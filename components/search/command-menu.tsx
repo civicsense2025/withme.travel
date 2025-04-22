@@ -4,8 +4,9 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Command, CommandGroup, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import {
   MapPin,
   Calendar,
@@ -34,7 +35,7 @@ type SearchResult = {
   description?: string
 }
 
-export function CommandMenu() {
+export function CommandMenu({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
@@ -222,7 +223,11 @@ export function CommandMenu() {
 
   return (
     <Dialog open={isSearchOpen} onOpenChange={(open) => !open && closeSearch()}>
-      <DialogContent className="p-0 gap-0 max-w-[650px]" showClose={false}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="p-0 gap-0 max-w-[650px]">
+        <VisuallyHidden><DialogTitle>Search Menu</DialogTitle></VisuallyHidden>
         {showTooltip && (
           <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-lg animate-fade-in">
             <p className="text-sm font-medium">Pro tip: Press {isMac ? "⌘K" : "Ctrl+K"} anytime to open this menu</p>

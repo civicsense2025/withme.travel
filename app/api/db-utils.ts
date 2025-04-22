@@ -1,3 +1,6 @@
+// Server-side database functions that were previously in lib/db.ts
+// These functions use the createServerClient and should only be used in API routes
+
 import { createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 

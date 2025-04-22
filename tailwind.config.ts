@@ -55,12 +55,12 @@ const config = {
         },
         // Travel theme colors
         travel: {
-          blue: "#7EB6FF",
-          pink: "#FFB7D1",
-          yellow: "#FFE17D",
-          purple: "#C8A4FF",
-          mint: "#A4FFD9",
-          peach: "#FFCBA4",
+          blue: "hsl(var(--travel-blue))",
+          pink: "hsl(var(--travel-pink))",
+          yellow: "hsl(var(--travel-yellow))",
+          purple: "hsl(var(--travel-purple))",
+          mint: "hsl(var(--travel-mint))",
+          peach: "hsl(var(--travel-peach))",
         },
       },
       borderRadius: {

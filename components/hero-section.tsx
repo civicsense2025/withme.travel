@@ -40,20 +40,21 @@ export function HeroSection() {
       </div>
 
       <h1 className="text-4xl md:text-6xl font-black lowercase flex flex-col animate-fade-in-up">
-        <span>say goodbye to the chaos</span>
-        <span className="min-h-[1.2em] text-travel-blue dark:text-travel-blue">of {planningType}.</span>
+        <span>say goodbye to the chaos of</span>
+        <span className="min-h-[1.2em] text-travel-blue dark:text-travel-blue">{planningType}.</span>
       </h1>
 
       <p className="mt-6 text-xl max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
         plan your next adventure together, make decisions easily, and create unforgettable memories.
       </p>
 
-      {/* City bubbles */}
-      <CityBubbles />
-
-      <div className="mt-4 w-full max-w-md animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+      {/* Search Bar - Added Margins */}
+      <div className="mt-12 mb-16 w-full max-w-xl animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
         <SearchForm placeholder="Where to? Try 'Barcelona' or 'Tokyo'" />
       </div>
+
+      {/* City bubbles - Kept below search bar for now */}
+      <CityBubbles />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
+import useSWR from "swr"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,38 +22,48 @@ interface Destination {
   avg_days: number
 }
 
+interface DestinationsResponse {
+  destinations: Destination[]
+}
+
+// Fetcher function for SWR
+const fetcher = async (url: string): Promise<DestinationsResponse> => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  return res.json()
+}
+
 export function TrendingDestinations() {
   const router = useRouter()
   const { toast } = useToast()
-  const [destinations, setDestinations] = useState<Destination[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchTrendingDestinations() {
-      try {
-        setIsLoading(true)
-        const response = await fetch("/api/destinations?trending=true&limit=6")
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch trending destinations")
-        }
-
-        const data = await response.json()
-        setDestinations(data.destinations || [])
-      } catch (error) {
-        console.error("Error fetching trending destinations:", error)
-        toast({
-          title: "Error loading trending destinations",
-          description: "Please try again later",
-          variant: "destructive",
-        })
-      } finally {
-        setIsLoading(false)
-      }
+  
+  // Using SWR for data fetching with stale-while-revalidate strategy
+  const { data, error, isValidating } = useSWR<DestinationsResponse>(
+    '/api/destinations?trending=true&limit=6',
+    fetcher,
+    {
+      revalidateOnFocus: false,  // Don't revalidate when window gets focus
+      revalidateIfStale: true,   // Revalidate if data is stale
+      dedupingInterval: 60000,   // Dedupe requests within 1 minute
+      errorRetryCount: 3,        // Retry 3 times on failure
     }
+  )
+  
+  const destinations = data?.destinations || []
+  const isLoading = !data && !error
 
-    fetchTrendingDestinations()
-  }, [toast])
+  // Show error toast only once when error occurs
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading trending destinations",
+        description: "Please try again later",
+        variant: "destructive",
+      })
+    }
+  }, [error, toast])
 
   // Helper function to get the image URL
   const getDestinationImageUrl = (destination: Destination) => {
@@ -101,8 +112,22 @@ export function TrendingDestinations() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-3xl overflow-hidden h-64 bg-muted animate-pulse" />
+            <div key={`skeleton-${i}`} className="rounded-3xl overflow-hidden h-64 bg-muted animate-pulse" />
           ))}
+        </div>
+      </div>
+    )
+  }
+
+  // If no destinations after loading, show empty state
+  if (destinations.length === 0 && !isLoading) {
+    return (
+      <div className="py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold lowercase">trending destinations</h2>
+        </div>
+        <div className="text-center py-10">
+          <p className="text-muted-foreground">No trending destinations found.</p>
         </div>
       </div>
     )
@@ -122,12 +147,12 @@ export function TrendingDestinations() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {destinations.map((destination) => {
+        {destinations.map((destination: Destination, index: number) => {
           const colorClass = getColorClass(destination.id)
 
           return (
             <Link
-              key={destination.id}
+              key={destination.id ? `destination-${destination.id}` : `destination-index-${index}`}
               href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}`}
               className="block"
             >
@@ -144,6 +169,8 @@ export function TrendingDestinations() {
                     alt={destination.city}
                     fill
                     className="object-cover"
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-4">
@@ -169,6 +196,13 @@ export function TrendingDestinations() {
           )
         })}
       </div>
+      
+      {/* Show subtle loading indicator while revalidating */}
+      {isValidating && !isLoading && (
+        <div className="mt-4 flex justify-center">
+          <div className="h-1 w-10 bg-travel-purple/50 rounded-full animate-pulse"></div>
+        </div>
+      )}
     </div>
   )
 }

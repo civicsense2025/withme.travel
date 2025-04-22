@@ -7,7 +7,8 @@ type CityBubble = {
   text: string
   color: string
   size: string
-  position: string
+  x: string
+  y: string
   delay: number
 }
 
@@ -73,13 +74,15 @@ export function CityBubbles() {
     // Create bubbles with improved positioning
     const newBubbles = selectedPhrases.map((text, index) => {
       const sizes = ["text-sm", "text-base", "text-lg"]
+      const calculatedPosition = positions[index]
 
       return {
         id: index,
         text,
         color: bubbleColors[index % bubbleColors.length],
         size: sizes[Math.floor(Math.random() * sizes.length)],
-        position: `left-[${positions[index].x}] top-[${positions[index].y}]`,
+        x: calculatedPosition.x,
+        y: calculatedPosition.y,
         delay: index * 0.1,
       }
     })
@@ -89,32 +92,35 @@ export function CityBubbles() {
 
   return (
     <div className="relative h-40 w-full max-w-5xl mx-auto my-12 overflow-visible">
-      {bubbles.map((bubble) => (
-        <motion.div
-          key={bubble.id}
-          className={`
-            absolute rounded-full px-4 py-2 lowercase font-medium
-            shadow-sm cursor-pointer hover:scale-110 transition-transform
-            ${bubble.color} ${bubble.size}
-          `}
-          style={{
-            left: bubble.position.split(" ")[0].replace("left-[", "").replace("]", ""),
-            top: bubble.position.split(" ")[1].replace("top-[", "").replace("]", ""),
-          }}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.9 }}
-          transition={{
-            delay: bubble.delay,
-            duration: 0.4,
-            type: "spring",
-            stiffness: 260,
-            damping: 20,
-          }}
-          whileHover={{ scale: 1.1, opacity: 1 }}
-        >
-          {bubble.text}
-        </motion.div>
-      ))}
+      {bubbles.map((bubble: CityBubble, index: number) => {
+        const tailClass = index % 2 === 0 ? "rounded-bl-none" : "rounded-br-none"
+        return (
+          <motion.div
+            key={bubble.id}
+            className={`
+              absolute rounded-full px-4 py-2 lowercase font-medium
+              shadow-sm cursor-pointer hover:scale-110 transition-transform
+              ${bubble.color} ${bubble.size} ${tailClass}
+            `}
+            style={{
+              left: bubble.x,
+              top: bubble.y,
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.9 }}
+            transition={{
+              delay: bubble.delay,
+              duration: 0.4,
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+            }}
+            whileHover={{ scale: 1.1, opacity: 1 }}
+          >
+            {bubble.text}
+          </motion.div>
+        )
+      })}
     </div>
   )
 }

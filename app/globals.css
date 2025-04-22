@@ -4,45 +4,48 @@
 
 @layer base {
   :root {
-    /* Original theme */
+    /* Base theme variables */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 355.7 100% 97.3%;
+    
+    /* Travel theme colors */
+    --travel-blue: 213 100% 75%;
+    --travel-blue-foreground: 213 100% 15%;
+    --travel-pink: 348 100% 86%;
+    --travel-pink-foreground: 348 100% 20%;
+    --travel-yellow: 48 100% 75%;
+    --travel-yellow-foreground: 48 100% 18%;
+    --travel-purple: 260 100% 82%;
+    --travel-purple-foreground: 260 100% 20%;
+    --travel-mint: 160 100% 82%;
+    --travel-mint-foreground: 160 100% 18%;
+    --travel-peach: 30 100% 82%;
+    --travel-peach-foreground: 30 100% 20%;
+    
+    /* Primary color using travel-purple */
+    --primary: 260 100% 82%;
+    --primary-foreground: 260 100% 20%;
+    
+    /* Secondary color */
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
+    
+    /* Accent color using travel-blue */
+    --accent: 213 100% 75%;
+    --accent-foreground: 213 100% 20%;
+    
+    /* Other system colors */
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 142.1 76.2% 36.3%;
-    --radius: 0.5rem;
-
-    /* Travel theme colors */
-    --travel-blue: 213 100% 75%;
-    --travel-pink: 348 100% 86%;
-    --travel-yellow: 48 100% 75%;
-    --travel-purple: 260 100% 82%;
-    --travel-mint: 160 100% 82%;
-    --travel-peach: 30 100% 82%;
-
-    /* New primary color - using the purple */
-    --primary: var(--travel-purple);
-    --primary-foreground: 260 100% 20%;
-
-    /* New accent color - using the blue */
-    --accent: var(--travel-blue);
-    --accent-foreground: 213 100% 20%;
-
-    /* New border radius */
+    --ring: 260 100% 82%;
     --radius: 1rem;
   }
 
@@ -53,6 +56,15 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
+    
+    /* Update Travel theme foregrounds for dark mode */
+    --travel-blue-foreground: 213 100% 85%;
+    --travel-pink-foreground: 348 100% 90%;
+    --travel-yellow-foreground: 48 100% 85%;
+    --travel-purple-foreground: 260 100% 90%;
+    --travel-mint-foreground: 160 100% 90%;
+    --travel-peach-foreground: 30 100% 90%;
+    
     --primary: 260 70% 70%;
     --primary-foreground: 260 100% 20%;
     --secondary: 217.2 32.6% 17.5%;
@@ -78,10 +90,80 @@
   }
 }
 
-.gradient-text {
-  @apply bg-gradient-to-r from-travel-purple to-travel-blue bg-clip-text text-transparent;
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-travel-purple to-travel-blue bg-clip-text text-transparent;
+  }
+
+  .travel-card {
+    @apply rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300;
+    transform: perspective(1000px) rotateY(0deg);
+    transition: transform 0.5s ease;
+  }
+
+  .travel-card:hover {
+    transform: perspective(1000px) rotateY(2deg);
+  }
+
+  .travel-button {
+    @apply rounded-full px-6 py-2 font-medium transition-all duration-300;
+  }
+
+  .travel-button-primary {
+    @apply bg-travel-purple text-purple-900 hover:bg-purple-300;
+  }
+
+  .travel-button-secondary {
+    @apply bg-travel-blue text-blue-900 hover:bg-blue-300;
+  }
+
+  .travel-button-accent {
+    @apply bg-travel-yellow text-amber-900 hover:bg-amber-300;
+  }
 }
 
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .hover-float {
+    transition: transform 0.3s ease;
+  }
+
+  .hover-float:hover {
+    transform: translateY(-5px);
+  }
+
+  .pulse-soft {
+    animation: pulse-soft 2s infinite ease-in-out;
+  }
+
+  .bubble-float {
+    animation: bubble-float 3s infinite ease-in-out;
+    animation-delay: calc(var(--delay) * 1s);
+  }
+
+  /* Custom scrollbar for the command menu */
+  .command-menu-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .command-menu-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .command-menu-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3);
+    border-radius: 20px;
+  }
+
+  .command-menu-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.5);
+  }
+}
+
+/* Keyframes must be defined globally */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -91,79 +173,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* Custom scrollbar for the command menu */
-.command-menu-scrollbar::-webkit-scrollbar {
-  width: 5px;
-}
-
-.command-menu-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.command-menu-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
-  border-radius: 20px;
-}
-
-.command-menu-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
-}
-
-/* Travel theme styles */
-.travel-theme {
-  --travel-blue: #7eb6ff;
-  --travel-pink: #ffb7d1;
-  --travel-yellow: #ffe17d;
-  --travel-purple: #c8a4ff;
-  --travel-mint: #a4ffd9;
-  --travel-peach: #ffcba4;
-}
-
-/* Custom card styles */
-.travel-card {
-  @apply rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300;
-  transform: perspective(1000px) rotateY(0deg);
-  transition: transform 0.5s ease;
-}
-
-.travel-card:hover {
-  transform: perspective(1000px) rotateY(2deg);
-}
-
-/* Button styles */
-.travel-button {
-  @apply rounded-full px-6 py-2 font-medium transition-all duration-300;
-}
-
-.travel-button-primary {
-  @apply bg-travel-purple text-purple-900 hover:bg-purple-300;
-}
-
-.travel-button-secondary {
-  @apply bg-travel-blue text-blue-900 hover:bg-blue-300;
-}
-
-.travel-button-accent {
-  @apply bg-travel-yellow text-amber-900 hover:bg-amber-300;
-}
-
-/* Animation utilities */
-.hover-float {
-  transition: transform 0.3s ease;
-}
-
-.hover-float:hover {
-  transform: translateY(-5px);
-}
-
-.pulse-soft {
-  animation: pulse-soft 2s infinite ease-in-out;
 }
 
 @keyframes pulse-soft {
@@ -176,7 +185,6 @@
   }
 }
 
-/* Bubble animation */
 @keyframes bubble-float {
   0%,
   100% {
@@ -185,9 +193,4 @@
   50% {
     transform: translateY(-10px);
   }
-}
-
-.bubble-float {
-  animation: bubble-float 3s infinite ease-in-out;
-  animation-delay: calc(var(--delay) * 1s);
 }

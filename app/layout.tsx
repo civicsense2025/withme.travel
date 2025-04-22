@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   title: "withme.travel | Group Travel Planning Made Simple",
   description:
     "Plan group trips with friends and family. Collaborate on itineraries, vote on activities, and manage expenses together.",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({

@@ -1,3 +1,5 @@
+// Remove the import of createServerClient from server.ts
+// import { createServerClient } from "./supabase/server"
 import { supabase as supabaseClient } from "./supabase/client"
 
 // Types based on our database schema

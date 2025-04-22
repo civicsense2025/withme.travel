@@ -35,17 +35,21 @@ export function SearchForm({
   return (
     <form onSubmit={handleSubmit} className={`flex items-center gap-2 ${className}`}>
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-muted-foreground h-6 w-6" />
         <Input
           type="text"
           placeholder={placeholder}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+          className="pl-18 h-14 text-lg px-4 py-4 placeholder:text-lg placeholder:italic"
         />
       </div>
       {showButton && (
-        <Button type="submit" disabled={!query.trim()} className="lowercase">
+        <Button 
+          type="submit" 
+          disabled={!query.trim()} 
+          className="lowercase h-14 px-8 text-lg"
+        >
           {buttonText}
         </Button>
       )}

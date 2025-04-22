@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -70,7 +70,7 @@ export default function DestinationsPage() {
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase()
       filtered = filtered.filter(
-        (dest) =>
+        (dest: Destination) =>
           dest.city.toLowerCase().includes(query) ||
           dest.country.toLowerCase().includes(query) ||
           (dest.state_province && dest.state_province.toLowerCase().includes(query)) ||
@@ -79,14 +79,14 @@ export default function DestinationsPage() {
     }
 
     if (continentFilter) {
-      filtered = filtered.filter((dest) => dest.continent === continentFilter)
+      filtered = filtered.filter((dest: Destination) => dest.continent === continentFilter)
     }
 
     setFilteredDestinations(filtered)
   }, [debouncedSearchQuery, continentFilter, destinations])
 
   // Get unique continents for filtering
-  const continents = Array.from(new Set(destinations.map((dest) => dest.continent))).sort()
+  const continents: string[] = Array.from(new Set(destinations.map((dest) => dest.continent))).sort()
 
   // Helper function to get the image URL
   const getDestinationImageUrl = (destination: Destination) => {
@@ -108,24 +108,22 @@ export default function DestinationsPage() {
   }
 
   // Determine color class based on destination ID
-  const getColorClass = (id: string | undefined | null): string => {
+  const getColorClass = (id: string | undefined) => {
+    // Define color classes using CSS variables for theme compatibility
     const colorClasses = [
-      "bg-travel-blue text-blue-900",
-      "bg-travel-pink text-pink-900",
-      "bg-travel-yellow text-amber-900",
-      "bg-travel-purple text-purple-900",
-      "bg-travel-mint text-emerald-900",
-      "bg-travel-peach text-orange-900",
+      "bg-travel-blue text-[hsl(var(--travel-blue-foreground))]",
+      "bg-travel-pink text-[hsl(var(--travel-pink-foreground))]",
+      "bg-travel-yellow text-[hsl(var(--travel-yellow-foreground))]",
+      "bg-travel-purple text-[hsl(var(--travel-purple-foreground))]",
+      "bg-travel-mint text-[hsl(var(--travel-mint-foreground))]",
+      "bg-travel-peach text-[hsl(var(--travel-peach-foreground))]",
     ]
 
-    // Check if id is a valid non-empty string
-    if (typeof id !== 'string' || id.length === 0) {
-      // Return a default class or handle the error appropriately
-      console.warn('Invalid destination ID received for color calculation:', id);
-      return colorClasses[0]; // Default to the first color
+    // If id is undefined or null, return a default color
+    if (!id) {
+      return colorClasses[0] // Default to first color
     }
 
-    // Ensure id has at least one character before accessing charCodeAt
     const colorIndex = Math.abs(id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % colorClasses.length
     return colorClasses[colorIndex]
   }
@@ -144,7 +142,7 @@ export default function DestinationsPage() {
             placeholder="search destinations..."
             className="pl-9 rounded-full"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
@@ -183,7 +181,7 @@ export default function DestinationsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDestinations.map((destination) => {
+          {filteredDestinations.map((destination: Destination) => {
             const colorClass = getColorClass(destination.id)
 
             return (
