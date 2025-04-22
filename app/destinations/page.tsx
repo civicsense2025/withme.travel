@@ -85,8 +85,14 @@ export default function DestinationsPage() {
     setFilteredDestinations(filtered)
   }, [debouncedSearchQuery, continentFilter, destinations])
 
-  // Get unique continents for filtering
-  const continents: string[] = Array.from(new Set(destinations.map((dest) => dest.continent))).sort()
+  // Get unique continents for filtering, ensuring only strings are included
+  const continents: string[] = Array.from(
+    new Set(
+      destinations
+        .map((dest) => dest.continent)
+        .filter((c): c is string => typeof c === 'string') // Filter out null/undefined
+    )
+  ).sort();
 
   // Helper function to get the image URL
   const getDestinationImageUrl = (destination: Destination) => {
@@ -187,7 +193,7 @@ export default function DestinationsPage() {
             return (
               <Link
                 key={destination.id}
-                href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}`}
+                href={`/destinations/${(destination.city ?? '').toLowerCase().replace(/\s+/g, "-")}`}
                 className="block"
               >
                 <motion.div
@@ -219,7 +225,7 @@ export default function DestinationsPage() {
 
                   <div className={`p-4 ${colorClass} bg-opacity-30`}>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm lowercase">{destination.continent.toLowerCase()}</span>
+                      <span className="text-sm lowercase">{(destination.continent ?? '').toLowerCase()}</span>
                       <span className="text-xs lowercase bg-white/30 px-2 py-1 rounded-full">explore →</span>
                     </div>
                   </div>

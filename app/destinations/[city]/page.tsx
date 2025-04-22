@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import React from "react"
 import {
   ArrowLeft,
   Calendar,
@@ -66,27 +67,37 @@ interface Destination {
   image_url: string
 }
 
-export default function CityPage({ params }: { params: { city: string } }) {
+export default function CityPage({ params }: { params: Promise<{ city: string }> }) {
   const router = useRouter()
   const { toast } = useToast()
   const [destination, setDestination] = useState<Destination | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Decode the city name from URL
-  const cityName = decodeURIComponent(params.city.replace(/-/g, " "))
+  
+  // Unwrap params promise using React.use()
+  const { city: cityParam } = React.use(params)
 
   useEffect(() => {
+    let decodedCityName = "";
+    try {
+       decodedCityName = decodeURIComponent(cityParam.replace(/-/g, " "));
+    } catch (e) {
+        console.error("Error decoding city name from params:", e);
+        setError("Invalid city name in URL");
+        setIsLoading(false);
+        return; // Exit if decoding fails
+    }
+
     async function fetchDestination() {
       try {
         setIsLoading(true)
         setError(null)
-
-        const response = await fetch(`/api/destinations/${encodeURIComponent(cityName)}`)
+        
+        const response = await fetch(`/api/destinations/${encodeURIComponent(decodedCityName)}`);
 
         if (!response.ok) {
           if (response.status === 404) {
-            setError("Destination not found")
+            setError(`Destination '${decodedCityName}' not found`); 
             return
           }
           throw new Error(`Failed to fetch destination: ${response.status}`)
@@ -108,7 +119,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
     }
 
     fetchDestination()
-  }, [cityName, toast])
+  }, [cityParam, toast])
 
   // Helper function to render rating stars
   const renderRating = (rating: number | null | undefined, max = 5) => {
@@ -178,7 +189,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
         </div>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold">Destination Not Found</h2>
-          <p className="text-muted-foreground mt-2">We couldn't find information about {cityName}.</p>
+          <p className="text-muted-foreground mt-2">We couldn't find information about {decodeURIComponent(cityParam.replace(/-/g, " "))}.</p>
           <Button className="mt-4" onClick={() => router.push("/destinations")}>
             Browse All Destinations
           </Button>
@@ -227,6 +238,13 @@ export default function CityPage({ params }: { params: { city: string } }) {
               <h2 className="text-2xl font-bold mb-4">About {destination.city}</h2>
               <p className="text-muted-foreground">{destination.description}</p>
 
+              <Button 
+                className="mt-6 w-full md:w-auto"
+                onClick={() => router.push(`/trips/create?destinationId=${destination.id}`)}
+              >
+                Plan a trip to {destination.city}
+              </Button>
+
               {destination.highlights && (
                 <div className="mt-6">
                   <h3 className="text-lg font-semibold mb-2">Highlights</h3>
@@ -237,7 +255,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
               <div className="mt-6 flex flex-wrap gap-2">
                 {destination.family_friendly && <Badge variant="outline">Family Friendly</Badge>}
                 {destination.digital_nomad_friendly >= 4 && <Badge variant="outline">Digital Nomad Friendly</Badge>}
-                {destination.beach_quality >= 4 && <Badge variant="outline">Great Beaches</Badge>}
+                {destination.beach_quality !== null && destination.beach_quality >= 4 && <Badge variant="outline">Great Beaches</Badge>}
                 {destination.cultural_attractions >= 4 && <Badge variant="outline">Cultural Hotspot</Badge>}
                 {destination.nightlife_rating >= 4 && <Badge variant="outline">Vibrant Nightlife</Badge>}
                 {destination.outdoor_activities >= 4 && <Badge variant="outline">Outdoor Activities</Badge>}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 
 // Fallback mock data in case of database issues
@@ -90,7 +90,7 @@ export async function GET(request: Request) {
     try {
       // Try to fetch from Supabase
       const cookieStore = cookies();
-      const supabase = createServerClient(cookieStore);
+      const supabase = createClient(cookieStore);
       
       let query = supabase.from("destinations").select("*");
       

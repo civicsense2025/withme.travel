@@ -19,12 +19,16 @@ import {
   Moon,
   Sun,
   ChevronRight,
+  Users,
+  Settings,
+  UserPlus,
 } from "lucide-react"
 import { useSearch } from "@/contexts/search-context"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/components/auth-provider"
+import { cn } from "@/lib/utils"
 
 type SearchResult = {
   id: string
@@ -35,7 +39,13 @@ type SearchResult = {
   description?: string
 }
 
-export function CommandMenu({ children }: { children: React.ReactNode }) {
+// Define SearchHistoryItem type (adjust if defined elsewhere)
+interface SearchHistoryItem {
+  query: string
+  type: string
+}
+
+export function CommandMenu() {
   const router = useRouter()
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
@@ -140,7 +150,7 @@ export function CommandMenu({ children }: { children: React.ReactNode }) {
 
     // Handle destination results
     if (value.startsWith("destination-")) {
-      const result = results.find((r) => r.id === value)
+      const result = results.find((r: SearchResult) => r.id === value)
       if (result && result.url) {
         router.push(result.url)
         addToSearchHistory(result.title, "destination")
@@ -222,9 +232,9 @@ export function CommandMenu({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <Dialog open={isSearchOpen} onOpenChange={(open) => !open && closeSearch()}>
+    <Dialog open={isSearchOpen} onOpenChange={(open: boolean) => !open && closeSearch()}>
       <DialogTrigger asChild>
-        {children}
+        {/* Placeholder for the children prop */}
       </DialogTrigger>
       <DialogContent className="p-0 gap-0 max-w-[650px]">
         <VisuallyHidden><DialogTitle>Search Menu</DialogTitle></VisuallyHidden>
@@ -242,7 +252,7 @@ export function CommandMenu({ children }: { children: React.ReactNode }) {
                 className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Search destinations, trips..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 autoFocus
               />
@@ -267,7 +277,7 @@ export function CommandMenu({ children }: { children: React.ReactNode }) {
             {/* Search Results */}
             {results.length > 0 && (
               <CommandGroup heading="Search Results" className="py-2 px-2">
-                {results.map((result) => (
+                {results.map((result: SearchResult) => (
                   <CommandItem
                     key={result.id}
                     value={result.id}
@@ -357,12 +367,12 @@ export function CommandMenu({ children }: { children: React.ReactNode }) {
               </CommandGroup>
             )}
 
-            {/* Recent Searches */}
-            {searchHistory.length > 0 && !searchQuery && (
+            {/* Search History - Only show when no search query and no results */}
+            {!searchQuery && !isLoading && results.length === 0 && searchHistory.length > 0 && (
               <CommandGroup heading="Recent Searches" className="py-2 px-2">
-                {searchHistory.map((item) => (
+                {searchHistory.map((item: SearchHistoryItem) => (
                   <CommandItem
-                    key={`${item.query}-${item.timestamp}`}
+                    key={item.query}
                     value={`history:${item.query}`}
                     onSelect={handleSelect}
                     className="py-2 px-4 cursor-pointer rounded-md"

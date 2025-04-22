@@ -4,25 +4,57 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { supabase } from "@/utils/supabase/client"
+
+// Cookie name for consent tracking
+const COOKIE_CONSENT_KEY = "withme_cookie_consent"
+
+// Helper function to set a cookie with specified parameters
+function setCookie(name: string, value: string, days = 365) {
+  const date = new Date()
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+  const expires = "; expires=" + date.toUTCString()
+  document.cookie = name + "=" + value + expires + "; path=/; SameSite=Lax"
+}
+
+// Helper function to get a cookie value by name
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? match[2] : null
+}
 
 export function CookieConsent() {
   const [showConsent, setShowConsent] = useState(false)
 
   useEffect(() => {
     // Check if user has already accepted cookies
-    const cookiesAccepted = localStorage.getItem("cookiesAccepted")
+    const cookiesAccepted = getCookie(COOKIE_CONSENT_KEY) === "true" || localStorage.getItem("cookiesAccepted") === "true"
+    
     if (!cookiesAccepted) {
       setShowConsent(true)
     }
   }, [])
 
   const acceptCookies = () => {
-    // Set with no expiration date for permanent storage
+    // Store consent in both localStorage (for legacy support) and as a cookie
     localStorage.setItem("cookiesAccepted", "true")
+    setCookie(COOKIE_CONSENT_KEY, "true", 365) // Set cookie for 1 year
+    
+    // Let Supabase know cookies are accepted
+    // This might trigger a re-auth if auth is configured to use cookies
+    try {
+      // Re-emit session to ensure it's properly stored with cookies
+      supabase.auth.refreshSession()
+    } catch (error) {
+      console.error("Error refreshing Supabase session:", error)
+    }
+    
     setShowConsent(false)
   }
 
   const dismissConsent = () => {
+    // Just hide the banner without accepting cookies
     setShowConsent(false)
   }
 

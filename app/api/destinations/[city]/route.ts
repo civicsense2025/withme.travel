@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 
-export async function GET(request: Request, { params }: { params: { city: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ city: string }> }) {
   try {
-    const cityName = decodeURIComponent(params.city.replace(/-/g, " "))
-
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const unwrappedParams = await params
+    const cityName = decodeURIComponent(unwrappedParams.city.replace(/-/g, " "))
+    
+    const supabase = createClient()
 
     // Search for the destination by city name (case insensitive)
     // Remove .single() to handle multiple or zero results

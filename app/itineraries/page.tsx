@@ -1,165 +1,144 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Filter } from "lucide-react"
+import { PlusCircle, Search, Filter, List, LayoutGrid } from "lucide-react"
+import { createClient } from "@/utils/supabase/server"
 
-import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PageHeader } from "@/components/page-header"
+import { SkeletonCard } from "@/components/skeleton-card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ItineraryFilters } from "@/components/itinerary-filters"
 import { ItineraryTemplateCard } from "@/components/itinerary-template-card"
 
+export const dynamic = 'force-dynamic' // Ensure dynamic rendering
+
 export const metadata: Metadata = {
-  title: "Itinerary Templates | withme.travel",
-  description: "Browse and use travel itinerary templates for your next group adventure",
+  title: "Browse Itineraries",
+  description: "Explore travel itineraries shared by the community.",
 }
 
-// Sample itinerary data - in a real app, this would come from the database
-const itineraries = [
-  {
-    id: "weekend-in-paris",
-    title: "Weekend in Paris",
-    description: "A perfect 3-day itinerary for first-time visitors to the City of Light",
-    image: "/Parisian-Cafe-Scene.png",
-    location: "Paris, France",
-    duration: "3 days",
-    groupSize: "2-4 people",
-    category: "city",
-    tags: ["romantic", "food", "culture"],
-  },
-  {
-    id: "tokyo-adventure",
-    title: "Tokyo Adventure",
-    description: "Explore the best of Tokyo in 5 days, from traditional temples to futuristic districts",
-    image: "/tokyo-twilight.png",
-    location: "Tokyo, Japan",
-    duration: "5 days",
-    groupSize: "2-6 people",
-    category: "city",
-    tags: ["food", "culture", "shopping"],
-  },
-  {
-    id: "barcelona-weekend",
-    title: "Barcelona Weekend",
-    description: "Beach, tapas, and architecture in this perfect weekend getaway",
-    image: "/barceloneta-sand-and-sea.png",
-    location: "Barcelona, Spain",
-    duration: "3 days",
-    groupSize: "4-8 people",
-    category: "beach",
-    tags: ["food", "nightlife", "architecture"],
-  },
-  {
-    id: "california-road-trip",
-    title: "California Road Trip",
-    description: "The ultimate coastal drive from San Francisco to Los Angeles",
-    image: "/california-highway-one.png",
-    location: "California, USA",
-    duration: "7 days",
-    groupSize: "2-5 people",
-    category: "road-trip",
-    tags: ["nature", "driving", "beaches"],
-  },
-  {
-    id: "bangkok-explorer",
-    title: "Bangkok Explorer",
-    description: "Temples, markets, and street food in the vibrant Thai capital",
-    image: "/bustling-bangkok-street.png",
-    location: "Bangkok, Thailand",
-    duration: "4 days",
-    groupSize: "2-6 people",
-    category: "city",
-    tags: ["food", "culture", "budget"],
-  },
-  {
-    id: "new-york-city-break",
-    title: "New York City Break",
-    description: "The essential NYC experience in just 4 days",
-    image: "/manhattan-twilight.png",
-    location: "New York, USA",
-    duration: "4 days",
-    groupSize: "2-6 people",
-    category: "city",
-    tags: ["shopping", "culture", "food"],
-  },
-]
+// Define the Itinerary type based on expected data from the query
+interface Itinerary {
+  id: string
+  title: string
+  description: string | null
+  cover_image_url: string | null
+  location: string | null
+  duration: string | null
+  duration_days: number | null
+  category: string | null
+  slug: string
+  is_public: boolean
+  upvotes: number
+  user: {
+    id: string;
+    name: string | null;
+    avatar_url: string | null;
+  } | null // Should be object or null
+  destinations: {
+    city: string;
+    country: string;
+    image_url: string | null;
+  } | null // Should be object or null
+  // Added fields (ensure they are selected or defaulted)
+  groupSize?: string | null;
+  tags?: string[];
+}
 
-export default function ItinerariesPage() {
+// Fetch itineraries from the database
+async function getItineraries() {
+  const supabase = createClient()
+  
+  const { data, error } = await supabase
+    .from("itinerary_templates")
+    .select("*, destinations(*), created_by:users(id, full_name, avatar_url)") 
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+  
+  if (error) {
+    console.error("Error fetching itineraries:", error)
+    return []
+  }
+  
+  // Map data to ensure consistency, especially if created_by is null
+  return (data || []).map(item => ({
+    ...item,
+    author: item.created_by ? { 
+      id: item.created_by.id, 
+      name: item.created_by.full_name, 
+      avatar_url: item.created_by.avatar_url 
+    } : null,
+  }))
+}
+
+export default async function ItinerariesPage() {
+  const itineraries = await getItineraries()
+  
+  const hasItineraries = itineraries.length > 0
+  const displayItineraries = hasItineraries ? itineraries : []
+
+  // Fetch distinct filter options (Placeholder)
+  const filterOptions = {
+    locations: [],
+    categories: [],
+    durations: [],
+  }
+
   return (
     <div className="container py-10">
-      <PageHeader
-        heading="itinerary templates"
-        subheading="browse and use travel templates for your next group adventure"
-      />
+      <PageHeader 
+        heading="explore itineraries" 
+        description="discover travel plans shared by the community"
+      >
+        <Button asChild>
+          <Link href="/itineraries/submit" className="flex items-center gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Submit Yours
+          </Link>
+        </Button>
+      </PageHeader>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between mt-8 mb-6">
-        <div className="w-full md:w-auto">
-          <Input placeholder="Search itineraries..." className="max-w-sm" />
-        </div>
-        <div className="flex flex-wrap gap-3 w-full md:w-auto">
-          <Select>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Duration" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1-3">1-3 days</SelectItem>
-              <SelectItem value="4-7">4-7 days</SelectItem>
-              <SelectItem value="8+">8+ days</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="mb-8">
+        {/* Pass only the destinations prop */}
+        <ItineraryFilters destinations={[]} /> {/* Pass fetched/mapped destinations here eventually */}
+      </div>
 
-          <Select>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Group Size" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="small">Small (2-4)</SelectItem>
-              <SelectItem value="medium">Medium (5-8)</SelectItem>
-              <SelectItem value="large">Large (9+)</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
+      {displayItineraries.length === 0 && (
+        <div className="text-center py-16">
+          <h3 className="text-xl font-semibold mb-2">No itineraries found yet</h3>
+          <p className="text-muted-foreground mb-6">Be the first to share your travel experience!</p>
+          <Button asChild>
+            <Link href="/itineraries/submit" className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Submit Your Itinerary
+            </Link>
           </Button>
         </div>
-      </div>
+      )}
 
-      <Tabs defaultValue="all" className="mb-8">
-        <TabsList>
-          <TabsTrigger value="all" className="lowercase">
-            All
-          </TabsTrigger>
-          <TabsTrigger value="city" className="lowercase">
-            City Breaks
-          </TabsTrigger>
-          <TabsTrigger value="beach" className="lowercase">
-            Beach
-          </TabsTrigger>
-          <TabsTrigger value="road-trip" className="lowercase">
-            Road Trips
-          </TabsTrigger>
-          <TabsTrigger value="nature" className="lowercase">
-            Nature & Outdoors
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {itineraries.map((itinerary) => (
-          <ItineraryTemplateCard key={itinerary.id} itinerary={itinerary} />
-        ))}
-      </div>
-
-      <div className="mt-12 text-center">
-        <h2 className="text-xl font-semibold mb-4 lowercase">Have a great itinerary to share?</h2>
-        <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-          Help other travelers by sharing your successful trip itinerary as a template
-        </p>
-        <Button asChild className="lowercase">
-          <Link href="/itineraries/submit">Submit Your Itinerary</Link>
-        </Button>
-      </div>
+      {displayItineraries.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {displayItineraries.map((itinerary) => (
+            <ItineraryTemplateCard 
+              key={itinerary.id} 
+              itinerary={{
+                id: itinerary.id,
+                title: itinerary.title,
+                description: itinerary.description,
+                // Use optional chaining for nested properties
+                image: itinerary.image || itinerary.destinations?.image_url || "/placeholder.svg",
+                location: itinerary.location || (itinerary.destinations ? `${itinerary.destinations.city}, ${itinerary.destinations.country}` : "Unknown Location"),
+                duration: itinerary.duration || `${itinerary.duration_days || "N/A"} days`,
+                groupSize: itinerary.groupSize || "N/A",
+                tags: itinerary.tags || [],
+                category: itinerary.category || "uncategorized",
+                slug: itinerary.slug || itinerary.id // Use ID as fallback slug
+              }} 
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

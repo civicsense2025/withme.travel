@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X, PlusCircle, LogOut, Settings, User, Map, Moon, Sun } from "lucide-react"
+import { Menu, X, PlusCircle, LogOut, Settings, User, Map, Moon, Sun, Search } from "lucide-react"
 import { motion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -18,10 +18,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/utils/supabase/client"
 import { useTheme } from "next-themes"
-import { SearchButton } from "@/components/search/search-button"
 import { Logo } from "@/components/logo"
+import { useSearch } from "@/contexts/search-context"
 
 export function Navbar() {
   const pathname = usePathname()
@@ -31,6 +31,7 @@ export function Navbar() {
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
+  const { openSearch } = useSearch()
 
   useEffect(() => {
     async function getUser() {
@@ -54,7 +55,7 @@ export function Navbar() {
     }
 
     getUser()
-  }, [])
+  }, [supabase])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -103,6 +104,14 @@ export function Navbar() {
               destinations
             </Link>
             <Link
+              href="/itineraries"
+              className={`text-sm font-medium transition-colors hover:text-travel-purple lowercase ${
+                isActive("/itineraries") ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              itineraries
+            </Link>
+            <Link
               href="/support"
               className={`text-sm font-medium transition-colors hover:text-travel-purple lowercase ${
                 isActive("/support") ? "text-foreground" : "text-muted-foreground"
@@ -114,9 +123,16 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <SearchButton />
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={openSearch}
+            aria-label="Open search menu"
+            className="h-8 w-8 rounded-full"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+
           {/* Only show theme toggle on desktop */}
           <div className="hidden md:block">
             <ThemeToggle />
@@ -133,7 +149,6 @@ export function Navbar() {
                     </Button>
                   </Link>
 
-                  {/* Show plan a trip button on mobile when logged in */}
                   <Link href="/trips/create" className="md:hidden">
                     <Button
                       size="sm"
@@ -147,8 +162,8 @@ export function Navbar() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email} />
-                          <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                          <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || 'User'} />
+                          <AvatarFallback>{user.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
@@ -165,6 +180,12 @@ export function Navbar() {
                           <Link href="/trips">
                             <Map className="mr-2 h-4 w-4" />
                             <span className="lowercase">my trips</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/itineraries">
+                            <Map className="mr-2 h-4 w-4" />
+                            <span className="lowercase">itineraries</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
@@ -198,12 +219,7 @@ export function Navbar() {
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
-                  <Link href="/login" className="hidden md:block">
-                    <Button variant="outline" className="lowercase rounded-full">
-                      log in
-                    </Button>
-                  </Link>
-                  <Link href="/signup">
+                  <Link href="/login?redirect=/trips/create">
                     <Button className="lowercase rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900">
                       plan a trip
                     </Button>
@@ -249,6 +265,15 @@ export function Navbar() {
                 onClick={closeMenu}
               >
                 destinations
+              </Link>
+              <Link
+                href="/itineraries"
+                className={`text-sm font-medium transition-colors hover:text-travel-purple lowercase ${
+                  isActive("/itineraries") ? "text-foreground" : "text-muted-foreground"
+                }`}
+                onClick={closeMenu}
+              >
+                itineraries
               </Link>
               <Link
                 href="/support"

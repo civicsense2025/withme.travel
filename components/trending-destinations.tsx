@@ -182,9 +182,9 @@ export function TrendingDestinations() {
                 <div className={`p-4 ${colorClass} bg-opacity-30`}>
                   <div className="flex justify-between items-center">
                     <Badge variant="outline" className="px-2 py-1 rounded-full bg-white/30">
-                      {destination.travelers_count.toLocaleString()} travelers
+                      {(destination.travelers_count ?? 0).toLocaleString()} travelers
                     </Badge>
-                    <span className="text-sm">Avg. {destination.avg_days} days</span>
+                    <span className="text-sm">Avg. {destination.avg_days ?? '-'} days</span>
                   </div>
 
                   <div className="mt-3 flex justify-end">

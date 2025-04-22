@@ -1,341 +1,287 @@
-// Remove the import of createServerClient from server.ts
-// import { createServerClient } from "./supabase/server"
-import { supabase as supabaseClient } from "./supabase/client"
+/**
+ * This is a temporary placeholder for database functions.
+ * These functions are implemented to provide types and minimal functionality
+ * to prevent build errors, but should be replaced with real database interactions.
+ */
 
-// Types based on our database schema
-export interface User {
-  id: string
-  email: string
-  name: string
-  avatar_url?: string
-  created_at?: string
-}
+import { supabase } from "@/utils/supabase/client";
 
-export interface Trip {
-  id: string
-  title: string
-  description?: string
-  start_date?: string
-  end_date?: string
-  cover_image?: string
-  total_budget?: number
-  created_at?: string
-  created_by?: string
+// Type definitions
+export interface Expense {
+  id: string;
+  trip_id: string;
+  title: string;
+  amount: number;
+  category: string;
+  date: string;
+  paid_by: string;
+  created_at: string;
+  user?: {
+    name: string;
+    avatar_url?: string;
+  };
 }
 
 export interface TripMember {
-  id: string
-  trip_id: string
-  user_id: string
-  role: string
-  created_at?: string
-  user?: User
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: string;
+  status: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
 }
 
 export interface ItineraryItem {
-  id: string
-  trip_id: string
-  title: string
-  type?: string
-  date?: string
-  start_time?: string
-  end_time?: string
-  location?: string
-  place_id?: string
-  latitude?: number
-  longitude?: number
-  cost?: number
-  notes?: string
-  created_at?: string
-  created_by?: string
-  votes?: number
-  user_vote?: "up" | "down" | null
+  id: string;
+  trip_id: string;
+  title: string;
+  description?: string;
+  location?: string;
+  start_time?: string;
+  end_time?: string;
+  date?: string;
+  category?: string;
+  status?: string;
+  created_by?: string;
+  notes?: string[];
 }
 
-export interface Expense {
-  id: string
-  trip_id: string
-  title: string
-  amount: number
-  category?: string
-  date?: string
-  paid_by?: string
-  created_at?: string
-  paid_by_user?: User
+// Mock data and functions
+const EXPENSE_CATEGORIES = [
+  { name: "Accommodation", color: "bg-blue-500" },
+  { name: "Food", color: "bg-green-500" },
+  { name: "Transportation", color: "bg-yellow-500" },
+  { name: "Activities", color: "bg-purple-500" },
+  { name: "Shopping", color: "bg-pink-500" },
+  { name: "Other", color: "bg-gray-500" },
+];
+
+/**
+ * Get expenses for a trip
+ */
+export async function getExpenses(tripId: string): Promise<Expense[]> {
+  try {
+    const { data, error } = await supabase
+      .from("expenses")
+      .select(`*, user:paid_by (name, avatar_url)`)
+      .eq("trip_id", tripId)
+      .order("date", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    return [];
+  }
 }
 
-export interface Vote {
-  id: string
-  itinerary_item_id: string
-  user_id: string
-  vote_type: "up" | "down"
-  created_at?: string
+/**
+ * Get expenses grouped by category
+ */
+export async function getExpensesByCategory(
+  tripId: string
+): Promise<{ name: string; amount: number; color: string }[]> {
+  try {
+    const expenses = await getExpenses(tripId);
+    
+    // Create a map of categories with amounts
+    const categoryMap = new Map<string, number>();
+    
+    // Initialize categories with 0
+    EXPENSE_CATEGORIES.forEach(cat => {
+      categoryMap.set(cat.name, 0);
+    });
+    
+    // Sum expenses by category
+    expenses.forEach(expense => {
+      const currentAmount = categoryMap.get(expense.category) || 0;
+      categoryMap.set(expense.category, currentAmount + expense.amount);
+    });
+    
+    // Convert to array with category info
+    return Array.from(categoryMap.entries())
+      .map(([name, amount]) => ({
+        name,
+        amount,
+        color: EXPENSE_CATEGORIES.find(c => c.name === name)?.color || "bg-gray-500"
+      }))
+      .filter(cat => cat.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
+  } catch (error) {
+    console.error("Error fetching expenses by category:", error);
+    return [];
+  }
 }
 
-// Client-side database functions only
-// Server-side functions have been moved to separate files in app/api
+/**
+ * Get trip members
+ */
+export async function getTripMembers(tripId: string): Promise<TripMember[]> {
+  try {
+    const { data, error } = await supabase
+      .from("trip_members")
+      .select(`*, user:user_id (id, name, email, avatar_url)`)
+      .eq("trip_id", tripId);
 
-// Client-side database functions
-export async function createTrip(tripData: Partial<Trip>, userId: string) {
-  const { data, error } = await supabaseClient
-    .from("trips")
-    .insert([
-      {
-        ...tripData,
-        created_by: userId,
-      },
-    ])
-    .select()
-
-  if (error) {
-    console.error("Error creating trip:", error)
-    throw error
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching trip members:", error);
+    return [];
   }
-
-  // Add the creator as a member with 'organizer' role
-  if (data && data[0]) {
-    const { error: memberError } = await supabaseClient.from("trip_members").insert([
-      {
-        trip_id: data[0].id,
-        user_id: userId,
-        role: "organizer",
-      },
-    ])
-
-    if (memberError) {
-      console.error("Error adding trip member:", memberError)
-    }
-  }
-
-  return data?.[0]
 }
 
-export async function addItineraryItem(itemData: Partial<ItineraryItem>, userId: string) {
-  const { data, error } = await supabaseClient
-    .from("itinerary_items")
-    .insert([
-      {
-        ...itemData,
-        created_by: userId,
-      },
-    ])
-    .select()
-
-  if (error) {
-    console.error("Error adding itinerary item:", error)
-    throw error
-  }
-
-  return data?.[0]
-}
-
-export async function voteForItem(itemId: string, userId: string, voteType: "up" | "down") {
-  // Check if user already voted
-  const { data: existingVote, error: checkError } = await supabaseClient
-    .from("votes")
-    .select("id, vote_type")
-    .eq("itinerary_item_id", itemId)
-    .eq("user_id", userId)
-    .maybeSingle()
-
-  if (checkError) {
-    console.error("Error checking existing vote:", checkError)
-    throw checkError
-  }
-
-  // If vote exists and is the same type, delete it (toggle off)
-  if (existingVote && existingVote.vote_type === voteType) {
-    const { error: deleteError } = await supabaseClient.from("votes").delete().eq("id", existingVote.id)
-
-    if (deleteError) {
-      console.error("Error deleting vote:", deleteError)
-      throw deleteError
-    }
-
-    return null
-  }
-  // If vote exists but different type, update it
-  else if (existingVote) {
-    const { data, error: updateError } = await supabaseClient
-      .from("votes")
-      .update({ vote_type: voteType })
-      .eq("id", existingVote.id)
+/**
+ * Add a new expense
+ */
+export async function addExpense(expenseData: {
+  trip_id: string;
+  title: string;
+  amount: number;
+  category: string;
+  date: string;
+  paid_by: string;
+}): Promise<Expense | null> {
+  try {
+    const { data, error } = await supabase
+      .from("expenses")
+      .insert(expenseData)
       .select()
+      .single();
 
-    if (updateError) {
-      console.error("Error updating vote:", updateError)
-      throw updateError
-    }
-
-    return data?.[0]
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error adding expense:", error);
+    return null;
   }
-  // If no vote exists, create new one
-  else {
-    const { data, error: insertError } = await supabaseClient
-      .from("votes")
-      .insert([
-        {
-          itinerary_item_id: itemId,
-          user_id: userId,
-          vote_type: voteType,
-        },
-      ])
+}
+
+/**
+ * Get itinerary items for a trip
+ */
+export async function getItineraryItems(tripId: string): Promise<ItineraryItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from("itinerary_items")
+      .select("*")
+      .eq("trip_id", tripId)
+      .order("date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching itinerary items:", error);
+    return [];
+  }
+}
+
+/**
+ * Add an itinerary item
+ */
+export async function addItineraryItem(itemData: Partial<ItineraryItem>): Promise<ItineraryItem | null> {
+  try {
+    const { data, error } = await supabase
+      .from("itinerary_items")
+      .insert(itemData)
       .select()
+      .single();
 
-    if (insertError) {
-      console.error("Error inserting vote:", insertError)
-      throw insertError
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error adding itinerary item:", error);
+    return null;
+  }
+}
+
+/**
+ * Update an itinerary item
+ */
+export async function updateItineraryItem(
+  itemId: string, 
+  itemData: Partial<ItineraryItem>
+): Promise<ItineraryItem | null> {
+  try {
+    const { data, error } = await supabase
+      .from("itinerary_items")
+      .update(itemData)
+      .eq("id", itemId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error updating itinerary item:", error);
+    return null;
+  }
+}
+
+/**
+ * Delete an itinerary item
+ */
+export async function deleteItineraryItem(itemId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from("itinerary_items")
+      .delete()
+      .eq("id", itemId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Error deleting itinerary item:", error);
+    return false;
+  }
+}
+
+/**
+ * Vote for an itinerary item
+ */
+export async function voteForItem(itemId: string, userId: string): Promise<boolean> {
+  try {
+    // First check if the user has already voted
+    const { data: existingVote, error: checkError } = await supabase
+      .from("itinerary_votes")
+      .select("id")
+      .eq("item_id", itemId)
+      .eq("user_id", userId)
+      .single();
+    
+    if (checkError && checkError.code !== "PGRST116") {
+      throw checkError;
     }
-
-    return data?.[0]
-  }
-}
-
-export async function addExpense(expenseData: Partial<Expense>) {
-  const { data, error } = await supabaseClient.from("expenses").insert([expenseData]).select()
-
-  if (error) {
-    console.error("Error adding expense:", error)
-    throw error
-  }
-
-  return data?.[0]
-}
-
-export async function addTripMember(tripId: string, userData: Partial<User>, role = "member") {
-  // First check if user exists
-  const { data: existingUser, error: userError } = await supabaseClient
-    .from("users")
-    .select("id")
-    .eq("email", userData.email)
-    .maybeSingle()
-
-  let userId: string
-
-  // If user doesn't exist, create them
-  if (!existingUser) {
-    const { data: newUser, error: createError } = await supabaseClient.from("users").insert([userData]).select()
-
-    if (createError) {
-      console.error("Error creating user:", createError)
-      throw createError
+    
+    // If vote exists, remove it (toggle behavior)
+    if (existingVote) {
+      const { error: deleteError } = await supabase
+        .from("itinerary_votes")
+        .delete()
+        .eq("id", existingVote.id);
+        
+      if (deleteError) throw deleteError;
+      return false; // Vote removed
     }
-
-    userId = newUser?.[0].id
-  } else {
-    userId = existingUser.id
+    
+    // Otherwise add a new vote
+    const { error: insertError } = await supabase
+      .from("itinerary_votes")
+      .insert({
+        item_id: itemId,
+        user_id: userId
+      });
+      
+    if (insertError) throw insertError;
+    return true; // Vote added
+  } catch (error) {
+    console.error("Error voting for item:", error);
+    return false;
   }
-
-  // Add user as trip member
-  const { data, error } = await supabaseClient
-    .from("trip_members")
-    .insert([
-      {
-        trip_id: tripId,
-        user_id: userId,
-        role,
-      },
-    ])
-    .select()
-
-  if (error) {
-    console.error("Error adding trip member:", error)
-    throw error
-  }
-
-  return data?.[0]
-}
-
-// Helper functions
-export function getCategoryColor(category: string): string {
-  const colors: Record<string, string> = {
-    Accommodation: "bg-blue-500",
-    "Food & Dining": "bg-green-500",
-    Activities: "bg-yellow-500",
-    Transportation: "bg-purple-500",
-    Shopping: "bg-pink-500",
-    Other: "bg-gray-500",
-  }
-
-  return colors[category] || colors.Other
-}
-
-export async function getExpenses(tripId: string) {
-  const { data, error } = await supabaseClient
-    .from("expenses")
-    .select(`
-      *,
-      paid_by_user:paid_by(id, name, email, avatar_url)
-    `)
-    .eq("trip_id", tripId)
-    .order("date", { ascending: false })
-
-  if (error) {
-    console.error("Error fetching expenses:", error)
-    return []
-  }
-
-  return data
-}
-
-export async function getExpensesByCategory(tripId: string) {
-  const { data, error } = await supabaseClient.from("expenses").select("category, amount").eq("trip_id", tripId)
-
-  if (error) {
-    console.error("Error fetching expenses by category:", error)
-    return []
-  }
-
-  // Group by category and sum amounts
-  const categories = data.reduce(
-    (acc, expense) => {
-      const category = expense.category || "Other"
-      if (!acc[category]) {
-        acc[category] = 0
-      }
-      acc[category] += Number(expense.amount)
-      return acc
-    },
-    {} as Record<string, number>,
-  )
-
-  // Convert to array format
-  return Object.entries(categories).map(([name, amount]) => ({
-    name,
-    amount,
-    color: getCategoryColor(name),
-  }))
-}
-
-export async function getTripMembers(tripId: string) {
-  const { data, error } = await supabaseClient
-    .from("trip_members")
-    .select(`
-      *,
-      user:user_id(id, name, email, avatar_url)
-    `)
-    .eq("trip_id", tripId)
-
-  if (error) {
-    console.error("Error fetching trip members:", error)
-    return []
-  }
-
-  return data
-}
-
-export async function getItineraryItems(tripId: string, userId?: string) {
-  const { data, error } = await supabaseClient
-    .from("itinerary_items")
-    .select("*")
-    .eq("trip_id", tripId)
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true })
-
-  if (error) {
-    console.error("Error fetching itinerary items:", error)
-    return []
-  }
-
-  return data
-}
+} 

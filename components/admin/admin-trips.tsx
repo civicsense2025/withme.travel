@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/utils/supabase/client"
 import { Loader2, Search, Edit, Trash } from "lucide-react"
 
 interface Trip {
@@ -55,20 +55,13 @@ export function AdminTrips() {
           start_date,
           end_date,
           created_by,
-          created_at,
-          users(email)
+          created_at
         `)
         .order("created_at", { ascending: false })
 
       if (error) throw error
 
-      // Format the trips data
-      const formattedTrips = trips.map((trip) => ({
-        ...trip,
-        user_email: trip.users?.email || "Unknown",
-      }))
-
-      setTrips(formattedTrips)
+      setTrips(trips || [])
     } catch (error) {
       console.error("Error fetching trips:", error)
     } finally {
@@ -84,7 +77,7 @@ export function AdminTrips() {
     (trip) =>
       trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       trip.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.user_email?.toLowerCase().includes(searchTerm.toLowerCase()),
+      (trip.created_by && trip.created_by.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const confirmDelete = (trip: Trip) => {
@@ -157,7 +150,7 @@ export function AdminTrips() {
                   <TableRow key={trip.id}>
                     <TableCell className="font-medium">{trip.name}</TableCell>
                     <TableCell>{trip.destination}</TableCell>
-                    <TableCell>{trip.user_email}</TableCell>
+                    <TableCell className="text-xs truncate max-w-[100px] font-mono" title={trip.created_by}>{trip.created_by || "Unknown"}</TableCell>
                     <TableCell>{formatDate(trip.start_date)}</TableCell>
                     <TableCell>{formatDate(trip.end_date)}</TableCell>
                     <TableCell>{new Date(trip.created_at).toLocaleDateString()}</TableCell>

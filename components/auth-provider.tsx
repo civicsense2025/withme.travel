@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 
 type User = {
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state change listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       console.log("Auth state changed:", event)
 
       if (session?.user) {

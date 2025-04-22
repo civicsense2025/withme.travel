@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { createClient } from "@/utils/supabase/server"
 
 export async function GET(request: Request) {
   try {
@@ -12,8 +11,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ results: [] })
     }
 
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createClient()
 
     let destinations = []
     let trips = []

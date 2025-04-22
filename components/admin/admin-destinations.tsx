@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/utils/supabase/client"
 import { Loader2, Search, Edit, Trash, Plus, ImageIcon } from "lucide-react"
 import { Label } from "@/components/ui/label"
 
@@ -75,8 +75,8 @@ export function AdminDestinations() {
 
   const filteredDestinations = destinations.filter(
     (destination) =>
-      destination.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      destination.country.toLowerCase().includes(searchTerm.toLowerCase()),
+      (destination.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (destination.country?.toLowerCase() || "").includes(searchTerm.toLowerCase()),
   )
 
   const openCreateDialog = () => {

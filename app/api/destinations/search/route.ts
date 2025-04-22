@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 
 export async function GET(request: Request) {
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     }
 
     const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createClient(cookieStore)
 
     // Search for destinations that match the query in city, state_province, or country
     const { data: destinations, error } = await supabase

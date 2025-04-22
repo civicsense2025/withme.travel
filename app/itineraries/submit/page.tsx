@@ -95,9 +95,9 @@ export default function SubmitItineraryPage() {
     setFormData(prev => ({ ...prev, days: newDays }))
   }
   
-  const handleActivityChange = (dayIndex: number, activityIndex: number, field: string, value: string) => {
+  const handleActivityChange = (dayIndex: number, activityIndex: number, field: keyof typeof formData.days[number]['activities'][number], value: string) => {
     const newDays = [...formData.days]
-    newDays[dayIndex].activities[activityIndex][field as keyof typeof newDays[typeof dayIndex]["activities"][typeof activityIndex]] = value
+    newDays[dayIndex].activities[activityIndex][field] = value
     setFormData(prev => ({ ...prev, days: newDays }))
   }
   
@@ -155,7 +155,7 @@ export default function SubmitItineraryPage() {
     <div className="container py-10">
       <PageHeader 
         heading="submit your itinerary" 
-        subheading="share your travel experience with the community" 
+        description="share your travel experience with the community" 
       />
       
       <form onSubmit={handleSubmit} className="mt-8 max-w-4xl mx-auto">
@@ -323,6 +323,22 @@ export default function SubmitItineraryPage() {
                         <Input 
                           placeholder="Day title" 
                           className="max-w-xs"
-
-\
-Let's create a loading state for the submit page:
+                          value={day.title}
+                          onChange={(e) => handleDayTitleChange(dayIndex, e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <Button type="submit" disabled={isSubmitting} className="w-full mt-8">
+          {isSubmitting ? "Submitting..." : "Submit Itinerary"}
+        </Button>
+      </form>
+    </div>
+  )
+}

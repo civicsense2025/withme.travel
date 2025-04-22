@@ -15,12 +15,13 @@ interface ItineraryTemplateCardProps {
     groupSize: string
     tags: string[]
     category?: string
+    slug?: string
   }
 }
 
 export function ItineraryTemplateCard({ itinerary }: ItineraryTemplateCardProps) {
   return (
-    <Link href={`/itineraries/${itinerary.id}`}>
+    <Link href={`/itineraries/${itinerary.slug || itinerary.id}`}>
       <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
         <div className="relative h-48">
           <Image
