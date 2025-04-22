@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/utils/supabase/client"
+import { API_ROUTES } from "@/utils/constants"
 
 interface Member {
   id: string
@@ -58,7 +59,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
         setIsLoading(true)
 
         // Fetch trip details
-        const tripResponse = await fetch(`/api/trips/${tripId}`)
+        const tripResponse = await fetch(API_ROUTES.TRIP_DETAILS(tripId))
         if (!tripResponse.ok) throw new Error("Failed to fetch trip")
         const tripData = await tripResponse.json()
 
@@ -77,7 +78,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
         })
 
         // Fetch members
-        const membersResponse = await fetch(`/api/trips/${tripId}/members`)
+        const membersResponse = await fetch(API_ROUTES.TRIP_MEMBERS(tripId))
         if (!membersResponse.ok) throw new Error("Failed to fetch members")
         const membersData = await membersResponse.json()
 
@@ -111,7 +112,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
       const newStatus = !isPublic
       setIsPublic(newStatus)
 
-      const response = await fetch(`/api/trips/${tripId}`, {
+      const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -160,7 +161,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
     }
 
     try {
-      const response = await fetch(`/api/trips/${tripId}/members/invite`, {
+      const response = await fetch(API_ROUTES.TRIP_MEMBERS(tripId) + '/invite', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inviteEmail }),
@@ -176,7 +177,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
       setInviteEmail("")
 
       // Refresh members list
-      const membersResponse = await fetch(`/api/trips/${tripId}/members`)
+      const membersResponse = await fetch(API_ROUTES.TRIP_MEMBERS(tripId))
       if (membersResponse.ok) {
         const membersData = await membersResponse.json()
         setMembers(membersData.members)
@@ -194,7 +195,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
   // Update member role
   const updateMemberRole = async (memberId: string, newRole: "admin" | "member") => {
     try {
-      const response = await fetch(`/api/trips/${tripId}/members/${memberId}`, {
+      const response = await fetch(API_ROUTES.TRIP_MEMBERS(tripId) + `/${memberId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole }),
@@ -222,7 +223,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
   // Remove a member
   const removeMember = async (memberId: string) => {
     try {
-      const response = await fetch(`/api/trips/${tripId}/members/${memberId}`, {
+      const response = await fetch(API_ROUTES.TRIP_MEMBERS(tripId) + `/${memberId}`, {
         method: "DELETE",
       })
 
@@ -257,7 +258,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
   // Save trip edits
   const saveTrip = async () => {
     try {
-      const response = await fetch(`/api/trips/${tripId}`, {
+      const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editedTrip),
@@ -423,7 +424,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
                       variant="destructive"
                       onClick={async () => {
                         try {
-                          const response = await fetch(`/api/trips/${tripId}`, {
+                          const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
                             method: "DELETE",
                           })
 
@@ -477,7 +478,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
                     <div key={member.id} className="flex items-center justify-between p-2 border rounded-md">
                       <div className="flex items-center gap-2">
                         <Avatar>
-                          <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
+                          <AvatarImage src={member.avatar_url || "/images/placeholder-avatar.png"} />
                           <AvatarFallback>{member.name?.charAt(0) || member.email.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>

@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Calendar, Loader2 } from "lucide-react"
+import { MapPin, Calendar, Loader2, Heart } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useSearch } from "@/contexts/search-context"
+import { LikeButton } from '@/components/like-button'
 
 interface Destination {
   id: string
@@ -19,6 +20,11 @@ interface Destination {
   continent: string
   description: string
   image_url: string
+  cuisine_rating: number
+  nightlife_rating: number
+  cultural_attractions: number
+  outdoor_activities: number
+  beach_quality: number
 }
 
 interface Trip {
@@ -202,10 +208,50 @@ export default function SearchPage() {
 }
 
 function DestinationCard({ destination }: { destination: Destination }) {
+  // Function to get tags for this destination
+  const getTags = () => {
+    const tags = [];
+    if (destination.cuisine_rating >= 4) tags.push("food");
+    if (destination.nightlife_rating >= 4) tags.push("nightlife");
+    if (destination.cultural_attractions >= 4) tags.push("history");
+    if (destination.outdoor_activities >= 4) tags.push("outdoors");
+    if (destination.beach_quality >= 4) tags.push("beach");
+    return tags.slice(0, 3); // Limit to 3 tags
+  };
+
+  const tags = getTags();
+  
+  // Get country code for flag emoji
+  const getCountryFlag = (countryName: string) => {
+    // This is a simplified version - in production you'd want a more robust mapping
+    const countryFlags: Record<string, string> = {
+      "Japan": "🇯🇵",
+      "Italy": "🇮🇹",
+      "France": "🇫🇷",
+      "Spain": "🇪🇸",
+      "United States": "🇺🇸",
+      "Thailand": "🇹🇭",
+      "Mexico": "🇲🇽",
+      "Brazil": "🇧🇷",
+      "UK": "🇬🇧",
+      "Greece": "🇬🇷",
+    };
+    
+    return countryFlags[countryName] || "🏳️";
+  };
+
   return (
     <Link href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}`}>
-      <Card className="overflow-hidden hover:shadow-md transition-shadow h-full">
-        <div className="relative h-40 w-full">
+      <div className="rounded-3xl overflow-hidden bg-white dark:bg-gray-900 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col h-full border">
+        <div className="relative h-48 w-full bg-travel-purple/10">
+          <div className="absolute top-3 right-3 z-10">
+            <LikeButton 
+              itemId={destination.id} 
+              itemType="destination" 
+              size="sm"
+              className="shadow-sm"
+            />
+          </div>
           <Image
             src={
               destination.image_url ||
@@ -216,18 +262,34 @@ function DestinationCard({ destination }: { destination: Destination }) {
             className="object-cover"
           />
         </div>
-        <CardContent className="p-4">
-          <h3 className="font-semibold truncate">{destination.city}</h3>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            <span>
-              {destination.state_province ? `${destination.state_province}, ` : ""}
-              {destination.country}
-            </span>
+        <div className="p-5 flex flex-col flex-grow">
+          <div className="flex items-center mb-3">
+            <span className="text-2xl mr-2">{getCountryFlag(destination.country)}</span>
+            <h3 className="text-xl font-bold">{destination.city.toLowerCase()}</h3>
           </div>
-          {destination.description && <p className="text-sm mt-2 line-clamp-2">{destination.description}</p>}
-        </CardContent>
-      </Card>
+          
+          <div className="flex flex-wrap gap-2 mt-3">
+            {tags.map(tag => (
+              <span 
+                key={tag} 
+                className={`text-sm px-4 py-1.5 rounded-full ${
+                  tag === 'food' ? 'bg-travel-mint/80 text-travel-mint-foreground' :
+                  tag === 'nightlife' ? 'bg-travel-peach/80 text-travel-peach-foreground' :
+                  tag === 'history' ? 'bg-travel-blue/80 text-travel-blue-foreground' :
+                  tag === 'outdoors' ? 'bg-travel-purple/80 text-travel-purple-foreground' :
+                  'bg-travel-yellow/80 text-travel-yellow-foreground'
+                }`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          
+          {destination.description && (
+            <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{destination.description}</p>
+          )}
+        </div>
+      </div>
     </Link>
   )
 }

@@ -78,4 +78,11 @@ export const createClient = () => {
 };
 
 // For the most direct backward compatibility
-export const supabase = getSupabaseBrowserClient(); 
+export const supabase = getSupabaseBrowserClient();
+
+export const createBrowserSupabaseClient = () => {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}; 

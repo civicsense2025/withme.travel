@@ -1,10 +1,9 @@
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
+import { createAdminClient } from "@/utils/supabase/admin"
 import { NextResponse } from "next/server"
 
 export async function GET() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createClient()
 
   try {
     // Check if user is authenticated and is an admin
@@ -27,53 +26,76 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Get user count
-    const { count: userCount, error: userCountError } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true })
+    console.log("Admin verified, fetching stats")
 
-    if (userCountError) {
-      throw userCountError
+    // Create admin client to bypass RLS
+    const adminClient = createAdminClient()
+
+    // Initialize stats with default values
+    const stats = {
+      totalUsers: 0,
+      totalTrips: 0,
+      totalDestinations: 0,
+      activeTrips: 0,
     }
 
-    // Get trip count
-    const { count: tripCount, error: tripCountError } = await supabase
-      .from("trips")
-      .select("*", { count: "exact", head: true })
-
-    if (tripCountError) {
-      throw tripCountError
+    // Get users count
+    try {
+      const { count, error } = await adminClient
+        .from("users")
+        .select("*", { count: "exact", head: true })
+      
+      if (!error) {
+        stats.totalUsers = count || 0
+      }
+    } catch (e) {
+      console.error("Error counting users:", e)
     }
 
-    // Get destination count
-    const { count: destinationCount, error: destinationCountError } = await supabase
-      .from("destinations")
-      .select("*", { count: "exact", head: true })
-
-    if (destinationCountError) {
-      throw destinationCountError
+    // Get trips count
+    try {
+      const { count, error } = await adminClient
+        .from("trips")
+        .select("*", { count: "exact", head: true })
+      
+      if (!error) {
+        stats.totalTrips = count || 0
+      }
+    } catch (e) {
+      console.error("Error counting trips:", e)
     }
 
-    // Get active trips (trips with start_date <= today and end_date >= today)
-    const today = new Date().toISOString().split("T")[0]
-    const { count: activeTrips, error: activeTripsError } = await supabase
-      .from("trips")
-      .select("*", { count: "exact", head: true })
-      .lte("start_date", today)
-      .gte("end_date", today)
-
-    if (activeTripsError) {
-      throw activeTripsError
+    // Get destinations count
+    try {
+      const { count, error } = await adminClient
+        .from("destinations")
+        .select("*", { count: "exact", head: true })
+      
+      if (!error) {
+        stats.totalDestinations = count || 0
+      }
+    } catch (e) {
+      console.error("Error counting destinations:", e)
     }
 
-    return NextResponse.json({
-      userCount: userCount || 0,
-      tripCount: tripCount || 0,
-      destinationCount: destinationCount || 0,
-      activeTrips: activeTrips || 0,
-    })
+    // Get active trips count
+    try {
+      const today = new Date().toISOString().split("T")[0]
+      const { count, error } = await adminClient
+        .from("trips")
+        .select("*", { count: "exact", head: true })
+        .gte("end_date", today)
+      
+      if (!error) {
+        stats.activeTrips = count || 0
+      }
+    } catch (e) {
+      console.error("Error counting active trips:", e)
+    }
+
+    return NextResponse.json({ stats })
   } catch (error) {
     console.error("Error fetching admin stats:", error)
-    return NextResponse.json({ error: "Failed to fetch admin stats" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }

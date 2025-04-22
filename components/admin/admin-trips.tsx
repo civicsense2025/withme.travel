@@ -15,18 +15,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { createClient } from "@/utils/supabase/client"
-import { Loader2, Search, Edit, Trash } from "lucide-react"
+import { Loader2, Search, Edit, Trash, ExternalLink } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+
+interface User {
+  id: string
+  email: string
+  name?: string
+}
 
 interface Trip {
   id: string
   name: string
-  destination: string
+  destination_id?: string
+  destination_name?: string
   start_date: string
   end_date: string
   created_by: string
   created_at: string
-  user_email?: string
+  updated_at?: string
+  is_public?: boolean
+  slug?: string
+  users?: User
 }
 
 export function AdminTrips() {
@@ -35,9 +47,17 @@ export function AdminTrips() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [tripToDelete, setTripToDelete] = useState<Trip | null>(null)
+  const [tripToEdit, setTripToEdit] = useState<Trip | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const supabase = createClient()
+  const [isSaving, setIsSaving] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: "",
+    is_public: false,
+    start_date: "",
+    end_date: "",
+  })
 
   useEffect(() => {
     fetchTrips()
@@ -46,22 +66,15 @@ export function AdminTrips() {
   const fetchTrips = async () => {
     setLoading(true)
     try {
-      const { data: trips, error } = await supabase
-        .from("trips")
-        .select(`
-          id,
-          name,
-          destination,
-          start_date,
-          end_date,
-          created_by,
-          created_at
-        `)
-        .order("created_at", { ascending: false })
-
-      if (error) throw error
-
-      setTrips(trips || [])
+      // Use the admin API endpoint instead of direct Supabase access
+      const response = await fetch('/api/admin/trips');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch trips: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setTrips(data.trips || []);
     } catch (error) {
       console.error("Error fetching trips:", error)
     } finally {
@@ -76,8 +89,10 @@ export function AdminTrips() {
   const filteredTrips = trips.filter(
     (trip) =>
       trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (trip.created_by && trip.created_by.toLowerCase().includes(searchTerm.toLowerCase()))
+      (trip.destination_name && trip.destination_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (trip.created_by && trip.created_by.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (trip.users?.email && trip.users.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (trip.users?.name && trip.users.name.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const confirmDelete = (trip: Trip) => {
@@ -91,9 +106,13 @@ export function AdminTrips() {
     setIsDeleting(true)
     try {
       // Delete trip from database
-      const { error } = await supabase.from("trips").delete().eq("id", tripToDelete.id)
-
-      if (error) throw error
+      const response = await fetch(`/api/admin/trips/${tripToDelete.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete trip: ${response.status}`);
+      }
 
       // Update UI
       setTrips(trips.filter((trip) => trip.id !== tripToDelete.id))
@@ -105,9 +124,73 @@ export function AdminTrips() {
     }
   }
 
+  const confirmEdit = (trip: Trip) => {
+    setTripToEdit(trip)
+    setEditForm({
+      name: trip.name,
+      is_public: trip.is_public || false,
+      start_date: trip.start_date ? new Date(trip.start_date).toISOString().split('T')[0] : "",
+      end_date: trip.end_date ? new Date(trip.end_date).toISOString().split('T')[0] : "",
+    })
+    setEditDialogOpen(true)
+  }
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setEditForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setEditForm(prev => ({ ...prev, is_public: checked }))
+  }
+
+  const handleSaveEdit = async () => {
+    if (!tripToEdit) return
+
+    setIsSaving(true)
+    try {
+      // Update trip in database
+      const response = await fetch(`/api/admin/trips/${tripToEdit.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update trip: ${response.status}`);
+      }
+
+      const { trip: updatedTrip } = await response.json();
+
+      // Update UI
+      setTrips(trips.map(trip => 
+        trip.id === tripToEdit.id ? { ...trip, ...updatedTrip } : trip
+      ))
+      setEditDialogOpen(false)
+    } catch (error) {
+      console.error("Error updating trip:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A"
     return new Date(dateString).toLocaleDateString()
+  }
+
+  const getOwnerDisplay = (trip: Trip) => {
+    if (trip.users?.name) {
+      return (
+        <div>
+          <div>{trip.users.name}</div>
+          <div className="text-xs text-muted-foreground">{trip.users.email}</div>
+        </div>
+      )
+    }
+    return trip.created_by || "Unknown"
   }
 
   return (
@@ -131,7 +214,7 @@ export function AdminTrips() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Destination</TableHead>
-                <TableHead>Created By</TableHead>
+                <TableHead>Owner</TableHead>
                 <TableHead>Start Date</TableHead>
                 <TableHead>End Date</TableHead>
                 <TableHead>Created</TableHead>
@@ -149,16 +232,24 @@ export function AdminTrips() {
                 filteredTrips.map((trip) => (
                   <TableRow key={trip.id}>
                     <TableCell className="font-medium">{trip.name}</TableCell>
-                    <TableCell>{trip.destination}</TableCell>
-                    <TableCell className="text-xs truncate max-w-[100px] font-mono" title={trip.created_by}>{trip.created_by || "Unknown"}</TableCell>
+                    <TableCell>{trip.destination_name || 'Unknown'}</TableCell>
+                    <TableCell>{getOwnerDisplay(trip)}</TableCell>
                     <TableCell>{formatDate(trip.start_date)}</TableCell>
                     <TableCell>{formatDate(trip.end_date)}</TableCell>
                     <TableCell>{new Date(trip.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="icon" onClick={() => router.push(`/trips/${trip.id}`)}>
+                        <Button variant="outline" size="icon" onClick={() => confirmEdit(trip)}>
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => router.push(`/trips/${trip.id}`)}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          <span className="sr-only">View</span>
                         </Button>
                         <Button variant="destructive" size="icon" onClick={() => confirmDelete(trip)}>
                           <Trash className="h-4 w-4" />
@@ -194,6 +285,71 @@ export function AdminTrips() {
                 </>
               ) : (
                 "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Trip</DialogTitle>
+            <DialogDescription>
+              Make changes to the trip details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Trip Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={editForm.name}
+                onChange={handleEditChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="start_date">Start Date</Label>
+              <Input
+                id="start_date"
+                name="start_date"
+                type="date"
+                value={editForm.start_date}
+                onChange={handleEditChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="end_date">End Date</Label>
+              <Input
+                id="end_date"
+                name="end_date"
+                type="date"
+                value={editForm.end_date}
+                onChange={handleEditChange}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="is_public" 
+                checked={editForm.is_public} 
+                onCheckedChange={handleCheckboxChange} 
+              />
+              <Label htmlFor="is_public">Public Trip</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
               )}
             </Button>
           </DialogFooter>

@@ -5,6 +5,7 @@ import { MapPin, Loader2 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { useDebounce } from "@/hooks/use-debounce"
+import { API_ROUTES } from "@/utils/constants"
 
 interface Destination {
   id: string
@@ -57,7 +58,7 @@ export function LocationSearch({
       }
       try {
         setIsSearching(true)
-        const response = await fetch(`/api/destinations/search?query=${encodeURIComponent(debouncedSearchQuery)}`)
+        const response = await fetch(API_ROUTES.DESTINATION_SEARCH(debouncedSearchQuery))
         if (!response.ok) {
           throw new Error("Failed to fetch destinations")
         }

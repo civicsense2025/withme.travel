@@ -8,10 +8,11 @@ import { Calendar, Clock, MapPin, ThumbsDown, ThumbsUp, Users, Edit } from "luci
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { cn, formatDate, formatTime } from "@/lib/utils"
 import { type ItineraryItem, getItineraryItems, voteForItem } from "@/lib/db"
 import { useToast } from "@/hooks/use-toast"
 import { CollaborativeEditor } from "@/components/collaborative-editor"
+import { API_ROUTES, ITINERARY_CATEGORIES, PAGE_ROUTES, TIME_FORMATS } from "@/utils/constants"
 
 interface ItineraryTabProps {
   tripId: string
@@ -98,7 +99,7 @@ export function ItineraryTab({ tripId, canEdit = false }: ItineraryTabProps) {
 
   const handleSaveNotes = async (itemId: string, content: any) => {
     try {
-      const response = await fetch(`/api/trips/${tripId}/itinerary/${itemId}/notes`, {
+      const response = await fetch(`${API_ROUTES.TRIP_ITINERARY(tripId)}/${itemId}/notes`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -155,7 +156,7 @@ export function ItineraryTab({ tripId, canEdit = false }: ItineraryTabProps) {
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">No itinerary items added yet.</p>
           {canEdit && (
-            <Button variant="outline" as={Link} href={`/trips/${tripId}/add-item`}>
+            <Button variant="outline" as={Link} href={`${PAGE_ROUTES.TRIP_DETAILS(tripId)}/add-item`}>
               Add Your First Item
             </Button>
           )}
@@ -166,7 +167,7 @@ export function ItineraryTab({ tripId, canEdit = false }: ItineraryTabProps) {
             <h3 className="text-lg font-semibold mb-4">
               {date === "Unscheduled"
                 ? "Unscheduled"
-                : new Date(date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+                : formatDate(date, "FULL_DATE")}
             </h3>
             <div className="space-y-4">
               {itemsByDate[date]
@@ -218,21 +219,6 @@ function ItineraryItemComponent({
   onCancel,
   tripId,
 }: ItineraryItemProps) {
-  // Format time for display
-  const formatTime = (timeStr?: string) => {
-    if (!timeStr) return ""
-    try {
-      const [hours, minutes] = timeStr.split(":")
-      return new Date(0, 0, 0, Number.parseInt(hours), Number.parseInt(minutes)).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
-    } catch (e) {
-      return timeStr
-    }
-  }
-
   const [activeUsers, setActiveUsers] = useState<string[]>([])
 
   // In a real app, you would fetch active users from your presence system
@@ -247,7 +233,7 @@ function ItineraryItemComponent({
   }, [item.id])
 
   return (
-    <Card>
+    <Card className={`shadow hover:shadow-md transition-shadow duration-200 ${getCardClass()}`}>
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-start">
           <div>
@@ -305,7 +291,7 @@ function ItineraryItemComponent({
       <CardFooter className="p-4 pt-2 flex justify-between">
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
-          <span>{item.date ? new Date(item.date).toLocaleDateString() : "Unscheduled"}</span>
+          <span>{item.date ? formatDate(item.date) : "Unscheduled"}</span>
         </div>
         <div className="flex items-center gap-2">
           {canEdit && !isEditing && (
@@ -333,6 +319,20 @@ function ItineraryItemComponent({
           </Button>
         </div>
       </CardFooter>
+      {canEdit && (
+        <div className="flex justify-end mt-2">
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            asChild
+          >
+            <Link href={`${API_ROUTES.TRIP_ITINERARY(tripId)}/${item.id}/edit`}>
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Link>
+          </Button>
+        </div>
+      )}
     </Card>
   )
 }

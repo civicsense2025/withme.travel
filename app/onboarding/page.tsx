@@ -27,7 +27,7 @@ export default function OnboardingPage() {
   // If user is already logged in, redirect to trips page
   useEffect(() => {
     if (!loading && user) {
-      router.push("/trips")
+      router.push("/")
     }
   }, [user, loading, router])
 

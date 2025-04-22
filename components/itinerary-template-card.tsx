@@ -17,13 +17,14 @@ interface ItineraryTemplateCardProps {
     category?: string
     slug?: string
   }
+  index?: number
 }
 
-export function ItineraryTemplateCard({ itinerary }: ItineraryTemplateCardProps) {
+export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplateCardProps) {
   return (
     <Link href={`/itineraries/${itinerary.slug || itinerary.id}`}>
-      <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
-        <div className="relative h-48">
+      <Card className="overflow-hidden h-full hover:shadow-md transition-all">
+        <div className="relative h-48 overflow-hidden">
           <Image
             src={itinerary.image || "/placeholder.svg?height=400&width=800&query=travel destination"}
             alt={itinerary.title}

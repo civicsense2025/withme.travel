@@ -50,7 +50,7 @@ export function HeroSection() {
 
       {/* Search Bar - Added Margins */}
       <div className="mt-12 mb-16 w-full max-w-xl animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-        <SearchForm placeholder="Where to? Try 'Barcelona' or 'Tokyo'" />
+        <SearchForm placeholder="where to? try 'barcelona' or 'tokyo'" />
       </div>
 
       {/* City bubbles - Kept below search bar for now */}

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
+import { 
+  DB_TABLES, 
+  DB_FIELDS 
+} from "@/utils/constants"
 
 // Fallback mock data in case of database issues
 const mockDestinations = [
@@ -79,7 +83,6 @@ export async function GET(request: Request) {
     // Check if we have valid cached data
     const now = Date.now();
     if (destinationsCache && (now - destinationsCache.timestamp < CACHE_DURATION)) {
-      console.log("Using cached destinations data");
       const cachedData = destinationsCache.data;
       
       // Apply limit if requested
@@ -92,10 +95,11 @@ export async function GET(request: Request) {
       const cookieStore = cookies();
       const supabase = createClient(cookieStore);
       
-      let query = supabase.from("destinations").select("*");
+      // Use our constants for consistency
+      let query = supabase.from(DB_TABLES.DESTINATIONS).select("*");
       
       if (trending) {
-        query = query.order("popularity", { ascending: false });
+        query = query.order(DB_FIELDS.DESTINATIONS.POPULARITY, { ascending: false });
       }
       
       if (limit) {
@@ -105,8 +109,18 @@ export async function GET(request: Request) {
       const { data, error } = await query;
       
       if (error) {
-        console.error("Supabase query error:", error);
         throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        // Return mock data if no results found
+        destinationsCache = {
+          data: mockDestinations,
+          timestamp: now
+        };
+        
+        const limitedMockData = limit ? mockDestinations.slice(0, limit) : mockDestinations;
+        return NextResponse.json({ destinations: limitedMockData });
       }
       
       // Process data to add traveler counts for trending destinations if needed
@@ -138,8 +152,14 @@ export async function GET(request: Request) {
         };
 
         data.forEach((destination) => {
-          destination.travelers_count = travelersMap[destination.city] || Math.floor(Math.random() * 3000) + 1000;
-          destination.avg_days = avgDaysMap[destination.city] || Math.floor(Math.random() * 7) + 3;
+          // Use field constants
+          destination[DB_FIELDS.DESTINATIONS.TRAVELERS_COUNT] = 
+            travelersMap[destination[DB_FIELDS.DESTINATIONS.CITY]] || 
+            Math.floor(Math.random() * 3000) + 1000;
+          
+          destination[DB_FIELDS.DESTINATIONS.AVG_DAYS] = 
+            avgDaysMap[destination[DB_FIELDS.DESTINATIONS.CITY]] || 
+            Math.floor(Math.random() * 7) + 3;
         });
       }
       
@@ -151,8 +171,6 @@ export async function GET(request: Request) {
       
       return NextResponse.json({ destinations: data });
     } catch (error) {
-      console.error("Error fetching from Supabase, using mock data:", error);
-      
       // Fallback to mock data
       destinationsCache = {
         data: mockDestinations,
@@ -163,7 +181,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ destinations: limitedMockData });
     }
   } catch (error: any) {
-    console.error("Unexpected error in destinations fetch:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }

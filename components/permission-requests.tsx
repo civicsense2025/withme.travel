@@ -110,11 +110,17 @@ export function PermissionRequests({ tripId }: PermissionRequestsProps) {
           <CardContent>
             <div className="flex items-center gap-4 mb-4">
               <Avatar>
-                <AvatarImage src={request.user.avatar_url || "/placeholder.svg"} />
+                <AvatarImage src={request.user.avatar_url || "/images/placeholder-avatar.png"} />
                 <AvatarFallback>{request.user.name?.charAt(0) || request.user.email.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="font-medium">{request.user.name || request.user.email}</p>
                 <p className="text-sm text-muted-foreground">{request.user.email}</p>
               </div>
-            \
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}

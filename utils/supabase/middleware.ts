@@ -6,18 +6,49 @@ import { type NextRequest, NextResponse } from "next/server";
  * Ensures server components and API routes have up-to-date auth state.
  */
 export async function updateSession(request: NextRequest) {
-  // This will refresh the session cookie if needed
-  // by calling `createServerClient` inside `createClient` 
-  // which reads and writes cookies via the Next.js cookies() function.
-  const supabase = createClient();
-  await supabase.auth.getUser();
+  let supabaseResponse: NextResponse | null = null;
+  try {
+    // Only log debugging information in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Middleware] Attempting to update session...");
+    }
+    
+    const supabase = createClient();
+    
+    // It's generally recommended to handle the response, although getUser often works implicitly
+    const { data, error } = await supabase.auth.getUser(); 
+    
+    if (error) {
+      // Don't treat auth session missing as an error - this is normal for unauthenticated users
+      if (error.message !== 'Auth session missing!' && !error.message?.includes("AuthSessionMissingError")) {
+        console.error("[Middleware] Error getting user in middleware:", error);
+      }
+      // Allow request to continue regardless of authentication status
+    } else if (process.env.NODE_ENV === 'development' && data?.user) {
+      console.log("[Middleware] Session updated for user:", data.user.id);
+    }
 
+    // If createServerClient modified the response (e.g., set cookies), use it
+    // Note: This specific implementation might vary based on how your createClient handles cookies
+    // For now, we assume NextResponse.next is sufficient unless createClient explicitly returns a modified response
+    supabaseResponse = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+
+  } catch (e) {
+    console.error("[Middleware] Caught exception during session update:", e);
+    // If an error occurs, pass the request through without modifying cookies potentially
+    supabaseResponse = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+  }
+  
   // Continue the request chain
-  return NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  return supabaseResponse;
 }
 
 // No need to manage cookies explicitly here anymore.

@@ -6,14 +6,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
   try {
     const supabase = createClient()
 
-    // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      console.log("No session found in trip fetch")
-      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 })
+    // Check if user is authenticated using getUser
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.log("No user found in trip fetch", authError);
+      return NextResponse.json(
+        { error: authError?.message || "Unauthorized - Please log in" },
+        { status: 401 }
+      );
     }
 
     // Check if user is a member of this trip
@@ -21,7 +22,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       .from("trip_members")
       .select("role")
       .eq("trip_id", params.id)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id) // Use user.id from getUser
       .maybeSingle()
 
     if (memberError) {
@@ -69,13 +70,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   try {
     const supabase = createClient()
 
-    // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Check if user is authenticated using getUser
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError?.message || "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     // Check if user is an organizer of this trip
@@ -83,7 +85,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       .from("trip_members")
       .select("role")
       .eq("trip_id", params.id)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id) // Use user.id from getUser
       .maybeSingle()
 
     if (memberError || !member) {
@@ -115,13 +117,14 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   try {
     const supabase = createClient()
 
-    // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Check if user is authenticated using getUser
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError?.message || "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     // Check if user is an owner of this trip
@@ -129,7 +132,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       .from("trip_members")
       .select("role")
       .eq("trip_id", params.id)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id) // Use user.id from getUser
       .eq("role", "owner")
       .maybeSingle()
 

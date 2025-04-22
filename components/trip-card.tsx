@@ -4,11 +4,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { Calendar, MapPin, Users } from "lucide-react"
 import { motion } from "framer-motion"
+import { THEME, PAGE_ROUTES } from "@/utils/constants"
+import { formatDate, formatDateRange, getColorClassFromId } from "@/lib/utils"
 
 // Updated Trip type to match actual database schema
 interface Trip {
   id: string
   name: string
+  created_by: string
   destination_id?: string
   destination_name?: string
   start_date?: string
@@ -20,6 +23,8 @@ interface Trip {
   is_public: boolean
   slug?: string
   cover_image_url?: string
+  created_at: string
+  updated_at?: string
   
   // Fields added by the API
   title?: string
@@ -46,23 +51,11 @@ export function TripCard({ trip }: TripCardProps) {
   // Handle travelers count
   const membersCount = trip.members || trip.travelers_count || 1
 
-  // Determine which color to use based on the trip ID
-  const colorClasses = [
-    "bg-travel-blue text-blue-900",
-    "bg-travel-pink text-pink-900",
-    "bg-travel-yellow text-amber-900", 
-    "bg-travel-purple text-purple-900",
-    "bg-travel-mint text-emerald-900",
-    "bg-travel-peach text-orange-900",
-  ]
-
-  const colorIndex = trip.id
-    ? Math.abs(trip.id.charCodeAt(0) + trip.id.charCodeAt(trip.id.length - 1)) % colorClasses.length
-    : 0
-  const colorClass = colorClasses[colorIndex]
+  // Use the utility function to get a consistent color
+  const colorClass = getColorClassFromId(trip.id)
 
   return (
-    <Link href={`/trips/${trip.id}`}>
+    <Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)}>
       <motion.div
         className="rounded-3xl overflow-hidden h-full shadow-md hover:shadow-lg transition-all duration-300 max-w-xs mx-auto"
         whileHover={{ y: -5 }}
@@ -91,7 +84,7 @@ export function TripCard({ trip }: TripCardProps) {
               <div className="flex items-center gap-1 text-sm">
                 <Calendar className="h-4 w-4" />
                 <span>
-                  {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
+                  {formatDateRange(trip.start_date, trip.end_date)}
                 </span>
               </div>
             )}

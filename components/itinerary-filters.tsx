@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, X } from "lucide-react"
+import { motion } from "framer-motion"
+import { fadeIn, slideUp } from "@/utils/animation"
 
 interface Destination {
   id: string
@@ -73,11 +75,35 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
   }, [searchParams])
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
-      <h2 className="text-lg font-semibold mb-4">Filter Templates</h2>
+    <motion.div 
+      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6"
+      variants={fadeIn}
+      initial="hidden"
+      animate="visible"
+      transition={{ duration: 0.4 }}
+    >
+      <motion.h2 
+        className="text-lg font-semibold mb-4"
+        variants={slideUp}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.1 }}
+      >
+        Filter Templates
+      </motion.h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <div className="relative">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4"
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.2, staggerChildren: 0.1 }}
+      >
+        <motion.div 
+          className="relative"
+          variants={slideUp}
+          transition={{ delay: 0.1 }}
+        >
           <Input
             placeholder="Search templates..."
             value={search}
@@ -85,58 +111,78 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
             className="pl-9"
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        </div>
+        </motion.div>
 
-        <Select value={destination} onValueChange={setDestination}>
-          <SelectTrigger>
-            <SelectValue placeholder="Destination" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Destinations</SelectItem>
-            {destinations.map((dest) => (
-              <SelectItem key={dest.id} value={dest.id}>
-                {dest.name}, {dest.country}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <motion.div variants={slideUp} transition={{ delay: 0.2 }}>
+          <Select value={destination} onValueChange={setDestination}>
+            <SelectTrigger>
+              <SelectValue placeholder="Destination" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Destinations</SelectItem>
+              {destinations.map((dest) => (
+                <SelectItem key={dest.id} value={dest.id}>
+                  {dest.name}, {dest.country}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
 
-        <Select value={duration} onValueChange={setDuration}>
-          <SelectTrigger>
-            <SelectValue placeholder="Duration" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">Any Duration</SelectItem>
-            {durations.map((dur) => (
-              <SelectItem key={dur.value} value={dur.value}>
-                {dur.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <motion.div variants={slideUp} transition={{ delay: 0.3 }}>
+          <Select value={duration} onValueChange={setDuration}>
+            <SelectTrigger>
+              <SelectValue placeholder="Duration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any Duration</SelectItem>
+              {durations.map((dur) => (
+                <SelectItem key={dur.value} value={dur.value}>
+                  {dur.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
 
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger>
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value}>
-                {cat.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        <motion.div variants={slideUp} transition={{ delay: 0.4 }}>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
+      </motion.div>
 
-      <div className="flex justify-end gap-2">
+      <motion.div 
+        className="flex justify-end gap-2"
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.5 }}
+      >
         <Button variant="outline" onClick={clearFilters} className="flex items-center gap-1">
           <X size={14} />
           Clear
         </Button>
-        <Button onClick={applyFilters}>Apply Filters</Button>
-      </div>
-    </div>
+        <Button onClick={applyFilters} className="relative overflow-hidden">
+          <motion.span
+            className="absolute inset-0 bg-primary opacity-10"
+            initial={{ x: "-100%" }}
+            whileHover={{ x: "0%" }}
+            transition={{ duration: 0.4 }}
+          />
+          Apply Filters
+        </Button>
+      </motion.div>
+    </motion.div>
   )
 }

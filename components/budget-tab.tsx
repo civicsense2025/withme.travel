@@ -19,7 +19,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
+import { formatCurrency, formatDate, formatError } from "@/lib/utils"
 import { type Expense, getExpenses, getExpensesByCategory, getTripMembers, addExpense } from "@/lib/db"
+import { BUDGET_CATEGORIES, SPLIT_TYPES } from "@/utils/constants"
+import { limitItems } from "@/lib/utils"
 
 interface BudgetTabProps {
   tripId: string
@@ -73,7 +76,7 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
         console.error("Failed to load budget data:", error)
         toast({
           title: "Error",
-          description: "Failed to load budget data",
+          description: formatError(error, "Failed to load budget data"),
           variant: "destructive",
         })
       } finally {
@@ -131,7 +134,7 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
       console.error("Failed to add expense:", error)
       toast({
         title: "Error",
-        description: "Failed to add expense",
+        description: formatError(error, "Failed to add expense"),
         variant: "destructive",
       })
     }
@@ -156,14 +159,14 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Total Budget</span>
-                <span className="font-bold">${totalBudget.toLocaleString()}</span>
+                <span className="font-bold">{formatCurrency(totalBudget)}</span>
               </div>
               <Progress value={100} className="h-2 bg-primary/20" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Spent</span>
-                <span className="font-bold">${totalSpent.toLocaleString()}</span>
+                <span className="font-bold">{formatCurrency(totalSpent)}</span>
               </div>
               <Progress value={percentSpent} className="h-2" />
             </div>
@@ -171,7 +174,7 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Remaining</span>
                 <span className={`font-bold ${remainingBudget < 0 ? "text-destructive" : ""}`}>
-                  ${remainingBudget.toLocaleString()}
+                  {formatCurrency(remainingBudget)}
                 </span>
               </div>
               <Progress
@@ -190,7 +193,7 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
                     <div key={category.name} className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">{category.name}</span>
-                        <span className="text-sm font-medium">${category.amount.toLocaleString()}</span>
+                        <span className="text-sm font-medium">{formatCurrency(category.amount)}</span>
                       </div>
                       <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                         <div
@@ -256,16 +259,16 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
                           value={newExpense.category}
                           onValueChange={(value) => setNewExpense({ ...newExpense, category: value })}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger id="category">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Accommodation">Accommodation</SelectItem>
-                            <SelectItem value="Food & Dining">Food & Dining</SelectItem>
-                            <SelectItem value="Activities">Activities</SelectItem>
-                            <SelectItem value="Transportation">Transportation</SelectItem>
-                            <SelectItem value="Shopping">Shopping</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value={BUDGET_CATEGORIES.ACCOMMODATION}>Accommodation</SelectItem>
+                            <SelectItem value={BUDGET_CATEGORIES.TRANSPORTATION}>Transportation</SelectItem>
+                            <SelectItem value={BUDGET_CATEGORIES.FOOD}>Food & Dining</SelectItem>
+                            <SelectItem value={BUDGET_CATEGORIES.ACTIVITIES}>Activities</SelectItem>
+                            <SelectItem value={BUDGET_CATEGORIES.SHOPPING}>Shopping</SelectItem>
+                            <SelectItem value={BUDGET_CATEGORIES.OTHER}>Other</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -309,7 +312,7 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
 
               {expenses.length > 0 ? (
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                  {expenses.slice(0, 10).map((expense) => (
+                  {limitItems(expenses, 10).items.map((expense) => (
                     <div
                       key={expense.id}
                       className="p-3 border rounded-md flex justify-between items-center hover:bg-muted/50"
@@ -319,14 +322,19 @@ export function BudgetTab({ tripId }: BudgetTabProps) {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{expense.category}</span>
                           <span>•</span>
-                          <span>{expense.date ? new Date(expense.date).toLocaleDateString() : "No date"}</span>
+                          <span>{expense.date ? formatDate(expense.date) : "No date"}</span>
                           <span>•</span>
                           <span>Paid by {expense.paid_by_user?.name || "Unknown"}</span>
                         </div>
                       </div>
-                      <p className="font-bold">${Number(expense.amount).toFixed(2)}</p>
+                      <p className="font-bold">{formatCurrency(expense.amount)}</p>
                     </div>
                   ))}
+                  {limitItems(expenses, 10).hasMore && (
+                    <div className="text-center py-2 text-sm text-muted-foreground">
+                      And {limitItems(expenses, 10).hiddenCount} more expenses...
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground border rounded-md">

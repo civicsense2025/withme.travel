@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -11,17 +11,23 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
-import { CalendarIcon, ChevronLeft, ChevronRight, Loader2, CircleCheck, CircleDashed } from "lucide-react"
+import { CalendarIcon, ChevronLeft, ChevronRight, Loader2, CircleCheck, CircleDashed, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LocationSearch } from "@/components/location-search"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Textarea } from "@/components/ui/textarea"
+import { generateSlug } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
+import { slideInLeft, slideInRight, fadeIn, bounceIn } from "@/utils/animation"
+import { UrlDisplay } from "./components/url-display"
 
 // Define Destination type matching the one expected by LocationSearch results
 interface Destination {
@@ -35,10 +41,28 @@ interface Destination {
   image_url: string | null
 }
 
+// Trip interface (ensure it reflects the schema + form fields)
+interface Trip {
+  id?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  destination_id?: string | null;
+  destination_name?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  date_flexibility?: string;
+  travelers_count?: number;
+  vibe?: string;
+  budget?: string;
+  is_public: boolean;
+  created_by?: string;
+  // Add any other relevant schema fields
+}
+
 // Updated Steps Array
 const steps = [
-  { id: "name-destination", title: "Name & Destination" }, // Combined Step 0
-  // { id: "destination", title: "Destination" }, // Removed
+  { id: "details", title: "Trip Details" }, // Renamed Step 0
   { id: "dates", title: "Dates" },           // Now Step 1
   { id: "travelers", title: "Travel Buddies" }, // Now Step 2
   { id: "vibe", title: "Trip Vibe" },        // Now Step 3
@@ -49,6 +73,8 @@ const steps = [
 function CreateTripPageContent() {
   const [currentStep, setCurrentStep] = useState(0)
   const [tripName, setTripName] = useState("")
+  const [slug, setSlug] = useState("")
+  const [description, setDescription] = useState("")
   const [destination, setDestination] = useState<Destination | null>(null)
   const [destinationLoading, setDestinationLoading] = useState(false)
   const [destinationError, setDestinationError] = useState<string | null>(null)
@@ -61,6 +87,8 @@ function CreateTripPageContent() {
   const [isPublic, setIsPublic] = useState(false)
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   const router = useRouter()
   const supabase = createClient()
   const searchParams = useSearchParams()
@@ -80,12 +108,13 @@ function CreateTripPageContent() {
   }, [router])
 
   useEffect(() => {
-    console.log("CLIENT: Destination fetch useEffect running.");
-    const destinationId = searchParams.get("destination_id");
-    console.log("CLIENT: Got destination_id from searchParams:", destinationId);
+    // console.log("CLIENT: Destination fetch useEffect running.");
+    // Corrected the parameter name to match the URL
+    const destinationId = searchParams.get("destination_id"); 
+    // console.log("CLIENT: Got destination_id from searchParams:", destinationId);
 
     async function fetchAndSetDestination(id: string) {
-      console.log("CLIENT: fetchAndSetDestination called with ID:", id);
+      // console.log("CLIENT: fetchAndSetDestination called with ID:", id);
       // Reset error state
       setDestinationError(null);
       setDestinationLoading(true);
@@ -93,42 +122,42 @@ function CreateTripPageContent() {
       // Validate UUID format before making the request
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(id)) {
-        console.error("CLIENT: Invalid destination ID format:", id);
+        // console.error("CLIENT: Invalid destination ID format:", id);
         setDestinationError("Invalid destination ID format");
         setDestinationLoading(false);
         return;
       }
 
       try {
-        console.log(`CLIENT: Fetching /api/destinations/id/${id}`);
+        // console.log(`CLIENT: Fetching /api/destinations/id/${id}`);
         const response = await fetch(`/api/destinations/id/${id}`);
-        console.log("CLIENT: Fetch response received:", response);
+        // console.log("CLIENT: Fetch response received:", response);
 
         if (response.status === 404) {
-          console.warn(`CLIENT: Destination with ID ${id} not found (404).`);
+          // console.warn(`CLIENT: Destination with ID ${id} not found (404).`);
           setDestinationError("Destination not found");
           setDestinationLoading(false);
           return;
         }
 
         if (!response.ok) {
-          console.error("CLIENT: Fetch response not OK:", response.status, response.statusText);
+          // console.error("CLIENT: Fetch response not OK:", response.status, response.statusText);
           throw new Error(`Failed to fetch destination details: ${response.status}`);
         }
 
         // Clone response to log body safely
-        const responseClone = response.clone(); 
-        const responseText = await responseClone.text();
-        console.log("CLIENT: Fetch response body text:", responseText);
+        // const responseClone = response.clone(); 
+        // const responseText = await responseClone.text();
+        // console.log("CLIENT: Fetch response body text:", responseText);
 
         const data = await response.json();
-        console.log("CLIENT: Parsed JSON data:", data);
+        // console.log("CLIENT: Parsed JSON data:", data);
 
         if (data.destination) {
-          console.log("CLIENT: data.destination found:", data.destination);
+          // console.log("CLIENT: data.destination found:", data.destination);
           // Validate minimum required fields
           if (!data.destination.id || !data.destination.city || !data.destination.country) {
-            console.error("CLIENT: Destination data incomplete", data.destination);
+            console.error("CLIENT: Destination data incomplete", data.destination); // Keep this error log
             setDestinationError("Destination data incomplete");
             setDestinationLoading(false);
             return;
@@ -136,40 +165,61 @@ function CreateTripPageContent() {
 
           // If name is missing, use city + country
           if (!data.destination.name || data.destination.name.trim() === '') {
-            console.log("CLIENT: Destination name missing, generating from city/country.");
+            // console.log("CLIENT: Destination name missing, generating from city/country.");
             data.destination.name = `${data.destination.city}, ${data.destination.country}`;
           }
 
-          console.log("CLIENT: Calling setDestination with:", data.destination);
+          // console.log("CLIENT: Calling setDestination with:", data.destination);
           setDestination(data.destination);
           
           // Try focusing after a short delay to ensure element exists
           setTimeout(() => {
-            console.log("CLIENT: Attempting to focus #trip-name");
+            // console.log("CLIENT: Attempting to focus #trip-name");
             document.getElementById('trip-name')?.focus();
           }, 0);
 
         } else {
-          console.warn(`CLIENT: Destination data invalid (data.destination missing):`, data);
+          console.warn(`CLIENT: Destination data invalid (data.destination missing):`, data); // Keep this warning log
           setDestinationError("Invalid destination data");
         }
       } catch (error) {
-        console.error("CLIENT: Error fetching pre-filled destination:", error);
+        console.error("CLIENT: Error fetching pre-filled destination:", error); // Keep this error log
         setDestinationError("Failed to load destination");
       } finally {
-        console.log("CLIENT: Setting destinationLoading to false.");
+        // console.log("CLIENT: Setting destinationLoading to false.");
         setDestinationLoading(false);
       }
     }
 
     // Only run fetch if we have an ID and destination is not already set
     if (destinationId && !destination) {
-      console.log("CLIENT: Conditions met (destinationId exists, destination is null), calling fetchAndSetDestination.");
+      // console.log("CLIENT: Conditions met (destinationId exists, destination is null), calling fetchAndSetDestination.");
       fetchAndSetDestination(destinationId);
     } else {
-        console.log("CLIENT: Conditions not met for fetching. destinationId:", destinationId, "destination state:", destination);
+        // console.log("CLIENT: Conditions not met for fetching. destinationId:", destinationId, "destination state:", destination);
     }
   }, [searchParams, destination]);
+
+  // Auto-generate slug from name, unless manually edited
+  useEffect(() => {
+    if (!isSlugManuallyEdited && tripName) {
+      setSlug(generateSlug(tripName));
+    }
+  }, [tripName, isSlugManuallyEdited]);
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSlug = generateSlug(e.target.value); // Ensure slug format
+    setSlug(newSlug);
+    setIsSlugManuallyEdited(true); // Mark as manually edited
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTripName(e.target.value);
+    // If slug hasn't been manually edited, update it based on the new name
+    if (!isSlugManuallyEdited) {
+      setSlug(generateSlug(e.target.value));
+    }
+  };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -187,11 +237,16 @@ function CreateTripPageContent() {
     if (!user) return
 
     setLoading(true)
+    setError(null) // Reset any previous errors
+    
     try {
-      const tripData = {
+      // Ensure destination_name is included
+      const tripData: Partial<Trip> = {
         name: tripName,
+        slug: slug,
+        description: description,
         destination_id: destination?.id,
-        destination_name: destination?.name,
+        destination_name: destination?.name, // Make sure this is correct
         start_date: dateOption === "specific" ? startDate?.toISOString() : null,
         end_date: dateOption === "specific" ? endDate?.toISOString() : null,
         date_flexibility: dateOption === "specific" ? "fixed" : dateOption,
@@ -199,70 +254,63 @@ function CreateTripPageContent() {
         vibe,
         budget,
         is_public: isPublic,
-        created_by: user.id,
+        created_by: user.id, // This is set by the function now
+      }
+
+      // Simple profanity/hate speech check (replace with more robust solution if needed)
+      const forbiddenWords = ["hate", "kill", "profane"]; // Example list
+      const checkString = `${tripName.toLowerCase()} ${slug.toLowerCase()} ${description.toLowerCase()}`;
+      if (forbiddenWords.some(word => checkString.includes(word))) {
+         setError("Trip name, slug, or description contains inappropriate content.");
+         setLoading(false);
+         return;
       }
 
       console.log("Attempting to insert trip data:", tripData)
       console.log("User ID:", user.id)
 
-      // 1. Insert the main trip data
-      const { data: tripDataResult, error: tripError } = await supabase
-        .from("trips")
-        .insert(tripData)
-        .select()
-        .single() // Expecting single row back
+      // Use a single API endpoint to create the trip and add the creator as a member
+      // This avoids the RLS policy recursion by handling both operations server-side
+      const response = await fetch("/api/trips/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tripData,
+          userId: user.id,
+        }),
+      });
 
-      if (tripError) {
-        console.error("Supabase insert error object (trips):", tripError)
-        throw tripError
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error("Error creating trip:", responseData);
+        setError(responseData.error || "Failed to create trip");
+        return;
       }
 
-      if (!tripDataResult) {
-        throw new Error("Trip creation succeeded but no data returned.")
-      }
-
-      console.log("Trip created successfully:", tripDataResult)
-      const newTripId = tripDataResult.id
-
-      // 2. Add the creator as owner in trip_members
-      const { error: memberError } = await supabase.from("trip_members").insert({
-        trip_id: newTripId,
-        user_id: user.id,
-        role: "owner", // Automatically assign creator as owner
-      })
-
-      if (memberError) {
-        console.error("Error adding creator to trip_members:", memberError)
-        // Decide how to handle this - maybe delete the trip? Or just log and proceed?
-        // For now, let's throw the error to make it visible.
-        throw new Error(
-          `Trip created (ID: ${newTripId}), but failed to add creator as owner. ${memberError.message}`,
-        )
-      }
-
-      console.log("Creator added as owner to trip_members")
+      const { tripId } = responseData;
+      console.log("Trip created successfully with ID:", tripId);
 
       // 3. Redirect to success page
-      router.push(`/trips/create/success?id=${newTripId}`)
+      router.push(`/trips/create/success?id=${tripId}`);
     } catch (error: any) {
-      console.error("Error during trip creation process:", error)
+      console.error("Error during trip creation process:", error);
+      setError(error?.message || "An unexpected error occurred. Please try again.");
+      
       if (error && typeof error === 'object') {
-        console.error("Detailed Supabase Error:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        })
+        console.error("Detailed error:", error);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const isStepValid = () => {
     switch (steps[currentStep].id) {
-      case "name-destination": // Combined validation
-        return tripName.trim().length > 0 && destination !== null
+      case "details": // Updated validation
+        return tripName.trim().length > 0 && slug.trim().length > 0 && destination !== null
       case "dates":
         if (dateOption === "specific") {
           return startDate !== undefined && endDate !== undefined
@@ -281,234 +329,364 @@ function CreateTripPageContent() {
     }
   }
 
+  const getSlideDirection = (step: number, currentStep: number) => {
+    return step > currentStep ? "right" : "left";
+  };
+
   const renderStep = () => {
-    switch (steps[currentStep].id) {
-      case "name-destination": // Combined render
+    switch (currentStep) {
+      case 0:
         return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="trip-name">What are we calling this adventure?</Label>
-              <Input
-                id="trip-name"
-                placeholder="Summer in Barcelona"
-                value={tripName}
-                onChange={(e) => setTripName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Where are you headed?</Label>
-              {/* Show destination error if there is one */}
-              {destinationError && (
-                <Card className="p-3 border-destructive bg-destructive/10">
-                  <p className="text-sm text-destructive">{destinationError}</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setDestinationError(null)}>
-                    Choose a Different Destination
-                  </Button>
-                </Card>
-              )}
-              
-              {/* Show loading state while fetching destination */}
-              {destinationLoading && (
-                <Card className="p-3 border-muted bg-muted/50">
-                  <div className="flex items-center space-x-2">
+          <motion.div
+            key="step0"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideInLeft}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="trip-name">Trip Name</Label>
+                <Input
+                  id="trip-name"
+                  placeholder="Awesome Summer Trip"
+                  value={tripName}
+                  onChange={handleNameChange}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trip-slug">URL Friendly Name</Label>
+                <div className="flex items-center space-x-1">
+                  <UrlDisplay />
+                  <Input
+                    id="trip-slug"
+                    placeholder="awesome-summer-trip"
+                    value={slug}
+                    onChange={handleSlugChange}
+                    onFocus={() => setIsSlugManuallyEdited(true)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trip-description">Description (Optional)</Label>
+                <Textarea
+                  id="trip-description"
+                  placeholder="What are you planning for this trip?"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Destination</Label>
+                <LocationSearch
+                  onLocationSelect={(destination: Destination) => setDestination(destination)}
+                  placeholder="Where are you going?"
+                />
+                {destinationLoading && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <p className="text-sm">Loading destination...</p>
+                    <span>Loading destination...</span>
                   </div>
-                </Card>
-              )}
-              
-              {/* Show selected destination if available */}
-              {destination && !destinationLoading && !destinationError && (
-                <Card className="p-3 border-primary bg-muted/50">
-                  <p className="font-semibold">Selected: {destination.city}, {destination.country}</p>
-                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setDestination(null)}>
-                    Change
-                  </Button>
-                </Card>
-              )}
-              
-              {/* Show location search if no destination selected and not loading */}
-              {!destination && !destinationLoading && !destinationError && (
-                <LocationSearch onLocationSelect={(selectedLocation) => setDestination(selectedLocation)} />
-              )}
-            </div>
-          </div>
-        )
-      // case "destination": // Removed
-      //   return null 
-      case "dates":
-        return (
-           <div className="space-y-4">
-             <div className="space-y-2">
-               <Label>When are you planning to go?</Label>
-               <RadioGroup value={dateOption} onValueChange={setDateOption}>
-                 <div className="flex items-center space-x-2">
-                   <RadioGroupItem value="specific" id="specific" />
-                   <Label htmlFor="specific">I know my dates</Label>
-                 </div>
-                 <div className="flex items-center space-x-2">
-                   <RadioGroupItem value="month" id="month" />
-                   <Label htmlFor="month">Sometime this month</Label>
-                 </div>
-                 <div className="flex items-center space-x-2">
-                   <RadioGroupItem value="season" id="season" />
-                   <Label htmlFor="season">This season</Label>
-                 </div>
-                 <div className="flex items-center space-x-2">
-                   <RadioGroupItem value="undecided" id="undecided" />
-                   <Label htmlFor="undecided">Still figuring it out</Label>
-                 </div>
-               </RadioGroup>
-             </div>
-             {dateOption === "specific" && (
-               <div className="grid gap-2">
-                 <div className="grid gap-2">
-                   <Label>Start Date</Label>
-                   <Popover>
-                     <PopoverTrigger asChild>
-                       <Button
-                         variant={"outline"}
-                         className={cn(
-                           "w-full justify-start text-left font-normal",
-                           !startDate && "text-muted-foreground",
-                         )}
-                       >
-                         <CalendarIcon className="mr-2 h-4 w-4" />
-                         {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
-                       </Button>
-                     </PopoverTrigger>
-                     <PopoverContent className="w-auto p-0">
-                       <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-                     </PopoverContent>
-                   </Popover>
-                 </div>
-                 <div className="grid gap-2">
-                   <Label>End Date</Label>
-                   <Popover>
-                     <PopoverTrigger asChild>
-                       <Button
-                         variant={"outline"}
-                         className={cn(
-                           "w-full justify-start text-left font-normal",
-                           !endDate && "text-muted-foreground",
-                         )}
-                       >
-                         <CalendarIcon className="mr-2 h-4 w-4" />
-                         {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
-                       </Button>
-                     </PopoverTrigger>
-                     <PopoverContent className="w-auto p-0">
-                       <Calendar
-                         mode="single"
-                         selected={endDate}
-                         onSelect={setEndDate}
-                         initialFocus
-                         disabled={(date) => (startDate ? date < startDate : false)}
-                       />
-                     </PopoverContent>
-                   </Popover>
-                 </div>
-               </div>
-             )}
-           </div>
-        )
-      case "travelers":
-         // ... travelers rendering logic ...
-        return (
-           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="travelers">How many people are joining?</Label>
-              <Input
-                id="travelers"
-                type="number"
-                min="1"
-                placeholder="Number of travelers"
-                value={travelers}
-                onChange={(e) => setTravelers(e.target.value)}
-              />
-            </div>
-          </div>
-        )
-      case "vibe":
-        // ... vibe rendering logic ...
-         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>What's the vibe of this trip?</Label>
-              <RadioGroup value={vibe} onValueChange={setVibe}>
-                 {/* ... radio items ... */}
-                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="relaxed" id="relaxed" />
-                  <Label htmlFor="relaxed">Relaxed & Chill</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="adventure" id="adventure" />
-                  <Label htmlFor="adventure">Adventure & Exploration</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cultural" id="cultural" />
-                  <Label htmlFor="cultural">Cultural & Educational</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="party" id="party" />
-                  <Label htmlFor="party">Party & Nightlife</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="mixed" id="mixed" />
-                  <Label htmlFor="mixed">Mix of Everything</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        )
-      case "budget":
-        // ... budget rendering logic ...
-         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>What's your budget range?</Label>
-              <RadioGroup value={budget} onValueChange={setBudget}>
-                 {/* ... radio items ... */}
-                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="budget" id="budget" />
-                  <Label htmlFor="budget">Budget-friendly</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="moderate" id="moderate" />
-                  <Label htmlFor="moderate">Moderate</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="luxury" id="luxury" />
-                  <Label htmlFor="luxury">Luxury</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="mixed" id="budget-mixed" />
-                  <Label htmlFor="budget-mixed">Mix of price points</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        )
-      case "privacy":
-        // ... privacy rendering logic ...
-         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Trip Privacy Settings</Label>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <Label htmlFor="public-trip">Make trip public</Label>
-                  <p className="text-sm text-muted-foreground">Public trips can be viewed by anyone with the link</p>
-                </div>
-                <Switch id="public-trip" checked={isPublic} onCheckedChange={setIsPublic} />
+                )}
+                {destinationError && (
+                  <div className="mt-2 text-sm text-destructive">
+                    <span>{destinationError}</span>
+                  </div>
+                )}
+                {destination && (
+                  <div className="mt-2 p-2 border rounded-md bg-muted">
+                    <p className="text-sm font-medium">{destination.city}, {destination.country}</p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          </motion.div>
         )
+      
+      case 1:
+        return (
+          <motion.div
+            key="step1"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideInRight}
+          >
+            <div className="space-y-6">
+              <RadioGroup value={dateOption} onValueChange={setDateOption} className="space-y-3">
+                <div>
+                  <RadioGroupItem value="specific" id="specific" className="peer sr-only" />
+                  <Label
+                    htmlFor="specific"
+                    className="flex flex-col items-start justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium leading-none">Specific Dates</p>
+                      <p className="text-sm text-muted-foreground">
+                        I know exactly when I'm traveling
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+
+                {dateOption === "specific" && (
+                  <motion.div 
+                    className="grid gap-2" 
+                    initial={{ opacity: 0, height: 0 }} 
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex flex-col space-y-3 sm:flex-row sm:space-x-3 sm:space-y-0">
+                      <div className="w-full sm:w-1/2 space-y-2">
+                        <Label>Start Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !startDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {startDate ? format(startDate, "PPP") : <span>Select date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={startDate}
+                              onSelect={setStartDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="w-full sm:w-1/2 space-y-2">
+                        <Label>End Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !endDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate ? format(endDate, "PPP") : <span>Select date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={endDate}
+                              onSelect={setEndDate}
+                              initialFocus
+                              disabled={(date) => startDate ? date < startDate : false}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                <div>
+                  <RadioGroupItem value="month" id="month" className="peer sr-only" />
+                  <Label
+                    htmlFor="month"
+                    className="flex flex-col items-start justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium leading-none">Approximate Month</p>
+                      <p className="text-sm text-muted-foreground">
+                        I'm flexible with exact dates but know the month
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+
+                <div>
+                  <RadioGroupItem value="season" id="season" className="peer sr-only" />
+                  <Label
+                    htmlFor="season"
+                    className="flex flex-col items-start justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium leading-none">Approximate Season</p>
+                      <p className="text-sm text-muted-foreground">
+                        I know the general season I want to travel
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+
+                <div>
+                  <RadioGroupItem value="undecided" id="undecided" className="peer sr-only" />
+                  <Label
+                    htmlFor="undecided"
+                    className="flex flex-col items-start justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium leading-none">Undecided</p>
+                      <p className="text-sm text-muted-foreground">
+                        I don't know when I want to travel yet
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </motion.div>
+        )
+      
+      case 2:
+        return (
+          <motion.div
+            key="step2"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideInRight}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="travelers">How many people are traveling?</Label>
+                <Input
+                  id="travelers"
+                  placeholder="Number of travelers"
+                  value={travelers}
+                  onChange={(e) => setTravelers(e.target.value)}
+                  type="number"
+                  min="1"
+                />
+              </div>
+            </div>
+          </motion.div>
+        )
+      
+      case 3:
+        return (
+          <motion.div
+            key="step3"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideInRight}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>What's the vibe of this trip?</Label>
+                <RadioGroup value={vibe} onValueChange={setVibe}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="relaxed" id="relaxed" />
+                    <Label htmlFor="relaxed">Relaxed & Chill</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="adventure" id="adventure" />
+                    <Label htmlFor="adventure">Adventure & Exploration</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cultural" id="cultural" />
+                    <Label htmlFor="cultural">Cultural & Educational</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="party" id="party" />
+                    <Label htmlFor="party">Party & Nightlife</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mixed" id="mixed" />
+                    <Label htmlFor="mixed">Mix of Everything</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+          </motion.div>
+        )
+      
+      case 4:
+        return (
+          <motion.div
+            key="step4"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideInRight}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>What's your budget range?</Label>
+                <RadioGroup value={budget} onValueChange={setBudget}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="budget" id="budget" />
+                    <Label htmlFor="budget">Budget-friendly</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="moderate" id="moderate" />
+                    <Label htmlFor="moderate">Moderate</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="luxury" id="luxury" />
+                    <Label htmlFor="luxury">Luxury</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mixed" id="budget-mixed" />
+                    <Label htmlFor="budget-mixed">Mix of price points</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+          </motion.div>
+        )
+      
+      case 5:
+        return (
+          <motion.div
+            key="step5"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideInRight}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Trip Privacy Settings</Label>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="public-trip">Make trip public</Label>
+                    <p className="text-sm text-muted-foreground">Public trips can be viewed by anyone with the link</p>
+                  </div>
+                  <Switch id="public-trip" checked={isPublic} onCheckedChange={setIsPublic} />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )
+      
       default:
         return null
     }
   }
+
+  // Display error alert if there's an error
+  const renderError = () => {
+    if (!error) return null;
+    
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  };
 
   const formatSummaryDate = (date: Date | undefined): string => {
     return date ? format(date, "PPP") : "Not set"
@@ -523,129 +701,117 @@ function CreateTripPageContent() {
     }
   }
 
-  // Restore the two-column layout
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col lg:flex-row gap-12">
-        {/* Main Stepper Card */}
-        <div className="lg:w-2/3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Trip</CardTitle>
-              <div className="text-sm text-muted-foreground">
-                {/* Display title from updated steps array */} 
-                <span>{steps[currentStep].title}</span>
-              </div>
-            </CardHeader>
-            <CardContent>{renderStep()}</CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handleBack} disabled={currentStep === 0 || loading}>
-                <ChevronLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              {currentStep === steps.length - 1 ? (
-                <Button onClick={handleSubmit} disabled={!isStepValid() || loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Create Trip
-                </Button>
-              ) : (
-                <Button onClick={handleNext} disabled={!isStepValid() || loading}>
-                  Next <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-        </div>
-
-        {/* Trip Summary Sidebar - Updated */}
-        <aside className="lg:w-1/3 space-y-4 lg:sticky lg:top-24 h-fit">
-          <h2 className="text-xl font-semibold tracking-tight">Trip Summary</h2>
-          <div className="space-y-2">
-            {[ 
-              // Combined first step summary
-              { label: "Name & Destination", value: `${tripName || "-"} @ ${destination ? destination.city : "-"}`, stepIndex: 0 }, 
-              // Updated subsequent steps (indices shift due to removal of one step)
-              { label: "Dates", value: dateOption === "specific" ? `${formatSummaryDate(startDate)} - ${formatSummaryDate(endDate)}` : dateOption, stepIndex: 1 },
-              { label: "Travelers", value: travelers || "-", stepIndex: 2 },
-              { label: "Vibe", value: vibe || "-", stepIndex: 3 },
-              { label: "Budget", value: budget || "-", stepIndex: 4 },
-              { label: "Privacy", value: isPublic ? "Public" : "Private", stepIndex: 5 },
-            ].map((item, index) => {
-              const stepIndex = item.stepIndex // Use defined stepIndex for logic
-              const isCompleted = stepIndex < currentStep;
-              const isActive = stepIndex === currentStep;
-              const StepIcon = isCompleted ? CircleCheck : isActive ? ChevronRight : CircleDashed;
-              const iconColor = isCompleted ? "text-green-500" : isActive ? "text-primary" : "text-muted-foreground";
-
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => handleStepJump(stepIndex)}
-                  className={cn(
-                    "w-full flex items-start text-left p-3 rounded-lg transition-colors duration-150",
-                    isActive ? "bg-muted" : "hover:bg-muted/50"
-                  )}
-                  // Allow jumping only to completed or active steps
-                  disabled={!isCompleted && !isActive} 
-                >
-                  <div className="flex items-center mr-3 pt-1">
-                    <StepIcon className={cn("h-5 w-5 flex-shrink-0", iconColor)} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
-                    {/* Combined display for first step */}
-                    {stepIndex === 0 ? (
-                      <>
-                        <p className={cn("text-sm font-semibold mt-0.5", !tripName ? 'text-muted-foreground/60 italic' : '')}>{tripName || 'Name not set'}</p>
-                        <p className={cn("text-sm font-semibold mt-0.5", !destination ? 'text-muted-foreground/60 italic' : '')}>{destination ? `${destination.city}, ${destination.country}` : 'Destination not set'}</p>
-                      </>
-                    ) : (
-                       <p className={cn("text-sm font-semibold mt-0.5", !item.value || item.value === '-' ? 'text-muted-foreground/60 italic' : '')}>
-                        {item.value && item.value !== '-' ? item.value : 'Not set'}
-                        {item.label === "Dates" && dateOption !== "specific" && dateOption !== '' && ` (${dateOption})`}
-                      </p>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
+    <div className="container max-w-5xl pt-12 pb-20">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Plan a new trip</h1>
+        <p className="text-muted-foreground mt-2">
+          Let's get started by setting up your trip details.
+        </p>
       </div>
 
-      {/* FAQ Section (Keep as is) */}
-      {/* ... */}
-      <section className="mt-16 pt-12 border-t">
-         <h2 className="text-2xl font-bold tracking-tight text-center mb-8 lowercase">Frequently Asked Questions</h2>
-         <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
-           {/* ... AccordionItems ... */}
-           <AccordionItem value="item-1">
-             <AccordionTrigger>How do I invite friends to this trip?</AccordionTrigger>
-             <AccordionContent>
-               Once you've created the trip, you'll be taken to the trip dashboard. From there, you can find an "Invite" button or share a unique link to invite your travel buddies to collaborate.
-             </AccordionContent>
-           </AccordionItem>
-           <AccordionItem value="item-2">
-             <AccordionTrigger>Can I change the trip details later?</AccordionTrigger>
-             <AccordionContent>
-               Absolutely! Almost all details like dates, destinations (though major changes might require more planning!), vibe, budget, and privacy settings can be updated later from the trip dashboard.
-             </AccordionContent>
-           </AccordionItem>
-           <AccordionItem value="item-3">
-             <AccordionTrigger>What does "Make trip public" mean?</AccordionTrigger>
-             <AccordionContent>
-               Making a trip public generates a shareable link that anyone can use to view a read-only version of your itinerary. It's great for sharing your plans with people not collaborating directly or for inspiration. Private trips are only visible to invited members.
-             </AccordionContent>
-           </AccordionItem>
-           <AccordionItem value="item-4">
-             <AccordionTrigger>What happens after I click "Create Trip"?</AccordionTrigger>
-             <AccordionContent>
-               Your trip will be saved, and you'll be redirected to the main dashboard for that specific trip. There, you can start adding itinerary items, manage expenses, invite members, and more.
-             </AccordionContent>
-           </AccordionItem>
-         </Accordion>
-       </section>
+      <div className="flex flex-col lg:flex-row gap-8">
+        <Card className="w-full lg:w-3/4">
+          <CardHeader>
+            <CardTitle className="lowercase text-travel-purple">
+              {steps[currentStep].title}
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent>
+            <AnimatePresence mode="wait">
+              {renderStep()}
+            </AnimatePresence>
+          </CardContent>
+          
+          <CardFooter className="flex justify-between border-t pt-6">
+            <Button
+              onClick={handleBack}
+              variant="outline"
+              disabled={currentStep === 0}
+              className="flex items-center gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </Button>
+            
+            {currentStep < steps.length - 1 ? (
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button onClick={handleNext} className="flex items-center gap-1" disabled={!isStepValid()}>
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                whileHover={{ scale: 1.05 }} 
+                whileTap={{ scale: 0.95 }}
+                initial={{ scale: 1 }}
+                animate={{ 
+                  scale: [1, 1.02, 1], 
+                  transition: { repeat: Infinity, repeatType: "reverse", duration: 2 }
+                }}
+              >
+                <Button onClick={handleSubmit} className="bg-travel-purple hover:bg-purple-400" disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  Create Trip
+                </Button>
+              </motion.div>
+            )}
+          </CardFooter>
+        </Card>
+
+        <motion.div 
+          className="w-full lg:w-1/4"
+          initial="hidden"
+          animate="visible"
+          variants={fadeIn}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="lowercase font-semibold">Progress</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {steps.map((step, index) => (
+                <motion.div
+                  key={step.id}
+                  className={`flex items-center gap-3 ${
+                    index <= currentStep ? "cursor-pointer" : "opacity-60"
+                  }`}
+                  onClick={() => handleStepJump(index)}
+                  whileHover={index <= currentStep ? { x: 5 } : {}}
+                >
+                  {index < currentStep ? (
+                    <motion.div variants={bounceIn} initial="hidden" animate="visible">
+                      <CircleCheck className="h-5 w-5 text-green-500" />
+                    </motion.div>
+                  ) : index === currentStep ? (
+                    <div className="h-5 w-5 rounded-full bg-travel-purple flex items-center justify-center text-white text-xs">
+                      {index + 1}
+                    </div>
+                  ) : (
+                    <CircleDashed className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <p className="text-sm">{step.title}</p>
+                </motion.div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {error && (
+            <motion.div 
+              className="mt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+            >
+              {renderError()}
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
     </div>
-  );
+  )
 }
 
 // Default export wraps the main content with Suspense

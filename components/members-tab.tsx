@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { TRIP_ROLES, PERMISSION_STATUSES, API_ROUTES, TripRole, PAGE_ROUTES } from "@/utils/constants"
 
 interface MembersTabProps {
   tripId: string
@@ -41,26 +42,26 @@ interface AccessRequest {
 
 export function MembersTab({ tripId, canEdit = false, userRole = null }: MembersTabProps) {
   const [members, setMembers] = useState([
-    { id: "1", name: "John Smith", email: "john@example.com", role: "Organizer", avatar: "/diverse-group-city.png" },
+    { id: "1", name: "John Smith", email: "john@example.com", role: TRIP_ROLES.OWNER, avatar: "/diverse-group-city.png" },
     {
       id: "2",
       name: "Sarah Johnson",
       email: "sarah@example.com",
-      role: "Member",
+      role: TRIP_ROLES.VIEWER,
       avatar: "/contemplative-artist.png",
     },
     {
       id: "3",
       name: "Mike Williams",
       email: "mike@example.com",
-      role: "Member",
+      role: TRIP_ROLES.VIEWER,
       avatar: "/placeholder.svg?key=iss0w",
     },
     {
       id: "4",
       name: "Lisa Brown",
       email: "lisa@example.com",
-      role: "Member",
+      role: TRIP_ROLES.VIEWER,
       avatar: "/placeholder.svg?key=i7tha",
     },
   ])
@@ -71,10 +72,10 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
   const [newMember, setNewMember] = useState({
     name: "",
     email: "",
-    role: "Member",
+    role: TRIP_ROLES.VIEWER as TripRole,
   })
   const { toast } = useToast()
-  const isAdmin = userRole === "owner" || userRole === "admin"
+  const isAdmin = userRole === TRIP_ROLES.OWNER || userRole === TRIP_ROLES.ADMIN
 
   // Fetch members and access requests
   useEffect(() => {
@@ -83,7 +84,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
         setIsLoading(true)
 
         // Fetch members
-        const membersResponse = await fetch(`/api/trips/${tripId}/members`)
+        const membersResponse = await fetch(API_ROUTES.TRIP_MEMBERS(tripId))
         if (membersResponse.ok) {
           const membersData = await membersResponse.json()
           setMembers(membersData.members)
@@ -91,7 +92,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
 
         // Fetch access requests if user is admin
         if (isAdmin) {
-          const requestsResponse = await fetch(`/api/trips/${tripId}/access-requests`)
+          const requestsResponse = await fetch(API_ROUTES.PERMISSION_REQUESTS(tripId))
           if (requestsResponse.ok) {
             const requestsData = await requestsResponse.json()
             setAccessRequests(requestsData.requests || [])
@@ -118,7 +119,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
     }
 
     try {
-      const response = await fetch(`/api/trips/${tripId}/members`, {
+      const response = await fetch(API_ROUTES.TRIP_MEMBERS(tripId), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,7 +146,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
       setNewMember({
         name: "",
         email: "",
-        role: "Member",
+        role: TRIP_ROLES.VIEWER as TripRole,
       })
 
       toast({
@@ -164,7 +165,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
 
   const handleRemoveMember = async (id: string) => {
     try {
-      const response = await fetch(`/api/trips/${tripId}/members/${id}`, {
+      const response = await fetch(`${API_ROUTES.TRIP_MEMBERS(tripId)}/${id}`, {
         method: "DELETE",
       })
 
@@ -192,13 +193,13 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
 
   const handleAccessRequest = async (requestId: string, approve: boolean) => {
     try {
-      const response = await fetch(`/api/trips/${tripId}/access-requests/${requestId}`, {
+      const response = await fetch(`${API_ROUTES.PERMISSION_REQUESTS(tripId)}/${requestId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          status: approve ? "approved" : "denied",
+          status: approve ? PERMISSION_STATUSES.APPROVED : PERMISSION_STATUSES.REJECTED,
         }),
       })
 
@@ -212,7 +213,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
 
       // If approved, refresh members list
       if (approve) {
-        const membersResponse = await fetch(`/api/trips/${tripId}/members`)
+        const membersResponse = await fetch(API_ROUTES.TRIP_MEMBERS(tripId))
         if (membersResponse.ok) {
           const membersData = await membersResponse.json()
           setMembers(membersData.members)
@@ -244,8 +245,8 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
           {members.map((member) => (
             <div key={member.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
               <div className="flex items-center gap-4">
-                <Avatar>
-                  <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={member.avatar || "/images/placeholder-avatar.png"} alt={member.name} />
                   <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -255,7 +256,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{member.role}</Badge>
-                {canEdit && member.role !== "Organizer" && (
+                {canEdit && member.role !== TRIP_ROLES.OWNER && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -313,14 +314,17 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
                     <Label htmlFor="role">Role</Label>
                     <Select
                       value={newMember.role}
-                      onValueChange={(value) => setNewMember({ ...newMember, role: value })}
+                      onValueChange={(value: TripRole) => setNewMember({ ...newMember, role: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Member">Member</SelectItem>
-                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value={TRIP_ROLES.VIEWER}>Viewer</SelectItem>
+                        <SelectItem value={TRIP_ROLES.EDITOR}>Editor</SelectItem>
+                        {userRole === TRIP_ROLES.OWNER && (
+                          <SelectItem value={TRIP_ROLES.ADMIN}>Admin</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -349,7 +353,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarImage src={request.user.avatar_url || "/placeholder.svg"} alt={request.user.name} />
+                      <AvatarImage src={request.user.avatar_url || "/images/placeholder-avatar.png"} alt={request.user.name} />
                       <AvatarFallback>{request.user.name?.charAt(0) || request.user.email.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -388,11 +392,11 @@ export function MembersTab({ tripId, canEdit = false, userRole = null }: Members
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Input value={`https://withme.travel/invite/${tripId}`} readOnly />
+            <Input value={`${window.location.origin}${PAGE_ROUTES.TRIP_INVITE(tripId)}`} readOnly />
             <Button
               variant="secondary"
               onClick={() => {
-                navigator.clipboard.writeText(`https://withme.travel/invite/${tripId}`)
+                navigator.clipboard.writeText(`${window.location.origin}${PAGE_ROUTES.TRIP_INVITE(tripId)}`)
                 toast({
                   title: "Link copied",
                   description: "Invitation link copied to clipboard",

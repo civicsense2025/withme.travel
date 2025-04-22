@@ -1,22 +1,14 @@
-import type { Metadata } from "next"
 import Link from "next/link"
-import { PlusCircle, Search, Filter, List, LayoutGrid } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 import { createClient } from "@/utils/supabase/server"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { PageHeader } from "@/components/page-header"
-import { SkeletonCard } from "@/components/skeleton-card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ItineraryFilters } from "@/components/itinerary-filters"
 import { ItineraryTemplateCard } from "@/components/itinerary-template-card"
+import { ClientWrapper } from "./client-wrapper"
 
 export const dynamic = 'force-dynamic' // Ensure dynamic rendering
-
-export const metadata: Metadata = {
-  title: "Browse Itineraries",
-  description: "Explore travel itineraries shared by the community.",
-}
 
 // Define the Itinerary type based on expected data from the query
 interface Itinerary {
@@ -78,12 +70,19 @@ export default async function ItinerariesPage() {
   const hasItineraries = itineraries.length > 0
   const displayItineraries = hasItineraries ? itineraries : []
 
-  // Fetch distinct filter options (Placeholder)
-  const filterOptions = {
-    locations: [],
-    categories: [],
-    durations: [],
-  }
+  // Transform itineraries into a format compatible with the client component
+  const formattedItineraries = displayItineraries.map((itinerary) => ({
+    id: itinerary.id,
+    title: itinerary.title,
+    description: itinerary.description,
+    image: itinerary.cover_image_url || itinerary.destinations?.image_url || "/placeholder.svg",
+    location: itinerary.location || (itinerary.destinations ? `${itinerary.destinations.city}, ${itinerary.destinations.country}` : "Unknown Location"),
+    duration: itinerary.duration || `${itinerary.duration_days || "N/A"} days`,
+    groupSize: itinerary.groupSize || "N/A",
+    tags: itinerary.tags || [],
+    category: itinerary.category || "uncategorized",
+    slug: itinerary.slug || itinerary.id
+  }))
 
   return (
     <div className="container py-10">
@@ -99,46 +98,11 @@ export default async function ItinerariesPage() {
         </Button>
       </PageHeader>
 
-      <div className="mb-8">
-        {/* Pass only the destinations prop */}
-        <ItineraryFilters destinations={[]} /> {/* Pass fetched/mapped destinations here eventually */}
-      </div>
-
-      {displayItineraries.length === 0 && (
-        <div className="text-center py-16">
-          <h3 className="text-xl font-semibold mb-2">No itineraries found yet</h3>
-          <p className="text-muted-foreground mb-6">Be the first to share your travel experience!</p>
-          <Button asChild>
-            <Link href="/itineraries/submit" className="flex items-center gap-2">
-              <PlusCircle className="h-4 w-4" />
-              Submit Your Itinerary
-            </Link>
-          </Button>
-        </div>
-      )}
-
-      {displayItineraries.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayItineraries.map((itinerary) => (
-            <ItineraryTemplateCard 
-              key={itinerary.id} 
-              itinerary={{
-                id: itinerary.id,
-                title: itinerary.title,
-                description: itinerary.description,
-                // Use optional chaining for nested properties
-                image: itinerary.image || itinerary.destinations?.image_url || "/placeholder.svg",
-                location: itinerary.location || (itinerary.destinations ? `${itinerary.destinations.city}, ${itinerary.destinations.country}` : "Unknown Location"),
-                duration: itinerary.duration || `${itinerary.duration_days || "N/A"} days`,
-                groupSize: itinerary.groupSize || "N/A",
-                tags: itinerary.tags || [],
-                category: itinerary.category || "uncategorized",
-                slug: itinerary.slug || itinerary.id // Use ID as fallback slug
-              }} 
-            />
-          ))}
-        </div>
-      )}
+      {/* Client side components wrapped in a client component */}
+      <ClientWrapper 
+        itineraries={formattedItineraries}
+        destinations={[]} // Pass fetched destinations here eventually
+      />
     </div>
   )
 }

@@ -5,7 +5,8 @@ import { useAuth } from "./auth-provider"
 import { Logo } from "@/components/logo"
 
 export function Footer() {
-  const { user, isAdmin } = useAuth()
+  const { user, profile } = useAuth()
+  const isAdmin = profile?.is_admin
 
   return (
     <footer className="bg-muted/30 py-12">
@@ -48,7 +49,7 @@ export function Footer() {
               {user && (
                 <li>
                   <Link
-                    href="/trips"
+                    href="/"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
                   >
                     My Trips

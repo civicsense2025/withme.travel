@@ -20,6 +20,10 @@ export interface Expense {
     name: string;
     avatar_url?: string;
   };
+  paid_by_user?: {
+    name: string;
+    avatar_url?: string;
+  };
 }
 
 export interface TripMember {
@@ -49,6 +53,10 @@ export interface ItineraryItem {
   status?: string;
   created_by?: string;
   notes?: string[];
+  user_vote?: "up" | "down" | null;
+  votes?: number;
+  cost?: number;
+  type?: string;
 }
 
 // Mock data and functions

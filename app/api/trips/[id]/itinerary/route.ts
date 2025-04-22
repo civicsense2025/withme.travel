@@ -2,150 +2,154 @@ import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
+// Helper function to check user membership and role
+async function checkTripAccess(
+  supabase: ReturnType<typeof createClient>,
+  tripId: string,
+  userId: string,
+  allowedRoles: string[] = ["owner", "admin", "editor", "viewer"] // Default: any member can access
+): Promise<{ allowed: boolean; error?: string; status?: number }> {
+  const { data: member, error } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error checking trip membership:", error);
+    return { allowed: false, error: error.message, status: 500 };
+  }
+
+  if (!member) {
+    return {
+      allowed: false,
+      error: "Access Denied: You are not a member of this trip.",
+      status: 403,
+    };
+  }
+
+  if (!allowedRoles.includes(member.role)) {
+    return {
+      allowed: false,
+      error: "Access Denied: You do not have sufficient permissions.",
+      status: 403,
+    };
+  }
+
+  return { allowed: true };
+}
+
+// GET /api/trips/[id]/itinerary - Fetch all itinerary items for a trip
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError?.message || "Authentication required" },
+        { status: 401 }
+      )
     }
 
-    // Check if user is a member of this trip
-    const { data: member, error: memberError } = await supabase
-      .from("trip_members")
-      .select()
-      .eq("trip_id", params.id)
-      .eq("user_id", session.user.id)
-      .maybeSingle()
+    const tripId = params.id
 
-    if (memberError || !member) {
-      return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 })
+    // Check if user is a member of the trip (any role can view)
+    const access = await checkTripAccess(supabase, tripId, user.id)
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
     }
 
-    // Get itinerary items
-    const { data: items, error } = await supabase
+    // Fetch itinerary items
+    const { data: items, error: fetchError } = await supabase
       .from("itinerary_items")
-      .select("*")
-      .eq("trip_id", params.id)
-      .order("date", { ascending: true })
-      .order("start_time", { ascending: true })
+      .select("*") // Select all columns or specify needed ones
+      .eq("trip_id", tripId)
+      .order("date", { ascending: true, nullsFirst: false })
+      .order("start_time", { ascending: true, nullsFirst: false })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    // Get votes for this user
-    const { data: votes, error: votesError } = await supabase
-      .from("votes")
-      .select("itinerary_item_id, vote_type")
-      .eq("user_id", session.user.id)
-      .in(
-        "itinerary_item_id",
-        items.map((item) => item.id),
+    if (fetchError) {
+      console.error("Error fetching itinerary items:", fetchError)
+      return NextResponse.json(
+        { error: fetchError.message },
+        { status: 500 }
       )
-
-    if (votesError) {
-      return NextResponse.json({ error: votesError.message }, { status: 500 })
     }
 
-    // Create a map of item_id to vote_type
-    const voteMap = votes.reduce(
-      (acc, vote) => {
-        acc[vote.itinerary_item_id] = vote.vote_type
-        return acc
-      },
-      {} as Record<string, string>,
-    )
-
-    // Get vote counts for each item
-    const { data: voteCounts, error: countError } = await supabase
-      .from("votes")
-      .select("itinerary_item_id, vote_type")
-      .in(
-        "itinerary_item_id",
-        items.map((item) => item.id),
-      )
-
-    if (countError) {
-      return NextResponse.json({ error: countError.message }, { status: 500 })
-    }
-
-    // Calculate net votes for each item
-    const voteCountMap = voteCounts.reduce(
-      (acc, vote) => {
-        if (!acc[vote.itinerary_item_id]) {
-          acc[vote.itinerary_item_id] = 0
-        }
-        acc[vote.itinerary_item_id] += vote.vote_type === "up" ? 1 : -1
-        return acc
-      },
-      {} as Record<string, number>,
-    )
-
-    // Add user_vote and votes to each item
-    const itemsWithVotes = items.map((item) => ({
-      ...item,
-      user_vote: voteMap[item.id] || null,
-      votes: voteCountMap[item.id] || 0,
-    }))
-
-    return NextResponse.json({ items: itemsWithVotes })
+    return NextResponse.json({ items: items || [] }, { status: 200 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("Unexpected error fetching itinerary:", error)
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    )
   }
 }
 
+// POST /api/trips/[id]/itinerary - Create a new itinerary item
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError?.message || "Authentication required" },
+        { status: 401 }
+      )
     }
 
-    // Check if user is a member of this trip
-    const { data: member, error: memberError } = await supabase
-      .from("trip_members")
-      .select()
-      .eq("trip_id", params.id)
-      .eq("user_id", session.user.id)
-      .maybeSingle()
+    const tripId = params.id
 
-    if (memberError || !member) {
-      return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 })
+    // Check if user has permission to add items (e.g., owner, admin, editor)
+    const access = await checkTripAccess(supabase, tripId, user.id, [
+      "owner",
+      "admin",
+      "editor",
+    ])
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
     }
 
-    // Get item data from request
-    const itemData = await request.json()
+    const newItemData = await request.json()
 
-    // Insert item into database
-    const { data, error } = await supabase
+    // Validate required fields (example: title)
+    if (!newItemData.title) {
+      return NextResponse.json({ error: "Title is required for itinerary item." }, { status: 400 })
+    }
+
+    // Add trip_id and created_by from server-side context
+    const itemToInsert = {
+      ...newItemData,
+      trip_id: tripId,
+      created_by: user.id,
+    }
+
+    // Insert the new item
+    const { data: newItem, error: insertError } = await supabase
       .from("itinerary_items")
-      .insert([
-        {
-          ...itemData,
-          trip_id: params.id,
-          created_by: session.user.id,
-        },
-      ])
+      .insert(itemToInsert)
       .select()
+      .single()
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (insertError) {
+      console.error("Error inserting itinerary item:", insertError)
+      return NextResponse.json(
+        { error: insertError.message },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ item: data[0] })
+    return NextResponse.json({ item: newItem }, { status: 201 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("Unexpected error creating itinerary item:", error)
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    }
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    )
   }
 }

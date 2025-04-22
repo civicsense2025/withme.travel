@@ -10,6 +10,7 @@ import { Suspense } from "react"
 import { SearchProvider } from "@/contexts/search-context"
 import { CommandMenu } from "@/components/search/command-menu"
 import { Toaster } from "@/components/ui/toaster"
+import { AuthProvider } from "@/components/auth-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,16 +30,18 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <SearchProvider>
-            <CommandMenu />
-            <Suspense>
-              <Navbar />
-            </Suspense>
-            <main className="min-h-[calc(100vh-4rem-4rem)]">{children}</main>
-            <Footer />
-            <CookieConsent />
-            <Toaster />
-          </SearchProvider>
+          <AuthProvider>
+            <SearchProvider>
+              <CommandMenu />
+              <Suspense>
+                <Navbar />
+              </Suspense>
+              <main className="min-h-[calc(100vh-4rem-4rem)]">{children}</main>
+              <Footer />
+              <CookieConsent />
+              <Toaster />
+            </SearchProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

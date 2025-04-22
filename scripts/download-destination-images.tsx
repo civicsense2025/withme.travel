@@ -1,7 +1,16 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env.local first, then .env
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: false }); // Don't override .env.local
+
 import { createClient } from "@supabase/supabase-js"
 import fs from "fs"
 import path from "path"
 import https from "https"
+import { createApi } from 'unsplash-js';
+import nodeFetch from 'node-fetch'; // Use node-fetch for Unsplash API
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!

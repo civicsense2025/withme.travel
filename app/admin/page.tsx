@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
-import { PageHeader } from "@/components/page-header"
+import { Shield } from "lucide-react"
 
 export default async function AdminPage() {
   const cookieStore = cookies()
@@ -18,16 +18,33 @@ export default async function AdminPage() {
   }
 
   // Check if user is an admin
-  const { data: userData, error } = await supabase.from("users").select("is_admin").eq("id", user.id).single()
+  const { data: userData, error } = await supabase.from("users").select("is_admin, name").eq("id", user.id).single()
 
   if (error || !userData?.is_admin) {
     redirect("/")
   }
 
   return (
-    <div className="container py-6 space-y-6">
-      <PageHeader heading="Admin Dashboard" text="Manage trips, users, and destinations for withme.travel" />
-      <AdminDashboard />
+    <div className="flex min-h-screen flex-col bg-muted/30">
+      <header className="sticky top-0 z-30 border-b bg-background">
+        <div className="container flex h-16 items-center justify-between py-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-6 w-6" />
+            <h1 className="text-xl font-bold">Admin Dashboard</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-sm">
+              Logged in as <span className="font-semibold">{userData.name || user.email}</span>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <main className="flex-1 py-6">
+        <div className="container">
+          <AdminDashboard />
+        </div>
+      </main>
     </div>
   )
 }

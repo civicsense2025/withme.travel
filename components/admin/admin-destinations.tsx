@@ -249,6 +249,9 @@ export function AdminDestinations() {
                             src={destination.image_url || "/placeholder.svg"}
                             alt={destination.name}
                             className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "/destinations/paris-eiffel-tower.png";
+                            }}
                           />
                         </div>
                       ) : (

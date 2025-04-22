@@ -7,51 +7,75 @@ import { MapTab } from "@/components/map-tab"
 import { BudgetTab } from "@/components/budget-tab"
 import { redirect } from "next/navigation"
 import { CollaborativeNotes } from "@/components/collaborative-notes"
+import { notFound } from "next/navigation"
 
 export default async function TripPage({
   params,
 }: {
   params: { id: string }
 }) {
-  const supabase = createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Validate the ID parameter first - make sure it's provided
+  if (!params?.id) {
+    notFound();
+  }
+  
+  // Ensure the ID is a string and access it once
+  const tripId = params.id as string;
 
-  if (!session) {
-    redirect("/login")
+  // Initialize Supabase client
+  const supabase = createClient();
+
+  // Use getUser instead of getSession for better security
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    redirect("/login?redirect=" + encodeURIComponent(`/trips/${tripId}`));
   }
 
   // Fetch trip details
-  const { data: trip } = await supabase.from("trips").select("*, destinations(*)").eq("id", params.id).single()
+  const { data: trip, error: tripError } = await supabase
+    .from("trips")
+    .select("*, destinations(*)")
+    .eq("id", tripId)
+    .single();
 
-  if (!trip) {
-    redirect("/trips")
+  if (tripError || !trip) {
+    console.error("Trip not found or error:", tripError);
+    redirect("/trips");
   }
 
   // Check if user is a member of this trip
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipError } = await supabase
     .from("trip_members")
     .select("role")
-    .eq("trip_id", params.id)
-    .eq("user_id", session.user.id)
-    .single()
+    .eq("trip_id", tripId)
+    .eq("user_id", user.id)
+    .single();
 
-  if (!membership) {
-    redirect("/trips")
+  if (membershipError || !membership) {
+    console.error("User is not a member of this trip:", membershipError);
+    redirect("/trips");
   }
 
   // Fetch trip members
-  const { data: members } = await supabase
+  const { data: members, error: membersError } = await supabase
     .from("trip_members")
     .select("*, profiles(id, name, avatar_url)")
-    .eq("trip_id", params.id)
+    .eq("trip_id", tripId);
+
+  if (membersError) {
+    console.error("Error fetching trip members:", membersError);
+    // Continue anyway, just log the error
+  }
+
+  // Check user role to determine edit permissions
+  const canEdit = membership && ['owner', 'admin', 'editor'].includes(membership.role);
 
   return (
     <div className="container py-6">
       <TripHeader
         title={trip.name}
-        destination={trip.destinations.name}
+        destination={trip.destinations?.name || "Unknown"}
         startDate={trip.start_date}
         endDate={trip.end_date}
         memberCount={members?.length || 0}
@@ -66,21 +90,28 @@ export default async function TripPage({
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
         <TabsContent value="itinerary">
-          <ItineraryTab tripId={params.id} userRole={membership.role} />
+          <ItineraryTab tripId={tripId} canEdit={canEdit} />
         </TabsContent>
         <TabsContent value="map">
-          <MapTab tripId={params.id} />
+          <MapTab tripId={tripId} />
         </TabsContent>
         <TabsContent value="budget">
-          <BudgetTab tripId={params.id} userRole={membership.role} />
+          <BudgetTab tripId={tripId} />
         </TabsContent>
         <TabsContent value="members">
-          <MembersTab tripId={params.id} members={members || []} userRole={membership.role} />
+          <MembersTab 
+            tripId={tripId} 
+            canEdit={canEdit}
+            userRole={membership.role}
+          />
         </TabsContent>
         <TabsContent value="notes">
-          <CollaborativeNotes tripId={params.id} readOnly={membership.role === "viewer"} />
+          <CollaborativeNotes 
+            tripId={tripId} 
+            readOnly={membership.role === "viewer"} 
+          />
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

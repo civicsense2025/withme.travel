@@ -6,6 +6,7 @@ import { PlusCircle, Plane, BeanIcon as Beach, MountainIcon as Mountains, Coffee
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { PAGE_ROUTES } from "@/utils/constants"
 
 export function EmptyTrips() {
   const router = useRouter()
@@ -38,12 +39,12 @@ export function EmptyTrips() {
   ]
 
   const handleQuickStart = (destination: string) => {
-    router.push(`/trips/create?destination=${encodeURIComponent(destination)}`)
+    router.push(`${PAGE_ROUTES.CREATE_TRIP}?destination=${encodeURIComponent(destination)}`)
   }
 
   return (
     <div className="mt-12">
-      <Card className="gradient-bg-1 border-0 shadow-md">
+      <Card className="gradient-bg-1 border-0">
         <CardContent className="p-8 md:p-12">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-8">
@@ -76,7 +77,7 @@ export function EmptyTrips() {
             </div>
 
             <div className="flex justify-center">
-              <Link href="/trips/create">
+              <Link href={PAGE_ROUTES.CREATE_TRIP}>
                 <Button className="gap-2">
                   <PlusCircle className="h-4 w-4" />
                   create custom trip

@@ -21,6 +21,9 @@ export default function LoginPage() {
     }
   }, [searchParams])
 
+  // Pass the redirect parameter to the form so it can be used after login
+  const redirectParam = searchParams.get("redirect")
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-1 py-12">
       <Card className="w-full max-w-md border-0 shadow-lg">
@@ -43,7 +46,10 @@ export default function LoginPage() {
         <CardFooter className="flex justify-center">
           <p className="text-center text-sm text-muted-foreground">
             don't have an account yet?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
+            <Link 
+              href={redirectParam ? `/signup?redirect=${encodeURIComponent(redirectParam)}` : "/signup"} 
+              className="text-primary hover:underline"
+            >
               sign up
             </Link>
           </p>

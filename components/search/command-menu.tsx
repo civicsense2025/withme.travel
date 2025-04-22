@@ -236,18 +236,18 @@ export function CommandMenu() {
       <DialogTrigger asChild>
         {/* Placeholder for the children prop */}
       </DialogTrigger>
-      <DialogContent className="p-0 gap-0 max-w-[650px]">
+      <DialogContent className="p-0 gap-0 max-w-[650px] rounded-xl border-0 shadow-xl">
         <VisuallyHidden><DialogTitle>Search Menu</DialogTitle></VisuallyHidden>
         {showTooltip && (
-          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-lg animate-fade-in">
+          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-travel-purple text-travel-purple-foreground px-4 py-2 rounded-md shadow-lg animate-fade-in">
             <p className="text-sm font-medium">Pro tip: Press {isMac ? "⌘K" : "Ctrl+K"} anytime to open this menu</p>
           </div>
         )}
 
-        <Command className="rounded-lg border shadow-md" shouldFilter={false}>
+        <Command className="rounded-xl overflow-hidden border-0 shadow-none bg-background/95 backdrop-blur-sm" shouldFilter={false}>
           <form onSubmit={handleSubmit}>
-            <div className="flex items-center border-b px-3 py-2 w-full">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <div className="flex items-center border-b px-4 py-3 w-full">
+              <Search className="mr-3 h-5 w-5 shrink-0 text-travel-purple" />
               <input
                 className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Search destinations, trips..."
@@ -259,40 +259,40 @@ export function CommandMenu() {
             </div>
           </form>
 
-          <CommandList className="max-h-[400px] overflow-auto py-2 command-menu-scrollbar">
+          <CommandList className="max-h-[400px] overflow-auto py-3 command-menu-scrollbar">
             {/* Support Us - Pinned at top */}
-            <div className="px-3 mb-2">
+            <div className="px-4 mb-2">
               <CommandItem
                 value="support-us"
                 onSelect={handleSelect}
-                className="py-2 px-3 cursor-pointer flex items-center rounded-md hover:bg-accent"
+                className="py-3 px-3 cursor-pointer flex items-center rounded-xl hover:bg-travel-purple/10"
               >
-                <Heart className="mr-2 h-4 w-4 text-rose-500" />
+                <Heart className="mr-2 h-5 w-5 text-rose-500" />
                 <span className="text-sm font-medium tracking-tight">Support us</span>
               </CommandItem>
             </div>
 
-            <CommandSeparator />
+            <CommandSeparator className="bg-muted/50" />
 
             {/* Search Results */}
             {results.length > 0 && (
-              <CommandGroup heading="Search Results" className="py-2 px-2">
+              <CommandGroup heading="Search Results" className="py-2 px-3">
                 {results.map((result: SearchResult) => (
                   <CommandItem
                     key={result.id}
                     value={result.id}
                     onSelect={handleSelect}
-                    className="py-3 px-4 cursor-pointer rounded-md"
+                    className="py-3 px-4 cursor-pointer rounded-xl hover:bg-travel-purple/10 transition-colors"
                   >
                     <div className="flex items-center w-full">
-                      <div className="mr-3">{result.icon}</div>
+                      <div className="mr-3 text-travel-purple">{result.icon}</div>
                       <div className="flex-1">
                         <p className="font-medium tracking-tight">{result.title}</p>
                         {result.description && (
                           <p className="text-sm text-muted-foreground mt-0.5">{result.description}</p>
                         )}
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-70 ml-2" />
+                      <ChevronRight className="h-4 w-4 text-travel-purple opacity-70 ml-2" />
                     </div>
                   </CommandItem>
                 ))}
@@ -316,52 +316,52 @@ export function CommandMenu() {
 
             {/* Quick Actions - Only show when no search query or no results */}
             {(!searchQuery || (!isLoading && results.length === 0)) && (
-              <CommandGroup heading="Quick Actions" className="py-2 px-2">
+              <CommandGroup heading="Quick Actions" className="py-2 px-3">
                 <CommandItem
                   value="browse-destinations"
                   onSelect={handleSelect}
-                  className="py-3 px-4 cursor-pointer rounded-md"
+                  className="py-3 px-4 cursor-pointer rounded-xl hover:bg-travel-purple/10 transition-colors"
                 >
                   <div className="flex items-center w-full">
-                    <MapPin className="mr-3 h-5 w-5 text-primary" />
+                    <MapPin className="mr-3 h-5 w-5 text-travel-purple" />
                     <div className="flex-1">
                       <p className="font-medium tracking-tight">Browse destinations</p>
                       <p className="text-sm text-muted-foreground mt-0.5">Explore travel destinations</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-70 ml-2" />
+                    <ChevronRight className="h-4 w-4 text-travel-purple opacity-70 ml-2" />
                   </div>
                 </CommandItem>
 
-                <CommandItem value="plan-trip" onSelect={handleSelect} className="py-3 px-4 cursor-pointer rounded-md">
+                <CommandItem value="plan-trip" onSelect={handleSelect} className="py-3 px-4 cursor-pointer rounded-xl hover:bg-travel-purple/10 transition-colors">
                   <div className="flex items-center w-full">
-                    <Calendar className="mr-3 h-5 w-5 text-primary" />
+                    <Calendar className="mr-3 h-5 w-5 text-travel-purple" />
                     <div className="flex-1">
                       <p className="font-medium tracking-tight">Plan a new trip</p>
                       <p className="text-sm text-muted-foreground mt-0.5">Start planning your next adventure</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-70 ml-2" />
+                    <ChevronRight className="h-4 w-4 text-travel-purple opacity-70 ml-2" />
                   </div>
                 </CommandItem>
 
-                <CommandItem value="my-trips" onSelect={handleSelect} className="py-3 px-4 cursor-pointer rounded-md">
+                <CommandItem value="my-trips" onSelect={handleSelect} className="py-3 px-4 cursor-pointer rounded-xl hover:bg-travel-purple/10 transition-colors">
                   <div className="flex items-center w-full">
-                    <User className="mr-3 h-5 w-5 text-primary" />
+                    <User className="mr-3 h-5 w-5 text-travel-purple" />
                     <div className="flex-1">
                       <p className="font-medium tracking-tight">My trips</p>
                       <p className="text-sm text-muted-foreground mt-0.5">View your planned trips</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-70 ml-2" />
+                    <ChevronRight className="h-4 w-4 text-travel-purple opacity-70 ml-2" />
                   </div>
                 </CommandItem>
 
-                <CommandItem value="support" onSelect={handleSelect} className="py-3 px-4 cursor-pointer rounded-md">
+                <CommandItem value="support" onSelect={handleSelect} className="py-3 px-4 cursor-pointer rounded-xl hover:bg-travel-purple/10 transition-colors">
                   <div className="flex items-center w-full">
-                    <LifeBuoy className="mr-3 h-5 w-5 text-primary" />
+                    <LifeBuoy className="mr-3 h-5 w-5 text-travel-purple" />
                     <div className="flex-1">
                       <p className="font-medium tracking-tight">Get support</p>
                       <p className="text-sm text-muted-foreground mt-0.5">Contact our support team</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-70 ml-2" />
+                    <ChevronRight className="h-4 w-4 text-travel-purple opacity-70 ml-2" />
                   </div>
                 </CommandItem>
               </CommandGroup>
@@ -369,18 +369,18 @@ export function CommandMenu() {
 
             {/* Search History - Only show when no search query and no results */}
             {!searchQuery && !isLoading && results.length === 0 && searchHistory.length > 0 && (
-              <CommandGroup heading="Recent Searches" className="py-2 px-2">
+              <CommandGroup heading="Recent Searches" className="py-2 px-3">
                 {searchHistory.map((item: SearchHistoryItem) => (
                   <CommandItem
                     key={item.query}
                     value={`history:${item.query}`}
                     onSelect={handleSelect}
-                    className="py-2 px-4 cursor-pointer rounded-md"
+                    className="py-3 px-4 cursor-pointer rounded-xl hover:bg-travel-purple/10 transition-colors"
                   >
                     <div className="flex items-center w-full">
-                      <Search className="mr-3 h-4 w-4 text-muted-foreground" />
+                      <Search className="mr-3 h-4 w-4 text-travel-purple" />
                       <span className="tracking-tight flex-1">{item.query}</span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-70 ml-2" />
+                      <ChevronRight className="h-4 w-4 text-travel-purple opacity-70 ml-2" />
                     </div>
                   </CommandItem>
                 ))}

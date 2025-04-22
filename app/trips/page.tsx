@@ -1,341 +1,247 @@
-"use client"
-
-import React, { useEffect, useState, useCallback } from "react"
+import { Suspense } from "react"
+import { createClient } from "@/utils/supabase/server"
+import { redirect } from "next/navigation"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { 
-  PlusCircle, 
-  AlertCircle, 
-  CalendarCheck, 
-  MapPin, 
-  Plane, 
-  Clock, 
-  RefreshCw,
-  Filter,
-  Search,
-  Calendar
-} from "lucide-react"
+import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/page-header"
-import { useAuth } from "@/components/auth-provider"
+import { EmptyTrips } from "@/components/empty-trips"
+import { Skeleton } from "@/components/ui/skeleton"
 import { TripCard } from "@/components/trip-card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useToast } from "@/hooks/use-toast"
-import { SkeletonCard } from "@/components/skeleton-card"
+import { ItineraryTemplateCard } from "@/components/itinerary-template-card"
 import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent 
-} from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+  DB_TABLES, 
+  DB_FIELDS, 
+  TRIP_ROLES,
+  DB_RELATIONSHIPS 
+} from "@/utils/constants"
+import { TripWithMemberInfo } from "@/utils/types"
 
-// Trip type definition
-interface Trip {
-  id: string
-  name: string
-  destination_id?: string
-  destination_name?: string
-  start_date?: string
-  end_date?: string
-  date_flexibility?: string
-  travelers_count?: number
-  vibe?: string
-  budget?: string
-  is_public: boolean
-  slug?: string
-  cover_image_url?: string
-  created_at: string
-  updated_at: string
-  created_by: string
+// Components for the trips dashboard
+const UserTripsSection = async () => {
+  const supabase = createClient()
   
-  // Fields added by the API
-  title?: string
-  description?: string
-  cover_image?: string
-  members?: number
+  // Use getUser instead of getSession for better security  
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  
+  if (userError || !user) {
+    console.error("Auth error in trips page:", userError)
+    redirect("/login?redirect=/trips")
+    return null
+  }
+
+  try {
+    // Fetch all trips the user is a member of (through trip_members table)
+    const { data: memberships, error: membershipError } = await supabase
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select(`
+        *,
+        ${DB_RELATIONSHIPS.TRIP_MEMBERS.TRIP}(*)
+      `)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .order(DB_FIELDS.TRIP_MEMBERS.CREATED_AT, { ascending: false })
+
+    if (membershipError) {
+      console.error("Error fetching trip memberships:", membershipError)
+      return (
+        <div className="my-8">
+          <p className="text-destructive">Error loading your trips. Please try again later.</p>
+          <pre className="text-xs text-muted-foreground mt-2">{JSON.stringify(membershipError, null, 2)}</pre>
+        </div>
+      )
+    }
+
+    // No memberships found
+    if (!memberships || memberships.length === 0) {
+      return <EmptyTrips />
+    }
+
+    // Separate trips based on role
+    const ownedTrips: TripWithMemberInfo[] = []
+    const memberTrips: TripWithMemberInfo[] = []
+
+    // Process the memberships data
+    memberships.forEach(membership => {
+      if (!membership.trips) return
+      
+      // Ensure created_by field exists to satisfy TripCard component requirements
+      const tripWithMemberInfo: TripWithMemberInfo = {
+        ...membership.trips,
+        created_by: membership.trips.user_id || membership.invited_by || user.id,
+        role: membership.role,
+        memberSince: membership.joined_at
+      }
+      
+      if (membership.role === TRIP_ROLES.OWNER) {
+        ownedTrips.push(tripWithMemberInfo)
+      } else {
+        memberTrips.push(tripWithMemberInfo)
+      }
+    })
+
+    // If no trips after processing, show empty state
+    if (ownedTrips.length === 0 && memberTrips.length === 0) {
+      return <EmptyTrips />
+    }
+
+    // Render the trips
+    return (
+      <div className="space-y-10">
+        {ownedTrips.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Your Trips</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {ownedTrips.map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {memberTrips.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Trips You're Invited To</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {memberTrips.map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  } catch (error) {
+    console.error("Unexpected error in trips section:", error)
+    return (
+      <div className="my-8">
+        <p className="text-destructive">Something went wrong while loading your trips.</p>
+      </div>
+    )
+  }
 }
 
-// Quick start templates
-const quickStartTemplates = [
-  {
-    title: "Start From Scratch",
-    description: "Build your perfect trip itinerary step-by-step.",
-    icon: <Plane className="h-8 w-8 text-primary mb-3" />,
-    href: "/trips/create",
-  },
-  {
-    title: "Explore Destinations",
-    description: "Get inspired and discover amazing places to visit.",
-    icon: <MapPin className="h-8 w-8 text-primary mb-3" />,
-    href: "/destinations",
-  },
-  {
-    title: "Weekend Getaway",
-    description: "Quickly set up a short trip for the weekend.",
-    icon: <CalendarCheck className="h-8 w-8 text-primary mb-3" />,
-    href: "/trips/create?template=weekend",
-  },
-]
-
-// Template sections
-const EmptyStateView = () => (
-  <div className="mt-12 text-center">
-    <h2 className="text-2xl font-bold lowercase tracking-tight mb-4">
-      ready for your next adventure?
-    </h2>
-    <p className="text-muted-foreground mb-8">
-      start planning your next group trip with a template or from scratch.
-    </p>
-    <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-      {quickStartTemplates.map((template) => (
-        <Link href={template.href} key={template.title}>
-          <Card className="text-left h-full hover:bg-accent transition-colors duration-200 cursor-pointer">
-            <CardHeader>
-              {template.icon}
-              <CardTitle className="text-lg lowercase">{template.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>{template.description}</CardDescription>
-            </CardContent>
-          </Card>
-        </Link>
+// Loading fallback for trips
+const TripsSectionSkeleton = () => (
+  <div className="space-y-8">
+    <h2 className="text-2xl font-bold mb-4">Your Trips</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="border rounded-lg p-4 space-y-3">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-32 w-full rounded-md" />
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-4 w-1/4" />
+          </div>
+        </div>
       ))}
     </div>
   </div>
 )
 
-export default function TripsPage() {
-  const { user, loading: authLoading } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
-  const [trips, setTrips] = useState<Trip[]>([])
-  const [filteredTrips, setFilteredTrips] = useState<Trip[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest")
-  const [filterType, setFilterType] = useState<"all" | "upcoming" | "past" | "planning">("all")
-  const [activeTab, setActiveTab] = useState<"cards" | "list">("cards")
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [authError, setAuthError] = useState<string | null>(null)
-
-  const fetchTrips = useCallback(async () => {
-    if (!user) return // Don't fetch if user is not logged in
-
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/trips")
-      if (!response.ok) {
-        // Handle specific auth error
-        if (response.status === 401) {
-          setError("Authentication failed. Please log in again.")
-          setTrips([])
-          router.push('/login?redirect=/trips'); // Redirect to login
-          return;
-        }
-        throw new Error(`Failed to fetch trips: ${response.status}`)
-      }
-
-      const data = await response.json()
-      if (data.error) {
-         throw new Error(data.error)
-      }
-      
-      console.log("Fetched trips:", data.trips); // Log fetched data
-      setTrips(data.trips || [])
-
-    } catch (err: any) {
-      console.error("[TripsPage] Error fetching trips:", err)
-      setError(err.message || "Failed to load trips")
-      setTrips([]) // Clear trips on error
-      toast({
-        title: "Error loading trips",
-        description: "Please try refreshing the page or log in again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user, router, toast])
-
-  // Effect to handle auth state changes and initial fetch
-  useEffect(() => {
-    // If auth is still loading, wait.
-    if (authLoading) {
-      setIsLoading(true); // Keep the page loading state true while auth loads
-      return;
-    }
-
-    // If auth finished loading and there's no user, redirect.
-    if (!user) {
-      router.push("/login?redirect=/trips");
-      return; // Stop further execution in this effect run
-    }
-
-    // If auth finished loading and there IS a user, fetch trips.
-    fetchTrips();
-
-  }, [user, authLoading, router, fetchTrips]); // Depend on user and authLoading
-
-  // Filter & sort logic
-  useEffect(() => {
-    if (!trips.length) {
-      setFilteredTrips([])
-      return
-    }
-
-    let result = [...trips]
+// Fetches itinerary templates to show as quickstart options
+const ItineraryTemplatesSection = async () => {
+  const supabase = createClient()
+  
+  try {
+    // Fetch public templates
+    const { data: templates, error } = await supabase
+      .from('itinerary_templates')
+      .select(`
+        *,
+        destinations(*),
+        users:created_by(id, full_name, avatar_url)
+      `)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+      .limit(6)
     
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter(trip => 
-        trip.name.toLowerCase().includes(term) || 
-        trip.destination_name?.toLowerCase().includes(term)
+    if (error) {
+      console.error("Error fetching templates:", error)
+      return (
+        <div className="my-4">
+          <p className="text-destructive">Error loading itinerary templates.</p>
+        </div>
       )
     }
-    
-    // Apply type filter
-    if (filterType !== 'all') {
-      const now = new Date()
-      
-      if (filterType === 'upcoming') {
-        result = result.filter(trip => 
-          trip.start_date && new Date(trip.start_date) > now
-        )
-      } else if (filterType === 'past') {
-        result = result.filter(trip => 
-          trip.end_date && new Date(trip.end_date) < now
-        )
-      } else if (filterType === 'planning') {
-        result = result.filter(trip => 
-          trip.date_flexibility === 'undecided' || !trip.start_date || !trip.end_date
-        )
-      }
-    }
-    
-    // Apply sorting
-    if (sortBy === 'newest') {
-      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    } else if (sortBy === 'oldest') {
-      result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    } else if (sortBy === 'name') {
-      result.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
-    }
-    
-    setFilteredTrips(result)
-  }, [trips, searchTerm, sortBy, filterType])
 
-  // Handle refresh button
-  const handleRefresh = () => {
-    fetchTrips()
-  }
-
-  // Clear auth cookies and redirect to login
-  const handleClearCookies = async () => {
-    try {
-      toast({
-        title: "Clearing cookies...",
-        description: "This will fix authentication issues but require you to log in again.",
-      })
-      
-      // Use our improved auth helper
-      import('@/utils/auth-helper').then(({ clearAuthState }) => {
-        clearAuthState().then(() => {
-          // Redirect to login
-          router.push("/login?redirect=/trips&reason=cookies_reset")
-        })
-      }).catch(() => {
-        // Fallback to the API approach if the import fails
-        fetch("/api/auth/clear-cookies").then(() => {
-          router.push("/login?redirect=/trips&reason=cookies_reset")
-        })
-      })
-    } catch (error) {
-      console.error("Error clearing cookies:", error)
-      toast({
-        title: "Error clearing cookies",
-        description: "Please try signing out and in again manually",
-        variant: "destructive",
-      })
+    // No templates found
+    if (!templates || templates.length === 0) {
+      return null
     }
-  }
 
-  // Render Loading State
-  if (authLoading || isLoading) {
     return (
-      <div className="container py-10">
-        <PageHeader
-          heading="your travel plans"
-          description="create and manage your group travel itineraries"
-        />
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
+      <div className="py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold lowercase">quickstart itineraries</h2>
+          <Button
+            variant="ghost"
+            asChild
+            className="lowercase rounded-full hover:bg-travel-purple hover:bg-opacity-20"
+          >
+            <Link href="/itineraries">
+              view all <span className="ml-2">→</span>
+            </Link>
+          </Button>
         </div>
-      </div>
-    )
-  }
 
-  // Render Error State
-  if (error) {
-    return (
-      <div className="container py-10">
-        <PageHeader
-          heading="your travel plans"
-          description="create and manage your group travel itineraries"
-        />
-        <Alert variant="destructive" className="mt-8">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error Loading Trips</AlertTitle>
-          <AlertDescription>
-            {error}. Please try refreshing the page. If the problem persists, try logging out and back in.
-            <Button variant="link" onClick={() => fetchTrips()} className="ml-2 p-0 h-auto">Retry</Button>
-          </AlertDescription>
-        </Alert>
-         {/* Still show EmptyStateView as a fallback */}
-         <EmptyStateView />
-      </div>
-    )
-  }
-
-  // Render Content (Empty or Trips List)
-  return (
-    <div className="container py-10">
-      <PageHeader
-        heading="your travel plans"
-        description="create and manage your group travel itineraries"
-      />
-
-      {trips.length === 0 ? (
-        <EmptyStateView />
-      ) : (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trips.map((trip) => (
-            <TripCard
-              key={trip.id}
-              trip={trip}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {templates.map((template, index) => (
+            <ItineraryTemplateCard 
+              key={template.id} 
+              index={index}
+              itinerary={{
+                id: template.id,
+                title: template.title,
+                description: template.description || "",
+                image: template.cover_image_url || template.destinations?.image_url || "/placeholder.svg",
+                location: template.destinations ? `${template.destinations.city}, ${template.destinations.country}` : "Various locations",
+                duration: `${template.duration_days || "N/A"} days`,
+                groupSize: template.grouptype || "N/A",
+                tags: template.tags || [],
+                category: template.category || "uncategorized",
+                slug: template.slug || template.id
+              }} 
             />
           ))}
         </div>
-      )}
+      </div>
+    )
+  } catch (error) {
+    console.error("Unexpected error in templates section:", error)
+    return null
+  }
+}
+
+// Main Trips Page
+export default async function TripsPage() {
+  return (
+    <div className="container py-10">
+      <div className="flex justify-between items-center mb-8">
+        <PageHeader
+          heading="Your Trips"
+          description="Manage and organize your travel adventures"
+        />
+        <Link href="/trips/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" /> Create Trip
+          </Button>
+        </Link>
+      </div>
+
+      {/* Wrap trips section in Suspense for better loading UX */}
+      <Suspense fallback={<TripsSectionSkeleton />}>
+        <UserTripsSection />
+      </Suspense>
+
+      {/* Itinerary templates as quickstart options */}
+      <div className="mt-12">
+        <Suspense fallback={<div className="h-64 bg-muted animate-pulse rounded-lg" />}>
+          <ItineraryTemplatesSection />
+        </Suspense>
+      </div>
     </div>
   )
-}
+} 

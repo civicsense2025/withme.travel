@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
+import { DB_TABLES, DB_FIELDS } from "@/utils/constants"
 
 export async function GET(request: Request) {
   try {
@@ -12,14 +13,18 @@ export async function GET(request: Request) {
     }
 
     const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    const supabase = createClient()
 
     // Search for destinations that match the query in city, state_province, or country
     const { data: destinations, error } = await supabase
-      .from("destinations")
+      .from(DB_TABLES.DESTINATIONS)
       .select("*")
-      .or(`city.ilike.%${query}%,state_province.ilike.%${query}%,country.ilike.%${query}%`)
-      .order("popularity", { ascending: false })
+      .or(
+        `${DB_FIELDS.DESTINATIONS.CITY}.ilike.%${query}%,` +
+        `state_province.ilike.%${query}%,` +
+        `${DB_FIELDS.DESTINATIONS.COUNTRY}.ilike.%${query}%`
+      )
+      .order(DB_FIELDS.DESTINATIONS.POPULARITY, { ascending: false })
       .limit(10)
 
     if (error) {

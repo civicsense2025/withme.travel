@@ -62,7 +62,7 @@ async function getItineraryBySlug(slug: string): Promise<ItineraryTemplate | nul
 
 // Generate Metadata based on fetched data
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug } = params // Destructure slug
+  const { slug } = params
   const itinerary = await getItineraryBySlug(slug)
 
   if (!itinerary) {
@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 // The Page Component itself - now async
 export default async function ItineraryPage({ params }: { params: { slug: string } }) {
-  const { slug } = params // Destructure slug
+  const { slug } = params
   const itinerary = await getItineraryBySlug(slug)
 
   if (!itinerary) {
@@ -88,14 +88,14 @@ export default async function ItineraryPage({ params }: { params: { slug: string
   }
 
   // Log the fetched itinerary data, specifically the destination_id
-  console.log("Fetched Itinerary Data:", itinerary)
-  console.log("Destination ID:", itinerary?.destination_id)
+  // console.log("Fetched Itinerary Data:", itinerary)
+  // console.log("Destination ID:", itinerary?.destination_id)
 
   const location = itinerary.destinations ? `${itinerary.destinations.city}, ${itinerary.destinations.country}` : "Unknown Location"
   const duration = itinerary.duration_days ? `${itinerary.duration_days} days` : "Variable duration"
   const imageUrl = itinerary.image_url || itinerary.destinations?.image_url || "/placeholder.svg"
-  const authorName = itinerary.users?.full_name || "Community Contributor"
-  const authorAvatar = itinerary.users?.avatar_url || "/placeholder-avatar.png"
+  const authorName = itinerary.users?.full_name || "Anonymous"
+  const authorAvatar = itinerary.users?.avatar_url || "/images/placeholder-avatar.png"
 
   return (
     <div className="container py-10">

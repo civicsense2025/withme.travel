@@ -143,9 +143,6 @@ importers:
       date-fns:
         specifier: 3.6.0
         version: 3.6.0
-      dotenv:
-        specifier: latest
-        version: 16.5.0
       embla-carousel-react:
         specifier: 8.5.1
         version: 8.5.1(react@19.1.0)
@@ -231,6 +228,9 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.1.2(@types/react@19.1.2)
+      dotenv:
+        specifier: latest
+        version: 16.5.0
       mini-css-extract-plugin:
         specifier: ^2.9.2
         version: 2.9.2(webpack@5.99.6)
