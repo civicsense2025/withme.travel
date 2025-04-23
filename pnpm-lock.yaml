@@ -229,7 +229,7 @@ importers:
         specifier: ^19
         version: 19.1.2(@types/react@19.1.2)
       dotenv:
-        specifier: latest
+        specifier: ^16.5.0
         version: 16.5.0
       mini-css-extract-plugin:
         specifier: ^2.9.2

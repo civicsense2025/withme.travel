@@ -154,28 +154,28 @@ export default function Home() {
         {/* Features Section - Increased padding and changed layout */}
         <section className="py-24 bg-muted/30">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-2">
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
               plan together, <span className="text-travel-purple dark:text-travel-purple">travel better</span>
             </h2>
-            <p className="text-lg mb-16 max-w-2xl mx-auto">
+            <p className="text-lg mb-20 max-w-2xl mx-auto">
               Everything you need to create amazing group trips without the headaches.
             </p>
 
-            {/* Changed from grid to flex/block layout */}
-            <div className="space-y-12 md:space-y-16">
+            {/* Increased spacing between rows */}
+            <div className="space-y-16 md:space-y-20">
               {/* Row 1: Two items */}
-              <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-12">
-                <div className="md:w-1/3 bg-card p-6 rounded-lg shadow-sm border">
+              <div className="flex flex-col md:flex-row justify-center gap-10 md:gap-16">
+                <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
                   {/* Feature 1: Find cool spots */}
                   <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <MapPin className="text-travel-purple dark:text-travel-purple h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">find cool spots</h3>
+                  <h3 className="text-xl font-semibold mb-3">find cool spots</h3>
                   <p className="text-muted-foreground">
                     Discover and save places everyone will love. No more endless debates about where to go.
                   </p>
                 </div>
-                <div className="md:w-1/3 bg-card p-6 rounded-lg shadow-sm border">
+                <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
                   {/* Feature 2: Vote on plans */}
                   <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg
@@ -194,7 +194,7 @@ export default function Home() {
                       <path d="m9 12 2 2 4-4" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">vote on plans</h3>
+                  <h3 className="text-xl font-semibold mb-3">vote on plans</h3>
                   <p className="text-muted-foreground">
                     Everyone gets a say. Easily vote on activities, restaurants, and accommodations.
                   </p>
@@ -203,12 +203,12 @@ export default function Home() {
               
               {/* Row 2: One centered item */}
               <div className="flex justify-center">
-                <div className="md:w-1/3 bg-card p-6 rounded-lg shadow-sm border">
+                <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
                   {/* Feature 3: Build your itinerary */}
                   <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CalendarCheck className="text-travel-purple dark:text-travel-purple h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">build your itinerary</h3>
+                  <h3 className="text-xl font-semibold mb-3">build your itinerary</h3>
                   <p className="text-muted-foreground">
                     Create the perfect schedule together. Sync with your calendar so you never miss a thing.
                   </p>
@@ -222,11 +222,13 @@ export default function Home() {
         {/* CTA Section - Increased padding */}
         <section className="py-24 bg-travel-purple/10">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-4">ready to start planning?</h2>
-            <p className="text-lg mb-8 max-w-2xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
+              ready to start planning?
+            </h2>
+            <p className="text-lg mb-10 max-w-2xl mx-auto">
               Join withme.travel today and make your next group trip the best one yet.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-6">
               <Link href="/signup">
                 <Button size="lg" className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900">
                   Sign up - it's free
@@ -267,42 +269,40 @@ export default function Home() {
 
   // Render logged-in user dashboard
   return (
-    <main className="container py-8">
-      <div className="flex flex-col md:flex-row gap-6">
+    <main className="container py-12 md:py-16">
+      <div className="flex flex-col md:flex-row gap-8 md:gap-12">
         {/* Sidebar with user profile */}
-        <div className="w-full md:w-1/4">
-          <Card className="mb-6">
-            <CardHeader className="pb-2">
-              <CardTitle className="lowercase text-xl">Welcome back</CardTitle>
+        <div className="w-full md:w-1/3 lg:w-1/4">
+          <Card className="mb-8">
+            <CardHeader className="pb-4">
+              <CardTitle className="lowercase text-xl font-semibold">Welcome back</CardTitle>
               <CardDescription>Here's your travel dashboard</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2">
               <div className="flex flex-col items-center">
                 <Avatar className="h-24 w-24 mb-4">
                   <AvatarImage src={(user as UserWithMetadata)?.user_metadata?.avatar_url || userProfile?.avatar_url || ''} />
                   <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
-                <h3 className="text-lg font-medium">{userProfile?.name || (user as UserWithMetadata)?.user_metadata?.name || user?.email}</h3>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <h3 className="text-lg font-bold">{userProfile?.name || (user as UserWithMetadata)?.user_metadata?.name || user?.email}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{user?.email}</p>
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-full mt-2"
+                  onClick={() => router.push('/settings')}
+                >
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  View profile
+                </Button>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button 
-                variant="outline" 
-                className="w-full rounded-full"
-                onClick={() => router.push('/settings')}
-              >
-                <UserCircle className="mr-2 h-4 w-4" />
-                View profile
-              </Button>
-            </CardFooter>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="lowercase text-xl">Quick actions</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="lowercase text-xl font-semibold">Quick actions</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
+            <CardContent className="flex flex-col gap-3">
               <Button 
                 variant="outline" 
                 className="w-full justify-start rounded-full"
@@ -332,11 +332,11 @@ export default function Home() {
         </div>
 
         {/* Main content */}
-        <div className="w-full md:w-3/4">
+        <div className="w-full md:w-2/3 lg:w-3/4">
           {/* Recent trips section */}
-          <div className="mb-10">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold lowercase">Your recent trips</h2>
+          <div className="mb-12">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-extrabold lowercase">Your recent trips</h2>
               <Button
                 variant="ghost"
                 onClick={() => router.push("/trips")}
@@ -361,7 +361,7 @@ export default function Home() {
                 </Button>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {recentTrips.map((trip) => (
                   <TripCard key={trip.id} trip={trip} />
                 ))}

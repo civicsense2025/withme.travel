@@ -28,7 +28,7 @@ export function HeroSection() {
   }, [])
 
   return (
-    <div className="relative py-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center">
+    <div className="relative py-28 md:py-32 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/80 to-background/40" />
 
       {/* Animated background elements */}
@@ -39,22 +39,22 @@ export function HeroSection() {
         <div className="absolute bottom-[10%] right-[20%] w-36 h-36 rounded-full bg-travel-purple/10 animate-pulse-soft"></div>
       </div>
 
-      <h1 className="text-4xl md:text-6xl font-black lowercase flex flex-col animate-fade-in-up">
+      <h1 className="text-4xl md:text-6xl font-black lowercase flex flex-col animate-fade-in-up mb-6">
         <span>say goodbye to the chaos of</span>
         <span className="min-h-[1.2em] text-travel-blue dark:text-travel-blue">{planningType}.</span>
       </h1>
 
-      <p className="mt-6 text-xl max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+      <p className="mt-6 text-xl max-w-2xl mx-auto animate-fade-in-up mb-12" style={{ animationDelay: "0.1s" }}>
         plan your next adventure together, make decisions easily, and create unforgettable memories.
       </p>
 
-      {/* Search Bar - Added Margins */}
-      <div className="mt-12 mb-16 w-full max-w-xl animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+      <div className="mt-16 mb-16 w-full max-w-xl animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
         <SearchForm placeholder="where to? try 'barcelona' or 'tokyo'" />
       </div>
 
-      {/* City bubbles - Kept below search bar for now */}
-      <CityBubbles />
+      <div className="mt-12">
+        <CityBubbles />
+      </div>
     </div>
   )
 }
