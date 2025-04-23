@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/utils/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { Logo } from "@/components/logo"
+import { AuthSellingPoints } from "@/components/auth-selling-points"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -31,10 +32,12 @@ export default function SignupPage() {
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [signupContext, setSignupContext] = useState<string | null>(null)
 
   // Get invitation token or referral code from URL
   const invitationToken = searchParams.get("invitation")
   const referralCode = searchParams.get("ref")
+  const redirectParam = searchParams.get("redirect")
 
   // Pre-fill email if coming from invitation
   useEffect(() => {
@@ -59,7 +62,18 @@ export default function SignupPage() {
 
       getInvitationDetails()
     }
-  }, [invitationToken])
+    
+    // Detect where the user is coming from and provide appropriate context
+    if (redirectParam) {
+      if (redirectParam.includes('/trips/create')) {
+        setSignupContext("to create a new trip")
+      } else if (redirectParam.includes('/trips')) {
+        setSignupContext("to access trips")
+      } else if (redirectParam.includes('/saved')) {
+        setSignupContext("to save your favorite places")
+      }
+    }
+  }, [invitationToken, redirectParam])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -187,17 +201,19 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-1 py-12">
-      <Card className="w-full max-w-md border-0 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-1 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-0">
+      <div className="w-full max-w-lg">
+        <Card className="border-0 shadow-lg mb-8">
         <CardHeader className="space-y-3">
-          <div className="flex justify-center">
-            <Logo />
-          </div>
           <CardTitle className="text-2xl font-bold text-center">create an account</CardTitle>
           <CardDescription className="text-center">
-            {invitationToken
-              ? "join withme.travel and accept your trip invitation"
-              : "join withme.travel and start planning adventures with friends"}
+            {invitationToken ? (
+              "join withme.travel and accept your trip invitation"
+            ) : signupContext ? (
+              <>join withme.travel {signupContext}</>
+            ) : (
+              "join withme.travel and start planning adventures with friends"
+            )}
           </CardDescription>
         </CardHeader>
 
@@ -332,6 +348,10 @@ export default function SignupPage() {
           </>
         )}
       </Card>
+        
+        {/* Add selling points */}
+        <AuthSellingPoints />
+      </div>
     </div>
   )
 }

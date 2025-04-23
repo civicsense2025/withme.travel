@@ -281,7 +281,7 @@ function DestinationCard({ destination }: { destination: Destination }) {
                 }`}
               >
                 {tag}
-              </span>
+            </span>
             ))}
           </div>
           

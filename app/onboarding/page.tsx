@@ -9,6 +9,7 @@ import { TravelPersonalityScreen } from "@/components/onboarding/travel-personal
 import { TravelSquadScreen } from "@/components/onboarding/travel-squad-screen"
 import { SuccessScreen } from "@/components/onboarding/success-screen"
 import { AppTourScreen } from "@/components/onboarding/app-tour-screen"
+import { Card } from "@/components/ui/card"
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
@@ -69,7 +70,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-1 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-1 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {step === 1 && <WelcomeScreen onNext={handleNext} />}
         {step === 2 && (

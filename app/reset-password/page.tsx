@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createClient } from "@/utils/supabase/client"
+import { AuthSellingPoints } from "@/components/auth-selling-points"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -72,8 +73,9 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-1 dark:bg-black dark:bg-opacity-90 py-12">
-      <Card className="w-full max-w-md border-0 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-1 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-0">
+      <div className="w-full max-w-lg">
+        <Card className="border-0 shadow-lg mb-8">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">reset your password</CardTitle>
           <CardDescription>enter a new password for your account</CardDescription>
@@ -149,6 +151,10 @@ export default function ResetPasswordPage() {
           </div>
         </CardFooter>
       </Card>
+        
+        {/* Selling points */}
+        <AuthSellingPoints />
+      </div>
     </div>
   )
 }

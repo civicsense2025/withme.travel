@@ -8,10 +8,20 @@ export function Footer() {
   const { user, profile } = useAuth()
   const isAdmin = profile?.is_admin
 
+  // Major continents for the footer links
+  const continents = [
+    "Africa",
+    "Asia",
+    "Europe",
+    "North America",
+    "South America",
+    "Oceania"
+  ]
+
   return (
     <footer className="bg-muted/30 py-12">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
           <div className="space-y-4">
             <Logo />
             <p className="text-sm text-muted-foreground max-w-xs">
@@ -56,6 +66,22 @@ export function Footer() {
                   </Link>
                 </li>
               )}
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-semibold text-base lowercase">Continents</h3>
+            <ul className="space-y-3">
+              {continents.map((continent) => (
+                <li key={continent}>
+                  <Link
+                    href={`/continents/${continent.toLowerCase().replace(/\s+/g, "-")}`}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
+                  >
+                    {continent.toLowerCase()}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

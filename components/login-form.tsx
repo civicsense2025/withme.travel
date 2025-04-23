@@ -47,14 +47,30 @@ export function LoginForm() {
         throw error
       }
 
-      // Redirect to trips page on successful login
-      const origin = window.location.origin
-      router.push(`${origin}${redirectPath}`)
+      // Redirect to the specified path on successful login
+      router.push(redirectPath)
       router.refresh()
     } catch (error: any) {
+      console.error("Login error:", error)
+      
+      // Provide more user-friendly error messages
+      let errorMessage = "please check your credentials and try again"
+      
+      if (error.message) {
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "invalid email or password"
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "please confirm your email address before logging in"
+        } else if (error.message.includes("rate limit")) {
+          errorMessage = "too many login attempts, please try again later"
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
       toast({
         title: "login failed",
-        description: error.message || "please check your credentials and try again",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -66,8 +82,7 @@ export function LoginForm() {
     try {
       setIsLoading(true)
       
-      // Build the OAuth redirect URL and include the redirect path if it's not the homepage
-      // This ensures the user is redirected to the correct page after authentication
+      // Build the OAuth callback URL with the redirect path
       const callbackUrl = new URL('/auth/callback', window.location.origin);
       
       // Only add the redirect parameter if it's not the default homepage

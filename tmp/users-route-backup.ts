@@ -3,7 +3,8 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 export async function GET() {
-  const supabase = createClient()
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
   try {
     // Check if user is authenticated and is an admin
@@ -29,14 +30,23 @@ export async function GET() {
     // Get all users with trip count
     const { data: users, error } = await supabase
       .from("users")
-      .select("*")
+      .select(`
+        *,
+        trip_count:trips(count)
+      `)
       .order("created_at", { ascending: false })
 
     if (error) {
       throw error
     }
 
-    return NextResponse.json({ users })
+    // Format the users to include the trip count
+    const formattedUsers = users.map((user) => ({
+      ...user,
+      trip_count: user.trip_count[0]?.count || 0,
+    }))
+
+    return NextResponse.json({ users: formattedUsers })
   } catch (error) {
     console.error("Error fetching users:", error)
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })

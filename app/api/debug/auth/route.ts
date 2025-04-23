@@ -1,51 +1,55 @@
-import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
 export async function GET() {
-  const cookieStore = cookies()
-  const allCookies = cookieStore.getAll()
+  try {
   const supabase = createClient()
 
-  // Check for the specific cookie that's causing issues
-  const authCookie = cookieStore.get('supabase-auth-token')
-  let cookieParseError = null
-  
-  if (authCookie) {
-    try {
-      // Try parsing it
-      JSON.parse(decodeURIComponent(authCookie.value))
-    } catch (e) {
-      cookieParseError = e instanceof Error ? e.message : String(e)
+    // Get session info
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    
+    // Get user info
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    
+    if (sessionError) {
+      return NextResponse.json({ 
+        status: "error",
+        source: "session",
+        message: sessionError.message,
+        details: sessionError
+      }, { status: 500 })
     }
-  }
-
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
+    
+    if (userError) {
+      return NextResponse.json({ 
+        status: "error",
+        source: "user",
+        message: userError.message,
+        details: userError
+      }, { status: 500 })
+    }
+    
+    // Return debugging information
     return NextResponse.json({
-      authenticated: !!user,
-      userId: user?.id ?? null,
-      userEmail: user?.email ?? null,
-      cookieCount: allCookies.length,
-      cookieNames: allCookies.map((c: { name: string }) => c.name),
-      // Don't expose cookie values in production, this is for local debugging only
-      supabaseCookie: authCookie ? 
-        {
-          exists: true,
-          length: authCookie.value.length,
-          firstChars: authCookie.value.substring(0, 20) + '...',
-          parseError: cookieParseError
-        } : null
+      status: "success",
+      authenticated: !!userData.user,
+      session: {
+        exists: !!sessionData.session,
+        expires_at: sessionData.session?.expires_at,
+      },
+      user: userData.user ? {
+        id: userData.user.id,
+        email: userData.user.email,
+        provider: userData.user.app_metadata?.provider,
+        created_at: userData.user.created_at,
+      } : null,
     })
-  } catch (error) {
-    console.error("Error in auth debug:", error)
+  } catch (error: any) {
+    console.error("Auth debug error:", error)
     return NextResponse.json({ 
-      error: "Failed to check auth state",
-      details: error instanceof Error ? error.message : String(error),
-      cookieParseError: cookieParseError
+      status: "error",
+      message: error.message || "Unknown error",
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
     }, { status: 500 })
   }
 } 

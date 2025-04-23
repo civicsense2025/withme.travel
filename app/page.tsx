@@ -169,51 +169,51 @@ export default function Home() {
                   {/* Feature 1: Find cool spots */}
                   <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <MapPin className="text-travel-purple dark:text-travel-purple h-8 w-8" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3">find cool spots</h3>
-                  <p className="text-muted-foreground">
-                    Discover and save places everyone will love. No more endless debates about where to go.
-                  </p>
                 </div>
+                  <h3 className="text-xl font-semibold mb-3">find cool spots</h3>
+                <p className="text-muted-foreground">
+                  Discover and save places everyone will love. No more endless debates about where to go.
+                </p>
+              </div>
                 <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
                   {/* Feature 2: Vote on plans */}
                   <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
                       width="32"
                       height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-travel-purple dark:text-travel-purple"
-                    >
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-                      <path d="m9 12 2 2 4-4" />
-                    </svg>
-                  </div>
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-travel-purple dark:text-travel-purple"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                </div>
                   <h3 className="text-xl font-semibold mb-3">vote on plans</h3>
-                  <p className="text-muted-foreground">
-                    Everyone gets a say. Easily vote on activities, restaurants, and accommodations.
-                  </p>
+                <p className="text-muted-foreground">
+                  Everyone gets a say. Easily vote on activities, restaurants, and accommodations.
+                </p>
                 </div>
               </div>
-              
+
               {/* Row 2: One centered item */}
               <div className="flex justify-center">
                 <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
                   {/* Feature 3: Build your itinerary */}
                   <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CalendarCheck className="text-travel-purple dark:text-travel-purple h-8 w-8" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3">build your itinerary</h3>
-                  <p className="text-muted-foreground">
-                    Create the perfect schedule together. Sync with your calendar so you never miss a thing.
-                  </p>
                 </div>
+                  <h3 className="text-xl font-semibold mb-3">build your itinerary</h3>
+                <p className="text-muted-foreground">
+                  Create the perfect schedule together. Sync with your calendar so you never miss a thing.
+                </p>
               </div>
+            </div>
             </div>
 
           </div>
@@ -286,14 +286,14 @@ export default function Home() {
                 </Avatar>
                 <h3 className="text-lg font-bold">{userProfile?.name || (user as UserWithMetadata)?.user_metadata?.name || user?.email}</h3>
                 <p className="text-sm text-muted-foreground mb-4">{user?.email}</p>
-                <Button 
-                  variant="outline" 
+              <Button 
+                variant="outline" 
                   className="w-full rounded-full mt-2"
-                  onClick={() => router.push('/settings')}
-                >
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  View profile
-                </Button>
+                onClick={() => router.push('/settings')}
+              >
+                <UserCircle className="mr-2 h-4 w-4" />
+                View profile
+              </Button>
               </div>
             </CardContent>
           </Card>

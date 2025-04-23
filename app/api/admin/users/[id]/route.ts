@@ -1,10 +1,8 @@
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createClient()
   const userId = params.id
 
   try {
@@ -46,8 +44,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createClient()
   const userId = params.id
 
   try {
@@ -80,18 +77,12 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     // Delete user's invitations
     await supabase.from("invitations").delete().eq("email", userId)
 
-    // Delete user's trips (optional, you might want to reassign them instead)
-    // await supabase.from("trips").delete().eq("created_by", userId)
-
     // Finally delete the user
     const { error } = await supabase.from("users").delete().eq("id", userId)
 
     if (error) {
       throw error
     }
-
-    // Also delete the user from auth
-    await supabase.auth.admin.deleteUser(userId)
 
     return NextResponse.json({ success: true })
   } catch (error) {

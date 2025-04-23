@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fetchCompleted = true; // Mark as completed after await
 
       if (profileError) {
-        // If profile not found, it might not be an error (e.g., during signup)
+         // If profile not found, it might not be an error (e.g., during signup)
         if (profileError.code !== 'PGRST116') { 
           console.error('[AuthProvider] Supabase error fetching user profile:', profileError.message, { code: profileError.code, details: profileError.details, hint: profileError.hint });
           setError(new Error(`Profile fetch failed: ${profileError.message}`)); // Set specific error
@@ -140,12 +140,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUserProfile]);
 
   const signOut = async () => {
-    setUser(null)
-    setIsGoogleConnected(false)
-    setLoading(true)
     try {
       console.log("AuthProvider: Signing out...");
+      
+      // Call Supabase signOut first
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
         console.error("AuthProvider: Sign out error:", error);
       } else {
@@ -154,7 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch(e) {
       console.error("AuthProvider: Exception during sign out:", e);
     } finally {
-       router.push(PAGE_ROUTES.HOME);
+      // Always redirect to home page with a hard refresh regardless of errors
+      window.location.href = '/';
     }
   }
 

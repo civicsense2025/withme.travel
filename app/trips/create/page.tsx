@@ -60,15 +60,27 @@ interface Trip {
   // Add any other relevant schema fields
 }
 
-// Updated Steps Array
+// Updated Steps Array with added emojis
 const steps = [
-  { id: "details", title: "Trip Details" }, // Renamed Step 0
-  { id: "dates", title: "Dates" },           // Now Step 1
-  { id: "travelers", title: "Travel Buddies" }, // Now Step 2
-  { id: "vibe", title: "Trip Vibe" },        // Now Step 3
-  { id: "budget", title: "Budget Range" },    // Now Step 4
-  { id: "privacy", title: "Privacy Settings" }, // Now Step 5
+  { id: "details", title: "trip details", emoji: "📝" }, 
+  { id: "dates", title: "dates", emoji: "📅" }, 
+  { id: "travelers", title: "travel buddies", emoji: "👥" }, 
+  { id: "vibe", title: "trip vibe", emoji: "✨" }, 
+  { id: "budget", title: "budget range", emoji: "💰" }, 
+  { id: "privacy", title: "privacy settings", emoji: "🔒" }, 
 ]
+
+// Add decorative shape component
+const DecorativeShape = ({ className = "", variant = "1" }: { className?: string, variant?: string }) => {
+  const shapes = {
+    "1": <div className={`absolute ${className} w-6 h-6 rounded-full bg-travel-pink/30 animate-float-slow`} />,
+    "2": <div className={`absolute ${className} w-8 h-8 rounded-md rotate-45 bg-travel-yellow/20 animate-float`} />,
+    "3": <div className={`absolute ${className} w-5 h-5 rounded-sm bg-travel-mint/30 animate-pulse`} />,
+    "4": <div className={`absolute ${className} w-4 h-4 rounded-full bg-travel-purple/20 animate-bounce-slow`} />,
+    "5": <div className={`absolute ${className} w-7 h-7 rounded-tr-2xl rounded-bl-2xl bg-travel-peach/20 animate-spin-slow`} />,
+  };
+  return shapes[variant as keyof typeof shapes] || shapes["1"];
+};
 
 function CreateTripPageContent() {
   const [currentStep, setCurrentStep] = useState(0)
@@ -239,38 +251,54 @@ function CreateTripPageContent() {
     setLoading(true)
     setError(null) // Reset any previous errors
     
+    // Validate required fields before constructing payload
+    if (!tripName.trim()) {
+      setError("Trip name is required.")
+      setLoading(false)
+      return
+    }
+    if (!slug.trim()) {
+      setError("Trip URL name (slug) is required.")
+      setLoading(false)
+      return
+    }
+    if (!destination || !destination.id || !destination.name) {
+      setError("A valid destination must be selected.")
+      setLoading(false)
+      return
+    }
+
+    // Simple profanity/hate speech check (replace with more robust solution if needed)
+    const forbiddenWords = ["hate", "kill", "profane"]; // Example list
+    const checkString = `${tripName.toLowerCase()} ${slug.toLowerCase()} ${description.toLowerCase()}`;
+    if (forbiddenWords.some(word => checkString.includes(word))) {
+       setError("Trip name, slug, or description contains inappropriate content.");
+       setLoading(false);
+       return;
+    }
+
     try {
-      // Ensure destination_name is included
+      // Construct tripData only after validation passes
       const tripData: Partial<Trip> = {
-        name: tripName,
-        slug: slug,
-        description: description,
-        destination_id: destination?.id,
-        destination_name: destination?.name, // Make sure this is correct
-        start_date: dateOption === "specific" ? startDate?.toISOString() : null,
-        end_date: dateOption === "specific" ? endDate?.toISOString() : null,
+        name: tripName.trim(),
+        slug: slug.trim(),
+        description: description.trim(),
+        destination_id: destination.id, // Now guaranteed to exist
+        destination_name: destination.name, // Now guaranteed to exist
+        start_date: dateOption === "specific" ? (startDate ? startDate.toISOString() : null) : null,
+        end_date: dateOption === "specific" ? (endDate ? endDate.toISOString() : null) : null,
         date_flexibility: dateOption === "specific" ? "fixed" : dateOption,
-        travelers_count: Number.parseInt(travelers) || 0,
-        vibe,
-        budget,
+        travelers_count: Number.parseInt(travelers) || 1, // Default to 1 traveler if parsing fails or empty
+        vibe: vibe.trim(),
+        budget: budget.trim(),
         is_public: isPublic,
-        created_by: user.id, // This is set by the function now
+        // created_by is handled by the SQL function
       }
 
-      // Simple profanity/hate speech check (replace with more robust solution if needed)
-      const forbiddenWords = ["hate", "kill", "profane"]; // Example list
-      const checkString = `${tripName.toLowerCase()} ${slug.toLowerCase()} ${description.toLowerCase()}`;
-      if (forbiddenWords.some(word => checkString.includes(word))) {
-         setError("Trip name, slug, or description contains inappropriate content.");
-         setLoading(false);
-         return;
-      }
-
-      console.log("Attempting to insert trip data:", tripData)
-      console.log("User ID:", user.id)
+      console.log("Submitting trip data:", JSON.stringify(tripData, null, 2));
+      console.log("User ID:", user.id);
 
       // Use a single API endpoint to create the trip and add the creator as a member
-      // This avoids the RLS policy recursion by handling both operations server-side
       const response = await fetch("/api/trips/create", {
         method: "POST",
         headers: {
@@ -285,25 +313,33 @@ function CreateTripPageContent() {
       const responseData = await response.json();
 
       if (!response.ok) {
-        console.error("Error creating trip:", responseData);
-        setError(responseData.error || "Failed to create trip");
+        console.error("Error creating trip - Response:", responseData);
+        // Use the more specific error from the API/SQL function if available
+        setError(responseData.error || `Failed to create trip (Status: ${response.status})`);
+        // Optionally log details if present
+        if (responseData.details) {
+          console.error("Error details:", responseData.details);
+        }
+        setLoading(false); // Ensure loading stops on error
         return;
       }
 
-      const { tripId } = responseData;
-      console.log("Trip created successfully with ID:", tripId);
+      // Success: Use the redirectUrl from the response
+      const { tripId, redirectUrl } = responseData;
+      console.log(`Trip created successfully. ID: ${tripId}. Redirecting to: ${redirectUrl}`);
+      router.push(redirectUrl || `/trips/${tripId}`); // Fallback just in case
 
-      // 3. Redirect to success page
-      router.push(`/trips/create/success?id=${tripId}`);
     } catch (error: any) {
-      console.error("Error during trip creation process:", error);
-      setError(error?.message || "An unexpected error occurred. Please try again.");
+      console.error("Error during trip creation fetch process:", error);
+      setError(error?.message || "An unexpected network error occurred. Please try again.");
       
       if (error && typeof error === 'object') {
         console.error("Detailed error:", error);
       }
     } finally {
-      setLoading(false);
+      // Ensure loading is always set to false, even if redirect happens quickly
+      // Use a small delay to allow UI to update before potentially navigating away
+      setTimeout(() => setLoading(false), 100);
     }
   }
 
@@ -702,18 +738,50 @@ function CreateTripPageContent() {
   }
 
   return (
-    <div className="container max-w-5xl pt-12 pb-20">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Plan a new trip</h1>
-        <p className="text-muted-foreground mt-2">
-          Let's get started by setting up your trip details.
+    <div className="container max-w-5xl pt-8 pb-20 relative overflow-hidden">
+      {/* Decorative shapes */}
+      <DecorativeShape className="-top-4 -right-8" variant="1" />
+      <DecorativeShape className="top-40 -left-10" variant="2" />
+      <DecorativeShape className="bottom-20 right-10" variant="3" />
+      <DecorativeShape className="bottom-40 left-20" variant="4" />
+      <DecorativeShape className="top-1/3 right-1/4" variant="5" />
+
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight lowercase">plan a new trip</h1>
+        <p className="text-muted-foreground mt-2 lowercase">
+          let's get started by setting up your trip details.
         </p>
+      </div>
+
+      {/* Mobile horizontal stepper - only shows on mobile */}
+      <div className="lg:hidden mb-6 overflow-x-auto pb-2">
+        <div className="flex space-x-1 min-w-max">
+          {steps.map((step, index) => (
+            <div 
+              key={step.id}
+              className={`flex flex-col items-center justify-center p-2 ${
+                index <= currentStep ? "cursor-pointer" : "opacity-50"
+              }`}
+              onClick={() => handleStepJump(index)}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white mb-1 text-xs
+                ${index < currentStep ? "bg-green-500" : index === currentStep ? "bg-travel-purple" : "bg-gray-300"}`}>
+                {index < currentStep ? "✓" : step.emoji}
+              </div>
+              <p className="text-[10px] font-medium text-center lowercase whitespace-nowrap">{step.title}</p>
+              {index < steps.length - 1 && (
+                <div className="absolute hidden">→</div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <Card className="w-full lg:w-3/4">
           <CardHeader>
-            <CardTitle className="lowercase text-travel-purple">
+            <CardTitle className="lowercase flex items-center gap-2 text-travel-purple">
+              <span className="lg:hidden">{steps[currentStep].emoji}</span>
               {steps[currentStep].title}
             </CardTitle>
           </CardHeader>
@@ -761,15 +829,16 @@ function CreateTripPageContent() {
           </CardFooter>
         </Card>
 
+        {/* Desktop progress sidebar - only shows on large screens */}
         <motion.div 
-          className="w-full lg:w-1/4"
+          className="hidden lg:block w-full lg:w-1/4"
           initial="hidden"
           animate="visible"
           variants={fadeIn}
         >
           <Card>
             <CardHeader>
-              <CardTitle className="lowercase font-semibold">Progress</CardTitle>
+              <CardTitle className="lowercase font-semibold">progress</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {steps.map((step, index) => (
@@ -787,12 +856,12 @@ function CreateTripPageContent() {
                     </motion.div>
                   ) : index === currentStep ? (
                     <div className="h-5 w-5 rounded-full bg-travel-purple flex items-center justify-center text-white text-xs">
-                      {index + 1}
+                      {step.emoji}
                     </div>
                   ) : (
                     <CircleDashed className="h-5 w-5 text-muted-foreground" />
                   )}
-                  <p className="text-sm">{step.title}</p>
+                  <p className="text-sm lowercase">{step.title}</p>
                 </motion.div>
               ))}
             </CardContent>
