@@ -9,27 +9,19 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip"
-import { createClient } from "@/utils/supabase/client"
 import { useTheme } from "next-themes"
 import { Logo } from "@/components/logo"
 import { useSearch } from "@/contexts/search-context"
 import { useAuth } from "@/components/auth-provider"
 import { PAGE_ROUTES, THEME } from "@/utils/constants"
+import { UserNav } from "@/components/layout/user-nav"
 
 // Create a client-only wrapper for the tooltip component
 function ClientOnlyTooltip({ children, text }: { children: React.ReactNode, text: string }) {
@@ -60,7 +52,7 @@ function ClientOnlyTooltip({ children, text }: { children: React.ReactNode, text
 export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, isLoading } = useAuth()
   const isAdmin = profile?.is_admin
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -68,7 +60,6 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     await signOut()
-    // Router push is handled inside signOut function in auth-provider
   }
 
   const toggleMenu = () => {
@@ -87,6 +78,17 @@ export function Navbar() {
     return pathname === path
   }
 
+  // Placeholder for user-specific items while loading
+  const LoadingUserNavPlaceholder = () => (
+    <div className="flex items-center gap-4">
+      <Skeleton className="h-5 w-16 rounded" />
+    </div>
+  );
+  
+  const LoadingUserAvatarPlaceholder = () => (
+    <Skeleton className="h-8 w-8 rounded-full" />
+  );
+
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="flex h-16 items-center justify-between py-4 px-3 sm:px-4 md:container md:px-6">
@@ -96,17 +98,30 @@ export function Navbar() {
           </div>
 
           {/* Desktop Navigation - hidden on mobile */}
-          <nav className="hidden md:flex gap-6">
-            {user && (
-              <Link
-                href="/trips"
-                className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                  isActive("/trips") ? "text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                My Trips
-              </Link>
-            )}
+          <nav className="hidden md:flex gap-6 items-center">
+            {isLoading ? (
+               <Skeleton className="h-5 w-16 rounded" /> 
+            ) : user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
+                    isActive("/dashboard") ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/trips"
+                  className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
+                    isActive("/trips") ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  My Trips
+                </Link>
+              </>
+            ) : null }
+            
             <Link
               href={PAGE_ROUTES.DESTINATIONS}
               className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
@@ -152,11 +167,27 @@ export function Navbar() {
           </div>
 
           {/* Plan a trip button - visible on all screens */}
-          <Link href={user ? "/trips/create" : "/login?redirect=/trips/create"}>
-            <ClientOnlyTooltip text={user ? "Plan a new trip" : "You need to log in to plan a trip"}>
-              <Button className="lowercase rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8">
-                <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                <span>new trip</span>
+          <Link href={isLoading ? "#" : (user ? "/trips/create" : "/login?redirect=/trips/create")}>
+            <ClientOnlyTooltip text={isLoading ? "Loading..." : (user ? "Plan a new trip" : "login to manage your trips")}>
+              <Button 
+                disabled={isLoading}
+                className="
+                  relative overflow-hidden
+                  lowercase rounded-full 
+                  bg-travel-purple hover:bg-purple-400 text-purple-900 
+                  text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8 
+                  animate-pulse-soft-scale 
+                  before:absolute before:inset-0 before:bg-shimmer-gradient 
+                  before:bg-no-repeat before:bg-200% 
+                  before:animate-shimmer
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple
+                  disabled:opacity-70 disabled:cursor-not-allowed
+                "
+              >
+                <span className="relative z-10 flex items-center">
+                  <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                  <span>manage my trips</span>
+                </span>
               </Button>
             </ClientOnlyTooltip>
           </Link>
@@ -172,83 +203,14 @@ export function Navbar() {
             {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
 
-          {/* User dropdown - hidden on mobile */}
-          {user ? (
-            <div className="hidden md:flex items-center gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || 'User'} />
-                      <AvatarFallback>{user.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                      <Link href="/trips" onClick={closeMenu}>
-                        <Map className="mr-2 h-4 w-4" />
-                        <span className="lowercase">my trips</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/itineraries" onClick={closeMenu}>
-                        <Map className="mr-2 h-4 w-4" />
-                        <span className="lowercase">itineraries</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/saved" onClick={closeMenu}>
-                        <Bookmark className="mr-2 h-4 w-4" />
-                        <span className="lowercase">saved items</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={PAGE_ROUTES.SETTINGS}>
-                        <User className="mr-2 h-4 w-4" />
-                        <span className="lowercase">account</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={PAGE_ROUTES.CREATE_TRIP}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        <span className="lowercase">new trip</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    {isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span className="lowercase">admin</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span className="lowercase">Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ) : (
-            <div className="hidden md:flex items-center gap-4">
-              {/* <Button asChild variant="outline" size="sm">
-                <Link href="/login?redirect=/trips/create">Login</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/signup?redirect=/trips/create">Sign Up</Link>
-              </Button> */}
-            </div>
-          )}
+          {/* User dropdown - hidden on mobile, now using UserNav component */}
+          <div className="hidden md:flex items-center gap-4">
+            {isLoading ? (
+              <LoadingUserAvatarPlaceholder />
+            ) : user ? (
+              <UserNav />
+            ) : null }
+          </div>
         </div>
       </div>
 
@@ -275,21 +237,36 @@ export function Navbar() {
               key="mobile-menu-content"
             >
               <div className="container py-6 h-full flex flex-col">
-                {/* If user is logged in, show user info at top of mobile menu */}
-                {user && (
-                  <div className="flex items-center gap-4 pb-6 border-b mb-6">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || 'User'} />
-                      <AvatarFallback>{user.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{user.user_metadata?.name || user.email}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                    </div>
+                {isLoading ? (
+                   <div className="pb-6 border-b mb-6">
+                     <Skeleton className="h-8 w-full rounded-full" />
+                   </div>
+                 ) : !user && (
+                  <div className="pb-6 border-b mb-6">
+                    <Link href="/login?redirect=/trips/create">
+                      <Button 
+                        className="
+                          relative overflow-hidden w-full
+                          lowercase rounded-full 
+                          bg-travel-purple hover:bg-purple-400 text-purple-900 
+                          text-sm px-3 py-1 h-8
+                          animate-pulse-soft-scale 
+                          before:absolute before:inset-0 before:bg-shimmer-gradient 
+                          before:bg-no-repeat before:bg-200% 
+                          before:animate-shimmer
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple
+                        "
+                        onClick={closeMenu}
+                      >
+                        <span className="relative z-10 flex items-center justify-center">
+                          <PlusCircle className="h-3.5 w-3.5 mr-1" />
+                          <span>start planning your trip</span>
+                        </span>
+                      </Button>
+                    </Link>
                   </div>
                 )}
 
-                {/* Search button - shown only in mobile menu */}
                 <Button
                   variant="outline"
                   size="default"
@@ -304,29 +281,38 @@ export function Navbar() {
                 </Button>
 
                 <nav className="flex flex-col space-y-6 flex-grow">
-                  {user && (
-                    <Link
-                      href="/trips"
-                      className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                        isActive("/trips") ? "text-foreground" : "text-muted-foreground"
-                      }`}
-                      onClick={closeMenu}
-                    >
-                      My Trips
-                    </Link>
-                  )}
-                  {user && (
-                    <Link
-                      href="/saved"
-                      className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                        isActive("/saved") ? "text-foreground" : "text-muted-foreground"
-                      }`}
-                      onClick={closeMenu}
-                    >
-                      <Bookmark className="inline-block mr-1 h-3.5 w-3.5" />
-                      Saved Items
-                    </Link>
-                  )}
+                   {!isLoading && user && (
+                    <>
+                      <Link
+                        href="/dashboard"
+                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
+                          isActive("/dashboard") ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                        onClick={closeMenu}
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/trips"
+                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
+                          isActive("/trips") ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                        onClick={closeMenu}
+                      >
+                        My Trips
+                      </Link>
+                      <Link
+                        href="/saved"
+                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
+                          isActive("/saved") ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                        onClick={closeMenu}
+                      >
+                        <Bookmark className="inline-block mr-1 h-3.5 w-3.5" />
+                        Saved Items
+                      </Link>
+                    </>
+                   )}
                   <Link
                     href={PAGE_ROUTES.DESTINATIONS}
                     className={`text-sm font-medium transition-colors hover:text-travel-purple lowercase ${
@@ -354,34 +340,11 @@ export function Navbar() {
                   >
                     support us
                   </Link>
-                  {!user && (
-                    <>
-                      {/* Remove these from mobile menu as well */}
-                      {/* <Link
-                        href="/login?redirect=/trips/create"
-                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                          isActive("/login") ? "text-foreground" : "text-muted-foreground"
-                        }`}
-                        onClick={closeMenu}
-                      >
-                        log in
-                      </Link>
-                      <Link
-                        href="/signup?redirect=/trips/create"
-                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                          isActive("/signup") ? "text-foreground" : "text-muted-foreground"
-                        }`}
-                        onClick={closeMenu}
-                      >
-                        sign up
-                      </Link> */}
-                    </>
-                  )}
-                  {isAdmin && (
+                  {!isLoading && isAdmin && (
                     <Link
-                      href="/admin"
+                      href="/admin/dashboard"
                       className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                        isActive("/admin") ? "text-foreground" : "text-muted-foreground"
+                        isActive("/admin/dashboard") ? "text-foreground" : "text-muted-foreground"
                       }`}
                       onClick={closeMenu}
                     >
@@ -389,7 +352,6 @@ export function Navbar() {
                     </Link>
                   )}
 
-                  {/* Theme toggle in mobile menu */}
                   <div className="flex items-center justify-between pt-2">
                     <span className="text-sm font-medium lowercase">Theme</span>
                     <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -398,15 +360,42 @@ export function Navbar() {
                     </Button>
                   </div>
 
-                  {/* Spacer to push logout to bottom */}
                   <div className="flex-grow"></div>
 
-                  {/* Log out button at bottom for logged in users */}
-                  {user && (
-                    <div className="pt-4 mt-4 border-t">
+                  {isLoading ? (
+                    <div className="pt-4 mt-auto border-t">
+                      <div className="flex items-center gap-3 p-2">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="flex flex-col gap-1">
+                           <Skeleton className="h-4 w-24 rounded" />
+                           <Skeleton className="h-3 w-16 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : user && (
+                    <div className="pt-4 mt-auto border-t">
+                      <Link 
+                        href={PAGE_ROUTES.SETTINGS}
+                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                        onClick={closeMenu}
+                      >
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || user?.email || 'User'} />
+                          <AvatarFallback>{profile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col text-sm">
+                          <span className="font-medium truncate">{profile?.name || user?.email}</span>
+                          <span className="text-muted-foreground">view account</span>
+                        </div>
+                      </Link>
+                    </div>
+                  )}
+
+                  {!isLoading && user && (
+                    <div className={'pt-2'}>
                       <Button
                         variant="ghost"
-                        className="w-full justify-start text-sm font-medium text-destructive lowercase"
+                        className="w-full justify-start text-sm font-medium text-destructive lowercase p-2 hover:bg-destructive/10 focus:bg-destructive/10"
                         onClick={() => {
                           handleSignOut()
                           closeMenu()

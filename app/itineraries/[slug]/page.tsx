@@ -13,6 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UseTemplateButton } from "@/components/use-template-button"
 import { ItineraryShareButton } from "@/components/itinerary/itinerary-share-button"
 
+// Force dynamic rendering for this page since it uses auth and data fetching
+export const dynamic = 'force-dynamic';
+
 // Define the structure for a single itinerary template (matching the DB query)
 interface ItineraryTemplate {
   id: string
@@ -62,8 +65,7 @@ async function getItineraryBySlug(slug: string): Promise<ItineraryTemplate | nul
 
 // Generate Metadata based on fetched data
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug } = params
-  const itinerary = await getItineraryBySlug(slug)
+  const itinerary = await getItineraryBySlug(params.slug)
 
   if (!itinerary) {
     return {
@@ -80,8 +82,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 // The Page Component itself - now async
 export default async function ItineraryPage({ params }: { params: { slug: string } }) {
-  const { slug } = params
-  const itinerary = await getItineraryBySlug(slug)
+  const itinerary = await getItineraryBySlug(params.slug)
 
   if (!itinerary) {
     notFound()
@@ -190,11 +191,14 @@ export default async function ItineraryPage({ params }: { params: { slug: string
         <div className="lg:col-span-1 space-y-6">
           <Card className="bg-gradient-to-br from-travel-blue/10 to-travel-purple/10">
             <CardHeader>
-              <CardTitle className="lowercase">Use this Template</CardTitle>
+              <CardTitle className="lowercase">Use Template</CardTitle>
               <CardDescription>Start planning your trip based on this itinerary.</CardDescription>
             </CardHeader>
             <CardContent>
-              <UseTemplateButton destinationId={itinerary.destination_id} />
+              <UseTemplateButton 
+                templateId={itinerary.id} 
+                className="w-full lowercase bg-travel-purple hover:bg-purple-400 text-purple-900"
+              />
             </CardContent>
           </Card>
 

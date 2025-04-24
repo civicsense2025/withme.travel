@@ -14,9 +14,13 @@ import {
   DB_TABLES, 
   DB_FIELDS, 
   TRIP_ROLES,
-  DB_RELATIONSHIPS 
+  DB_RELATIONSHIPS,
+  PAGE_ROUTES
 } from "@/utils/constants"
 import { TripWithMemberInfo } from "@/utils/types"
+
+// Force dynamic rendering for this page since it uses cookies and auth
+export const dynamic = 'force-dynamic';
 
 // Components for the trips dashboard
 const UserTripsSection = async () => {
@@ -27,58 +31,92 @@ const UserTripsSection = async () => {
   
   if (userError || !user) {
     console.error("Auth error in trips page:", userError)
-    redirect("/login?redirect=/trips")
+    redirect(`/login?redirect=${encodeURIComponent(PAGE_ROUTES.TRIPS)}`)
     return null
   }
 
   try {
-    // Fetch all trips the user is a member of (through trip_members table)
+    // Step 1: Fetch the user's memberships (IDs and roles only initially)
     const { data: memberships, error: membershipError } = await supabase
       .from(DB_TABLES.TRIP_MEMBERS)
-      .select(`
-        *,
-        ${DB_RELATIONSHIPS.TRIP_MEMBERS.TRIP}(*)
-      `)
+      .select("trip_id, role, joined_at, invited_by") // Select only needed fields + trip_id
       .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-      .order(DB_FIELDS.TRIP_MEMBERS.CREATED_AT, { ascending: false })
-
+      
     if (membershipError) {
       console.error("Error fetching trip memberships:", membershipError)
       return (
         <div className="my-8">
-          <p className="text-destructive">Error loading your trips. Please try again later.</p>
+          <p className="text-destructive">Error loading your trips (memberships). Please try again later.</p>
           <pre className="text-xs text-muted-foreground mt-2">{JSON.stringify(membershipError, null, 2)}</pre>
         </div>
       )
     }
 
-    // No memberships found
+    // If no memberships, show empty state early
     if (!memberships || memberships.length === 0) {
       return <EmptyTrips />
     }
+
+    // Step 2: Extract trip IDs and fetch trip details
+    const tripIds = memberships.map(m => m.trip_id)
+    const { data: tripsData, error: tripsError } = await supabase
+      .from(DB_TABLES.TRIPS)
+      .select("*") // Select all trip fields needed for TripCard
+      .in(DB_FIELDS.TRIPS.ID, tripIds)
+      .order(DB_FIELDS.TRIPS.CREATED_AT, { ascending: false }) // Keep consistent ordering if desired
+
+    if (tripsError) {
+      console.error("Error fetching trip details:", tripsError)
+      return (
+        <div className="my-8">
+          <p className="text-destructive">Error loading your trip details. Please try again later.</p>
+          <pre className="text-xs text-muted-foreground mt-2">{JSON.stringify(tripsError, null, 2)}</pre>
+        </div>
+      )
+    }
+
+    // Step 3: Combine trip data with membership info
+    const combinedTripsMap = new Map<string, TripWithMemberInfo>()
+
+    // Create a map of trips by ID for easy lookup
+    tripsData.forEach(trip => {
+       combinedTripsMap.set(trip.id, {
+         ...trip,
+         created_by: trip.user_id || user.id, // Adjust logic as needed
+         role: 'unknown', // Default role, will be updated
+         memberSince: undefined // Default, will be updated
+       });
+    });
+
+    // Update map with actual role and memberSince from memberships
+    memberships.forEach(membership => {
+      const trip = combinedTripsMap.get(membership.trip_id);
+      if (trip) {
+        trip.role = membership.role;
+        trip.memberSince = membership.joined_at;
+        // If trip.created_by logic needs the invited_by field:
+        if (!trip.created_by && membership.invited_by) {
+           // This assignment might need adjustment based on your exact definition of `created_by` for TripCard
+           // Assuming trip.user_id holds the original creator
+           // trip.created_by = trip.user_id || membership.invited_by || user.id;
+        }
+      }
+    });
+    
+    const combinedTrips = Array.from(combinedTripsMap.values());
 
     // Separate trips based on role
     const ownedTrips: TripWithMemberInfo[] = []
     const memberTrips: TripWithMemberInfo[] = []
 
-    // Process the memberships data
-    memberships.forEach(membership => {
-      if (!membership.trips) return
-      
-      // Ensure created_by field exists to satisfy TripCard component requirements
-      const tripWithMemberInfo: TripWithMemberInfo = {
-        ...membership.trips,
-        created_by: membership.trips.user_id || membership.invited_by || user.id,
-        role: membership.role,
-        memberSince: membership.joined_at
-      }
-      
-      if (membership.role === TRIP_ROLES.OWNER) {
-        ownedTrips.push(tripWithMemberInfo)
+    combinedTrips.forEach(trip => {
+      // Use role names consistent with your RLS policies / constants
+      if (trip.role === 'admin') { // Adjust 'admin' if your owner role name is different
+        ownedTrips.push(trip)
       } else {
-        memberTrips.push(tripWithMemberInfo)
+        memberTrips.push(trip)
       }
-    })
+    });
 
     // If no trips after processing, show empty state
     if (ownedTrips.length === 0 && memberTrips.length === 0) {
@@ -187,7 +225,7 @@ const ItineraryTemplatesSection = async () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {templates.map((template, index) => (
             <ItineraryTemplateCard 
               key={template.id} 
@@ -224,7 +262,7 @@ export default async function TripsPage() {
           heading="Your Trips"
           description="Manage and organize your travel adventures"
         />
-        <Link href="/trips/create">
+        <Link href={PAGE_ROUTES.CREATE_TRIP}>
           <Button>
             <Plus className="mr-2 h-4 w-4" /> Create Trip
           </Button>

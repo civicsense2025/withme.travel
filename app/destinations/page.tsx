@@ -21,6 +21,7 @@ interface Destination {
   continent: string
   description: string | null
   image_url: string | null
+  emoji?: string | null
   cuisine_rating: number
   nightlife_rating: number
   cultural_attractions: number
@@ -62,11 +63,11 @@ export default function DestinationsPage() {
         throw new Error("Failed to fetch destinations")
       }
 
-      const data = await response.json()
+      const { destinations } = await response.json()
       
       if (refresh) {
-        setDestinations(data.destinations || [])
-        setFilteredDestinations(data.destinations || [])
+        setDestinations(destinations || [])
+        setFilteredDestinations(destinations || [])
         setPage(1)
       }
     } catch (error) {
@@ -94,10 +95,10 @@ export default function DestinationsPage() {
       const query = debouncedSearchQuery.toLowerCase()
       filtered = filtered.filter(
         (dest: Destination) =>
-          dest.city.toLowerCase().includes(query) ||
-          dest.country.toLowerCase().includes(query) ||
-          (dest.state_province && dest.state_province.toLowerCase().includes(query)) ||
-          dest.continent.toLowerCase().includes(query),
+          (dest.city?.toLowerCase() || "").includes(query) ||
+          (dest.country?.toLowerCase() || "").includes(query) ||
+          (dest.state_province?.toLowerCase() || "").includes(query) ||
+          (dest.continent?.toLowerCase() || "").includes(query),
       )
     }
 
@@ -134,37 +135,37 @@ export default function DestinationsPage() {
   ).sort();
 
   return (
-    <div className="container py-8">
+    <div className="container py-12">
       <PageHeader
-        heading="explore destinations"
-        description="discover amazing places around the world for your next adventure"
+        heading="discover your next adventure"
+        description="explore authentic local experiences and hidden gems in cities around the world, curated by fellow travelers"
       />
 
-      <div className="flex flex-col md:flex-row gap-4 mt-8 mb-6">
+      <div className="flex flex-col md:flex-row gap-6 mt-12 mb-8">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="search destinations..."
+            placeholder="find your perfect destination..."
             className="pl-9 rounded-full"
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+        <div className="flex gap-3 overflow-x-auto pb-2 md:pb-0">
           <Button
             variant={continentFilter === null ? "default" : "outline"}
             size="sm"
-            className="lowercase rounded-full"
+            className="lowercase rounded-full whitespace-nowrap"
             onClick={() => setContinentFilter(null)}
           >
-            all
+            all regions
           </Button>
           {continents.map((continent) => (
             <Button
               key={continent}
               variant={continentFilter === continent ? "default" : "outline"}
               size="sm"
-              className="lowercase rounded-full"
+              className="lowercase rounded-full whitespace-nowrap"
               onClick={() => setContinentFilter(continent)}
             >
               {continent.toLowerCase()}
@@ -174,19 +175,19 @@ export default function DestinationsPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-3xl overflow-hidden h-64 bg-muted animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="rounded-3xl overflow-hidden h-48 bg-muted animate-pulse" />
           ))}
         </div>
       ) : filteredDestinations.length === 0 ? (
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold lowercase">no destinations found</h2>
-          <p className="text-muted-foreground mt-2">try adjusting your search or filter criteria</p>
+        <div className="text-center py-16">
+          <h2 className="text-2xl font-medium lowercase">no destinations found</h2>
+          <p className="text-muted-foreground mt-3">try adjusting your search or exploring different regions</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {displayedDestinations.map((destination: Destination) => (
               <motion.div
                 key={destination.id}
@@ -194,31 +195,27 @@ export default function DestinationsPage() {
                 initial="initial"
                 animate="animate"
                 transition={{ duration: 0.3, delay: 0.1 }}
+                className="h-full"
               >
                 <DestinationCard 
-                  destination={{
-                    id: destination.id,
-                    city: destination.city,
-                    country: destination.country,
-                    image_url: destination.image_url,
-                    description: destination.description,
-                    slug: destination.city.toLowerCase().replace(/\s+/g, "-"),
-                  }}
+                  destination={destination}
+                  className="h-full"
                 />
               </motion.div>
             ))}
           </div>
-          
+
           {hasMore && (
-            <div className="flex justify-center mt-8">
-              <Button 
-                variant="outline" 
-                className="gap-2"
+            <div className="mt-12 text-center">
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full lowercase"
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
               >
-                {isLoadingMore ? "Loading..." : "Load More"}
-                {!isLoadingMore && <ChevronDown className="h-4 w-4" />}
+                {isLoadingMore ? "loading more..." : "discover more destinations"}
+                <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </div>
           )}

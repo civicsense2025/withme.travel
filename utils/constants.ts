@@ -3,13 +3,30 @@ export const DB_TABLES = {
   TRIPS: 'trips',
   TRIP_MEMBERS: 'trip_members',
   PROFILES: 'profiles',
+  USERS: 'users',
   DESTINATIONS: 'destinations',
   ITINERARY_ITEMS: 'itinerary_items',
-  COLLABORATIVE_NOTES: 'collaborative_notes',
+  PLACES: 'places',
+  COLLABORATIVE_NOTES: 'trip_notes',
   BUDGET_ITEMS: 'budget_items',
   LIBRARY_TEMPLATES: 'library_templates',
   PERMISSION_REQUESTS: 'permission_requests',
   REFERRALS: 'referrals',
+  ITINERARY_TEMPLATES: 'itinerary_templates',
+  TEMPLATE_SECTIONS: 'template_sections',
+  TEMPLATE_ACTIVITIES: 'template_activities',
+  TRIP_TEMPLATE_USES: 'trip_template_uses',
+  LIKES: 'likes',
+  SPLITWISE_CONNECTIONS: 'splitwise_connections',
+  USER_PRESENCE: 'user_presence',
+  VOTES: 'votes',
+  ALBUMS: 'albums',
+  TRIP_IMAGES: 'trip_images',
+  IMAGE_METADATA: 'image_metadata',
+  INVITATIONS: 'invitations',
+  TAGS: 'tags',
+  TRIP_TAGS: 'trip_tags',
+  NOTE_TAGS: 'note_tags',
 } as const;
 
 // Database field names by table
@@ -20,7 +37,6 @@ export const DB_FIELDS = {
     NAME: 'name',
     START_DATE: 'start_date',
     END_DATE: 'end_date',
-    USER_ID: 'user_id', // Creator of the trip
     DESTINATION_ID: 'destination_id',
     DESTINATION_NAME: 'destination_name',
     TRAVELERS_COUNT: 'travelers_count',
@@ -41,6 +57,10 @@ export const DB_FIELDS = {
     VIEW_COUNT: 'view_count',
     USE_COUNT: 'use_count',
     TRIP_TYPE: 'trip_type',
+    CREATED_BY: 'created_by',
+    SPLITWISE_GROUP_ID: 'splitwise_group_id',
+    DESCRIPTION: 'description',
+    DURATION_DAYS: 'duration_days',
   },
   
   // Trip members table fields
@@ -128,6 +148,10 @@ export const DB_FIELDS = {
     LONGITUDE: 'longitude',
     TYPE: 'type',
     COVER_IMAGE_URL: 'cover_image_url',
+    DAY_NUMBER: 'day_number',
+    ESTIMATED_COST: 'estimated_cost',
+    CURRENCY: 'currency',
+    DURATION_MINUTES: 'duration_minutes',
   },
 
   // Collaborative notes table fields
@@ -181,13 +205,195 @@ export const DB_FIELDS = {
     CREATED_AT: 'created_at',
     STATUS: 'status',
   },
+
+  // Itinerary templates table fields
+  ITINERARY_TEMPLATES: {
+    ID: 'id',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    IMAGE_URL: 'image_url',
+    DESTINATION_ID: 'destination_id',
+    DURATION_DAYS: 'duration_days',
+    CATEGORY: 'category',
+    TAGS: 'tags',
+    IS_PUBLISHED: 'is_published',
+    CREATED_BY: 'created_by',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    TEMPLATE_TYPE: 'template_type',
+    SOURCE_TRIP_ID: 'source_trip_id',
+    VERSION: 'version',
+    COPIED_COUNT: 'copied_count',
+    LAST_COPIED_AT: 'last_copied_at',
+    METADATA: 'metadata',
+    SLUG: 'slug',
+  },
+
+  // Template sections table fields
+  TEMPLATE_SECTIONS: {
+    ID: 'id',
+    TEMPLATE_ID: 'template_id',
+    DAY_NUMBER: 'day_number',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    POSITION: 'position',
+    METADATA: 'metadata',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+
+  // Template activities table fields
+  TEMPLATE_ACTIVITIES: {
+    ID: 'id',
+    SECTION_ID: 'section_id',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    LOCATION: 'location',
+    DURATION_MINUTES: 'duration_minutes',
+    START_TIME: 'start_time',
+    POSITION: 'position',
+    CATEGORY: 'category',
+    METADATA: 'metadata',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+
+  // Trip template uses table fields
+  TRIP_TEMPLATE_USES: {
+    ID: 'id',
+    TRIP_ID: 'trip_id',
+    TEMPLATE_ID: 'template_id',
+    APPLIED_AT: 'applied_at',
+    APPLIED_BY: 'applied_by',
+    VERSION_USED: 'version_used',
+    MODIFICATIONS: 'modifications',
+  },
+
+  // Likes table fields
+  LIKES: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    ITEM_ID: 'item_id',
+    ITEM_TYPE: 'item_type',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+
+  // Splitwise connections table fields
+  SPLITWISE_CONNECTIONS: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    ACCESS_TOKEN: 'access_token',
+    REFRESH_TOKEN: 'refresh_token',
+    EXPIRES_AT: 'expires_at',
+    SPLITWISE_USER_ID: 'splitwise_user_id',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+
+  // User presence table fields
+  USER_PRESENCE: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    TRIP_ID: 'trip_id',
+    DOCUMENT_ID: 'document_id',
+    STATUS: 'status',
+    LAST_ACTIVE: 'last_active',
+  },
+
+  // Votes table fields
+  VOTES: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    ITINERARY_ITEM_ID: 'itinerary_item_id',
+    VOTE_TYPE: 'vote_type',
+    CREATED_AT: 'created_at',
+  },
+
+  // Albums table fields
+  ALBUMS: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+
+  // Trip images table fields
+  TRIP_IMAGES: {
+    ID: 'id',
+    TRIP_ID: 'trip_id',
+    ALBUM_ID: 'album_id',
+    FILE_NAME: 'file_name',
+    FILE_PATH: 'file_path',
+    CONTENT_TYPE: 'content_type',
+    SIZE_BYTES: 'size_bytes',
+    WIDTH: 'width',
+    HEIGHT: 'height',
+    DESCRIPTION: 'description',
+    CREATED_BY: 'created_by',
+    CREATED_AT: 'created_at',
+  },
+
+  // Image metadata table fields
+  IMAGE_METADATA: {
+    ID: 'id',
+    ENTITY_ID: 'entity_id',
+    ENTITY_TYPE: 'entity_type',
+    URL: 'url',
+    SOURCE: 'source',
+    SOURCE_ID: 'source_id',
+    ALT_TEXT: 'alt_text',
+    WIDTH: 'width',
+    HEIGHT: 'height',
+    FOCAL_POINT_X: 'focal_point_x',
+    FOCAL_POINT_Y: 'focal_point_y',
+    ATTRIBUTION: 'attribution',
+    LICENSE: 'license',
+    PHOTOGRAPHER_NAME: 'photographer_name',
+    PHOTOGRAPHER_URL: 'photographer_url',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+
+  // Invitations table fields
+  INVITATIONS: {
+    ID: 'id',
+    EMAIL: 'email',
+    TOKEN: 'token',
+    TRIP_ID: 'trip_id',
+    INVITED_BY: 'invited_by',
+    INVITATION_STATUS: 'invitation_status',
+    CREATED_AT: 'created_at',
+    EXPIRES_AT: 'expires_at',
+  },
+
+  TAGS: {
+    ID: 'id',
+    NAME: 'name',
+    CREATED_AT: 'created_at'
+  },
+
+  TRIP_TAGS: {
+    TRIP_ID: 'trip_id',
+    TAG_ID: 'tag_id',
+    ASSIGNED_AT: 'assigned_at'
+  },
+
+  // Added Note Tags fields
+  NOTE_TAGS: {
+    NOTE_ID: 'note_id',
+    TAG_ID: 'tag_id',
+    ASSIGNED_AT: 'assigned_at'
+  }
 } as const;
 
 // Trip member roles
 export const TRIP_ROLES = {
-  OWNER: 'owner',
   ADMIN: 'admin',
   EDITOR: 'editor',
+  CONTRIBUTOR: 'contributor',
   VIEWER: 'viewer',
 } as const;
 
@@ -207,7 +413,7 @@ export const DB_RELATIONSHIPS = {
     DESTINATION: `${DB_TABLES.DESTINATIONS}`,
     BUDGET: `${DB_TABLES.BUDGET_ITEMS}`,
     NOTES: `${DB_TABLES.COLLABORATIVE_NOTES}`,
-    CREATOR: `${DB_TABLES.PROFILES}:${DB_FIELDS.TRIPS.USER_ID}`,
+    CREATOR: `${DB_TABLES.PROFILES}:${DB_FIELDS.TRIPS.CREATED_BY}`,
   },
   
   // Relationships for the trip_members table
@@ -233,6 +439,74 @@ export const DB_RELATIONSHIPS = {
     TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.PERMISSION_REQUESTS.TRIP_ID}`,
     USER: `${DB_TABLES.PROFILES}:${DB_FIELDS.PERMISSION_REQUESTS.USER_ID}`,
   },
+
+  // Template relationships
+  ITINERARY_TEMPLATES: {
+    CREATOR: `${DB_TABLES.PROFILES}:${DB_FIELDS.ITINERARY_TEMPLATES.CREATED_BY}`,
+    DESTINATION: `${DB_TABLES.DESTINATIONS}:${DB_FIELDS.ITINERARY_TEMPLATES.DESTINATION_ID}`,
+    SOURCE_TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.ITINERARY_TEMPLATES.SOURCE_TRIP_ID}`,
+    SECTIONS: `${DB_TABLES.TEMPLATE_SECTIONS}`,
+  },
+
+  TEMPLATE_SECTIONS: {
+    TEMPLATE: `${DB_TABLES.ITINERARY_TEMPLATES}:${DB_FIELDS.TEMPLATE_SECTIONS.TEMPLATE_ID}`,
+    ACTIVITIES: `${DB_TABLES.TEMPLATE_ACTIVITIES}`,
+  },
+
+  TEMPLATE_ACTIVITIES: {
+    SECTION: `${DB_TABLES.TEMPLATE_SECTIONS}:${DB_FIELDS.TEMPLATE_ACTIVITIES.SECTION_ID}`,
+  },
+
+  TRIP_TEMPLATE_USES: {
+    TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.TRIP_TEMPLATE_USES.TRIP_ID}`,
+    TEMPLATE: `${DB_TABLES.ITINERARY_TEMPLATES}:${DB_FIELDS.TRIP_TEMPLATE_USES.TEMPLATE_ID}`,
+    APPLIED_BY_USER: `${DB_TABLES.PROFILES}:${DB_FIELDS.TRIP_TEMPLATE_USES.APPLIED_BY}`,
+  },
+
+  // Likes relationships
+  LIKES: {
+    USER: `${DB_TABLES.USERS}:${DB_FIELDS.LIKES.USER_ID}`,
+  },
+
+  // Splitwise connections relationships
+  SPLITWISE_CONNECTIONS: {
+    USER: `${DB_TABLES.USERS}:${DB_FIELDS.SPLITWISE_CONNECTIONS.USER_ID}`,
+  },
+
+  // User presence relationships
+  USER_PRESENCE: {
+    USER: `${DB_TABLES.USERS}:${DB_FIELDS.USER_PRESENCE.USER_ID}`,
+    TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.USER_PRESENCE.TRIP_ID}`,
+  },
+
+  // Votes relationships
+  VOTES: {
+    USER: `${DB_TABLES.PROFILES}:${DB_FIELDS.VOTES.USER_ID}`,
+    ITINERARY_ITEM: `${DB_TABLES.ITINERARY_ITEMS}:${DB_FIELDS.VOTES.ITINERARY_ITEM_ID}`,
+  },
+
+  // Albums relationships
+  ALBUMS: {
+    USER: `${DB_TABLES.USERS}:${DB_FIELDS.ALBUMS.USER_ID}`,
+  },
+
+  // Trip images relationships
+  TRIP_IMAGES: {
+    TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.TRIP_IMAGES.TRIP_ID}`,
+    ALBUM: `${DB_TABLES.ALBUMS}:${DB_FIELDS.TRIP_IMAGES.ALBUM_ID}`,
+    CREATOR: `${DB_TABLES.USERS}:${DB_FIELDS.TRIP_IMAGES.CREATED_BY}`,
+  },
+
+  // Image metadata relationships
+  IMAGE_METADATA: {
+    ENTITY: (type: string) => `${type}:${DB_FIELDS.IMAGE_METADATA.ENTITY_ID}`,
+  },
+
+  // Invitations relationships
+  INVITATIONS: {
+    TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.INVITATIONS.TRIP_ID}`,
+    INVITER: `${DB_TABLES.USERS}:${DB_FIELDS.INVITATIONS.INVITED_BY}`,
+  },
 } as const;
 
 // Database query examples using the constants
@@ -241,7 +515,7 @@ export const DB_QUERIES = {
   GET_USER_TRIPS: (userId: string) => ({
     table: DB_TABLES.TRIPS,
     select: '*',
-    filters: [{ field: DB_FIELDS.TRIPS.USER_ID, value: userId }],
+    filters: [{ field: DB_FIELDS.TRIPS.CREATED_BY, value: userId }],
     order: { field: DB_FIELDS.TRIPS.CREATED_AT, ascending: false },
   }),
   
@@ -295,6 +569,7 @@ export const API_ENDPOINTS = {
   ITINERARY: (tripId: string) => `/api/trips/${tripId}/itinerary`,
   ITINERARY_ITEM: (tripId: string, itemId: string) => `/api/trips/${tripId}/itinerary/${itemId}`,
   DESTINATIONS: '/api/destinations',
+  DESTINATION_SEARCH: (query: string) => `/api/destinations/search?query=${encodeURIComponent(query)}`,
   TRENDING_DESTINATIONS: '/api/destinations?trending=true',
   DESTINATION_BY_ID: (id: string) => `/api/destinations/${id}`,
   TEMPLATES: '/api/templates',
@@ -379,6 +654,15 @@ export const TEMPLATE_CATEGORIES = {
 
 export type TemplateCategory = typeof TEMPLATE_CATEGORIES[keyof typeof TEMPLATE_CATEGORIES];
 
+// Add template types
+export const TEMPLATE_TYPES = {
+  OFFICIAL: 'official',
+  USER_CREATED: 'user_created',
+  TRIP_BASED: 'trip_based',
+} as const;
+
+export type TemplateType = typeof TEMPLATE_TYPES[keyof typeof TEMPLATE_TYPES];
+
 // API Routes
 export const API_ROUTES = {
   TRIPS: "/api/trips",
@@ -396,8 +680,36 @@ export const API_ROUTES = {
   LIBRARY: "/api/library",
   LIBRARY_TEMPLATE: (id: string) => `/api/library/${id}`,
   USER_PROFILE: (id: string) => `/api/profiles/${id}`,
-  REFERRALS: "/api/referrals"
-};
+  REFERRALS: "/api/referrals",
+  ITINERARIES: "/api/itineraries",
+  ITINERARY_DETAILS: (slug: string) => `/api/itineraries/${slug}`,
+  TEMPLATES: "/api/templates",
+  TEMPLATE_DETAILS: (id: string) => `/api/templates/${id}`,
+  TEMPLATE_SECTIONS: (id: string) => `/api/templates/${id}/sections`,
+  TEMPLATE_ACTIVITIES: (templateId: string, sectionId: string) => 
+    `/api/templates/${templateId}/sections/${sectionId}/activities`,
+  APPLY_TEMPLATE: (tripId: string, templateId: string) => 
+    `/api/trips/${tripId}/apply-template/${templateId}`,
+  PLACES: "/api/places",
+  PLACE_DETAILS: (id: string) => `/api/places/${id}`,
+  PLACE_REVIEWS: (id: string) => `/api/places/${id}/reviews`,
+  TRIP_REVIEWS: "/api/trip-reviews",
+  DESTINATION_REVIEWS: (id: string) => `/api/destinations/${id}/reviews`,
+  AUTH_CHECK: "/api/auth/check",
+  TRIP_MEMBER_INVITE: (id: string) => `/api/trips/${id}/members/invite`,
+  TAGS: '/api/tags',
+  TRIP_TAGS: (id: string) => `/api/trips/${id}/tags`,
+  // Itinerary specific routes
+  ITINERARY_ITEM_VOTE: (tripId: string, itemId: string) => `/api/trips/${tripId}/itinerary/${itemId}/vote`,
+  TRIP_ITINERARY_REORDER: (tripId: string) => `/api/trips/${tripId}/itinerary/reorder`,
+  // Splitwise specific routes
+  SPLITWISE_AUTH: (tripId: string) => `/api/splitwise/auth?tripId=${tripId}`,
+  SPLITWISE_CALLBACK: "/api/splitwise/callback",
+  SPLITWISE_EXPENSES: (tripId: string) => `/api/splitwise/expenses?tripId=${tripId}`,
+  SPLITWISE_GROUPS: "/api/splitwise/groups",
+  SPLITWISE_LINK: "/api/splitwise/link",
+  SPLITWISE_IMPORT_CANDIDATES: (tripId: string) => `/api/splitwise/import-candidates?tripId=${tripId}`,
+} as const;
 
 // Page Routes
 export const PAGE_ROUTES = {
@@ -431,4 +743,121 @@ export const TIME_FORMATS = {
   INPUT_DATE: "yyyy-MM-dd",
   FULL_DATE: "EEEE, MMMM d, yyyy",
   SHORT_DATE: "MMM d"
-}; 
+};
+
+// Supabase foreign key relationship names
+export const FOREIGN_KEYS = {
+  // Users/Profiles relationships
+  TRIP_MEMBERS_USER_ID: 'trip_members_user_id_fkey',
+  TRIP_MEMBERS_INVITED_BY: 'trip_members_invited_by_fkey',
+  TRIP_NOTES_UPDATED_BY: 'trip_notes_updated_by_fkey',
+  TRIP_NOTES_USER_ID: 'trip_notes_user_id_fkey',
+  TRIPS_USER_ID: 'trips_user_id_fkey',
+  ITINERARY_ITEMS_CREATED_BY: 'itinerary_items_created_by_fkey',
+  BUDGET_ITEMS_CREATED_BY: 'budget_items_created_by_fkey',
+  BUDGET_ITEMS_PAID_BY: 'budget_items_paid_by_fkey',
+} as const;
+
+// Supabase query snippets for commonly used joins
+export const QUERY_SNIPPETS = {
+  // User joins
+  USER_BASIC: `id, name, email, avatar_url`,
+  
+  // Trip member joins
+  TRIP_MEMBER_WITH_USER: `
+    id,
+    role,
+    created_at,
+    joined_at,
+    user:users!${FOREIGN_KEYS.TRIP_MEMBERS_USER_ID}(
+      id,
+      name,
+      email,
+      avatar_url
+    ),
+    inviter:users!${FOREIGN_KEYS.TRIP_MEMBERS_INVITED_BY}(
+      id,
+      name,
+      email,
+      avatar_url
+    )
+  `,
+  
+  // Trip notes joins
+  TRIP_NOTE_WITH_USER: `
+    *,
+    updated_by_user:users!${FOREIGN_KEYS.TRIP_NOTES_UPDATED_BY}(
+      id, 
+      name, 
+      email, 
+      avatar_url
+    )
+  `,
+  
+  // Trip with creator join
+  TRIP_WITH_CREATOR: `
+    *,
+    creator:users!${FOREIGN_KEYS.TRIPS_USER_ID}(
+      id,
+      name,
+      email,
+      avatar_url
+    )
+  `,
+  
+  // Itinerary item with creator
+  ITINERARY_ITEM_WITH_CREATOR: `
+    *,
+    creator:users!${FOREIGN_KEYS.ITINERARY_ITEMS_CREATED_BY}(
+      id,
+      name,
+      email,
+      avatar_url
+    )
+  `,
+} as const;
+
+// Unsplash API Configuration
+export const UNSPLASH_CONFIG = {
+  API_URL: 'https://api.unsplash.com',
+  ACCESS_KEY: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || '',
+  SECRET_KEY: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_SECRET || '',
+  ENDPOINTS: {
+    SEARCH: '/search/photos',
+    RANDOM: '/photos/random',
+  },
+  DEFAULT_QUERY_PARAMS: {
+    orientation: 'landscape',
+    content_filter: 'high',
+  },
+} as const;
+
+// Image types
+export const IMAGE_TYPES = {
+  DESTINATION: 'destination',
+  TRIP_COVER: 'trip_cover',
+  USER_AVATAR: 'user_avatar',
+  TEMPLATE_COVER: 'template_cover',
+} as const;
+
+export type ImageType = typeof IMAGE_TYPES[keyof typeof IMAGE_TYPES];
+
+// Invitation statuses
+export const INVITATION_STATUSES = {
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  DECLINED: 'declined',
+  EXPIRED: 'expired',
+} as const;
+
+export type InvitationStatus = typeof INVITATION_STATUSES[keyof typeof INVITATION_STATUSES];
+
+// Add other constants as needed 
+
+// Add Vote Type enum
+export const VOTE_TYPES = {
+  UP: 'up',
+  DOWN: 'down',
+} as const;
+
+export type VoteType = typeof VOTE_TYPES[keyof typeof VOTE_TYPES]; 

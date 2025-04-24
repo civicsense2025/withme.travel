@@ -13,6 +13,7 @@ const mockDestinations = [
     city: "Paris",
     country: "France",
     continent: "Europe",
+    emoji: "🇫🇷",
     image_url: "/destinations/paris-eiffel-tower.jpg", // Assuming this image exists or use one from the list
     popularity: 90,
     travelers_count: 4200,
@@ -45,6 +46,7 @@ const mockDestinations = [
     city: "Tokyo",
     country: "Japan",
     continent: "Asia",
+    emoji: "🇯🇵",
     image_url: "/destinations/kyoto-bamboo-forest.jpg", // Using Kyoto image for Tokyo example
     popularity: 92,
     travelers_count: 3200,
@@ -77,6 +79,7 @@ const mockDestinations = [
     city: "Rome",
     country: "Italy",
     continent: "Europe",
+    emoji: "🇮🇹",
     image_url: "/destinations/rome-colosseum.jpg",
     popularity: 87,
     travelers_count: 3100,
@@ -109,6 +112,7 @@ const mockDestinations = [
     city: "New York",
     country: "USA",
     continent: "North America",
+    emoji: "🇺🇸",
     image_url: "/destinations/new-york-skyline.jpg", // Assuming this exists
     popularity: 88,
     travelers_count: 3800,
@@ -141,6 +145,7 @@ const mockDestinations = [
     city: "London",
     country: "UK",
     continent: "Europe",
+    emoji: "🇬🇧",
     image_url: "/destinations/london-big-ben.jpg",
     popularity: 89,
     travelers_count: 3500,
@@ -173,6 +178,7 @@ const mockDestinations = [
     city: "Barcelona",
     country: "Spain",
     continent: "Europe",
+    emoji: "🇪🇸",
     image_url: "/destinations/barcelona-park-guell.jpg", // Assuming this exists
     popularity: 95,
     travelers_count: 4800,
@@ -429,6 +435,7 @@ const mockDestinations = [
     city: "San Francisco",
     country: "USA",
     continent: "North America",
+    emoji: "🇺🇸",
     image_url: "/destinations/san-francisco-golden-gate.jpg",
     popularity: 85, // Adjust as needed
     travelers_count: 3300, // Adjust as needed
@@ -461,6 +468,7 @@ const mockDestinations = [
     city: "Los Angeles",
     country: "USA",
     continent: "North America",
+    emoji: "🇺🇸",
     image_url: "/destinations/los-angeles-united-states.jpg",
     popularity: 86, // Adjust as needed
     travelers_count: 3600, // Adjust as needed
@@ -500,110 +508,79 @@ export async function GET(request: Request) {
     const trending = searchParams.get("trending") === "true"
     const limit = searchParams.get("limit") ? Number.parseInt(searchParams.get("limit")!) : undefined
     
-    // Check if we have valid cached data
-    const now = Date.now();
-    if (destinationsCache && (now - destinationsCache.timestamp < CACHE_DURATION)) {
-      const cachedData = destinationsCache.data;
-      
-      // Apply limit if requested
-      const limitedData = limit ? cachedData.slice(0, limit) : cachedData;
-      return NextResponse.json({ destinations: limitedData });
+    const supabase = createClient()
+    
+    // Start with the base query
+    let query = supabase
+      .from(DB_TABLES.DESTINATIONS)
+      .select("*")
+    
+    // Always sort by city name for consistency unless trending is requested
+    if (trending) {
+      query = query.order(DB_FIELDS.DESTINATIONS.POPULARITY, { ascending: false })
+    } else {
+      query = query.order(DB_FIELDS.DESTINATIONS.CITY, { ascending: true })
     }
-
-    try {
-      // Try to fetch from Supabase
-      const cookieStore = cookies();
-      const supabase = createClient();
-      
-      // Use our constants for consistency
-      let query = supabase.from(DB_TABLES.DESTINATIONS).select("*");
-      
+    
+    // Apply limit if requested
+    if (limit) {
+      query = query.limit(limit)
+    }
+    
+    const { data, error } = await query
+    
+    if (error) {
+      console.error('Error fetching destinations:', error)
+      // Only fall back to mock data in development
+      if (process.env.NODE_ENV === 'development') {
+        const mockData = limit ? mockDestinations.slice(0, limit) : mockDestinations
+        return NextResponse.json({ destinations: mockData })
+      }
+      throw error
+    }
+    
+    if (!data || data.length === 0) {
+      return NextResponse.json({ 
+        destinations: [], 
+        message: "No destinations found" 
+      })
+    }
+    
+    // Process data to add traveler counts for trending destinations
+    const processedData = data.map(destination => {
       if (trending) {
-        query = query.order(DB_FIELDS.DESTINATIONS.POPULARITY, { ascending: false });
-      }
-      
-      if (limit) {
-        query = query.limit(limit);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data || data.length === 0) {
-        // Return mock data if no results found
-        destinationsCache = {
-          data: mockDestinations,
-          timestamp: now
-        };
+        // Add realistic traveler counts based on city popularity
+        const baseCount = Math.floor(destination.popularity * 50)
+        const randomVariation = Math.floor(Math.random() * 500)
+        destination.travelers_count = baseCount + randomVariation
         
-        const limitedMockData = limit ? mockDestinations.slice(0, limit) : mockDestinations;
-        return NextResponse.json({ destinations: limitedMockData });
+        // Add average days based on continent and distance
+        const continentAvgDays: Record<string, number> = {
+          'Europe': 5,
+          'Asia': 7,
+          'North America': 6,
+          'South America': 8,
+          'Africa': 8,
+          'Oceania': 9
+        }
+        destination.avg_days = continentAvgDays[destination.continent as string] || 5
       }
       
-      // Process data to add traveler counts for trending destinations if needed
-      if (trending && data) {
-        const travelersMap: Record<string, number> = {
-          Barcelona: 4800,
-          Tokyo: 3200,
-          California: 2900,
-          Paris: 4200,
-          "New York": 3800,
-          London: 3500,
-          Bangkok: 2800,
-          Rome: 3100,
-          Sydney: 2600,
-          Amsterdam: 2400,
-        };
-
-        const avgDaysMap: Record<string, number> = {
-          Barcelona: 5,
-          Tokyo: 7,
-          California: 10,
-          Paris: 4,
-          "New York": 6,
-          London: 5,
-          Bangkok: 8,
-          Rome: 4,
-          Sydney: 9,
-          Amsterdam: 4,
-        };
-
-        data.forEach((destination) => {
-          // Use field constants
-          destination[DB_FIELDS.DESTINATIONS.TRAVELERS_COUNT] = 
-            travelersMap[destination[DB_FIELDS.DESTINATIONS.CITY]] || 
-            Math.floor(Math.random() * 3000) + 1000;
-          
-          destination[DB_FIELDS.DESTINATIONS.AVG_DAYS] = 
-            avgDaysMap[destination[DB_FIELDS.DESTINATIONS.CITY]] || 
-            Math.floor(Math.random() * 7) + 3;
-        });
+      // Ensure image_url is properly formatted
+      if (destination.image_url && !destination.image_url.startsWith('http') && !destination.image_url.startsWith('/')) {
+        destination.image_url = `/${destination.image_url}`
       }
       
-      // Cache the results
-      destinationsCache = {
-        data: data,
-        timestamp: now
-      };
-      
-      return NextResponse.json({ destinations: data });
-    } catch (error) {
-      // Fallback to mock data
-      destinationsCache = {
-        data: mockDestinations,
-        timestamp: now
-      };
-      
-      const limitedMockData = limit ? mockDestinations.slice(0, limit) : mockDestinations;
-      return NextResponse.json({ destinations: limitedMockData });
-    }
+      return destination
+    })
+    
+    return NextResponse.json({ destinations: processedData })
+    
   } catch (error: any) {
+    console.error('Error in destinations API:', error)
     return NextResponse.json({ 
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    }, { status: 500 });
+    }, { status: 500 })
   }
 }

@@ -1,78 +1,184 @@
+import { createClient as createServerClient } from "@/utils/supabase/server";
+// Import the base Supabase client creator
+import { createClient } from '@supabase/supabase-js'; 
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
-import { API_ROUTES } from "@/utils/constants";
+import { API_ROUTES, PAGE_ROUTES, DB_TABLES, DB_FIELDS, TRIP_ROLES } from "@/utils/constants";
+import chalk from "chalk";
 
-export async function POST(req: Request) {
+// Helper function to process tags: find existing or create new ones
+async function processTags(supabaseAdmin: any, tagNames: string[]): Promise<string[]> {
+  if (!tagNames || tagNames.length === 0) {
+    return [];
+  }
+
+  const uniqueTagNames = [...new Set(tagNames)].filter(name => name.trim() !== '');
+  if (uniqueTagNames.length === 0) {
+    return [];
+  }
+
+  // Use constants for field names
+  const tagsToUpsert = uniqueTagNames.map(name => ({ [DB_FIELDS.TAGS.NAME]: name.trim().toLowerCase() })); 
+
+  const { data: tags, error: tagUpsertError } = await supabaseAdmin
+    .from(DB_TABLES.TAGS)
+    .upsert(tagsToUpsert, { onConflict: DB_FIELDS.TAGS.NAME })
+    .select(DB_FIELDS.TAGS.ID);
+
+  if (tagUpsertError) {
+    console.error("Error upserting tags:", tagUpsertError);
+    throw new Error("Failed to process tags");
+  }
+
+  if (!tags || tags.length !== uniqueTagNames.length) {
+     console.warn("Tag upsert didn't return all expected tags, re-fetching IDs...");
+     const { data: fetchedTags, error: tagFetchError } = await supabaseAdmin
+         .from(DB_TABLES.TAGS)
+         .select(DB_FIELDS.TAGS.ID)
+         .in(DB_FIELDS.TAGS.NAME, uniqueTagNames);
+         
+     if (tagFetchError) {
+         console.error("Error fetching tag IDs after upsert:", tagFetchError);
+         throw new Error("Failed to retrieve tag IDs");
+     }
+     if (!fetchedTags || fetchedTags.length === 0) {
+         console.error("Could not find any tag IDs for:", uniqueTagNames);
+         throw new Error("Failed to find required tag IDs");
+     }
+     // Use constant for ID field
+     return fetchedTags.map((tag: any) => tag[DB_FIELDS.TAGS.ID]);
+  } 
+  // Use constant for ID field
+  return tags.map((tag: any) => tag[DB_FIELDS.TAGS.ID]);
+}
+
+export async function POST(request: Request) {
+  const supabase = createServerClient();
+  // Admin client using service role key (ensure env vars are set)
+  // Check if the environment variables are present
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Supabase URL or Service Role Key missing from environment variables.");
+      return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
+  }
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   try {
-    // Initialize Supabase client
-    const supabase = createClient();
-    
-    // Authenticate request using Supabase getUser for better security
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
-      console.error("Authentication error in trip creation:", authError);
-      return NextResponse.json(
-        { error: authError?.message || "Authentication required" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Expect destination_id in the request body now
+    const { title, description, start_date, end_date, destination_id, tags: tagsString } = await request.json(); 
+
+    if (!title || !start_date || !end_date) { // destination_id is optional for now
+      return NextResponse.json({ error: "Missing required fields (title, start_date, end_date)" }, { status: 400 });
+    }
+
+    let coverImageUrl: string | null = null;
+
+    // --- Fetch Destination Image if destination_id is provided ---
+    if (destination_id) {
+      console.log(chalk.dim(`Fetching image for destination ID: ${destination_id}`));
+      try {
+        const { data: destinationData, error: destError } = await supabaseAdmin
+          .from(DB_TABLES.DESTINATIONS)
+          .select(DB_FIELDS.DESTINATIONS.IMAGE_URL)
+          .eq(DB_FIELDS.DESTINATIONS.ID, destination_id)
+          .maybeSingle(); // Use maybeSingle as destination might not exist or have image
+
+        if (destError) {
+          console.error(`Error fetching destination image for ID ${destination_id}:`, destError.message);
+          // Don't fail the trip creation, just proceed without cover image
+        } else if (destinationData && destinationData[DB_FIELDS.DESTINATIONS.IMAGE_URL]) {
+          coverImageUrl = destinationData[DB_FIELDS.DESTINATIONS.IMAGE_URL];
+          console.log(chalk.dim(`Using destination image as cover: ${coverImageUrl}`));
+        } else {
+          console.log(chalk.dim(`Destination ${destination_id} not found or has no image_url.`));
+        }
+      } catch (fetchErr) {
+         console.error(`Unexpected error fetching destination image for ID ${destination_id}:`, fetchErr);
+      }
+    }
+    // --- End Fetch Destination Image ---
+
+    // --- 1. Insert Trip --- 
+    const tripDataToInsert: any = {
+      [DB_FIELDS.TRIPS.NAME]: title,
+      [DB_FIELDS.TRIPS.DESCRIPTION]: description,
+      [DB_FIELDS.TRIPS.START_DATE]: new Date(start_date).toISOString(),
+      [DB_FIELDS.TRIPS.END_DATE]: new Date(end_date).toISOString(),
+      [DB_FIELDS.TRIPS.CREATED_BY]: user.id,
+      [DB_FIELDS.TRIPS.DESTINATION_ID]: destination_id || null, // Include destination_id
+      [DB_FIELDS.TRIPS.COVER_IMAGE_URL]: coverImageUrl, // Include fetched cover image URL
+    };
+
+    const { data: newTrip, error: tripInsertError } = await supabase
+        .from(DB_TABLES.TRIPS)
+        .insert([tripDataToInsert]) // Use the prepared object
+        .select()
+        .single();
+
+    if (tripInsertError) {
+      console.error("Error inserting trip:", tripInsertError);
+      return NextResponse.json({ error: "Failed to create trip", details: tripInsertError.message }, { status: 500 });
     }
     
-    // Parse request body
-    const { tripData, userId } = await req.json();
+    const newTripId = newTrip[DB_FIELDS.TRIPS.ID];
     
-    // Validate that the user ID from the request matches the authenticated user
-    if (userId !== user.id) {
-      console.warn(`Unauthorized attempt to create trip. User ID: ${user.id}, Provided ID: ${userId}`);
-      return NextResponse.json(
-        { error: "Unauthorized - user ID mismatch" },
-        { status: 403 }
-      );
+    // --- 2. Add Owner as Admin Member --- 
+    const { error: memberInsertError } = await supabaseAdmin
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .insert({
+          [DB_FIELDS.TRIP_MEMBERS.TRIP_ID]: newTripId,
+          [DB_FIELDS.TRIP_MEMBERS.USER_ID]: user.id,
+          [DB_FIELDS.TRIP_MEMBERS.ROLE]: TRIP_ROLES.ADMIN,
+          [DB_FIELDS.TRIP_MEMBERS.JOINED_AT]: new Date().toISOString()
+      });
+      
+    if (memberInsertError) {
+        console.error(`Failed to add creator as admin member for trip ${newTripId}:`, memberInsertError);
+    }
+
+    // --- 3. Process and Link Tags --- 
+    let tagIds: string[] = [];
+    if (tagsString && typeof tagsString === 'string' && tagsString.trim() !== '') {
+        const tagNames = tagsString.split(",").map(tag => tag.trim()).filter(Boolean);
+        if (tagNames.length > 0) {
+          try {
+            // Use admin client for tag processing
+            tagIds = await processTags(supabaseAdmin, tagNames);
+          } catch (tagError: any) {
+             console.error(`Error processing tags for trip ${newTripId}:`, tagError);
+             // Log error but proceed
+          }
+        }
     }
     
-    // Log the data being sent to the RPC function
-    console.log(`Calling create_trip_with_owner for user ${userId} with data:`, JSON.stringify(tripData, null, 2));
-    
-    // Start a transaction to handle both trip creation and member assignment
-    const { data, error } = await supabase.rpc('create_trip_with_owner', {
-      trip_data: tripData,
-      owner_id: userId
-    });
-    
-    if (error) {
-      // Log the detailed RPC error
-      console.error("Error response from create_trip_with_owner RPC:", JSON.stringify(error, null, 2));
-      return NextResponse.json(
-        { 
-          error: error.message || "Failed to execute trip creation procedure.",
-          details: error.details || null, // Pass details if available
-          code: error.code || null // Pass code if available
-        },
-        { status: 500 }
-      );
+    if (tagIds.length > 0) {
+        const tripTagAssociations = tagIds.map(tagId => ({
+            [DB_FIELDS.TRIP_TAGS.TRIP_ID]: newTripId,
+            [DB_FIELDS.TRIP_TAGS.TAG_ID]: tagId
+        }));
+        
+        // Use admin client to insert into join table
+        const { error: tripTagInsertError } = await supabaseAdmin
+            .from(DB_TABLES.TRIP_TAGS)
+            .insert(tripTagAssociations);
+            
+        if (tripTagInsertError) {
+            console.error(`Failed to insert associations into trip_tags for trip ${newTripId}:`, tripTagInsertError);
+            // Log error, but trip is created.
+        }
     }
-    
-    // Check if the RPC itself indicated failure (based on our SQL function structure)
-    if (!data || !data.success) {
-      console.error("RPC call create_trip_with_owner did not succeed or return expected data:", data);
-      return NextResponse.json(
-        { error: data?.error || "Failed to create trip after calling RPC." },
-        { status: 400 } // Use 400 for known failures from the function
-      );
-    }
-    
-    // Success case
-    console.log(`Trip created successfully. ID: ${data.trip_id}, Slug: ${data.slug}`);
-    return NextResponse.json({ 
-      tripId: data.trip_id,
-      slug: data.slug, // Pass the potentially updated slug back
-      redirectUrl: `/trips/${data.trip_id}` // Simpler redirect URL
-    }, { status: 201 });
+
+    return NextResponse.json({ trip: newTrip }, { status: 201 });
+
   } catch (error: any) {
-    console.error("Unhandled error in trip creation API route:", error);
-    return NextResponse.json(
-      { error: error.message || "An internal server error occurred." },
-      { status: 500 }
-    );
+    console.error("Error in POST /api/trips/create:", error);
+    return NextResponse.json({ error: "An unexpected error occurred", details: error.message }, { status: 500 });
   }
 } 

@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function SettingsPage() {
-  const { user, loading } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -34,22 +34,22 @@ export default function SettingsPage() {
   const [interests, setInterests] = useState<string[]>([])
   const [newInterest, setNewInterest] = useState("")
 
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Redirect if not logged in
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isAuthLoading && !user) {
       router.push("/login?redirect=/settings")
     }
-  }, [user, loading, router])
+  }, [user, isAuthLoading, router])
 
   // Fetch user data
   useEffect(() => {
     if (user) {
       const fetchUserData = async () => {
         try {
-          setIsLoading(true)
+          setIsLoadingUserData(true)
           setError(null)
 
           const response = await fetch("/api/user/profile")
@@ -78,7 +78,7 @@ export default function SettingsPage() {
             variant: "destructive",
           })
         } finally {
-          setIsLoading(false)
+          setIsLoadingUserData(false)
         }
       }
 
@@ -142,8 +142,13 @@ export default function SettingsPage() {
   }
 
   // Don't render anything while checking auth
-  if (loading || !user) {
+  if (isAuthLoading) {
     return null
+  }
+
+  // Handle case where user is definitely not logged in after loading check
+  if (!user) {
+    return <p>Please log in to view settings.</p>
   }
 
   return (
@@ -167,7 +172,7 @@ export default function SettingsPage() {
               <CardDescription className="lowercase">update your personal information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {isLoading ? (
+              {isLoadingUserData ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -239,7 +244,7 @@ export default function SettingsPage() {
               )}
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveProfile} disabled={isLoading || isSaving} className="gap-2 lowercase">
+              <Button onClick={handleSaveProfile} disabled={isLoadingUserData || isSaving} className="gap-2 lowercase">
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 save changes
               </Button>
@@ -254,7 +259,7 @@ export default function SettingsPage() {
               <CardDescription className="lowercase">what do you love about traveling?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {isLoading ? (
+              {isLoadingUserData ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -335,9 +340,9 @@ export default function SettingsPage() {
               )}
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveProfile} disabled={isLoading || isSaving} className="gap-2 lowercase">
+              <Button onClick={handleSaveProfile} disabled={isLoadingUserData || isSaving} className="gap-2 lowercase">
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                save interests
+                save changes
               </Button>
             </CardFooter>
           </Card>

@@ -245,4 +245,60 @@ export function formatError(error: unknown, fallback: string = "An unexpected er
   }
   
   return fallback;
+}
+
+/**
+ * Format a date to show relative time (e.g., "5 minutes ago")
+ * @param date - The date to format
+ * @returns A string representing the relative time
+ */
+export function formatRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const past = typeof date === 'string' ? new Date(date) : date;
+  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+  if (diffInSeconds < 60) {
+    return rtf.format(-diffInSeconds, 'second');
+  }
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return rtf.format(-diffInMinutes, 'minute');
+  }
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return rtf.format(-diffInHours, 'hour');
+  }
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) {
+    return rtf.format(-diffInDays, 'day');
+  }
+  const diffInWeeks = Math.floor(diffInDays / 7);
+  if (diffInWeeks < 4) {
+    return rtf.format(-diffInWeeks, 'week');
+  }
+  const diffInMonths = Math.floor(diffInDays / 30); // Approximate
+  if (diffInMonths < 12) {
+    return rtf.format(-diffInMonths, 'month');
+  }
+  const diffInYears = Math.floor(diffInDays / 365); // Approximate
+  return rtf.format(-diffInYears, 'year');
+}
+
+/**
+ * Generate initials from a name string
+ * @param name The full name string
+ * @returns A 1 or 2 character uppercase string of initials
+ */
+export function getInitials(name?: string): string {
+  if (!name) return "U"; // Default to 'U' for User if no name
+  
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean) // Remove empty strings in case of multiple spaces
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
 } 

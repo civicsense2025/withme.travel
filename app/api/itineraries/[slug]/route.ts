@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
+// import { cookies } from "next/headers" // cookies() is handled within createClient
 
 export async function GET(request: Request, { params }: { params: { slug: string } }) {
-  const supabase = createClient(cookies())
+  // const supabase = createClient(cookies()) // Incorrect usage
+  const supabase = createClient() // Correct usage
   const slug = params.slug
 
   // Get the itinerary template
@@ -29,7 +30,8 @@ export async function GET(request: Request, { params }: { params: { slug: string
 }
 
 export async function PUT(request: Request, { params }: { params: { slug: string } }) {
-  const supabase = createClient(cookies())
+  // const supabase = createClient(cookies()) // Incorrect usage
+  const supabase = createClient() // Correct usage
 
   // Check if user is authenticated
   const {
@@ -65,7 +67,8 @@ export async function PUT(request: Request, { params }: { params: { slug: string
 }
 
 export async function DELETE(request: Request, { params }: { params: { slug: string } }) {
-  const supabase = createClient(cookies())
+  // const supabase = createClient(cookies()) // Incorrect usage
+  const supabase = createClient() // Correct usage
 
   // Check if user is authenticated
   const {

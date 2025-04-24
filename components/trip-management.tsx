@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Settings, Trash2, Share2, Lock, Globe, UserPlus, Mail, Copy } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import { cn } from "@/lib/utils"
+import { API_ROUTES, PAGE_ROUTES, TRIP_ROLES } from "@/utils/constants"
+import { AuthContextType } from '@/components/auth-provider'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,8 +26,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/utils/supabase/client"
-import { API_ROUTES } from "@/utils/constants"
 
 interface Member {
   id: string
@@ -39,6 +41,7 @@ interface TripManagementProps {
 }
 
 export function TripManagement({ tripId }: TripManagementProps) {
+  const supabase = createClient()
   const router = useRouter()
   const { toast } = useToast()
   const [trip, setTrip] = useState<any>(null)
@@ -47,7 +50,6 @@ export function TripManagement({ tripId }: TripManagementProps) {
   const [isPublic, setIsPublic] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [publicLink, setPublicLink] = useState("")
-  const [isOwner, setIsOwner] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [editedTrip, setEditedTrip] = useState<any>({})
@@ -78,19 +80,27 @@ export function TripManagement({ tripId }: TripManagementProps) {
         })
 
         // Fetch members
-        const membersResponse = await fetch(API_ROUTES.TRIP_MEMBERS(tripId))
-        if (!membersResponse.ok) throw new Error("Failed to fetch members")
-        const membersData = await membersResponse.json()
+        const { data, error } = await supabase
+          .from("trip_members")
+          .select("*")
 
-        setMembers(membersData.members)
+        if (error) throw error
+
+        setMembers(data.map((member: any) => ({
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          avatar_url: member.avatar_url,
+          role: member.role,
+          status: member.status,
+        })))
 
         // Check if current user is owner or admin
         const {
           data: { user },
         } = await supabase.auth.getUser()
-        const currentUserMember = membersData.members.find((m: any) => m.id === user?.id)
-        setIsOwner(currentUserMember?.role === "owner")
-        setIsAdmin(currentUserMember?.role === "admin" || currentUserMember?.role === "owner")
+        const currentUserMember = data.find((m: any) => m.id === user?.id)
+        setIsAdmin(currentUserMember?.role === TRIP_ROLES.ADMIN || currentUserMember?.role === TRIP_ROLES.EDITOR)
       } catch (error) {
         console.error("Error fetching trip data:", error)
         toast({
@@ -104,7 +114,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
     }
 
     fetchTripAndMembers()
-  }, [tripId, toast])
+  }, [tripId, toast, supabase])
 
   // Toggle public/private status
   const togglePublicStatus = async () => {
@@ -177,11 +187,20 @@ export function TripManagement({ tripId }: TripManagementProps) {
       setInviteEmail("")
 
       // Refresh members list
-      const membersResponse = await fetch(API_ROUTES.TRIP_MEMBERS(tripId))
-      if (membersResponse.ok) {
-        const membersData = await membersResponse.json()
-        setMembers(membersData.members)
-      }
+      const { data, error } = await supabase
+        .from("trip_members")
+        .select("*")
+
+      if (error) throw error
+
+      setMembers(data.map((member: any) => ({
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        avatar_url: member.avatar_url,
+        role: member.role,
+        status: member.status,
+      })))
     } catch (error) {
       console.error("Error inviting member:", error)
       toast({
@@ -302,6 +321,10 @@ export function TripManagement({ tripId }: TripManagementProps) {
     )
   }
 
+  if (!trip) {
+    return <div>Trip not found or access denied.</div>
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -327,14 +350,14 @@ export function TripManagement({ tripId }: TripManagementProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="details">
+        <Tabs defaultValue="general">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="sharing">Sharing</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="space-y-4 pt-4">
+          <TabsContent value="general" className="space-y-4 pt-4">
             {editMode ? (
               <div className="space-y-4">
                 <div>
@@ -401,7 +424,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
               </div>
             )}
 
-            {isOwner && (
+            {isAdmin && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="destructive" className="mt-4">
@@ -491,15 +514,13 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
                       {isAdmin && member.id !== trip?.owner_id && (
                         <div className="flex gap-2">
-                          {isOwner && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateMemberRole(member.id, member.role === "admin" ? "member" : "admin")}
-                            >
-                              {member.role === "admin" ? "Remove Admin" : "Make Admin"}
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateMemberRole(member.id, member.role === "admin" ? "member" : "admin")}
+                          >
+                            {member.role === "admin" ? "Remove Admin" : "Make Admin"}
+                          </Button>
                           <Button size="sm" variant="destructive" onClick={() => removeMember(member.id)}>
                             Remove
                           </Button>

@@ -41,7 +41,7 @@ export function PresenceIndicator() {
             .map((p: any) => p.user) as User[]
           setActiveUsers(users)
         })
-        .on("presence", { event: "join" }, ({ key, newPresences }) => {
+        .on("presence", { event: "join" }, ({ key, newPresences }: { key: string, newPresences: any[] }) => {
           const newUser = newPresences[0].user as User
           setActiveUsers((prev) => {
             if (prev.some((u) => u.id === newUser.id)) {
@@ -50,11 +50,11 @@ export function PresenceIndicator() {
             return [...prev, newUser]
           })
         })
-        .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
+        .on("presence", { event: "leave" }, ({ key, leftPresences }: { key: string, leftPresences: any[] }) => {
           const leftUser = leftPresences[0].user as User
           setActiveUsers((prev) => prev.filter((u) => u.id !== leftUser.id))
         })
-        .subscribe(async (status) => {
+        .subscribe(async (status: string) => {
           if (status === "SUBSCRIBED") {
             await channel.track({
               user: {
@@ -109,7 +109,7 @@ export function PresenceIndicator() {
                     src={user.avatar_url || `/api/avatar?name=${encodeURIComponent(user.name)}`}
                     alt={user.name}
                   />
-                  <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{(user.name || "").substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent side="bottom">{user.name}</TooltipContent>

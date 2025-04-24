@@ -12,10 +12,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { supabase } from "@/utils/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { Logo } from "@/components/logo"
 import { AuthSellingPoints } from "@/components/auth-selling-points"
+import { createClient } from "@/utils/supabase/client"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -23,16 +23,18 @@ export default function SignupPage() {
   const { toast } = useToast()
 
   const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   })
-  const [error, setError] = useState("")
+  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [signupContext, setSignupContext] = useState<string | null>(null)
+
+  const supabase = createClient()
 
   // Get invitation token or referral code from URL
   const invitationToken = searchParams.get("invitation")
@@ -83,70 +85,77 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
-    setError("")
+    setError(null)
 
     try {
-      // Sign up with Supabase
+      // Sign up directly using Supabase client
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
+          // Pass name/username in options.data if needed for profile/metadata
+          // This depends on how your Supabase project/triggers are set up.
+          // If profile is created via API route after confirmation, this might not be needed here.
           data: {
-            name: formData.name,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback${invitationToken ? `?invitation=${invitationToken}` : ""}`,
-        },
-      })
+            name: formData.name || formData.email.split('@')[0], // Example: Pass name
+          }
+        }
+      });
 
       if (signUpError) {
-        throw signUpError
+        throw signUpError; // Throw the error to be caught below
       }
-
-      // Create user in our database with referral information
-      const userData = {
-        id: data.user?.id,
-        email: formData.email,
-        name: formData.name,
-        referred_by: referralCode || null,
-      }
-
-      const { error: userError } = await supabase.from("profiles").insert([userData])
-
-      if (userError) {
-        throw userError
-      }
-
-      // If there's an invitation token, accept it immediately
-      if (invitationToken) {
-        try {
-          await fetch(`/api/invitations/${invitationToken}/accept`, {
-            method: "POST",
+      
+      // Check if email confirmation is required
+      if (data.user && !data.user.email_confirmed_at) {
+          setSuccess(true) // Show success message about checking email
+          toast({
+            title: "account created!",
+            description: "please check your email to verify your account.",
           })
-        } catch (inviteError) {
-          console.error("Error accepting invitation:", inviteError)
-          // Continue with signup even if invitation acceptance fails
-        }
+      } else if (data.user) {
+          // User created and possibly auto-confirmed (or confirmation disabled)
+          // We might still show the email check message for consistency, 
+          // or directly proceed as if logged in (though /api/auth/me handles profile fetch).
+          setSuccess(true) 
+          toast({
+            title: "account created!",
+            description: "signup successful! you may need to verify your email.",
+          })
+      } else {
+          // Handle case where sign up returns no user and no error (unlikely but possible)
+          throw new Error('Signup completed but no user data received.');
       }
 
-      // Show success message
-      setSuccess(true)
-      toast({
-        title: "account created!",
-        description: "please check your email to verify your account.",
-      })
-
-      // Clear form
+      // Clear form only on success
       setFormData({
         name: "",
         email: "",
         password: "",
       })
+      
+      // --- Invitation acceptance can be handled in the callback or after first login ---
+      // Removing immediate invitation acceptance here as it requires the user to be logged in,
+      // which might not be the case if email verification is needed.
+      // The callback route already handles invitations for OAuth sign-ins.
+      // For email signups, accepting after first login might be more robust.
+
     } catch (error: any) {
       console.error("Signup error:", error)
-      setError(error.message || "an error occurred during signup")
+      let errorMessage = "an error occurred during signup";
+      if (error.message) {
+          if (error.message.includes("User already registered")) {
+              errorMessage = "an account with this email already exists.";
+          } else if (error.message.includes("Password should be at least 6 characters")) {
+              errorMessage = "password must be at least 6 characters long";
+          } else {
+              errorMessage = error.message;
+          }
+      }
+      setError(errorMessage);
       toast({
         title: "signup failed",
-        description: error.message || "an error occurred during signup",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -156,48 +165,52 @@ export default function SignupPage() {
 
   async function handleGoogleSignIn() {
     try {
-      setIsGoogleLoading(true)
+      setIsGoogleLoading(true);
 
-      // Get the redirect URL
-      const redirectUrl = searchParams.get("redirect") || "/"
-
-      // Include invitation token in the redirect if present
-      let callbackUrl = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl)}`
-      if (invitationToken) {
-        callbackUrl += `&invitation=${invitationToken}`
+      // Get the redirect URL from search params or default to home
+      const redirectUrl = searchParams.get("redirect") || "/";
+      
+      // Construct the callback URL base
+      const callbackUrl = new URL('/auth/callback', window.location.origin);
+      
+      // Append existing search params from the signup page (like redirect, ref, invitation) to the callback
+      searchParams.forEach((value, key) => {
+        callbackUrl.searchParams.append(key, value);
+      });
+      // Ensure the intended final redirect is included if not already present
+      if (!callbackUrl.searchParams.has('redirect')) {
+          callbackUrl.searchParams.set('redirect', redirectUrl);
       }
-      if (referralCode) {
-        callbackUrl += `&ref=${referralCode}`
-      }
 
-      // Sign in with Google
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+      console.log("Google Sign-In redirectTo:", callbackUrl.toString()); // For debugging
+
+      // Initiate Google OAuth sign-in using Supabase client
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
         options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-            scope:
-              "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
-          },
+          redirectTo: callbackUrl.toString(),
+          //queryParams: { // Optional: Add any extra params if needed by Supabase
+          //  invitation: invitationToken || '',
+          //  ref: referralCode || ''
+          //}
         },
-      })
+      });
 
       if (error) {
-        throw error
+        throw error; // Throw error to be caught below
       }
+      // Note: No need to handle redirect here, Supabase handles it.
 
-      // The user will be redirected to Google for authentication
     } catch (error: any) {
-      console.error("Google sign-in error:", error)
+      console.error('Google sign-in error:', error);
       toast({
-        title: "Google sign-in failed",
-        description: error.message || "Please try again later.",
-        variant: "destructive",
-      })
-      setIsGoogleLoading(false)
+        title: 'Google sign-in failed',
+        description: error.message || 'Please try again later.',
+        variant: 'destructive',
+      });
+       setIsGoogleLoading(false); // Ensure loading state is reset on error
     }
+    // No finally block needed here, loading state reset on error
   }
 
   return (
@@ -296,7 +309,7 @@ export default function SignupPage() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      readOnly={invitationToken && formData.email !== ""}
+                      readOnly={Boolean(invitationToken && formData.email !== "")}
                     />
                   </div>
                   <div className="space-y-2">

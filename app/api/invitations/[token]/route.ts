@@ -2,7 +2,9 @@ import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { token: string } }) {
+export async function GET(request: Request, props: { params: { token: string } }) {
+  const { token } = props.params;
+
   try {
     const supabase = createClient()
 
@@ -14,7 +16,7 @@ export async function GET(request: Request, { params }: { params: { token: strin
         trip:trip_id(*),
         inviter:invited_by(id, name, email, avatar_url)
       `)
-      .eq("token", params.token)
+      .eq("token", token)
       .single()
 
     if (error || !invitation) {

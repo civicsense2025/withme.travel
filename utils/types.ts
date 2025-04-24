@@ -6,7 +6,7 @@ export interface Trip {
   name: string
   start_date?: string
   end_date?: string
-  user_id: string // Creator of the trip
+  created_by: string | null // Allow null for creator
   destination_id?: string
   destination_name?: string
   travelers_count?: number

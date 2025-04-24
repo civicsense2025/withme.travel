@@ -19,6 +19,25 @@ export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get("redirect") || "/"
+  
+  // Properly decode the redirect path
+  let decodedRedirectPath = redirectPath;
+  try {
+    if (redirectPath.includes('%')) {
+      // Only decode once to avoid issues with double-encoding
+      decodedRedirectPath = decodeURIComponent(redirectPath);
+      console.log("Decoded redirect path:", decodedRedirectPath);
+    }
+    
+    // Ensure it starts with a slash if it's a relative path
+    if (!decodedRedirectPath.startsWith('/') && !decodedRedirectPath.startsWith('http')) {
+      decodedRedirectPath = '/' + decodedRedirectPath;
+    }
+  } catch (e) {
+    console.error("Error decoding redirect path:", e);
+    // If decoding fails, use as-is
+    decodedRedirectPath = redirectPath;
+  }
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -34,49 +53,88 @@ export function LoginForm() {
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-
+    e.preventDefault();
+    setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      })
-
-      if (error) {
-        throw error
+      console.log("Submitting login form...");
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password })
+      });
+      
+      console.log("Login API response status:", res.status);
+      const data = await res.json();
+      console.log("Login API response data:", JSON.stringify(data).substring(0, 100) + "...");
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Error logging in');
       }
 
-      // Redirect to the specified path on successful login
-      router.push(redirectPath)
-      router.refresh()
+      // Store user data in localStorage to help with auth state persistence
+      if (data.user && data.session) {
+        console.log("Storing auth data in localStorage");
+        
+        // Store the complete session details in exactly the format Supabase expects
+        const storageData = {
+          currentSession: {
+            ...data.session,
+            user: data.user  // Ensure the user is included in the session
+          },
+          expiresAt: Math.floor(Date.now() / 1000) + 3600
+        };
+        
+        try {
+          localStorage.setItem('supabase.auth.token', JSON.stringify(storageData));
+          console.log("Auth data stored successfully");
+        } catch (err) {
+          console.error("Error storing auth data:", err);
+        }
+        
+        // Add a slight delay to ensure localStorage is updated before redirect
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log("Auth data stored, redirecting to:", decodedRedirectPath);
+      } else {
+        console.warn("Login succeeded but no user/session data received");
+      }
+
+      // Show success message
+      toast({
+        title: 'welcome back!',
+        description: 'successfully logged in',
+        variant: 'default',
+      });
+
+      // Instead of using window.location, let's just reload the current page first to ensure auth state is properly loaded
+      window.location.reload();
+      
+      // Then set a flag in sessionStorage to redirect after reload
+      // Store the properly decoded path for the redirect
+      sessionStorage.setItem('auth_redirect', decodedRedirectPath);
     } catch (error: any) {
-      console.error("Login error:", error)
-      
-      // Provide more user-friendly error messages
-      let errorMessage = "please check your credentials and try again"
-      
+      console.error('Login error:', error);
+      let errorMessage = 'please check your credentials and try again';
       if (error.message) {
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "invalid email or password"
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "please confirm your email address before logging in"
-        } else if (error.message.includes("rate limit")) {
-          errorMessage = "too many login attempts, please try again later"
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'invalid email or password';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'please confirm your email address before logging in';
+        } else if (error.message.includes('rate limit')) {
+          errorMessage = 'too many login attempts, please try again later';
         } else {
-          errorMessage = error.message
+          errorMessage = error.message.toLowerCase();
         }
       }
-      
       toast({
-        title: "login failed",
+        title: 'login failed',
         description: errorMessage,
-        variant: "destructive",
-      })
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleSignIn = async () => {
     try {

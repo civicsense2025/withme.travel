@@ -264,7 +264,7 @@ function DestinationCard({ destination, onUnlike }: { destination: any, onUnlike
   const tags = getTags();
 
   return (
-    <Link href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}`}>
+    <Link href={`/destinations/${destination.city ? destination.city.toLowerCase().replace(/\s+/g, "-") : `destination-${destination.id}`}`}>
       <div className="rounded-3xl overflow-hidden bg-white dark:bg-gray-900 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col h-full border">
         <div className="relative h-48 w-full bg-travel-purple/10">
           <div className="absolute top-3 right-3 z-10">

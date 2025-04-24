@@ -10,11 +10,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-provider"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Icons } from "@/components/icons"
+import { Container } from "@/components/container"
 
 // Trip type definition (simplified for this page)
 interface Trip {
   id: string;
-  name: string;
+  title: string;
   is_public?: boolean;
   // Add other fields as needed for display
 }
@@ -23,7 +25,7 @@ function TripSuccessPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const { user, loading: authLoading } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [trip, setTrip] = useState<Trip | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -83,122 +85,82 @@ function TripSuccessPageContent() {
   // Render Loading State
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-muted/30 py-8">
-        <div className="container max-w-2xl">
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-6 text-center">
-              <Skeleton className="h-16 w-16 rounded-full mx-auto mb-6" />
-              <Skeleton className="h-8 w-3/4 mx-auto mb-2" />
-              <Skeleton className="h-6 w-1/2 mx-auto mb-8" />
-              <Skeleton className="h-10 w-full mb-4" />
-              <Skeleton className="h-10 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Container className="flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-lg p-6">
+          <div className="flex flex-col items-center space-y-4">
+            <Icons.spinner className="h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">Loading your trip details...</p>
+          </div>
+        </Card>
+      </Container>
     )
   }
   
   // Render Error State
   if (error) {
      return (
-      <div className="min-h-screen bg-muted/30 py-8">
-        <div className="container max-w-2xl">
-          <Card className="border-destructive shadow-md">
-            <CardContent className="p-6 text-center">
-               <div className="mb-6 flex justify-center">
-                <AlertTriangle className="h-16 w-16 text-destructive" />
-              </div>
-              <h1 className="text-3xl font-bold mb-2 text-destructive">
-                Loading Failed
-              </h1>
-              <p className="text-muted-foreground mb-8">{error}</p>
-               <Link href="/">
-                  <Button variant="outline" className="w-full">
-                    Go to My Trips
-                  </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Container className="flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-lg p-6">
+          <div className="flex flex-col items-center space-y-4">
+            <Icons.warning className="h-12 w-12 text-destructive" />
+            <h1 className="text-2xl font-bold">Oops!</h1>
+            <p className="text-center text-muted-foreground">
+              We couldn't find your trip. Please try creating a new one.
+            </p>
+            <Button asChild>
+              <Link href="/trips/create">Create New Trip</Link>
+            </Button>
+          </div>
+        </Card>
+      </Container>
     )
   }
 
   // Render Success State (only if trip data is loaded)
   if (trip) {
     return (
-      <div className="min-h-screen bg-muted/30 py-8">
-        <div className="container max-w-2xl">
-          <Card className="border-0 shadow-md gradient-bg-3">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <div className="mb-6 flex justify-center">
-                  <CheckCircle className="h-16 w-16 text-green-500" />
-                </div>
-                <h1 className="text-3xl font-bold mb-2">
-                  🎉 Your <span className="gradient-text">trip is born</span>!
-                </h1>
-                <p className="text-xl mb-8">
-                  <span className="font-medium">"{trip.name}"</span> is ready for planning.
-                </p>
-
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-medium">Next steps:</h2>
-                    <ul className="space-y-3 text-left">
-                      <li className="flex items-start gap-2">
-                        <div className="rounded-full bg-primary/10 p-1 mt-0.5">
-                          <CheckCircle className="h-4 w-4 text-primary" />
-                        </div>
-                        <span>Add places to visit to your itinerary</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="rounded-full bg-primary/10 p-1 mt-0.5">
-                          <CheckCircle className="h-4 w-4 text-primary" />
-                        </div>
-                        <span>Invite your travel companions</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="rounded-full bg-primary/10 p-1 mt-0.5">
-                          <CheckCircle className="h-4 w-4 text-primary" />
-                        </div>
-                        <span>Track your expenses and split costs</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="flex flex-col gap-4 pt-4">
-                    <Link href={`/trips/${trip.id}`}>
-                      <Button className="w-full">Go to Trip Details</Button>
-                    </Link>
-                    <Link href="/">
-                      <Button variant="outline" className="w-full">
-                        View All Trips
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Container className="flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-lg p-6">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="rounded-full bg-primary/10 p-3">
+              <Icons.check className="h-8 w-8 text-primary" />
+            </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold">Trip Created Successfully!</h1>
+              <p className="mt-2 text-muted-foreground">
+                Your trip "{trip.title}" has been created. You can now start planning your adventure!
+              </p>
+            </div>
+            <div className="flex w-full flex-col gap-3">
+              <Button asChild>
+                <Link href={`/trips/${trip.id}`}>View Trip Details</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/trips">View All Trips</Link>
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </Container>
     )
   }
   
   // Fallback if no trip data and no error (should ideally not be reached)
   return (
-     <div className="min-h-screen bg-muted/30 py-8">
-        <div className="container max-w-2xl">
-          <p>Something went wrong. Please try again later.</p>
-          <Link href="/">
-              <Button variant="outline" className="mt-4">
-                Go to My Trips
-              </Button>
-          </Link>
-        </div>
-      </div>
+     <Container className="flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-lg p-6">
+          <div className="flex flex-col items-center space-y-4">
+            <Icons.warning className="h-12 w-12 text-destructive" />
+            <h1 className="text-2xl font-bold">Oops!</h1>
+            <p className="text-center text-muted-foreground">
+              We couldn't find your trip. Please try creating a new one.
+            </p>
+            <Button asChild>
+              <Link href="/trips/create">Create New Trip</Link>
+            </Button>
+          </div>
+        </Card>
+      </Container>
   );
 }
 

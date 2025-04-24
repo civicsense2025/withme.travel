@@ -1,156 +1,152 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 // GET /api/likes?type=destination
 // Gets all likes for the current user, optionally filtered by type
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const supabase = createClient()
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error("API Likes GET Error: Unauthorized - ", userError?.message);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const type = request.nextUrl.searchParams.get("type")
-    const query = supabase
-      .from("likes")
-      .select("*, destinations(*), itineraries(*)")
-      .eq("user_id", session.user.id)
-    
-    // Add type filter if provided
+    // Get query params
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type')
+
+    // Build query
+    let query = supabase
+      .from('likes')
+      .select('*')
+      .eq('user_id', user.id) // Use user.id
+
     if (type) {
-      query.eq("item_type", type)
+      query = query.eq('item_type', type)
     }
 
-    const { data, error } = await query
-
+    // Execute query
+    const { data: likes, error } = await query
     if (error) {
-      console.error("Error fetching likes:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('API Likes GET: Error fetching likes -', error.message);
+        throw error; // Re-throw to be caught by the outer catch block
     }
 
-    return NextResponse.json({ likes: data })
+    return NextResponse.json(likes)
   } catch (error: any) {
-    console.error("Exception fetching likes:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Error fetching likes:', error.message)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
 // POST /api/likes
 // Creates a new like for the current user
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const supabase = createClient()
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+       console.error("API Likes POST Error: Unauthorized - ", userError?.message);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { item_id, item_type } = await request.json()
+    // Get request body
+    const body = await request.json()
+    const { itemId, itemType } = body
 
-    if (!item_id || !item_type) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (!itemId || !itemType) {
+        return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Validate item type
-    if (!['destination', 'itinerary', 'attraction'].includes(item_type)) {
-      return NextResponse.json({ error: "Invalid item type" }, { status: 400 })
-    }
+    // Optional: Add item existence check here if needed
+    // ... (code to verify itemId exists in the relevant table based on itemType)
 
-    // Check if the item exists based on type
-    let itemExists = false
-    if (item_type === 'destination') {
-      const { count } = await supabase
-        .from('destinations')
-        .select('*', { count: 'exact', head: true })
-        .eq('id', item_id)
-      
-      itemExists = count ? count > 0 : false
-    } else if (item_type === 'itinerary') {
-      const { count } = await supabase
-        .from('itineraries')
-        .select('*', { count: 'exact', head: true })
-        .eq('id', item_id)
-      
-      itemExists = count ? count > 0 : false
-    } else if (item_type === 'attraction') {
-      const { count } = await supabase
-        .from('attractions')
-        .select('*', { count: 'exact', head: true })
-        .eq('id', item_id)
-      
-      itemExists = count ? count > 0 : false
-    }
-
-    if (!itemExists) {
-      return NextResponse.json({ error: "Item not found" }, { status: 404 })
-    }
-
-    // Add the like
+    // Create like
     const { data, error } = await supabase
-      .from("likes")
+      .from('likes')
       .insert({
-        user_id: session.user.id,
-        item_id,
-        item_type
+        user_id: user.id, // Use user.id
+        item_id: itemId,
+        item_type: itemType
       })
-      .select()
-      .single()
+      .select() // Select the newly created record
+      .single() // Expect only one record
 
+    // Handle unique constraint violation (already liked)
+    if (error?.code === '23505') { 
+        console.log(`API Likes POST: Item ${itemId} (${itemType}) already liked by user ${user.id}.`);
+        // You could fetch the existing like here if needed, or just return conflict
+        return NextResponse.json({ error: 'Item already liked' }, { status: 409 }); // 409 Conflict
+    }
+    
+    // Handle other potential errors during insert
     if (error) {
-      // Check if it's a unique constraint violation (already liked)
-      if (error.code === '23505') {
-        return NextResponse.json({ error: "Already liked" }, { status: 409 })
-      }
-      
-      console.error("Error creating like:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('API Likes POST: Error inserting like -', error.message);
+        throw error; // Re-throw other errors
     }
 
-    return NextResponse.json({ like: data })
+    // Return the newly created like data
+    return NextResponse.json(data)
+
   } catch (error: any) {
-    console.error("Exception creating like:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Error creating like:', error.message)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
-// DELETE /api/likes?item_id=123&item_type=destination
+// DELETE /api/likes?itemId=123&itemType=destination
 // Deletes a like for the current user
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const supabase = createClient()
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error("API Likes DELETE Error: Unauthorized - ", userError?.message);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const item_id = request.nextUrl.searchParams.get("item_id")
-    const item_type = request.nextUrl.searchParams.get("item_type")
+    // Get query params
+    const { searchParams } = new URL(request.url)
+    const itemId = searchParams.get('itemId')
+    const itemType = searchParams.get('itemType')
 
-    if (!item_id || !item_type) {
-      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
+    if (!itemId || !itemType) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Delete the like
-    const { error } = await supabase
-      .from("likes")
-      .delete()
-      .eq("user_id", session.user.id)
-      .eq("item_id", item_id)
-      .eq("item_type", item_type)
+    // Delete like
+    const { error, count } = await supabase
+      .from('likes')
+      .delete({ count: 'exact' }) // Request count of deleted rows
+      .eq('user_id', user.id) // Use user.id
+      .eq('item_id', itemId)
+      .eq('item_type', itemType)
 
     if (error) {
-      console.error("Error deleting like:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('API Likes DELETE: Error deleting like -', error.message);
+        throw error; // Re-throw
     }
 
-    return NextResponse.json({ success: true })
+    // Check if any row was actually deleted
+    if (count === 0) {
+        console.log(`API Likes DELETE: Like not found for item ${itemId}, type ${itemType}, user ${user.id}`);
+        // Return 404 if the like didn't exist to be deleted
+        return NextResponse.json({ error: 'Like not found' }, { status: 404 });
+    }
+
+    // Return 204 No Content on successful deletion
+    return new NextResponse(null, { status: 204 })
+    
   } catch (error: any) {
-    console.error("Exception deleting like:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Error deleting like:', error.message)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 } 

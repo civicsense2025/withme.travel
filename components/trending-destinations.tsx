@@ -18,7 +18,21 @@ interface Destination {
   city: string
   country: string
   continent: string
+  description: string | null
   image_url: string | null
+  emoji?: string | null
+  image_metadata?: {
+    alt_text?: string
+    attribution?: string
+  }
+  cuisine_rating: number
+  nightlife_rating: number
+  cultural_attractions: number
+  outdoor_activities: number
+  beach_quality: number
+  best_season?: string
+  avg_cost_per_day?: number
+  safety_rating?: number
   travelers_count: number
   avg_days: number
 }
@@ -65,118 +79,74 @@ export function TrendingDestinations() {
   const destinations = data?.destinations || []
   const isLoading = !data && !error
 
-  // Cards animation stagger
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  }
-
-  const fadeIn = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-  }
-
   if (isLoading) {
     return (
-      <div className="py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold lowercase">trending destinations</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={`skeleton-${i}`} className="rounded-3xl overflow-hidden h-64 bg-muted animate-pulse" />
-          ))}
-        </div>
-      </div>
+      <>
+        {[...Array(6)].map((_, i) => (
+          <div 
+            key={`skeleton-${i}`} 
+            className="aspect-[3/4] rounded-xl overflow-hidden bg-muted animate-pulse"
+          />
+        ))}
+      </>
     )
   }
 
   // Show error details for debugging
   if (error) {
     return (
-      <div className="py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold lowercase">trending destinations</h2>
-        </div>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error loading destinations</AlertTitle>
-          <AlertDescription>
-            <p>There was a problem loading destinations.</p>
-            {errorDetails && (
-              <details className="mt-2 text-xs">
-                <summary>Error details</summary>
-                <pre className="mt-2 whitespace-pre-wrap">{errorDetails}</pre>
-              </details>
-            )}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error loading destinations</AlertTitle>
+        <AlertDescription>
+          <p>There was a problem loading destinations.</p>
+          {errorDetails && (
+            <details className="mt-2 text-xs">
+              <summary>Error details</summary>
+              <pre className="mt-2 whitespace-pre-wrap">{errorDetails}</pre>
+            </details>
+          )}
+        </AlertDescription>
+      </Alert>
     )
   }
 
   // If no destinations after loading, show empty state
   if (destinations.length === 0 && !isLoading) {
     return (
-      <div className="py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold lowercase">trending destinations</h2>
-        </div>
-        <div className="text-center py-10">
-          <p className="text-muted-foreground">No trending destinations found.</p>
-        </div>
+      <div className="text-center py-10">
+        <p className="text-muted-foreground">No trending destinations found.</p>
       </div>
     )
   }
 
   return (
-    <div className="py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold lowercase">trending destinations</h2>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/destinations")}
-          className="lowercase rounded-full hover:bg-travel-purple hover:bg-opacity-20"
+    <>
+      {destinations.map((destination: Destination, index: number) => (
+        <motion.div
+          key={destination.id || `dest-${index}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            duration: 0.4, 
+            delay: index * 0.15,
+            ease: "easeOut"
+          }}
+          className="h-full"
         >
-          view all <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-
-      <motion.div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-      >
-        {destinations.map((destination: Destination, index: number) => (
-          <motion.div
-            key={destination.id || `dest-${index}`}
-            variants={fadeIn}
-          >
-            <DestinationCard 
-              destination={{
-                id: destination.id,
-                city: destination.city,
-                country: destination.country,
-                image_url: destination.image_url,
-                slug: destination.city.toLowerCase().replace(/\s+/g, "-"),
-              }}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
+          <DestinationCard 
+            destination={destination}
+            href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}`}
+          />
+        </motion.div>
+      ))}
       
       {/* Show subtle loading indicator while revalidating */}
       {isValidating && !isLoading && (
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex justify-center col-span-full">
           <div className="h-1 w-10 bg-travel-purple/50 rounded-full animate-pulse"></div>
         </div>
       )}
-    </div>
+    </>
   )
 }

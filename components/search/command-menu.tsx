@@ -111,7 +111,7 @@ export function CommandMenu() {
           id: `destination-${dest.id || dest.city}`,
           title: `${dest.city}${dest.state_province ? `, ${dest.state_province}` : ""}, ${dest.country}`,
           type: "destination",
-          url: `/destinations/${dest.city.toLowerCase().replace(/\s+/g, "-")}`,
+          url: `/destinations/${dest.city ? dest.city.toLowerCase().replace(/\s+/g, "-") : `destination-${dest.id}`}`,
           icon: <MapPin className="h-5 w-5 text-primary" />,
           description: dest.description || `Explore ${dest.city}`,
         }))

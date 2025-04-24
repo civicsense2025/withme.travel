@@ -5,15 +5,18 @@ import { CityBubbles } from "./city-bubbles"
 import { LocationSearch } from "@/components/location-search"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/components/auth-provider"
+import type { AuthContextType } from "@/components/auth-provider"
 
 export function HeroSection() {
   const [planningType, setPlanningType] = useState("group planning")
   const router = useRouter()
+  const { user } = useAuth() as AuthContextType
   const planningTypes = [
     "group planning",
     "family vacations",
     "destination weddings",
-    "business retreats",
+    "work retreats",
     "friend getaways",
     "bachelor parties",
     "reunion trips",
@@ -31,8 +34,18 @@ export function HeroSection() {
   }, [])
 
   const handleLocationSelect = (destination: any) => {
-    if (destination && destination.id) {
-      router.push(`/destinations/${destination.id}`);
+    if (destination && destination.city) {
+      // Create a slug from the city name - replacing spaces with hyphens and removing special characters
+      const citySlug = destination.city.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
+      router.push(`/destinations/${citySlug}`);
+    }
+  }
+
+  const handleExploreClick = () => {
+    if (user) {
+      router.push('/trips')
+    } else {
+      router.push('/destinations')
     }
   }
 
@@ -68,9 +81,9 @@ export function HeroSection() {
           />
           <Button 
             className="lowercase px-8 py-3 rounded-full h-auto w-full md:w-auto"
-            onClick={() => router.push('/destinations')}
+            onClick={handleExploreClick}
           >
-            explore
+            {user ? 'my trips' : 'explore'}
           </Button>
         </div>
       </div>

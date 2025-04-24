@@ -6,6 +6,8 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { Globe, Map, Users, CalendarDays, BarChart3 } from "lucide-react"
+import type { Metadata, ResolvingMetadata } from "next"
+import { notFound } from "next/navigation"
 
 import { createClient } from "@/utils/supabase/client"
 import { PageHeader } from "@/components/page-header"
@@ -13,6 +15,33 @@ import { DestinationCard } from "@/components/destination-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { createClient as serverCreateClient } from "@/utils/supabase/server"
+
+// Force dynamic rendering for this page since it uses data fetching
+export const dynamic = 'force-dynamic';
+
+// Define the structure matching DestinationCardProps["destination"]
+interface Destination {
+  id: string
+  city: string
+  country: string
+  continent: string
+  description: string | null
+  image_url?: string | null
+  emoji?: string | null
+  image_metadata?: {
+    alt_text?: string
+    attribution?: string
+  }
+  cuisine_rating: number
+  nightlife_rating: number
+  cultural_attractions: number
+  outdoor_activities: number
+  beach_quality: number
+  best_season?: string
+  avg_cost_per_day?: number
+  safety_rating?: number
+}
 
 // Define continent-specific data
 const CONTINENT_DATA = {
@@ -149,7 +178,8 @@ const itemVariants = {
 export default function ContinentPage() {
   const params = useParams()
   const continentSlug = typeof params.continent === 'string' ? params.continent : ''
-  const [destinations, setDestinations] = useState<any[]>([])
+  // Use the defined Destination type for state
+  const [destinations, setDestinations] = useState<Destination[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   
@@ -169,15 +199,17 @@ export default function ContinentPage() {
         setIsLoading(true)
         const supabase = createClient()
         
+        // Select all fields needed for the Destination type
         const { data, error } = await supabase
           .from('destinations')
-          .select('*')
+          .select('*') // Ensure '*' fetches all required fields
           .eq('continent', continentData.name)
           .order('popularity', { ascending: false })
         
         if (error) throw error
         
-        setDestinations(data || [])
+        // Cast fetched data to Destination[] before setting state
+        setDestinations((data as Destination[]) || [])
       } catch (error) {
         console.error('Error fetching destinations:', error)
       } finally {
@@ -188,6 +220,7 @@ export default function ContinentPage() {
     fetchDestinations()
   }, [continentSlug, continentData.name])
   
+  // These should now be correctly typed as Destination[]
   const topDestinations = destinations.slice(0, 9)
   const otherDestinations = destinations.slice(9)
 
@@ -366,16 +399,7 @@ export default function ContinentPage() {
                 >
                   {topDestinations.slice(0, 3).map((destination) => (
                     <motion.div key={destination.id} variants={itemVariants}>
-                      <DestinationCard
-                        destination={{
-                          id: destination.id,
-                          city: destination.city,
-                          country: destination.country,
-                          image_url: destination.image_url,
-                          description: destination.description,
-                          slug: destination.city.toLowerCase().replace(/\s+/g, "-"),
-                        }}
-                      />
+                      <DestinationCard destination={destination} />
                     </motion.div>
                   ))}
                 </motion.div>
@@ -411,16 +435,7 @@ export default function ContinentPage() {
                   >
                     {topDestinations.map((destination) => (
                       <motion.div key={destination.id} variants={itemVariants}>
-                        <DestinationCard
-                          destination={{
-                            id: destination.id,
-                            city: destination.city,
-                            country: destination.country,
-                            image_url: destination.image_url,
-                            description: destination.description,
-                            slug: destination.city.toLowerCase().replace(/\s+/g, "-"),
-                          }}
-                        />
+                        <DestinationCard destination={destination} />
                       </motion.div>
                     ))}
                   </motion.div>
@@ -436,16 +451,7 @@ export default function ContinentPage() {
                       >
                         {otherDestinations.map((destination) => (
                           <motion.div key={destination.id} variants={itemVariants}>
-                            <DestinationCard
-                              destination={{
-                                id: destination.id,
-                                city: destination.city,
-                                country: destination.country,
-                                image_url: destination.image_url,
-                                description: destination.description,
-                                slug: destination.city.toLowerCase().replace(/\s+/g, "-"),
-                              }}
-                            />
+                            <DestinationCard destination={destination} />
                           </motion.div>
                         ))}
                       </motion.div>

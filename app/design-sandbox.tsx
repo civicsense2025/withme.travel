@@ -8,6 +8,7 @@ import { Heart, Sparkles, ChevronRight, ArrowRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import TravelTracker from '@/components/TravelTracker'
 
 // SVG texture overlay for gradients
 const TextureOverlay = () => (
@@ -295,6 +296,11 @@ export default function DesignSandbox() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section style={{ margin: '2rem 0' }}>
+        <h2>Travel Tracker Widget</h2>
+        <TravelTracker />
       </section>
     </div>
   )

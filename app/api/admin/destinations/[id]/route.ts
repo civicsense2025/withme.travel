@@ -1,97 +1,146 @@
-import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+import type { Database } from '@/types/supabase';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-  const destinationId = params.id
+// Helper function to check admin status (can be moved to a shared lib later)
+async function isAdmin(supabaseClient: any): Promise<boolean> {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) {
+    return false;
+  }
+  const { data: profile, error } = await supabaseClient
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single();
+  
+  if (error || !profile) {
+    console.error('[API Admin Check] Error fetching profile or profile not found:', error);
+    return false;
+  }
+  return profile.is_admin === true;
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        async get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        async set(name: string, value: string, options: Partial<ResponseCookie>) {
+          try {
+            const cookieStore = await cookies();
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // Handle error if needed
+          }
+        },
+        async remove(name: string, options: Partial<ResponseCookie>) {
+          try {
+            const cookieStore = await cookies();
+            cookieStore.delete({ name, ...options });
+          } catch (error) {
+            // Handle error if needed
+          }
+        },
+      },
+    }
+  );
+
+  // Check if the user is an admin
+  const userIsAdmin = await isAdmin(supabase);
+  if (!userIsAdmin) {
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
-    // Check if user is authenticated and is an admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { id } = params;
+    const data = await request.json();
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const { error } = await supabase
+      .from('destinations')
+      .update(data)
+      .eq('id', id);
 
-    // Check if user is an admin
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single()
+    if (error) throw error;
 
-    if (userError || !userData?.is_admin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // Get update data from request
-    const updateData = await request.json()
-
-    // Update destination
-    const { data, error } = await supabase
-      .from("destinations")
-      .update({
-        name: updateData.name,
-        city: updateData.city,
-        country: updateData.country,
-        continent: updateData.continent,
-        description: updateData.description || null,
-        image_url: updateData.image_url || null,
-      })
-      .eq("id", destinationId)
-      .select()
-
-    if (error) {
-      throw error
-    }
-
-    return NextResponse.json({ destination: data[0] })
-  } catch (error) {
-    console.error("Error updating destination:", error)
-    return NextResponse.json({ error: "Failed to update destination" }, { status: 500 })
+    return NextResponse.json({ message: 'Destination updated successfully' });
+  } catch (error: any) {
+    console.error('Error updating destination:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Failed to update destination', details: error.message }),
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-  const destinationId = params.id
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        async get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        async set(name: string, value: string, options: Partial<ResponseCookie>) {
+          try {
+            const cookieStore = await cookies();
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // Handle error if needed
+          }
+        },
+        async remove(name: string, options: Partial<ResponseCookie>) {
+          try {
+            const cookieStore = await cookies();
+            cookieStore.delete({ name, ...options });
+          } catch (error) {
+            // Handle error if needed
+          }
+        },
+      },
+    }
+  );
+
+  // Check if the user is an admin
+  const userIsAdmin = await isAdmin(supabase);
+  if (!userIsAdmin) {
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
-    // Check if user is authenticated and is an admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { id } = params;
+    const { error } = await supabase.from('destinations').delete().eq('id', id);
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    if (error) throw error;
 
-    // Check if user is an admin
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single()
-
-    if (userError || !userData?.is_admin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // Delete destination
-    const { error } = await supabase.from("destinations").delete().eq("id", destinationId)
-
-    if (error) {
-      throw error
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error deleting destination:", error)
-    return NextResponse.json({ error: "Failed to delete destination" }, { status: 500 })
+    return NextResponse.json({ message: 'Destination deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting destination:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Failed to delete destination', details: error.message }),
+      { status: 500 }
+    );
   }
 }

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
+import { DB_TABLES, DB_FIELDS, TRIP_ROLES } from "@/utils/constants"; // Import constants
 
 // Define interfaces for better type safety
 interface TripMemberEntry {
@@ -50,22 +51,23 @@ export async function GET(request: NextRequest) {
 
     // Build a single efficient query - more similar to admin dashboard approach
     let query = supabase
-      .from("trips")
+      .from(DB_TABLES.TRIPS)
       .select(`
         *,
-        trip_members!inner(user_id, role),
-        trip_members_count:trip_members(count)
+        ${DB_TABLES.TRIP_MEMBERS}!inner(${DB_FIELDS.TRIP_MEMBERS.USER_ID}, ${DB_FIELDS.TRIP_MEMBERS.ROLE}),
+        trip_members_count:${DB_TABLES.TRIP_MEMBERS}(count)
       `)
-      .eq("trip_members.user_id", user.id)
+      // Use the relationship name defined in Supabase for filtering
+      .eq(`${DB_TABLES.TRIP_MEMBERS}.${DB_FIELDS.TRIP_MEMBERS.USER_ID}`, user.id) 
     
     // Apply sorting
     if (sort === 'oldest') {
-      query = query.order("created_at", { ascending: true })
+      query = query.order(DB_FIELDS.TRIPS.CREATED_AT, { ascending: true })
     } else if (sort === 'name') {
-      query = query.order("name", { ascending: true })
+      query = query.order(DB_FIELDS.TRIPS.NAME, { ascending: true })
     } else {
       // Default to newest first
-      query = query.order("created_at", { ascending: false })
+      query = query.order(DB_FIELDS.TRIPS.CREATED_AT, { ascending: false })
     }
     
     const { data: trips, error: tripsError } = await query
@@ -135,20 +137,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Ensure the trip is associated with the current user
-    body.created_by = user.id
+    body[DB_FIELDS.TRIPS.CREATED_BY] = user.id
 
-    const { data, error } = await supabase.from("trips").insert(body).select()
+    const { data, error } = await supabase.from(DB_TABLES.TRIPS).insert(body).select()
 
     if (error) {
       throw error
     }
     
-    // Also add the creator as a member with 'owner' role
-    const tripId = data[0].id
-    const { error: memberError } = await supabase.from("trip_members").insert({
-      trip_id: tripId,
-      user_id: user.id,
-      role: "owner"
+    // Also add the creator as a member with 'admin' role
+    const tripId = data[0][DB_FIELDS.TRIPS.ID] // Use ID constant
+    const { error: memberError } = await supabase.from(DB_TABLES.TRIP_MEMBERS).insert({
+      [DB_FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
+      [DB_FIELDS.TRIP_MEMBERS.USER_ID]: user.id,
+      [DB_FIELDS.TRIP_MEMBERS.ROLE]: TRIP_ROLES.ADMIN // Use ADMIN role constant
     })
     
     if (memberError) {

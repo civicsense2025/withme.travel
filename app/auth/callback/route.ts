@@ -1,6 +1,6 @@
-import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 /**
  * Validates that a redirect URL is safe
@@ -33,8 +33,8 @@ function isValidRedirectUrl(url: string): boolean {
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get("code")
-  const redirectTo = requestUrl.searchParams.get("redirect") || "/"
+  const code = requestUrl.searchParams.get('code')
+  const redirectTo = requestUrl.searchParams.get('redirect') || '/'
   const invitationToken = requestUrl.searchParams.get("invitation")
   const referralCode = requestUrl.searchParams.get("ref")
 
@@ -51,92 +51,83 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = cookies()
-    const supabase = createClient()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    
+    try {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) throw error
 
-    // Exchange the code for a session
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (error) {
-      console.error("Auth callback error:", error)
-      return NextResponse.redirect(`${requestUrl.origin}/login?error=${encodeURIComponent(error.message)}`)
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log("[Auth Callback] Successfully exchanged code for session for user:", data?.user?.id);
-    }
-
-    // Check if this is a new user from Google sign-in
-    if (data?.user?.app_metadata?.provider === "google" && data?.user?.user_metadata) {
-      // Check if user exists in our profiles table
-      const { data: existingUser } = await supabase.from("profiles").select("id").eq("id", data.user.id).single()
-
-      // If user doesn't exist, create a new record
-      if (!existingUser) {
-        const { error: insertError } = await supabase.from("profiles").insert([
-          {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.user_metadata.full_name || data.user.user_metadata.name,
-            avatar_url: data.user.user_metadata.avatar_url,
-            created_at: new Date().toISOString(),
-            referred_by: referralCode || null,
-          },
-        ])
-
-        if (insertError) {
-          console.error("Error creating user record:", insertError)
-        } else if (process.env.NODE_ENV === 'development') {
-          console.log("[Auth Callback] Created new user profile for:", data.user.id);
-        }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Auth Callback] Successfully exchanged code for session for user:', data.user?.id)
       }
-    }
 
-    // Handle invitation acceptance if present
-    if (invitationToken) {
-      try {
-        const response = await fetch(`${requestUrl.origin}/api/invitations/${invitationToken}/accept`, {
-          method: "POST",
-          headers: {
-            Cookie: cookieStore.toString(),
-          },
-        })
+      // Check if this is a new user from Google sign-in
+      if (data?.user?.app_metadata?.provider === "google" && data?.user?.user_metadata) {
+        // Check if user exists in our profiles table
+        const { data: existingUser } = await supabase.from("profiles").select("id").eq("id", data.user.id).single()
 
-        if (response.ok) {
-          const data = await response.json()
-          if (data.tripId) {
-            // Redirect to the trip instead of the original redirect
-            const tripRedirectUrl = `${requestUrl.origin}/trips/${data.tripId}`;
-            if (process.env.NODE_ENV === 'development') {
-              console.log("[Auth Callback] Redirecting to trip:", tripRedirectUrl);
-            }
-            return NextResponse.redirect(tripRedirectUrl)
+        // If user doesn't exist, create a new record
+        if (!existingUser) {
+          const { error: insertError } = await supabase.from("profiles").insert([
+            {
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.user_metadata.full_name || data.user.user_metadata.name,
+              avatar_url: data.user.user_metadata.avatar_url,
+              created_at: new Date().toISOString(),
+              referred_by: referralCode || null,
+            },
+          ])
+
+          if (insertError) {
+            console.error("Error creating user record:", insertError)
+          } else if (process.env.NODE_ENV === 'development') {
+            console.log("[Auth Callback] Created new user profile for:", data.user.id);
           }
         }
-      } catch (error) {
-        console.error("Error accepting invitation:", error)
-        // Continue with normal redirect even if invitation acceptance fails
       }
+
+      // Handle invitation acceptance if present
+      if (invitationToken) {
+        try {
+          const response = await fetch(`${requestUrl.origin}/api/invitations/${invitationToken}/accept`, {
+            method: "POST",
+            headers: {
+              Cookie: cookieStore.toString(),
+            },
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.tripId) {
+              // Redirect to the trip instead of the original redirect
+              const tripRedirectUrl = `${requestUrl.origin}/trips/${data.tripId}`;
+              if (process.env.NODE_ENV === 'development') {
+                console.log("[Auth Callback] Redirecting to trip:", tripRedirectUrl);
+              }
+              return NextResponse.redirect(tripRedirectUrl)
+            }
+          }
+        } catch (error) {
+          console.error("Error accepting invitation:", error)
+          // Continue with normal redirect even if invitation acceptance fails
+        }
+      }
+
+      // If there's a redirect URL, use it
+      if (redirectTo) {
+        return NextResponse.redirect(new URL(redirectTo, requestUrl.origin))
+      }
+    } catch (error) {
+      console.error('Error in auth callback:', error)
+      // Redirect to login with error
+      return NextResponse.redirect(
+        `${requestUrl.origin}/login?error=${encodeURIComponent('Authentication failed')}`
+      )
     }
   }
 
-  // Validate the redirect URL to prevent open redirect vulnerabilities
-  let finalRedirectUrl: string;
-  
-  if (redirectTo.startsWith('http') && !isValidRedirectUrl(redirectTo)) {
-    console.warn("[Auth Callback] Blocked potential open redirect to:", redirectTo);
-    // If the redirect URL is suspicious, redirect to home instead
-    finalRedirectUrl = `${requestUrl.origin}/`;
-  } else if (redirectTo.startsWith('http')) {
-    // Already a full URL that passed validation
-    finalRedirectUrl = redirectTo;
-  } else {
-    // It's a relative path - construct the full URL
-    finalRedirectUrl = `${requestUrl.origin}${redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`}`;
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log("[Auth Callback] Final redirect URL:", finalRedirectUrl);
-  }
-
-  return NextResponse.redirect(finalRedirectUrl)
+  // Default redirect to home page if no redirect URL specified
+  return NextResponse.redirect(requestUrl.origin)
 }

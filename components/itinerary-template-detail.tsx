@@ -147,6 +147,19 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
         <Image
           src={template.destinations.image_url || '/placeholder.svg?height=800&width=1200&query=travel destination'}
           alt={template.title}
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Add gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+      </div>
+      
+      {/* Placeholder for the rest of the content */}
+      <div>Rest of the component content goes here...</div>
+
+    </div>
+  );
+}
 
 
-\

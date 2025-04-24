@@ -1,0 +1,2 @@
+// types/itinerary.ts
+export {};

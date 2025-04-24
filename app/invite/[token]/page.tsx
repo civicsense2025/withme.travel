@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AlertCircle, Loader2 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/utils/supabase/client"
 
 export default function InvitePage({ params }: { params: { token: string } }) {
+  const supabase = createClient()
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)

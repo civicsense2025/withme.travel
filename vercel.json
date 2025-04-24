@@ -1,0 +1,8 @@
+{
+    "crons": [
+      {
+        "path": "/api/splitwise/refresh-tokens",
+        "schedule": "50 * * * *"
+      }
+    ]
+  }

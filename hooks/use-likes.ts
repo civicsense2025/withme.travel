@@ -1,167 +1,144 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useToast } from '@/hooks/use-toast'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth-provider'
+import { useToast } from '@/components/ui/use-toast'
 
 type LikeItemType = 'destination' | 'itinerary' | 'attraction'
 
-interface LikeItem {
+interface Like {
   id: string
+  user_id: string
   item_id: string
   item_type: LikeItemType
-  user_id: string
   created_at: string
 }
 
-interface UseLikesOptions {
-  type?: LikeItemType
-  initiallyLikedItemIds?: string[]
-}
-
-export function useLikes(options: UseLikesOptions = {}) {
-  const { user } = useAuth()
+export function useLikes() {
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { toast } = useToast()
-  const [likes, setLikes] = useState<LikeItem[]>([])
-  const [likedItemIds, setLikedItemIds] = useState<Set<string>>(
-    new Set(options.initiallyLikedItemIds || [])
-  )
+  const [likes, setLikes] = useState<Like[]>([])
+  const [likedItemIds, setLikedItemIds] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
 
-  // Fetch likes for the current user
-  const fetchLikes = useCallback(async () => {
-    if (!user) return
-    
-    setIsLoading(true)
-    setError(null)
-    
+  // Fetch likes when user changes
+  useEffect(() => {
+    if (!isAuthLoading) {
+      if (user) {
+        fetchLikes()
+      } else {
+        // Clear likes if user logs out
+        setLikes([])
+        setLikedItemIds(new Set())
+      }
+    }
+  }, [user, isAuthLoading])
+
+  // Fetch all likes for current user
+  const fetchLikes = async () => {
     try {
-      // Build query URL
-      let url = '/api/likes'
-      if (options.type) {
-        url += `?type=${options.type}`
-      }
-      
-      const response = await fetch(url)
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch likes')
-      }
-      
-      const data = await response.json()
-      setLikes(data.likes || [])
-      
-      // Update the set of liked item IDs
-      const newLikedIds = new Set<string>()
-      data.likes.forEach((like: LikeItem) => {
-        newLikedIds.add(like.item_id)
+      setIsLoading(true)
+      const response = await fetch('/api/likes', {
+        credentials: 'include'
       })
-      setLikedItemIds(newLikedIds)
-    } catch (err: any) {
-      console.error('Error fetching likes:', err)
-      setError(err)
+
+      if (response.status === 401) {
+        // Clear likes if unauthorized
+        setLikes([])
+        setLikedItemIds(new Set())
+        return
+      }
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to fetch likes')
+      }
+
+      const data = await response.json()
+      setLikes(data)
+      setLikedItemIds(new Set(data.map((like: Like) => like.item_id)))
+    } catch (error) {
+      console.error('Error fetching likes:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch likes. Please try again later.',
+        variant: 'destructive'
+      })
     } finally {
       setIsLoading(false)
     }
-  }, [user, options.type])
+  }
 
   // Check if an item is liked
-  const isLiked = useCallback((itemId: string) => {
+  const isLiked = (itemId: string) => {
     return likedItemIds.has(itemId)
-  }, [likedItemIds])
+  }
 
   // Toggle like status for an item
-  const toggleLike = useCallback(async (itemId: string, itemType: LikeItemType) => {
-    if (!user) {
-      toast({
-        title: 'Login required',
-        description: 'Please log in to save items',
-        variant: 'destructive',
-      })
-      return false
-    }
+  const toggleLike = async (itemId: string, itemType: LikeItemType): Promise<boolean> => {
+    if (!user) return false
+
+    const currentlyLiked = isLiked(itemId)
     
     try {
-      if (isLiked(itemId)) {
+      if (currentlyLiked) {
         // Unlike
-        const response = await fetch(`/api/likes?item_id=${itemId}&item_type=${itemType}`, {
+        const response = await fetch(`/api/likes?itemId=${itemId}&itemType=${itemType}`, {
           method: 'DELETE',
+          credentials: 'include'
         })
-        
+
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to unlike item')
+          const error = await response.json()
+          throw new Error(error.message || 'Failed to unlike item')
         }
-        
-        // Update local state
-        setLikedItemIds(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(itemId)
-          return newSet
-        })
-        
+
         setLikes(prev => prev.filter(like => like.item_id !== itemId))
-        
-        return false // Return new like status (false = unliked)
+        setLikedItemIds(prev => {
+          const next = new Set(prev)
+          next.delete(itemId)
+          return next
+        })
+
+        return false
       } else {
         // Like
         const response = await fetch('/api/likes', {
           method: 'POST',
+          credentials: 'include',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            item_id: itemId,
-            item_type: itemType,
-          }),
+            itemId,
+            itemType
+          })
         })
-        
+
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to like item')
+          const error = await response.json()
+          throw new Error(error.message || 'Failed to like item')
         }
-        
-        const data = await response.json()
-        
-        // Update local state
-        setLikedItemIds(prev => {
-          const newSet = new Set(prev)
-          newSet.add(itemId)
-          return newSet
-        })
-        
-        setLikes(prev => [...prev, data.like])
-        
-        return true // Return new like status (true = liked)
+
+        const newLike = await response.json()
+        setLikes(prev => [...prev, newLike])
+        setLikedItemIds(prev => new Set([...prev, itemId]))
+
+        return true
       }
-    } catch (err: any) {
-      console.error('Error toggling like:', err)
+    } catch (error) {
+      console.error('Error toggling like:', error)
       toast({
         title: 'Error',
-        description: err.message || 'Failed to update like status',
-        variant: 'destructive',
+        description: 'Failed to update like status. Please try again later.',
+        variant: 'destructive'
       })
-      return isLiked(itemId) // Return original status
+      return currentlyLiked
     }
-  }, [user, isLiked, toast])
-
-  // Fetch likes on initial load
-  useEffect(() => {
-    if (user) {
-      fetchLikes()
-    } else {
-      // Clear likes when user logs out
-      setLikes([])
-      setLikedItemIds(new Set())
-    }
-  }, [user, fetchLikes])
+  }
 
   return {
     likes,
     isLiked,
     toggleLike,
-    isLoading,
-    error,
-    refetch: fetchLikes,
+    isLoading: isLoading || isAuthLoading
   }
 } 

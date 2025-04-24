@@ -4,9 +4,12 @@ import { cookies } from "next/headers"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
 import { Shield } from "lucide-react"
 
+// Force dynamic rendering for admin pages since they use cookies and auth
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
   const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createClient()
 
   // Check if user is authenticated and is an admin
   const {

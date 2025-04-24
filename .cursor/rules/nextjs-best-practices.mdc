@@ -1,0 +1,202 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Next.js Best Practices for withme.travel
+
+## Project Structure & Organization
+
+- **Feature-Based Organization**: Structure your code around business features rather than technical concerns
+  - Group related components, hooks, utilities, and tests together by feature
+  - Example: `/features/city-profiles/components`, `/features/city-profiles/hooks`
+
+- **Consistent Naming Conventions**:
+  - Use kebab-case for directories and files
+  - Use PascalCase for React components
+  - Use camelCase for functions and variables
+
+- **Clean Separation of Concerns**:
+  - Keep UI components separate from business logic and data fetching
+  - Use custom hooks for reusable logic
+  - Create service layers for API interactions
+
+## Performance Optimization
+
+- **Image Optimization**:
+  - Use Next.js `Image` component for all travel destination photos
+  - Implement proper `sizes` attribute for responsive images
+  - Consider using blur placeholders for city profile images
+  - Optimize image formats (WebP, AVIF) for faster loading
+
+- **Font Optimization**:
+  - Use `next/font` to automatically optimize and load web fonts
+  - Implement font display strategies to prevent layout shifts
+
+- **Code Splitting**:
+  - Leverage Next.js automatic code splitting
+  - Use dynamic imports for larger components that aren't needed on initial load
+  - Consider route-based code splitting for city profile pages
+
+- **Bundle Analysis**:
+  - Regularly monitor bundle size with tools like `@next/bundle-analyzer`
+  - Keep third-party dependencies lean and consider alternatives for large libraries
+
+## Rendering & Data Fetching
+
+- **Strategic Rendering Choices**:
+  - Use Static Generation for city profile pages that don't change frequently
+  - Implement Incremental Static Regeneration (ISR) for content that changes periodically
+  - Choose Server Components for data-heavy sections of city profiles
+
+- **Efficient Data Fetching**:
+  - Implement proper caching strategies for city data
+  - Use `SWR` or `React Query` for client-side data fetching with automatic revalidation
+  - Consider implementing a data access layer to abstract API interactions
+
+- **Loading States**:
+  - Create engaging loading states specific to city profile content
+  - Implement skeleton screens that match the final layout
+  - Consider using React Suspense with streaming rendering
+
+## SEO & Accessibility
+
+- **Robust SEO Implementation**:
+  - Use dynamic metadata for each city profile
+  - Implement proper OpenGraph tags with city-specific images
+  - Create a dynamic sitemap for all city profiles
+  - Implement structured data/JSON-LD for travel destinations
+
+- **Accessibility Standards**:
+  - Maintain WCAG 2.1 AA compliance across all pages
+  - Use semantic HTML consistently
+  - Ensure proper keyboard navigation for interactive elements
+  - Maintain sufficient color contrast throughout the interface
+  - Add proper aria-labels to interactive elements
+
+## State Management
+
+- **Appropriate State Management**:
+  - Use React Context for global UI state (theme, user preferences)
+  - Consider Redux or Zustand for complex application state
+  - Leverage React Query for server state management
+  - Keep component state local when possible
+
+- **Form Handling**:
+  - Use Formik or React Hook Form for complex forms
+  - Implement proper validation with Yup or Zod
+  - Create reusable form components for consistent styling and behavior
+
+## Testing & Quality Assurance
+
+- **Comprehensive Testing Strategy**:
+  - Implement Jest for unit testing
+  - Use React Testing Library for component testing
+  - Set up Cypress for end-to-end testing of key user flows
+  - Consider visual regression testing for city profile layouts
+
+- **Code Quality Tools**:
+  - Use ESLint with strict rules
+  - Implement Prettier for consistent formatting
+  - Set up TypeScript with strict mode enabled
+  - Consider using Husky for pre-commit hooks
+
+## Deployment & Environment
+
+- **CI/CD Pipeline**:
+  - Implement automated testing in CI
+  - Set up preview deployments for PRs
+  - Use environment variables for configuration
+  - Consider implementing feature flags for gradual rollouts
+
+- **Monitoring & Analytics**:
+  - Set up error tracking with Sentry
+  - Implement Core Web Vitals monitoring
+  - Configure custom events tracking for city profile interactions
+  - Set up proper logging for debugging issues
+
+## API Routes & Backend Integration
+
+- **API Route Best Practices**:
+  - Create RESTful endpoints for city data
+  - Implement proper error handling and status codes
+  - Add rate limiting for public endpoints
+  - Use middleware for common functionality like authentication
+
+- **Authentication & Authorization**:
+  - Use NextAuth.js for authentication
+  - Implement proper RBAC for different user types
+  - Secure API routes with appropriate middleware
+  - Consider JWT or session-based authentication based on requirements
+
+## Mobile & Responsive Design
+
+- **Mobile-First Development**:
+  - Design city profiles for mobile devices first
+  - Use responsive design principles throughout the application
+  - Test on multiple device sizes and browsers
+  - Implement touch-friendly interactions
+
+- **Progressive Enhancement**:
+  - Ensure core functionality works without JavaScript
+  - Use feature detection for advanced browser features
+  - Consider offline support with Service Workers
+
+## City Profile Specific Optimizations
+
+- **Dynamic City Content**:
+  - Implement ISR for city profiles with a reasonable revalidation period
+  - Create a CMS integration for easy content updates
+  - Consider a headless CMS for managing city data
+
+- **Interactive Maps**:
+  - Lazy load map components
+  - Use vector maps where possible for faster loading
+  - Implement clustering for multiple points of interest
+  - Consider using static maps for initial load
+
+- **User Personalization**:
+  - Implement saved/favorite cities functionality
+  - Consider personalized recommendations based on browsing history
+  - Add trip planning features with local storage persistence
+
+## Internationalization & Localization
+
+- **Multi-language Support**:
+  - Use next-i18next for translations
+  - Implement proper language detection
+  - Create language-specific routes
+  - Consider right-to-left (RTL) support for applicable languages
+
+- **Content Localization**:
+  - Adapt city descriptions for different markets
+  - Implement region-specific recommendations
+  - Consider currency and measurement unit conversions
+
+## Advanced Features
+
+- **Search Implementation**:
+  - Consider Algolia or Elasticsearch for fast city search
+  - Implement type-ahead suggestions
+  - Add filtering options for city characteristics
+  - Optimize search results for relevance
+
+- **Performance Monitoring**:
+  - Set up real user monitoring (RUM)
+  - Track and optimize Time to Interactive (TTI)
+  - Monitor First Input Delay (FID) and Largest Contentful Paint (LCP)
+  - Set performance budgets for different types of pages
+
+## Documentation & Knowledge Sharing
+
+- **Code Documentation**:
+  - Document complex business logic
+  - Create clear component APIs with PropTypes or TypeScript
+  - Add JSDoc comments for important functions
+  - Maintain a style guide for consistent component usage
+
+- **Team Processes**:
+  - Establish clear PR review guidelines
+  - Create templates for bug reports and feature requests
+  - Document architectural decisions
+  - Maintain up-to-date development environment setup instructions

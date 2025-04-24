@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/utils/supabase/client"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 // Cookie name for consent tracking
 const COOKIE_CONSENT_KEY = "withme_cookie_consent"
@@ -14,21 +14,25 @@ function setCookie(name: string, value: string, days = 365) {
   const date = new Date()
   date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
   const expires = "; expires=" + date.toUTCString()
-  document.cookie = name + "=" + value + expires + "; path=/; SameSite=Lax"
+  // Ensure SameSite=Lax and Secure in production
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  document.cookie = name + "=" + value + expires + "; path=/; SameSite=Lax" + secure;
 }
 
 // Helper function to get a cookie value by name
 function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-  return match ? match[2] : null
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
 }
 
 export function CookieConsent() {
   const [showConsent, setShowConsent] = useState(false)
+  const { supabase } = useAuth();
 
   useEffect(() => {
-    // Check if user has already accepted cookies
     const cookiesAccepted = getCookie(COOKIE_CONSENT_KEY) === "true" || localStorage.getItem("cookiesAccepted") === "true"
     
     if (!cookiesAccepted) {
@@ -36,18 +40,17 @@ export function CookieConsent() {
     }
   }, [])
 
-  const acceptCookies = () => {
-    // Store consent in both localStorage (for legacy support) and as a cookie
+  const acceptCookies = async () => {
     localStorage.setItem("cookiesAccepted", "true")
-    setCookie(COOKIE_CONSENT_KEY, "true", 365) // Set cookie for 1 year
+    setCookie(COOKIE_CONSENT_KEY, "true", 365)
     
-    // Let Supabase know cookies are accepted
-    // This might trigger a re-auth if auth is configured to use cookies
     try {
-      // Re-emit session to ensure it's properly stored with cookies
-      supabase.auth.refreshSession()
+      const { error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error("Error refreshing Supabase session on cookie consent:", error);
+      }
     } catch (error) {
-      console.error("Error refreshing Supabase session:", error)
+      console.error("Exception refreshing Supabase session:", error)
     }
     
     setShowConsent(false)

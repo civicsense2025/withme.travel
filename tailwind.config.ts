@@ -96,6 +96,14 @@ const config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
+        "pulse-soft-scale": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.03)" },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-100% 0' },
+          '100%': { backgroundPosition: '100% 0' },
+        },
         "spin-slow": {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
@@ -133,6 +141,8 @@ const config = {
         "float-slow": "float-slow 6s ease-in-out infinite",
         "bounce-slow": "bounce-slow 4s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "pulse-soft-scale": "pulse-soft-scale 2.5s ease-in-out infinite",
+        shimmer: "shimmer 3s infinite linear",
         "spin-slow": "spin-slow 8s linear infinite",
         "bounce-horizontal": "bounce-horizontal 1s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.5s ease-out",
@@ -150,6 +160,11 @@ const config = {
         "tiptap-blue": "linear-gradient(to right, #3b82f6, #60a5fa)",
         "tiptap-dark": "linear-gradient(to right, #1e293b, #334155)",
         "tiptap-gradient": "linear-gradient(to right, #7c3aed, #3b82f6)",
+        // Gradient for shimmer effect - subtle white/transparent overlay
+        "shimmer-gradient": "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
+      },
+      backgroundSize: {
+        '200%': '200% 100%',
       },
     },
   },

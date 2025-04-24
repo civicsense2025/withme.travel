@@ -1,11 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
-import { Calendar, MapPin, Users } from "lucide-react"
 import { motion } from "framer-motion"
+import { Calendar, MapPin, Users } from "lucide-react"
 import { THEME, PAGE_ROUTES } from "@/utils/constants"
 import { formatDate, formatDateRange, getColorClassFromId } from "@/lib/utils"
+import { OptimizedImage } from "@/components/ui/optimized-image"
+import { imageService } from "@/lib/services/image-service"
+import { useEffect, useState } from "react"
+import type { ImageMetadata } from "@/lib/services/image-service"
 
 // Updated Trip type to match actual database schema
 interface Trip {
@@ -31,6 +34,10 @@ interface Trip {
   description?: string
   cover_image?: string
   members?: number
+  cover_image_metadata?: {
+    alt_text?: string
+    attribution?: string
+  }
 }
 
 interface TripCardProps {
@@ -38,6 +45,8 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip }: TripCardProps) {
+  const [imageMetadata, setImageMetadata] = useState<ImageMetadata | null>(null)
+
   // Extract location from destination_name or use name as fallback
   const location = trip.destination_name || trip.name
   
@@ -54,6 +63,22 @@ export function TripCard({ trip }: TripCardProps) {
   // Use the utility function to get a consistent color
   const colorClass = getColorClassFromId(trip.id)
 
+  // Fetch image metadata on mount
+  useEffect(() => {
+    async function fetchImageMetadata() {
+      try {
+        const metadata = await imageService.getImageMetadata(trip.id, 'trip_cover')
+        if (metadata) {
+          setImageMetadata(metadata)
+        }
+      } catch (error) {
+        console.error('Error fetching image metadata:', error)
+        // Don't set error state, just fall back to default image
+      }
+    }
+    fetchImageMetadata()
+  }, [trip.id])
+
   return (
     <Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)}>
       <motion.div
@@ -64,11 +89,19 @@ export function TripCard({ trip }: TripCardProps) {
         transition={{ duration: 0.3 }}
       >
         <div className="relative h-48 w-full">
-          <Image
-            src={trip.cover_image || trip.cover_image_url || "/placeholder.svg?height=200&width=400&query=travel"}
-            alt={displayTitle}
+          <OptimizedImage
+            metadata={imageMetadata}
+            type="trip_cover"
+            fallbackText={displayTitle}
             fill
             className="object-cover"
+            showAttribution
+            imageOptions={{
+              width: 400,
+              height: 200,
+              quality: 80,
+              format: 'webp'
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-0 left-0 p-4">

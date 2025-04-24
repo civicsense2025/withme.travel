@@ -163,4 +163,14 @@ export function ItineraryItemNotes({
       {!readOnly && (
         <div className="flex justify-end">
           <Button 
-            onClick={saveContent} \
+            onClick={saveContent} 
+            size="sm"
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save Notes'}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

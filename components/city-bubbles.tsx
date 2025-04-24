@@ -107,58 +107,59 @@ export function CityBubbles() {
   const isInView = useInView(bubblesRef, { once: false, amount: 0.15 })
 
   useEffect(() => {
-    // Set initial window width
-    setWindowWidth(window.innerWidth || 0)
-    
-    // Update window width on resize
-    const handleResize = () => {
+    // Ensure window is defined before accessing innerWidth
+    if (typeof window !== 'undefined') {
       setWindowWidth(window.innerWidth || 0)
+    const handleResize = () => {
+        setWindowWidth(window.innerWidth || 0)
     }
-    
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+    } 
   }, [])
 
   useEffect(() => {
+    // Return early if windowWidth is 0 to avoid errors during SSR or initial render
+    if (windowWidth === 0) return;
+    
     const shuffled = [...cityPhrases].sort(() => 0.5 - Math.random())
     const isMobile = windowWidth < 768
-    
+
     // Cap to 6 bubbles on mobile, 8 on desktop
     const maxBubbles = isMobile ? 6 : 8
     const selectedPhrases = shuffled.slice(0, maxBubbles)
 
-    // Mobile grid with more defined spacing to prevent overlap
+    // Mobile grid - Keep as is from previous fix
     const mobileGrid = [
       // Left column
-      { x: "5%", y: "2%" },    // Top left
-      { x: "8%", y: "35%" },  // Middle left
-      { x: "5%", y: "70%" },  // Lower left
-      
+      { x: "5%", y: "2%" },    
+      { x: "8%", y: "35%" },  
+      { x: "5%", y: "70%" },  
       // Right column
-      { x: "60%", y: "15%" },  // Top right
-      { x: "65%", y: "50%" },  // Middle right
-      { x: "58%", y: "85%" },  // Lower right
+      { x: "60%", y: "15%" },  
+      { x: "65%", y: "50%" },  
+      { x: "58%", y: "85%" },  
     ]
 
-    // Desktop grid adjusted for less overlap
+    // Desktop grid - Adjusted X values to center the cluster more
     const desktopGrid = [
-      { x: "5%", y: "8%" },
-      { x: "28%", y: "30%" }, 
-      { x: "50%", y: "5%" },  
-      { x: "70%", y: "25%" }, 
-      { x: "85%", y: "12%" }, 
-      { x: "15%", y: "60%" }, 
-      { x: "40%", y: "75%" }, 
-      { x: "65%", y: "65%" }, 
+      { x: "18%", y: "15%" }, // Moved in from 10%
+      { x: "35%", y: "40%" }, // Moved in from 30%
+      { x: "50%", y: "10%" }, // Already centered
+      { x: "65%", y: "35%" }, // Moved in from 70%
+      { x: "78%", y: "20%" }, // Moved in from 85%
+      { x: "22%", y: "70%" }, // Moved in from 15%
+      { x: "45%", y: "75%" }, // Moved in slightly from 40%
+      { x: "68%", y: "65%" }, // Moved in from 65%
     ]
 
     const grid = isMobile ? mobileGrid : desktopGrid
 
     // Use only as many grid positions as we have phrases
     const positions = grid.slice(0, selectedPhrases.length).map((pos) => {
-      // Minimal random offset, mostly for desktop
-      const xOffset = Math.random() * (isMobile ? 0 : 1) - (isMobile ? 0 : 0.5)
-      const yOffset = Math.random() * (isMobile ? 0 : 2) - (isMobile ? 0 : 1)
+      // Keep desktop random offset minimal
+      const xOffset = Math.random() * (isMobile ? 0.1 : 2.0) - (isMobile ? 0.05 : 1.0)
+      const yOffset = Math.random() * (isMobile ? 0.2 : 4.0) - (isMobile ? 0.1 : 2.0)
       return {
         x: `calc(${pos.x} + ${xOffset}%)`,
         y: `calc(${pos.y} + ${yOffset}%)`, 
@@ -172,9 +173,10 @@ export function CityBubbles() {
         "px-3 py-1 text-xs", // Small
         "px-3 py-1.5 text-sm", // Medium
       ] : [
-        "px-3 py-1 text-xs",
-        "px-4 py-1.5 text-sm",
-        "px-5 py-2 text-base",
+        // Use 3 sizes for desktop for more variation
+        "px-4 py-1.5 text-sm", // Medium
+        "px-5 py-2 text-base", // Large
+        "px-3 py-1 text-xs",   // Small
       ]
       
       const citySlug = createCitySlug(text)
@@ -184,23 +186,27 @@ export function CityBubbles() {
         text,
         citySlug,
         color: bubbleColors[index % bubbleColors.length],
+        // Ensure correct size class assignment for desktop
         sizeClass: sizeClasses[index % sizeClasses.length],
         x: positions[index].x,
         y: positions[index].y,
-        delay: index * 0.15,
+        delay: index * 0.15, 
       }
     })
 
     setBubbles(newBubbles)
-  }, [windowWidth])
+    // Add windowWidth to dependency array to recalculate on resize
+  }, [windowWidth]) 
 
   return (
     <div 
       ref={bubblesRef}
       className="relative w-full mx-auto overflow-hidden py-24 md:py-20"
     >
-      <div className="relative w-full h-full px-4 md:px-6">
+      {/* Ensure container has enough height to prevent clipping if bubbles position low */} 
+      <div className="relative w-full min-h-[250px] md:min-h-[150px] h-full px-4 md:px-6"> 
         {bubbles.map((bubble) => (
+          // Render the simplified BubbleItem
           <BubbleItem 
             key={bubble.id} 
             bubble={bubble} 

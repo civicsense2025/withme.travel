@@ -12,18 +12,30 @@ export async function GET(request: Request) {
       return NextResponse.json({ destinations: [] })
     }
 
-    const cookieStore = cookies()
+    // const cookieStore = cookies() // Not needed for server client with env vars
     const supabase = createClient()
 
-    // Search for destinations that match the query in city, state_province, or country
+    // If query contains commas, handle it as a specific search (like "Washington, United States")
+    // This likely happens after a user has already selected a location
+    if (query.includes(",")) {
+      // Already found destination, so just return an empty array - no search needed
+      // The LocationSearch component has already called onLocationSelect with the destination object
+      console.log("Search query contains comma, likely from a selected location:", query);
+      return NextResponse.json({ destinations: [] });
+    }
+
+    // Escape special characters for ilike
+    const safeQuery = query.replace(/[%_]/g, '\\$&'); // Escape % and _ for LIKE/ILIKE
+    
+    // Build the OR condition string ONLY using valid fields (city, country)
+    const orCondition = `${DB_FIELDS.DESTINATIONS.CITY}.ilike.%${safeQuery}%,${DB_FIELDS.DESTINATIONS.COUNTRY}.ilike.%${safeQuery}%`;
+    console.log("Safe query:", safeQuery, "OR condition:", orCondition);
+
+    // Search for destinations that match the query in city or country
     const { data: destinations, error } = await supabase
       .from(DB_TABLES.DESTINATIONS)
       .select("*")
-      .or(
-        `${DB_FIELDS.DESTINATIONS.CITY}.ilike.%${query}%,` +
-        `state_province.ilike.%${query}%,` +
-        `${DB_FIELDS.DESTINATIONS.COUNTRY}.ilike.%${query}%`
-      )
+      .or(orCondition) // Apply the correctly formatted OR condition
       .order(DB_FIELDS.DESTINATIONS.POPULARITY, { ascending: false })
       .limit(10)
 

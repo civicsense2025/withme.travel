@@ -2,10 +2,15 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, props: { params: { slug: string } }) {
+  const { slug } = props.params;
+
+  if (!slug) {
+    return NextResponse.json({ error: "Slug is required" }, { status: 400 })
+  }
+
   const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-  const slug = params.slug
+  const supabase = createClient()
 
   try {
     // Get the public trip by slug

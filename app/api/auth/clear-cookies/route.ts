@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 // This endpoint clears all authentication cookies, to help resolve issues with corrupted cookie data
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     
     // Clear all Supabase auth-related cookies
     const cookiesToClear = [

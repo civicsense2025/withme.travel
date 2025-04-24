@@ -1,42 +1,53 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
+import { DB_TABLES, DB_FIELDS } from "@/utils/constants"; // Import constants
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const destination = searchParams.get("destination")
+  const destinationId = searchParams.get("destination_id")
   const duration = searchParams.get("duration")
   const category = searchParams.get("category")
+  const isPublicParam = searchParams.get("is_public")
   const page = Number.parseInt(searchParams.get("page") || "1")
   const limit = Number.parseInt(searchParams.get("limit") || "9")
   const offset = (page - 1) * limit
 
-  const supabase = createClient(cookies())
+  const supabase = createClient()
 
   let query = supabase
-    .from("itinerary_templates")
+    .from(DB_TABLES.ITINERARY_TEMPLATES)
     .select("*, destinations(*), users(id, full_name, avatar_url)", { count: "exact" })
 
-  if (destination) {
-    query = query.eq("destination_id", destination)
+  if (destinationId) {
+    query = query.eq(DB_FIELDS.ITINERARY_TEMPLATES.DESTINATION_ID, destinationId)
   }
 
   if (duration) {
-    query = query.eq("duration_days", duration)
+    query = query.eq(DB_FIELDS.ITINERARY_TEMPLATES.DURATION_DAYS, duration)
   }
 
   if (category) {
-    query = query.eq("category", category)
+    query = query.eq(DB_FIELDS.ITINERARY_TEMPLATES.CATEGORY, category)
   }
 
-  const { data, error, count } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1)
+  if (isPublicParam === "true") {
+    query = query.eq(DB_FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
+  } else if (isPublicParam === "false") {
+    // Optionally handle fetching non-public? Requires auth check.
+    // For now, we assume the builder only asks for public=true
+  }
+
+  const { data, error, count } = await query
+    .order(DB_FIELDS.ITINERARY_TEMPLATES.CREATED_AT, { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({
-    data,
+    itineraries: data,
     meta: {
       total: count || 0,
       page,
@@ -47,7 +58,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = createClient(cookies())
+  const supabase = createClient()
 
   // Check if user is authenticated
   const {

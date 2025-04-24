@@ -1,12 +1,12 @@
 // Server-side database functions that were previously in lib/db.ts
-// These functions use the createServerClient and should only be used in API routes
+// These functions use the createClient from @/utils/supabase/server and should only be used in API routes
 
-import { createServerClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
+import { createClient } from "@/utils/supabase/server"
+// import { cookies } from "next/headers" // No longer needed directly
 
 export async function getTrips() {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  // const cookieStore = cookies() // Handled by createClient
+  const supabase = createClient() // Corrected
   const { data, error } = await supabase
     .from("trips")
     .select("*, trip_members(count)")
@@ -24,8 +24,8 @@ export async function getTrips() {
 }
 
 export async function getTripById(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  // const cookieStore = cookies() // Handled by createClient
+  const supabase = createClient() // Corrected
   const { data, error } = await supabase
     .from("trips")
     .select(`
@@ -48,8 +48,8 @@ export async function getTripById(id: string) {
 }
 
 export async function getTripMembers(tripId: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  // const cookieStore = cookies() // Handled by createClient
+  const supabase = createClient() // Corrected
   const { data, error } = await supabase
     .from("trip_members")
     .select(`
@@ -67,8 +67,8 @@ export async function getTripMembers(tripId: string) {
 }
 
 export async function getItineraryItems(tripId: string, userId?: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  // const cookieStore = cookies() // Handled by createClient
+  const supabase = createClient() // Corrected
 
   // First get the itinerary items
   const { data: items, error } = await supabase
@@ -97,7 +97,7 @@ export async function getItineraryItems(tripId: string, userId?: string) {
     if (!votesError && votes) {
       // Create a map of item_id to vote_type
       const voteMap = votes.reduce(
-        (acc, vote) => {
+        (acc: Record<string, string>, vote) => { // Added type annotation for acc
           acc[vote.itinerary_item_id] = vote.vote_type
           return acc
         },
@@ -105,7 +105,7 @@ export async function getItineraryItems(tripId: string, userId?: string) {
       )
 
       // Add user_vote to each item
-      items.forEach((item) => {
+      items.forEach((item: any) => { // Added type annotation for item
         item.user_vote = (voteMap[item.id] as "up" | "down" | null) || null
       })
     }
@@ -123,7 +123,7 @@ export async function getItineraryItems(tripId: string, userId?: string) {
   if (!countError && voteCounts) {
     // Calculate net votes for each item
     const voteCountMap = voteCounts.reduce(
-      (acc, vote) => {
+      (acc: Record<string, number>, vote) => { // Added type annotation for acc
         if (!acc[vote.itinerary_item_id]) {
           acc[vote.itinerary_item_id] = 0
         }
@@ -134,7 +134,7 @@ export async function getItineraryItems(tripId: string, userId?: string) {
     )
 
     // Add votes to each item
-    items.forEach((item) => {
+    items.forEach((item: any) => { // Added type annotation for item
       item.votes = voteCountMap[item.id] || 0
     })
   }
@@ -143,8 +143,8 @@ export async function getItineraryItems(tripId: string, userId?: string) {
 }
 
 export async function getExpenses(tripId: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  // const cookieStore = cookies() // Handled by createClient
+  const supabase = createClient() // Corrected
   const { data, error } = await supabase
     .from("expenses")
     .select(`
@@ -163,8 +163,8 @@ export async function getExpenses(tripId: string) {
 }
 
 export async function getExpensesByCategory(tripId: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  // const cookieStore = cookies() // Handled by createClient
+  const supabase = createClient() // Corrected
   const { data, error } = await supabase.from("expenses").select("category, amount").eq("trip_id", tripId)
 
   if (error) {
@@ -174,7 +174,7 @@ export async function getExpensesByCategory(tripId: string) {
 
   // Group by category and sum amounts
   const categories = data.reduce(
-    (acc, expense) => {
+    (acc: Record<string, number>, expense) => { // Added type annotation for acc
       const category = expense.category || "Other"
       if (!acc[category]) {
         acc[category] = 0
@@ -205,4 +205,60 @@ function getCategoryColor(category: string): string {
   }
 
   return colors[category] || colors.Other
+}
+
+// New function to handle voting on itinerary items
+export async function voteForItem(itemId: string, userId: string, voteType: "up" | "down" | null) {
+  const supabase = createClient();
+
+  if (!userId) {
+    throw new Error("User must be logged in to vote.");
+  }
+
+  if (voteType === null) {
+    // Remove existing vote
+    const { error } = await supabase
+      .from('votes')
+      .delete()
+      .match({ itinerary_item_id: itemId, user_id: userId });
+
+    if (error) {
+      console.error("Error removing vote:", error);
+      throw new Error("Failed to remove vote.");
+    }
+  } else {
+    // Upsert vote (add or update)
+    const { error } = await supabase
+      .from('votes')
+      .upsert({
+        itinerary_item_id: itemId,
+        user_id: userId,
+        vote_type: voteType
+      }, {
+        onConflict: 'itinerary_item_id, user_id' // Specify conflict columns
+      });
+
+    if (error) {
+      console.error("Error casting vote:", error);
+      throw new Error("Failed to cast vote.");
+    }
+  }
+
+  // Optionally, fetch and return the updated vote count for the item
+  const { data: counts, error: countError } = await supabase
+    .from('votes')
+    .select('vote_type')
+    .eq('itinerary_item_id', itemId);
+
+  if (countError) {
+    console.error("Error fetching updated vote counts:", countError);
+    // Don't throw error here, just return 0 maybe?
+    return { newVoteCount: 0 }; 
+  }
+
+  const newVoteCount = counts.reduce((acc, vote) => {
+    return acc + (vote.vote_type === 'up' ? 1 : -1);
+  }, 0);
+
+  return { newVoteCount };
 }

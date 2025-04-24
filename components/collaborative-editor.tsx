@@ -72,9 +72,9 @@ export function CollaborativeEditor({
         CollaborationCursor.configure({
           provider: provider,
           user: {
-            name: user?.name || "Anonymous",
+            name: user?.profile?.name || user?.email?.split('@')[0] || "Anonymous",
             color: getRandomColor(),
-            avatar: user?.avatar_url,
+            avatar: user?.profile?.avatar_url || `/api/avatar?name=${encodeURIComponent(user?.profile?.name || 'User')}`,
           },
         }),
       ],

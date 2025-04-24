@@ -23,6 +23,8 @@ interface LocationSearchProps {
   placeholder?: string
   className?: string
   containerClassName?: string
+  initialValue?: string
+  onClear?: () => void
 }
 
 export function LocationSearch({
@@ -30,13 +32,21 @@ export function LocationSearch({
   placeholder = "Search city, state, or country...",
   className = "",
   containerClassName = "",
+  initialValue = "",
+  onClear,
 }: LocationSearchProps) {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(initialValue)
   const [searchResults, setSearchResults] = useState<Destination[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+  // Reset error when query changes
+  useEffect(() => {
+    setSearchError(null)
+  }, [searchQuery])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -51,22 +61,30 @@ export function LocationSearch({
   }, [])
 
   useEffect(() => {
-    async function fetchDestinations() {
+    async function fetchDestinations(retryCount = 0) {
       if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) {
         setSearchResults([])
         return
       }
       try {
+        setSearchError(null)
         setIsSearching(true)
         const response = await fetch(API_ROUTES.DESTINATION_SEARCH(debouncedSearchQuery))
         if (!response.ok) {
-          throw new Error("Failed to fetch destinations")
+          // If we get a 5xx error and haven't retried too many times, retry
+          if (response.status >= 500 && retryCount < 2) {
+            console.warn(`Destination search failed with status ${response.status}, retrying...`)
+            setTimeout(() => fetchDestinations(retryCount + 1), 1000)
+            return
+          }
+          throw new Error(`Failed to fetch destinations: ${response.status}`)
         }
         const data = await response.json()
         setSearchResults(data.destinations || [])
       } catch (error) {
         console.error("Error fetching destinations:", error)
         setSearchResults([])
+        setSearchError("Unable to search destinations. Please try again later.")
       } finally {
         setIsSearching(false)
       }
@@ -75,10 +93,19 @@ export function LocationSearch({
   }, [debouncedSearchQuery])
 
   const handleSelectLocation = (location: Destination) => {
-    setSearchQuery(`${location.city}, ${location.country}`)
+    const displayValue = `${location.city}, ${location.country}`;
+    setSearchQuery(displayValue)
     setSearchResults([])
     onLocationSelect(location)
   }
+
+  const handleClear = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    if (onClear) {
+      onClear();
+    }
+  };
 
   return (
     <div className={`relative ${containerClassName}`} ref={searchRef}>
@@ -91,12 +118,28 @@ export function LocationSearch({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        {isSearching && (
+        {searchQuery && onClear && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+            aria-label="Clear search"
+          >
+             &times;
+          </button>
+        )}
+        {isSearching && !(searchQuery && onClear) && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         )}
       </div>
+
+      {searchError && (
+        <div className="mt-1 text-sm text-destructive">
+          {searchError}
+        </div>
+      )}
 
       {searchResults.length > 0 && (
         <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg max-h-60 overflow-y-auto">

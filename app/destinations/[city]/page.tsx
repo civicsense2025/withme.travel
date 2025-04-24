@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import React from "react"
 import {
   ArrowLeft,
@@ -25,13 +25,25 @@ import {
   Shield,
   Accessibility,
   Users,
+  Info,
+  PlusCircle,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
+import { DestinationReviews } from "@/components/destinations/destination-reviews"
+import { useAuth } from '@/components/auth-provider'
+import { User as SupabaseUser } from "@supabase/supabase-js"
+import { AuthContextType } from "@/components/auth-provider"
 
 interface Destination {
   id: string
@@ -65,27 +77,49 @@ interface Destination {
   highlights: string
   tourism_website: string
   image_url: string
+  image_metadata?: {
+    alt_text?: string
+    attribution?: string
+  }
 }
 
-export default function CityPage({ params }: { params: Promise<{ city: string }> }) {
+interface Profile {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  // Add other profile fields as needed
+}
+
+export default function CityPage() {
   const router = useRouter()
+  const params = useParams<{ city: string }>()
   const { toast } = useToast()
+  const { user, profile } = useAuth() as AuthContextType
   const [destination, setDestination] = useState<Destination | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { user: currentUser } = useAuth() as { user: SupabaseUser | null }
   
-  // Unwrap params promise using React.use()
-  const { city: cityParam } = React.use(params)
+  const cityParam = params?.city
 
   useEffect(() => {
+    if (!cityParam) {
+      setError("No city specified");
+      setIsLoading(false);
+      return;
+    }
+
     let decodedCityName = "";
     try {
-       decodedCityName = decodeURIComponent(cityParam.replace(/-/g, " "));
+      if (typeof cityParam !== 'string') {
+        throw new Error("Invalid city parameter type");
+      }
+      decodedCityName = decodeURIComponent(cityParam.replace(/-/g, " "));
     } catch (e) {
-        console.error("Error decoding city name from params:", e);
-        setError("Invalid city name in URL");
-        setIsLoading(false);
-        return; // Exit if decoding fails
+      console.error("Error decoding city name from params:", e);
+      setError("Invalid city name in URL");
+      setIsLoading(false);
+      return;
     }
 
     async function fetchDestination() {
@@ -93,7 +127,7 @@ export default function CityPage({ params }: { params: Promise<{ city: string }>
         setIsLoading(true)
         setError(null)
         
-        const response = await fetch(`/api/destinations/${encodeURIComponent(decodedCityName)}`);
+        const response = await fetch(`/api/destinations/by-city/${encodeURIComponent(decodedCityName)}`);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -121,7 +155,6 @@ export default function CityPage({ params }: { params: Promise<{ city: string }>
     fetchDestination()
   }, [cityParam, toast])
 
-  // Helper function to render rating stars
   const renderRating = (rating: number | null | undefined, max = 5) => {
     if (rating === null || rating === undefined) return "N/A"
 
@@ -136,30 +169,38 @@ export default function CityPage({ params }: { params: Promise<{ city: string }>
     return <div className="flex">{stars}</div>
   }
 
-  // Helper function to get the image URL
-  const getDestinationImageUrl = (destination: Destination | null) => {
-    if (!destination) return "/tropical-beach-getaway.png"
-
-    // If the destination has an image_url that starts with '/', it's a local image
-    if (destination.image_url && destination.image_url.startsWith("/")) {
-      return destination.image_url
+  const getDestinationImageData = (destination: Destination | null) => {
+    if (!destination) {
+      return {
+        url: "/placeholder.svg",
+        alt: "Destination placeholder image",
+        attribution: null
+      };
     }
 
-    // If the destination has an external image URL
-    if (
-      destination.image_url &&
-      (destination.image_url.startsWith("http://") || destination.image_url.startsWith("https://"))
-    ) {
-      return destination.image_url
+    let imageUrl = destination.image_url;
+    if (imageUrl) {
+      if (!imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
+        imageUrl = `/destinations/${imageUrl}`;
+      }
+    } else {
+      imageUrl = `/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}-${destination.country.toLowerCase().replace(/\s+/g, "-")}.jpg`;
     }
 
-    // Fallback to a placeholder with the destination name
-    return `/placeholder.svg?height=800&width=1200&query=${encodeURIComponent(destination.city + " " + destination.country)}`
+    return {
+      url: imageUrl,
+      alt: destination.image_metadata?.alt_text || `${destination.city}, ${destination.country}`,
+      attribution: destination.image_metadata?.attribution
+    };
+  };
+
+  if (!cityParam) {
+    return <div className="mx-auto max-w-6xl px-4 py-6 text-center">Loading city information...</div>;
   }
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-6">
+      <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">
           <Link href="/destinations">
             <Button variant="ghost" size="sm" className="gap-1">
@@ -177,8 +218,9 @@ export default function CityPage({ params }: { params: Promise<{ city: string }>
   }
 
   if (error || !destination) {
+    const decodedCityForError = cityParam ? decodeURIComponent(cityParam.replace(/-/g, " ")) : 'the requested city';
     return (
-      <div className="mx-auto max-w-4xl px-4 py-6">
+      <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">
           <Link href="/destinations">
             <Button variant="ghost" size="sm" className="gap-1">
@@ -189,7 +231,7 @@ export default function CityPage({ params }: { params: Promise<{ city: string }>
         </div>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold">Destination Not Found</h2>
-          <p className="text-muted-foreground mt-2">We couldn't find information about {decodeURIComponent(cityParam.replace(/-/g, " "))}.</p>
+          <p className="text-muted-foreground mt-2">We couldn't find information about {decodedCityForError}.</p>
           <Button className="mt-4" onClick={() => router.push("/destinations")}>
             Browse All Destinations
           </Button>
@@ -198,8 +240,12 @@ export default function CityPage({ params }: { params: Promise<{ city: string }>
     )
   }
 
+  const imageData = getDestinationImageData(destination);
+
+  const defaultTripName = `${profile?.first_name || 'My'}'s trip to ${destination.city}`;
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="mx-auto max-w-6xl px-4 py-6">
       <div className="flex items-center mb-6">
         <Link href="/destinations">
           <Button variant="ghost" size="sm" className="gap-1">
@@ -209,213 +255,246 @@ export default function CityPage({ params }: { params: Promise<{ city: string }>
         </Link>
       </div>
 
-      <div className="relative h-80 w-full rounded-lg overflow-hidden mb-6">
+      <div className="relative h-64 md:h-96 w-full rounded-lg overflow-hidden group transition-transform duration-300 hover:scale-[1.02]">
         <Image
-          src={getDestinationImageUrl(destination) || "/placeholder.svg"}
-          alt={destination.name || destination.city}
+          src={imageData.url}
+          alt={imageData.alt}
           fill
-          className="object-cover"
           priority
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-          <div className="p-6">
-            <h1 className="text-3xl font-bold text-white">{destination.city}</h1>
-            <div className="flex items-center gap-2 text-white/90 mt-2">
-              <Globe className="h-4 w-4" />
-              <span>
-                {destination.state_province ? `${destination.state_province}, ` : ""}
-                {destination.country} • {destination.continent}
-              </span>
-            </div>
+        {imageData.attribution && (
+          <div className="absolute bottom-2 right-2 z-10">
+            <p className="text-xs text-white/80 bg-black/50 px-2 py-1 rounded">
+              {imageData.attribution}
+            </p>
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <div className="md:col-span-2 space-y-8">
+          <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardContent className="pt-6">
-              <h2 className="text-2xl font-bold mb-4">About {destination.city}</h2>
-              <p className="text-muted-foreground">{destination.description}</p>
-
-              <Button 
-                className="mt-6 w-full md:w-auto"
-                onClick={() => router.push(`/trips/create?destinationId=${destination.id}`)}
-              >
-                Plan a trip to {destination.city}
-              </Button>
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-2xl font-bold lowercase">{destination.city}</h2>
+              </div>
+              {destination.description && (
+                <div 
+                  className="text-muted-foreground prose prose-sm dark:prose-invert [&>p]:my-4"
+                  dangerouslySetInnerHTML={{ 
+                    __html: destination.description.includes('<') 
+                      ? destination.description
+                      : destination.description.split('\n\n').map(block => {
+                          // Check if this block is a list
+                          if (block.includes('\n') && !block.trim().endsWith('.')) {
+                            const lines = block.split('\n').filter(line => line.trim());
+                            // If first line ends with a colon, it's likely a list header
+                            const [first, ...rest] = lines;
+                            if (first.trim().endsWith(':')) {
+                              return `<p>${first}</p><ul>${rest.map(item => 
+                                `<li>${item.trim()}</li>`).join('')}</ul>`;
+                            }
+                            // Otherwise treat all lines as list items
+                            return `<ul>${lines.map(item => 
+                              `<li>${item.trim()}</li>`).join('')}</ul>`;
+                          }
+                          return `<p>${block}</p>`;
+                        }).join('')
+                  }}
+                />
+              )}
 
               {destination.highlights && (
                 <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-2">Highlights</h3>
-                  <div dangerouslySetInnerHTML={{ __html: destination.highlights }} />
+                  <h3 className="text-lg font-semibold mb-2 lowercase">highlights</h3>
+                  <div 
+                    className="prose prose-sm dark:prose-invert [&>p]:my-4"
+                    dangerouslySetInnerHTML={{ 
+                      __html: destination.highlights.includes('<') 
+                        ? destination.highlights
+                        : destination.highlights.split('\n\n').map(block => {
+                            // Check if this block is a list
+                            if (block.includes('\n') && !block.trim().endsWith('.')) {
+                              const lines = block.split('\n').filter(line => line.trim());
+                              // If first line ends with a colon, it's likely a list header
+                              const [first, ...rest] = lines;
+                              if (first.trim().endsWith(':')) {
+                                return `<p>${first}</p><ul>${rest.map(item => 
+                                  `<li>${item.trim()}</li>`).join('')}</ul>`;
+                              }
+                              // Otherwise treat all lines as list items
+                              return `<ul>${lines.map(item => 
+                                `<li>${item.trim()}</li>`).join('')}</ul>`;
+                            }
+                            return `<p>${block}</p>`;
+                          }).join('')
+                    }}
+                  />
                 </div>
               )}
 
               <div className="mt-6 flex flex-wrap gap-2">
-                {destination.family_friendly && <Badge variant="outline">Family Friendly</Badge>}
-                {destination.digital_nomad_friendly >= 4 && <Badge variant="outline">Digital Nomad Friendly</Badge>}
-                {destination.beach_quality !== null && destination.beach_quality >= 4 && <Badge variant="outline">Great Beaches</Badge>}
-                {destination.cultural_attractions >= 4 && <Badge variant="outline">Cultural Hotspot</Badge>}
-                {destination.nightlife_rating >= 4 && <Badge variant="outline">Vibrant Nightlife</Badge>}
-                {destination.outdoor_activities >= 4 && <Badge variant="outline">Outdoor Activities</Badge>}
-                {destination.lgbtq_friendliness >= 4 && <Badge variant="outline">LGBTQ+ Friendly</Badge>}
-                {destination.accessibility >= 4 && <Badge variant="outline">Accessible</Badge>}
+                {destination.family_friendly && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Family Friendly</Badge>
+                )}
+                {destination.digital_nomad_friendly >= 4 && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Digital Nomad Friendly</Badge>
+                )}
+                {destination.beach_quality !== null && destination.beach_quality >= 4 && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Great Beaches</Badge>
+                )}
+                {destination.cultural_attractions >= 4 && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Cultural Hotspot</Badge>
+                )}
+                {destination.nightlife_rating >= 4 && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Vibrant Nightlife</Badge>
+                )}
+                {destination.outdoor_activities >= 4 && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Outdoor Activities</Badge>
+                )}
+                {destination.lgbtq_friendliness >= 4 && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">LGBTQ+ Friendly</Badge>
+                )}
+                {destination.accessibility >= 4 && (
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Accessible</Badge>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <DestinationReviews 
+            destinationId={destination.id}
+            destinationName={destination.city}
+          />
+        </div>
+
+        <div className="space-y-8">
+          <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardContent className="pt-6">
-              <h2 className="text-xl font-bold mb-4">Plan Your Trip</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium flex items-center gap-1">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold lowercase">at a glance</h2>
+                <Button 
+                  className="
+                    relative overflow-hidden
+                    lowercase rounded-full 
+                    bg-gradient-to-r from-travel-purple/80 to-travel-purple 
+                    hover:from-purple-400 hover:to-purple-500
+                    text-white
+                    text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8 
+                    transition-all duration-300 hover:scale-105
+                    before:absolute before:inset-0 before:bg-shimmer-gradient 
+                    before:bg-no-repeat before:bg-200% 
+                    before:animate-shimmer
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple
+                  "
+                  onClick={() => {
+                    router.push(`/trips/create?destination_id=${destination.id}&trip_name=${encodeURIComponent(defaultTripName)}`);
+                  }}
+                >
+                  <span className="relative z-10 flex items-center">
+                    <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5" />
+                    <span>plan your trip</span>
+                  </span>
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="transition-all duration-300 hover:scale-105">
+                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
                     <Calendar className="h-4 w-4" /> Best Time to Visit
                   </h3>
                   <p className="text-sm text-muted-foreground">{destination.best_season}</p>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium flex items-center gap-1">
+                <div className="transition-all duration-300 hover:scale-105">
+                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
                     <DollarSign className="h-4 w-4" /> Average Daily Cost
                   </h3>
                   <p className="text-sm text-muted-foreground">${destination.avg_cost_per_day} USD</p>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium flex items-center gap-1">
+                <div className="transition-all duration-300 hover:scale-105">
+                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
                     <Globe className="h-4 w-4" /> Local Language
                   </h3>
                   <p className="text-sm text-muted-foreground">{destination.local_language}</p>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium flex items-center gap-1">
+                <div className="transition-all duration-300 hover:scale-105">
+                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4" /> Time Zone
                   </h3>
                   <p className="text-sm text-muted-foreground">{destination.time_zone}</p>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <Button
-                  className="w-full"
-                  onClick={() =>
-                    router.push(
-                      `/trips/new?destination=${encodeURIComponent(destination.city)}&placeId=${destination.id}`,
-                    )
-                  }
-                >
-                  Create a Trip to {destination.city}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-xl font-bold mb-4">City Ratings</h2>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Utensils className="h-4 w-4" /> Cuisine
-                  </span>
-                  {renderRating(destination.cuisine_rating)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Camera className="h-4 w-4" /> Cultural Attractions
-                  </span>
-                  {renderRating(destination.cultural_attractions)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Moon className="h-4 w-4" /> Nightlife
-                  </span>
-                  {renderRating(destination.nightlife_rating)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Sun className="h-4 w-4" /> Outdoor Activities
-                  </span>
-                  {renderRating(destination.outdoor_activities)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Shield className="h-4 w-4" /> Safety
-                  </span>
-                  {renderRating(destination.safety_rating)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Train className="h-4 w-4" /> Public Transportation
-                  </span>
-                  {renderRating(destination.public_transportation)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Walking className="h-4 w-4" /> Walkability
-                  </span>
-                  {renderRating(destination.walkability)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Wifi className="h-4 w-4" /> Wi-Fi Connectivity
-                  </span>
-                  {renderRating(destination.wifi_connectivity)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Heart className="h-4 w-4" /> LGBTQ+ Friendliness
-                  </span>
-                  {renderRating(destination.lgbtq_friendliness)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Accessibility className="h-4 w-4" /> Accessibility
-                  </span>
-                  {renderRating(destination.accessibility)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Leaf className="h-4 w-4" /> Eco-Friendly Options
-                  </span>
-                  {renderRating(destination.eco_friendly_options)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Instagram className="h-4 w-4" /> Instagram-Worthy Spots
-                  </span>
-                  {renderRating(destination.instagram_worthy_spots)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Briefcase className="h-4 w-4" /> Digital Nomad Friendly
-                  </span>
-                  {renderRating(destination.digital_nomad_friendly)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm flex items-center gap-1">
-                    <Users className="h-4 w-4" /> Family Friendly
-                  </span>
-                  {destination.family_friendly ? "Yes" : "No"}
-                </div>
-              </div>
-
               {destination.tourism_website && (
-                <div className="mt-6">
+                <div className="mt-8">
                   <a
                     href={destination.tourism_website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 transition-all duration-300 hover:translate-x-1"
                   >
                     <Globe className="h-4 w-4" />
                     Official Tourism Website
                   </a>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="group transition-all duration-300 hover:shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-bold lowercase">city ratings</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground">
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ratings are based on aggregated user reviews and WithMe.travel data analysis.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { icon: <Utensils className="h-4 w-4" />, label: "Cuisine", value: destination.cuisine_rating },
+                  { icon: <Camera className="h-4 w-4" />, label: "Cultural Attractions", value: destination.cultural_attractions },
+                  { icon: <Moon className="h-4 w-4" />, label: "Nightlife", value: destination.nightlife_rating },
+                  { icon: <Sun className="h-4 w-4" />, label: "Outdoor Activities", value: destination.outdoor_activities },
+                  { icon: <Shield className="h-4 w-4" />, label: "Safety", value: destination.safety_rating },
+                  { icon: <Train className="h-4 w-4" />, label: "Public Transportation", value: destination.public_transportation },
+                  { icon: <Walking className="h-4 w-4" />, label: "Walkability", value: destination.walkability },
+                  { icon: <Wifi className="h-4 w-4" />, label: "Wi-Fi Connectivity", value: destination.wifi_connectivity },
+                  { icon: <Heart className="h-4 w-4" />, label: "LGBTQ+ Friendliness", value: destination.lgbtq_friendliness },
+                  { icon: <Accessibility className="h-4 w-4" />, label: "Accessibility", value: destination.accessibility },
+                  { icon: <Leaf className="h-4 w-4" />, label: "Eco-Friendly Options", value: destination.eco_friendly_options },
+                  { icon: <Instagram className="h-4 w-4" />, label: "Instagram-Worthy Spots", value: destination.instagram_worthy_spots },
+                  { icon: <Briefcase className="h-4 w-4" />, label: "Digital Nomad Friendly", value: destination.digital_nomad_friendly },
+                ].map((item, index) => (
+                  <div 
+                    key={index}
+                    className="flex justify-between items-center p-2 rounded-lg transition-all duration-300 hover:bg-muted/50"
+                  >
+                    <span className="text-sm flex items-center gap-1 text-muted-foreground">
+                      {item.icon} {item.label}
+                    </span>
+                    {renderRating(item.value)}
+                  </div>
+                ))}
+                
+                <div className="flex justify-between items-center p-2 rounded-lg transition-all duration-300 hover:bg-muted/50">
+                  <span className="text-sm flex items-center gap-1 text-muted-foreground">
+                    <Users className="h-4 w-4" /> Family Friendly
+                  </span>
+                  <span className={`text-sm ${destination.family_friendly ? 'text-green-600' : 'text-red-600'}`}>
+                    {destination.family_friendly ? "Yes" : "No"}
+                  </span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

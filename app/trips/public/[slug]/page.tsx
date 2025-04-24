@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function PublicTripPage({ params }: { params: { slug: string } }) {
+export default function PublicTripPage(props: { params: { slug: string } }) {
+  const { slug } = props.params;
   const router = useRouter()
   const { toast } = useToast()
   const [trip, setTrip] = useState<any>(null)
@@ -26,7 +27,7 @@ export default function PublicTripPage({ params }: { params: { slug: string } })
         setIsLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/trips/public/${params.slug}`)
+        const response = await fetch(`/api/trips/public/${slug}`)
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -51,7 +52,7 @@ export default function PublicTripPage({ params }: { params: { slug: string } })
     }
 
     fetchTrip()
-  }, [params.slug, toast])
+  }, [slug, toast])
 
   const handleShare = () => {
     if (navigator.share) {

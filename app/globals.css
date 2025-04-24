@@ -165,6 +165,16 @@
     animation-delay: calc(var(--delay) * 1s);
   }
   
+  /* Hide scrollbar but keep scrolling functionality */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  
   /* Tiptap-inspired utilities */
   .texture-overlay {
     position: relative;
@@ -265,4 +275,46 @@
     transform: scale(0) rotate(360deg);
     opacity: 0;
   }
+}
+
+@keyframes pulse-border {
+  0% {
+    border-color: hsl(var(--primary) / 0.3);
+  }
+  50% {
+    border-color: hsl(var(--primary) / 0.6);
+  }
+  100% {
+    border-color: hsl(var(--primary) / 0.3);
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 3s ease-in-out infinite;
+}
+
+@keyframes gradient-xy {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-xy {
+  /* Remove the continuous animation */
+  /* animation: gradient-xy 15s ease infinite; */ 
+  background-size: 200% 200%;
+  background-position: 50% 50%; /* Center the gradient */
+  transition: background-position 0.5s ease; /* Smooth transition for hover */
+}
+
+/* Optional: Add a subtle change on hover if desired */
+.group:hover .animate-gradient-xy {
+  background-position: 100% 50%; /* Shift gradient slightly on hover */
+  opacity: 0.75; /* Increase opacity slightly */
 }

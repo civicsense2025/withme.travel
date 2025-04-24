@@ -1,88 +1,65 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { Database } from '@/types/database.types'
 
 // Constants for Supabase configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Global variable to hold the singleton instance
-let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
+// Singleton instance
+let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
 /**
- * Get the Supabase browser client as a singleton
- * This ensures we only create one client per browser context
+ * Creates and returns a Supabase browser client instance.
+ * Uses a singleton pattern to avoid multiple client instances.
  */
-export const getSupabaseBrowserClient = () => {
-  if (!supabaseInstance) {
-    console.log("Creating new Supabase browser client");
-    supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        get(name) {
-          // Parse cookies safely
-          try {
-            if (typeof document === "undefined") return null;
-            const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
-            return match ? decodeURIComponent(match[2]) : null;
-          } catch (error) {
-            console.error(`Error getting cookie ${name}:`, error);
-            return null;
-          }
-        },
-        set(name, value, options) {
-          // Set cookies safely
-          try {
-            if (typeof document === "undefined") return;
-            
-            let cookieString = `${name}=${value}`;
-            if (options?.expires) {
-              cookieString += `; expires=${options.expires.toUTCString()}`;
-            }
-            if (options?.path) {
-              cookieString += `; path=${options.path}`;
-            }
-            if (options?.domain) {
-              cookieString += `; domain=${options.domain}`;
-            }
-            if (options?.sameSite) {
-              cookieString += `; samesite=${options.sameSite}`;
-            }
-            if (options?.secure) {
-              cookieString += `; secure`;
-            }
-            
-            document.cookie = cookieString;
-          } catch (error) {
-            console.error(`Error setting cookie ${name}:`, error);
-          }
-        },
-        remove(name, options) {
-          // Remove cookies safely
-          try {
-            if (typeof document === "undefined") return;
-            
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT${
-              options?.path ? `; path=${options.path}` : '; path=/'
-            }`;
-          } catch (error) {
-            console.error(`Error removing cookie ${name}:`, error);
-          }
-        },
-      },
-    });
-  }
-  return supabaseInstance;
-};
-
-// Export a createClient function for backward compatibility
 export const createClient = () => {
-  return getSupabaseBrowserClient();
+  if (clientInstance) {
+    return clientInstance;
+  }
+
+  console.log("[Supabase Client] Creating new browser client instance.");
+  
+  // Create new client instance with default cookie handling
+  clientInstance = createBrowserClient<Database>(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    // Let @supabase/ssr handle cookie storage automatically
+    {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true, // This will use cookies by default
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      }
+    }
+  );
+
+  return clientInstance;
 };
 
-// For the most direct backward compatibility
-export const supabase = getSupabaseBrowserClient();
-
-export const createBrowserSupabaseClient = () => {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+// Function to reset the client (useful for testing/development)
+export const resetClient = () => {
+  clientInstance = null;
+  
+  // Clear Supabase-related items in localStorage (though we primarily use cookies now)
+  if (typeof window !== 'undefined') {
+    Object.keys(localStorage).forEach(key => {
+      if (key.includes('supabase') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Clear all Supabase cookies explicitly
+    document.cookie.split(';').forEach(cookie => {
+      const [name] = cookie.split('=').map(c => c.trim());
+      if (name.includes('supabase') || name.includes('sb-')) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    });
+    
+    // Fetch our clear-cookies endpoint to ensure server-side cookies are cleared too
+    fetch('/api/auth/clear-cookies').catch(e => 
+      console.error('Failed to clear server-side cookies:', e)
+    );
+  }
 }; 

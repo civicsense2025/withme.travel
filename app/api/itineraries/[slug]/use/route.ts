@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
+// import { cookies } from "next/headers" // cookies() is handled within createClient
 
 export async function POST(request: Request, { params }: { params: { slug: string } }) {
-  const supabase = createClient(cookies())
+  // const supabase = createClient(cookies()) // Incorrect usage
+  const supabase = createClient() // Correct usage
 
   // Check if user is authenticated
   const {

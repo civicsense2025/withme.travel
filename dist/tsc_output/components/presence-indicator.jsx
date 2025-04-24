@@ -1,0 +1,109 @@
+"use client";
+import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useParams } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+export function PresenceIndicator() {
+    const [activeUsers, setActiveUsers] = useState([]);
+    const params = useParams();
+    const tripId = params.id;
+    const supabase = createClient();
+    useEffect(() => {
+        const channel = supabase.channel(`presence:trip:${tripId}`);
+        // Set up presence tracking
+        const trackPresence = async () => {
+            const { data: { user }, } = await supabase.auth.getUser();
+            if (!user)
+                return;
+            // Get user profile
+            const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("id", user.id).single();
+            channel
+                .on("presence", { event: "sync" }, () => {
+                const state = channel.presenceState();
+                const users = Object.values(state)
+                    .flat()
+                    .map((p) => p.user);
+                setActiveUsers(users);
+            })
+                .on("presence", { event: "join" }, ({ key, newPresences }) => {
+                const newUser = newPresences[0].user;
+                setActiveUsers((prev) => {
+                    if (prev.some((u) => u.id === newUser.id)) {
+                        return prev.map((u) => (u.id === newUser.id ? newUser : u));
+                    }
+                    return [...prev, newUser];
+                });
+            })
+                .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
+                const leftUser = leftPresences[0].user;
+                setActiveUsers((prev) => prev.filter((u) => u.id !== leftUser.id));
+            })
+                .subscribe(async (status) => {
+                var _a;
+                if (status === "SUBSCRIBED") {
+                    await channel.track({
+                        user: {
+                            id: user.id,
+                            name: (profile === null || profile === void 0 ? void 0 : profile.name) || ((_a = user.email) === null || _a === void 0 ? void 0 : _a.split("@")[0]) || "Anonymous",
+                            avatar_url: profile === null || profile === void 0 ? void 0 : profile.avatar_url,
+                            last_active: Date.now(),
+                        },
+                    });
+                }
+            });
+        };
+        trackPresence();
+        // Update presence every 30 seconds
+        const interval = setInterval(async () => {
+            const { data: { user }, } = await supabase.auth.getUser();
+            if (user) {
+                await channel.track({
+                    user: {
+                        id: user.id,
+                        last_active: Date.now(),
+                    },
+                });
+            }
+        }, 30000);
+        return () => {
+            clearInterval(interval);
+            channel.unsubscribe();
+        };
+    }, [tripId, supabase]);
+    // Filter out users who haven't been active in the last 5 minutes
+    const recentlyActiveUsers = activeUsers.filter((user) => Date.now() - user.last_active < 5 * 60 * 1000);
+    if (recentlyActiveUsers.length <= 1)
+        return null;
+    return (<div className="flex items-center space-x-1">
+      <span className="text-sm text-muted-foreground mr-2">Currently viewing:</span>
+      <div className="flex -space-x-2">
+        {recentlyActiveUsers.slice(0, 5).map((user) => (<TooltipProvider key={user.id}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="h-6 w-6 border-2 border-background">
+                  <AvatarImage src={user.avatar_url || `/api/avatar?name=${encodeURIComponent(user.name)}`} alt={user.name}/>
+                  <AvatarFallback>{(user.name || "").substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{user.name}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>))}
+        {recentlyActiveUsers.length > 5 && (<TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="h-6 w-6 border-2 border-background">
+                  <AvatarFallback>+{recentlyActiveUsers.length - 5}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {recentlyActiveUsers
+                .slice(5)
+                .map((user) => user.name)
+                .join(", ")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>)}
+      </div>
+    </div>);
+}
