@@ -1,5 +1,5 @@
 "use client"
-
+import { Analytics } from "@vercel/analytics/react"
 import { TrendingDestinations } from "@/components/trending-destinations"
 import { HeroSection } from "@/components/hero-section"
 import { useAuth } from "@/components/auth-provider"
