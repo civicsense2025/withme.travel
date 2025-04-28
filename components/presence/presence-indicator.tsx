@@ -1,26 +1,13 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
-import { UserPresence, PresenceStatus } from '@/types/presence';
+import React, { useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getInitials } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Edit, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { UserPresence, PresenceStatus } from '@/types/presence';
 import { UserStatusBadge } from './user-status-badge';
+import { Pencil } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PresenceIndicatorProps {
   users: UserPresence[];
@@ -30,20 +17,15 @@ interface PresenceIndicatorProps {
   withTooltip?: boolean;
 }
 
-// Map of status to colors
-const statusColors: Record<PresenceStatus, string> = {
-  online: 'bg-green-500',
-  away: 'bg-amber-500',
-  offline: 'bg-gray-400',
-  editing: 'bg-blue-500',
-};
-
-// Map of status to descriptive text
-const statusText: Record<PresenceStatus, string> = {
-  online: 'Online',
-  away: 'Away',
-  offline: 'Offline',
-  editing: 'Editing',
+// A helper function to get initials from a name
+const getUserInitials = (name: string | null | undefined): string => {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
 };
 
 export function PresenceIndicator({
@@ -53,184 +35,122 @@ export function PresenceIndicator({
   size = 'md',
   withTooltip = true,
 }: PresenceIndicatorProps) {
-  // Filter users to only show online or away users
-  const filteredUsers = useMemo(() => users.filter(user => 
-    (user.status === 'online' || user.status === 'away')
-  ), [users]);
-  
-  // Get the users that will be shown in the avatar stack
-  const visibleUsers = useMemo(() => 
-    filteredUsers.slice(0, maxAvatars), 
-    [filteredUsers, maxAvatars]
-  );
-  
-  // Calculate how many users are not shown in the avatar stack
-  const remainingCount = Math.max(0, filteredUsers.length - maxAvatars);
-  
-  // Helper to get initials from a name
-  const getUserInitials = useCallback((name: string | null | undefined) => {
-    if (!name) return '?';
-    return name.split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  }, []);
+  // Filter to only show users who are online or away
+  const activeUsers = useMemo(() => {
+    return users.filter((user) => ['online', 'away'].includes(user.status));
+  }, [users]);
 
-  // Function to handle keyboard events for tooltip triggers
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      // The tooltip is automatically shown on focus, so this is primarily
-      // to prevent default space behavior (scrolling)
-    }
-  }, []);
-  
-  // Avatar sizes based on the size prop
   const sizeClasses = {
-    sm: 'h-6 w-6 text-xs',
-    md: 'h-8 w-8 text-sm',
-    lg: 'h-10 w-10 text-base'
+    sm: 'h-6 w-6 text-[10px]',
+    md: 'h-8 w-8 text-xs',
+    lg: 'h-10 w-10 text-sm',
   };
-  
-  // If no active users, return nothing
-  if (filteredUsers.length === 0) {
+
+  const statusSizeClasses = {
+    sm: 'h-1.5 w-1.5',
+    md: 'h-2 w-2',
+    lg: 'h-2.5 w-2.5',
+  };
+
+  const visibleUsers = activeUsers.slice(0, maxAvatars);
+  const extraUsers = activeUsers.length > maxAvatars ? activeUsers.length - maxAvatars : 0;
+
+  if (activeUsers.length === 0) {
     return null;
   }
-  
+
   return (
     <div 
-      className="flex -space-x-2" 
+      className="flex items-center -space-x-1.5" 
       role="status"
       aria-label="Active users"
     >
-      {visibleUsers.map(user => {
-        const avatar = (
-          <div className="relative" key={user.id} role="listitem">
-            <Avatar 
-              className={`border-2 border-background ${sizeClasses[size]}`}
-              aria-label={`${user.name || 'Unknown user'} is ${statusText[user.status]}`}
-            >
-              {user.avatar_url ? (
-                <AvatarImage 
-                  src={user.avatar_url} 
-                  alt=""
-                  aria-hidden="true"
-                  onError={(e) => {
-                    // Remove src on error to show fallback
-                    (e.target as HTMLImageElement).src = '';
-                  }} 
-                />
-              ) : null}
-              
-              <AvatarFallback>
-                {getUserInitials(user.name)}
-              </AvatarFallback>
-            </Avatar>
+      {visibleUsers.map((user) => {
+        const userInitials = getUserInitials(user.name);
+        
+        const userAvatar = (
+          <Avatar 
+            key={user.user_id} 
+            className={cn(
+              sizeClasses[size],
+              'border-2 border-background relative',
+              user.status === 'editing' && 'ring-2 ring-blue-500'
+            )}
+            aria-label={`${user.name || 'Unknown user'} is ${user.status}`}
+          >
+            <AvatarImage src={user.avatar_url || undefined} alt="" />
+            <AvatarFallback>{userInitials}</AvatarFallback>
             
             {showStatus && (
-              <UserStatusBadge 
-                status={user.status} 
-                className={`absolute bottom-0 right-0 ${size === 'sm' ? 'h-2 w-2' : 'h-3 w-3'}`}
-                aria-hidden="true" 
-              />
+              <div className="absolute bottom-0 right-0">
+                <UserStatusBadge 
+                  status={user.status as PresenceStatus}
+                  className={statusSizeClasses[size]}
+                  aria-hidden="true"
+                />
+                
+                {user.status === 'editing' && (
+                  <span className="absolute -top-1 -right-1 rounded-full bg-blue-500 p-0.5" aria-hidden="true">
+                    <Pencil className="h-2 w-2 text-white" />
+                  </span>
+                )}
+              </div>
             )}
-          </div>
+          </Avatar>
         );
-        
-        if (withTooltip) {
-          return (
-            <TooltipProvider key={user.id}>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger
-                  asChild
-                  tabIndex={0}
-                  onKeyDown={handleKeyDown}
-                  aria-label={`View details for ${user.name || 'Unknown user'}`}
-                >
-                  {avatar}
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  align="center"
-                  className="max-w-[200px] break-words text-center"
-                  aria-live="polite"
-                  role="tooltip"
-                >
-                  <div>
-                    <p className="font-semibold">{user.name || 'Unknown user'}</p>
-                    <p className="text-xs capitalize">
-                      {user.status} 
-                      {user.status === 'editing' && user.editing_item_id && (
-                        <span className="ml-1" aria-hidden="true">• Editing</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <span aria-hidden="true">Active</span> {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}
-                    </p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        }
-        
-        return avatar;
+
+        return withTooltip ? (
+          <TooltipProvider key={user.user_id}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {userAvatar}
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{user.name || 'Unknown user'}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user.status}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          userAvatar
+        );
       })}
-      
-      {remainingCount > 0 && (
+
+      {extraUsers > 0 && (
         <HoverCard>
           <HoverCardTrigger asChild>
-            <div
-              className={`${sizeClasses[size]} flex items-center justify-center rounded-full bg-muted text-muted-foreground border-2 border-background`}
-              aria-label={`${remainingCount} more active ${remainingCount === 1 ? 'user' : 'users'}`}
-              tabIndex={0}
+            <Avatar 
+              className={cn(sizeClasses[size], 'border-2 border-background bg-muted hover:bg-muted/80 cursor-pointer')}
               role="button"
               aria-haspopup="true"
-              onKeyDown={handleKeyDown}
+              aria-label={`${extraUsers} more active users`}
             >
-              +{remainingCount}
-            </div>
+              <AvatarFallback>+{extraUsers}</AvatarFallback>
+            </Avatar>
           </HoverCardTrigger>
-          <HoverCardContent className="w-auto p-3">
-            <ScrollArea className="h-[200px]">
-              <div className="space-y-2">
-                {filteredUsers.slice(maxAvatars).map(user => (
-                  <div key={user.id} className="flex items-center space-x-2" role="listitem">
-                    <Avatar className={`border-2 border-background ${sizeClasses['sm']}`}>
-                      {user.avatar_url ? (
-                        <AvatarImage 
-                          src={user.avatar_url} 
-                          alt=""
-                          aria-hidden="true"
-                          onError={(e) => {
-                            // Remove src on error to show fallback
-                            (e.target as HTMLImageElement).src = '';
-                          }} 
-                        />
-                      ) : null}
-                      
-                      <AvatarFallback>
-                        {getUserInitials(user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {user.name || 'Unknown user'}
-                        <UserStatusBadge 
-                          status={user.status} 
-                          className="ml-2 h-2 w-2"
-                          aria-hidden="true"
-                        />
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        <span aria-hidden="true">Active</span> {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}
-                      </p>
-                    </div>
-                  </div>
+          <HoverCardContent className="w-auto">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Additional users</p>
+              <ul className="space-y-1">
+                {activeUsers.slice(maxAvatars).map((user) => (
+                  <li 
+                    key={user.user_id} 
+                    className="flex items-center gap-2"
+                    role="listitem"
+                  >
+                    <UserStatusBadge 
+                      status={user.status as PresenceStatus} 
+                      className="h-2 w-2"
+                      aria-hidden="true"
+                    />
+                    <span className="text-sm">{user.name || 'Unknown user'}</span>
+                    {user.status === 'editing' && (
+                      <Pencil className="h-3 w-3 text-blue-500 ml-auto" aria-hidden="true" />
+                    )}
+                  </li>
                 ))}
-              </div>
-            </ScrollArea>
+              </ul>
+            </div>
           </HoverCardContent>
         </HoverCard>
       )}

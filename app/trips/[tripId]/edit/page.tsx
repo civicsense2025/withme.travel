@@ -5,13 +5,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
-import dynamic from "next/dynamic";
 
-// Dynamically import the client component with no SSR
-const EditTripFormClient = dynamic(
-  () => import("@/app/trips/components/EditTripForm").then(mod => ({ default: mod.EditTripForm })),
-  { ssr: false }
-);
+// Import the client wrapper instead of using dynamic import with ssr: false
+import EditTripFormWrapper from "./edit-trip-form-wrapper";
 
 // Force dynamic rendering for this page since it uses auth
 export const dynamicParams = true;
@@ -134,20 +130,10 @@ export default async function EditTripPage({ params }: { params: { tripId: strin
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Edit Trip</h1>
-      <EditTripFormClient 
+      <EditTripFormWrapper 
         trip={formattedTrip} 
         initialDestinationName={trip.destinations?.name || undefined}
-        onSave={async (data: TripFormData) => {
-          // This would typically be implemented in a client component
-          // Placeholder for the required prop
-          console.log("Save data:", data);
-          return Promise.resolve();
-        }}
-        onClose={() => {
-          // This would typically be implemented in a client component
-          // Placeholder for the required prop
-          console.log("Close form");
-        }}
+        tripId={params.tripId}
       />
     </div>
   );
