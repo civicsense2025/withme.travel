@@ -123,6 +123,86 @@ export function useTripItinerary({
   }, [tripId, allItems.length, toast]);
 
   /**
+   * Update sections and unscheduled items after an item is added or edited
+   */
+  const updateItemsAfterEdit = useCallback((itemId: string, updatedData: Partial<DisplayItineraryItem>) => {
+    const dayNumber = updatedData.day_number;
+
+    setSections(prevSections => {
+      let newSections = [...prevSections];
+      let itemFound = false;
+
+      // Remove item from its old position (if it exists)
+      newSections = newSections.map(section => ({
+        ...section,
+        items: section.items.filter((item: DisplayItineraryItem) => {
+          if (item.id === itemId) {
+            itemFound = true;
+            return false; // Remove from old section
+          }
+          return true;
+        })
+      }));
+
+      // Add item to its new section (if it has a day number)
+      if (dayNumber !== null && dayNumber !== undefined) {
+        const targetSectionIndex = newSections.findIndex(s => s.day_number === dayNumber);
+        if (targetSectionIndex !== -1) {
+          // Combine updated data with existing item data (if found)
+          // This assumes the full item data isn't always in updatedData
+          const existingItem = allItems.find(i => i.id === itemId) || {}; 
+          const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem; 
+          
+          newSections[targetSectionIndex] = {
+            ...newSections[targetSectionIndex],
+            items: [...newSections[targetSectionIndex].items, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          };
+        } else {
+          // Handle case where section for dayNumber doesn't exist (should ideally not happen if sections match duration)
+          console.warn(`Section for day ${dayNumber} not found while updating item ${itemId}`);
+        }
+      } 
+      
+      return newSections;
+    });
+
+    setUnscheduledItems(prevUnscheduled => {
+      let newUnscheduled = prevUnscheduled.filter(item => item.id !== itemId);
+      // If item is now unscheduled (dayNumber is null/undefined)
+      if (dayNumber === null || dayNumber === undefined) {
+        const existingItem = allItems.find(i => i.id === itemId) || {};
+        const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem;
+        newUnscheduled = [...newUnscheduled, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      }
+      return newUnscheduled;
+    });
+  }, [setSections, setUnscheduledItems, allItems]);
+  
+  /**
+   * Add a newly created item to the correct section or unscheduled list
+   */
+  const handleItemAdded = useCallback((newItem: DisplayItineraryItem) => {
+    if (newItem.day_number !== null && newItem.day_number !== undefined) {
+      setSections(prevSections => {
+        const targetSectionIndex = prevSections.findIndex(s => s.day_number === newItem.day_number);
+        if (targetSectionIndex !== -1) {
+          const newSections = [...prevSections];
+          newSections[targetSectionIndex] = {
+            ...newSections[targetSectionIndex],
+            items: [...newSections[targetSectionIndex].items, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          };
+          return newSections;
+        }
+        return prevSections; // Section not found, maybe log an error?
+      });
+    } else {
+      setUnscheduledItems(prev => 
+        [...prev, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      );
+    }
+  }, [setSections, setUnscheduledItems]);
+
+  /**
    * Handler for adding a new item
    */
   const handleAddItem = useCallback((dayNumber: number | null) => {
@@ -182,7 +262,7 @@ export function useTripItinerary({
         variant: "destructive"
       });
     }
-  }, [tripId, editingItem, allItems, toast]);
+  }, [tripId, editingItem, allItems, toast, updateItemsAfterEdit]);
 
   /**
    * Handler for reordering items
@@ -250,50 +330,7 @@ export function useTripItinerary({
       });
       throw error;
     }
-  }, [tripId, toast]);
-
-  /**
-   * Handler for adding a newly created item to the UI
-   */
-  const handleItemAdded = useCallback((item: DisplayItineraryItem) => {
-    setAllItems(prevItems => [...prevItems, item]);
-    
-    // Add to the appropriate section or unscheduled items
-    if (item.day_number === null) {
-      setUnscheduledItems(prev => [...prev, item]);
-    } else {
-      setSections(prevSections => {
-        // Find the section with the matching day_number
-        const sectionIndex = prevSections.findIndex(s => s.day_number === item.day_number);
-        
-        if (sectionIndex >= 0) {
-          // Add to existing section
-          const updatedSections = [...prevSections];
-          updatedSections[sectionIndex] = {
-            ...updatedSections[sectionIndex],
-            items: [...updatedSections[sectionIndex].items, item]
-          };
-          return updatedSections;
-        } else {
-          // If no section exists with this day_number, create a new one
-          return [
-            ...prevSections,
-            {
-              id: `new-section-${Date.now()}`,
-              trip_id: tripId,
-              day_number: item.day_number,
-              date: null,
-              title: `Day ${item.day_number}`,
-              position: prevSections.length,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              items: [item]
-            }
-          ];
-        }
-      });
-    }
-  }, [tripId]);
+  }, [tripId, toast, handleItemAdded]);
 
   /**
    * Handler for updating item status
@@ -329,7 +366,7 @@ export function useTripItinerary({
       });
       throw error;
     }
-  }, [tripId, toast]);
+  }, [tripId, toast, updateItemsAfterEdit, setAllItems]);
 
   /**
    * Handler for deleting an item
@@ -387,131 +424,35 @@ export function useTripItinerary({
       setUnscheduledItems(originalUnscheduled);
       throw error;
     }
-  }, [tripId, canEdit, allItems, sections, unscheduledItems, toast]);
-
-  /**
-   * Helper to update items after an edit
-   * This keeps the sections and unscheduled items in sync with allItems
-   */
-  const updateItemsAfterEdit = useCallback((
-    itemId: string,
-    updatedData: Partial<DisplayItineraryItem>
-  ) => {
-    const item = allItems.find((i: DisplayItineraryItem) => i.id === itemId);
-    if (!item) return;
-    
-    const updatedItem = { ...item, ...updatedData };
-    const originalDayNumber = item.day_number;
-    const newDayNumber = updatedData.day_number !== undefined ? updatedData.day_number : originalDayNumber;
-    
-    // If day number changed, we need to move the item
-    if (newDayNumber !== originalDayNumber) {
-      // Remove from original location
-      if (originalDayNumber === null) {
-        setUnscheduledItems(prev => prev.filter((i: DisplayItineraryItem) => i.id !== itemId));
-      } else {
-        setSections(prevSections => {
-          return prevSections.map(section => {
-            if (section.day_number === originalDayNumber) {
-              return {
-                ...section,
-                items: section.items.filter((item: DisplayItineraryItem) => item.id !== itemId)
-              };
-            }
-            return section;
-          });
-        });
-      }
-      
-      // Add to new location
-      if (newDayNumber === null) {
-        setUnscheduledItems(prev => [...prev, updatedItem]);
-      } else {
-        setSections(prevSections => {
-          // Find section with the new day number
-          const sectionIndex = prevSections.findIndex(s => s.day_number === newDayNumber);
-          
-          if (sectionIndex >= 0) {
-            // Add to existing section
-            const updatedSections = [...prevSections];
-            updatedSections[sectionIndex] = {
-              ...updatedSections[sectionIndex],
-              items: [...updatedSections[sectionIndex].items, updatedItem]
-            };
-            return updatedSections;
-          } else {
-            // If no section exists with this day_number, create a new one
-            return [
-              ...prevSections,
-              {
-                id: `new-section-${Date.now()}`,
-                trip_id: tripId,
-                day_number: newDayNumber,
-                date: null,
-                title: `Day ${newDayNumber}`,
-                position: prevSections.length,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                items: [updatedItem]
-              }
-            ];
-          }
-        });
-      }
-    } else {
-      // Just update the item in place
-      if (newDayNumber === null) {
-        setUnscheduledItems(prev =>
-          prev.map((i: DisplayItineraryItem) => i.id === itemId ? updatedItem : i)
-        );
-      } else {
-        setSections(prevSections => {
-          return prevSections.map(section => {
-            if (section.day_number === newDayNumber) {
-              return {
-                ...section,
-                items: section.items.map((i: DisplayItineraryItem) => i.id === itemId ? updatedItem : i)
-              };
-            }
-            return section;
-          });
-        });
-      }
-    }
-  }, [allItems, tripId]);
+  }, [tripId, canEdit, allItems, sections, unscheduledItems, toast, setAllItems, setSections, setUnscheduledItems]);
 
   /**
    * Handler for voting on an item
    */
-  const handleVote = useCallback(async (itemId: string, dayNumber: number | null, voteType: 'up' | 'down'): Promise<void> => {
-    if (!userId) {
-      toast({ title: "Please login to vote", variant: "destructive" });
-      return;
-    }
-
+  const handleVote = useCallback(async (itemId: string, voteType: 'up' | 'down'): Promise<void> => {
     try {
-      const response = await fetch(API_ROUTES.ITINERARY_ITEM_VOTE(tripId, String(itemId)), {
+      const response = await fetch(API_ROUTES.ITINERARY_ITEM_VOTE(tripId, itemId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voteType, dayNumber }),
+        body: JSON.stringify({ voteType }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to submit vote');
       }
-      
-      // Update will come via real-time or the next fetch
-    } catch (error: any) {
+
+      toast({ title: "Vote recorded" });
+    } catch (error) {
       console.error("Vote failed:", error);
       toast({
-        title: "Vote Failed",
-        description: error.message,
+        title: "Error",
+        description: formatError(error as Error, "Failed to submit vote"),
         variant: "destructive"
       });
       throw error;
     }
-  }, [tripId, userId, toast]);
+  }, [tripId, toast]);
 
   return {
     // State
@@ -519,18 +460,11 @@ export function useTripItinerary({
     unscheduledItems,
     allItems,
     travelTimes,
-    editingItem,
-    isAddingItemToDay,
     loadingTravelTimes,
+    isAddingItemToDay,
+    editingItem,
     itineraryDurationDays,
-    
-    // Setters
-    setSections,
-    setUnscheduledItems,
-    setAllItems,
-    setEditingItem,
-    setIsAddingItemToDay,
-    
+
     // Actions
     handleAddItem,
     handleEditItem,

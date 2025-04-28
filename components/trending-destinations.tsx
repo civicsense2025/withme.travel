@@ -109,11 +109,12 @@ export function TrendingDestinations() {
 
   // Shuffle destinations once data is loaded
   useEffect(() => {
-    if (destinations.length > 0 && shuffledDestinations.length === 0) {
-      setShuffledDestinations(shuffleArray(destinations));
+    const localDestinations = data?.destinations || [];
+    if (localDestinations.length > 0 && shuffledDestinations.length === 0) {
+      setShuffledDestinations(shuffleArray(localDestinations));
     }
     // Only run when destinations data changes (and shuffledDestinations is empty initially)
-  }, [destinations, shuffledDestinations.length]);
+  }, [data, shuffledDestinations.length]);
 
   if (isLoading) {
     return (

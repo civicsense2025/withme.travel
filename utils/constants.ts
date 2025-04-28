@@ -167,6 +167,18 @@ export const DB_FIELDS = {
     IS_CUSTOM: 'is_custom',
   },
 
+  // Itinerary sections table fields
+  ITINERARY_SECTIONS: {
+    ID: 'id',
+    TRIP_ID: 'trip_id',
+    DAY_NUMBER: 'day_number',
+    TITLE: 'title',
+    POSITION: 'position',
+    IS_CUSTOM: 'is_custom',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+
   // Collaborative notes table fields
   COLLABORATIVE_NOTES: {
     TRIP_ID: 'trip_id',
@@ -376,15 +388,16 @@ export const DB_FIELDS = {
     ASSIGNED_AT: 'assigned_at'
   },
 
-  ITINERARY_SECTIONS: {
+  // Validation logs fields
+  VALIDATION_LOGS: {
     ID: 'id',
     TRIP_ID: 'trip_id',
-    DAY_NUMBER: 'day_number',
-    DATE: 'date',
-    TITLE: 'title',
-    POSITION: 'position',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
+    TEMPLATE_ID: 'template_id',
+    ITEM_ID: 'item_id',
+    IS_VALID: 'is_valid',
+    VALIDATION_ERRORS: 'validation_errors',
+    VALIDATED_AT: 'validated_at',
+    VALIDATED_BY: 'validated_by',
   },
 
   // Itinerary template items table fields
@@ -410,18 +423,6 @@ export const DB_FIELDS = {
     LONGITUDE: 'longitude',
     SECTION_ID: 'section_id',
     LINKS: 'links',
-  },
-
-  // Validation logs fields
-  VALIDATION_LOGS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TEMPLATE_ID: 'template_id',
-    ITEM_ID: 'item_id',
-    IS_VALID: 'is_valid',
-    VALIDATION_ERRORS: 'validation_errors',
-    VALIDATED_AT: 'validated_at',
-    VALIDATED_BY: 'validated_by',
   },
 } as const;
 
@@ -463,6 +464,12 @@ export const DB_RELATIONSHIPS = {
   ITINERARY_ITEMS: {
     TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.ITINERARY_ITEMS.TRIP_ID}`,
     CREATOR: `${DB_TABLES.PROFILES}:${DB_FIELDS.ITINERARY_ITEMS.CREATED_BY}`,
+  },
+
+  // Relationships for the itinerary_sections table
+  ITINERARY_SECTIONS: {
+    TRIP: `${DB_TABLES.TRIPS}:${DB_FIELDS.ITINERARY_SECTIONS.TRIP_ID}`,
+    ITEMS: `${DB_TABLES.ITINERARY_ITEMS}`,
   },
 
   // Relationships for library templates

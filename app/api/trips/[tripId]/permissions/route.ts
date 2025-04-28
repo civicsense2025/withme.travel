@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server"
+import { createApiClient } from "@/utils/supabase/server";
 import { NextResponse, NextRequest } from "next/server"
 import { DB_TABLES, DB_FIELDS, DB_ENUMS, TripRole, RequestStatus } from "@/utils/constants/database"
 import { 

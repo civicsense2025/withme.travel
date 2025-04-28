@@ -15,6 +15,41 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+// Add a debugging component to show Supabase connection status
+function SupabaseDebug() {
+  // Only show in development
+  if (process.env.NODE_ENV !== 'development') return null;
+  
+  const checkSupabaseVars = () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    return {
+      hasUrl: !!url,
+      hasKey: !!key,
+      urlPreview: url ? `${url.substring(0, 15)}...` : 'Not set',
+      keyLength: key ? key.length : 0
+    };
+  };
+  
+  const vars = checkSupabaseVars();
+  
+  return (
+    <div style={{
+      padding: '12px',
+      margin: '8px 0',
+      background: '#f8f8f8',
+      border: '1px solid #eaeaea',
+      borderRadius: '4px',
+      fontSize: '12px'
+    }}>
+      <h4 style={{ margin: '0 0 8px 0' }}>Supabase Debug Info</h4>
+      <div>URL Set: {vars.hasUrl ? '✅' : '❌'} ({vars.urlPreview})</div>
+      <div>Key Set: {vars.hasKey ? '✅' : '❌'} (Length: {vars.keyLength})</div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -160,8 +195,10 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background py-12 px-4 sm:px-0">
       <div className="w-full max-w-md flex flex-col">
+        <SupabaseDebug />
+        
         <div className="md:hidden mb-6">
-           <AuthSellingPoints />
+          <AuthSellingPoints />
         </div>
         
         <Card className="border border-border/10 dark:border-border/10 shadow-xl dark:shadow-2xl dark:shadow-black/20">
@@ -181,7 +218,7 @@ export default function LoginPage() {
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
-
+            
             <LoginForm />
             
             {/* Debug utility for clearing auth data */}

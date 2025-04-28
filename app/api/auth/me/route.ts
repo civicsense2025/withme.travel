@@ -1,22 +1,22 @@
-import { createClient } from '@/utils/supabase/server';
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
+import { createApiClient } from '@/utils/supabase/server';
 import type { Database } from '@/types/database.types';
 
 export async function GET(request: Request) {
   try {
-    // Create Supabase client
-    const supabase = createClient();
+    // Create Supabase client with correct cookie handling for route handlers
+    const supabase = await createApiClient();
 
     // First, check if there's a valid session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError || !session) {
       console.log("API Me Route: No active session found or error retrieving session.", sessionError?.message);
       return NextResponse.json({ user: null, profile: null }, { status: 401 }); // Unauthorized
     }
 
-    // If we have a session, verify the user (getSession already verifies, but getUser fetches user details)
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // If we have a session, verify the user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
       // If there's an error or no user, it means the user is not authenticated

@@ -140,9 +140,14 @@ export default function InvitePage({ params }: { params: { token: string } }) {
         <CardContent className="space-y-4">
           <div className="text-center py-4">
             <h2 className="text-xl font-bold mb-2">{invitation.trip.name}</h2>
-            <p className="text-muted-foreground">
-              {invitation.inviter.name || invitation.inviter.email} has invited you to join this trip
-            </p>
+            {
+              /* Show different message based on whether user exists */
+              !invitation.existingUser ? (
+                <p className="text-sm text-center text-muted-foreground">You&apos;ve been invited to join this trip! Create an account to accept.</p>
+              ) : (
+                <p className="text-sm text-center text-muted-foreground">Accept the invitation to join the trip.</p>
+              )
+            }
           </div>
 
           {invitation.trip.description && (

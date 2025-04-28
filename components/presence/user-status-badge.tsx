@@ -4,42 +4,36 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { PresenceStatus } from '@/types/presence';
 
-interface UserStatusBadgeProps {
+interface UserStatusBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * User presence status
+   */
   status: PresenceStatus;
-  className?: string;
-  'aria-hidden'?: boolean;
 }
 
 /**
- * A visual indicator showing a user's presence status
- * It renders a colored dot that represents different statuses:
- * - green for online
- * - amber/yellow for away
- * - gray for offline 
- * - blue for editing
+ * A small colored badge that indicates a user's online status
  */
-export function UserStatusBadge({
-  status,
-  className,
-  'aria-hidden': ariaHidden = false,
-  ...props
-}: UserStatusBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
-  // Status colors mapping
-  const statusColors: Record<PresenceStatus, string> = {
+export function UserStatusBadge({ status, className, ...props }: UserStatusBadgeProps) {
+  const statusColors = {
     online: 'bg-green-500',
-    away: 'bg-amber-500',
     offline: 'bg-gray-400',
-    editing: 'bg-blue-500',
+    away: 'bg-yellow-500',
+    editing: 'bg-blue-500 animate-pulse',
+  };
+
+  const statusDescriptions = {
+    online: 'Online',
+    offline: 'Offline',
+    away: 'Away',
+    editing: 'Editing',
   };
 
   return (
-    <span
-      className={cn(
-        "inline-block rounded-full ring-1 ring-background",
-        statusColors[status],
-        className
-      )}
-      aria-hidden={ariaHidden}
+    <div 
+      className={cn('rounded-full', statusColors[status], className)}
+      aria-label={statusDescriptions[status]}
+      role="status"
       {...props}
     />
   );

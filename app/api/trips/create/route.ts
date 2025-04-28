@@ -1,4 +1,4 @@
-import { createClient as createServerClient } from "@/utils/supabase/server";
+import { createApiClient as createServerClient } from "@/utils/supabase/server";
 // Import the base Supabase client creator
 import { createClient } from '@supabase/supabase-js'; 
 import { NextResponse } from "next/server";
@@ -55,7 +55,7 @@ async function processTags(supabaseAdmin: any, tagNames: string[]): Promise<stri
 }
 
 export async function POST(request: Request) {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   // Admin client using service role key (ensure env vars are set)
   // Check if the environment variables are present
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

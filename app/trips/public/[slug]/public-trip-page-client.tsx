@@ -272,12 +272,18 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
       )}
 
       <TripHeader 
-        title={trip.name || 'Trip Details'}
-        destination={trip.destination_name || "Unknown Destination"}
+        tripId={trip.id}
+        tripName={trip.name || 'Trip Details'} 
+        destinationName={trip.destination_name || "Unknown Destination"}
         startDate={trip.start_date}
         endDate={trip.end_date}
+        coverImageUrl={trip.cover_image_url || null}
         members={undefined}
         tags={undefined}
+        canEdit={false}
+        onEdit={() => {}}
+        onMembers={() => {}}
+        onChangeCover={() => {}}
       />
 
       <div className="flex flex-wrap gap-4 mt-6 mb-8">

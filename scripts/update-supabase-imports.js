@@ -5,118 +5,74 @@
  * to the new singleton implementation
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-// Directories to search
-const API_DIRS = [
-  './app/api',
-  './app/auth'
-];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT_DIR = path.resolve(__dirname, '..');
 
-// File extensions to include
-const EXTENSIONS = ['.ts', '.tsx'];
+// Get all TypeScript files that import from the old library
+const findCommand = `grep -r -l --include="*.ts" --include="*.tsx" "@supabase/auth-helpers-nextjs" ${ROOT_DIR}`;
+let files;
 
-// Old import pattern to replace
-const OLD_IMPORT = `import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"`;
-const OLD_CLIENT = `const supabase = createRouteHandlerClient({ cookies })`;
-
-// New replacements
-const NEW_IMPORT = `import { createClient } from "@/utils/supabase/server"`;
-const NEW_CLIENT = `const supabase = createClient()`;
-
-let updatedFiles = 0;
-let skippedFiles = 0;
-let errorFiles = 0;
-
-/**
- * Check if the file needs to be updated
- */
-function needsUpdate(content) {
-  return content.includes(OLD_IMPORT) || content.includes(OLD_CLIENT);
+try {
+  files = execSync(findCommand).toString().trim().split('\n');
+} catch (error) {
+  console.error('Error finding files:', error.message);
+  process.exit(1);
 }
 
-/**
- * Update the file content
- */
-function updateContent(content) {
-  let updated = content;
-  
-  // Replace imports
-  updated = updated.replace(OLD_IMPORT, NEW_IMPORT);
-  
-  // Replace client initialization, handling different formats
-  updated = updated.replace(/const supabase = createRouteHandlerClient\(\{ cookies(:? [a-zA-Z]+)? \}\)/g, NEW_CLIENT);
-  
-  return updated;
-}
+console.log(`Found ${files.length} files to update.`);
 
-/**
- * Process a single file
- */
-function processFile(filePath) {
+// Process each file
+let successCount = 0;
+let errorCount = 0;
+
+files.forEach(filePath => {
   try {
-    const content = fs.readFileSync(filePath, 'utf8');
+    console.log(`Processing: ${filePath}`);
+    let content = fs.readFileSync(filePath, 'utf8');
     
-    if (needsUpdate(content)) {
-      const updated = updateContent(content);
-      fs.writeFileSync(filePath, updated, 'utf8');
-      console.log(`✅ Updated ${filePath}`);
-      updatedFiles++;
-      return true;
-    } else {
-      skippedFiles++;
-      return false;
-    }
-  } catch (error) {
-    console.error(`❌ Error processing ${filePath}: ${error.message}`);
-    errorFiles++;
-    return false;
-  }
-}
-
-/**
- * Recursively process files in a directory
- */
-function processDirectory(dirPath) {
-  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-  
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
+    // Replace the import from auth-helpers-nextjs
+    content = content.replace(
+      /import\s+\{\s*createRouteHandlerClient\s*\}\s+from\s+['"]@supabase\/auth-helpers-nextjs['"]/g,
+      `import { createApiClient } from "@/utils/supabase/server"`
+    );
     
-    if (entry.isDirectory()) {
-      processDirectory(fullPath);
-    } else if (EXTENSIONS.includes(path.extname(entry.name))) {
-      processFile(fullPath);
-    }
-  }
-}
-
-// Main execution
-console.log('🔄 Starting Supabase client migration...');
-
-for (const dir of API_DIRS) {
-  if (fs.existsSync(dir)) {
-    processDirectory(dir);
-  } else {
-    console.warn(`⚠️ Directory not found: ${dir}`);
-  }
-}
-
-console.log('\n📊 Migration Summary:');
-console.log(`✅ Updated files: ${updatedFiles}`);
-console.log(`⏭️ Skipped files: ${skippedFiles}`);
-console.log(`❌ Errors: ${errorFiles}`);
-
-if (updatedFiles > 0) {
-  console.log('\n🔍 Running type-check to verify changes...');
-  try {
-    execSync('npm run typecheck', { stdio: 'inherit' });
-    console.log('✅ Type-check passed!');
+    content = content.replace(
+      /import\s+\{\s*createServerComponentClient\s*\}\s+from\s+['"]@supabase\/auth-helpers-nextjs['"]/g,
+      `import { createServerClientComponent } from "@/utils/supabase/server"`
+    );
+    
+    // Replace client creation patterns
+    content = content.replace(
+      /const\s+supabase\s*=\s*createRouteHandlerClient(?:.*?)?\(\s*\{\s*cookies(?:.*?)?\s*\}\s*\)/gs,
+      `const supabase = await createApiClient()`
+    );
+    
+    content = content.replace(
+      /const\s+supabase\s*=\s*createServerComponentClient(?:.*?)?\(\s*\{\s*cookies(?:.*?)?\s*\}\s*\)/gs,
+      `const supabase = await createServerClientComponent()`
+    );
+    
+    // Write the updated content back to the file
+    fs.writeFileSync(filePath, content);
+    successCount++;
+    console.log(`Updated: ${filePath}`);
   } catch (error) {
-    console.error('❌ Type-check failed. You may need to manually fix some files.');
+    console.error(`Error processing ${filePath}:`, error.message);
+    errorCount++;
   }
-}
+});
 
-console.log('\n✨ Migration complete!'); 
+console.log('\nSummary:');
+console.log(`Total files processed: ${files.length}`);
+console.log(`Successfully updated: ${successCount}`);
+console.log(`Errors: ${errorCount}`);
+
+if (errorCount > 0) {
+  console.log('\nWarning: Some files could not be updated automatically. Manual review is needed.');
+} 

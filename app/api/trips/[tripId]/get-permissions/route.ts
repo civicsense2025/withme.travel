@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseServerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { TRIP_ROLES, DB_TABLES, DB_FIELDS } from '@/utils/constants';
@@ -18,7 +18,7 @@ export async function GET(
   { params }: { params: { tripId: string } }
 ) {
   const tripId = params.tripId;
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createSupabaseServerClient();
 
   try {
     // First, get the current user

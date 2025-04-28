@@ -1,5 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createServerClientComponent } from "@/utils/supabase/server";
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { ItineraryDetailClient } from './page-client';
@@ -12,44 +11,47 @@ interface ItineraryPageProps {
 }
 
 export async function generateMetadata({ params }: ItineraryPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const { slug } = params;
+  const supabase = await createServerClientComponent();
   
-  const { data: itinerary } = await supabase
-    .from(DB_TABLES.ITINERARY_TEMPLATES)
-    .select(`
-      *,
-      ${DB_TABLES.DESTINATIONS}(*)
-    `)
-    .eq(DB_FIELDS.ITINERARY_TEMPLATES.SLUG, slug)
-    .single();
-  
-  if (!itinerary) {
+  try {
+    // Fetch the itinerary template
+    const { data: template, error: templateError } = await supabase
+      .from(DB_TABLES.ITINERARY_TEMPLATES)
+      .select(`
+        *,
+        ${DB_TABLES.DESTINATIONS}(*),
+        creator:${DB_FIELDS.ITINERARY_TEMPLATES.CREATED_BY}(id, name, avatar_url)
+      `)
+      .eq(DB_FIELDS.ITINERARY_TEMPLATES.SLUG, slug)
+      .single();
+    
+    if (templateError || !template) {
+      return {
+        title: 'Itinerary Not Found',
+        description: 'The requested itinerary could not be found'
+      };
+    }
+    
     return {
-      title: 'Itinerary Not Found',
-      description: 'The requested itinerary could not be found.'
+      title: template.title || 'Itinerary Template',
+      description: template.description || 'View this trip itinerary template',
+      openGraph: {
+        images: template.cover_image_url ? [template.cover_image_url] : [],
+      },
+    };
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+    return {
+      title: 'Itinerary',
+      description: 'View this trip itinerary template',
     };
   }
-  
-  return {
-    title: `${itinerary.title} | withme.travel`,
-    description: itinerary.description || `A ${itinerary.duration_days}-day itinerary for ${itinerary?.destination?.city}, ${itinerary?.destination?.country}`,
-    openGraph: {
-      images: [{
-        url: itinerary?.destination?.image_url || '/images/destinations/default-destination.jpg',
-        width: 1200,
-        height: 630,
-        alt: itinerary.title
-      }]
-    }
-  };
 }
 
 export default async function ItineraryPage({ params }: ItineraryPageProps) {
-  const { slug } = await params;
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const { slug } = params;
+  const supabase = await createServerClientComponent();
   
   // Fetch the itinerary template
   const { data: template, error: templateError } = await supabase

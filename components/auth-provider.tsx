@@ -205,499 +205,288 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase]);
 
-  // Function to check session state and synchronize with server
-  const checkSessionState = useCallback(async (isInitialCheck = false) => {
-    // Prevent concurrent session checks
-    if (!supabase) return;
-    if (authCheckInProgress.current) {
-      console.log("[AuthProvider] Session check already in progress, skipping");
-      return;
-    }
-    
-    authCheckInProgress.current = true;
-    
-    try {
-      console.log("[AuthProvider] Starting session check");
-      
-      if (isInitialCheck) {
-        // Only set loading on initial check to prevent UI flicker
-        setAuthState(prev => ({ ...prev, isLoading: true }));
-      }
-      
-      // Get the session directly from Supabase client
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("[AuthProvider] Session check error:", error);
-        setAuthState({
-          session: null,
-          user: null,
-          isLoading: false,
-          error,
-        });
-        authCheckInProgress.current = false;
-        return;
-      }
-      
-      console.log("[AuthProvider] Session check result:", !!session);
-      
-      // If session exists, fetch profile and set state
-      if (session?.user?.id) {
-        const profile = await fetchProfile(session.user.id);
-        const appUser: AppUser = { ...session.user, profile };
-        // Ensure we only update if component is still mounted
-        if (mounted.current) {
-          setAuthState({ session, user: appUser, isLoading: false, error: null });
-        }
-      } else {
-        // No session found
-        if (mounted.current) {
-          setAuthState({ session: null, user: null, isLoading: false, error: null });
-        }
-      }
-    } catch (err) {
-      console.error("[AuthProvider] Unexpected error during session check:", err);
-      if (mounted.current) {
-         setAuthState({ session: null, user: null, isLoading: false, error: err instanceof Error ? err : new Error("Session check failed") });
-      }
-    } finally {
-      authCheckInProgress.current = false;
-    }
-  }, [supabase, fetchProfile, setError]); // Include fetchProfile and setError in dependencies
+  // === INTERNAL HELPER FUNCTIONS (useCallback for stability) ===
 
-  // Session refresh function with improved error handling
-  const refreshSession = useCallback(async () => {
+  // Define _refreshSession first
+  const _refreshSession = useCallback(async (): Promise<{ session: Session | null }> => {
     if (!supabase) return { session: null };
+    if (!mounted.current) return { session: null }; // Check if component is mounted
+
+    console.log("[AuthProvider] Attempting to refresh session...");
     try {
-      console.log("[AuthProvider] Refreshing session...");
+      // Use refreshSession method
       const { data, error } = await supabase.auth.refreshSession();
-      
-      // Check if component is still mounted before proceeding with state updates
-      if (!mounted.current) {
-        console.log("[AuthProvider] Component unmounted during session refresh - skipping updates");
-        return { session: null };
-      }
-      
+
       if (error) {
-        console.error("[AuthProvider] Session refresh error:", error);
-        // Update auth state with the error
-        setAuthState(prev => ({ 
-          ...prev, 
-          error: error
-        }));
+        console.error("[AuthProvider] Error refreshing session:", error);
+        // If refresh fails, likely the refresh token is invalid or expired, treat as signed out
+        if (mounted.current) {
+          setAuthState({ session: null, user: null, isLoading: false, error, errorMessage: getFriendlyErrorMessage(error) });
+          setError(error);
+        }
         return { session: null };
       }
-      
-      if (data?.session) {
-        console.log("[AuthProvider] Session refreshed successfully");
+
+      if (data.session && mounted.current) {
+        console.log("[AuthProvider] Session refreshed successfully.");
+        const userWithProfile = data.user ? { ...data.user, profile: await fetchProfile(data.user.id) } : null;
+        setAuthState(prev => ({ ...prev, session: data.session, user: userWithProfile, isLoading: false, error: null, errorMessage: undefined }));
         
-        // If we have a new expiry time, setup the next refresh (only if still mounted)
-        if (mounted.current && data.session.expires_at) {
-          setupSessionRefresh(data.session.expires_at);
-        }
-        
-        // Fetch profile only if component is still mounted
-        let profileData = null;
-        if (mounted.current && data.session.user) {
-          try {
-            profileData = await fetchProfile(data.session.user.id);
-          } catch (err) {
-            console.error("[AuthProvider] Error fetching profile after refresh:", err);
-          }
-        }
-        
-        // Check again if component is still mounted before updating state
-        if (mounted.current) {
-          setAuthState(prev => ({
-            ...prev,
-            session: data.session,
-            user: data.session?.user ? 
-              { ...data.session.user, profile: profileData } : 
-              null,
-            error: null // Clear any previous errors
-          }));
-        }
-      } else {
-        console.warn("[AuthProvider] Session refresh returned no session");
-        if (mounted.current) {
-          setAuthState(prev => ({
-            ...prev,
-            session: null,
-            user: null,
-            error: new Error("Session refresh returned no session"),
-            errorMessage: "Your session could not be refreshed. Please try signing in again."
-          }));
-        }
+        // If session has expiry, set up the next refresh
+        // NOTE: We cannot call _setupSessionRefresh directly here anymore due to reordering
+        // Instead, the effect hook will handle setting up the refresh based on the updated session
+        // if (data.session.expires_at) {
+        //   _setupSessionRefresh(data.session.expires_at); 
+        // }
+        return { session: data.session };
       }
       
-      return data;
-    } catch (e) {
-      console.error("[AuthProvider] Error refreshing session:", e);
-      // Update auth state with the error and show toast only if still mounted
+      return { session: null }; // Should not happen if no error, but added for safety
+
+    } catch (err) {
+      console.error("[AuthProvider] Unexpected error during session refresh:", err);
       if (mounted.current) {
-        setError(e instanceof Error ? e : new Error(String(e)));
+        setError(err as Error);
       }
       return { session: null };
     }
-  }, [supabase, fetchProfile, setError, mounted]); // Include setError in dependencies
+  // Dependencies: supabase, fetchProfile, mounted ref (removed _setupSessionRefresh)
+  }, [supabase, fetchProfile, mounted]);
 
-  // Setup a session refresh timer to refresh before session expires
-  const setupSessionRefresh = useCallback((expiresAt: number) => {
+  // Define _setupSessionRefresh, depends on _refreshSession
+  const _setupSessionRefresh = useCallback((expiresAt: number): void => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = null;
+    }
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    const expiresIn = expiresAt - currentTime;
+    // Refresh slightly before expiry (e.g., 1 minute)
+    const refreshTime = Math.max(10, expiresIn - 60) * 1000; // In milliseconds
+
+    console.log(`[AuthProvider] Setting session refresh timer for ${refreshTime / 1000} seconds`);
+
+    refreshTimerRef.current = setTimeout(async () => {
+      console.log("[AuthProvider] Refresh timer fired. Attempting to refresh session.");
+      // Call the refresh function directly here - it will be the latest version available in this scope
+      await _refreshSession(); 
+    }, refreshTime);
+  // Dependencies: Only external setters/refs it directly uses, plus _refreshSession
+  }, [setError, _refreshSession]);
+
+  // Define _checkSessionState, depends on _setupSessionRefresh
+  const _checkSessionState = useCallback(async (isInitialCheck = false): Promise<void> => {
+    if (!supabase || authCheckInProgress.current) return;
+    authCheckInProgress.current = true;
+    if (isInitialCheck) {
+      setIsLoading(true); 
+    }
+    console.log(`[AuthProvider] Checking session state (Initial: ${isInitialCheck})...`);
+    try {
+      // Attempt to repair potentially corrupted auth state first
+      await repairAuthState();
+      
+      // Fetch current session
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("[AuthProvider] Error fetching session:", error);
+        setError(error);
+        setAuthState(prev => ({ ...prev, session: null, user: null }));
+        return;
+      }
+
+      const { session } = data;
+      console.log("[AuthProvider] Fetched session:", !!session);
+
+      if (session) {
+        const userWithProfile = session.user ? { ...session.user, profile: await fetchProfile(session.user.id) } : null;
+        setAuthState(prev => ({ ...prev, session, user: userWithProfile, error: null, errorMessage: undefined }));
+        if (session.expires_at) {
+          _setupSessionRefresh(session.expires_at);
+        }
+      } else {
+        setAuthState(prev => ({ ...prev, session: null, user: null }));
+      }
+    } catch (err) {
+      console.error("[AuthProvider] Unexpected error during session check:", err);
+      setError(err as Error);
+    } finally {
+      if (mounted.current) {
+        setIsLoading(false);
+        authCheckInProgress.current = false;
+      }
+    }
+  // Dependencies: supabase, fetchProfile, setError, setIsLoading, _setupSessionRefresh, mounted ref
+  }, [supabase, fetchProfile, setError, setIsLoading, _setupSessionRefresh, mounted]);
+
+  // Define _initialSessionCheck, depends on _checkSessionState
+  const _initialSessionCheck = useCallback(async (): Promise<void> => {
+    console.log("[AuthProvider] Performing initial session check...");
+    await _checkSessionState(true);
+  // Dependency: _checkSessionState
+  }, [_checkSessionState]);
+
+  // === USECALLBACK WRAPPERS (Expose stable functions to context/effects) ===
+  // These are not strictly necessary if the internal functions are already stable via useCallback,
+  // but kept for clarity or potential future refactoring where internal functions might change.
+  const checkSessionState = _checkSessionState;
+  const initialSessionCheck = _initialSessionCheck;
+  const refreshSession = _refreshSession;
+  const setupSessionRefresh = _setupSessionRefresh;
+
+  // === EFFECTS ===
+  // Effect for initial auth state check and listener setup
+  useEffect(() => {
+    if (!initialSetupCompleted.current && !authState.isLoading) {
+      console.log("[AuthProvider] Running initial session check effect");
+      initialSessionCheck(); // Call the check function defined earlier
+      initialSetupCompleted.current = true; // Mark as completed
+    }
+
+    // Setup refresh timer based on current session expiry
+    if (authState.session?.expires_at) {
+      setupSessionRefresh(authState.session.expires_at);
     }
     
-    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-    const timeToExpiry = expiresAt - currentTime; // Time until expiry in seconds
-    
-    // Set refresh to happen 5 minutes before expiry, or immediately if already close
-    const refreshTime = Math.max(0, timeToExpiry - 300) * 1000; // Convert to ms
-    
-    console.log(`[AuthProvider] Setting session refresh in ${refreshTime / 1000} seconds`);
-    
-    refreshTimerRef.current = setTimeout(() => {
-      console.log("[AuthProvider] Running session refresh");
-      
-      // Use async/await and common error handling
-      refreshSession().catch(error => {
-        console.error("[AuthProvider] Session refresh failed:", error);
-        // Use common error handling with user-friendly messages
-        setError(error instanceof Error ? error : new Error(String(error)));
-      });
-    }, refreshTime);
-  }, [refreshSession, setError]); // Include setError in dependencies
-
-  // Initial session check function
-  const initialSessionCheck = useCallback(async () => {
-    await checkSessionState(true);
-  }, [checkSessionState]);
-  
-  // Add a fallback timer to prevent infinite loading with improved error handling
-  // Use component mount as the only dependency to ensure it only runs once
-  useEffect(() => {
-    console.log("[AuthProvider] Setting up fallback timer");
-    
-    // Use a longer timeout to give auth processes more time to complete
-    const fallbackTimerId = setTimeout(() => {
-      // Only take action if we're still in loading state and initialization isn't complete
-      if (authState.isLoading && !initialSetupCompleted.current && !fallbackTimerFired.current) {
-        console.warn("[AuthProvider] Fallback timer triggered - forcing loading state to false");
-        fallbackTimerFired.current = true;
-        
-        // Only update state if we should
-        if (shouldUpdate.current && mounted.current) {
-          setAuthState(prev => ({
-            ...prev,
-            isLoading: false,
-            error: new Error("Authentication state check timed out"),
-            errorMessage: "Authentication is taking longer than expected. Please refresh the page."
-          }));
-          
-          // Also reset any ongoing checks
-          authCheckInProgress.current = false;
-          
-          // Attempt to recover the auth state
-          repairAuthState().catch((e: Error) => {
-            console.error("[AuthProvider] Failed to recover after auth timeout:", e);
-          });
-        }
-      }
-    }, 30000); // 30 second fallback (increased from 10s)
-    
     return () => {
-      console.log("[AuthProvider] Clearing fallback timer");
-      clearTimeout(fallbackTimerId);
-    };
-  }, []); // Empty dependency array - only run on mount
-
-  // Then set up the auth state change listener for future changes
-  useEffect(() => {
-    if (!supabase) return; // Add null check for supabase client
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        console.log(`[AuthProvider] Auth state change event: ${event}`, !!session);
-        
-        // Skip all processing immediately if component unmounted
-        if (!mounted.current) {
-          console.log("[AuthProvider] Skipping auth state change processing - component unmounted");
-          return;
-        }
-        
-        // If the fallback timer has already fired, log it
-        if (fallbackTimerFired.current) {
-          console.log("[AuthProvider] Auth state change received after fallback timer fired");
-        }
-        
-        // Take note of session state immediately to help with race condition
-        if (session) {
-          // If we have a session, capture it immediately to prevent the fallback timer
-          // from wiping it out
-          if (authState.isLoading && shouldUpdate.current) {
-            console.log("[AuthProvider] Setting preliminary session state while fetching profile");
-            // Set a transitional state that indicates we have a session but are still loading profile
-            setAuthState(prev => ({
-              ...prev,
-              session: session,
-              // Keep user loading until we fetch profile
-              error: null // Clear any previous errors
-            }));
-          }
-        }
-        
-        try {
-          // Create abort controller for this request
-          const controller = new AbortController();
-          pendingRequests.current.push(controller);
-          
-          // Call the /api/auth/me endpoint to verify auth status server-side
-          const meResponse = await fetch('/api/auth/me', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include', // Important for cookies
-            signal: controller.signal, // Allow cancellation
-          });
-          
-          // Remove controller from pending requests
-          pendingRequests.current = pendingRequests.current.filter(c => c !== controller);
-          if (event === 'SIGNED_OUT') {
-            console.log("[AuthProvider] SIGNED_OUT: Clearing session and user.");
-            if (mounted.current) {
-              setAuthState({
-                session: null,
-                user: null,
-                isLoading: false,
-                error: null
-              });
-            }
-            return;
-          }
-          
-          // For other events, fetch profile if needed
-          let profileData: UserProfile | null = null;
-          if (session?.user?.id) {
-            try {
-              profileData = await fetchProfile(session.user.id);
-            } catch (profileError) {
-              console.error("[AuthProvider] Error fetching profile within listener:", profileError);
-              // Continue despite profile error
-            }
-          }
-
-          // Skip further processing if component unmounted during async operations
-          if (!mounted.current) {
-            console.log("[AuthProvider] Component unmounted during auth state processing - aborting");
-            return;
-          }
-          
-          // Update state with session and profile data,
-          // but only if the fallback timer hasn't already fired
-          if (!fallbackTimerFired.current) {
-            setAuthState({
-              session,
-              user: session?.user ? { ...session.user, profile: profileData } : null,
-              isLoading: false,
-              error: null // Clear error on successful auth change
-            });
-            
-            console.log("[AuthProvider] Auth state successfully updated with session and profile");
-            // Mark initialization as complete
-            initialSetupCompleted.current = true;
-          } else {
-            console.log("[AuthProvider] Skipping auth state update because fallback timer already fired");
-          }
-        } catch (e) {
-          // Only update error state if still mounted
-          if (mounted.current) {
-            console.error("[AuthProvider] Error processing auth state change:", e);
-            setAuthState(prev => ({
-              ...prev,
-              isLoading: false,
-              error: e instanceof Error ? e : new Error(String(e)),
-              errorMessage: getFriendlyErrorMessage(e instanceof Error ? e : new Error(String(e)))
-            }));
-          } else {
-            console.error("[AuthProvider] Error occurred after unmount:", e);
-          }
-        }
-      }
-    );
-
-    // Cleanup function to unsubscribe and clear timers
-    return () => {
-      console.log("[AuthProvider] Starting cleanup process...");
-      
-      // Set flags to prevent further state updates and signal we're cleaning up
-      mounted.current = false;
-      shouldUpdate.current = false;
-      
-      // Cancel any pending requests
-      console.log(`[AuthProvider] Cancelling ${pendingRequests.current.length} pending requests`);
-      pendingRequests.current.forEach(controller => {
-        try {
-          controller.abort();
-        } catch (e) {
-          console.error("[AuthProvider] Error aborting request:", e);
-        }
-      });
-      pendingRequests.current = [];
-      
-      // Clean up auth state listener
-      if (authListener?.subscription) {
-        console.log("[AuthProvider] Unsubscribing from auth listener");
-        authListener.subscription.unsubscribe();
-      }
-      
-      // Clean up any refresh timers
       if (refreshTimerRef.current) {
-        console.log("[AuthProvider] Clearing session refresh timer");
         clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = null;
       }
-      
-      // Check for pending auth operations
-      if (authState.isLoading) {
-        console.warn("[AuthProvider] Component unmounted while auth operation was in progress");
-      }
-      
-      // Reset all ref flags
-      authCheckInProgress.current = false;
-      initialSetupCompleted.current = false;
-      
-      // Log completion of cleanup
-      console.log("[AuthProvider] Cleanup process completed");
     };
-  }, [supabase, fetchProfile, initialSessionCheck, setError]); // Restore dependencies
+  }, [authState.session, authState.isLoading, initialSessionCheck, setupSessionRefresh]);
 
-  // --- Auth Methods using Supabase Client --- 
-  const signIn = async (email: string, password: string) => {
-    if (!supabase) throw new Error("Supabase client not initialized");
-    setIsLoading(true);
-    clearError(); // Clear previous errors
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      // State will update via onAuthStateChange listener
-      return data;
-    } catch (error: any) {
-      console.error("Sign in error:", error);
-      setError(error);
-      // Ensure loading is false even on error, state change listener might not fire
-      setIsLoading(false);
-      throw error; // Re-throw for component handling
-    }
-  };
-
-  const signUp = async (email: string, password: string, username: string) => {
-    if (!supabase) throw new Error("Supabase client not initialized");
-    setIsLoading(true);
-    clearError(); // Clear previous errors
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { 
-            username: username
-          }
-        }
-      });
-      if (error) throw error;
-      // State will update via onAuthStateChange listener
-      return data;
-    } catch (error: any) {
-      console.error("Sign up error:", error);
-      setError(error);
-      // Ensure loading is false even on error
-      setIsLoading(false);
-      throw error; // Re-throw for component handling
-    }
-  };
-
-  const signOut = async () => {
-    shouldUpdate.current = false; // Prevent updates during sign-out transition
-    console.log("[AuthProvider] Attempting sign out...");
-    setIsLoading(true);
-    setError(null);
-
-    // Cancel any pending requests
-    pendingRequests.current.forEach(controller => controller.abort());
-    pendingRequests.current = [];
-
-    // Clear any refresh timers immediately
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = null;
-    }
-
-    try {
+  // === CONTEXT VALUE ===
+  const value: AuthContextType = useMemo(() => {
+    // Auth Methods using Supabase Client
+    const signIn = async (email: string, password: string) => {
       if (!supabase) throw new Error("Supabase client not initialized");
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('[AuthProvider] Error during sign out:', error);
-        // Set error state even if update flag is false during transition
-        setAuthState(prev => ({ ...prev, error, errorMessage: getFriendlyErrorMessage(error), isLoading: false }));
-        // Do not re-enable updates here, let the auth state change handle it
-        return; // Exit early on error
-      } 
-      
-      console.log("[AuthProvider] Supabase signOut successful, clearing state...");
-      // Clear local state immediately after successful sign out
-      // Note: onAuthStateChange will also fire, but this ensures faster UI update
-      setAuthState({
-        session: null,
-        user: null,
-        isLoading: false, // Set loading false after sign out attempt
-        error: null,
-      });
-      
-      // Re-enable state updates after sign out process is complete
-      shouldUpdate.current = true; 
-      
-      // Show success message
-      toast.success("Signed out successfully", {
-        description: "You have been signed out of your account",
-        duration: 3000,
-      });
-      
-      // Navigate to home page
-      router.push('/');
-      
-    } catch (error: any) {
-      console.error("[AuthProvider] Sign out error:", error);
-      setError(error);
-      setIsLoading(false);
-      throw error; // Re-throw for component handling
-    }
-  };
+      setIsLoading(true);
+      clearError(); // Clear previous errors
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        // State will update via onAuthStateChange listener
+        return data;
+      } catch (error: any) {
+        console.error("Sign in error:", error);
+        setError(error);
+        // Ensure loading is false even on error, state change listener might not fire
+        setIsLoading(false);
+        throw error; // Re-throw for component handling
+      }
+    };
 
-  // Memoize the context value to prevent unnecessary re-renders
-  const value: AuthContextType = useMemo(() => ({
-    // Extract from authState to ensure TypeScript typing is correct
-    session: authState.session,
-    user: authState.user,
-    profile: authState.user?.profile || null,
-    isLoading: authState.isLoading,
-    error: authState.error,
-    errorMessage: authState.errorMessage,
-    // Include memoized functions
-    signIn,
-    signUp,
-    signOut,
-    // Include the supabase client for direct access if needed
-    supabase
-  }), [
-    // List dependencies explicitly
+    const signUp = async (email: string, password: string, username: string) => {
+      if (!supabase) throw new Error("Supabase client not initialized");
+      setIsLoading(true);
+      clearError(); // Clear previous errors
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { 
+              username: username
+            }
+          }
+        });
+        if (error) throw error;
+        // State will update via onAuthStateChange listener
+        return data;
+      } catch (error: any) {
+        console.error("Sign up error:", error);
+        setError(error);
+        // Ensure loading is false even on error
+        setIsLoading(false);
+        throw error; // Re-throw for component handling
+      }
+    };
+
+    const signOut = async () => {
+      shouldUpdate.current = false; // Prevent updates during sign-out transition
+      console.log("[AuthProvider] Attempting sign out...");
+      setIsLoading(true);
+      setError(null);
+
+      // Cancel any pending requests
+      pendingRequests.current.forEach(controller => controller.abort());
+      pendingRequests.current = [];
+
+      // Clear any refresh timers immediately
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+
+      try {
+        if (!supabase) throw new Error("Supabase client not initialized");
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('[AuthProvider] Error during sign out:', error);
+          // Set error state even if update flag is false during transition
+          setAuthState(prev => ({ ...prev, error, errorMessage: getFriendlyErrorMessage(error), isLoading: false }));
+          // Do not re-enable updates here, let the auth state change handle it
+          return; // Exit early on error
+        } 
+        
+        console.log("[AuthProvider] Supabase signOut successful, clearing state...");
+        // Clear local state immediately after successful sign out
+        // Note: onAuthStateChange will also fire, but this ensures faster UI update
+        setAuthState({
+          session: null,
+          user: null,
+          isLoading: false, // Set loading false after sign out attempt
+          error: null,
+        });
+        
+        // Re-enable state updates after sign out process is complete
+        shouldUpdate.current = true; 
+        
+        // Show success message
+        toast.success("Signed out successfully", {
+          description: "You have been signed out of your account",
+          duration: 3000,
+        });
+        
+        // Navigate to home page
+        router.push('/');
+        
+      } catch (error: any) {
+        console.error("[AuthProvider] Sign out error:", error);
+        setError(error);
+        setIsLoading(false);
+        throw error; // Re-throw for component handling
+      }
+    };
+    
+    return {
+      session: authState.session,
+      user: authState.user,
+      profile: authState.user?.profile || null,
+      isLoading: authState.isLoading,
+      error: authState.error,
+      errorMessage: authState.errorMessage,
+      signIn,
+      signUp,
+      signOut,
+      supabase
+    };
+  }, [
     authState.session,
     authState.user,
     authState.isLoading,
     authState.error,
     authState.errorMessage,
-    signIn,
-    signUp,
-    signOut,
-    supabase
+    supabase,
+    setIsLoading,
+    setError,
+    clearError,
+    router,
+    refreshTimerRef,
+    shouldUpdate,
+    pendingRequests
   ]); // List each dependency explicitly for better performance tracking
 
   return (

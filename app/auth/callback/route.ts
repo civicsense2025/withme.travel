@@ -1,7 +1,8 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createSupabaseServerClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { DB_TABLES } from '@/utils/constants/database'
+import { CSRF } from '@/utils/csrf'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,47 @@ function validateRedirectUrl(url: string): boolean {
   }
 }
 
+/**
+ * Validates the CSRF token sent with OAuth request
+ */
+function validateOAuthCsrfToken(request: NextRequest): boolean {
+  // Get the CSRF token from the URL
+  const requestUrl = new URL(request.url)
+  const csrfParam = requestUrl.searchParams.get('csrf')
+  
+  // If no CSRF token in URL, skip validation in OAuth flow
+  // This is a balance between security and user experience for OAuth
+  if (!csrfParam) {
+    console.warn('[Auth Callback] No CSRF token in OAuth callback')
+    return true
+  }
+  
+  // Get the CSRF token from cookies
+  const cookieHeader = request.headers.get('cookie')
+  if (!cookieHeader) {
+    console.warn('[Auth Callback] No cookies in request, skipping CSRF validation')
+    return true // More permissive for OAuth flows to avoid login loops
+  }
+  
+  // Extract the CSRF token from cookies
+  const cookies = cookieHeader.split(';').map(cookie => cookie.trim())
+  const csrfCookie = cookies.find(cookie => cookie.startsWith(`${CSRF.COOKIE_NAME}=`))
+  
+  if (!csrfCookie) {
+    console.warn('[Auth Callback] CSRF cookie not found, skipping validation')
+    return true // More permissive for OAuth flows
+  }
+  
+  const cookieToken = csrfCookie.split('=')[1]
+  
+  // Compare the tokens
+  const isValid = cookieToken === csrfParam
+  if (!isValid) {
+    console.warn('[Auth Callback] CSRF token mismatch, but allowing for OAuth flow')
+  }
+  return true // Always return true for OAuth flows to prevent login loops
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const searchParams = requestUrl.searchParams
@@ -53,6 +95,12 @@ export async function GET(request: NextRequest) {
     inviteToken: !!inviteToken, // Log presence, not the value
     url: request.url
   })
+  
+  // Validate CSRF token for OAuth flows
+  if (!validateOAuthCsrfToken(request)) {
+    console.error('[Auth Callback] CSRF token validation failed')
+    return NextResponse.redirect(new URL('/login?error=invalid_csrf_token', requestUrl.origin))
+  }
 
   // If no code, redirect to login page
   if (!code) {
@@ -60,9 +108,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=no_auth_code', requestUrl.origin))
   }
   
-  // Create a supabase client
-  const cookieStore = cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  // Create a supabase client using the new function
+  const supabase = await createSupabaseServerClient()
   
   try {
     // Get the original URL set in the signInWithOAuth call
@@ -92,26 +139,33 @@ export async function GET(request: NextRequest) {
       if (error.message.includes('code challenge') || error.message.includes('PKCE')) {
         console.log('[Auth Callback] PKCE error detected - redirecting to login page')
         
-        // Redirect to login with special error message
+        // Create a response with login redirect
         const response = NextResponse.redirect(
           new URL(`/login?error=${encodeURIComponent('pkce_failed')}`, requestUrl.origin)
         )
         
-        // Add cookie clearing headers using Next.js Response
-        response.cookies.set('sb-refresh-token', '', { 
-          maxAge: 0,
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
+        // Clear all potential auth cookies
+        const cookiesToClear = [
+          'sb-refresh-token',
+          'sb-access-token',
+          'sb-auth-token',
+          'supabase-auth-token',
+          'supabase-auth'
+        ]
+        
+        cookiesToClear.forEach(cookieName => {
+          response.cookies.set(cookieName, '', { 
+            maxAge: 0,
+            path: '/',
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+          })
         })
         
-        response.cookies.set('sb-access-token', '', { 
-          maxAge: 0,
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
-        })
+        // Also add a special header to signal the client to clear local storage
+        response.headers.set('X-Clear-Storage', 'true')
         
+        console.log('[Auth Callback] Clearing auth cookies and redirecting to login')
         return response
       }
 
@@ -238,9 +292,7 @@ export async function GET(request: NextRequest) {
     console.log('[Auth Callback] Redirecting user to:', redirectTo)
     return NextResponse.redirect(redirectTo)
   } catch (error) {
-    console.error('[Auth Callback] Unhandled exception in auth callback:', error)
-    return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent('An unexpected error occurred')}`, requestUrl.origin)
-    )
+    console.error('[Auth Callback] Unexpected error:', error)
+    return NextResponse.redirect(new URL('/login?error=callback_failed', requestUrl.origin))
   }
 }

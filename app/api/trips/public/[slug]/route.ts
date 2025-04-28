@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { createApiClient } from "@/utils/supabase/server";
 import { calculateTravelTimes } from '@/lib/mapbox'
 import { type TravelTimesResult } from "@/lib/mapbox"
 

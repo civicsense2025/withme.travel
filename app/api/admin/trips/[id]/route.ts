@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createApiClient } from "@/utils/supabase/server";
 import { NextResponse } from 'next/server';
 import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
 
@@ -13,7 +13,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient()
+  const supabase = await createApiClient()
   const id = params.id
 
   try {
@@ -114,7 +114,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
+  const supabase = await createApiClient();
   const id = params.id;
 
   try {

@@ -3,16 +3,14 @@ import plugin from "tailwindcss/plugin"
 
 const config = {
   darkMode: "class",
-  content: ({
-    files: [
-      "./pages/**/*.{ts,tsx}",
-      "./components/**/*.{ts,tsx}",
-      "./app/**/*.{ts,tsx,css}",
-      "./src/**/*.{ts,tsx}",
-      "*.{js,ts,jsx,tsx,mdx}",
-    ],
-    safelist: ["border-border", "bg-background", "text-foreground"],
-  } as any),
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx,css}",
+    "./src/**/*.{ts,tsx}",
+    "*.{js,ts,jsx,tsx,mdx}",
+  ],
+  safelist: ["border-border", "bg-background", "text-foreground"],
   prefix: "",
   theme: {
     container: {

@@ -37,6 +37,9 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, init
     }
 
     if (geocoderContainerRef.current) {
+      // Capture the reference value in a local variable
+      const container = geocoderContainerRef.current;
+      
       const geocoder = new MapboxGeocoder({
         accessToken: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!,
         mapboxgl: mapboxgl as any, // Use type assertion as a temporary workaround for the mapboxgl instance type mismatch
@@ -44,7 +47,7 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, init
         ...options, // Spread additional options
       });
 
-      geocoder.addTo(geocoderContainerRef.current);
+      geocoder.addTo(container);
 
       // Store the instance
       geocoderInstanceRef.current = geocoder;
@@ -74,10 +77,10 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, init
         // Clear the ref
         geocoderInstanceRef.current = null;
         // Ensure the container is cleared thoroughly on cleanup
-        if (geocoderContainerRef.current) {
+        if (container) {
           // Remove all child nodes
-          while (geocoderContainerRef.current.firstChild) {
-              geocoderContainerRef.current.removeChild(geocoderContainerRef.current.firstChild);
+          while (container.firstChild) {
+              container.removeChild(container.firstChild);
           }
         }
       };

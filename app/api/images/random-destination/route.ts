@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDestinationPhoto } from '@/lib/unsplashService';
-import { createClient } from '@/utils/supabase/server'; // Use server client
+import { createApiClient } from "@/utils/supabase/server"; // Use server client
 import { z } from 'zod';
 
 // Function to get a random element from an array

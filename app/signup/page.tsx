@@ -352,7 +352,9 @@ export default function SignupPage() {
 
         <CardFooter className="flex justify-center">
           <p className="text-center text-sm text-muted-foreground">
-            already have an account?{" "}
+            By creating an account, you agree to our Terms of Service and
+            Privacy Policy.
+            Already have an account?{' '}
             <Link 
               href={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"}
               className="text-primary hover:underline font-medium"

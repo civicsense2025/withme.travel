@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { CityBubbles } from "./city-bubbles"
 import { LocationSearch } from "@/components/location-search"
 import { useRouter } from "next/navigation"
@@ -13,7 +13,11 @@ export function HeroSection() {
   const [planningType, setPlanningType] = useState("group planning")
   const router = useRouter()
   const { user } = useAuth() as AuthContextType
-  const planningTypes = [
+  const [currentWordIndex, setCurrentWordIndex] = useState(0)
+  const [currentText, setCurrentText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const planningTypes = useMemo(() => [
     "group planning",
     "family vacations",
     "destination weddings",
@@ -22,7 +26,7 @@ export function HeroSection() {
     "bachelor parties",
     "reunion trips",
     "festival groups",
-  ]
+  ], [])
 
   useEffect(() => {
     let currentIndex = 0
@@ -32,7 +36,27 @@ export function HeroSection() {
     }, 2000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [planningTypes])
+
+  useEffect(() => {
+    let typingTimeout: NodeJS.Timeout
+    if (currentText.length < planningType.length) {
+      typingTimeout = setTimeout(() => {
+        setCurrentText(prevText => prevText + planningType[currentText.length])
+      }, 100)
+    } else if (!isDeleting) {
+      typingTimeout = setTimeout(() => {
+        setIsDeleting(true)
+      }, 1000)
+    } else {
+      typingTimeout = setTimeout(() => {
+        setCurrentText(prevText => prevText.slice(0, -1))
+        setIsDeleting(false)
+      }, 50)
+    }
+
+    return () => clearTimeout(typingTimeout)
+  }, [currentText, isDeleting, currentWordIndex, planningType])
 
   const handleLocationSelect = (destination: any) => {
     if (destination && destination.city) {
@@ -69,7 +93,7 @@ export function HeroSection() {
       >
         <h1 className="text-5xl leading-loose font-black lowercase flex flex-col animate-fade-in-up mb-4">
           <span>say goodbye to the chaos of</span>
-          <span className="min-h-[1.2em] text-travel-blue dark:text-travel-blue">{planningType}.</span>
+          <span className="min-h-[1.2em] text-travel-blue dark:text-travel-blue">{currentText}</span>
         </h1>
       </motion.div>
 

@@ -25,40 +25,6 @@ export function PlaceAutocomplete({
   const [inputValue, setInputValue] = useState<string>(initialValue);
   const { toast } = useToast(); // Get toast function
 
-  // Initialize the Autocomplete service
-  useEffect(() => {
-    if (!placesLibrary || !inputRef.current) {
-      return;
-    }
-
-    try {
-      const options = {
-        fields: ["address_components", "geometry", "icon", "name", "formatted_address", "place_id", "types"],
-        // Optionally add componentRestrictions, bounds, types etc.
-        // types: ['address'], // Example: restrict to addresses
-      };
-      const newAutoComplete = new placesLibrary.Autocomplete(inputRef.current, options);
-      setAutoComplete(newAutoComplete);
-      
-      // Add listener for place changes
-      newAutoComplete.addListener('place_changed', () => {
-         handlePlaceChanged(newAutoComplete);
-      });
-    } catch (error) {
-        console.error("Error initializing Google Places Autocomplete:", error);
-        // Handle initialization error (e.g., API key issue, network error)
-    }
-
-    // Cleanup listener on component unmount
-    return () => {
-      if (autoComplete) {
-        google.maps.event.clearInstanceListeners(autoComplete);
-      }
-    };
-    // Re-run effect only if placesLibrary changes (should only happen once)
-    // Intentionally excluding autoComplete from dependencies to avoid re-binding listener
-  }, [placesLibrary]); 
-
   // Handler for when a place is selected from the dropdown
   const handlePlaceChanged = useCallback((acInstance: google.maps.places.Autocomplete) => {
     const googlePlace = acInstance.getPlace();
@@ -70,7 +36,8 @@ export function PlaceAutocomplete({
         setInputValue(googlePlace.formatted_address || googlePlace.name || "");
 
         // Construct a basic Place object (adapt based on your Place type)
-        const placeDetails: Place = {
+        // TODO: Properly map googlePlace to your Place type
+        const placeDetails: Partial<Place> = { // Use Partial<Place> for now
             id: googlePlace.place_id || '', // Use place_id as our internal ID? Or generate one?
             name: googlePlace.name || 'Unknown Place',
             address: googlePlace.formatted_address || '',
@@ -78,22 +45,54 @@ export function PlaceAutocomplete({
             longitude: googlePlace.geometry.location.lng(),
             // Map other relevant fields if needed (types, etc.)
             google_place_id: googlePlace.place_id, // Store original ID if needed
-            // Initialize other fields based on your Place type definition
-            description: '', 
-            rating: 0,
-            rating_count: 0,
-            price_level: 0,
             tags: googlePlace.types || [],
-            is_verified: false, // Default? Or derive?
-            destination_id: '', // Needs context if required
         };
         
-        onPlaceSelect(placeDetails, googlePlace);
+        // Cast to Place for the callback, assuming the parent handles partial data
+        onPlaceSelect(placeDetails as Place, googlePlace);
     } else {
         console.warn("Selected place details incomplete or invalid:", googlePlace);
         onPlaceSelect(null, googlePlace); // Pass null if invalid
     }
   }, [onPlaceSelect]);
+
+  // Initialize the Autocomplete service
+  useEffect(() => {
+    if (!placesLibrary || !inputRef.current) {
+      return;
+    }
+
+    // Prevent re-initialization if autoComplete instance already exists
+    if (autoComplete) {
+      return;
+    }
+
+    try {
+      const options = {
+        fields: ["address_components", "geometry", "icon", "name", "formatted_address", "place_id", "types"],
+      };
+      const newAutoComplete = new placesLibrary.Autocomplete(inputRef.current, options);
+      setAutoComplete(newAutoComplete); // Store the instance
+      
+      // Add the listener
+      const listener = newAutoComplete.addListener('place_changed', () => {
+         handlePlaceChanged(newAutoComplete);
+      });
+
+      // Cleanup listener on component unmount OR when dependencies change
+      return () => {
+        if (newAutoComplete) {
+          // Use the specific listener variable for removal
+          google.maps.event.removeListener(listener); 
+          // Additionally clear all listeners for the instance, just in case
+          google.maps.event.clearInstanceListeners(newAutoComplete); 
+        }
+      };
+    } catch (error) {
+      console.error("Error initializing Google Places Autocomplete:", error);
+    }
+    // Dependencies: Run only when library is loaded or the handler changes
+  }, [placesLibrary, handlePlaceChanged, autoComplete]);
 
   // Handle manual input changes
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,4 +1,4 @@
-export type PresenceStatus = 'online' | 'away' | 'offline' | 'editing';
+import { PresenceStatus } from "@/utils/constants/database";
 
 export interface CursorPosition {
   x: number;
@@ -6,26 +6,41 @@ export interface CursorPosition {
   timestamp?: number;
 }
 
+// Basic user presence interface
 export interface UserPresence {
   id: string;
-  user_id: string;
+  user_id: string; 
   trip_id: string;
   status: PresenceStatus;
   last_active: string;
-  cursor_position?: CursorPosition | null;
-  editing_item_id?: string | null;
-  page_path?: string | null;
-  created_at?: string;
-  updated_at?: string;
-  // Additional user details from joins
-  name?: string | null;
-  avatar_url?: string | null;
-  email?: string | null;
+  document_id?: string;
+  editing_item_id?: string;
+  cursor_position?: CursorPosition;
+  page_path?: string;
+}
+
+// Extended user presence with profile information
+export interface ExtendedUserPresence extends UserPresence {
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+  username?: string;
+}
+
+// Type for user presence from imports
+export interface ImportedUserPresence extends UserPresence {
   profiles?: {
     name: string | null;
-    avatar_url: string | null;
     email: string | null;
+    avatar_url: string | null;
+    username: string | null;
   } | null;
+}
+
+export interface TripSection {
+  id: string;
+  name: string;
+  path: string;
 }
 
 export type ConnectionState = 'connected' | 'connecting' | 'disconnected';

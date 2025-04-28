@@ -23,7 +23,7 @@ export interface Trip {
   date_flexibility: string | null
   travelers_count: number
   vibe: string | null
-  budget: string | null
+  budget: number | null
   is_public: boolean
   slug: string | null
   cover_image_url: string | null
@@ -42,6 +42,7 @@ export interface Trip {
   public_slug: string | null
   trip_type: string | null
   privacy_setting?: 'private' | 'shared_with_link' | 'public' | null
+  playlist_url?: string | null
 }
 
 export interface ItineraryTemplate {

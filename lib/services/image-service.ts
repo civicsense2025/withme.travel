@@ -21,6 +21,7 @@ export interface ImageMetadata {
   height?: number;
   focal_point_x?: number;
   focal_point_y?: number;
+  blur_data_url?: string; // Base64 encoded blur placeholder
   created_at: string;
   updated_at: string;
 }

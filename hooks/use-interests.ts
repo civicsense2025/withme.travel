@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { createClient } from '@/utils/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { Database } from '@/types/supabase'
 import { Tag } from '@/hooks/use-tags'
@@ -12,7 +12,7 @@ export interface UserInterest {
 }
 
 export function useInterests() {
-  const supabase = useSupabaseClient<Database>()
+  const supabase = createClient()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 

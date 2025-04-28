@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
   Star,
@@ -82,10 +82,12 @@ export function DestinationReviews({
   const [sortBy, setSortBy] = useState<"recent" | "rating">("recent")
   const [filterSeason, setFilterSeason] = useState<string | null>(null)
   const [filterTravelType, setFilterTravelType] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
     try {
-      setIsLoading(true)
       const params = new URLSearchParams({
         sort_by: sortBy,
         ...(filterSeason && { season: filterSeason }),
@@ -109,12 +111,11 @@ export function DestinationReviews({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [destinationId, sortBy, filterSeason, filterTravelType, toast])
 
-  // Fetch reviews when filters change
   useEffect(() => {
     fetchReviews()
-  }, [destinationId, sortBy, filterSeason, filterTravelType])
+  }, [fetchReviews])
 
   const renderStars = (rating: number) => {
     return (

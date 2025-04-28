@@ -1,27 +1,37 @@
-import { createClient } from "@/utils/supabase/server"
+import { createApiClient } from "@/utils/supabase/server";
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database'
 import { Profile } from '@/types/database.types'
+import { rateLimit } from '@/utils/middleware/rate-limit'
+import { validateRequestCsrfToken } from '@/utils/csrf'
+import { sanitizeAuthCredentials, sanitizeString } from '@/utils/sanitize'
+import { validateRequestMiddleware, signupSchema } from '@/utils/validation'
 
-export async function POST(request: Request) {
-  let requestBody;
-  try {
-    requestBody = await request.json();
-  } catch (error) {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+// Rate limiting configuration for signup attempts
+// 5 attempts per 10 minutes per IP address - stricter than login
+const signupRateLimiter = rateLimit({
+  limit: 5,
+  windowMs: 600, // 10 minutes
+});
 
-  const { email, password, username } = requestBody;
-
-  if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
-    return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+// Handler for signup requests after validation
+async function signupHandler(request: Request, validatedData: { email: string; password: string; username?: string }) {
+  // Apply rate limiting to signup requests
+  const rateLimitResult = await signupRateLimiter(request as any);
+  if (rateLimitResult) {
+    // Rate limit was hit, return the error response
+    return rateLimitResult;
   }
   
-  // Basic password validation (example: minimum length)
-  if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters long" }, { status: 400 });
+  // Validate CSRF token
+  if (!validateRequestCsrfToken(request)) {
+    console.error('CSRF token validation failed for signup attempt');
+    return NextResponse.json({ error: "Invalid security token" }, { status: 403 });
   }
+
+  // Use the validated and sanitized data
+  const { email, password, username } = sanitizeAuthCredentials(validatedData);
 
   const cookieStore = cookies()
   const supabase = createClient()
@@ -36,9 +46,8 @@ export async function POST(request: Request) {
         // For now, let's assume username might be stored in user_metadata or a profile table.
         // If using a separate profiles table, we might need another step.
         data: {
-          // Example: Storing username in user_metadata
-          // This depends on your Supabase setup and policies
-          // username: username || email.split('@')[0], // Default username if not provided
+          // Sanitize any additional data
+          username: username || email.split('@')[0],
         }
       },
     })
@@ -65,7 +74,7 @@ export async function POST(request: Request) {
         .insert({ 
           id: newUserId, // Link profile to the auth user ID
           email: newUserEmail, 
-          name: profileName, 
+          name: sanitizeString(profileName), 
           avatar_url: null, // Default avatar or potentially use data.user.user_metadata.avatar_url if available?
           is_admin: false, // Default role
           // Add other default fields from your Profile Insert type as needed
@@ -87,11 +96,17 @@ export async function POST(request: Request) {
     // Sign up successful (user created, profile attempt made)
     // AuthProvider will call /api/auth/me to get user data after potential confirmation.
     // If email confirmation is enabled, the user object in the response might indicate this.
-    const responseMessage = data.user.email_confirmed_at ? "Signup successful" : "Account created. Please check your email to confirm your account.";
+    const responseMessage = data.user?.email_confirmed_at 
+      ? "Signup successful" 
+      : "Account created. Please check your email to confirm your account.";
+      
     return NextResponse.json({ success: true, message: responseMessage }, { status: 201 }); // 201 Created
 
   } catch (error: any) {
     console.error("API Signup Route Error:", error);
     return NextResponse.json({ error: "An unexpected error occurred during sign up" }, { status: 500 });
   }
-} 
+}
+
+// Export the POST handler with validation middleware
+export const POST = validateRequestMiddleware(signupSchema, signupHandler); 

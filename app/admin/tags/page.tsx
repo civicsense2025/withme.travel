@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useEffect, useState, useCallback } from 'react'
+import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Check, X, AlertTriangle } from 'lucide-react'
 
@@ -36,19 +36,14 @@ interface TagWithSuggestion extends Tag {
 }
 
 export default function AdminTagsPage() {
-  const supabase = useSupabaseClient<Database>()
+  const supabase = createClient()
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
   const [pendingTags, setPendingTags] = useState<TagWithSuggestion[]>([])
   const [approvedTags, setApprovedTags] = useState<Tag[]>([])
 
-  useEffect(() => {
-    checkAdmin()
-    loadTags()
-  }, [])
-
-  async function checkAdmin() {
+  const checkAdmin = useCallback(async () => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -67,9 +62,9 @@ export default function AdminTagsPage() {
       console.error('Error checking admin status:', error)
       router.push('/')
     }
-  }
+  }, [supabase, toast, router])
 
-  async function loadTags() {
+  const loadTags = useCallback(async () => {
     try {
       setIsLoading(true)
 
@@ -118,7 +113,12 @@ export default function AdminTagsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase, toast, setIsLoading])
+
+  useEffect(() => {
+    checkAdmin()
+    loadTags()
+  }, [checkAdmin, loadTags])
 
   async function handleApprove(suggestion: TagSuggestion) {
     try {

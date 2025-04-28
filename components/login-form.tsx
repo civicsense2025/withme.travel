@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { createClient, resetClient } from "@/utils/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/hooks/use-auth"
+import { useCsrf, fetchWithCsrf } from "@/components/csrf-provider"
 import { fadeIn, slideUp, staggerContainer } from "@/utils/animation"
 
 export function LoginForm() {
@@ -23,6 +24,7 @@ export function LoginForm() {
   const urlError = searchParams.get("error")
   const { toast } = useToast()
   const { signIn, isLoading, error: authError, user } = useAuth()
+  const { csrfToken, loading: csrfLoading } = useCsrf()
   const [inlineError, setInlineError] = useState<string | null>(null)
   
   // Handle decoded redirect path
@@ -43,6 +45,29 @@ export function LoginForm() {
       // Handle known error codes from callback
       if (urlError === 'pkce_failed') {
         errorMessage = 'authentication process interrupted, please try again';
+        
+        // Clear local storage auth tokens to help with PKCE issues
+        if (typeof window !== 'undefined') {
+          try {
+            console.log("[LoginForm] Clearing auth storage due to PKCE failure");
+            localStorage.removeItem('supabase-auth-token');
+            sessionStorage.removeItem('supabase-auth-token');
+            // Also check for and clear any old format tokens
+            localStorage.removeItem('sb-access-token');
+            localStorage.removeItem('sb-refresh-token');
+            sessionStorage.removeItem('sb-access-token');
+            sessionStorage.removeItem('sb-refresh-token');
+          } catch (e) {
+            console.warn("[LoginForm] Error clearing auth storage:", e);
+          }
+        }
+        
+        // Reset the Supabase client to ensure a clean session
+        try {
+          resetClient();
+        } catch (e) {
+          console.warn("[LoginForm] Failed to reset client after PKCE failure:", e);
+        }
       } else if (urlError === 'invalid_redirect') {
         errorMessage = 'invalid redirect url, please try again';
       } else if (urlError === 'email_not_confirmed') {
@@ -112,6 +137,19 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Ensure CSRF token is available
+    if (!csrfToken) {
+      console.error("[LoginForm] Missing CSRF token");
+      setInlineError("Security token missing. Please refresh the page and try again.");
+      toast({
+        title: 'Security Error',
+        description: "Missing security token. Please refresh the page.",
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setInlineError(null);
     try {
       console.log("[LoginForm] Submitting login form with email:", formData.email);
@@ -125,14 +163,35 @@ export function LoginForm() {
         }
       }
       
-      await signIn(formData.email, formData.password);
-      console.log("[LoginForm] Sign-in successful");
+      // Use a custom login implementation that includes the CSRF token
+      const response = await fetchWithCsrf('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      }, csrfToken);
       
-      toast({
-        title: 'welcome back!',
-        description: 'successfully logged in',
-        variant: 'default',
-      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Login failed');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Let the AuthProvider handle the session
+        await signIn(formData.email, formData.password);
+        console.log("[LoginForm] Sign-in successful");
+        
+        toast({
+          title: 'welcome back!',
+          description: 'successfully logged in',
+          variant: 'default',
+        });
+      } else {
+        throw new Error(data.error || 'Login failed');
+      }
     } catch (error: any) {
       console.error('[LoginForm] Login error:', error);
       
@@ -189,6 +248,11 @@ export function LoginForm() {
       
       // Add timestamp to prevent caching issues with PKCE
       callbackUrl.searchParams.set('_t', Date.now().toString());
+      
+      // Add CSRF token to help validate the response
+      if (csrfToken) {
+        callbackUrl.searchParams.set('csrf', csrfToken);
+      }
       
       console.log("[LoginForm] Google sign-in callback URL:", callbackUrl.toString());
       

@@ -84,7 +84,7 @@ export function TripNotesEditor({
     if (editor && initialContent !== editor.getHTML()) {
       editor.commands.setContent(initialContent, false)
     }
-  }, [initialContent])
+  }, [initialContent, editor])
 
   const saveContent = async () => {
     if (!editor || !noteId) {

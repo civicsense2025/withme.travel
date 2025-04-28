@@ -1,5 +1,6 @@
-import { Metadata } from "next"
-import DesignSandbox from "../design-sandbox"
+import React from 'react';
+import { Metadata } from "next";
+import DesignSandboxClient from './design-sandbox-client';
 
 export const metadata: Metadata = {
   title: "Design Sandbox | withme.travel",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function DesignSandboxPage() {
-  return <DesignSandbox />
+  return <DesignSandboxClient />;
 } 

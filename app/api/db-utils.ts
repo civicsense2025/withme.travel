@@ -1,7 +1,7 @@
 // Server-side database functions that were previously in lib/db.ts
 // These functions use the createClient from @/utils/supabase/server and should only be used in API routes
 
-import { createClient } from "@/utils/supabase/server"
+import { createServerClient } from "@/utils/supabase/server";
 // import { cookies } from "next/headers" // No longer needed directly
 
 export async function getTrips() {

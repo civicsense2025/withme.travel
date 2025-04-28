@@ -62,12 +62,11 @@ export function CollaborativeNotes({
   const { toast } = useToast()
   const saveTagsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Fetch notes list on mount
+  // Fetch notes list on component mount
   useEffect(() => {
     async function fetchNotesList() {
+      setIsLoadingList(true)
       try {
-        setIsLoadingList(true)
-        setError(null)
         const response = await fetch(API_ROUTES.COLLABORATIVE_NOTES(tripId))
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}))
@@ -75,7 +74,8 @@ export function CollaborativeNotes({
         }
         const data = await response.json()
         setNotesList(data.notes || [])
-        // Automatically select the first note if list is not empty
+        
+        // If we have notes and none is selected, select the first one
         if (data.notes && data.notes.length > 0 && !selectedNoteId) {
           setSelectedNoteId(data.notes[0].id)
         }
@@ -87,7 +87,7 @@ export function CollaborativeNotes({
       }
     }
     fetchNotesList()
-  }, [tripId])
+  }, [tripId, selectedNoteId])
 
   // Fetch selected note content AND tags when ID changes
   useEffect(() => {
@@ -245,12 +245,6 @@ export function CollaborativeNotes({
         clearTimeout(saveTagsTimeoutRef.current)
       }
     }
-  }, [])
-  useEffect(() => {
-     // Clear timer when switching notes
-      if (saveTagsTimeoutRef.current) {
-        clearTimeout(saveTagsTimeoutRef.current)
-      }
   }, [selectedNoteId])
 
   // Function to save tags via API

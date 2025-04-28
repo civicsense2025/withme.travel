@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 
 interface ErrorProps {
   error: Error & { digest?: string }
@@ -27,12 +28,12 @@ export default function Error({ error, reset }: ErrorProps) {
         <p className="text-muted-foreground">
           {error.message || 'An error occurred. Please try again.'}
         </p>
-        <button
+        <Button
           onClick={reset}
-          className="rounded bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
+          variant="default"
         >
           Try again
-        </button>
+        </Button>
       </div>
     </div>
   )

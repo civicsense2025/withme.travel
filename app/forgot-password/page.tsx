@@ -1,107 +1,175 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Mail } from "lucide-react"
+import { motion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { createClient } from "@/utils/supabase/client"
-import { AuthSellingPoints } from "@/components/auth-selling-points"
+import { useToast } from "@/hooks/use-toast"
+import { useCsrf } from "@/components/csrf-provider"
+import { fadeIn, staggerContainer } from "@/utils/animation"
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
+  const { toast } = useToast()
+  const { csrfToken, loading: csrfLoading } = useCsrf()
+  
   const [email, setEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError("")
-
+    setError(null)
+    
+    // Simple email validation
+    if (!email || !email.includes('@')) {
+      setError("Please enter a valid email address")
+      return
+    }
+    
+    // Check for CSRF token
+    if (!csrfToken) {
+      setError("Missing security token. Please refresh the page.")
+      return
+    }
+    
+    setIsSubmitting(true)
+    
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({
+          email,
+          csrfToken,
+        }),
       })
-
-      if (error) {
-        throw error
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send reset email")
       }
-
+      
+      // Show success message
       setSuccess(true)
-    } catch (error: any) {
-      setError(error.message || "something went wrong. please try again.")
+      setEmail("")
+      
+      toast({
+        title: "Reset Email Sent",
+        description: "If an account exists with this email, you will receive reset instructions.",
+      })
+    } catch (err: any) {
+      console.error("Forgot password error:", err)
+      setError(err.message || "Failed to send reset email")
+      
+      toast({
+        title: "Request Failed",
+        description: err.message || "Failed to send reset email. Please try again.",
+        variant: "destructive",
+      })
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-1 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-0">
-      <div className="w-full max-w-md">
-        <Card className="border-0 shadow-lg mb-8">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">forgot password</CardTitle>
-            <CardDescription>enter your email and we'll send you a reset link</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+    <div className="container max-w-md mx-auto py-16 px-4">
+      <motion.div
+        className="space-y-8"
+        initial="hidden"
+        animate="visible"
+        variants={staggerContainer}
+      >
+        <motion.div variants={fadeIn} className="text-center space-y-2">
+          <h1 className="text-3xl font-bold">Forgot Password</h1>
+          <p className="text-muted-foreground">
+            Enter your email address to receive a password reset link
+          </p>
+        </motion.div>
 
-            {success ? (
-              <Alert>
-                <AlertDescription>
-                  <p className="font-medium">check your email</p>
-                  <p className="mt-2">
-                    we've sent a password reset link to <span className="font-medium">{email}</span>. please check your
-                    inbox and follow the instructions.
-                  </p>
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="hello@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "sending reset link..." : "send reset link"}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-          <CardFooter>
-            <div className="flex w-full flex-col space-y-2">
-              <Link href="/login" className="flex items-center text-sm text-muted-foreground hover:text-primary">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                back to login
+        {error && (
+          <motion.div
+            variants={fadeIn}
+            className="bg-destructive/10 text-destructive p-3 rounded-md text-sm"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        {success ? (
+          <motion.div
+            variants={fadeIn}
+            className="bg-green-100 text-green-800 p-4 rounded-md text-center space-y-4"
+          >
+            <p className="font-medium">Check your email</p>
+            <p className="text-sm">
+              We've sent password reset instructions to your email address.
+              Please check your inbox and follow the link to reset your password.
+            </p>
+            <Button
+              onClick={() => router.push("/login")}
+              variant="outline"
+              className="mt-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Login
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.form
+            variants={fadeIn}
+            className="space-y-4"
+            onSubmit={handleSubmit}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="your@email.com"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || csrfLoading}
+            >
+              {isSubmitting ? (
+                "Sending Reset Email..."
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Reset Email
+                </>
+              )}
+            </Button>
+            
+            <div className="text-center mt-4">
+              <Link 
+                href="/login" 
+                className="text-sm text-muted-foreground hover:text-primary"
+              >
+                Back to login
               </Link>
             </div>
-          </CardFooter>
-        </Card>
-        
-        {/* Selling points */}
-        <AuthSellingPoints />
-      </div>
+          </motion.form>
+        )}
+      </motion.div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createServerClient } from "@/utils/supabase/server";
 import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database";
 import type { TripRole } from "@/utils/constants/database";
 import { errorResponse } from "./api-utils";

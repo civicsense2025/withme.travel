@@ -1,35 +1,45 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { type CookieOptions, createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import type { Database } from '@/types/database.types'
 
-export const createClient = () => {
-  return createServerClient(
+/**
+ * Creates a Supabase client configured for Server Components, Route Handlers, and Server Actions.
+ * Requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.
+ */
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        async getAll() {
-          const cookieStore = await cookies();
-          return cookieStore.getAll();
+        get(name: string) {
+          return cookieStore.get(name)?.value
         },
-        async setAll(cookiesToSet) {
+        set(name: string, value: string, options: CookieOptions) {
           try {
-            const cookieStore = await cookies();
-            cookiesToSet.forEach(({ name, value, options }) => {
-              try {
-                cookieStore.set(name, value, options);
-              } catch (error) {
-                // Ignore errors from trying to set cookies in RSC
-                // See: https://github.com/vercel/next.js/discussions/49408
-              }
-            });
+            cookieStore.set({ name, value, ...options })
           } catch (error) {
-            // The `setAll` method was called from a Server Component or Route Handler.
-            // This can be ignored if you have middleware refreshing user sessions.
-            // Log error for debugging?
-            // console.error("Error in setAll cookies:", error);
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // The `delete` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
           }
         },
       },
-    },
-  );
-}; 
+    }
+  )
+}
+
+// Maintain compatibility with old naming for now, but prefer createSupabaseServerClient
+export const createApiClient = createSupabaseServerClient;
+export const createServerClientComponent = createSupabaseServerClient; 

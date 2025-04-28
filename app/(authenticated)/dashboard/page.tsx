@@ -26,6 +26,7 @@ import { TripCard } from "@/components/trip-card"
 import { createClient } from "@/utils/supabase/client"
 import TravelTracker from '@/components/TravelTracker'
 import { TrendingDestinations } from "@/components/trending-destinations"
+import type { TripRole } from "@/utils/constants"
 
 // Trip type definition - simplified version of the one in trips/page.tsx
 interface Trip {
@@ -51,6 +52,7 @@ interface Trip {
   description?: string
   cover_image?: string
   members?: number
+  role: TripRole | null
 }
 
 // User type with metadata
@@ -95,7 +97,11 @@ export default function DashboardPage() {
         }
 
         const data = await response.json()
-        setRecentTrips(Array.isArray(data.trips) ? data.trips : [])
+        // Ensure each trip has a role property
+        const trips = Array.isArray(data.trips) 
+          ? data.trips.map((trip: any) => ({ ...trip, role: trip.role || null }))
+          : []
+        setRecentTrips(trips)
       } catch (error) {
         console.error("Error fetching recent trips:", error)
         setRecentTrips([])
@@ -282,7 +288,7 @@ export default function DashboardPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {recentTrips.map((trip) => (
-                  <TripCard key={trip.id} trip={trip} />
+                  <TripCard key={trip.id} trip={{...trip, role: 'admin'}} />
                 ))}
               </div>
             )}

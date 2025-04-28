@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useTripData } from './trip-data-provider';
 import { useToast } from '@/components/ui/use-toast';
@@ -28,7 +28,7 @@ export function RealtimeProvider({ tripId, children }: RealtimeProviderProps) {
   const { toast } = useToast();
   const supabase = createClient();
   
-  const setupSubscriptions = () => {
+  const setupSubscriptions = useCallback(() => {
     if (!tripId) return null;
     
     setStatus('connecting');
@@ -106,7 +106,7 @@ export function RealtimeProvider({ tripId, children }: RealtimeProviderProps) {
       itineraryChannel,
       membersChannel
     };
-  };
+  }, [tripId, supabase, refetchTrip, refetchItinerary, refetchMembers, toast, setStatus]);
   
   useEffect(() => {
     const channels = setupSubscriptions();
@@ -118,9 +118,9 @@ export function RealtimeProvider({ tripId, children }: RealtimeProviderProps) {
         supabase.removeChannel(channels.membersChannel);
       }
     };
-  }, [tripId]);
+  }, [tripId, setupSubscriptions, supabase]);
   
-  const reconnect = () => {
+  const reconnect = useCallback(() => {
     const channels = setupSubscriptions();
     if (channels) {
       toast({
@@ -128,7 +128,7 @@ export function RealtimeProvider({ tripId, children }: RealtimeProviderProps) {
         description: "Attempting to reconnect to real-time updates",
       });
     }
-  };
+  }, [setupSubscriptions, toast]);
   
   const value = {
     isRealtimeEnabled: status === 'connected',

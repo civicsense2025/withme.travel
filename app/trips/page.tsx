@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyTrips } from '@/components/empty-trips'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TripCard } from '@/components/trip-card'
-import { ErrorBoundary } from '@/components/error-boundary'
+import { ClassErrorBoundary } from '@/components/error-boundary'
 import { DB_TABLES, DB_FIELDS, PAGE_ROUTES, TripRole } from '@/utils/constants'
 import type { TripWithMemberInfo } from '@/utils/types'
 
@@ -46,7 +46,8 @@ interface TripMemberRow {
 }
 
 // Fetcher function for SWR
-const fetchTrips = async () => {
+// Explicitly type the return value of the fetcher
+const fetchTrips = async (): Promise<{ rows: TripMemberRow[], userId: string }> => {
   const supabase = createClient()
   
   // Get current user
@@ -73,17 +74,20 @@ const fetchTrips = async () => {
     .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
     .order(DB_FIELDS.TRIPS.START_DATE, { foreignTable: DB_TABLES.TRIPS, ascending: false, nullsFirst: false })
     .order(DB_FIELDS.TRIPS.CREATED_AT, { foreignTable: DB_TABLES.TRIPS, ascending: false })
+    // Cast the result data explicitly to match TripMemberRow[]
+    .returns<TripMemberRow[]>()
   
   if (fetchErr) throw fetchErr
   
-  const rows = data || []
+  // Ensure data is not null before returning
+  const rows = data || [] 
   return { rows, userId }
 }
 
 function UserTripsList() {
   const router = useRouter()
   
-  // Use SWR for data fetching with stale-while-revalidate strategy
+  // Use SWR for data fetching
   const { data, error, isLoading } = useSWR('user-trips', fetchTrips, {
     revalidateOnFocus: true,
     revalidateIfStale: true,
@@ -91,33 +95,35 @@ function UserTripsList() {
     errorRetryCount: 3
   })
 
-  // Redirect to login if not authenticated
-  if (error?.message === 'Not authenticated') {
-    router.replace(`/login?redirect=${encodeURIComponent(safeRedirect(PAGE_ROUTES.TRIPS))}`)
-    return <div className="grid grid-cols-1 gap-6">
-      {[1,2,3].map(i => (
-        <SkeletonTripCard key={i} />
-      ))}
-    </div>
-  }
-
-  // Process and sort trips when data is available
+  // Process and sort trips when data is available (Reverted inner changes)
   const trips = useMemo(() => {
     if (!data) return []
     
     const { rows, userId } = data
     
     // Filter out missing trips
-    const valid = rows.filter((r: TripMemberRow) => r.trip !== null)
+    const valid = rows.filter((r: TripMemberRow): r is TripMemberRow & { trip: NonNullable<TripMemberRow['trip']> } => r.trip !== null)
     
     // Map to unified type
-    const mappedTrips: TripWithMemberInfo[] = valid.map(({ role, joined_at, trip }: TripMemberRow) => ({
-      ...trip!,
-      created_by: trip!.created_by ?? userId,
+    const mappedTrips: TripWithMemberInfo[] = valid.map(({ role, joined_at, trip }) => ({
+      ...trip,
+      // Explicitly map fields ensuring null -> undefined conversion where needed
+      id: trip.id, // Assuming ID is always present
+      name: trip.name, // Assuming name is always present
+      start_date: trip.start_date ?? undefined,
+      end_date: trip.end_date ?? undefined,
+      created_at: trip.created_at, // Assuming created_at is always present
+      status: trip.status ?? undefined,
+      destination_id: trip.destination_id ?? undefined,
+      destination_name: trip.destination_name ?? undefined,
+      cover_image_url: trip.cover_image_url ?? undefined,
+      created_by: trip.created_by ?? userId,
+      is_public: trip.is_public, // Assuming is_public is always present
+      privacy_setting: trip.privacy_setting ?? undefined,
+      description: trip.description ?? undefined, // Convert null to undefined
+      // Member specific fields
       role: role ?? null,
-      memberSince: joined_at,
-      description: trip!.description ?? null,
-      destination_name: trip!.destination_name ?? null
+      memberSince: joined_at ?? undefined, // Convert null to undefined
     }))
     
     // Sort: upcoming first, then past; use Date.parse for accuracy
@@ -138,6 +144,18 @@ function UserTripsList() {
     })
   }, [data])
 
+  // Redirect to login if not authenticated (Now after hooks)
+  if (error?.message === 'Not authenticated') {
+    router.replace(`/login?redirect=${encodeURIComponent(safeRedirect(PAGE_ROUTES.TRIPS))}`)
+    // Return skeleton after hooks have run
+    return <div className="grid grid-cols-1 gap-6">
+      {[1,2,3].map(i => (
+        <SkeletonTripCard key={i} />
+      ))}
+    </div>
+  }
+
+  // Handle loading state
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-6">
@@ -148,6 +166,7 @@ function UserTripsList() {
     )
   }
 
+  // Handle general fetch errors
   if (error) {
     return (
       <div className="my-8 text-center">
@@ -157,10 +176,12 @@ function UserTripsList() {
     )
   }
 
-  if (trips.length === 0) {
+  // Handle case with no trips after loading and no error
+  if (!isLoading && trips.length === 0) {
     return <EmptyTrips />
   }
 
+  // Render the list of trips
   return (
     <div className="grid grid-cols-1 gap-6">
       {trips.map(trip => <TripCard key={trip.id} trip={trip} />)}
@@ -196,7 +217,7 @@ export default function TripsPage() {
           </Button>
         </Link>
       </div>
-      <ErrorBoundary
+      <ClassErrorBoundary
         fallback={
           <div className="my-8 text-center">
             <p className="text-destructive">Failed to load trips.</p>
@@ -207,7 +228,7 @@ export default function TripsPage() {
         }
       >
         <UserTripsList key={refreshKey} />
-      </ErrorBoundary>
+      </ClassErrorBoundary>
     </div>
   )
 }

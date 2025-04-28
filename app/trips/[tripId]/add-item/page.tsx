@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createServerClient } from "@/utils/supabase/server";
 import { DB_TABLES, DB_FIELDS } from "@/utils/constants/database";
 import { ItineraryItem } from "@/types/database.types";
 import { AddItineraryItemClient } from "./add-item-client"; // Import the new client component

@@ -15,7 +15,7 @@ import { DestinationCard } from "@/components/destination-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { createClient as serverCreateClient } from "@/utils/supabase/server"
+import { createServerClient as serverCreateClient } from "@/utils/supabase/server";
 
 // Force dynamic rendering for this page since it uses data fetching
 export const dynamic = 'force-dynamic';

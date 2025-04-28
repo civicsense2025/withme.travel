@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, Suspense } from 'react';
 import { usePresence } from '@/hooks/use-presence';
 import { PresenceContextType, UserPresence, ConnectionState } from '@/types/presence';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 // Create a context with a default empty state
 const PresenceContext = createContext<PresenceContextType>({
@@ -31,11 +32,17 @@ interface PresenceProviderProps {
 export function PresenceProvider({ 
   children,
   tripId,
-  trackCursor = false,
+  trackCursor: forceTrackCursor,
   announceConnectionChanges = true,
 }: PresenceProviderProps) {
+  // Check user preference for cursor tracking
+  const [trackMyCursor] = useLocalStorage<boolean>('withme-track-my-cursor', true);
+  
+  // Respect user preference for cursor tracking, unless explicitly overridden
+  const shouldTrackCursor = forceTrackCursor !== undefined ? forceTrackCursor : trackMyCursor;
+  
   const presence = usePresence(tripId, {
-    trackCursor,
+    trackCursor: shouldTrackCursor,
     updateInterval: 15000, // 15 seconds
     awayTimeout: 300000, // 5 minutes
   });

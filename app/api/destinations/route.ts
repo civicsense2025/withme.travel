@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createApiClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database";
 import { API_ROUTES } from "@/utils/constants";
@@ -544,8 +544,8 @@ export async function GET(request: Request) {
     const minRating = parseInt(searchParams.get('minRating') || '0')
     const includeCover = searchParams.get('includeCover') === 'true' // Check if cover image is needed
 
-    // Call createClient without arguments as it handles cookies internally
-    const supabase = createClient() 
+    // Call createApiClient without arguments as it handles cookies internally
+    const supabase = await createApiClient() 
     
     // Calculate pagination offsets
     const from = (page - 1) * limit

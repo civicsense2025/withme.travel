@@ -49,20 +49,20 @@ All documentation is organized in the `docs/` directory:
 
 | Date | Major Changes |
 |------|--------------|
-| [2023-06-05](#2023-06-05---current-development) | Trip Hooks Restructuring |
-| [2023-06-01](#2023-06-01---authentication--trip-management) | Authentication Overhaul, Trip Creation & Editing, Trip Tag Management |
-| [2023-05-20](#2023-05-20---core-refactoring--component-development) | Core Refactoring & Stability, UI Components |
-| [2023-05-10](#2023-05-10---destination--search-features) | Destination Pages, Search Functionality |
+| [2025-04-30](#2025-04-30---current-development) | Trip Hooks Restructuring |
+| [2025-04-29](#2025-04-29---authentication--trip-management) | Authentication Overhaul, Trip Creation & Editing |
+| [2025-04-27](#2025-04-27---core-refactoring--component-development) | Core Refactoring & UI Components |
+| [2025-04-24](#2025-04-24---destination--search-features) | Destination Pages, Search Functionality, Trip Tags |
 | [Full Changelog](docs/CHANGELOG.md) | Comprehensive change history |
 
-### [2023-06-05] - Current Development
+### [2025-04-30] - Current Development
 
 #### Trip Hooks Restructuring
 - Created and updated `app/trips/[tripId]/hooks/index.ts` to centralize hook exports
 - Ensured correct exports for `use-trip-budget`, `use-trip-itinerary`, `use-trip-mutations`, `use-trip-presence`, and `use-trip-sheets`
 - Fixed linter errors for missing import hooks
 
-### [2023-06-01] - Authentication & Trip Management
+### [2025-04-29] - Authentication & Trip Management
 
 #### Authentication Overhaul
 - Implemented dedicated API routes (`/api/auth/...`) using Supabase server client
@@ -76,12 +76,7 @@ All documentation is organized in the `docs/` directory:
 - Frontend: Built multi-step create form (`/trips/create`) with validation
 - Fixed "Edit Trip" button visibility and 404 on edit page
 
-#### Trip Tag Management
-- Added `tags` and `trip_tags` database tables
-- Created `TagInput` component with autocomplete
-- Implemented API routes for tag fetching and synchronization
-
-### [2023-05-20] - Core Refactoring & Component Development
+### [2025-04-27] - Core Refactoring & Component Development
 
 #### Core Refactoring & Stability
 - Types: Overhauled core types (`User`, `Trip`, etc.) and Supabase types
@@ -96,7 +91,7 @@ All documentation is organized in the `docs/` directory:
 - Built `LikeButton` component for content interaction
 - Created `DestinationReviews` component
 
-### [2023-05-10] - Destination & Search Features
+### [2025-04-24] - Destination & Search Features
 
 #### Destination Pages
 - Backend: Created API endpoints for destination data
@@ -106,6 +101,11 @@ All documentation is organized in the `docs/` directory:
 #### Search Functionality
 - Backend: Started development of search logic
 - Frontend: Built initial search page structure
+
+#### Trip Tag Management
+- Added `tags` and `trip_tags` database tables
+- Created `TagInput` component with autocomplete
+- Implemented API routes for tag fetching and synchronization
 
 ## 🚦 Feature Status
 

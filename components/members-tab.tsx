@@ -112,7 +112,7 @@ export function MembersTab({ tripId, canEdit = false, userRole = null, initialMe
     }
 
     fetchAccessRequests()
-  }, [tripId, isAdmin]) // Dependency array updated
+  }, [tripId, isAdmin, toast]) // Added toast dependency
 
   const handleAddMember = async () => {
     if (!newMember.email || !newMember.role) {

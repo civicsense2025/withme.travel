@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,11 +41,7 @@ export function AdminUsers() {
   const [isDeleting, setIsDeleting] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
       const { data: users, error } = await supabase.from("users").select("*").order("created_at", { ascending: false })
@@ -58,7 +54,11 @@ export function AdminUsers() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, setUsers, setLoading])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)

@@ -168,14 +168,17 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({
     }
   }, [canEdit, onDeleteItem, toast, setItineraryItems]);
 
-  const handleVote = useCallback(async (itemId: string, dayNumber: number | null, voteType: 'up' | 'down') => {
-    try {
-      await onVote(itemId, dayNumber, voteType);
-    } catch (error) {
-      console.error('Failed to vote:', error);
-      toast({ title: 'Error submitting vote', variant: 'destructive' });
-    }
-  }, [onVote, toast]);
+  const handleVoteItem = useCallback(
+    async (itemId: string, day: number | null, voteType: "up" | "down") => {
+      try {
+        await onVote(itemId, day, voteType);
+      } catch (error) {
+        console.error('Failed to vote:', error);
+        toast({ title: 'Error submitting vote', variant: 'destructive' });
+      }
+    },
+    [onVote, toast]
+  );
 
   const handleItemStatusChange = useCallback(async (id: string, status: ItemStatus | null) => {
     if (!canEdit) return;
@@ -197,12 +200,23 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({
       toast({ title: 'Cannot move item here', variant: 'destructive'});
       return;
     }
-    const originalItems = [...itineraryItems]; 
-    const itemsInTargetDay = originalItems.filter(item => item.day_number === newDayNumber && item.id !== itemId );
-    const newPosition = itemsInTargetDay.length; 
-    console.log(`[MoveItem] Calculated new position: ${newPosition} in target day.`);
+    
+    // Use setItineraryItems to capture the current state without creating a dependency
+    let originalItems: DisplayItineraryItem[] = [];
+    let newPosition = 0;
+    
+    // Step 1: Calculate new position and save original items (all in one function to avoid stale state)
+    setItineraryItems(currentItems => {
+      originalItems = [...currentItems];
+      const itemsInTargetDay = currentItems.filter(item => 
+        item.day_number === newDayNumber && item.id !== itemId
+      );
+      newPosition = itemsInTargetDay.length;
+      console.log(`[MoveItem] Calculated new position: ${newPosition} in target day.`);
+      return currentItems; // Return unchanged - this is just to read current state
+    });
 
-    // Optimistic UI Update
+    // Step 2: Optimistic UI Update
     setItineraryItems(currentItems => {
         const activeItemIndex = currentItems.findIndex(item => item.id === itemId);
         if (activeItemIndex === -1) return currentItems;
@@ -214,17 +228,24 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({
 
     // API Call
     try {
-        const finalState = [...itineraryItems]; // Read latest state after optimistic update
-        const finalPosition = finalState.find(item => item.id === itemId)?.position ?? newPosition;
+        // Step 3: Get position from latest state using function update
+        let finalPosition = newPosition;
+        setItineraryItems(currentItems => {
+          const item = currentItems.find(item => item.id === itemId);
+          finalPosition = item?.position ?? newPosition;
+          return currentItems; // Return unchanged - just reading state
+        });
+        
         console.log(`[MoveItem] Calling API: itemId=${itemId}, newDayNumber=${newDayNumber}, newPosition=${finalPosition}`);
         await onReorder({ itemId, newDayNumber, newPosition: finalPosition });
         toast({ title: 'Item moved successfully.'});
     } catch (error) {
         console.error('[MoveItem] API Error moving item:', error);
         toast({ title: 'Error moving item', description: 'Reverting changes.', variant: 'destructive' });
-        setItineraryItems(originalItems); // Revert
+        setItineraryItems(() => originalItems); // Revert using the saved original items
     }
-  }, [itineraryItems, setItineraryItems, onReorder, toast]);
+  }, [setItineraryItems, onReorder, toast]);
+  // itineraryItems removed from dependency array
 
   // Wrapper to handle the null case (though it shouldn't be called with null anymore)
   const handleMoveItemWrapper = useCallback((itemId: string, targetDay: number | null) => {
@@ -473,9 +494,9 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({
                  </div>
                  {unscheduledItems.map(item => {
                     // Create specific handlers for this item
-                    const handleVoteForItem = (voteType: 'up' | 'down') => onVote(item.id, item.day_number ?? null, voteType);
-                    const handleStatusChangeForItem = (status: ItemStatus | null) => onItemStatusChange(item.id, status);
-                    const handleDeleteItemForItem = () => onDeleteItem(item.id);
+                    const handleVoteForItem = (voteType: 'up' | 'down') => handleVoteItem(item.id, item.day_number ?? null, voteType);
+                    const handleStatusChangeForItem = (status: ItemStatus | null) => handleItemStatusChange(item.id, status);
+                    const handleDeleteItemForItem = () => handleDeleteItem(item.id);
                     const handleEditItemForItem = () => onEditItem(item);
                     
                     return (
@@ -513,9 +534,9 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({
                     </div>
                    {dayItems.map(item => {
                       // Create specific handlers for this item
-                      const handleVoteForItem = (voteType: 'up' | 'down') => onVote(item.id, item.day_number ?? null, voteType);
-                      const handleStatusChangeForItem = (status: ItemStatus | null) => onItemStatusChange(item.id, status);
-                      const handleDeleteItemForItem = () => onDeleteItem(item.id);
+                      const handleVoteForItem = (voteType: 'up' | 'down') => handleVoteItem(item.id, item.day_number ?? null, voteType);
+                      const handleStatusChangeForItem = (status: ItemStatus | null) => handleItemStatusChange(item.id, status);
+                      const handleDeleteItemForItem = () => handleDeleteItem(item.id);
                       const handleEditItemForItem = () => onEditItem(item);
                       
                       return (
@@ -537,9 +558,9 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({
                   startDate={startDate}
                   dayNumber={day}
               items={dayItems}
-                  onVote={onVote} 
-                  onStatusChange={onItemStatusChange}
-                  onDelete={onDeleteItem}
+                  onVote={handleVoteItem} 
+                  onStatusChange={handleItemStatusChange}
+                  onDelete={handleDeleteItem}
               canEdit={canEdit}
               onEditItem={onEditItem}
                   onAddItemToDay={() => onAddItem(day)}

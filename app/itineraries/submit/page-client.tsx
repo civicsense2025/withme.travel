@@ -60,10 +60,12 @@ export function CreateItineraryClient() {
   
   // Initialize sections based on duration days
   useEffect(() => {
-    if (!sections.length) {
+    // Only generate if sections are empty AND duration is set
+    if (!sections.length && itinerary.duration_days > 0) { 
       generateSections(itinerary.duration_days);
     }
-  }, []);
+    // The effect should run if duration changes OR if sections become empty
+  }, [itinerary.duration_days, sections.length]); // Add missing dependencies
   
   const generateSections = (days: number) => {
     const newSections = Array.from({ length: days }, (_, i) => ({

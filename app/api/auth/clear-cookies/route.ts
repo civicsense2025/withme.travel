@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { createClient } from "@/utils/supabase/server"
+import { createApiClient } from "@/utils/supabase/server";
 
 // This endpoint clears all authentication cookies and local storage, to help resolve issues with corrupted auth data
 // Changed from GET to POST for better security (state-changing operations should use POST)

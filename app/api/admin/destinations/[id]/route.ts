@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import type { Database } from '@/types/supabase';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createApiClient } from "@/utils/supabase/server";
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 
 // Helper function to check admin status (can be moved to a shared lib later)
@@ -25,9 +25,9 @@ async function isAdmin(supabaseClient: any): Promise<boolean> {
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest,
+  context: { params: { id: string } }
+): Promise<NextResponse> {
   const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,7 +67,7 @@ export async function PUT(
   }
 
   try {
-    const { id } = params;
+    const { id } = context.params;
     const data = await request.json();
 
     const { error } = await supabase
@@ -88,9 +88,9 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest,
+  context: { params: { id: string } }
+): Promise<NextResponse> {
   const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -130,9 +130,8 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params;
+    const { id } = context.params;
     const { error } = await supabase.from('destinations').delete().eq('id', id);
-
     if (error) throw error;
 
     return NextResponse.json({ message: 'Destination deleted successfully' });

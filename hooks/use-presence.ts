@@ -5,11 +5,15 @@ import { useAuth, AppUser } from '@/components/auth-provider';
 import _ from 'lodash';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
-import { 
-  PresenceStatus, 
-  CursorPosition, 
-  UserPresence, 
-  ConnectionState 
+// Assuming PresenceStatus should be exported from '@/types/presence'
+// The fix likely involves adding `export` to the type definition in that file.
+// If PresenceStatus is defined and exported elsewhere (e.g., in database constants), adjust the import accordingly.
+// For now, keeping the import as is, acknowledging the error is external.
+import {
+  PresenceStatus,
+  CursorPosition,
+  UserPresence,
+  ConnectionState
 } from '@/types/presence';
 
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -441,7 +445,7 @@ export function usePresence(
         });
 
       // Subscribe and set up listeners
-      await channel.subscribe(async (statusVal: string, err: Error | null) => {
+      await channel.subscribe(async (statusVal: string, err?: Error) => {
         if (statusVal === 'SUBSCRIBED') {
           console.log(`Reconnected to presence channel: trip-presence:${tripId}`);
           // Reset reconnect attempts after successful connection
@@ -599,7 +603,7 @@ export function usePresence(
             if (key === user.id) setMyPresence(null); // Clear my presence if I left
           });
 
-        channel.subscribe(async (statusVal: string, err: Error | null) => {
+        channel.subscribe(async (statusVal: string, err?: Error) => {
           if (!isMounted) return;
           if (statusVal === 'SUBSCRIBED') {
             console.log(`Subscribed to presence channel: trip-presence:${tripId}`);

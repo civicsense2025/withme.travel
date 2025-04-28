@@ -1,4 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClientComponent } from "@/utils/supabase/server";
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CreateItineraryPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = await createServerClientComponent();
   
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();

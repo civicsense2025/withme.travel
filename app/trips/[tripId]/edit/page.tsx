@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createSupabaseServerClient } from "@/utils/supabase/server";
 import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database";
 import { PAGE_ROUTES } from "@/utils/constants";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -8,6 +8,11 @@ import { notFound } from "next/navigation";
 
 // Import the client wrapper instead of using dynamic import with ssr: false
 import EditTripFormWrapper from "./edit-trip-form-wrapper";
+
+export const metadata = {
+  title: "Edit Trip | WithMe Travel",
+  description: "Update your trip details and settings",
+};
 
 // Force dynamic rendering for this page since it uses auth
 export const dynamicParams = true;
@@ -51,7 +56,7 @@ interface TripFormData {
 }
 
 export default async function EditTripPage({ params }: { params: { tripId: string } }) {
-  const supabase = createClient();
+  const supabase = await createSupabaseServerClient();
 
   // Check if user is logged in
   const { data: { session } } = await supabase.auth.getSession();
@@ -128,13 +133,10 @@ export default async function EditTripPage({ params }: { params: { tripId: strin
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Edit Trip</h1>
-      <EditTripFormWrapper 
-        trip={formattedTrip} 
-        initialDestinationName={trip.destinations?.name || undefined}
-        tripId={params.tripId}
-      />
-    </div>
+    <EditTripFormWrapper 
+      trip={formattedTrip} 
+      initialDestinationName={trip.destinations?.name || undefined}
+      tripId={params.tripId}
+    />
   );
 } 

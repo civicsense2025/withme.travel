@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server"
+import { createApiClient } from "@/utils/supabase/server";
 import type { Database } from "@/types/database.types";
 import { NextResponse, NextRequest } from "next/server"
 import { API_ROUTES } from "@/utils/constants"
@@ -270,7 +270,7 @@ export async function GET(request: NextRequest, { params }: { params: { tripId: 
     });
     
     console.log(`API route called for trip ID: ${validatedTripId}`);
-    const supabase = createClient();
+    const supabase = await createApiClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -291,6 +291,7 @@ export async function GET(request: NextRequest, { params }: { params: { tripId: 
       const status = tripExists ? 403 : 404;
       const message = tripExists ? "You don't have access to this trip" : `Trip not found: ${validatedTripId}`;
       return NextResponse.json(
+        // @ts-ignore - Suppressing potentially incorrect TS error due to union type inference
         formatErrorResponse(message, { tripId: validatedTripId, userId: user.id }),
         { status, headers: responseHeaders }
       );
@@ -472,7 +473,7 @@ export async function GET(request: NextRequest, { params }: { params: { tripId: 
 export async function PATCH(request: NextRequest, { params }: { params: { tripId: string } }) { 
   const { tripId } = await params; 
   try {
-    const supabase = createClient()
+    const supabase = await createApiClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -560,7 +561,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { tripId
 export async function DELETE(request: Request, { params }: { params: { tripId: string } }) { 
   const { tripId } = await params; 
   try {
-    const supabase = createClient()
+    const supabase = await createApiClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {

@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server"
+import { createSupabaseServerClient } from "@/utils/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
 
 /**
@@ -13,7 +13,7 @@ export async function updateSession(request: NextRequest) {
       console.log("[Middleware] Attempting to update session...");
     }
     
-    const supabase = createClient();
+    const supabase = await createSupabaseServerClient();
     
     // It's generally recommended to handle the response, although getUser often works implicitly
     const { data, error } = await supabase.auth.getUser(); 

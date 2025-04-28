@@ -1,23 +1,27 @@
-import { createClient } from "@/utils/supabase/server"
+import { createApiClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database"
+import { DB_TABLES, DB_FIELDS, TRIP_ROLES as DB_ENUMS } from "@/utils/constants"
 import { NextRequest } from "next/server"
 import { ItineraryItem, ItinerarySection } from "@/types/database.types"
+import { z } from 'zod';
+import { ApiError, formatErrorResponse } from '@/lib/api-utils';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache'
 
 // Helper function to check user membership and role
 async function checkTripAccess(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   tripId: string,
   userId: string,
   allowedRoles: string[] = [
-    DB_ENUMS.TRIP_ROLES.ADMIN,
-    DB_ENUMS.TRIP_ROLES.EDITOR,
-    DB_ENUMS.TRIP_ROLES.VIEWER,
-    DB_ENUMS.TRIP_ROLES.CONTRIBUTOR,
+    DB_ENUMS.ADMIN,
+    DB_ENUMS.EDITOR,
+    DB_ENUMS.VIEWER,
+    DB_ENUMS.CONTRIBUTOR,
   ]
-): Promise<{ allowed: boolean; error?: string; status?: number }> {
-  const { data: member, error } = await supabase
+) {
+  const { data: membership, error } = await supabase
     .from(DB_TABLES.TRIP_MEMBERS)
     .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
     .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
@@ -25,11 +29,11 @@ async function checkTripAccess(
     .maybeSingle();
 
   if (error) {
-    console.error("Error checking trip membership:", error);
-    return { allowed: false, error: error.message, status: 500 };
+    console.error('Error checking trip access:', error);
+    throw new ApiError('Failed to verify trip membership', 500);
   }
 
-  if (!member) {
+  if (!membership) {
     // Allow access if the trip itself is public
     const { data: tripData, error: tripError } = await supabase
       .from(DB_TABLES.TRIPS)
@@ -40,35 +44,27 @@ async function checkTripAccess(
     if (tripError) {
       console.error("Error fetching trip details:", tripError);
       // Fallback to deny access if trip fetch fails
-      return { allowed: false, error: "Could not verify trip access.", status: 500 };
+      throw new ApiError("Could not verify trip access.", 500);
     }
 
     if (tripData?.is_public) {
         // Allow read-only access for public trips
         // Check if the requested roles are only for viewing
-        const isReadOnlyRequest = allowedRoles.length === 1 && allowedRoles[0] === DB_ENUMS.TRIP_ROLES.VIEWER;
+        const isReadOnlyRequest = allowedRoles.length === 1 && allowedRoles[0] === DB_ENUMS.VIEWER;
         if(isReadOnlyRequest) {
-            return { allowed: true };
+            return membership;
         }
     } 
         
     // If not public or request is not read-only, deny access
-    return {
-        allowed: false,
-        error: "Access Denied: You are not a member of this trip.",
-        status: 403,
-    };
+    throw new ApiError("Access Denied: You are not a member of this trip.", 403);
   }
 
-  if (!allowedRoles.includes(member.role)) {
-    return {
-      allowed: false,
-      error: "Access Denied: You do not have sufficient permissions.",
-      status: 403,
-    };
+  if (!allowedRoles.includes(membership.role)) {
+    throw new ApiError("Access Denied: You do not have sufficient permissions.", 403);
   }
 
-  return { allowed: true };
+  return membership;
 }
 
 // Define structure for the response
@@ -131,6 +127,38 @@ interface VoteWithProfile {
   profiles: ProfileBasic | null; // Use ProfileBasic type
 }
 
+// Validation schemas
+const baseItineraryItemSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional().nullable(),
+  start_time: z.string().optional().nullable(),
+  end_time: z.string().optional().nullable(),
+  item_type: z.string().default('activity'),
+  url: z.string().url().optional().nullable(),
+  address: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  place_id: z.string().optional().nullable(), // Reference to a place
+  destination_id: z.string().uuid().optional().nullable(), // Reference to a destination
+  section_id: z.string().uuid().optional().nullable(), // Optional: Link to a specific section
+  day_number: z.number().int().positive().optional().nullable(), // Optional: Link to a day number
+  position: z.number().int().optional(), // For ordering within section/day
+  data: z.record(z.any()).optional().nullable(), // For flexible custom data
+});
+
+const createItineraryItemSchema = baseItineraryItemSchema.omit({ position: true }); // Position is handled separately
+const updateItineraryItemSchema = baseItineraryItemSchema.partial(); // All fields optional for update
+
+const createItinerarySectionSchema = z.object({
+  name: z.string().min(1, "Section name is required"),
+  description: z.string().optional().nullable(),
+  day_number: z.number().int().positive().optional().nullable(),
+  date: z.string().optional().nullable(), // ISO date string
+  position: z.number().int().optional(),
+});
+
+const updateItinerarySectionSchema = createItinerarySectionSchema.partial();
+
 // GET /api/trips/[tripId]/itinerary - Fetch itinerary structured by sections
 export async function GET(
   request: Request,
@@ -138,11 +166,12 @@ export async function GET(
 ) {
   const { tripId } = await params;
   if (!tripId) {
-    return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
+    return NextResponse.json(formatErrorResponse("Trip ID is required"), { status: 400 });
   }
 
+  let supabase;
   try {
-    const supabase = createClient()
+    supabase = await createApiClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     const userId = user?.id; // Can be null if user is not logged in but viewing public trip
 
@@ -162,17 +191,17 @@ export async function GET(
 
     if (memberError || publicError) {
       console.error("Error checking access or trip details:", { memberError, publicError });
-      return NextResponse.json({ error: "Failed to verify access." }, { status: 500 });
+      return NextResponse.json(formatErrorResponse("Failed to verify access."), { status: 500 });
     }
      
     // If trip doesn't exist at all
     if (!tripPublicCheck && !memberCheck) {
-         return NextResponse.json({ error: "Trip not found or access denied." }, { status: 404 });
+         return NextResponse.json(formatErrorResponse("Trip not found or access denied."), { status: 404 });
     }
 
     // Deny access if user is not a member AND trip is not public
     if (!memberCheck && !tripPublicCheck?.is_public) {
-        return NextResponse.json({ error: "Access Denied" }, { status: 403 });
+        return NextResponse.json(formatErrorResponse("Access Denied"), { status: 403 });
     }
     // --- End Access Check ---
 
@@ -186,7 +215,7 @@ export async function GET(
 
     if (sectionsError) {
       console.error("Error fetching itinerary sections:", sectionsError);
-      return NextResponse.json({ error: sectionsError.message }, { status: 500 });
+      return NextResponse.json(formatErrorResponse("Error fetching itinerary sections"), { status: 500 });
     }
     const sections = sectionsData || [];
 
@@ -204,7 +233,7 @@ export async function GET(
 
     if (itemsError) {
       console.error("Error fetching itinerary items:", itemsError);
-      return NextResponse.json({ error: itemsError.message }, { status: 500 });
+      return NextResponse.json(formatErrorResponse("Error fetching itinerary items"), { status: 500 });
     }
     const allItems = (itemsData as any[] | null) || []; // Cast to array for safety
     const itemIds = allItems.map(item => item.id);
@@ -301,10 +330,12 @@ export async function GET(
       unscheduled: unscheduledItems,
     });
 
-  } catch (error) {
-    console.error("Error fetching itinerary:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  } catch (error: any) {
+    console.error(`[ITINERARY API GET /${tripId}] Error:`, error);
+    if (error instanceof ApiError) {
+      return NextResponse.json(formatErrorResponse(error.message), { status: error.status });
+    }
+    return NextResponse.json(formatErrorResponse("An unexpected server error occurred"), { status: 500 });
   }
 }
 
@@ -314,113 +345,112 @@ export async function POST(
   { params }: { params: { tripId: string } }
 ) {
   const { tripId } = await params;
-  if (!tripId) {
-    return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
-  }
+  const cookieStore = cookies();
 
   try {
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabase = await createApiClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      console.error('Authentication error:', authError);
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
 
-    // Check if user has permission to add items (Admi or Editor)
-    const access = await checkTripAccess(supabase, tripId, user.id, [
-      DB_ENUMS.TRIP_ROLES.ADMIN,
-      DB_ENUMS.TRIP_ROLES.EDITOR,
-    ]);
-    if (!access.allowed) {
-      return NextResponse.json({ error: access.error }, { status: access.status });
-    }
+    await checkTripAccess(supabase, tripId, user.id, ['admin', 'editor', 'contributor']);
 
-    // Parse the request body for the new item data
-    const newItemData = await request.json();
+    const body = await request.json();
+    const { type, ...payload } = body; // Expect 'item' or 'section' type
 
-    // TODO: Add validation for newItemData here (e.g., using Zod)
-    // For now, assume data is valid
+    if (type === 'item') {
+      // Validate payload for itinerary item
+      const validatedData = createItineraryItemSchema.parse(payload);
 
-    // Call Supabase RPC function to add the item
-    // Assumes an RPC function `add_itinerary_item` exists
-    // Alternatively, use a direct insert:
-    // const { data, error } = await supabase.from(DB_TABLES.ITINERARY_ITEMS).insert({ ...newItemData, trip_id: tripId, created_by: user.id }).select().single();
-
-    // We need to determine the next position for the item within its assigned day
-    const targetDay = newItemData.day_number ?? null;
-    let nextPosition = 0;
-
-    if (targetDay !== null) {
-      const { count, error: countError } = await supabase
+      // Determine the position for the new item
+      const { data: maxPositionData, error: positionError } = await supabase
         .from(DB_TABLES.ITINERARY_ITEMS)
-        .select("", { count: "exact", head: true })
+        .select(DB_FIELDS.ITINERARY_ITEMS.POSITION)
         .eq(DB_FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId)
-        .eq(DB_FIELDS.ITINERARY_ITEMS.DAY_NUMBER, targetDay);
-      if (countError) {
-        console.error("Error counting items in day:", countError);
-        // Handle error or default position? Defaulting to 0
-      } else {
-        nextPosition = count ?? 0;
+        .eq(DB_FIELDS.ITINERARY_ITEMS.SECTION_ID, validatedData.section_id ?? null) // Check position within the section
+        .order(DB_FIELDS.ITINERARY_ITEMS.POSITION, { ascending: false })
+        .limit(1)
+        .maybeSingle(); // Use maybeSingle to handle no items case
+
+      if (positionError) {
+        console.error("Error fetching max position:", positionError);
+        throw new ApiError('Failed to determine item position', 500);
       }
-    } else {
-      // Handle unscheduled items - place at the end of unscheduled
-      const { count, error: countError } = await supabase
+
+      const nextPosition = (maxPositionData?.position ?? -1) + 1;
+
+      // Insert new itinerary item
+      const { data: newItem, error: insertError } = await supabase
         .from(DB_TABLES.ITINERARY_ITEMS)
-        .select("", { count: "exact", head: true })
-        .eq(DB_FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId)
-        .is(DB_FIELDS.ITINERARY_ITEMS.DAY_NUMBER, null);
-       if (countError) {
-        console.error("Error counting unscheduled items:", countError);
-      } else {
-        nextPosition = count ?? 0;
-      } 
+        .insert([{ ...validatedData, trip_id: tripId, position: nextPosition }])
+        .select('*')
+        .single();
+
+      if (insertError) {
+        console.error("Error creating itinerary item:", insertError);
+        throw new ApiError('Failed to create itinerary item', 500);
+      }
+
+      return NextResponse.json(newItem, { status: 201 });
+
+    } else if (type === 'section') {
+      // Validate payload for itinerary section
+      const validatedData = createItinerarySectionSchema.parse(payload);
+
+      // Determine the position for the new section
+      const { data: maxPositionData, error: positionError } = await supabase
+        .from(DB_TABLES.ITINERARY_SECTIONS)
+        .select(DB_FIELDS.ITINERARY_SECTIONS.POSITION)
+        .eq(DB_FIELDS.ITINERARY_SECTIONS.TRIP_ID, tripId)
+        .order(DB_FIELDS.ITINERARY_SECTIONS.POSITION, { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (positionError) {
+        console.error("Error fetching max section position:", positionError);
+        throw new ApiError('Failed to determine section position', 500);
+      }
+
+      const nextPosition = (maxPositionData?.position ?? -1) + 1;
+
+      // Insert new itinerary section
+      const { data: newSection, error: insertError } = await supabase
+        .from(DB_TABLES.ITINERARY_SECTIONS)
+        .insert([{ ...validatedData, trip_id: tripId, position: nextPosition }])
+        .select('*')
+        .single();
+
+      if (insertError) {
+        console.error("Error creating itinerary section:", insertError);
+        throw new ApiError('Failed to create itinerary section', 500);
+      }
+
+      return NextResponse.json(newSection, { status: 201 });
+
+    } else {
+      return NextResponse.json(formatErrorResponse("Invalid type specified. Must be 'item' or 'section'"), { status: 400 });
     }
 
-    const itemToInsert = {
-      ...newItemData,
-      trip_id: tripId,
-      created_by: user.id,
-      position: nextPosition,
-    };
-
-    // Remove fields that might not be directly in the DB table (like creatorProfile)
-    delete itemToInsert.creatorProfile;
-    delete itemToInsert.votes;
-
-    console.log("[API POST Itinerary] Inserting item:", itemToInsert); // DEBUG
-
-    const { data: insertedItem, error: insertError } = await supabase
-      .from(DB_TABLES.ITINERARY_ITEMS)
-      .insert(itemToInsert)
-      .select(`
-          *, 
-          creatorProfile:profiles(id, name, avatar_url, username)
-      `)
-      .single();
-
-    if (insertError) {
-      console.error("Error inserting itinerary item:", insertError);
-      return NextResponse.json(
-        { error: `Failed to add item: ${insertError.message}` },
-        { status: 500 }
-      );
-    }
-
-    console.log("[API POST Itinerary] Insert successful:", insertedItem); // DEBUG
-    
-    // We need to fetch votes separately for the new item to match GET structure
-    const finalItem = {
-        ...insertedItem,
-        votes: { up: 0, down: 0, upVoters: [], downVoters: [], userVote: null }
-    };
-
-    return NextResponse.json(finalItem, { status: 201 }); // 201 Created
   } catch (error: any) {
-    console.error("Unexpected error in POST /itinerary:", error);
-    return NextResponse.json(
-      { error: `An unexpected error occurred: ${error.message}` },
-      { status: 500 }
-    );
+    console.error(`[ITINERARY API POST /${tripId}] Error:`, error);
+    if (error instanceof z.ZodError) {
+      // @ts-ignore - Suppressing erroneous TS error about details type
+      return NextResponse.json(formatErrorResponse("Invalid input data", error.issues), { status: 400 });
+    } else if (error instanceof ApiError) {
+      return NextResponse.json(formatErrorResponse(error.message), { status: error.status });
+    }
+     // Handle potential JSON parsing errors
+     if (error instanceof SyntaxError) {
+      console.error("Invalid JSON:", error);
+      return NextResponse.json(formatErrorResponse("Invalid JSON format in request body"), { status: 400 });
+    }
+    return NextResponse.json(formatErrorResponse("An unexpected server error occurred"), { status: 500 });
   }
 }
 
@@ -452,24 +482,16 @@ export async function DELETE(
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createApiClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
+      console.error('Authentication error:', authError);
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
 
     // Check user's access to the trip
-    const accessCheck = await checkTripAccess(supabase, tripId, user.id);
-    if (!accessCheck.allowed) {
-      return NextResponse.json(
-        { error: accessCheck.error },
-        { status: accessCheck.status || 403 }
-      );
-    }
+    await checkTripAccess(supabase, tripId, user.id);
 
     // Delete the item
     const { error: deleteError } = await supabase
@@ -480,18 +502,12 @@ export async function DELETE(
 
     if (deleteError) {
       console.error("Error deleting item:", deleteError);
-      return NextResponse.json(
-        { error: "Failed to delete item" },
-        { status: 500 }
-      );
+      throw new ApiError('Failed to delete itinerary item', 500);
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in delete handler:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json(formatErrorResponse("Internal server error"), { status: 500 });
   }
 }

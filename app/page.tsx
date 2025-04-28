@@ -14,16 +14,29 @@ import {
 export default function Home() {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
+  
+  // Log the initial state
+  console.log("[Homepage] Rendering. Auth loading:", authLoading, "User exists:", !!user);
 
   useEffect(() => {
+    console.log("[Homepage] useEffect triggered. Auth loading:", authLoading, "User exists:", !!user);
     if (!authLoading && user) {
+      console.log("[Homepage] User is logged in, redirecting to /dashboard");
       router.replace('/dashboard')
+    }
+     if (!authLoading && !user) {
+      console.log("[Homepage] User is not logged in, showing homepage content.");
     }
   }, [user, authLoading, router])
 
   if (authLoading || user) {
+    // Log why we are returning null
+    console.log(`[Homepage] Returning null. Auth loading: ${authLoading}, User exists: ${!!user}`);
     return null;
   }
+  
+  // Log when rendering actual content
+  console.log("[Homepage] Rendering main content because user is not logged in and not loading.");
 
   return (
     <main className="flex min-h-screen flex-col">

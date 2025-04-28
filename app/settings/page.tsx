@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CursorSettings } from '@/components/presence/cursor-settings'
+import { PageHeader } from '@/components/page-header'
 
 export default function SettingsPage() {
   const { user, isLoading: isAuthLoading } = useAuth()
@@ -152,17 +154,17 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-5xl leading-loose font-bold mb-6 lowercase">settings</h1>
+    <div className="container max-w-screen-md py-6">
+      <PageHeader
+        heading="Settings"
+        description="Manage your account settings and preferences"
+      />
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile" className="lowercase">
-            profile
-          </TabsTrigger>
-          <TabsTrigger value="interests" className="lowercase">
-            interests
-          </TabsTrigger>
+      <Tabs defaultValue="profile" className="mt-6">
+        <TabsList className="mb-4">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="collaboration">Collaboration</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -252,99 +254,28 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="interests">
+        <TabsContent value="collaboration">
+          <div className="space-y-6">
+            <CursorSettings />
+            
+            {/* Other collaboration settings can go here */}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          {/* Notification settings would go here */}
           <Card>
             <CardHeader>
-              <CardTitle className="lowercase">travel interests</CardTitle>
-              <CardDescription className="lowercase">what do you love about traveling?</CardDescription>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>
+                Configure how you would like to be notified
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {isLoadingUserData ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : error ? (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              ) : (
-                <>
-                  <form onSubmit={handleAddInterest} className="flex gap-2">
-                    <div className="flex-1">
-                      <Input
-                        value={newInterest}
-                        onChange={(e) => setNewInterest(e.target.value)}
-                        placeholder="add a travel interest (e.g., hiking, food, museums)"
-                      />
-                    </div>
-                    <Button type="submit">add</Button>
-                  </form>
-
-                  <div>
-                    <Label className="mb-2 block">your interests</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {interests.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">no interests added yet</p>
-                      ) : (
-                        interests.map((interest) => (
-                          <Badge key={interest} variant="secondary" className="pl-2 pr-1 py-1.5 gap-1">
-                            <Tag className="h-3 w-3" />
-                            <span>{interest}</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-4 w-4 ml-1 hover:bg-transparent"
-                              onClick={() => handleRemoveInterest(interest)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </Badge>
-                        ))
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      these interests help us suggest trips and activities you might enjoy
-                    </p>
-                  </div>
-
-                  <div className="border rounded-md p-4 bg-muted/20">
-                    <h4 className="font-medium mb-2 lowercase">suggested interests</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        "hiking",
-                        "beaches",
-                        "food",
-                        "museums",
-                        "nightlife",
-                        "shopping",
-                        "history",
-                        "architecture",
-                        "nature",
-                        "photography",
-                      ].map(
-                        (suggestion) =>
-                          !interests.includes(suggestion) && (
-                            <Badge
-                              key={suggestion}
-                              variant="outline"
-                              className="cursor-pointer hover:bg-secondary"
-                              onClick={() => setInterests([...interests, suggestion])}
-                            >
-                              + {suggestion}
-                            </Badge>
-                          ),
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Notification settings coming soon...
+              </p>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleSaveProfile} disabled={isLoadingUserData || isSaving} className="gap-2 lowercase">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                save changes
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

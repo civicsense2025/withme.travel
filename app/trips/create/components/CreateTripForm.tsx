@@ -120,7 +120,7 @@ export function CreateTripForm() {
       const parsedForm = JSON.parse(savedForm)
       form.reset(parsedForm)
     }
-  }, [])
+  }, [form])
 
   // Save form data on change
   useEffect(() => {
@@ -128,7 +128,7 @@ export function CreateTripForm() {
       localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(value))
     })
     return () => subscription.unsubscribe()
-  }, [form.watch])
+  }, [form])
 
   // Function to apply template
   const applyTemplate = (templateId: string) => {

@@ -30,7 +30,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -44,6 +44,7 @@ import { DestinationReviews } from "@/components/destinations/destination-review
 import { useAuth } from '@/components/auth-provider'
 import { User as SupabaseUser } from "@supabase/supabase-js"
 import { AuthContextType } from "@/lib/hooks/use-auth"
+import { Rating } from "@/components/ui/rating"
 
 interface Destination {
   id: string

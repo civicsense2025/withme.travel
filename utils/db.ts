@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server"
+import { createServerClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers"
 import { ApiResponse, DbQueryParams } from "./types"
 

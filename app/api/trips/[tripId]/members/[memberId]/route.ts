@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createApiClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from 'zod';
 import { API_ROUTES } from "@/utils/constants";

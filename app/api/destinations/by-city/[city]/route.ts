@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createApiClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers"
 
 export async function GET(request: Request, { params }: { params: Promise<{ city: string }> }) {
@@ -7,7 +7,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ city
     const unwrappedParams = await params
     const cityName = decodeURIComponent(unwrappedParams.city.replace(/-/g, " "))
     
-    const supabase = createClient()
+    const supabase = await createApiClient()
 
     // Search for the destination by city name (case insensitive)
     // Remove .single() to handle multiple or zero results

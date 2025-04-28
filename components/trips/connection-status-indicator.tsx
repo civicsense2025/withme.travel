@@ -72,32 +72,42 @@ export function ConnectionStatusIndicator({
 
   // Initialize real-time subscription
   const initializeSubscription = useCallback(async () => {
-    try {
-      // Clean up existing subscription if it exists
-      if (subscriptionRef.current) {
-        await supabaseRef.current.removeChannel(subscriptionRef.current);
-        subscriptionRef.current = null;
-      }
-      
-      updateStatus(ConnectionState.Connecting);
-      setIsRetrying(true);
+    // Clear any previous timeout
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+      connectionTimeoutRef.current = null;
+    }
 
+    // Clean up existing subscription if it exists
+    if (subscriptionRef.current) {
+      try {
+        await supabaseRef.current.removeChannel(subscriptionRef.current);
+      } catch (removeError) {
+        console.warn("Error removing previous channel:", removeError);
+      }
+      subscriptionRef.current = null;
+    }
+    
+    // Set initial status based on retry count
+    updateStatus(retryCount === 0 ? ConnectionState.Connecting : ConnectionState.Reconnecting);
+    setIsRetrying(true);
+
+    // Set a timeout for the connection attempt
+    connectionTimeoutRef.current = setTimeout(() => {
+      console.warn("Connection attempt timed out after 10 seconds");
+      if (status === ConnectionState.Connecting || status === ConnectionState.Reconnecting) {
+         updateStatus(ConnectionState.Error, new Error('Connection timed out'));
+         setIsRetrying(false);
+      }
+    }, 10000); // 10 second timeout
+
+    try {
       // Create a new subscription to the trip's channel
       const channel = supabaseRef.current
         .channel(`trip:${tripId}`)
         .on('presence', { event: 'sync' }, () => {
-          // Connection successful
-          updateStatus(ConnectionState.Connected);
-          setRetryCount(0);
-          
-          // Show connection restored toast if we were previously disconnected or had an error
-          if (status === ConnectionState.Disconnected || status === ConnectionState.Error) {
-            toast({
-              title: 'Connection restored',
-              description: 'Real-time updates have resumed',
-              variant: 'default',
-            });
-          }
+          // This is the main sync event, but we rely on 'SUBSCRIBED' for initial connection confirmation
+          console.log("Presence sync received");
         })
         .on('presence', { event: 'join' }, ({ newPresences }) => {
           console.log('New users joined:', newPresences);
@@ -105,28 +115,45 @@ export function ConnectionStatusIndicator({
         .on('presence', { event: 'leave' }, ({ leftPresences }) => {
           console.log('Users left:', leftPresences);
         })
-        .subscribe(async (status, err) => {
-          if (status === 'SUBSCRIBED') {
-            // Set a timeout to verify that we're receiving data
-            if (connectionTimeoutRef.current) {
-              clearTimeout(connectionTimeoutRef.current);
-            }
-            
-            connectionTimeoutRef.current = setTimeout(() => {
-              if (status === ConnectionState.Connecting) {
-                updateStatus(ConnectionState.Error, new Error('Connection timed out'));
-                setIsRetrying(false);
-              }
-            }, 5000);
-          } else if (err) {
-            updateStatus(ConnectionState.Error, err as Error);
+        .subscribe((subscribeStatus, err) => {
+          // Clear the connection timeout once we get any response
+          if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+            connectionTimeoutRef.current = null;
+          }
+          
+          if (subscribeStatus === 'SUBSCRIBED') {
+            console.log("Successfully subscribed to channel");
+            const previouslyDisconnected = status === ConnectionState.Disconnected || status === ConnectionState.Error;
+            updateStatus(ConnectionState.Connected);
+            setRetryCount(0);
             setIsRetrying(false);
             
+            if (previouslyDisconnected) {
+              toast({
+                title: 'Connection restored',
+                description: 'Real-time updates have resumed',
+                variant: 'default',
+              });
+            }
+          } else if (subscribeStatus === 'CHANNEL_ERROR' || subscribeStatus === 'TIMED_OUT' || err) {
+            console.error('Subscription error:', { status: subscribeStatus, err });
+            updateStatus(ConnectionState.Error, err || new Error(`Subscription failed: ${subscribeStatus || 'unknown error'}`));
+            setIsRetrying(false);
             toast({
-              title: 'Connection error',
-              description: 'Failed to establish real-time connection',
+              title: 'Connection Error',
+              description: `Failed to establish real-time connection. ${err?.message || 'Please try again later.'}`,
               variant: 'destructive',
             });
+          } else if (subscribeStatus === 'CLOSED') {
+             console.log('Realtime channel closed, attempting reconnect if browser is online...');
+             if (isBrowserOnline()) {
+                updateStatus(ConnectionState.Reconnecting);
+                // Optionally add a delay before retrying
+                setTimeout(() => initializeSubscription(), 1000 * (retryCount + 1)); // Basic backoff
+             } else {
+                updateStatus(ConnectionState.Disconnected);
+             }
           }
         });
 
@@ -134,32 +161,41 @@ export function ConnectionStatusIndicator({
       subscriptionRef.current = channel;
     } catch (error) {
       console.error('Error initializing subscription:', error);
+      // Clear timeout on error
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
       updateStatus(ConnectionState.Error, error as Error);
       setIsRetrying(false);
-      
       toast({
         title: 'Connection error',
         description: 'Failed to initialize real-time connection',
         variant: 'destructive',
       });
-    } finally {
-      setIsRetrying(false);
     }
-  }, [tripId, toast, updateStatus, status]);
+    // No finally block needed here as setIsRetrying(false) is handled in subscribe/error paths
+  }, [tripId, toast, updateStatus, status, retryCount]); // Added retryCount
 
   // Handle browser online/offline events
   useEffect(() => {
     const handleOnline = () => {
-      // Only attempt reconnection if we were previously disconnected
+      // Only attempt reconnection if we were previously disconnected or errored
       if (status === ConnectionState.Disconnected || status === ConnectionState.Error) {
+        console.log("Browser back online, attempting to reconnect...");
         setRetryCount(prevCount => prevCount + 1);
         initializeSubscription();
       }
     };
 
     const handleOffline = () => {
+      console.log("Browser offline, setting status to disconnected.");
       updateStatus(ConnectionState.Disconnected);
-      
+      // Clear any pending retry timeout
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
       toast({
         title: 'Connection lost',
         description: 'Real-time updates have been paused',
@@ -174,29 +210,38 @@ export function ConnectionStatusIndicator({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [status, initializeSubscription, toast, updateStatus]);
+  }, [status, initializeSubscription, toast, updateStatus]); // Keep dependencies
 
   // Initialize subscription on mount and cleanup on unmount
   useEffect(() => {
-    // Only initialize if browser is online
+    const currentSupabase = supabaseRef.current; // Capture ref value
+    
     if (isBrowserOnline()) {
       initializeSubscription();
     } else {
       updateStatus(ConnectionState.Disconnected);
     }
 
+    // Cleanup function
     return () => {
-      // Cleanup subscription on unmount
-      if (subscriptionRef.current) {
-        supabaseRef.current.removeChannel(subscriptionRef.current);
-      }
-      
-      // Clear any pending timeouts
+      console.log("Cleaning up ConnectionStatusIndicator...");
+      // Clear connection timeout
       if (connectionTimeoutRef.current) {
         clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+      // Remove subscription
+      if (subscriptionRef.current && currentSupabase) {
+        console.log("Removing Supabase channel...");
+        currentSupabase.removeChannel(subscriptionRef.current)
+          .then(() => console.log("Channel removed successfully."))
+          .catch(err => console.error("Error removing channel:", err));
+        subscriptionRef.current = null;
       }
     };
-  }, [tripId, initializeSubscription, updateStatus]);
+    // Run only once on mount - initializeSubscription has its own deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId]); // Rerun only if tripId changes
 
   // Manual retry handler
   const handleRetry = () => {

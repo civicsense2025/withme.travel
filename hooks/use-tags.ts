@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { createClient } from '@/utils/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { Database } from '@/types/supabase'
 
@@ -23,7 +23,7 @@ export type TagSuggestion = {
 }
 
 export function useTags() {
-  const supabase = useSupabaseClient<Database>()
+  const supabase = createClient()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 

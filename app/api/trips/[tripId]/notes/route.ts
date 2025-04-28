@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createApiClient } from "@/utils/supabase/server";
 import { NextResponse, NextRequest } from 'next/server';
 import { DB_TABLES, DB_FIELDS, TRIP_ROLES } from "@/utils/constants";
 import { z } from 'zod';
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, context: { params: { tripId: str
   if (!tripId) return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
 
   try {
-    const supabase = createClient()
+    const supabase = await createApiClient();
 
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest, context: { params: { tripId: st
   if (!tripId) return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
 
   try {
-    const supabase = createClient()
+    const supabase = await createApiClient();
 
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()

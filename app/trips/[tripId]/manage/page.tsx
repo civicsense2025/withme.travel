@@ -417,11 +417,9 @@ export default function ManageTripPage({ params: { tripId } }: PageProps) {
     )
   }
 
+  // Replace the destinations property access with destination_name
   // Handle destination name access carefully
-  // Assuming destinations is an array and we want the first one's name
-  const destinationName = trip.destinations && trip.destinations.length > 0 && trip.destinations[0].destination
-    ? trip.destinations[0].destination.name
-    : "Unknown Destination";
+  const destinationName = trip.destination_name || "Unknown Destination";
 
   return (
     <div className="container py-8 max-w-4xl mx-auto">

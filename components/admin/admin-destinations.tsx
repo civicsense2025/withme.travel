@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,11 +48,7 @@ export function AdminDestinations() {
   const [isDeleting, setIsDeleting] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchDestinations()
-  }, [])
-
-  const fetchDestinations = async () => {
+  const fetchDestinations = useCallback(async () => {
     setLoading(true)
     try {
       const { data: destinations, error } = await supabase
@@ -67,7 +64,11 @@ export function AdminDestinations() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, setDestinations, setLoading])
+
+  useEffect(() => {
+    fetchDestinations()
+  }, [fetchDestinations])
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
@@ -245,10 +246,12 @@ export function AdminDestinations() {
                     <TableCell>
                       {destination.image_url ? (
                         <div className="h-10 w-10 rounded overflow-hidden bg-muted">
-                          <img
+                          <Image
                             src={destination.image_url || "/placeholder.svg"}
                             alt={destination.name}
-                            className="h-full w-full object-cover"
+                            width={40}
+                            height={40}
+                            className="object-cover"
                             onError={(e) => {
                               e.currentTarget.src = "/destinations/paris-eiffel-tower.png";
                             }}

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { createApiClient } from "@/utils/supabase/server";
 import { DB_TABLES } from '@/utils/constants'
 import { calculateTravelTimes, TravelInfo } from '@/lib/mapbox'
 
@@ -14,7 +14,7 @@ export async function GET(
   }
   
   try {
-    const supabase = createClient();
+    const supabase = await createApiClient();
 
     // 1. Fetch itinerary items required for calculation
     // Type assertion might need adjustment based on actual DB schema/types

@@ -10,7 +10,12 @@ interface OptimizedImageProps extends Omit<React.ComponentProps<typeof Image>, '
   fallbackText: string;
   imageOptions?: ImageOptions;
   showAttribution?: boolean;
+  priority?: boolean;
+  sizes?: string;
 }
+
+// Default placeholder blur data URL (light gray)
+const PLACEHOLDER_BLUR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNlZWVlZWUiLz48L3N2Zz4=';
 
 export function OptimizedImage({
   metadata = null,
@@ -18,6 +23,8 @@ export function OptimizedImage({
   fallbackText,
   imageOptions,
   showAttribution = false,
+  priority = false,
+  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
   className,
   ...props
 }: OptimizedImageProps) {
@@ -35,6 +42,12 @@ export function OptimizedImage({
         src={imageUrl}
         alt={metadata?.alt_text || fallbackText}
         className={className}
+        placeholder="blur"
+        blurDataURL={metadata?.blur_data_url || PLACEHOLDER_BLUR}
+        priority={priority}
+        sizes={sizes}
+        loading={priority ? 'eager' : 'lazy'}
+        quality={85} // Higher quality for better visual appearance
         {...props}
       />
       

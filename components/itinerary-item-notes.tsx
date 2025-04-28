@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Collaboration from "@tiptap/extension-collaboration"
@@ -9,7 +9,10 @@ import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import * as Y from "yjs"
-import { WebrtcProvider } from "y-webrtc"
+import { WebsocketProvider } from "y-websocket"
+
+// Define connection status type
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
 
 type ItineraryItemNotesProps = {
   tripId: string
@@ -58,12 +61,51 @@ export function ItineraryItemNotes({
   const [currentUser, setCurrentUser] = useState<any>(null);
   const supabase = createClient();
   
-  // Set up Yjs document
-  const ydoc = new Y.Doc();
-  const provider = new WebrtcProvider(`trip-item-${tripId}-${itemId}`, ydoc, {
-    signaling: ['wss://signaling.yjs.dev']
-  });
-  
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
+  const editorRef = useRef<any>(null);
+  const providerRef = useRef<WebsocketProvider | null>(null);
+
+  // Wrap ydoc initialization in useMemo
+  const ydoc = useMemo(() => new Y.Doc(), []);
+
+  // Wrap provider initialization in useMemo
+  const provider = useMemo(() => {
+    // Ensure this runs only on the client
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    // Construct the room name
+    const roomName = `withme-notes-${tripId}-${itemId}`;
+    
+    // Use environment variables for WebSocket URL
+    const wsUrl = process.env.NEXT_PUBLIC_YJS_WEBSOCKET_URL || 'ws://localhost:1234';
+    
+    console.log(`[Notes ${itemId}] Initializing Yjs provider for room: ${roomName} at ${wsUrl}`);
+    
+    // Initialize the provider
+    const wsProvider = new WebsocketProvider(wsUrl, roomName, ydoc, {
+      // Optional: Add authentication or other params here if needed
+      // params: { auth: 'your-auth-token' }
+    });
+
+    wsProvider.on('status', (event: { status: ConnectionStatus }) => {
+      console.log(`[Notes ${itemId}] Yjs Connection Status:`, event.status); 
+      setConnectionStatus(event.status);
+      if (event.status === 'disconnected') {
+        // Optional: Add retry logic here if needed
+        console.warn(`[Notes ${itemId}] Yjs disconnected. Will attempt to reconnect automatically.`);
+      }
+    });
+
+    wsProvider.on('sync', (isSynced: boolean) => {
+      console.log(`[Notes ${itemId}] Yjs Sync Status:`, isSynced ? 'Synced' : 'Syncing...');
+      // You might want to update UI based on sync status
+    });
+
+    return wsProvider;
+  // Dependencies: ydoc, tripId, itemId
+  }, [ydoc, tripId, itemId]); 
+
   const ytext = ydoc.getText('content');
   
   // If there's initial content and the ytext is empty, set it
@@ -93,11 +135,17 @@ export function ItineraryItemNotes({
     
     getUser();
     
+    // Store the current provider reference in a local variable
+    providerRef.current = provider;
+    const currentProvider = providerRef.current;
+    
     return () => {
-      provider.destroy();
+      // Use the captured variable instead of providerRef.current
+      currentProvider?.disconnect();
+      currentProvider?.destroy();
       ydoc.destroy();
     };
-  }, []);
+  }, [provider, supabase, ydoc]);
 
   const editor = useEditor({
     extensions: [

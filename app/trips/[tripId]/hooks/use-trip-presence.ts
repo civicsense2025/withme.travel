@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { throttle } from 'lodash';
 
@@ -41,38 +41,6 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
   const [showCursors, setShowCursors] = useState(true);
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
-  // Monitor network changes
-  useEffect(() => {
-    // Event listeners for network changes
-    const handleOnline = () => {
-      console.log('Network came online, attempting to recover presence connection');
-      handleReconnect();
-    };
-    
-    const handleOffline = () => {
-      console.log('Network went offline, marking connection as disrupted');
-      setConnectionQuality('poor');
-      setErrorMessage('Network connection lost. Waiting for reconnection...');
-    };
-
-    // Add event listeners
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    // Initial check
-    updateConnectionQuality();
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      
-      // Clear any pending reconnection timeout
-      if (reconnectTimeoutId) {
-        clearTimeout(reconnectTimeoutId);
-      }
-    };
-  }, [reconnectTimeoutId]);
-
   /**
    * Update connection quality based on status
    */
@@ -97,31 +65,6 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
       setErrorMessage('Connection error: Unable to connect to presence service');
     }
   }, [connectionStatus.state, reconnectAttempts]);
-
-  /**
-   * Throttled cursor update function
-   */
-  const throttledCursorUpdate = useCallback(
-    throttle((x: number, y: number) => {
-      if (showCursors && typeof window !== 'undefined') {
-        const cursorPos = { x, y };
-        window.dispatchEvent(new CustomEvent('cursor-moved', { detail: cursorPos }));
-      }
-    }, 50),
-    [showCursors]
-  );
-
-  /**
-   * Toggle cursor visibility
-   */
-  const toggleCursorVisibility = useCallback(() => {
-    setShowCursors(prev => !prev);
-    
-    // If turning off cursors, clean up existing cursor elements
-    if (showCursors) {
-      cleanupCursorElements();
-    }
-  }, [showCursors]);
 
   /**
    * Clean up cursor elements from the DOM
@@ -208,6 +151,63 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
       setIsReconnecting(false);
     }
   }, [isReconnecting, reconnectTimeoutId, reconnectAttempts, recoverPresence]);
+
+  // Monitor network changes
+  useEffect(() => {
+    // Event listeners for network changes
+    const handleOnline = () => {
+      console.log('Network came online, attempting to recover presence connection');
+      handleReconnect();
+    };
+    
+    const handleOffline = () => {
+      console.log('Network went offline, marking connection as disrupted');
+      setConnectionQuality('poor');
+      setErrorMessage('Network connection lost. Waiting for reconnection...');
+    };
+
+    // Add event listeners
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Initial check
+    updateConnectionQuality();
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      
+      // Clear any pending reconnection timeout
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId);
+      }
+    };
+  }, [reconnectTimeoutId, handleReconnect, updateConnectionQuality]);
+
+  /**
+   * Throttled cursor update function (Refactored with useMemo)
+   */
+  const throttledCursorUpdate = useMemo(() => 
+    throttle((x: number, y: number) => {
+      // Check showCursors inside the throttled function
+      if (showCursors && typeof window !== 'undefined') { 
+        const cursorPos = { x, y };
+        window.dispatchEvent(new CustomEvent('cursor-moved', { detail: cursorPos }));
+      }
+    }, 50), // Throttle delay
+  [showCursors]); // Dependency: recreate throttle if showCursors changes
+
+  /**
+   * Toggle cursor visibility
+   */
+  const toggleCursorVisibility = useCallback(() => {
+    setShowCursors(prev => !prev);
+    
+    // If turning off cursors, clean up existing cursor elements
+    if (showCursors) {
+      cleanupCursorElements();
+    }
+  }, [showCursors, cleanupCursorElements]);
 
   // Cleanup on unmount
   useEffect(() => {

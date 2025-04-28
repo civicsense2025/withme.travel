@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { PlusCircle } from "lucide-react"
-import { createClient } from "@/utils/supabase/server"
+import { createServerClient } from "@/utils/supabase/server";
 
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/page-header"

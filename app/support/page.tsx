@@ -6,6 +6,10 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { useState } from 'react';
 
 const faqStructuredData = {
   "@context": "https://schema.org",
@@ -55,6 +59,43 @@ const faqStructuredData = {
 }
 
 export default function SupportPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [messageStatus, setMessageStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      // Simulated API call - replace with your actual submission logic
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setMessageStatus('success');
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setMessageStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }} />
@@ -201,9 +242,162 @@ export default function SupportPage() {
           <h2 className="text-2xl font-semibold mb-6 text-center">common questions</h2>
           
           <Accordion type="single" collapsible className="w-full">
-            {/* ... existing FAQ items ... */}
+            <AccordionItem value="item-1">
+              <AccordionTrigger>How do I plan a trip?</AccordionTrigger>
+              <AccordionContent>
+                Planning a trip is easy! Use the "Create New Trip" button on your dashboard, 
+                set your destination and dates, and start adding itinerary items like flights, 
+                hotels, activities, and notes. You can use our search features to find 
+                inspiration and places.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-2">
+              <AccordionTrigger>Can I collaborate with friends?</AccordionTrigger>
+              <AccordionContent>
+                Absolutely! WithMe Travel is designed for collaboration. You can
+                invite friends to join your trip, and everyone can contribute to
+                the itinerary, add suggestions, and manage expenses together in
+                real-time.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-3">
+              <AccordionTrigger>How does the budgeting feature work?</AccordionTrigger>
+              <AccordionContent>
+                You can set a target budget for your trip. As you add itinerary
+                items with estimated costs, the app tracks your planned spending.
+                You can also manually log expenses as they happen to compare actual
+                spending against your plan.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-4">
+              <AccordionTrigger>Is my trip data private?</AccordionTrigger>
+              <AccordionContent>
+                By default, trips are private to you and the members you invite.
+                You can choose to share a trip publicly via a unique link if you
+                want. Check our{' '}
+                <Link href="/privacy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>{' '}
+                for more details.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-5">
+              <AccordionTrigger>What if I encounter an issue?</AccordionTrigger>
+              <AccordionContent>
+                If you run into any problems or have questions not covered here,
+                please reach out to our support team via the contact form below or
+                email us directly at{' '}
+                <a
+                  href="mailto:support@withme.travel"
+                  className="text-primary hover:underline"
+                >support@withme.travel
+                </a>.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-6">
+              <AccordionTrigger>Can I use WithMe Travel offline?</AccordionTrigger>
+              <AccordionContent>
+                Currently, WithMe Travel requires an internet connection for most
+                features, including real-time collaboration and searching for new
+                destinations.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-7">
+              <AccordionTrigger>Do you offer pre-made itineraries?</AccordionTrigger>
+              <AccordionContent>
+                Yes! We have a growing library of itinerary templates created by
+                other travelers and our team. You can browse these templates,
+                customize them, and use them as a starting point for your trip.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-8">
+              <AccordionTrigger>How are destinations suggested?</AccordionTrigger>
+              <AccordionContent>
+                We use a combination of factors including popular travel trends,
+                user interests (if you've shared them during onboarding), and
+                location data to suggest destinations.
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
+
+        <section>
+          <h2 className="text-2xl font-bold mb-4">Contact Support</h2>
+          <p className="text-muted-foreground mb-6">
+            Still need help? Fill out the form below, and we'll get back to you
+            as soon as possible.
+          </p>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Your Name</Label>
+                <Input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  value={formData.name}
+                  onChange={handleChange}
+                  required 
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Your Email</Label>
+                <Input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  value={formData.email}
+                  onChange={handleChange}
+                  required 
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="subject">Subject</Label>
+              <Input 
+                type="text" 
+                id="subject" 
+                name="subject" 
+                value={formData.subject}
+                onChange={handleChange}
+                required 
+              />
+            </div>
+            <div>
+              <Label htmlFor="message">Your Message</Label>
+              <Textarea
+                id="message"
+                name="message"
+                rows={5}
+                value={formData.message}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Sending...' : 'Send Message'}
+            </Button>
+            {messageStatus && (
+              <p
+                className={`text-sm mt-2 ${messageStatus === 'success' ? 'text-green-600' : 'text-red-600'}`}
+              >
+                {messageStatus === 'success' ? 'Message sent successfully! We will get back to you soon.' : messageStatus}
+              </p>
+            )}
+          </form>
+        </section>
+
+        <section className="text-center text-sm text-muted-foreground mt-12">
+          <p>
+            For urgent issues, you can also reach us at{' '}
+            <a
+              href="mailto:support@withme.travel"
+              className="text-primary hover:underline"
+            >support@withme.travel
+            </a>
+          </p>
+          <p>We typically respond within 24-48 hours during business days.</p>
+        </section>
       </div>
     </>
   )

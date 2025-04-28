@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 type TripPrivacySetting = 'private' | 'shared_with_link' | 'public';
 
 // Define the structure of a member with profile data expected from the page
-interface MemberWithProfile {
+export interface MemberWithProfile {
   profiles: {
     id: string
     name: string | null

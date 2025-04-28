@@ -2,12 +2,16 @@ import { cookies } from 'next/headers';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { TripPageClient } from './trip-page-client';
-import { ErrorBoundary } from '@/components/error-boundary';
+import { ClassErrorBoundary } from '@/components/error-boundary';
 import { TripPageSkeleton } from '@/components/skeletons/trip-page-skeleton';
 import { TripPageError } from '@/components/trips/trip-page-error';
-import { createClient } from "@/utils/supabase/server";
+import { createSupabaseServerClient } from "@/utils/supabase/server";
 import { z } from 'zod';
+
+// Import the TripPageClientWrapper
+import TripPageClientWrapper from './trip-page-client-wrapper';
 
 // Define a TypeScript interface for props
 interface PageProps {
@@ -80,7 +84,7 @@ interface Cookie {
  */
 async function checkAuth(tripId: string): Promise<{ authenticated: boolean; canAccess: boolean; message?: string }> {
   try {
-    const supabase = createClient();
+    const supabase = await createSupabaseServerClient();
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -220,19 +224,19 @@ export default async function TripPage({ params }: PageProps) {
         <p className="text-red-500 mb-4">
           {authStatus.message || "You don't have permission to view this trip"}
         </p>
-        <a href="/trips" className="text-blue-500 hover:underline">
+        <Link href="/trips" className="text-blue-500 hover:underline">
           View your trips
-        </a>
+        </Link>
       </div>
     );
   }
   
   return (
-    <ErrorBoundary fallback={<TripPageError tripId={tripId} />}>
+    <ClassErrorBoundary fallback={<TripPageError tripId={tripId} />}>
       <Suspense fallback={<TripPageSkeleton />}>
         <TripContent tripId={tripId} />
       </Suspense>
-    </ErrorBoundary>
+    </ClassErrorBoundary>
   );
 }
 
@@ -243,7 +247,8 @@ async function TripContent({ tripId }: { tripId: string }) {
   try {
     const tripData = await getTripData(tripId);
     
-    return <TripPageClient {...tripData} />;
+    // Use TripPageClientWrapper instead of directly using TripPageClient
+    return <TripPageClientWrapper {...tripData} />;
   } catch (error) {
     // Return a detailed error UI
     return (
@@ -258,9 +263,9 @@ async function TripContent({ tripId }: { tripId: string }) {
           </pre>
         </div>
         <div className="mt-6">
-          <a href="/trips" className="text-primary hover:underline">
+          <Link href="/trips" className="text-primary hover:underline">
             Return to trips
-          </a>
+          </Link>
         </div>
       </div>
     );

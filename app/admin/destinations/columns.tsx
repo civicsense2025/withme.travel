@@ -4,6 +4,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Button } from "@/components/ui/button";
 import { Edit, Trash } from "lucide-react";
 import { type Database } from '@/types/supabase';
+import Image from "next/image";
 type Destination = Database['public']['Tables']['destinations']['Row'];
 
 export const columns: ColumnDef<Destination>[] = [
@@ -24,10 +25,12 @@ export const columns: ColumnDef<Destination>[] = [
     header: 'Image',
     cell: ({ row }) => (
       row.getValue('image_url') ? (
-        <img 
+        <Image 
           src={row.getValue('image_url')} 
           alt={`${row.getValue('city')}`} 
-          className="h-10 w-10 object-cover rounded-md" 
+          width={40}
+          height={40}
+          className="object-cover rounded-md" 
         />
       ) : (
         <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">

@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createApiClient } from "@/utils/supabase/server";
 import { DB_TABLES, TRIP_ROLES, DB_FIELDS, VOTE_TYPES } from "@/utils/constants";
 
 // Helper function to check user membership and role (can be reused or imported)

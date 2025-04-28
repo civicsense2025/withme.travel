@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/utils/supabase/server"
+import { createServerClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
 import { Shield } from "lucide-react"
