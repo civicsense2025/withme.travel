@@ -137,6 +137,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only update state if we should (not during unmount or transitions)
     if (shouldUpdate.current) {
       const errorMessage = error ? getFriendlyErrorMessage(error) : undefined;
+      
+      // Log more detailed information about the error for debugging
+      if (error) {
+        console.error("[AuthProvider] Authentication error:", error);
+        
+        // Log additional details if available
+        if ('code' in error) {
+          console.error("[AuthProvider] Error code:", error.code);
+        }
+        
+        if ('status' in error) {
+          console.error("[AuthProvider] Error status:", (error as any).status);
+        }
+        
+        // Try to log the stack trace if available
+        if (error.stack) {
+          console.error("[AuthProvider] Error stack:", error.stack);
+        }
+      }
+      
+      // Update auth state with error information
       setAuthState(prev => ({ ...prev, error, errorMessage }));
       
       // Show a toast notification if there's an error

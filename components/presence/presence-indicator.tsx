@@ -101,20 +101,21 @@ export function PresenceIndicator({
   return (
     <div 
       className="flex -space-x-2" 
-      role="region" 
-      aria-label="Active collaborators"
+      role="status"
+      aria-label="Active users"
     >
       {visibleUsers.map(user => {
         const avatar = (
-          <div className="relative" key={user.id}>
+          <div className="relative" key={user.id} role="listitem">
             <Avatar 
               className={`border-2 border-background ${sizeClasses[size]}`}
-              aria-label={`${user.name || 'Unknown user'} is ${user.status}`}
+              aria-label={`${user.name || 'Unknown user'} is ${statusText[user.status]}`}
             >
               {user.avatar_url ? (
                 <AvatarImage 
                   src={user.avatar_url} 
                   alt=""
+                  aria-hidden="true"
                   onError={(e) => {
                     // Remove src on error to show fallback
                     (e.target as HTMLImageElement).src = '';
@@ -145,6 +146,7 @@ export function PresenceIndicator({
                   asChild
                   tabIndex={0}
                   onKeyDown={handleKeyDown}
+                  aria-label={`View details for ${user.name || 'Unknown user'}`}
                 >
                   {avatar}
                 </TooltipTrigger>
@@ -153,17 +155,18 @@ export function PresenceIndicator({
                   align="center"
                   className="max-w-[200px] break-words text-center"
                   aria-live="polite"
+                  role="tooltip"
                 >
                   <div>
                     <p className="font-semibold">{user.name || 'Unknown user'}</p>
                     <p className="text-xs capitalize">
                       {user.status} 
                       {user.status === 'editing' && user.editing_item_id && (
-                        <span className="ml-1">• Editing</span>
+                        <span className="ml-1" aria-hidden="true">• Editing</span>
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Active {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}
+                      <span aria-hidden="true">Active</span> {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}
                     </p>
                   </div>
                 </TooltipContent>
@@ -176,15 +179,60 @@ export function PresenceIndicator({
       })}
       
       {remainingCount > 0 && (
-        <div
-          className={`${sizeClasses[size]} flex items-center justify-center rounded-full bg-muted text-muted-foreground border-2 border-background`}
-          aria-label={`${remainingCount} more active ${remainingCount === 1 ? 'user' : 'users'}`}
-          tabIndex={0}
-          role="button"
-          onKeyDown={handleKeyDown}
-        >
-          +{remainingCount}
-        </div>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <div
+              className={`${sizeClasses[size]} flex items-center justify-center rounded-full bg-muted text-muted-foreground border-2 border-background`}
+              aria-label={`${remainingCount} more active ${remainingCount === 1 ? 'user' : 'users'}`}
+              tabIndex={0}
+              role="button"
+              aria-haspopup="true"
+              onKeyDown={handleKeyDown}
+            >
+              +{remainingCount}
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-auto p-3">
+            <ScrollArea className="h-[200px]">
+              <div className="space-y-2">
+                {filteredUsers.slice(maxAvatars).map(user => (
+                  <div key={user.id} className="flex items-center space-x-2" role="listitem">
+                    <Avatar className={`border-2 border-background ${sizeClasses['sm']}`}>
+                      {user.avatar_url ? (
+                        <AvatarImage 
+                          src={user.avatar_url} 
+                          alt=""
+                          aria-hidden="true"
+                          onError={(e) => {
+                            // Remove src on error to show fallback
+                            (e.target as HTMLImageElement).src = '';
+                          }} 
+                        />
+                      ) : null}
+                      
+                      <AvatarFallback>
+                        {getUserInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {user.name || 'Unknown user'}
+                        <UserStatusBadge 
+                          status={user.status} 
+                          className="ml-2 h-2 w-2"
+                          aria-hidden="true"
+                        />
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        <span aria-hidden="true">Active</span> {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </HoverCardContent>
+        </HoverCard>
       )}
     </div>
   );

@@ -45,6 +45,16 @@ All documentation is organized in the `docs/` directory:
 
 ## 📅 Changelog
 
+### Timeline Navigation
+
+| Date | Major Changes |
+|------|--------------|
+| [2023-06-05](#2023-06-05---current-development) | Trip Hooks Restructuring |
+| [2023-06-01](#2023-06-01---authentication--trip-management) | Authentication Overhaul, Trip Creation & Editing, Trip Tag Management |
+| [2023-05-20](#2023-05-20---core-refactoring--component-development) | Core Refactoring & Stability, UI Components |
+| [2023-05-10](#2023-05-10---destination--search-features) | Destination Pages, Search Functionality |
+| [Full Changelog](docs/CHANGELOG.md) | Comprehensive change history |
+
 ### [2023-06-05] - Current Development
 
 #### Trip Hooks Restructuring

@@ -81,6 +81,12 @@ export async function GET(request: NextRequest) {
     // If there's an error, handle it
     if (error) {
       console.error('[Auth Callback] Error exchanging code for session:', error)
+      console.error('[Auth Callback] Error details:', { 
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        code: (error as any).code
+      })
       
       // Handle specific error types differently
       if (error.message.includes('code challenge') || error.message.includes('PKCE')) {
@@ -88,7 +94,7 @@ export async function GET(request: NextRequest) {
         
         // Redirect to login with special error message
         const response = NextResponse.redirect(
-          new URL(`/login?error=${encodeURIComponent('Authentication failed: Please try signing in again')}`, requestUrl.origin)
+          new URL(`/login?error=${encodeURIComponent('pkce_failed')}`, requestUrl.origin)
         )
         
         // Add cookie clearing headers using Next.js Response
@@ -108,15 +114,35 @@ export async function GET(request: NextRequest) {
         
         return response
       }
+
+      // Handle specific error messages with friendly error codes
+      let errorCode = 'auth_error'
+      if (error.message.includes('session not found')) {
+        errorCode = 'session_expired'
+      } else if (error.message.includes('not confirmed')) {
+        errorCode = 'email_not_confirmed'
+      } else if (error.message.toLowerCase().includes('invalid')) {
+        errorCode = 'invalid_credentials'
+      } else if (error.message.includes('rate limit')) {
+        errorCode = 'rate_limited'
+      }
       
       // For other errors, use standard flow
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
+        new URL(`/login?error=${encodeURIComponent(errorCode)}`, requestUrl.origin)
+      )
+    }
+    
+    // Verify we have a valid session
+    if (!data.session || !data.session.user || !data.session.user.id) {
+      console.error('[Auth Callback] No valid session after code exchange. Session data:', data)
+      return NextResponse.redirect(
+        new URL('/login?error=invalid_session', requestUrl.origin)
       )
     }
     
     // Log successful authentication
-    console.log('[Auth Callback] Authentication successful for user ID:', data.session?.user.id)
+    console.log('[Auth Callback] Authentication successful for user ID:', data.session.user.id)
     
     // Check if the user already has a profile
     const userId = data.session?.user.id
