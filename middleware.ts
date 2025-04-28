@@ -24,6 +24,12 @@ async function isAdmin(request: NextRequest, supabaseClient: ReturnType<typeof c
 }
 
 export async function middleware(request: NextRequest) {
+  // Bypass auth for Flight/RSC requests
+  const acceptHeader = request.headers.get('accept') || '';
+  if (acceptHeader.includes('text/x-component')) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -39,7 +45,8 @@ export async function middleware(request: NextRequest) {
     '/admin'
   ];
   const pathname = request.nextUrl.pathname;
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  // Check if it starts with a protected route *but not* /trips/public
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route)) && !pathname.startsWith('/trips/public');
 
   // Create supabase client using @supabase/ssr for middleware
   const supabase = createServerClient(
@@ -57,31 +64,42 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            })
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            })
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
           })
         },
       },
     }
   )
 
-  // IMPORTANT: Refresh session - this will update the cookies if needed.
-  // Use getUser() instead of getSession() for authentication check.
+  // IMPORTANT: Refresh session first, then get the user.
   try {
+    // Call getSession() to handle session refresh and update response cookies
+    await supabase.auth.getSession(); 
+
+    // Now, get the user based on the potentially refreshed session
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
+    // Improved error handling
     if (userError) {
       console.error('[Middleware] Error getting user:', userError.message);
-      // Instead of immediately treating this as an error, check localStorage on the client side
-      // This is a workaround for session inconsistency issues
+      // If there's an error checking the user for a protected route, treat as unauthenticated
+      if (isProtectedRoute) {
+        const redirectUrl = new URL('/login', request.url);
+        const originalPath = pathname + (request.nextUrl.search || '');
+        redirectUrl.searchParams.set('redirect', originalPath);
+        console.log('[Middleware] Error getting user on protected route. Redirecting to login.');
+        return NextResponse.redirect(redirectUrl);
+      }
+      // For non-protected routes, allow proceeding without a user if getUser failed
     }
 
     console.log('[Middleware] User found:', user?.id ?? 'None');
@@ -90,19 +108,19 @@ export async function middleware(request: NextRequest) {
 
     // If accessing a protected route and no user is found, redirect to login
     if (isProtectedRoute && !user) {
-      // Add a check for development mode to bypass auth for testing if needed
-      if (process.env.NODE_ENV === 'development' && request.headers.get('x-bypass-auth') === 'true') {
-        console.log('[Middleware] Development mode: bypassing auth check');
-        return response;
-      }
+        // Add a check for development mode to bypass auth for testing if needed
+        if (process.env.NODE_ENV === 'development' && request.headers.get('x-bypass-auth') === 'true') {
+          console.log('[Middleware] Development mode: bypassing auth check');
+          return response;
+        }
 
-      // Create the redirect URL, ensuring proper path formatting
+        // Create the redirect URL, ensuring proper path formatting
       const redirectUrl = new URL('/login', request.url);
-      const originalPath = pathname + (request.nextUrl.search || '');
-      
-      // Use the encodeURIComponent to ensure correct URL encoding
+        const originalPath = pathname + (request.nextUrl.search || '');
+        
+        // Use the encodeURIComponent to ensure correct URL encoding
       redirectUrl.searchParams.set('redirect', originalPath);
-      
+        
       console.log('[Middleware] Redirecting to login for protected route:', redirectUrl.toString());
       console.log('[Middleware] Original path for redirect:', originalPath);
       
@@ -133,7 +151,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Match protected routes and potentially API routes if needed
-    '/trips/:path*',
+    // Exclude /trips/public using negative lookahead
+    '/trips/((?!public).*)',
     '/settings/:path*',
     '/saved/:path*',
     // '/itineraries/:path*', // Consider if itineraries always require login

@@ -35,8 +35,12 @@ export function AppTourScreen({ tourStep, onNext, onSkip }: AppTourScreenProps) 
     <Card className="border-0 shadow-lg">
       <CardContent className="pt-6 pb-8 px-6 text-center">
         <div className="mb-6">{currentContent.icon}</div>
-        <h1 className="text-xl font-bold mb-2">{currentContent.title}</h1>
-        <p className="text-muted-foreground mb-8">{currentContent.description}</p>
+        <div className="text-center max-w-lg mx-auto">
+          <h1 className="text-5xl leading-loose font-bold mb-2">{currentContent.title}</h1>
+          <p className="text-muted-foreground mb-6">
+            {currentContent.description}
+          </p>
+        </div>
 
         <div className="flex flex-col gap-3">
           <Button onClick={onNext} size="lg">

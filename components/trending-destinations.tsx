@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation"
 import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
 import useSWR from "swr"
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselNext, 
+  CarouselPrevious, 
+} from "@/components/ui/carousel"
+import Autoplay from "embla-carousel-autoplay"
 
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -56,13 +64,33 @@ const fetcher = async (url: string): Promise<DestinationsResponse> => {
   }
 }
 
+// Fisher-Yates (Knuth) Shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  let currentIndex = array.length, randomIndex;
+  const newArray = [...array]; // Create a copy to avoid modifying the original
+
+  // While there remain elements to shuffle.
+  while (currentIndex !== 0) {
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [newArray[currentIndex], newArray[randomIndex]] = [
+      newArray[randomIndex], newArray[currentIndex]];
+  }
+
+  return newArray;
+}
+
 export function TrendingDestinations() {
   const router = useRouter()
   const [errorDetails, setErrorDetails] = useState<string | null>(null)
+  const [shuffledDestinations, setShuffledDestinations] = useState<Destination[]>([])
   
   // Using SWR for data fetching with stale-while-revalidate strategy
   const { data, error, isValidating } = useSWR<DestinationsResponse>(
-    API_ENDPOINTS.TRENDING_DESTINATIONS + "&limit=6",
+    API_ENDPOINTS.TRENDING_DESTINATIONS + "&limit=8",
     fetcher,
     {
       revalidateOnFocus: false,  // Don't revalidate when window gets focus
@@ -79,16 +107,24 @@ export function TrendingDestinations() {
   const destinations = data?.destinations || []
   const isLoading = !data && !error
 
+  // Shuffle destinations once data is loaded
+  useEffect(() => {
+    if (destinations.length > 0 && shuffledDestinations.length === 0) {
+      setShuffledDestinations(shuffleArray(destinations));
+    }
+    // Only run when destinations data changes (and shuffledDestinations is empty initially)
+  }, [destinations, shuffledDestinations.length]);
+
   if (isLoading) {
     return (
-      <>
-        {[...Array(6)].map((_, i) => (
+      <div className="flex space-x-4 overflow-hidden w-full">
+        {[...Array(3)].map((_, i) => (
           <div 
             key={`skeleton-${i}`} 
-            className="aspect-[3/4] rounded-xl overflow-hidden bg-muted animate-pulse"
+            className="aspect-[3/4] rounded-xl overflow-hidden bg-muted animate-pulse w-[calc(50%-8px)] md:w-[calc(33.333%-12px)] flex-shrink-0"
           />
         ))}
-      </>
+      </div>
     )
   }
 
@@ -112,7 +148,7 @@ export function TrendingDestinations() {
   }
 
   // If no destinations after loading, show empty state
-  if (destinations.length === 0 && !isLoading) {
+  if (shuffledDestinations.length === 0 && !isLoading && !error) {
     return (
       <div className="text-center py-10">
         <p className="text-muted-foreground">No trending destinations found.</p>
@@ -121,32 +157,53 @@ export function TrendingDestinations() {
   }
 
   return (
-    <>
-      {destinations.map((destination: Destination, index: number) => (
-        <motion.div
-          key={destination.id || `dest-${index}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            duration: 0.4, 
-            delay: index * 0.15,
-            ease: "easeOut"
-          }}
-          className="h-full"
-        >
-          <DestinationCard 
-            destination={destination}
-            href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}`}
-          />
-        </motion.div>
-      ))}
+    <Carousel 
+      opts={{
+        align: "start",
+        loop: true,
+      }}
+      plugins={[
+        Autoplay({
+          delay: 5000, // 5 seconds delay
+          stopOnInteraction: true, // Stop autoplay on user interaction
+          stopOnMouseEnter: true, // Stop autoplay when hovering over the carousel
+        })
+      ]}
+      className="w-full"
+    >
+      <CarouselContent className="-ml-2 md:-ml-4">
+        {shuffledDestinations.map((destination: Destination, index: number) => (
+          <CarouselItem 
+            key={destination.id || `dest-${index}`}
+            className="pl-2 md:pl-4 basis-[50%] md:basis-[33.333%]"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                duration: 0.4, 
+                delay: index * 0.15,
+                ease: "easeOut"
+              }}
+              className="h-full"
+            >
+              <DestinationCard 
+                destination={destination}
+                href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}`}
+                hideAttributionMobile
+              />
+            </motion.div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious className="hidden md:flex" />
+      <CarouselNext className="hidden md:flex" />
       
-      {/* Show subtle loading indicator while revalidating */}
       {isValidating && !isLoading && (
-        <div className="mt-4 flex justify-center col-span-full">
+        <div className="mt-4 flex justify-center">
           <div className="h-1 w-10 bg-travel-purple/50 rounded-full animate-pulse"></div>
         </div>
       )}
-    </>
+    </Carousel>
   )
 }

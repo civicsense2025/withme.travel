@@ -1,26 +1,33 @@
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import type { Database } from '@/types/database.types';
 
 export async function GET(request: Request) {
-  const cookieStore = cookies()
-  const supabase = createClient()
-
   try {
-    // Attempt to get the current user session
-    const { data: { user }, error: sessionError } = await supabase.auth.getUser()
+    // Create Supabase client
+    const supabase = createClient();
 
-    if (sessionError || !user) {
+    // First, check if there's a valid session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      console.log("API Me Route: No active session found or error retrieving session.", sessionError?.message);
+      return NextResponse.json({ user: null, profile: null }, { status: 401 }); // Unauthorized
+    }
+
+    // If we have a session, verify the user (getSession already verifies, but getUser fetches user details)
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError || !user) {
       // If there's an error or no user, it means the user is not authenticated
-      console.log("API Me Route: No active session found or error retrieving user.", sessionError?.message);
+      console.log("API Me Route: No active user found or error retrieving user.", userError?.message);
       return NextResponse.json({ user: null, profile: null }, { status: 401 }); // Unauthorized
     }
 
     // If user is authenticated, fetch their profile from the 'profiles' table
-    // Assumes you have a 'profiles' table where the 'id' column matches the auth.users 'id'
     const { data: profileData, error: profileError } = await supabase
       .from('profiles') // Your profile table name
-      .select('name, avatar_url, is_admin') // Select specific columns as a comma-separated string
+      .select('id, name, avatar_url, username, is_admin') // Include all important profile fields
       .eq('id', user.id) // Match profile id with authenticated user id
       .maybeSingle(); // Use maybeSingle() if a user might not have a profile yet
 

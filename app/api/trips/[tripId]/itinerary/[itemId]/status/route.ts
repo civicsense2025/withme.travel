@@ -1,0 +1,121 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { DB_TABLES, TRIP_ROLES, DB_FIELDS } from "@/utils/constants";
+import { NextRequest } from "next/server";
+
+// Re-use or import the checkTripAccess helper function (assuming it's defined elsewhere or paste it here)
+async function checkTripAccess(
+  supabase: ReturnType<typeof createClient>,
+  tripId: string,
+  userId: string,
+  allowedRoles: string[] 
+): Promise<{ allowed: boolean; error?: string; status?: number }> {
+    const { data: member, error } = await supabase
+    .from(DB_TABLES.TRIP_MEMBERS)
+    .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
+    .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+    .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .maybeSingle();
+
+    if (error) {
+        console.error("Error checking trip membership:", error);
+        return { allowed: false, error: error.message, status: 500 };
+    }
+
+    if (!member) {
+        return {
+        allowed: false,
+        error: "Access Denied: You are not a member of this trip.",
+        status: 403,
+        };
+    }
+
+    if (!allowedRoles.includes(member.role)) {
+        return {
+        allowed: false,
+        error: "Access Denied: You do not have sufficient permissions for this action.",
+        status: 403,
+        };
+    }
+
+    return { allowed: true };
+}
+
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { tripId: string; itemId: string } }
+) {
+  const { tripId, itemId } = params;
+
+  if (!tripId || !itemId) {
+    return NextResponse.json({ error: "Trip ID and Item ID are required" }, { status: 400 });
+  }
+
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Access Check: Only admins and editors can change status
+    const access = await checkTripAccess(supabase, tripId, user.id, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+    ]);
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
+    const body = await request.json();
+    const newStatus = body.status;
+
+    // Validate the new status
+    if (!newStatus || (newStatus !== 'approved' && newStatus !== 'rejected')) {
+      return NextResponse.json({ error: "Invalid status provided. Must be 'approved' or 'rejected'." }, { status: 400 });
+    }
+    
+    // Check if the item exists and belongs to the trip (optional but good practice)
+    const { data: itemCheck, error: itemCheckError } = await supabase
+        .from(DB_TABLES.ITINERARY_ITEMS)
+        .select('id')
+        .eq('id', itemId)
+        .eq('trip_id', tripId)
+        .maybeSingle();
+
+    if (itemCheckError) {
+        console.error("Error checking item existence:", itemCheckError);
+        return NextResponse.json({ error: "Failed to verify item." }, { status: 500 });
+    }
+    if (!itemCheck) {
+        return NextResponse.json({ error: "Itinerary item not found or does not belong to this trip." }, { status: 404 });
+    }
+
+
+    // Update the item status
+    const { error: updateError } = await supabase
+      .from(DB_TABLES.ITINERARY_ITEMS)
+      .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString() // Assuming you have moddatetime trigger or want manual update
+       })
+      .eq(DB_FIELDS.ITINERARY_ITEMS.ID, itemId);
+
+    if (updateError) {
+      console.error("Error updating itinerary item status:", updateError);
+      return NextResponse.json({ error: "Failed to update item status." }, { status: 500 });
+    }
+
+    return NextResponse.json({ message: `Item status updated to ${newStatus}` }, { status: 200 });
+
+  } catch (error) {
+    console.error("Error processing status update request:", error);
+     if (error instanceof SyntaxError) {
+        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+} 

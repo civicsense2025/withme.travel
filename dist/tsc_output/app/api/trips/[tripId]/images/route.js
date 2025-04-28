@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 export async function POST(request, { params }) {
     try {
-        const tripId = params.tripId;
+        const { tripId } = await params;
         const supabase = createClient();
         // Check if user is authenticated
         const { data: { user }, } = await supabase.auth.getUser();

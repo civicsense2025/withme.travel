@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/auth-provider";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 
@@ -85,7 +85,12 @@ export default function AuthDebugPage() {
 
   return (
     <div className="p-8 space-y-8">
-      <h1 className="text-2xl font-bold">Auth Debug Information</h1>
+      <div className="container mx-auto p-4">
+        <h1 className="text-5xl leading-loose font-bold">Auth Debug Information</h1>
+        <p className="text-muted-foreground">
+          This page displays authentication status and user information.
+        </p>
+      </div>
       
       <div className="bg-muted p-4 rounded-md">
         <h2 className="text-xl font-semibold mb-2">Auth Provider State</h2>

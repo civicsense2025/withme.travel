@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -152,8 +152,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-6 lowercase">settings</h1>
+    <div className="container max-w-3xl mx-auto px-4 py-8">
+      <h1 className="text-5xl leading-loose font-bold mb-6 lowercase">settings</h1>
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>

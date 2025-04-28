@@ -1,6 +1,6 @@
-import { createClient } from "@/utils/supabase/server";
-import { NextResponse, NextRequest } from "next/server";
-import { DB_TABLES } from "@/utils/constants";
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
 
 // Helper function (from migration) - Consider moving to a shared utils file
 async function checkTripMembershipAndRole(supabase: any, tripId: string, userId: string, roles: string[]) {

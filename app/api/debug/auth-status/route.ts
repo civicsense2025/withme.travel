@@ -1,11 +1,13 @@
-import { createClient } from "@/utils/supabase/server"
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import type { Database } from '@/types/database.types'
 
 export async function GET() {
   try {
     console.log("[Debug] Checking auth status")
-    const supabase = createClient()
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
 
     // Check session status
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -17,7 +19,7 @@ export async function GET() {
     let userData = null
     if (user) {
       const { data: profile, error: profileError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()

@@ -17,7 +17,7 @@ export function ThemeToggle() {
   }, [])
 
   if (!mounted) {
-    return <Button variant="ghost" size="icon" className="w-9 px-0" />
+    return <Button variant="ghost" size="icon" className="w-9 px-0 opacity-0" />
   }
 
   return (
@@ -28,18 +28,25 @@ export function ThemeToggle() {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="w-9 px-0"
+            className="w-8 h-8 rounded-full transition-colors hover:bg-muted"
             aria-label="Toggle theme"
           >
-            {theme === "dark" ? (
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all" />
-            ) : (
-              <Moon className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all" />
-            )}
+            <div className="relative h-4 w-4 overflow-hidden">
+              <Sun 
+                className={`h-4 w-4 absolute top-0 left-0 transition-all duration-300 ease-out ${
+                  theme === "dark" ? "opacity-100 transform-none" : "opacity-0 -translate-y-2"
+                }`} 
+              />
+              <Moon 
+                className={`h-4 w-4 absolute top-0 left-0 transition-all duration-300 ease-out ${
+                  theme === "dark" ? "opacity-0 translate-y-2" : "opacity-100 transform-none"
+                }`} 
+              />
+            </div>
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          <p>{theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}</p>
+        <TooltipContent side="bottom">
+          <p className="text-xs">{theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

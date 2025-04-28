@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database"
 
 export async function GET(request: Request, props: { params: { tripId: string } }) {
   const { tripId } = props.params;
@@ -13,21 +13,21 @@ export async function GET(request: Request, props: { params: { tripId: string } 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is an admin or owner of the trip
-    const { data: member, error: memberError } = await supabase
-      .from("trip_members")
-      .select("role")
-      .eq("trip_id", tripId)
-      .eq("user_id", user.id)
+    // Check if user is an admin of this trip
+    const { data: membership, error: membershipError } = await supabase
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .single()
 
-    if (memberError || !member || !["owner", "admin"].includes(member.role)) {
+    if (membershipError || !membership || membership.role !== DB_ENUMS.TRIP_ROLES.ADMIN) {
       return NextResponse.json({ error: "You don't have permission to view access requests" }, { status: 403 })
     }
 
-    // Get pending access requests
-    const { data: requests, error: requestsError } = await supabase
-      .from("permission_requests")
+    // Fetch all pending access requests for this trip
+    const { data, error } = await supabase
+      .from(DB_TABLES.PERMISSION_REQUESTS)
       .select(`
         id,
         user_id,
@@ -43,11 +43,11 @@ export async function GET(request: Request, props: { params: { tripId: string } 
       .eq("status", "pending")
       .order("created_at", { ascending: false })
 
-    if (requestsError) {
-      throw requestsError
+    if (error) {
+      throw error
     }
 
-    return NextResponse.json({ requests })
+    return NextResponse.json({ data })
   } catch (error: any) {
     console.error("Error fetching access requests:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
-import { 
-  DB_TABLES, 
-  DB_FIELDS 
-} from "@/utils/constants"
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database";
+import { API_ROUTES } from "@/utils/constants";
 
 // Realistic fallback data based on schema and available images
 const mockDestinations = [
@@ -502,58 +500,98 @@ const mockDestinations = [
 let destinationsCache: { data: any, timestamp: number } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+interface Destination {
+  id: string;
+  city: string;
+  country: string;
+  continent: string;
+  description?: string;
+  byline?: string;
+  highlights?: string[];
+  image_url?: string;
+  image_metadata?: any;
+  emoji?: string;
+  cuisine_rating?: number;
+  nightlife_rating?: number;
+  cultural_attractions?: number;
+  outdoor_activities?: number;
+  beach_quality?: number;
+  best_season?: string;
+  avg_cost_per_day?: number;
+  safety_rating?: number;
+  popularity: number;
+}
+
+interface ProcessedDestination extends Destination {
+  avg_days?: number;
+  travelers_count?: number;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const trending = searchParams.get("trending") === "true"
-    const limit = searchParams.get("limit") ? Number.parseInt(searchParams.get("limit")!) : undefined
+    const sort = searchParams.get('sort')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const page = parseInt(searchParams.get('page') || '1')
+    const continent = searchParams.get('continent')
+    const country = searchParams.get('country')
+    const minCost = searchParams.get('minCost')
+    const maxCost = searchParams.get('maxCost')
+    const vibe = searchParams.get('vibe') // Can be comma-separated
+    const tags = searchParams.get('tags') // Can be comma-separated
+    const season = searchParams.get('season') // E.g., 'Summer'
+    const ratingType = searchParams.get('ratingType') // e.g., 'nightlife'
+    const minRating = parseInt(searchParams.get('minRating') || '0')
+    const includeCover = searchParams.get('includeCover') === 'true' // Check if cover image is needed
+
+    // Call createClient without arguments as it handles cookies internally
+    const supabase = createClient() 
     
-    const supabase = createClient()
-    
-    // Start with the base query
+    // Calculate pagination offsets
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
     let query = supabase
       .from(DB_TABLES.DESTINATIONS)
-      .select("*")
+      .select(`
+        id, city, country, continent, description, byline, highlights, 
+        image_url, image_metadata, emoji, cuisine_rating, nightlife_rating, 
+        cultural_attractions, outdoor_activities, beach_quality, best_season, 
+        avg_cost_per_day, safety_rating, popularity
+      `, { count: 'exact' })
+      .limit(limit)
+      .range(from, to)
     
     // Always sort by city name for consistency unless trending is requested
-    if (trending) {
+    if (sort === 'trending') {
       query = query.order(DB_FIELDS.DESTINATIONS.POPULARITY, { ascending: false })
     } else {
       query = query.order(DB_FIELDS.DESTINATIONS.CITY, { ascending: true })
     }
     
-    // Apply limit if requested
-    if (limit) {
-      query = query.limit(limit)
-    }
-    
-    const { data, error } = await query
+    const { data, error, count } = await query
     
     if (error) {
       console.error('Error fetching destinations:', error)
-      // Only fall back to mock data in development
-      if (process.env.NODE_ENV === 'development') {
-        const mockData = limit ? mockDestinations.slice(0, limit) : mockDestinations
-        return NextResponse.json({ destinations: mockData })
-      }
       throw error
     }
     
     if (!data || data.length === 0) {
       return NextResponse.json({ 
         destinations: [], 
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0
+        },
         message: "No destinations found" 
       })
     }
     
-    // Process data to add traveler counts for trending destinations
-    const processedData = data.map(destination => {
-      if (trending) {
-        // Add realistic traveler counts based on city popularity
-        const baseCount = Math.floor(destination.popularity * 50)
-        const randomVariation = Math.floor(Math.random() * 500)
-        destination.travelers_count = baseCount + randomVariation
-        
+    // Process data to add calculated fields for trending destinations
+    const processedData = data.map((destination: Destination): ProcessedDestination => {
+      if (sort === 'trending') {
         // Add average days based on continent and distance
         const continentAvgDays: Record<string, number> = {
           'Europe': 5,
@@ -563,18 +601,26 @@ export async function GET(request: Request) {
           'Africa': 8,
           'Oceania': 9
         }
-        destination.avg_days = continentAvgDays[destination.continent as string] || 5
-      }
-      
-      // Ensure image_url is properly formatted
-      if (destination.image_url && !destination.image_url.startsWith('http') && !destination.image_url.startsWith('/')) {
-        destination.image_url = `/${destination.image_url}`
+        const processed: ProcessedDestination = {
+          ...destination,
+          avg_days: continentAvgDays[destination.continent] || 5,
+          travelers_count: Math.floor(destination.popularity * 50) + Math.floor(Math.random() * 500)
+        }
+        return processed
       }
       
       return destination
     })
     
-    return NextResponse.json({ destinations: processedData })
+    return NextResponse.json({ 
+      destinations: processedData,
+      meta: {
+        total: count || 0,
+        page,
+        limit,
+        totalPages: count ? Math.ceil(count / limit) : 0
+      }
+    })
     
   } catch (error: any) {
     console.error('Error in destinations API:', error)

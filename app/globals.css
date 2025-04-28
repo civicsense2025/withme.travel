@@ -50,12 +50,17 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    /* True black background with pure white foreground */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    
+    /* Slightly elevated card background (dark gray, not blue) */
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    
+    /* Popover styling */
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 98%;
     
     /* Update Travel theme foregrounds for dark mode */
     --travel-blue-foreground: 213 100% 85%;
@@ -65,26 +70,34 @@
     --travel-mint-foreground: 160 100% 90%;
     --travel-peach-foreground: 30 100% 90%;
     
+    /* Vibrant primary for dark mode */
     --primary: 260 70% 70%;
     --primary-foreground: 260 100% 20%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    
+    /* Dark gray secondary (not navy blue) */
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    
+    /* Muted elements */
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    
+    /* Accent */
     --accent: 213 70% 65%;
     --accent-foreground: 213 100% 20%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    
+    /* Destructive */
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Subtle borders with low contrast */
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
     --ring: 260 70% 70%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
     @apply bg-background text-foreground;
   }
@@ -226,6 +239,10 @@
 
   .command-menu-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgba(156, 163, 175, 0.5);
+  }
+
+  .border-border {
+    border-color: var(--border);
   }
 }
 

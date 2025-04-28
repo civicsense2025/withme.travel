@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, SubmitHandler, Controller } from 'react-hook-form';
+import { useForm, SubmitHandler, Controller, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -11,168 +11,198 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants';
-import { Trip } from '@/types/trip'; // Use the full Trip type
-import { LocationSearch } from '@/components/location-search'; // Keep LocationSearch
+import { Trip } from '@/types/trip';
+import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
 import { TagInput } from '@/components/ui/tag-input';
-import { Tag } from '@/types/tag'; // Assuming Tag type exists
+import { Tag } from '@/types/tag';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatError } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { FormDescription, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form"
+import { Database } from "@/types/supabase"; // Import Database type
+import { Loader2 } from "lucide-react";
 
-// Zod schema for form validation (matching API)
-const editTripFormSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(100),
-  start_date: z.string().nullable().optional(), // Using string for date input
-  end_date: z.string().nullable().optional(),
-  tags: z.array(z.string()).optional().nullable(), // Keep tags as array of strings
-  // Use destination_id (string, nullable, optional) matching API
-  destination_id: z.string().uuid().nullable().optional(), 
-});
-
-// Infer type from the updated schema
-type EditTripFormValues = z.infer<typeof editTripFormSchema>;
-
-// Update Trip type for props to include destination_id
-interface EditTripFormProps {
-  trip: Pick<Trip, 'id' | 'name' | 'start_date' | 'end_date' | 'tags' | 'destination_id'>;
-  // Optional: Pass initial destination name for display in LocationSearch
-  initialDestinationName?: string | null; 
+// Define GeocoderResult locally as it's not exported
+interface GeocoderResult {
+    geometry: { coordinates: [number, number]; type: string };
+    place_name: string;
+    text: string;
+    id?: string; // Mapbox ID
+    properties?: { address?: string };
+    context?: any; // Keep context flexible
+    [key: string]: any;
 }
 
-export function EditTripForm({ trip, initialDestinationName }: EditTripFormProps) {
-  const router = useRouter();
+// Define privacy options for clarity
+const privacyOptions = [
+  { value: 'private', label: 'Private', description: 'Only invited members can see this trip.' },
+  { value: 'shared_with_link', label: 'Shared with Link', description: 'Anyone with the link can view a simplified version.' },
+  { value: 'public', label: 'Public', description: 'Anyone can find and view a simplified version.' },
+] as const; // Use const assertion for literal types
+
+// Use literal union type directly
+type PrivacySetting = 'private' | 'shared_with_link' | 'public';
+
+// EditTripForm Zod schema
+const editTripFormSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters").max(100),
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional().nullable(), // Keep schema as is
+  destination_id: z.string().uuid("Please select a valid destination").nullable().optional(),
+  cover_image_url: z.string().url("Must be a valid URL").nullable().optional(),
+  privacy_setting: z.enum(['private', 'shared_with_link', 'public']), // Schema uses enum
+});
+
+// Infer type from the schema
+type EditTripFormValues = z.infer<typeof editTripFormSchema>;
+
+// Export the type
+export type { EditTripFormValues };
+
+// Update props interface to include onSave and onClose
+interface EditTripFormProps {
+  trip: Pick<Trip, 'id' | 'name' | 'start_date' | 'end_date' | 'destination_id' | 'cover_image_url'> & { 
+      privacy_setting: PrivacySetting | null 
+      tags?: string[] 
+  };
+  initialDestinationName?: string | null;
+  onSave: (data: EditTripFormValues & { destination_id: string | null }) => Promise<void>; // Pass validated data + destination_id back
+  onClose: () => void; // Function to close the sheet
+}
+
+export function EditTripForm({ 
+  trip, 
+  initialDestinationName, 
+  onSave, // Add onSave
+  onClose, // Add onClose
+}: EditTripFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  // Keep track of the selected destination name for display in LocationSearch
-  const [selectedDestinationDisplay, setSelectedDestinationDisplay] = useState<string | undefined>(initialDestinationName ?? undefined);
+  const [isLookingUpDest, setIsLookingUpDest] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  // State for the Mapbox input display value
+  const [destinationDisplay, setDestinationDisplay] = useState<string | undefined>(initialDestinationName ?? undefined);
   const [existingTags, setExistingTags] = useState<Tag[]>([]);
+  const [destinationId, setDestinationId] = useState<string | null>(trip.destination_id || null); // Local state for destination ID
 
-  const { 
-    register, 
-    handleSubmit, 
-    reset, 
-    control, 
-    formState: { errors }, 
-    setValue,
-    watch 
-  } = useForm<EditTripFormValues>({
+  const formMethods = useForm<EditTripFormValues>({
     resolver: zodResolver(editTripFormSchema),
     defaultValues: {
       name: trip.name || '',
       start_date: trip.start_date ? trip.start_date.split('T')[0] : '',
       end_date: trip.end_date ? trip.end_date.split('T')[0] : '',
-      tags: trip.tags || [], 
-      // Use destination_id from trip prop
-      destination_id: trip.destination_id || null, 
+      // Use trip.tags directly, default to empty array
+      tags: trip.tags ?? [], 
+      cover_image_url: trip.cover_image_url || null,
+      privacy_setting: trip.privacy_setting ?? 'private',
     },
   });
+
+  // Destructure control and other methods needed outside FormProvider if any
+  const { control, handleSubmit, reset, setValue, formState: { errors }, register } = formMethods;
 
   // Fetch existing tags on mount
   useEffect(() => {
     const fetchTags = async () => {
       try {
         const response = await fetch(API_ROUTES.TAGS);
-        if (!response.ok) {
-          throw new Error('Failed to fetch tags');
-        }
+        if (!response.ok) throw new Error('Failed to fetch tags');
         const tagsData = await response.json();
         setExistingTags(tagsData);
       } catch (error) {
         console.error('Error fetching tags:', error);
-        // Optionally show a toast notification
-        toast({
-          title: 'Error',
-          description: 'Could not load existing tags.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Error', description: 'Could not load existing tags.', variant: 'destructive' });
       }
     };
     fetchTags();
-  }, [toast]); // Add toast to dependency array
+  }, [toast]);
 
   // Reset form if trip data changes
   useEffect(() => {
-    const defaultDestId = trip.destination_id || null;
     reset({
-        name: trip.name || '',
-        start_date: trip.start_date ? trip.start_date.split('T')[0] : '',
-        end_date: trip.end_date ? trip.end_date.split('T')[0] : '',
-        tags: trip.tags || [],
-        destination_id: defaultDestId,
+      name: trip.name || '',
+      start_date: trip.start_date ? trip.start_date.split('T')[0] : '',
+      end_date: trip.end_date ? trip.end_date.split('T')[0] : '',
+      tags: trip.tags ?? [],
+      cover_image_url: trip.cover_image_url || null,
+      privacy_setting: trip.privacy_setting ?? 'private',
     });
-    // Also reset the display name
-    // We need a way to get the name from the ID here if initialDestinationName isn't passed
-    // For now, rely on initialDestinationName or clear it if ID changes
-    setSelectedDestinationDisplay(initialDestinationName ?? undefined);
-
+    // Reset display name based on prop
+    setDestinationDisplay(initialDestinationName ?? undefined);
   }, [trip, reset, initialDestinationName]);
 
+  // Modify onSubmit
   const onSubmit: SubmitHandler<EditTripFormValues> = async (data) => {
     setIsLoading(true);
     try {
-      // 1. Prepare payload for the main trip update (WITHOUT tags)
-      const tripUpdatePayload = {
-        name: data.name,
-        start_date: data.start_date || null,
-        end_date: data.end_date || null,
-        destination_id: data.destination_id || null, 
+      // Combine form data with the current destinationId state
+      const saveData = {
+        ...data,
+        destination_id: destinationId, 
       };
-
-      // 2. Update the main trip details
-      const tripResponse = await fetch(API_ROUTES.TRIP_DETAILS(trip.id), {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(tripUpdatePayload),
-      });
-
-      if (!tripResponse.ok) {
-        const errorData = await tripResponse.json().catch(() => ({}));
-        console.error("API Error (Trip Update):", errorData);
-        throw new Error(errorData.error || 'Failed to update trip details');
-      }
-
-      // 3. Prepare tags for syncing
-      const submittedTagNames = data.tags || [];
-
-      // 4. Call the new API endpoint to sync tags
-      const tagsResponse = await fetch(API_ROUTES.TRIP_TAGS(trip.id), { // Using the new constant
-        method: 'PUT', // Use PUT to replace the entire set of tags
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tags: submittedTagNames }), // Send tag names
-      });
-
-      if (!tagsResponse.ok) {
-        const errorData = await tagsResponse.json().catch(() => ({}));
-        console.error("API Error (Tag Sync):", errorData);
-        // Don't throw here, main update succeeded, but notify user
-        toast({
-          title: 'Warning: Tags Not Updated',
-          description: errorData.error || 'Failed to update trip tags. Please try again.',
-          variant: 'destructive',
-        });
-      } else {
-        // Only show full success if both trip and tags updated
-        toast({
-          title: 'Trip Updated',
-          description: `Successfully updated ${data.name}.`,
-        });
-      }
-      
-      // Redirect back to the trip details page
-      router.push(PAGE_ROUTES.TRIP_DETAILS(trip.id));
-      router.refresh(); 
-
+      console.log("Calling onSave with:", saveData);
+      await onSave(saveData); 
     } catch (error) {
-      console.error('Error updating trip:', error);
-      toast({
-        title: 'Error Updating Trip',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
+      console.error('Error saving trip via onSave prop:', error);
+      // No need for toast here, TripPageClient's handler will show it
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Define the core async logic separately
+  const performDestinationLookup = async (result: GeocoderResult | null) => {
+    setLookupError(null);
+    if (!result || !result.id || !result.text || !result.geometry?.coordinates) {
+        setValue('destination_id', null);
+        setDestinationId(null);
+        setDestinationDisplay(undefined);
+        return;
+    }
+    setDestinationDisplay(result.place_name || result.text);
+    setIsLookingUpDest(true);
+    try {
+        const payload = {
+            mapbox_id: result.id,
+            name: result.text,
+            address: result.properties?.address || result.place_name,
+            latitude: result.geometry.coordinates[1],
+            longitude: result.geometry.coordinates[0],
+            context: result.context || null,
+        };
+        // Use the literal string for the API route
+        const response = await fetch('/api/destinations/lookup-or-create', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const destData = await response.json();
+        if (!response.ok) {
+            throw new Error(destData.error || 'Failed to lookup/create destination');
+        }
+        if (destData?.destination?.id) { 
+            setValue('destination_id', destData.destination.id);
+            setDestinationId(destData.destination.id);
+        } else {
+             console.error("API response missing destination.id:", destData);
+             throw new Error('Could not retrieve destination ID from API response.');
+        }
+    } catch (error: any) {
+        console.error("Error looking up/creating destination:", error);
+        setLookupError(error.message);
+        setValue('destination_id', null);
+        setDestinationId(null);
+        setDestinationDisplay(undefined);
+    } finally {
+        setIsLookingUpDest(false);
+    }
+  };
+  
+  // Wrapper function matching the expected onResult type
+  const handleGeocoderResultWrapper = (result: GeocoderResult | null) => {
+    // Don't await here, just fire off the async logic
+    performDestinationLookup(result);
   };
 
   return (
@@ -180,81 +210,107 @@ export function EditTripForm({ trip, initialDestinationName }: EditTripFormProps
       <CardHeader>
         <CardTitle>Edit Trip: {trip.name}</CardTitle>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Trip Name</Label>
-            <Input id="name" {...register('name')} />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <FormProvider {...formMethods}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-1">
+          <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="start_date">Start Date</Label>
-              <Input id="start_date" type="date" {...register('start_date')} />
-              {errors.start_date && <p className="text-sm text-destructive">{errors.start_date.message}</p>}
+              <Label htmlFor="name">Trip Name</Label>
+              <Input id="name" {...register('name')} />
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_date">Start Date</Label>
+                <Input id="start_date" type="date" {...register('start_date')} />
+                {errors.start_date && <p className="text-sm text-destructive">{errors.start_date.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_date">End Date</Label>
+                <Input id="end_date" type="date" {...register('end_date')} />
+                {errors.end_date && <p className="text-sm text-destructive">{errors.end_date.message}</p>}
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="end_date">End Date</Label>
-              <Input id="end_date" type="date" {...register('end_date')} />
-              {errors.end_date && <p className="text-sm text-destructive">{errors.end_date.message}</p>}
-            </div>
-          </div>
+               <Label htmlFor="cover_image_url">Cover Image URL</Label>
+               <Input id="cover_image_url" type="url" {...register('cover_image_url')} placeholder="https://..." />
+               {errors.cover_image_url && <p className="text-sm text-destructive">{errors.cover_image_url.message}</p>}
+             </div>
 
-          {/* Single Destination Selector */}
-          <div className="space-y-2">
-            <Label htmlFor="destination_id">Primary Destination</Label>
-             <Controller
+            <div className="space-y-2">
+              <Label htmlFor="destination-search">Primary Destination</Label>
+                      <MapboxGeocoderComponent
+                onResult={handleGeocoderResultWrapper}
+                          initialValue={destinationDisplay}
+                          options={{ placeholder: 'Search city, address, or place...' }}
+                      />
+               {isLookingUpDest && <p className="text-sm text-muted-foreground">Looking up destination...</p>}
+               {lookupError && <Alert variant="destructive" className="mt-2"><AlertDescription>{lookupError}</AlertDescription></Alert>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags</Label>
+              <Controller
+                name="tags"
                 control={control}
-                name="destination_id" // Control the destination_id field
                 render={({ field }) => (
-                  <LocationSearch
-                    // Use a unique key based on the controlled value to force re-render 
-                    // if the underlying ID changes programmatically (e.g., on reset)
-                    key={field.value ?? 'no-dest'}
-                    // Provide initial display value if available
-                    initialValue={selectedDestinationDisplay}
-                    onLocationSelect={(location) => {
-                      field.onChange(location.id); // Update form with selected ID
-                      setSelectedDestinationDisplay(`${location.city}, ${location.country}`); // Update display name
+                  <TagInput
+                    {...field}
+                    placeholder="Enter tags (e.g., Budget, Adventure)"
+                    value={field.value || []}
+                    onChange={(newTagTexts: string[]) => {
+                      field.onChange(newTagTexts);
                     }}
-                    // Add a way to clear the selection
-                    onClear={() => {
-                      field.onChange(null); // Set form value to null
-                      setSelectedDestinationDisplay(undefined); // Clear display name
-                    }}
-                    placeholder="Search for the main destination..."
                   />
                 )}
               />
-            {errors.destination_id && <p className="text-sm text-destructive">{errors.destination_id.message}</p>}
-          </div>
-
-          {/* Tag Input */}
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags</Label>
-            <Controller
+              {errors.tags && <p className="text-sm text-destructive">{errors.tags.message}</p>}
+            </div>
+            
+            {/* --- Privacy Settings --- */}
+             <FormField
               control={control}
-              name="tags"
+              name="privacy_setting"
               render={({ field }) => (
-                <TagInput
-                  existingTags={existingTags} // Pass existing tags
-                  value={field.value ?? []}
-                  onChange={field.onChange}
-                  placeholder="Add tags (e.g. adventure, beach)"
-                />
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-semibold">Trip Visibility</FormLabel>
+                  <FormDescription>
+                    Control who can see your trip plan.
+                  </FormDescription>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex flex-col space-y-1"
+                  >
+                    {privacyOptions.map((option) => (
+                       <FormItem key={option.value} className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                          <RadioGroupItem value={option.value} />
+                          </FormControl>
+                          <FormLabel className="font-normal flex flex-col">
+                              <span>{option.label}</span>
+                              <FormDescription className="text-xs">{option.description}</FormDescription>
+                          </FormLabel>
+                        </FormItem>
+                    ))}
+                   
+                  </RadioGroup>
+                  {errors.privacy_setting && <p className="text-sm text-destructive pt-1">{errors.privacy_setting.message}</p>}
+                </FormItem>
               )}
             />
-            {errors.tags && <p className="text-sm text-destructive">{errors.tags.message}</p>}
-          </div>
-
-          {/* Add fields for other editable properties like description, vibe etc. */}
-        </CardContent>
-        <CardFooter>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Updating...' : 'Update Trip'}
-          </Button>
-        </CardFooter>
-      </form>
+            
+          </CardContent>
+          <CardFooter className="justify-between">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>
+               Cancel
+             </Button>
+            <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Save Changes
+            </Button>
+          </CardFooter>
+        </form>
+      </FormProvider>
     </Card>
   );
 } 

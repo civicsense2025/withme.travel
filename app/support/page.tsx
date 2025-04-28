@@ -60,8 +60,12 @@ export default function SupportPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }} />
       
       <div className="container mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-2">support us</h1>
-        <p className="text-muted-foreground mb-8">help us make group travel planning even better</p>
+        <div className="text-center mb-12">
+          <h1 className="text-5xl leading-loose font-bold mb-2">support us</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            help keep withme.travel running and ad-free!
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Story Column - Left Side */}

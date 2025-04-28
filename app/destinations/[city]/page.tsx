@@ -43,7 +43,7 @@ import { useToast } from "@/hooks/use-toast"
 import { DestinationReviews } from "@/components/destinations/destination-reviews"
 import { useAuth } from '@/components/auth-provider'
 import { User as SupabaseUser } from "@supabase/supabase-js"
-import { AuthContextType } from "@/components/auth-provider"
+import { AuthContextType } from "@/lib/hooks/use-auth"
 
 interface Destination {
   id: string
@@ -80,6 +80,12 @@ interface Destination {
   image_metadata?: {
     alt_text?: string
     attribution?: string
+    attributionHtml?: string 
+    photographer_name?: string
+    photographer_url?: string
+    source?: string
+    source_id?: string
+    url?: string
   }
 }
 
@@ -155,6 +161,43 @@ export default function CityPage() {
     fetchDestination()
   }, [cityParam, toast])
 
+  // Helper function to create the attribution string with links
+  const createAttributionText = (metadata: Destination['image_metadata']) => {
+    if (!metadata) return null;
+
+    // Prioritize structured data if available
+    const { photographer_name, photographer_url, source, source_id, url } = metadata;
+
+    if (photographer_name && source) {
+      const sourceName = source.charAt(0).toUpperCase() + source.slice(1); // Capitalize source
+      let sourceLink = url; // Use the direct image URL as default source link
+
+      // Specific source links if needed
+      if (source === 'pexels' && source_id) {
+        sourceLink = `https://www.pexels.com/photo/${source_id}`;
+      } else if (source === 'unsplash' && source_id) {
+        // Assuming Unsplash structure, adjust if needed
+        sourceLink = `https://unsplash.com/photos/${source_id}`; 
+      }
+
+      const photographerPart = photographer_url 
+        ? `<a href=\"${photographer_url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${photographer_name}</a>` 
+        : photographer_name;
+      
+      const sourcePart = sourceLink
+        ? `<a href=\"${sourceLink}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${sourceName}</a>`
+        : sourceName;
+
+      return `Photo by ${photographerPart} on ${sourcePart}`;
+    }
+
+    // Fallback to existing attribution strings
+    if (metadata.attributionHtml) return metadata.attributionHtml;
+    if (metadata.attribution) return metadata.attribution; // Basic text fallback
+
+    return null; // No attribution available
+  };
+
   const renderRating = (rating: number | null | undefined, max = 5) => {
     if (rating === null || rating === undefined) return "N/A"
 
@@ -174,7 +217,7 @@ export default function CityPage() {
       return {
         url: "/placeholder.svg",
         alt: "Destination placeholder image",
-        attribution: null
+        attributionHtml: null
       };
     }
 
@@ -190,7 +233,7 @@ export default function CityPage() {
     return {
       url: imageUrl,
       alt: destination.image_metadata?.alt_text || `${destination.city}, ${destination.country}`,
-      attribution: destination.image_metadata?.attribution
+      attributionHtml: createAttributionText(destination.image_metadata)
     };
   };
 
@@ -242,7 +285,9 @@ export default function CityPage() {
 
   const imageData = getDestinationImageData(destination);
 
-  const defaultTripName = `${profile?.first_name || 'My'}'s trip to ${destination.city}`;
+  // Use profile.name and fallback to 'My' if name is not available
+  const profileName = profile?.name?.split(' ')[0] || 'My'; 
+  const defaultTripName = `${profileName}'s trip to ${destination.city}`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
@@ -255,19 +300,43 @@ export default function CityPage() {
         </Link>
       </div>
 
-      <div className="relative h-64 md:h-96 w-full rounded-lg overflow-hidden group transition-transform duration-300 hover:scale-[1.02]">
+      <div className="relative mb-8 h-64 md:h-96 w-full overflow-hidden rounded-lg shadow-lg">
         <Image
           src={imageData.url}
           alt={imageData.alt}
           fill
           priority
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 100vw"
+          className="object-cover"
         />
-        {imageData.attribution && (
-          <div className="absolute bottom-2 right-2 z-10">
-            <p className="text-xs text-white/80 bg-black/50 px-2 py-1 rounded">
-              {imageData.attribution}
-            </p>
+        {imageData.attributionHtml && (
+          <div className="absolute bottom-4 right-4 z-10">
+             <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      aria-label="Image attribution information"
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="left"
+                    sideOffset={5}
+                    className="bg-black/90 text-white border-none shadow-lg max-w-xs"
+                  >
+                    <p 
+                      className="text-xs"
+                      dangerouslySetInnerHTML={{ __html: imageData.attributionHtml || '' }}
+                    ></p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
           </div>
         )}
       </div>

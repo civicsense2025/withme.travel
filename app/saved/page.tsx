@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { LikeButton } from "@/components/like-button"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { useLikes } from "@/hooks/use-likes"
 
 export default function SavedPage() {

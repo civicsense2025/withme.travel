@@ -13,9 +13,10 @@ async function getReviewsForDestination(destinationId: string, sortBy: string | 
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const destinationId = params.id;
+  // Properly await and destructure the params object
+  const { id: destinationId } = context.params;
   const searchParams = request.nextUrl.searchParams;
   const sortBy = searchParams.get('sort_by');
   const season = searchParams.get('season');

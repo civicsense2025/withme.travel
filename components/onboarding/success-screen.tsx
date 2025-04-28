@@ -13,8 +13,12 @@ export function SuccessScreen({ onCreateTrip, onExplore }: SuccessScreenProps) {
     <Card className="border-0 shadow-lg">
       <CardContent className="pt-6 pb-8 px-6 text-center">
         <div className="mb-6 text-4xl">🎉</div>
-        <h1 className="text-2xl font-bold mb-2">you're all set!</h1>
-        <p className="text-muted-foreground mb-8">your account is ready for adventure</p>
+        <div className="text-center max-w-lg mx-auto">
+          <h1 className="text-5xl leading-loose font-bold mb-2">you're all set!</h1>
+          <p className="text-muted-foreground mb-8">
+            your profile is complete. let's start planning your next adventure!
+          </p>
+        </div>
         <div className="flex flex-col gap-3">
           <Button onClick={onCreateTrip} size="lg" className="w-full">
             create my first trip

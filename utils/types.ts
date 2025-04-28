@@ -1,5 +1,8 @@
 import { TripRole, PermissionStatus, ItineraryCategory } from "./constants"
 
+// Define ItemStatus before its use
+export type ItemStatus = 'suggested' | 'confirmed' | 'rejected';
+
 // Trip entity as stored in the database
 export interface Trip {
   id: string
@@ -40,7 +43,7 @@ export interface TripWithDetails extends Trip {
 
 // Trip with member role information
 export interface TripWithMemberInfo extends TripWithDetails {
-  role: TripRole
+  role: TripRole | null // Allow null for role
   memberSince?: string
 }
 
@@ -110,30 +113,44 @@ export interface Destination {
   digital_nomad_friendly?: number
 }
 
-// Itinerary item entity
+// Replace the old ItineraryItem definition with the more complete one
 export interface ItineraryItem {
-  id: string
-  trip_id: string
-  title: string
-  description?: string
-  location?: string
-  address?: string
-  start_time?: string
-  end_time?: string
-  start_date?: string
-  end_date?: string
-  date?: string
-  date_flexibility?: string
-  created_by: string
-  created_at: string
-  updated_at?: string
-  category?: ItineraryCategory
-  position?: number
-  status?: string
-  latitude?: number
-  longitude?: number
-  type?: string
-  cover_image_url?: string
+  id: string;
+  trip_id: string;
+  section_id?: string | null; // Added from API response structure
+  title: string | null;
+  type?: string | null; // Original 'type' field from schema
+  item_type?: string | null; // Added 'item_type' field from schema
+  date: string | null; // Kept as string from fetch
+  start_time?: string | null; // Optional start time
+  end_time?: string | null; // Optional end time
+  description?: string | null; // Add optional description field
+  location?: string | null;
+  address?: string | null;
+  place_id?: string | null; // Added from schema
+  latitude?: number | null;
+  longitude?: number | null;
+  estimated_cost?: number | null; // Use correct name
+  currency?: string | null;
+  notes?: string | null; // Added notes field
+  created_at: string;
+  created_by?: string | null; // Added from schema
+  is_custom?: boolean | null; // Added from schema
+  day_number?: number | null; // Added from schema
+  category?: ItineraryCategory | null; // Use ItineraryCategory enum type
+  status?: ItemStatus | null; // Use ItemStatus enum type
+  position?: number | null; // Type is numeric in schema
+  duration_minutes?: number | null; // Added from schema
+  cover_image_url?: string | null; // Added from schema
+  // Define ProcessedVotes structure directly or import if defined elsewhere
+  votes: { 
+    up: number;
+    down: number;
+    upVoters: Profile[]; // Assuming Profile is defined/imported
+    downVoters: Profile[]; // Assuming Profile is defined/imported
+    userVote: 'up' | 'down' | null;
+  };
+  user_vote: 'up' | 'down' | null; // Keep this for direct access if needed
 }
 
 // Budget item entity

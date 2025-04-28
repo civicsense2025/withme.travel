@@ -129,49 +129,52 @@ export function CityBubbles() {
     const maxBubbles = isMobile ? 6 : 8
     const selectedPhrases = shuffled.slice(0, maxBubbles)
 
-    // Mobile grid - Keep as is from previous fix
+    // Mobile grid - Updated for single vertical line, shifted left
     const mobileGrid = [
-      // Left column
-      { x: "5%", y: "2%" },    
-      { x: "8%", y: "35%" },  
-      { x: "5%", y: "70%" },  
-      // Right column
-      { x: "60%", y: "15%" },  
-      { x: "65%", y: "50%" },  
-      { x: "58%", y: "85%" },  
+      { x: "45%", y: "5%" },   // Shifted left from 50%
+      { x: "45%", y: "20%" },  // Shifted left from 50%
+      { x: "45%", y: "35%" },  // Shifted left from 50%
+      { x: "45%", y: "50%" },  // Shifted left from 50%
+      { x: "45%", y: "65%" },  // Shifted left from 50%
+      { x: "45%", y: "80%" },  // Shifted left from 50%
     ]
 
-    // Desktop grid - Adjusted X values to center the cluster more
+    // Desktop grid - Adjusted X values to shift the cluster left
     const desktopGrid = [
-      { x: "18%", y: "15%" }, // Moved in from 10%
-      { x: "35%", y: "40%" }, // Moved in from 30%
-      { x: "50%", y: "10%" }, // Already centered
-      { x: "65%", y: "35%" }, // Moved in from 70%
-      { x: "78%", y: "20%" }, // Moved in from 85%
-      { x: "22%", y: "70%" }, // Moved in from 15%
-      { x: "45%", y: "75%" }, // Moved in slightly from 40%
-      { x: "68%", y: "65%" }, // Moved in from 65%
+      { x: "10%", y: "15%" }, // Shifted left from 18%
+      { x: "27%", y: "40%" }, // Shifted left from 35%
+      { x: "42%", y: "10%" }, // Shifted left from 50%
+      { x: "57%", y: "35%" }, // Shifted left from 65%
+      { x: "70%", y: "20%" }, // Shifted left from 78%
+      { x: "14%", y: "70%" }, // Shifted left from 22%
+      { x: "37%", y: "75%" }, // Shifted left from 45%
+      { x: "60%", y: "65%" }, // Shifted left from 68%
     ]
 
     const grid = isMobile ? mobileGrid : desktopGrid
 
     // Use only as many grid positions as we have phrases
-    const positions = grid.slice(0, selectedPhrases.length).map((pos) => {
-      // Keep desktop random offset minimal
-      const xOffset = Math.random() * (isMobile ? 0.1 : 2.0) - (isMobile ? 0.05 : 1.0)
-      const yOffset = Math.random() * (isMobile ? 0.2 : 4.0) - (isMobile ? 0.1 : 2.0)
+    // Pass index to allow staggering based on position
+    const positions = grid.slice(0, selectedPhrases.length).map((pos, index) => {
+      // Keep desktop random offset minimal, adjust mobile offset for centering and staggering
+      // For mobile, alternate a small horizontal offset to stagger the line
+      const mobileOffsetPercentage = index % 2 === 0 ? -5 : 5; // Alternate between -5% and +5% from center
+      const xOffsetVal = isMobile ? mobileOffsetPercentage : (Math.random() * 2.0 - 1.0); // Mobile: Alternating offset %, Desktop: Small random %
+      const yOffsetVal = isMobile ? (Math.random() * 4.0 - 2.0) : (Math.random() * 4.0 - 2.0); // Small random Y offset for both
+
       return {
-        x: `calc(${pos.x} + ${xOffset}%)`,
-        y: `calc(${pos.y} + ${yOffset}%)`, 
+        // Use the calculated offset value. Positive/negative is handled by the value itself.
+        x: `calc(${pos.x} + ${xOffsetVal}%)`,
+        y: `calc(${pos.y} + ${yOffsetVal}%)`,
       }
     })
 
     const newBubbles = selectedPhrases.map((text, index) => {
-      // Consistent sizes for better visual hierarchy
+      // Consistent sizes for better visual hierarchy - Increased mobile sizes
       const sizeClasses = isMobile ? [
-        "px-2.5 py-1 text-xs", // Small
-        "px-3 py-1 text-xs", // Small
-        "px-3 py-1.5 text-sm", // Medium
+        "px-3.5 py-1.5 text-sm", // Larger small
+        "px-4 py-1.5 text-sm", // Larger medium
+        "px-4 py-2 text-base", // Larger large
       ] : [
         // Use 3 sizes for desktop for more variation
         "px-4 py-1.5 text-sm", // Medium
@@ -201,10 +204,11 @@ export function CityBubbles() {
   return (
     <div 
       ref={bubblesRef}
-      className="relative w-full mx-auto overflow-hidden py-24 md:py-20"
+      className="relative w-full mx-auto overflow-hidden py-16 md:py-20" // Reduced mobile padding slightly
     >
       {/* Ensure container has enough height to prevent clipping if bubbles position low */} 
-      <div className="relative w-full min-h-[250px] md:min-h-[150px] h-full px-4 md:px-6"> 
+      {/* Increased mobile min-height to accommodate vertical layout */}
+      <div className="relative w-full min-h-[350px] md:min-h-[150px] h-full px-4 md:px-6"> 
         {bubbles.map((bubble) => (
           // Render the simplified BubbleItem
           <BubbleItem 

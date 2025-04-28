@@ -29,7 +29,7 @@ export function TravelSquadScreen({ userData, onInputChange, onNext, onBack, onS
       <CardContent className="pt-6 pb-8 px-6">
         <div className="text-center mb-6">
           <div className="mb-4 text-4xl">👯‍♀️</div>
-          <h1 className="text-2xl font-bold mb-2">who do you usually travel with?</h1>
+          <h1 className="text-5xl leading-loose font-bold mb-2">who do you usually travel with?</h1>
           <p className="text-muted-foreground mb-4">Choose your typical travel companions (or skip for now)</p>
         </div>
 

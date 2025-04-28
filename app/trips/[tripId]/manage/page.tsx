@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Calendar } from "@/components/ui/calendar"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -35,6 +35,7 @@ import { AuthContextType } from '@/components/auth-provider'
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { Trip } from '@/types/trip'
 import { Database } from '@/types/supabase'
+import { PlaylistEmbed } from '@/components/trips/PlaylistEmbed'
 
 interface User {
   id: string
@@ -52,7 +53,7 @@ interface Member {
 }
 
 interface PageProps {
-  params: { id: string }
+  params: { tripId: string }
 }
 
 interface LoadingProps {
@@ -65,8 +66,7 @@ interface DragHandleProps {
   ref: (element: HTMLElement | null) => void
 }
 
-export default function ManageTripPage(props: PageProps) {
-  const { tripId } = props.params;
+export default function ManageTripPage({ params: { tripId } }: PageProps) {
   const { user, isLoading: authLoading } = useAuth() as AuthContextType
   const router = useRouter()
   const { toast } = useToast()
@@ -80,6 +80,7 @@ export default function ManageTripPage(props: PageProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [startDate, setStartDate] = useState<Date | undefined>()
   const [endDate, setEndDate] = useState<Date | undefined>()
+  const [playlistUrl, setPlaylistUrl] = useState<string | null | undefined>(undefined)
 
   const checkAuth = useCallback(async () => {
     try {
@@ -133,7 +134,14 @@ export default function ManageTripPage(props: PageProps) {
         const tripData = await tripResponse.json()
         const fetchedTrip = tripData.trip as Trip
         setTrip(fetchedTrip)
-        setEditedTrip(fetchedTrip)
+        setEditedTrip({
+          name: fetchedTrip.name,
+          description: fetchedTrip.description,
+          is_public: fetchedTrip.is_public,
+          cover_image_url: fetchedTrip.cover_image_url,
+          // Add other editable fields here if needed
+        }) // Only initialize editable fields
+        setPlaylistUrl(fetchedTrip.playlist_url) // Set playlist URL state
 
         // Fetch members
         const membersResponse = await fetch(API_ROUTES.TRIP_MEMBERS(tripId))
@@ -182,17 +190,38 @@ export default function ManageTripPage(props: PageProps) {
 
     setIsSaving(true)
     try {
-      const updatePayload: Partial<Trip> = {}
-      if (editedTrip.name !== undefined) {
+      // Construct payload with only changed fields
+      const updatePayload: Partial<Database['public']['Tables']['trips']['Update']> = {}
+
+      if (editedTrip.name !== trip.name) {
         updatePayload.name = editedTrip.name;
       }
-      if (editedTrip.is_public !== undefined) {
+      if (editedTrip.description !== trip.description) {
+        updatePayload.description = editedTrip.description;
+      }
+      if (editedTrip.is_public !== trip.is_public) {
         updatePayload.is_public = editedTrip.is_public;
       }
-      updatePayload.start_date = startDate ? startDate.toISOString() : null;
-      updatePayload.end_date = endDate ? endDate.toISOString() : null;
-      
-      Object.keys(updatePayload).forEach((key) => (updatePayload as any)[key] === undefined && delete (updatePayload as any)[key]);
+      const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : null;
+      if (formattedStartDate !== trip.start_date) {
+        updatePayload.start_date = formattedStartDate;
+      }
+      const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : null;
+      if (formattedEndDate !== trip.end_date) {
+        updatePayload.end_date = formattedEndDate;
+      }
+      // Add playlist_url check
+      if (playlistUrl !== trip.playlist_url) {
+         // Handle empty string case: set to null if empty
+         updatePayload.playlist_url = playlistUrl?.trim() ? playlistUrl.trim() : null;
+      }
+
+      // Check if any changes were actually made
+      if (Object.keys(updatePayload).length === 0) {
+        toast({ title: "No changes", description: "No modifications detected." });
+        setIsSaving(false);
+        return;
+      }
 
       const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
         method: "PATCH",
@@ -200,21 +229,35 @@ export default function ManageTripPage(props: PageProps) {
         body: JSON.stringify(updatePayload),
       })
 
-      if (!response.ok) throw new Error("Failed to update trip")
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to update trip:", errorData);
+        throw new Error(errorData.error || "Failed to update trip");
+      }
 
       const updatedTripData = await response.json()
       const updatedTrip = updatedTripData.trip as Trip;
+      // Update local state after successful save
       setTrip(updatedTrip)
-      setEditedTrip(updatedTrip)
+      setEditedTrip({
+          name: updatedTrip.name,
+          description: updatedTrip.description,
+          is_public: updatedTrip.is_public,
+          cover_image_url: updatedTrip.cover_image_url,
+      })
+      setPlaylistUrl(updatedTrip.playlist_url)
+      if (updatedTrip.start_date) setStartDate(new Date(updatedTrip.start_date))
+      if (updatedTrip.end_date) setEndDate(new Date(updatedTrip.end_date))
+
       toast({
         title: "Changes saved",
         description: "Trip details have been updated",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving trip:", error)
       toast({
         title: "Error",
-        description: "Failed to save changes",
+        description: error.message || "Failed to save changes",
         variant: "destructive",
       })
     } finally {
@@ -223,20 +266,39 @@ export default function ManageTripPage(props: PageProps) {
   }
 
   const handleDelete = async () => {
-    if (!user) return;
-    
+    if (!user || !trip) return;
+    if (!isAdmin) {
+        toast({
+            title: "Permission Denied",
+            description: "Only trip admins can delete a trip.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    setIsDeleting(true);
     try {
       const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
         method: "DELETE",
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to delete trip")
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete trip");
       }
 
-      router.push(PAGE_ROUTES.TRIPS)
-    } catch (error) {
-      console.error('Error deleting trip:', error)
+      toast({ title: "Trip Deleted", description: `Successfully deleted trip: ${trip.name}` });
+      router.push(PAGE_ROUTES.TRIPS);
+
+    } catch (error: any) {
+      console.error('Error deleting trip:', error);
+      toast({
+          title: "Error Deleting Trip",
+          description: error.message || "An unexpected error occurred.",
+          variant: "destructive",
+      });
+    } finally {
+        setIsDeleting(false);
     }
   }
 
@@ -284,13 +346,17 @@ export default function ManageTripPage(props: PageProps) {
   // Helper function to handle input changes for editedTrip state
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setEditedTrip(prev => ({ ...prev, [name]: value }));
-  };
+    setEditedTrip(prev => ({ ...prev, [name]: value }))
+  }
 
   // Helper function to handle switch changes
   const handleSwitchChange = (checked: boolean, name: keyof Trip) => {
-    setEditedTrip(prev => ({ ...prev, [name]: checked }));
-  };
+    setEditedTrip(prev => ({ ...prev, [name]: checked }))
+  }
+
+  const handlePlaylistUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPlaylistUrl(e.target.value);
+  }
 
   if (authLoading || !user) {
     // Return loading indicator or null while auth state is resolving
@@ -518,47 +584,39 @@ export default function ManageTripPage(props: PageProps) {
                     </CardContent>
                   </Card>
 
-                  {/* Splitwise Integration - Refocused for Inviting Members */}
-                  <Card className="bg-gradient-to-br from-blue-400 to-indigo-500 text-primary-foreground">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Invite from Splitwise</CardTitle>
-                      <CardDescription className="text-blue-100">
-                        {trip?.splitwise_group_id 
-                          ? "Quickly invite members from your linked Splitwise group."
-                          : "Connect to Splitwise to invite members from your groups."
-                        }
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-start gap-3">
-                      {trip?.splitwise_group_id ? (
-                        <>  
-                          <p className="text-sm">Invite members from your linked Splitwise group to this trip.</p>
-                          {/* TODO: Implement Splitwise group selection & member invite flow */}
-                          <Button 
-                            variant="secondary" 
-                            onClick={() => toast({ title: "Coming Soon!", description: "Inviting from Splitwise group feature is under development." })}
-                          >
-                             Invite from Splitwise Group
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm">Connect your Splitwise account first, then link this trip to invite members directly from your existing groups.</p>
-                          <Button asChild variant="secondary">
-                              {/* Link initiates the OAuth flow */}
-                              <a href={API_ROUTES.SPLITWISE_AUTH(tripId)}>Connect to Splitwise</a>
-                              <a href={API_ROUTES.SPLITWISE_AUTH(params.id)}>Connect to Splitwise</a>
-                          </Button>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
                 </div>
               </div>
             </section>
           )}
           
           {isAdmin && <Separator />} 
+
+          {/* Playlist Card - Added */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Playlist</CardTitle>
+              <CardDescription>Embed a Spotify or Tidal playlist for your trip.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="playlistUrl">Playlist URL</Label>
+                <Input
+                  id="playlistUrl"
+                  name="playlistUrl"
+                  type="url"
+                  placeholder="https://open.spotify.com/playlist/... or https://tidal.com/browse/playlist/..."
+                  value={playlistUrl ?? ''}
+                  onChange={handlePlaylistUrlChange}
+                  disabled={!isAdmin || isSaving}
+                />
+              </div>
+              <div className="pt-2">
+                {playlistUrl && (
+                  <PlaylistEmbed url={playlistUrl} width="100%" height={150} />
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Danger Zone */}
           {isAdmin && (

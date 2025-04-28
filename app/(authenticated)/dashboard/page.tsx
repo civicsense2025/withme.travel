@@ -1,7 +1,7 @@
 "use client"
 
-import { useAuth } from "@/components/auth-provider"
-import type { AuthContextType } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
+import type { AuthContextType } from "@/lib/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"

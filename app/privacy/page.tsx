@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from '@/components/page-header'
 
 export const metadata = {
   title: "Privacy Policy | withme.travel",
@@ -9,7 +10,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="container mx-auto px-4 py-12 max-w-3xl">
       <div className="mb-6">
         <Link href="/">
           <Button variant="ghost" size="sm" className="gap-1">
@@ -19,13 +20,12 @@ export default function PrivacyPage() {
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
+      <h1 className="text-5xl leading-loose font-bold mb-6">Privacy Policy</h1>
       <p className="text-muted-foreground mb-6">Last updated: April 22, 2023</p>
 
       <div className="prose dark:prose-invert max-w-none">
         <p>
-          At withme.travel, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose,
-          and safeguard your information when you use our service.
+          At withme.travel, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your information when you use our service.
         </p>
 
         <h2>Information We Collect</h2>

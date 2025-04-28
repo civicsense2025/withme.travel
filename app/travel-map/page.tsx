@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useAuth } from "@/components/auth-provider";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 // Import map components - assuming @vis.gl/react-google-maps is set up
@@ -133,6 +133,9 @@ export default function TravelMapPage() {
                           className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-background px-2 py-1 text-xs shadow-lg border"
                         >
                           {`${destination.city}, ${destination.country}`}
+                          <span className={`ml-1 font-medium ${isVisited ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                           {isVisited ? '(Visited)' : '(Not Visited)'}
+                          </span>
                         </div>
                       )}
                     </div>

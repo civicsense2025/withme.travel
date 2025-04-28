@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { PlusCircle, DollarSign, PieChart, Wallet2, Loader2, LinkIcon, Link2Off, RefreshCw } from "lucide-react"
+import { PlusCircle, DollarSign, PieChart, Wallet2, Loader2, LinkIcon, Link2Off, RefreshCw, Users, ChevronDown, ChevronUp } from "lucide-react"
+import { format, parseISO } from 'date-fns'; // Import date-fns functions
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,11 +22,13 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { formatCurrency, formatDate, formatError } from "@/lib/utils"
-import { BUDGET_CATEGORIES, SPLIT_TYPES, API_ROUTES, DB_TABLES, DB_FIELDS } from "@/utils/constants"
+import { formatCurrency, formatDate, formatError, getInitials } from "@/lib/utils"
+import { BUDGET_CATEGORIES, SPLIT_TYPES, API_ROUTES } from "@/utils/constants"
+import { DB_TABLES, DB_FIELDS } from "@/utils/constants/database"
 import { limitItems } from "@/lib/utils"
-import { type SplitwiseExpense as SplitwiseExpenseFromApi } from "@/components/splitwise-expenses"
 import { useAuth } from "@/lib/hooks/use-auth"
+import { TripMemberFromSSR } from "@/components/members-tab"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 // Define ManualDbExpense type locally (if not imported)
 interface ManualDbExpense {
@@ -44,181 +47,147 @@ interface ManualDbExpense {
 
 // Define a unified expense type for rendering
 interface UnifiedExpense {
-  id: string | number; // Manual uses string UUID, Splitwise uses number
-  title: string; // Use 'title' for manual, 'description' for Splitwise
-  amount: number;
-  currency: string;
-  category: string;
-  date: string; // ISO string format
-  paidBy: string; // Name of the person who paid
-  source: 'manual' | 'splitwise';
+  id: string | number;
+  title: string | null;
+  amount: number | null;
+  currency: string | null;
+  category: string | null;
+  date: string | null;
+  paidBy?: string | null;
+  source: 'manual' | 'planned'; // Added source
 }
 
 interface BudgetTabProps {
   tripId: string
   canEdit?: boolean
   isTripOver?: boolean
-  initialSplitwiseExpenses: SplitwiseExpenseFromApi[]
-  initialManualExpenses: ManualDbExpense[]
-  splitwiseGroupId: number | null
+  manualExpenses: ManualDbExpense[]
+  plannedExpenses: UnifiedExpense[]
+  initialMembers: TripMemberFromSSR[]
 }
 
 export function BudgetTab({ 
   tripId, 
   canEdit = false, 
   isTripOver = false, 
-  initialSplitwiseExpenses,
-  initialManualExpenses, 
-  splitwiseGroupId
+  manualExpenses,
+  plannedExpenses,
+  initialMembers,
 }: BudgetTabProps) {
   const { supabase } = useAuth();
-  const [manualExpenses, setManualExpenses] = useState<ManualDbExpense[]>(initialManualExpenses)
-  const [members, setMembers] = useState<{ id: string; name: string }[]>([])
-  const [totalBudget, setTotalBudget] = useState(0)
-  const { toast } = useToast()
+  const { toast } = useToast();
 
-  const splitwiseExpenses = initialSplitwiseExpenses;
+  const members = initialMembers;
+  const memberCount = members.length > 0 ? members.length : 1;
 
-  const isTripLinked = splitwiseGroupId !== null;
+  // State for expanded items
+  const [expandedItems, setExpandedItems] = useState<Record<string | number, boolean>>({});
 
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
-  const [newExpense, setNewExpense] = useState({
-    title: "",
-    amount: "",
-    category: "",
-    date: new Date().toISOString().split("T")[0],
-    paidById: "",
-  })
-
-  const loading = false;
-
-  useEffect(() => {
-    async function loadMembers() {
-      try {
-        if (!supabase) {
-            console.warn("Supabase client not available in useEffect yet.");
-            return;
-        }
-        const { data, error } = await supabase
-          .from(DB_TABLES.TRIP_MEMBERS)
-          .select(`user_id, profiles!inner(name)`)
-          .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
-
-        if (error) throw error;
-
-        setMembers(
-          data?.map((member: any) => ({
-            id: member.user_id,
-            name: member.profiles?.name || "Unknown User",
-          })) || []
-        );
-        setTotalBudget(5000);
-      } catch (error) {
-        console.error("Failed to load members for budget tab:", error);
-        toast({ title: "Error", description: formatError(error, "Failed to load member names"), variant: "destructive" });
-      }
-    }
-    loadMembers();
-  }, [tripId, toast, supabase]);
-
-  // --- Create Combined Expense List --- 
+  // Restore combinedExpenses calculation (needed for paidByMemberTotals)
   const combinedExpenses = useMemo(() => {
     const mappedManual: UnifiedExpense[] = manualExpenses.map(exp => ({
       id: exp.id,
       title: exp.title,
-      amount: Number(exp.amount), // Ensure amount is number
-      currency: "USD", // Assume USD for manual expenses
+      amount: Number(exp.amount),
+      currency: "USD",
       category: exp.category,
-      date: exp.date, // Assuming date is already ISO string
-      paidBy: members.find(m => m.id === exp.paid_by)?.name || "Unknown",
-      source: 'manual',
+      date: exp.date,
+      paidBy: members.find(m => m.user_id === exp.paid_by)?.profiles?.name || "Unknown", 
+      source: 'manual'
     }));
+    const allExpenses = [...mappedManual, ...plannedExpenses];
+    return allExpenses.sort((a, b) => {
+      if (a.date === null && b.date === null) return 0;
+      if (a.date === null) return 1;
+      if (b.date === null) return -1;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, [manualExpenses, plannedExpenses, members]);
+  
+  // Restore paidByMemberTotals calculation (uses manualExpenses & members)
+   const paidByMemberTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    manualExpenses.forEach(expense => {
+      const paidById = expense.paid_by;
+      totals[paidById] = (totals[paidById] || 0) + Number(expense.amount);
+    });
+    return members.map(member => ({
+      id: member.user_id,
+      name: member.profiles?.name || "Unknown User",
+      totalPaid: totals[member.user_id] || 0,
+    })).sort((a, b) => b.totalPaid - a.totalPaid);
+  }, [manualExpenses, members]);
 
-    const mappedSplitwise: UnifiedExpense[] = splitwiseExpenses.map(exp => ({
+  // Group expenses by date
+  const groupedExpenses = useMemo(() => {
+    const groups: Record<string, UnifiedExpense[]> = {};
+    const nullDateKey = 'unscheduled';
+
+    const mappedManual: UnifiedExpense[] = manualExpenses.map(exp => ({
       id: exp.id,
-      title: exp.description, // Use description field from Splitwise
-      amount: exp.amount,
-      currency: exp.currency,
+      title: exp.title,
+      amount: Number(exp.amount),
+      currency: "USD",
       category: exp.category,
-      date: exp.date, // Assuming date is ISO string
-      paidBy: exp.paidBy, // Use pre-formatted name from Splitwise data
-      source: 'splitwise',
+      date: exp.date, // Keep original date string/null
+      paidBy: members.find(m => m.user_id === exp.paid_by)?.profiles?.name || "Unknown", 
+      source: 'manual'
     }));
 
-    // Combine and sort by date (newest first)
-    return [...mappedManual, ...mappedSplitwise].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [manualExpenses, splitwiseExpenses, members]);
+    const allExpenses = [...mappedManual, ...plannedExpenses];
 
-  // --- Calculate Combined Totals (using combined list length if needed) --- 
-  const manualTotalSpent = manualExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
-  const splitwiseTotalSpent = splitwiseExpenses.reduce((sum, expense) => sum + expense.amount, 0)
-  const totalSpent = manualTotalSpent + splitwiseTotalSpent
-  const remainingBudget = totalBudget - totalSpent
-  const percentSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
-
-  const handleAddExpense = async () => {
-    if (!supabase) return toast({ title: "Error", description: "Client not available", variant: "destructive" });
-
-    try {
-      if (!newExpense.title || !newExpense.amount || !newExpense.category || !newExpense.paidById) {
-        toast({ title: "Missing information", description: "Please fill all fields including Paid By", variant: "destructive" })
-        return
+    allExpenses.forEach(expense => {
+      const dateKey = expense.date ? expense.date.split('T')[0] : nullDateKey; // Use YYYY-MM-DD or nullDateKey
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
       }
+      groups[dateKey].push(expense);
+    });
 
-      const expensePayload = {
-        title: newExpense.title,
-        amount: Number.parseFloat(newExpense.amount),
-        category: newExpense.category,
-        date: newExpense.date,
-        paid_by: newExpense.paidById,
-        currency: "USD",
-        trip_id: tripId,
-      }
-
-      const response = await fetch(`/api/trips/${tripId}/expenses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(expensePayload),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to add expense");
-      }
-
-      const newManualExpense: ManualDbExpense = {
-        id: result.expense?.id || Date.now().toString(),
-        trip_id: tripId,
-        title: expensePayload.title,
-        amount: expensePayload.amount,
-        currency: expensePayload.currency,
-        category: expensePayload.category,
-        paid_by: expensePayload.paid_by,
-        date: expensePayload.date,
-        created_at: new Date().toISOString(),
-        source: 'manual'
-      };
-      setManualExpenses(prev => [newManualExpense, ...prev]);
-      
-      toast({ 
-          title: "Expense Added", 
-          description: `Expense added successfully locally.` 
-      });
-      
-      setNewExpense({ title: "", amount: "", category: "", date: new Date().toISOString().split("T")[0], paidById: "" })
-      setIsAddExpenseOpen(false)
-
-    } catch (error) {
-      console.error("Failed to add expense:", error)
-      toast({ title: "Error", description: formatError(error, "Failed to add expense"), variant: "destructive" })
+    // Sort expenses within each date group (optional, but good practice)
+    for (const dateKey in groups) {
+       groups[dateKey].sort((a, b) => {
+           // Basic sort putting manual before planned if dates match, otherwise keep original logic
+           if (a.date && b.date && a.date === b.date) {
+              return a.source === 'manual' ? -1 : 1;
+           }
+           return 0; // Keep original array order if dates differ or are null
+       });
     }
-  }
 
-  const handleSettleUp = () => {
-    if (!splitwiseGroupId) return;
-    window.open(`https://secure.splitwise.com/#/groups/${splitwiseGroupId}/settle`, "_blank");
+    return groups;
+  }, [manualExpenses, plannedExpenses, members]);
+
+  // Get sorted date keys
+  const sortedDateKeys = useMemo(() => {
+    const nullDateKey = 'unscheduled';
+    const dateKeys = Object.keys(groupedExpenses)
+      .filter(key => key !== nullDateKey) // Exclude unscheduled for now
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime()); // Sort dates chronologically
+    
+    // Add unscheduled key at the end if it exists
+    if (groupedExpenses[nullDateKey]) {
+      dateKeys.push(nullDateKey);
+    }
+    return dateKeys;
+  }, [groupedExpenses]);
+
+  // Calculate totals locally
+  const totalPlanned = useMemo(() => 
+     plannedExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0), 
+     [plannedExpenses]
+  );
+  const totalManualSpent = useMemo(() => 
+     manualExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0), 
+     [manualExpenses]
+  );
+
+  const toggleItemExpansion = (itemId: string | number) => {
+     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
   };
+
+  // Define loading (can be made dynamic later if needed)
+  const loading = false; 
 
   if (loading) {
     return <div className="py-8 text-center">Loading budget...</div>
@@ -229,159 +198,149 @@ export function BudgetTab({
       <Card>
         <CardHeader>
           <CardTitle>Trip Finances</CardTitle>
-          <CardDescription>Keep track of shared costs and see who owes who (integrates with Splitwise!).</CardDescription>
+          <CardDescription>Keep track of trip expenses.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <div className="md:col-span-1 space-y-4 order-2 md:order-1">
-            <h3 className="text-lg font-medium border-b pb-2">Budget Snapshot</h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>Target Budget:</span>
-                <span className="font-medium">{formatCurrency(totalBudget)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span>Total Spent:</span>
-                <span className="font-medium">{formatCurrency(totalSpent)}</span>
-              </div>
-               <div className="flex items-center justify-between text-sm">
-                <span>Remaining:</span>
-                <span className={`font-medium ${remainingBudget < 0 ? "text-destructive" : ""}`}>
-                  {formatCurrency(remainingBudget)}
-                </span>
-              </div>
-              <Progress value={percentSpent} className="h-2" />
-            </div>
-
-            <div className="space-y-2 pt-4 border-t">
-              <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="w-full gap-1">
-                    <PlusCircle className="h-4 w-4" />
-                    Log an Expense
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md mx-auto sm:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Log a New Expense</DialogTitle>
-                    <DialogDescription>
-                      {isTripLinked 
-                         ? "Adding this straight to your linked Splitwise group. Easy peasy!"
-                         : "Adding this manually just for this trip (not synced to Splitwise)."
-                      }
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="title">Title / Description</Label>
-                      <Input id="title" placeholder="Dinner, Souvenirs..." value={newExpense.title} onChange={(e) => setNewExpense({ ...newExpense, title: e.target.value })} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="amount">Amount ($)</Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input id="amount" type="number" min="0" step="0.01" placeholder="0.00" className="pl-8" value={newExpense.amount} onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })} />
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="category">Category</Label>
-                      <Select value={newExpense.category} onValueChange={(value) => setNewExpense({ ...newExpense, category: value })}>
-                        <SelectTrigger id="category"><SelectValue placeholder="Select category" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={BUDGET_CATEGORIES.ACCOMMODATION}>Accommodation</SelectItem>
-                          <SelectItem value={BUDGET_CATEGORIES.TRANSPORTATION}>Transportation</SelectItem>
-                          <SelectItem value={BUDGET_CATEGORIES.FOOD}>Food & Dining</SelectItem>
-                          <SelectItem value={BUDGET_CATEGORIES.ACTIVITIES}>Activities</SelectItem>
-                          <SelectItem value={BUDGET_CATEGORIES.SHOPPING}>Shopping</SelectItem>
-                          <SelectItem value={BUDGET_CATEGORIES.OTHER}>Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="date">Date</Label>
-                      <Input id="date" type="date" value={newExpense.date} onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="paidById">Paid By</Label>
-                      <Select value={newExpense.paidById} onValueChange={(value) => setNewExpense({ ...newExpense, paidById: value })}>
-                        <SelectTrigger><SelectValue placeholder="Select person" /></SelectTrigger>
-                        <SelectContent>
-                          {members.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddExpenseOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAddExpense}>Add Expense</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
-              {isTripLinked && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full gap-1"
-                  disabled={!isTripOver || !splitwiseGroupId}
-                  onClick={handleSettleUp}
-                >
-                  <Wallet2 className="h-4 w-4" />
-                  Settle Up in Splitwise
-                </Button>
-              )}
-            </div>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2 border-b pb-4">
+             <Badge variant="secondary">Total Planned: {formatCurrency(totalPlanned)}</Badge>
+             <Badge variant="secondary">Total Logged: {formatCurrency(totalManualSpent)}</Badge>
           </div>
 
-          {/* --- Column 2: Expense List --- */}
-          <div className="md:col-span-2 order-1 md:order-2 mb-6 md:mb-0">
+          <div> 
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-medium">Expense Log</h3>
-              <Badge variant="outline" className="ml-2">{combinedExpenses.length} expenses</Badge>
+              <Badge variant="outline" className="ml-2">
+                 {Object.values(groupedExpenses).flat().length} items
+              </Badge>
             </div>
-             {combinedExpenses.length > 0 ? (
-               <div className="space-y-2 max-h-[350px] md:max-h-[400px] overflow-y-auto pr-2 border rounded-md p-2 bg-muted/20">
-                 {limitItems(combinedExpenses, 15).items.map((expense: UnifiedExpense) => ( 
-                   <div
-                     key={`${expense.source}-${expense.id}`}
-                     className="flex justify-between items-center p-3 rounded-md border bg-card hover:bg-card/90 transition-colors"
-                   >
-                     <div className="flex-1 pr-2">
-                       <div className="font-medium flex items-center gap-2">
-                         {expense.title} 
-                         {expense.source === 'splitwise' && (
-                            <Badge variant="outline" className="text-xs font-normal">Splitwise</Badge>
-                         )}
-                       </div>
-                       <div className="text-xs text-muted-foreground">
-                         <span>{expense.category}</span>
-                         <span> • </span>
-                         <span>{formatDate(expense.date)}</span>
-                         <span> • </span>
-                         <span>Paid by {expense.paidBy}</span> 
+             {sortedDateKeys.length > 0 ? (
+               <div className="space-y-4 border rounded-md p-3 bg-muted/20">
+                 {sortedDateKeys.map(dateKey => {
+                   const expensesForDate = groupedExpenses[dateKey];
+                   const isUnscheduled = dateKey === 'unscheduled';
+                   let displayDate = 'Unscheduled Expenses';
+                   if (!isUnscheduled) {
+                       try {
+                           displayDate = format(parseISO(dateKey), 'EEEE, MMM d, yyyy'); 
+                       } catch (e) {
+                           displayDate = dateKey; // Fallback if date parsing fails
+                       }
+                   }
+
+                   return (
+                     <div key={dateKey}>
+                       <h4 className="font-semibold text-md mb-2 sticky top-0 bg-muted/90 backdrop-blur-sm py-1 px-2 rounded-sm -mx-2 z-10">
+                           {displayDate}
+                       </h4>
+                       <div className="space-y-2 pl-2 border-l-2 border-dashed ml-1">
+                         {expensesForDate.map((expense: UnifiedExpense) => {
+                           const isExpanded = expandedItems[expense.id] || false;
+                           const costPerPerson = (expense.source === 'planned' && memberCount > 0 && expense.amount) ? expense.amount / memberCount : null;
+                           const payerProfile = expense.source === 'manual' ? members.find(m => m.user_id === manualExpenses.find(me => me.id === expense.id)?.paid_by)?.profiles : null;
+                           
+                           return (
+                             <div
+                               key={`${expense.source}-${expense.id}`}
+                               className="p-3 rounded-md border bg-card hover:bg-card/90 transition-colors cursor-pointer"
+                               onClick={() => toggleItemExpansion(expense.id)}
+                             >
+                               <div className="flex justify-between items-center">
+                                 <div className="flex-1 pr-2">
+                                   <div className="font-medium flex items-center gap-2">
+                                     {expense.title} 
+                                     {expense.source === 'planned' && (
+                                       <Badge variant="outline" className="text-xs font-normal text-blue-600 border-blue-200 bg-blue-50">Planned</Badge>
+                                     )}
+                                   </div>
+                                   <div className="text-xs text-muted-foreground mt-0.5">
+                                     <span>{expense.category || 'Uncategorized'}</span>
+                                     {expense.date && (
+                                        <>
+                                          <span> • </span>
+                                          <span>{formatDate(expense.date)}</span>
+                                        </> 
+                                     )}
+                                     {expense.source === 'manual' && expense.paidBy && (
+                                        <>
+                                          <span> • </span>
+                                          <span>Paid by {expense.paidBy}</span> 
+                                        </> 
+                                     )}
+                                   </div>
+                                 </div>
+                                 <div className="flex items-center gap-2">
+                                    <p className={`font-bold text-right ${expense.source === 'planned' ? 'text-muted-foreground italic' : ''}`}>
+                                      {expense.source === 'planned' 
+                                        ? `${formatCurrency(costPerPerson ?? 0)} (est. pp)` 
+                                        : formatCurrency(expense.amount ?? 0)}
+                                    </p> 
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground">
+                                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </Button>
+                                 </div>
+                               </div>
+                               
+                               {isExpanded && (
+                                  <div className="mt-3 pt-3 border-t border-dashed space-y-2">
+                                     <h4 className="text-sm font-medium text-muted-foreground">Details</h4>
+                                     {expense.source === 'planned' && (
+                                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                         {members.map(member => (
+                                           <div key={member.user_id} className="flex items-center gap-1 text-xs">
+                                              <Avatar className="h-5 w-5">
+                                                <AvatarImage src={member.profiles?.avatar_url ?? undefined} />
+                                                <AvatarFallback className="text-xs">{getInitials(member.profiles?.name)}</AvatarFallback>
+                                              </Avatar>
+                                              <span>{formatCurrency(costPerPerson ?? 0)}</span>
+                                           </div>
+                                         ))}
+                                       </div>
+                                     )}
+                                     {expense.source === 'manual' && payerProfile && (
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <Avatar className="h-5 w-5">
+                                              <AvatarImage src={payerProfile.avatar_url ?? undefined} />
+                                              <AvatarFallback className="text-xs">{getInitials(payerProfile.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <span>Paid {formatCurrency(expense.amount ?? 0)}</span>
+                                        </div>
+                                     )}
+                                  </div>
+                               )}
+                             </div>
+                           );
+                         })}
                        </div>
                      </div>
-                     <p className="font-bold">{formatCurrency(expense.amount)}</p> 
-                   </div>
-                 ))}
-                 {limitItems(combinedExpenses, 15).hasMore && (
-                   <div className="text-center pt-2 text-sm text-muted-foreground">
-                     And {limitItems(combinedExpenses, 15).hiddenCount} more expenses...
-                   </div>
-                 )}
+                   );
+                 })}
                </div>
              ) : (
                <div className="text-center py-8 text-muted-foreground border rounded-md">
                  <DollarSign className="mx-auto h-12 w-12 opacity-20 mb-2" />
-                 <p>No expenses logged yet. Add one above!</p>
+                 <p>No expenses logged or planned yet.</p>
                </div>
              )}
           </div>
-          {/* --- End Column 2 --- */}
+          
+           {/* Restore Paid by Member Card (Optional display) */}
+           {paidByMemberTotals.filter(m => m.totalPaid > 0).length > 0 && (
+              <div className="pt-4 border-t mt-4">
+                 <h3 className="text-lg font-medium mb-2 flex items-center">
+                    <Users className="h-5 w-5 mr-2 text-muted-foreground"/> Paid by Member Summary
+                 </h3>
+                  <ul className="space-y-2 text-sm">
+                    {paidByMemberTotals.filter(m => m.totalPaid > 0).map(member => (
+                      <li key={member.id} className="flex justify-between items-center">
+                        <span>{member.name}</span>
+                        <span className="font-medium">{formatCurrency(member.totalPaid)}</span>
+                      </li>
+                    ))}
+                  </ul>
+               </div>
+            )}
         </CardContent>
       </Card>
-      {/* End of Trip Budget Card */}
     </div>
   )
 }

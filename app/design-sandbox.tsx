@@ -126,7 +126,7 @@ export default function DesignSandbox() {
         
         <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-serif text-6xl font-bold mb-4 tracking-tight">
+            <h1 className="font-serif text-5xl leading-loose font-bold mb-4 tracking-tight">
               Discover new <span className="text-yellow-300">adventures</span>
             </h1>
             <p className="text-xl font-light leading-relaxed mb-8 text-white/90 max-w-2xl">
@@ -251,7 +251,7 @@ export default function DesignSandbox() {
             <div>
               <h3 className="text-xl text-violet-300 mb-4">Headings (Serif)</h3>
               <div className="space-y-4">
-                <h1 className="font-serif text-5xl font-bold">Level 1 Heading</h1>
+                <h1 className="font-serif text-5xl leading-loose font-bold">Level 1 Heading</h1>
                 <h2 className="font-serif text-4xl font-bold">Level 2 Heading</h2>
                 <h3 className="font-serif text-3xl font-bold">Level 3 Heading</h3>
                 <h4 className="font-serif text-2xl font-bold">Level 4 Heading</h4>

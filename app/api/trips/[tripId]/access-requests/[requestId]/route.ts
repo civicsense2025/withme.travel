@@ -1,8 +1,14 @@
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { TRIP_ROLES } from "@/utils/constants"
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database"
 
+/**
+ * Handle updating the status of a trip access request (approve/reject)
+ * 
+ * @param request The incoming request
+ * @param props The route parameters (tripId and requestId)
+ * @returns A JSON response indicating success or error
+ */
 export async function PATCH(request: Request, props: { params: { tripId: string; requestId: string } }) {
   const { tripId, requestId } = props.params;
 
@@ -10,82 +16,89 @@ export async function PATCH(request: Request, props: { params: { tripId: string;
     const supabase = createClient()
     const { status } = await request.json()
 
-    if (!["approved", "denied"].includes(status)) {
+    if (!status || (status !== DB_ENUMS.REQUEST_STATUSES.APPROVED && status !== DB_ENUMS.REQUEST_STATUSES.REJECTED)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 })
     }
 
     // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user is an admin or owner of the trip
-    const { data: member, error: memberError } = await supabase
-      .from("trip_members")
-      .select("role")
-      .eq("trip_id", tripId)
-      .eq("user_id", session.user.id)
+    // Check if user is an admin of this trip
+    const { data: membership, error: membershipError } = await supabase
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .single()
 
-    if (memberError || !member || !["owner", "admin"].includes(member.role)) {
+    if (membershipError || !membership || membership.role !== DB_ENUMS.TRIP_ROLES.ADMIN) {
       return NextResponse.json({ error: "You don't have permission to manage access requests" }, { status: 403 })
     }
 
     // Get the access request
-    const { data: permissionRequest, error: requestError } = await supabase
-      .from("permission_requests")
-      .select("user_id, status")
-      .eq("id", requestId)
-      .eq("trip_id", tripId)
+    const { data: request, error: requestError } = await supabase
+      .from(DB_TABLES.ACCESS_REQUESTS)
+      .select(`${DB_FIELDS.ACCESS_REQUESTS.USER_ID}, ${DB_FIELDS.ACCESS_REQUESTS.STATUS}`)
+      .eq(DB_FIELDS.ACCESS_REQUESTS.ID, requestId)
+      .eq(DB_FIELDS.ACCESS_REQUESTS.TRIP_ID, tripId)
       .single()
 
-    if (requestError || !permissionRequest) {
+    if (requestError || !request) {
       return NextResponse.json({ error: "Access request not found" }, { status: 404 })
     }
 
-    if (permissionRequest.status !== "pending") {
+    if (request.status !== DB_ENUMS.REQUEST_STATUSES.PENDING) {
       return NextResponse.json({ error: "This request has already been processed" }, { status: 400 })
     }
 
-    // Update the request status
+    // Update the access request status
     const { error: updateError } = await supabase
-      .from("permission_requests")
-      .update({
+      .from(DB_TABLES.ACCESS_REQUESTS)
+      .update({ 
         status,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-      .eq("id", requestId)
+      .eq(DB_FIELDS.ACCESS_REQUESTS.ID, requestId)
 
     if (updateError) {
       throw updateError
     }
 
-    // If approved, add or update the user's role in trip_members
-    if (status === "approved") {
-      // Check if user is already a member
-      const { data: existingMember, error: existingError } = await supabase
-        .from("trip_members")
-        .select("id, role")
-        .eq("trip_id", tripId)
-        .eq("user_id", permissionRequest.user_id)
-        .maybeSingle()
-
-      if (existingMember) {
-        // Update role to admin if not already admin (or editor)
-        if (existingMember.role !== TRIP_ROLES.ADMIN && existingMember.role !== TRIP_ROLES.EDITOR) {
-          await supabase.from("trip_members").update({ role: TRIP_ROLES.ADMIN }).eq("id", existingMember.id)
+    // If approved, add user as a trip member
+    if (status === DB_ENUMS.REQUEST_STATUSES.APPROVED) {
+      // Check if member already exists (rare edge case)
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from(DB_TABLES.TRIP_MEMBERS)
+        .select('id')
+        .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+        .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, request.user_id)
+        .maybeSingle();
+        
+      if (memberCheckError) {
+        console.error("Error checking existing membership:", memberCheckError);
+        return NextResponse.json({ error: "Failed to check existing membership" }, { status: 500 });
+      }
+      
+      if (!existingMember) {
+        // Add user as a member
+        const { error: memberError } = await supabase
+          .from(DB_TABLES.TRIP_MEMBERS)
+          .insert({
+            [DB_FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
+            [DB_FIELDS.TRIP_MEMBERS.USER_ID]: request.user_id,
+            [DB_FIELDS.TRIP_MEMBERS.ROLE]: DB_ENUMS.TRIP_ROLES.CONTRIBUTOR,
+            [DB_FIELDS.TRIP_MEMBERS.INVITED_BY]: user.id,
+            [DB_FIELDS.TRIP_MEMBERS.JOINED_AT]: new Date().toISOString()
+          });
+          
+        if (memberError) {
+          console.error("Error adding member:", memberError);
+          return NextResponse.json({ error: "Failed to add member" }, { status: 500 });
         }
-      } else {
-        // Add user as admin
-        await supabase.from("trip_members").insert({
-          trip_id: tripId,
-          user_id: permissionRequest.user_id,
-          role: TRIP_ROLES.ADMIN,
-        })
       }
     }
 

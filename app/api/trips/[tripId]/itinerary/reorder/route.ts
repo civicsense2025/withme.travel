@@ -1,147 +1,120 @@
-import { createClient } from "@/utils/supabase/server";
-import { NextResponse } from "next/server";
-import { TRIP_ROLES, DB_TABLES, DB_FIELDS } from "@/utils/constants";
+import { createClient } from "@/utils/supabase/server"
+import { NextResponse } from "next/server"
+import { TRIP_ROLES, DB_TABLES } from "@/utils/constants"
+import { NextRequest } from "next/server"
 
-// Re-use or import checkTripAccess function from the main itinerary route
+// Helper function to check user membership and role
 async function checkTripAccess(
-    supabase: ReturnType<typeof createClient>,
-    tripId: string,
-    userId: string,
-    allowedRoles: string[]
+  supabase: ReturnType<typeof createClient>,
+  tripId: string,
+  userId: string,
+  allowedRoles: string[] = [
+    TRIP_ROLES.ADMIN,
+    TRIP_ROLES.EDITOR,
+    TRIP_ROLES.CONTRIBUTOR,
+  ]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
-    const { data: member, error } = await supabase
-        .from(DB_TABLES.TRIP_MEMBERS)
-        .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-        .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-        .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
-        .maybeSingle();
+  const { data: member, error } = await supabase
+    .from(DB_TABLES.TRIP_MEMBERS)
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", userId)
+    .maybeSingle();
 
-    if (error) {
-        console.error("Error checking trip membership:", error);
-        return { allowed: false, error: error.message, status: 500 };
-    }
+  if (error) {
+    console.error("Error checking trip membership:", error);
+    return { allowed: false, error: error.message, status: 500 };
+  }
 
-    if (!member) {
-        return {
-            allowed: false,
-            error: "Access Denied: You are not a member of this trip.",
-            status: 403,
-        };
-    }
+  if (!member) {
+    return {
+      allowed: false,
+      error: "Access Denied: You are not a member of this trip.",
+      status: 403,
+    };
+  }
 
-    if (!allowedRoles.includes(member.role)) {
-        return {
-            allowed: false,
-            error: "Access Denied: You do not have sufficient permissions.",
-            status: 403,
-        };
-    }
+  if (!allowedRoles.includes(member.role)) {
+    return {
+      allowed: false,
+      error: "Access Denied: You do not have sufficient permissions.",
+      status: 403,
+    };
+  }
 
-    return { allowed: true };
+  return { allowed: true };
 }
 
-interface ReorderItem {
-    id: string;
-    day_number: number;
-    position: number;
-}
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { tripId: string } }
+) {
+  try {
+    const { tripId } = await params;
+    const body = await request.json();
+    const { itemId, newDayNumber, newPosition } = body;
 
-// Helper function to check user permissions
-async function checkUserPermission(supabase: any, tripId: string, userId: string) {
-  // ... (implementation as before)
-}
-
-// POST /api/trips/[tripId]/itinerary/reorder - Update day and position for multiple items
-export async function POST(request: Request, props: { params: { tripId: string } }) {
-    // Extract tripId properly
-    const { tripId } = props.params;
-
-    if (!tripId) {
-        return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
+    if (!tripId || !itemId || newDayNumber === undefined || newPosition === undefined) {
+      return NextResponse.json(
+        { error: "Missing required parameters" },
+        { status: 400 }
+      );
     }
 
-    try {
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        if (authError || !user) {
-            return NextResponse.json(
-                { error: authError?.message || "Authentication required" },
-                { status: 401 }
-            );
-        }
-
-        // Check if user has permission to edit items (e.g., admin, editor, contributor)
-        const access = await checkTripAccess(supabase, tripId, user.id, [
-            TRIP_ROLES.ADMIN,
-            TRIP_ROLES.EDITOR,
-            TRIP_ROLES.CONTRIBUTOR,
-        ]);
-        if (!access.allowed) {
-            return NextResponse.json({ error: access.error }, { status: access.status });
-        }
-
-        const itemsToUpdate: ReorderItem[] = await request.json();
-
-        if (!Array.isArray(itemsToUpdate) || itemsToUpdate.length === 0) {
-            return NextResponse.json(
-                { error: "Invalid request body: Expected an array of items to reorder." },
-                { status: 400 }
-            );
-        }
-
-        // Prepare updates
-        // Note: Supabase doesn't directly support bulk updates with different values per row via standard API.
-        // We need to perform multiple updates, ideally within a transaction if possible.
-        // If Supabase Edge Functions are available, a single function call could handle this transactionally.
-        // For now, we'll perform individual updates sequentially.
-        
-        const updatePromises = itemsToUpdate.map(item => {
-            if (!item.id || typeof item.day_number !== 'number' || typeof item.position !== 'number') {
-                console.warn("Skipping invalid item in reorder request:", item);
-                return Promise.resolve({ error: `Invalid data for item ${item.id}` }); // Resolve to avoid breaking Promise.all
-            }
-            return supabase
-                .from(DB_TABLES.ITINERARY_ITEMS)
-                .update({
-                    [DB_FIELDS.ITINERARY_ITEMS.DAY_NUMBER]: item.day_number,
-                    [DB_FIELDS.ITINERARY_ITEMS.POSITION]: item.position,
-                    [DB_FIELDS.ITINERARY_ITEMS.UPDATED_AT]: new Date().toISOString(),
-                })
-                .eq(DB_FIELDS.ITINERARY_ITEMS.ID, item.id)
-                .eq(DB_FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId); // Ensure update is scoped to the trip
-        });
-
-        const results = await Promise.allSettled(updatePromises);
-
-        const errors = results
-            .filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value?.error))
-            .map(result => {
-                 if (result.status === 'rejected') return result.reason;
-                 if (result.status === 'fulfilled' && result.value?.error) return result.value.error;
-                 return 'Unknown error';
-            });
-
-        if (errors.length > 0) {
-            console.error("Errors occurred during itinerary reorder:", errors);
-            // Return a partial success or failure based on requirements
-            // For simplicity, returning a general error if any update failed.
-            return NextResponse.json(
-                { error: "Failed to update some itinerary items.", details: errors },
-                { status: 500 }
-            );
-        }
-
-        return NextResponse.json({ message: "Itinerary reordered successfully." }, { status: 200 });
-
-    } catch (error: any) {
-        console.error("Unexpected error reordering itinerary items:", error);
-        if (error instanceof SyntaxError) {
-            return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-        }
-        return NextResponse.json(
-            { error: error.message || "Internal server error" },
-            { status: 500 }
-        );
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
     }
-} 
+
+    // Check user's access to the trip
+    const accessCheck = await checkTripAccess(supabase, tripId, user.id);
+    if (!accessCheck.allowed) {
+      return NextResponse.json(
+        { error: accessCheck.error },
+        { status: accessCheck.status || 403 }
+      );
+    }
+
+    // LOGGING ADDED HERE
+    console.log(`[API /reorder] Received request for trip ${tripId}:`, body);
+    console.log(`[API /reorder] Calling RPC with:`, {
+      p_item_id: itemId,
+      p_trip_id: tripId,
+      p_day_number: newDayNumber,
+      p_position: newPosition,
+    });
+
+    // Call the updated RPC function
+    // It handles section_id lookup and reordering internally
+    const { error: rpcError } = await supabase.rpc('update_itinerary_item_position', {
+      p_item_id: itemId,
+      p_trip_id: tripId,
+      p_day_number: newDayNumber, // Can be null for unscheduled
+      p_position: newPosition
+      // No need to pass p_section_id anymore
+    });
+
+    // Handle RPC error
+    if (rpcError) {
+      console.error("Error calling update_itinerary_item_position RPC:", rpcError);
+      return NextResponse.json(
+        { error: "Failed to update item position: " + rpcError.message },
+        { status: 500 }
+      );
+    }
+
+    // If RPC succeeded, return success
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error in reorder handler:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

@@ -3,12 +3,12 @@
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle, Globe2, Copy, AlertTriangle } from "lucide-react"
+import { CheckCircle, Globe2, Copy, AlertTriangle, Frown, PartyPopper } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Icons } from "@/components/icons"
 import { Container } from "@/components/container"
@@ -102,8 +102,8 @@ function TripSuccessPageContent() {
       <Container className="flex min-h-screen items-center justify-center">
         <Card className="w-full max-w-lg p-6">
           <div className="flex flex-col items-center space-y-4">
-            <Icons.warning className="h-12 w-12 text-destructive" />
-            <h1 className="text-2xl font-bold">Oops!</h1>
+            <Frown className="h-16 w-16 text-destructive mb-4" />
+            <h1 className="text-5xl leading-loose font-bold">Oops!</h1>
             <p className="text-center text-muted-foreground">
               We couldn't find your trip. Please try creating a new one.
             </p>
@@ -126,7 +126,7 @@ function TripSuccessPageContent() {
               <Icons.check className="h-8 w-8 text-primary" />
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-bold">Trip Created Successfully!</h1>
+              <h1 className="text-5xl leading-loose font-bold">Trip Created Successfully!</h1>
               <p className="mt-2 text-muted-foreground">
                 Your trip "{trip.title}" has been created. You can now start planning your adventure!
               </p>
@@ -150,8 +150,8 @@ function TripSuccessPageContent() {
      <Container className="flex min-h-screen items-center justify-center">
         <Card className="w-full max-w-lg p-6">
           <div className="flex flex-col items-center space-y-4">
-            <Icons.warning className="h-12 w-12 text-destructive" />
-            <h1 className="text-2xl font-bold">Oops!</h1>
+            <Frown className="h-16 w-16 text-destructive mb-4" />
+            <h1 className="text-5xl leading-loose font-bold">Oops!</h1>
             <p className="text-center text-muted-foreground">
               We couldn't find your trip. Please try creating a new one.
             </p>

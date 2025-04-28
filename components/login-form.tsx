@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, LogIn } from "lucide-react"
@@ -11,41 +11,99 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createClient } from "@/utils/supabase/client"
+import { createClient, resetClient } from "@/utils/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { fadeIn, slideUp, staggerContainer } from "@/utils/animation"
 
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get("redirect") || "/"
-  
-  // Properly decode the redirect path
-  let decodedRedirectPath = redirectPath;
-  try {
-    if (redirectPath.includes('%')) {
-      // Only decode once to avoid issues with double-encoding
-      decodedRedirectPath = decodeURIComponent(redirectPath);
-      console.log("Decoded redirect path:", decodedRedirectPath);
-    }
-    
-    // Ensure it starts with a slash if it's a relative path
-    if (!decodedRedirectPath.startsWith('/') && !decodedRedirectPath.startsWith('http')) {
-      decodedRedirectPath = '/' + decodedRedirectPath;
-    }
-  } catch (e) {
-    console.error("Error decoding redirect path:", e);
-    // If decoding fails, use as-is
-    decodedRedirectPath = redirectPath;
-  }
+  const urlError = searchParams.get("error")
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const { signIn, isLoading, error: authError, user } = useAuth()
+  const [inlineError, setInlineError] = useState<string | null>(null)
+  
+  // Handle decoded redirect path
+  const [decodedRedirectPath, setDecodedRedirectPath] = useState("/")
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
-  const supabase = createClient()
+  const supabase = createClient()!
+  
+  // Handle URL error parameter when component mounts
+  useEffect(() => {
+    if (urlError) {
+      console.error("[LoginForm] URL error parameter:", urlError);
+      let errorMessage = 'Authentication error';
+      
+      // Handle known error codes from callback
+      if (urlError === 'pkce_failed') {
+        errorMessage = 'authentication process interrupted, please try again';
+      } else if (urlError === 'invalid_redirect') {
+        errorMessage = 'invalid redirect url, please try again';
+      } else if (urlError === 'email_not_confirmed') {
+        errorMessage = 'please confirm your email before signing in';
+      } else if (urlError.includes('invalid_login')) {
+        errorMessage = 'invalid email or password';
+      } else {
+        // Try to make the error more user-friendly
+        errorMessage = urlError.replace(/_/g, ' ').toLowerCase();
+      }
+      
+      setInlineError(errorMessage);
+      toast({
+        title: 'login failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      
+      // Remove the error from URL to prevent showing it again on refresh
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete('error');
+      
+      // Replace the URL without the error param, but keep other params
+      const newPath = window.location.pathname + 
+        (newParams.toString() ? `?${newParams.toString()}` : '');
+      
+      router.replace(newPath);
+    }
+  }, [urlError, toast, router, searchParams]);
+  
+  // Decode redirect path once when component mounts or redirectPath changes
+  useEffect(() => {
+    try {
+      let decoded = redirectPath;
+      if (redirectPath.includes('%')) {
+        // Only decode once to avoid issues with double-encoding
+        decoded = decodeURIComponent(redirectPath);
+        console.log("Decoded redirect path:", decoded);
+      }
+      
+      // Ensure it starts with a slash if it's a relative path
+      if (!decoded.startsWith('/') && !decoded.startsWith('http')) {
+        decoded = '/' + decoded;
+      }
+      
+      setDecodedRedirectPath(decoded);
+    } catch (e) {
+      console.error("Error decoding redirect path:", e);
+      setDecodedRedirectPath(redirectPath);
+    }
+  }, [redirectPath]);
+  
+  // Handle successful authentication and redirect
+  useEffect(() => {
+    console.log("[LoginForm] Auth state updated - User:", !!user, "isLoading:", isLoading);
+    
+    if (user) {
+      console.log("[LoginForm] User authenticated, redirecting to:", decodedRedirectPath);
+      router.push(decodedRedirectPath);
+    }
+  }, [user, decodedRedirectPath, router, isLoading]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -54,66 +112,39 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
+    setInlineError(null);
     try {
-      console.log("Submitting login form...");
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, password: formData.password })
-      });
-      
-      console.log("Login API response status:", res.status);
-      const data = await res.json();
-      console.log("Login API response data:", JSON.stringify(data).substring(0, 100) + "...");
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Error logging in');
-      }
-
-      // Store user data in localStorage to help with auth state persistence
-      if (data.user && data.session) {
-        console.log("Storing auth data in localStorage");
-        
-        // Store the complete session details in exactly the format Supabase expects
-        const storageData = {
-          currentSession: {
-            ...data.session,
-            user: data.user  // Ensure the user is included in the session
-          },
-          expiresAt: Math.floor(Date.now() / 1000) + 3600
-        };
-        
+      console.log("[LoginForm] Submitting login form with email:", formData.email);
+      // Reset Supabase client if there was a previous error to ensure a clean session
+      if (authError && authError.message && authError.message.includes('timed out')) {
         try {
-          localStorage.setItem('supabase.auth.token', JSON.stringify(storageData));
-          console.log("Auth data stored successfully");
-        } catch (err) {
-          console.error("Error storing auth data:", err);
+          console.log("[LoginForm] Resetting Supabase client due to previous timeout");
+          await resetClient();
+        } catch (e) {
+          console.warn("[LoginForm] Failed to reset client", e);
         }
-        
-        // Add a slight delay to ensure localStorage is updated before redirect
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        console.log("Auth data stored, redirecting to:", decodedRedirectPath);
-      } else {
-        console.warn("Login succeeded but no user/session data received");
       }
-
-      // Show success message
+      
+      await signIn(formData.email, formData.password);
+      console.log("[LoginForm] Sign-in successful");
+      
       toast({
         title: 'welcome back!',
         description: 'successfully logged in',
         variant: 'default',
       });
-
-      // Instead of using window.location, let's just reload the current page first to ensure auth state is properly loaded
-      window.location.reload();
-      
-      // Then set a flag in sessionStorage to redirect after reload
-      // Store the properly decoded path for the redirect
-      sessionStorage.setItem('auth_redirect', decodedRedirectPath);
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('[LoginForm] Login error:', error);
+      
+      // Try to extract more information about the error
+      const errorDetails = {
+        message: error.message || 'Unknown error',
+        code: error.code || 'no_code',
+        status: error.status || 'no_status',
+        stack: error.stack || 'no_stack'
+      };
+      console.error('[LoginForm] Error details:', errorDetails);
+      
       let errorMessage = 'please check your credentials and try again';
       if (error.message) {
         if (error.message.includes('Invalid login credentials')) {
@@ -126,19 +157,27 @@ export function LoginForm() {
           errorMessage = error.message.toLowerCase();
         }
       }
+      setInlineError(errorMessage);
       toast({
         title: 'login failed',
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
-      setIsLoading(true)
+      // Clear any existing auth session storage to prevent PKCE conflicts
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('supabase-auth-token');
+          sessionStorage.removeItem('supabase-auth-token');
+          console.log("[LoginForm] Cleared previous auth tokens before Google sign-in");
+        } catch (e) {
+          console.warn("[LoginForm] Failed to clear tokens", e);
+        }
+      }
       
       // Build the OAuth callback URL with the redirect path
       const callbackUrl = new URL('/auth/callback', window.location.origin);
@@ -148,25 +187,83 @@ export function LoginForm() {
         callbackUrl.searchParams.set('redirect', redirectPath);
       }
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Add timestamp to prevent caching issues with PKCE
+      callbackUrl.searchParams.set('_t', Date.now().toString());
+      
+      console.log("[LoginForm] Google sign-in callback URL:", callbackUrl.toString());
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: callbackUrl.toString(),
+          skipBrowserRedirect: false,
         },
-      })
+      });
 
       if (error) {
-        throw error
+        console.error("[LoginForm] Google sign-in error:", error);
+        throw error;
       }
+      
+      if (!data?.url) {
+        console.error("[LoginForm] No OAuth URL returned");
+        throw new Error("No OAuth URL returned");
+      }
+      
+      console.log("[LoginForm] Google sign-in initiated successfully, redirecting to:", data.url);
+      
+      // The auth library will handle the redirect automatically
     } catch (error: any) {
+      console.error("[LoginForm] Google sign-in exception:", error);
       toast({
         title: "google sign-in failed",
         description: error.message || "please try again later",
         variant: "destructive",
-      })
-      setIsLoading(false)
+      });
     }
   }
+
+  // Debug information
+  useEffect(() => {
+    if (authError) {
+      console.error("[LoginForm] Auth error from context:", authError);
+      
+      // Extract error message from authError object
+      let errorMessage = '';
+      if (typeof authError === 'string') {
+        errorMessage = authError;
+      } else if (authError?.message) {
+        errorMessage = authError.message;
+        
+        // Handle specific error cases
+        if (errorMessage.includes('timed out')) {
+          errorMessage = 'Authentication is taking longer than expected. Please try again.';
+        } else if (errorMessage.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (errorMessage.includes('Email not confirmed')) {
+          errorMessage = 'Please confirm your email address before logging in.';
+        }
+      } else {
+        errorMessage = 'An unknown error occurred during authentication.';
+      }
+      
+      // Set error message for display
+      setInlineError(errorMessage);
+      
+      // Show toast notification for auth errors
+      toast({
+        title: 'authentication error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    }
+    
+    if (urlError) {
+      console.error("[LoginForm] URL error parameter:", urlError);
+      // Set URL error message for display
+      setInlineError(urlError);
+    }
+  }, [authError, urlError, toast]);
 
   return (
     <motion.div 
@@ -265,7 +362,18 @@ export function LoginForm() {
             )}
           </Button>
         </motion.div>
+        {(urlError || inlineError || authError) && (
+          <motion.div
+            variants={fadeIn}
+            className="text-destructive text-sm mt-2 text-center"
+            role="alert"
+            aria-live="polite"
+          >
+            {urlError || inlineError || (typeof authError === 'string' ? authError : authError?.message)}
+          </motion.div>
+        )}
       </motion.form>
     </motion.div>
   )
 }
+

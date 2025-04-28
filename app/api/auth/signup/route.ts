@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server"
-import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database'
+import { Profile } from '@/types/database.types'
 
 export async function POST(request: Request) {
   let requestBody;
@@ -51,21 +53,16 @@ export async function POST(request: Request) {
     }
     
     // Check if user object exists, sign up might require email confirmation
-    if (!data.user) {
-         console.error("Supabase Sign Up: No user object returned, email confirmation might be required.");
-         // Inform the user that confirmation is needed
-         return NextResponse.json({ success: true, message: "Account created. Please check your email to confirm your account." }, { status: 201 }); // 201 Created
-    }
+    if (data.user) {
+      // If sign up doesn't require confirmation or it's disabled, user is created.
+      // Create a corresponding profile entry in the 'profiles' table.
+      const newUserId = data.user.id;
+      const newUserEmail = data.user.email;
+      const profileName = username || newUserEmail?.split('@')[0] || 'New User'; // Use provided username or default
 
-    // If sign up doesn't require confirmation or it's disabled, user is created.
-    // Create a corresponding profile entry in the 'profiles' table.
-    const newUserId = data.user.id;
-    const newUserEmail = data.user.email;
-    const profileName = username || newUserEmail?.split('@')[0] || 'New User'; // Use provided username or default
-
-    const { error: profileError } = await supabase
-      .from('profiles') // Use DB_TABLES.PROFILES constant if available, otherwise string
-      .insert({ 
+      const { error: profileError } = await supabase
+        .from(DB_TABLES.PROFILES)
+        .insert({ 
           id: newUserId, // Link profile to the auth user ID
           email: newUserEmail, 
           name: profileName, 
@@ -76,14 +73,15 @@ export async function POST(request: Request) {
           // location: null,
           // website: null,
           // referred_by: requestBody.referralCode || null, // If you pass referral code in signup
-      });
+        });
 
-    if (profileError) {
-      console.error(`Failed to create user profile (${newUserId}) after signup:`, profileError.message);
-      // Decide how to handle this: Log it, but let signup succeed as the auth user exists.
-      // Returning success here, but you might want more robust error handling/cleanup.
-    } else {
-      console.log(`Successfully created profile for user: ${newUserId}`);
+      if (profileError) {
+        console.error(`Failed to create user profile (${newUserId}) after signup:`, profileError.message);
+        // Decide how to handle this: Log it, but let signup succeed as the auth user exists.
+        // Returning success here, but you might want more robust error handling/cleanup.
+      } else {
+        console.log(`Successfully created profile for user: ${newUserId}`);
+      }
     }
 
     // Sign up successful (user created, profile attempt made)

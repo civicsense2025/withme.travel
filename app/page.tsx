@@ -1,9 +1,7 @@
 "use client"
-import { Analytics } from "@vercel/analytics/react"
 import { TrendingDestinations } from "@/components/trending-destinations"
 import { HeroSection } from "@/components/hero-section"
-import { useAuth } from "@/components/auth-provider"
-import type { AuthContextType } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -14,7 +12,7 @@ import {
 } from "lucide-react"
 
 export default function Home() {
-  const { user, isLoading: authLoading } = useAuth() as AuthContextType
+  const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -43,7 +41,7 @@ export default function Home() {
               <Link href="/destinations">view all destinations</Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div>
             <TrendingDestinations />
           </div>
         </div>
@@ -52,7 +50,7 @@ export default function Home() {
       {/* Features Section - Increased padding and changed layout */}
       <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
+          <h2 className="text-4xl md:text-5xl md:leading-loose font-extrabold mb-4">
             plan together, <span className="text-travel-purple dark:text-travel-purple">travel better</span>
           </h2>
           <p className="text-lg mb-20 max-w-2xl mx-auto">
@@ -119,7 +117,7 @@ export default function Home() {
       {/* CTA Section - Increased padding */}
       <section className="py-24 bg-travel-purple/10">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
+          <h2 className="text-4xl md:text-5xl md:leading-loose font-extrabold mb-4">
             ready to start planning?
           </h2>
           <p className="text-lg mb-10 max-w-2xl mx-auto">

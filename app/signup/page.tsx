@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, UserPlus, RefreshCw } from "lucide-react"
+import { Eye, EyeOff, UserPlus, RefreshCw, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -214,9 +214,13 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-1 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-0">
-      <div className="w-full max-w-lg">
-        <Card className="border-0 shadow-lg mb-8">
+    <div className="flex min-h-screen items-center justify-center bg-background py-12 px-4 sm:px-0">
+      <div className="w-full max-w-md flex flex-col">
+        <div className="md:hidden mb-6">
+           <AuthSellingPoints />
+        </div>
+        
+        <Card className="border border-border/10 dark:border-border/10 shadow-xl dark:shadow-2xl dark:shadow-black/20">
         <CardHeader className="space-y-3">
           <CardTitle className="text-2xl font-bold text-center">create an account</CardTitle>
           <CardDescription className="text-center">
@@ -232,7 +236,7 @@ export default function SignupPage() {
 
         {success ? (
           <CardContent className="space-y-4">
-            <Alert>
+            <Alert className="border-border/20 dark:border-border/10">
               <AlertDescription>
                 <p className="font-medium">account created successfully!</p>
                 <p className="mt-2">
@@ -242,128 +246,126 @@ export default function SignupPage() {
               </AlertDescription>
             </Alert>
             <div className="flex flex-col space-y-2 mt-4">
-              <Button asChild>
+              <Button asChild className="bg-primary/90 hover:bg-primary">
                 <Link href="/login">go to login</Link>
               </Button>
-              <Button variant="outline" asChild>
-                <Link href="/">back to home</Link>
+              <Button variant="outline" onClick={() => window.location.reload()} className="border-border/20 dark:border-border/10 hover:bg-muted/50">
+                <RefreshCw className="mr-2 h-4 w-4"/>
+                Resend Verification Email (Refresh)
               </Button>
             </div>
           </CardContent>
         ) : (
-          <>
-            <CardContent className="space-y-4">
-              {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full flex items-center gap-2 h-10"
-                onClick={handleGoogleSignIn}
-                disabled={isGoogleLoading}
-              >
-                {isGoogleLoading ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                    <g transform="matrix(1, 0, 0, 1, 0, 0)">
-                      <path
-                        d="M21.35,11.1H12v3.73h5.41c-0.5,2.43-2.73,4.17-5.41,4.17c-3.3,0-6-2.7-6-6s2.7-6,6-6c1.56,0,2.98,0.6,4.07,1.58L20.07,5c-1.97-1.84-4.58-2.96-7.43-2.96c-5.52,0-10,4.48-10,10s4.48,10,10,10c5.67,0,9.4-4.01,9.4-9.65c0-0.58-0.05-1.15-0.15-1.71C21.8,11.58,21.35,11.1,21.35,11.1z"
-                        fill="#4285F4"
-                      ></path>
-                    </g>
-                  </svg>
-                )}
-                {isGoogleLoading ? "Signing in..." : "Sign up with Google"}
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                </div>
+          <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive" className="border-destructive/20 dark:border-destructive/10 bg-destructive/5">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="your name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="bg-background/50"
+                />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="bg-background/50"
+                />
+              </div>
+              <div className="space-y-2 relative">
+                <Label htmlFor="password">password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={6}
+                  className="pr-10 bg-background/50"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute bottom-1 right-1 h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1} // Prevent tabbing to this button
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </Button>
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-primary/90 hover:bg-primary"
+                disabled={isLoading}
+              >
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> please wait...</> : 'create account'}
+              </Button>
+            </form>
 
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">first name</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      placeholder="your name"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="hello@example.com"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      readOnly={Boolean(invitationToken && formData.email !== "")}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">create password</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        required
-                        minLength={6}
-                        value={formData.password}
-                        onChange={handleChange}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">at least 6 characters</p>
-                  </div>
-                  <Button type="submit" className="w-full gap-1" disabled={isLoading}>
-                    {isLoading ? (
-                      "creating account..."
-                    ) : (
-                      <>
-                        <UserPlus className="h-4 w-4" />
-                        create account
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-            <CardFooter>
-              <p className="text-center text-sm text-muted-foreground w-full">
-                already have an account?{" "}
-                <Link href="/login" className="text-primary hover:underline">
-                  sign in
-                </Link>
-              </p>
-            </CardFooter>
-          </>
+            {/* Separator */}
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/20 dark:border-border/10"></span>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Sign-in */}
+            <Button 
+              variant="outline" 
+              className="w-full border-border/20 dark:border-border/10 hover:bg-muted/50" 
+              onClick={handleGoogleSignIn} 
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                  <path fill="currentColor" d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.8 109.8 11.8 244 11.8c70.3 0 129.8 27.7 174.2 71.8l-64.5 62.3C314.5 118.4 282.8 103 244 103c-66.8 0-121.4 54.6-121.4 121.8s54.6 121.8 121.4 121.8c76.3 0 98.8-48.2 103-74.6H244v-81h244.5c2.5 13.7 4.5 29.1 4.5 46.8z"></path>
+                </svg>
+              )}
+              sign up with google
+            </Button>
+          </CardContent>
         )}
-      </Card>
+
+        <CardFooter className="flex justify-center">
+          <p className="text-center text-sm text-muted-foreground">
+            already have an account?{" "}
+            <Link 
+              href={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"}
+              className="text-primary hover:underline font-medium"
+            >
+              sign in
+            </Link>
+          </p>
+        </CardFooter>
+        </Card>
         
-        {/* Add selling points */}
-        <AuthSellingPoints />
+        <div className="hidden md:block mt-8">
+          <AuthSellingPoints />
+        </div>
       </div>
     </div>
   )

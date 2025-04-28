@@ -1,7 +1,14 @@
 import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database"
 
+/**
+ * Handle a user's request to access a trip
+ * 
+ * @param request The incoming request containing the message
+ * @param props The route parameters (tripId)
+ * @returns A JSON response indicating success or error
+ */
 export async function POST(request: Request, props: { params: { tripId: string } }) {
   const { tripId } = props.params;
 
@@ -12,43 +19,55 @@ export async function POST(request: Request, props: { params: { tripId: string }
     const { message } = await request.json()
 
     // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userId = session.user.id
-
     // Check if trip exists
-    const { data: trip, error: tripError } = await supabase.from("trips").select("id").eq("id", tripId).single()
+    const { data: trip, error: tripError } = await supabase
+      .from(DB_TABLES.TRIPS)
+      .select(DB_FIELDS.TRIPS.ID)
+      .eq(DB_FIELDS.TRIPS.ID, tripId)
+      .single()
 
     if (tripError || !trip) {
       return NextResponse.json({ error: "Trip not found" }, { status: 404 })
     }
 
+    // Check if user is already a member
+    const { data: existingMember } = await supabase
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select("id")
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .maybeSingle()
+
+    if (existingMember) {
+      return NextResponse.json({ error: "You are already a member of this trip" }, { status: 400 })
+    }
+
     // Check if user already has a pending request
-    const { data: existingRequest, error: requestError } = await supabase
-      .from("permission_requests")
-      .select("id, status")
-      .eq("trip_id", tripId)
-      .eq("user_id", userId)
+    const { data: existingRequest } = await supabase
+      .from(DB_TABLES.ACCESS_REQUESTS)
+      .select(`id, ${DB_FIELDS.ACCESS_REQUESTS.STATUS}`)
+      .eq(DB_FIELDS.ACCESS_REQUESTS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.ACCESS_REQUESTS.USER_ID, user.id)
       .maybeSingle()
 
     if (existingRequest) {
-      if (existingRequest.status === "pending") {
-        return NextResponse.json({ error: "You already have a pending request" }, { status: 400 })
-      } else if (existingRequest.status === "approved") {
-        return NextResponse.json({ error: "You already have access to this trip" }, { status: 400 })
+      if (existingRequest.status === DB_ENUMS.REQUEST_STATUSES.PENDING) {
+        return NextResponse.json({ error: "You already have a pending request for this trip" }, { status: 400 })
+      } else if (existingRequest.status === DB_ENUMS.REQUEST_STATUSES.REJECTED) {
+        return NextResponse.json({ error: "Your previous request was rejected" }, { status: 400 })
       } else {
         // If denied, allow to request again by updating the existing request
         const { error: updateError } = await supabase
-          .from("permission_requests")
+          .from(DB_TABLES.ACCESS_REQUESTS)
           .update({
-            status: "pending",
-            message,
+            [DB_FIELDS.ACCESS_REQUESTS.STATUS]: DB_ENUMS.REQUEST_STATUSES.PENDING,
+            [DB_FIELDS.ACCESS_REQUESTS.MESSAGE]: message || "",
             updated_at: new Date().toISOString(),
           })
           .eq("id", existingRequest.id)
@@ -59,10 +78,11 @@ export async function POST(request: Request, props: { params: { tripId: string }
       }
     } else {
       // Create new request
-      const { error: insertError } = await supabase.from("permission_requests").insert({
-        trip_id: tripId,
-        user_id: userId,
-        message,
+      const { error: insertError } = await supabase.from(DB_TABLES.ACCESS_REQUESTS).insert({
+        [DB_FIELDS.ACCESS_REQUESTS.TRIP_ID]: tripId,
+        [DB_FIELDS.ACCESS_REQUESTS.USER_ID]: user.id,
+        [DB_FIELDS.ACCESS_REQUESTS.MESSAGE]: message || "",
+        [DB_FIELDS.ACCESS_REQUESTS.STATUS]: DB_ENUMS.REQUEST_STATUSES.PENDING
       })
 
       if (insertError) {

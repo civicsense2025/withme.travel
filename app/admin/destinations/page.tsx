@@ -138,9 +138,9 @@ export default function AdminDestinationsPage() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Destinations</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-5xl leading-loose font-bold">Destinations</h1>
         <Button onClick={() => {
           setSelectedDestination(undefined);
           setFormOpen(true);

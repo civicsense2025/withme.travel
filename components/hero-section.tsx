@@ -5,8 +5,9 @@ import { CityBubbles } from "./city-bubbles"
 import { LocationSearch } from "@/components/location-search"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import type { AuthContextType } from "@/components/auth-provider"
+import { motion } from "framer-motion"
 
 export function HeroSection() {
   const [planningType, setPlanningType] = useState("group planning")
@@ -61,10 +62,16 @@ export function HeroSection() {
         <div className="absolute bottom-[10%] right-[20%] w-36 h-36 rounded-full bg-travel-purple/10 animate-pulse-soft"></div>
       </div>
 
-      <h1 className="text-4xl md:text-6xl font-black lowercase flex flex-col animate-fade-in-up mb-4">
-        <span>say goodbye to the chaos of</span>
-        <span className="min-h-[1.2em] text-travel-blue dark:text-travel-blue">{planningType}.</span>
-      </h1>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <h1 className="text-5xl leading-loose font-black lowercase flex flex-col animate-fade-in-up mb-4">
+          <span>say goodbye to the chaos of</span>
+          <span className="min-h-[1.2em] text-travel-blue dark:text-travel-blue">{planningType}.</span>
+        </h1>
+      </motion.div>
 
       <p className="text-xl max-w-2xl mx-auto animate-fade-in-up mb-8" style={{ animationDelay: "0.1s" }}>
         plan your next adventure together, make decisions easily, and create unforgettable memories.

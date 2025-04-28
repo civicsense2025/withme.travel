@@ -1,11 +1,13 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { SearchX } from "lucide-react"
 
 export default function ItineraryNotFound() {
   return (
-    <div className="container py-20 text-center">
-      <h1 className="text-4xl font-bold mb-4">Itinerary Not Found</h1>
-      <p className="text-muted-foreground text-lg mb-8 max-w-md mx-auto">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4">
+      <SearchX className="h-16 w-16 text-muted-foreground mb-4" />
+      <h1 className="text-5xl leading-loose font-bold mb-4">Itinerary Not Found</h1>
+      <p className="text-lg text-muted-foreground mb-6">
         We couldn't find the itinerary template you're looking for. It may have been removed or the URL might be
         incorrect.
       </p>

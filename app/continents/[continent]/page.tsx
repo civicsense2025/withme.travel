@@ -238,11 +238,11 @@ export default function ContinentPage() {
         />
         <div className="absolute inset-0 z-20 flex items-center justify-center">
           <div className="container text-center text-white">
-            <motion.h1 
-              className={`text-5xl md:text-6xl font-bold mb-4 text-${continentData.accentColor}`}
-              initial={{ opacity: 0, y: -20 }}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className={`text-5xl leading-loose md:text-6xl md:leading-loose font-bold mb-4 text-${continentData.accentColor}`}
             >
               {continentData.name}
             </motion.h1>

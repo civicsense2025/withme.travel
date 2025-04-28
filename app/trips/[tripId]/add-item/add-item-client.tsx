@@ -16,11 +16,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn, formatError } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
-import { PlaceSearch } from "@/components/place-search"
+import MapboxGeocoderComponent from "@/components/maps/mapbox-geocoder"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FormControl, FormMessage } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
 import { API_ROUTES, PAGE_ROUTES } from "@/utils/constants"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { FormControl, FormMessage } from "@/components/ui/form" // Assuming FormMessage is used, added import
 
 interface DestinationInfo {
   id: string;
@@ -36,24 +36,36 @@ interface AddItineraryItemClientProps {
   initialDestination: DestinationInfo | null;
 }
 
+interface GeocoderResult {
+  geometry: { coordinates: [number, number]; type: string };
+  place_name: string;
+  text: string;
+  id?: string;
+  properties?: { address?: string };
+  [key: string]: any;
+}
+
 export function AddItineraryItemClient({ tripId, initialDestination }: AddItineraryItemClientProps) {
   const router = useRouter()
   const { toast } = useToast();
   const [date, setDate] = useState<Date>()
-  const [selectedPlace, setSelectedPlace] = useState<any>(initialDestination ? {
-    name: initialDestination.city && initialDestination.country ? `${initialDestination.city}, ${initialDestination.country}` : (initialDestination.city || initialDestination.country || 'Unknown Location'),
-    formatted_address: initialDestination.city && initialDestination.country ? `${initialDestination.city}, ${initialDestination.country}` : (initialDestination.city || initialDestination.country || 'Unknown Address'),
-    place_id: initialDestination.google_place_id,
+  const [selectedPlace, setSelectedPlace] = useState<GeocoderResult | null>(initialDestination ? {
+    text: initialDestination.city || 'Unknown Location',
+    place_name: initialDestination.city && initialDestination.country ? `${initialDestination.city}, ${initialDestination.country}` : (initialDestination.city || initialDestination.country || 'Unknown Address'),
+    id: initialDestination.google_place_id || undefined,
     geometry: {
-      location: {
-        lat: () => initialDestination.latitude,
-        lng: () => initialDestination.longitude,
-      }
+      coordinates: [initialDestination.longitude ?? 0, initialDestination.latitude ?? 0],
+      type: 'Point'
     },
-    types: [],
   } : null);
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Define proximity value explicitly
+  let proximityValue: [number, number] | undefined = undefined;
+  if (initialDestination?.longitude != null && initialDestination?.latitude != null) {
+    proximityValue = [initialDestination.longitude, initialDestination.latitude];
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -72,12 +84,11 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
       estimated_cost: formValues.cost ? parseFloat(formValues.cost as string) : null,
       notes: formValues.notes,
       ...(selectedPlace ? {
-        place_name: selectedPlace.name,
-        address: selectedPlace.formatted_address,
-        google_place_id: selectedPlace.place_id,
-        latitude: selectedPlace.geometry?.location?.lat(),
-        longitude: selectedPlace.geometry?.location?.lng(),
-        category: selectedPlace.types?.[0] || null,
+        place_name: selectedPlace.text,
+        address: selectedPlace.place_name,
+        mapbox_id: selectedPlace.id,
+        latitude: selectedPlace.geometry?.coordinates[1],
+        longitude: selectedPlace.geometry?.coordinates[0],
       } : {}),
     };
 
@@ -100,9 +111,8 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
         variant: "default",
       });
 
-      // Use relative path for navigation within the app
       router.push(`/trips/${tripId}?tab=itinerary`); 
-      router.refresh(); // Refresh server components
+      router.refresh();
       
     } catch (error: any) {
       console.error("Failed to add itinerary item:", error);
@@ -118,14 +128,14 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
     }
   }
 
-  const handlePlaceSelect = (place: any) => {
-    setSelectedPlace(place);
+  const handleGeocoderResult = (result: GeocoderResult) => {
+    console.log("Geocoder Result:", result);
+    setSelectedPlace(result);
   };
 
   return (
     <div className="container py-8">
       <div className="mb-6">
-        {/* Use relative path for Link */}
         <Link href={`/trips/${tripId}?tab=itinerary`}> 
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" />
@@ -205,13 +215,17 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
 
             <div className="space-y-2">
               <Label>Location</Label>
-              {/* Removed initialValue */}
-              <PlaceSearch onPlaceSelect={handlePlaceSelect} /> 
+              <MapboxGeocoderComponent
+                onResult={handleGeocoderResult}
+                options={{
+                   proximity: proximityValue,
+                  // types: 'poi,address,place',
+                } as any}
+              />
               {selectedPlace && (
                 <div className="flex items-center gap-2 mt-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  {/* Display selected place name safely */}
-                  <span>{selectedPlace.name || selectedPlace.formatted_address || 'Selected Location'}</span> 
+                  <span>{selectedPlace.text || selectedPlace.place_name || 'Selected Location'}</span>
                 </div>
               )}
             </div>

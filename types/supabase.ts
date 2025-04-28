@@ -683,39 +683,6 @@ export type Database = {
           },
         ]
       }
-      splitwise_connections: {
-        Row: {
-          access_token: string
-          created_at: string
-          expires_at: string
-          id: number
-          refresh_token: string
-          splitwise_user_id: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          access_token: string
-          created_at?: string
-          expires_at: string
-          id?: number
-          refresh_token: string
-          splitwise_user_id: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          access_token?: string
-          created_at?: string
-          expires_at?: string
-          id?: number
-          refresh_token?: string
-          splitwise_user_id?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       template_activities: {
         Row: {
           category: string | null
@@ -1144,7 +1111,7 @@ export type Database = {
         | "user_avatar"
         | "template_cover"
       invitation_status: "pending" | "accepted" | "declined" | "expired"
-      trip_role: "owner" | "editor" | "viewer" | "contributor"
+      trip_role: "admin" | "editor" | "viewer" | "contributor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1267,7 +1234,7 @@ export const Constants = {
         "template_cover",
       ],
       invitation_status: ["pending", "accepted", "declined", "expired"],
-      trip_role: ["owner", "editor", "viewer", "contributor"],
+      trip_role: ["admin", "editor", "viewer", "contributor"],
     },
   },
 } as const

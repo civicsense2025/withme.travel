@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { TIME_FORMATS, THEME } from "@/utils/constants"
+import { format as formatFns, parseISO } from 'date-fns'
 
 /**
  * Combine multiple class names with clsx and twMerge
@@ -17,22 +18,20 @@ export function cn(...inputs: ClassValue[]) {
  * @returns Formatted date range string
  */
 export function formatDateRange(
-  startDate?: string | Date,
-  endDate?: string | Date,
+  startDate?: string | Date | null,
+  endDate?: string | Date | null,
   format: keyof typeof TIME_FORMATS = "DISPLAY_DATE"
 ): string {
-  if (!startDate && !endDate) return "Dates not set";
+  const startStr = startDate ? formatDate(startDate, format) : null;
+  const endStr = endDate ? formatDate(endDate, format) : null;
   
-  if (startDate && !endDate) {
-    return `From ${formatDate(startDate, format)}`;
+  if (!startStr && !endStr) return "Dates not set";
+  if (startStr && !endStr) return `From ${startStr}`;
+  if (!startStr && endStr) return `Until ${endStr}`;
+  if (startStr && endStr) {
+      return `${startStr} - ${endStr}`;
   }
-  
-  if (!startDate && endDate) {
-    return `Until ${formatDate(endDate, format)}`;
-  }
-  
-  // Both dates present
-  return `${formatDate(startDate, format)} - ${formatDate(endDate, format)}`;
+  return "Invalid date range";
 }
 
 /**
@@ -41,22 +40,33 @@ export function formatDateRange(
  * @param format - Optional format type from TIME_FORMATS
  * @returns Formatted date string
  */
-export function formatDate(date: string | Date | undefined, format: keyof typeof TIME_FORMATS = "DISPLAY_DATE"): string {
+export function formatDate(date: string | Date | undefined | null, formatType: keyof typeof TIME_FORMATS = "DISPLAY_DATE"): string {
   if (!date) return "Unscheduled";
   
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  let dateObj: Date;
+  try {
+     dateObj = typeof date === "string" ? parseISO(date) : date;
+     // Check if the date is valid after parsing/initialization
+     if (isNaN(dateObj.getTime())) {
+        throw new Error("Invalid date provided");
+     }
+  } catch (e) {
+     console.error("Error parsing date in formatDate:", e);
+     return "Invalid Date";
+  }
   
-  switch (format) {
+  // Use date-fns format for more control and reliability
+  switch (formatType) {
     case "DISPLAY_DATE":
-      return dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      return formatFns(dateObj, "MMM d, yyyy");
     case "DISPLAY_TIME":
-      return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      return formatFns(dateObj, "h:mm a");
     case "FULL_DATE":
-      return dateObj.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      return formatFns(dateObj, "EEEE, MMMM d, yyyy");
     case "SHORT_DATE":
-      return dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return formatFns(dateObj, "MMM d");
     default:
-      return dateObj.toLocaleDateString();
+      return formatFns(dateObj, "P"); // Default to locale-aware date format
   }
 }
 
@@ -248,57 +258,55 @@ export function formatError(error: unknown, fallback: string = "An unexpected er
 }
 
 /**
- * Format a date to show relative time (e.g., "5 minutes ago")
- * @param date - The date to format
- * @returns A string representing the relative time
+ * Formats a date relative to the current time.
+ * Example: "2 hours ago", "yesterday", "in 3 days"
+ * 
+ * @param date The date to format (string or Date object)
+ * @returns A string representing the relative time, or the formatted date if error.
  */
 export function formatRelativeTime(date: Date | string): string {
-  const now = new Date();
-  const past = typeof date === 'string' ? new Date(date) : date;
-  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+  try {
+    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(dateObj.getTime())) {
+       throw new Error("Invalid date provided");
+    }
+    
+    const now = new Date();
+    const diffSeconds = (now.getTime() - dateObj.getTime()) / 1000;
+    const diffDays = Math.round(diffSeconds / (60 * 60 * 24));
 
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+    if (diffSeconds < 60) return 'just now';
+    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} minutes ago`;
+    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} hours ago`;
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    
+    // For dates more than a year ago, return formatted date
+    return formatDate(dateObj, "DISPLAY_DATE");
 
-  if (diffInSeconds < 60) {
-    return rtf.format(-diffInSeconds, 'second');
+  } catch (error) {
+    console.error("Error formatting relative time:", error);
+    // Fallback to standard date format if relative calculation fails
+    return formatDate(date, "DISPLAY_DATE"); 
   }
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return rtf.format(-diffInMinutes, 'minute');
-  }
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return rtf.format(-diffInHours, 'hour');
-  }
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) {
-    return rtf.format(-diffInDays, 'day');
-  }
-  const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks < 4) {
-    return rtf.format(-diffInWeeks, 'week');
-  }
-  const diffInMonths = Math.floor(diffInDays / 30); // Approximate
-  if (diffInMonths < 12) {
-    return rtf.format(-diffInMonths, 'month');
-  }
-  const diffInYears = Math.floor(diffInDays / 365); // Approximate
-  return rtf.format(-diffInYears, 'year');
 }
 
 /**
- * Generate initials from a name string
- * @param name The full name string
- * @returns A 1 or 2 character uppercase string of initials
+ * Get initials from a name string.
+ * Handles null/undefined names and multiple words.
+ * 
+ * @param name The name string.
+ * @returns Initials (e.g., "JD") or empty string.
  */
-export function getInitials(name?: string): string {
-  if (!name) return "U"; // Default to 'U' for User if no name
+export function getInitials(name?: string | null): string {
+  if (!name) return "";
   
   return name
-    .split(" ")
+    .split(' ')
     .map((n) => n[0])
-    .filter(Boolean) // Remove empty strings in case of multiple spaces
-    .join("")
-    .toUpperCase()
-    .substring(0, 2);
+    .filter((char, index, arr) => index === 0 || index === arr.length - 1) // Get first and last initial
+    .join('')
+    .toUpperCase();
 } 

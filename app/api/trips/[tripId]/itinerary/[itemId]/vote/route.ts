@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { DB_TABLES, TRIP_ROLES, DB_FIELDS, VOTE_TYPES } from "@/utils/constants";
 
@@ -45,63 +45,84 @@ async function checkTripAccess(
   return { allowed: true };
 }
 
+// Helper to check trip membership (can be extracted to a shared util later)
+async function checkTripMembership(supabase: ReturnType<typeof createClient>, tripId: string, userId: string): Promise<boolean> {
+    const { data, error } = await supabase
+        .from(DB_TABLES.TRIP_MEMBERS)
+        .select('user_id')
+        .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+        .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+        .maybeSingle();
+    
+    if (error) {
+        console.error("Error checking trip membership:", error);
+        return false;
+    }
+    return !!data; // Return true if a membership record exists
+}
+
 export async function POST(
-  request: Request,
-  { params }: { params: { id: string; itemId: string } }
+  request: NextRequest,
+  { params }: { params: { tripId: string; itemId: string } }
 ) {
-  const tripId = params.id;
-  const itemId = params.itemId;
+  const { tripId, itemId } = params;
+  if (!tripId || !itemId) {
+    return NextResponse.json({ error: "Trip ID and Item ID are required" }, { status: 400 });
+  }
+
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = user.id;
+
+  // Check if user is part of the trip
+  const isMember = await checkTripMembership(supabase, tripId, userId);
+  if (!isMember) {
+      return NextResponse.json({ error: "Forbidden: User is not a member of this trip." }, { status: 403 });
+  }
+
+  let voteType: 'up' | 'down';
+  try {
+    const body = await request.json();
+    if (body.voteType !== VOTE_TYPES.UP && body.voteType !== VOTE_TYPES.DOWN) {
+        throw new Error("Invalid vote type");
+    }
+    voteType = body.voteType;
+  } catch (error) {
+    return NextResponse.json({ error: "Invalid request body or vote type" }, { status: 400 });
+  }
 
   try {
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is a member of the trip (any member can vote)
-    const access = await checkTripAccess(supabase, tripId, user.id);
-    if (!access.allowed) {
-      return NextResponse.json({ error: access.error }, { status: access.status });
-    }
-
-    const body = await request.json();
-    const voteType = body.vote_type;
-
-    if (!voteType || (voteType !== VOTE_TYPES.UP && voteType !== VOTE_TYPES.DOWN)) {
-      return NextResponse.json({ error: "Invalid vote_type provided. Must be 'up' or 'down'." }, { status: 400 });
-    }
-
-    // Upsert the vote: Insert or update if exists
-    const { error: voteError } = await supabase
-      .from(DB_TABLES.VOTES)
+    // Upsert the vote: If the user already voted on this item, update the vote. Otherwise, insert a new vote.
+    const { error: upsertError } = await supabase
+      .from(DB_TABLES.ITINERARY_ITEM_VOTES)
       .upsert(
         {
-          [DB_FIELDS.VOTES.USER_ID]: user.id,
-          [DB_FIELDS.VOTES.ITINERARY_ITEM_ID]: itemId,
-          [DB_FIELDS.VOTES.VOTE_TYPE]: voteType,
+          itinerary_item_id: itemId,
+          user_id: userId,
+          vote: voteType, // Use the correct 'vote' column name from schema
+          // created_at is handled by default, updated_at by trigger or default
         },
         {
-          onConflict: `${DB_FIELDS.VOTES.USER_ID},${DB_FIELDS.VOTES.ITINERARY_ITEM_ID}`,
+          onConflict: 'itinerary_item_id, user_id', // Specify conflict target columns
         }
       );
 
-    if (voteError) {
-      console.error("Error recording vote:", voteError);
-      return NextResponse.json({ error: "Failed to record vote." }, { status: 500 });
+    if (upsertError) {
+      console.error("Error upserting vote:", upsertError);
+      throw upsertError;
     }
 
-    // Optionally: Fetch updated vote counts for the item and return them
-    // For simplicity now, just return success
-    return NextResponse.json({ message: "Vote recorded successfully" }, { status: 200 });
+    // Optional: Recalculate and return new vote counts if needed by the client immediately,
+    // otherwise the client can refetch or update optimistically.
+    // For now, just return success.
+    return NextResponse.json({ success: true, message: "Vote recorded" }, { status: 200 });
 
-  } catch (error) {
-    console.error("Error processing vote request:", error);
-     if (error instanceof SyntaxError) {
-        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
-    }
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  } catch (error: any) {
+    console.error("Error processing vote:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 } 

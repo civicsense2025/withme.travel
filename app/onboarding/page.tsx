@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { WelcomeScreen } from "@/components/onboarding/welcome-screen"
 import { BasicInfoScreen } from "@/components/onboarding/basic-info-screen"
 import { TravelPersonalityScreen } from "@/components/onboarding/travel-personality-screen"

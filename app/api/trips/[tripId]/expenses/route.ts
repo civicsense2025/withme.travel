@@ -1,100 +1,48 @@
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { getGroupExpenses } from "@/lib/services/splitwise"
+import { DB_TABLES, DB_FIELDS } from "@/utils/constants"
 
 export async function GET(request: Request, { params }: { params: { tripId: string } }) {
   try {
     const supabase = createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    // Check if user is authenticated
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (authError || !user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
-    // Check if user is a member of this trip
-    const { data: member, error: memberError } = await supabase
-      .from("trip_members")
-      .select()
-      .eq("trip_id", params.tripId)
-      .eq("user_id", user.id)
-      .maybeSingle()
-
-    if (memberError || !member) {
-      return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 })
-    }
-
-    // Get trip data including Splitwise group ID
-    const { data: trip, error: tripError } = await supabase
-      .from("trips")
-      .select("total_budget, splitwise_group_id")
-      .eq("id", params.tripId)
+    // Verify user membership
+    const { data: tripMembership, error: tripError } = await supabase
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select(DB_FIELDS.TRIP_MEMBERS.ROLE) // Only need role
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, params.tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .single()
-
-    if (tripError) {
-      return NextResponse.json({ error: tripError.message }, { status: 500 })
+      
+    if (tripError || !tripMembership) {
+        console.error("Error fetching trip membership or not a member:", tripError)
+        return NextResponse.json({ error: "Access Denied" }, { status: 403 })
     }
 
-    // Get local expenses
-    const { data: localExpenses, error } = await supabase
-      .from("expenses")
+    // Fetch expenses from the 'expenses' table
+    const { data: localExpenses, error: localError } = await supabase
+      .from(DB_TABLES.EXPENSES)
       .select(`
         *,
-        paid_by_user:paid_by(id, name, email, avatar_url)
+        paid_by_user:profiles!expenses_paid_by_fkey(id, name, email, avatar_url)
       `)
-      .eq("trip_id", params.tripId)
+      .eq(DB_FIELDS.TRIPS.ID, params.tripId)
       .order("date", { ascending: false })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (localError) {
+      console.error("Error fetching local expenses:", localError)
+      return NextResponse.json({ error: "Failed to fetch expenses" }, { status: 500 })
     }
+    
+    let allExpenses = localExpenses || [];
 
-    // Initialize expenses array with local expenses
-    let allExpenses = localExpenses || []
-
-    // If trip is linked to Splitwise, fetch and merge Splitwise expenses
-    if (trip.splitwise_group_id) {
-      try {
-        const splitwiseExpenses = await getGroupExpenses(user.id, trip.splitwise_group_id)
-        
-        // Format Splitwise expenses to match our schema
-        const formattedSplitwiseExpenses = splitwiseExpenses.map(expense => ({
-          id: `splitwise_${expense.id}`,
-          description: expense.description,
-          amount: parseFloat(expense.cost),
-          currency: expense.currency_code,
-          date: expense.date,
-          category: expense.category?.name || "Other",
-          paid_by: expense.created_by.id.toString(),
-          paid_by_user: {
-            id: expense.created_by.id.toString(),
-            name: `${expense.created_by.first_name} ${expense.created_by.last_name}`,
-            email: null,
-            avatar_url: null
-          },
-          trip_id: params.tripId,
-          created_at: expense.created_at,
-          updated_at: expense.updated_at,
-          source: "splitwise"
-        }))
-
-        // Merge expenses, with Splitwise expenses first
-        allExpenses = [...formattedSplitwiseExpenses, ...allExpenses]
-      } catch (splitwiseError: any) {
-        // If Splitwise is not connected, just continue with local expenses
-        if (splitwiseError.message === "Splitwise not connected") {
-          console.log("Splitwise not connected for user, continuing with local expenses only")
-        } else {
-          console.error("Error fetching Splitwise expenses:", splitwiseError)
-        }
-      }
-    }
-
-    // Group all expenses by category and sum amounts
+    // Group expenses by category
     const categoryMap = allExpenses.reduce(
       (acc, expense) => {
         const category = expense.category || "Other"
@@ -107,95 +55,84 @@ export async function GET(request: Request, { params }: { params: { tripId: stri
       {} as Record<string, number>,
     )
 
-    // Calculate total spent
-    const totalSpent = (Object.values(categoryMap) as number[]).reduce((sum, amount) => sum + amount, 0)
-    const totalBudget = Number(trip.total_budget) || 0
-    const remaining = totalBudget - totalSpent
-
-    // Format categories
-    const formattedCategories = Object.entries(categoryMap).map(([name, amount]) => ({
-      name,
-      amount,
-      color: getCategoryColor(name),
-    }))
+    const totalSpent = allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
 
     return NextResponse.json({
       expenses: allExpenses,
-      budget: {
-        total: totalBudget,
-        spent: totalSpent,
-        remaining,
-        categories: formattedCategories,
-      },
-      splitwiseConnected: trip.splitwise_group_id != null
+      categoryTotals: categoryMap,
+      totalSpent,
     })
+
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("Error fetching expenses:", error)
+    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
   }
 }
 
 export async function POST(request: Request, { params }: { params: { tripId: string } }) {
-  try {
-    const supabase = createClient()
+    try {
+        const supabase = createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+        if (authError || !user) {
+          return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+        }
+        
+        // Verify user membership
+        const { count, error: permissionError } = await supabase
+            .from(DB_TABLES.TRIP_MEMBERS)
+            .select("*", { count: "exact", head: true })
+            .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, params.tripId)
+            .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id);
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        if (permissionError || count === 0) {
+           console.error("Permission error checking trip membership for expense POST:", permissionError);
+           return NextResponse.json({ error: "Forbidden: Not a member of this trip" }, { status: 403 });
+        }
+        
+        // --- Corrected logic using 'body' --- 
+        const body = await request.json();
+
+        // Basic validation
+        if (!body.title || !body.amount || !body.category || !body.date || !body.paid_by) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+        // --- End Corrected logic --- 
+
+        const expenseData = {
+            trip_id: params.tripId,
+            title: body.title,
+            amount: Number(body.amount),
+            currency: body.currency || "USD",
+            category: body.category,
+            date: body.date,
+            paid_by: body.paid_by,
+        };
+        
+        // Validate amount conversion
+        if (isNaN(expenseData.amount) || expenseData.amount <= 0) {
+           return NextResponse.json({ error: "Invalid amount provided" }, { status: 400 });
+        }
+
+        const { data: newExpense, error } = await supabase
+            .from(DB_TABLES.EXPENSES)
+            .insert(expenseData)
+            .select()
+            .single();
+        
+        if (error) {
+            console.error("Error creating expense:", error);
+            return NextResponse.json({ error: "Failed to create expense" }, { status: 500 });
+        }
+
+        return NextResponse.json({ expense: newExpense });
+
+    } catch (error: any) {
+        console.error("Error adding expense:", error);
+        // Handle JSON parsing errors
+        if (error instanceof SyntaxError) {
+           return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
+        }
+        return NextResponse.json({ error: "An unexpected error occurred while adding the expense." }, { status: 500 });
     }
-
-    // Check if user is a member of this trip
-    const { data: member, error: memberError } = await supabase
-      .from("trip_members")
-      .select()
-      .eq("trip_id", params.tripId)
-      .eq("user_id", session.user.id)
-      .maybeSingle()
-
-    if (memberError || !member) {
-      return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 })
-    }
-
-    // Get expense data from request
-    const expenseData = await request.json()
-
-    // Insert expense into database
-    const { data, error } = await supabase
-      .from("expenses")
-      .insert([
-        {
-          ...expenseData,
-          trip_id: params.tripId,
-        },
-      ])
-      .select(`
-        *,
-        paid_by_user:paid_by(id, name, email, avatar_url)
-      `)
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ expense: data[0] })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
-// Helper function
-function getCategoryColor(category: string): string {
-  const colors: Record<string, string> = {
-    Accommodation: "bg-blue-500",
-    "Food & Dining": "bg-green-500",
-    Activities: "bg-yellow-500",
-    Transportation: "bg-purple-500",
-    Shopping: "bg-pink-500",
-    Other: "bg-gray-500",
-  }
-
-  return colors[category] || colors.Other
 }

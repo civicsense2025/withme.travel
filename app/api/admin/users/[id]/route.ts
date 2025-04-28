@@ -1,92 +1,149 @@
-import { createClient } from "@/utils/supabase/server"
-import { NextResponse } from "next/server"
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+import type { Profile } from '@/types/database.types';
+
+/**
+ * Helper function to check if user is an admin
+ * @param supabaseClient The Supabase client instance
+ * @returns Boolean indicating if the user is an admin
+ */
+async function isAdmin(supabaseClient: SupabaseClient<Database>): Promise<boolean> {
+  try {
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    
+    if (authError || !user) {
+      return false;
+    }
+    
+    const { data: profile, error: profileError } = await supabaseClient
+      .from(DB_TABLES.PROFILES)
+      .select(DB_FIELDS.PROFILES.IS_ADMIN)
+      .eq(DB_FIELDS.PROFILES.ID, user.id)
+      .single();
+    
+    if (profileError || !profile) {
+      console.error('[API Admin Check] Error fetching profile or profile not found:', profileError);
+      return false;
+    }
+    
+    return profile.is_admin === true;
+  } catch (error) {
+    console.error('[API Admin Check] Unexpected error:', error);
+    return false;
+  }
+}
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient()
-  const userId = params.id
+  const supabase = createClient();
+  const userId = params.id;
 
   try {
-    // Check if user is authenticated and is an admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Check if the user is an admin
+    const isUserAdmin = await isAdmin(supabase);
+    if (!isUserAdmin) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Unauthorized: Admin access required' 
+      }, { status: 403 });
     }
 
-    // Check if user is an admin
+    // Fetch the user with all necessary relations
     const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single()
+      .from(DB_TABLES.PROFILES)
+      .select(`
+        id,
+        ${DB_FIELDS.PROFILES.NAME},
+        ${DB_FIELDS.PROFILES.EMAIL},
+        ${DB_FIELDS.PROFILES.AVATAR_URL},
+        ${DB_FIELDS.PROFILES.IS_ADMIN},
+        ${DB_FIELDS.PROFILES.CREATED_AT},
+        ${DB_FIELDS.PROFILES.UPDATED_AT}
+      `)
+      .eq(DB_FIELDS.PROFILES.ID, userId)
+      .single();
 
-    if (userError || !userData?.is_admin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (userError || !userData) {
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch user details',
+        details: userError?.message || 'User not found'
+      }, { status: 404 });
     }
 
     // Get update data from request
-    const updateData = await request.json()
+    const updateData = await request.json();
+    
+    // Update user profile
+    const { data: updatedProfile, error: updateError } = await supabase
+      .from(DB_TABLES.PROFILES)
+      .update(updateData)
+      .eq(DB_FIELDS.PROFILES.ID, userId)
+      .select();
 
-    // Update user
-    const { data, error } = await supabase.from("users").update(updateData).eq("id", userId).select()
-
-    if (error) {
-      throw error
+    if (updateError) {
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to update user',
+        details: updateError.message
+      }, { status: 500 });
     }
 
-    return NextResponse.json({ user: data[0] })
-  } catch (error) {
-    console.error("Error updating user:", error)
-    return NextResponse.json({ error: "Failed to update user" }, { status: 500 })
+    return NextResponse.json({
+      success: true,
+      user: updatedProfile
+    });
+
+  } catch (error: any) {
+    return NextResponse.json({
+      success: false,
+      error: 'An unexpected error occurred',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient()
-  const userId = params.id
+  const supabase = createClient();
+  const userId = params.id;
 
   try {
-    // Check if user is authenticated and is an admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Check if user is an admin
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single()
-
-    if (userError || !userData?.is_admin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    // Check if the user is an admin
+    const isUserAdmin = await isAdmin(supabase);
+    if (!isUserAdmin) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Unauthorized: Admin access required' 
+      }, { status: 403 });
     }
 
     // Delete user's trip memberships
-    await supabase.from("trip_members").delete().eq("user_id", userId)
+    await supabase.from(DB_TABLES.TRIP_MEMBERS).delete().eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId);
 
-    // Delete user's access requests
-    await supabase.from("access_requests").delete().eq("user_id", userId)
+    // Delete user's profile
+    const { error: profileError } = await supabase
+      .from(DB_TABLES.PROFILES)
+      .delete()
+      .eq(DB_FIELDS.PROFILES.ID, userId);
 
-    // Delete user's invitations
-    await supabase.from("invitations").delete().eq("email", userId)
-
-    // Finally delete the user
-    const { error } = await supabase.from("users").delete().eq("id", userId)
-
-    if (error) {
-      throw error
+    if (profileError) {
+      throw profileError;
     }
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error deleting user:", error)
-    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
+    // Auth user will need to be deleted separately through Supabase Auth API
+    // as it requires admin privileges and typically can't be done directly
+
+    return NextResponse.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error: any) {
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to delete user',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }

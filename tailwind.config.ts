@@ -1,14 +1,18 @@
 import type { Config } from "tailwindcss"
+import plugin from "tailwindcss/plugin"
 
 const config = {
-  darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-    "*.{js,ts,jsx,tsx,mdx}",
-  ],
+  darkMode: "class",
+  content: ({
+    files: [
+      "./pages/**/*.{ts,tsx}",
+      "./components/**/*.{ts,tsx}",
+      "./app/**/*.{ts,tsx,css}",
+      "./src/**/*.{ts,tsx}",
+      "*.{js,ts,jsx,tsx,mdx}",
+    ],
+    safelist: ["border-border", "bg-background", "text-foreground"],
+  } as any),
   prefix: "",
   theme: {
     container: {
@@ -155,10 +159,15 @@ const config = {
         "gradient-2": "linear-gradient(to right, #d1f2dd, #e6f7ec)",
         "gradient-3": "linear-gradient(to right, #e6f7ec, #c0edce)",
         "gradient-4": "linear-gradient(to right, #d1f2dd, #e6f7ec)",
+        // Dark mode gradients (black/gray)
+        "dark-gradient-1": "linear-gradient(to right, #000000, #121212)",
+        "dark-gradient-2": "linear-gradient(to bottom, #000000, #121212)",
+        "dark-gradient-3": "linear-gradient(135deg, #000000, #0a0a0a, #181818)",
+        "dark-gradient-4": "linear-gradient(to right, rgba(0,0,0,0.9), rgba(18,18,18,0.9))",
         // Tiptap-inspired gradients
         "tiptap-purple": "linear-gradient(to right, #7c3aed, #8b5cf6)",
         "tiptap-blue": "linear-gradient(to right, #3b82f6, #60a5fa)",
-        "tiptap-dark": "linear-gradient(to right, #1e293b, #334155)",
+        "tiptap-dark": "linear-gradient(to right, #000000, #181818)",
         "tiptap-gradient": "linear-gradient(to right, #7c3aed, #3b82f6)",
         // Gradient for shimmer effect - subtle white/transparent overlay
         "shimmer-gradient": "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
@@ -168,7 +177,23 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    plugin(function({ addUtilities, theme }) {
+      // Create border utilities
+      addUtilities({
+        ".border-border": { borderColor: theme("colors.border") },
+      });
+      
+      // Add dark mode gradient utilities - they'll be accessible with dark: prefix
+      addUtilities({
+        ".bg-dark-gradient-1": { backgroundImage: theme("backgroundImage.dark-gradient-1") },
+        ".bg-dark-gradient-2": { backgroundImage: theme("backgroundImage.dark-gradient-2") },
+        ".bg-dark-gradient-3": { backgroundImage: theme("backgroundImage.dark-gradient-3") },
+        ".bg-dark-gradient-4": { backgroundImage: theme("backgroundImage.dark-gradient-4") },
+      });
+    }),
+    require("tailwindcss-animate")
+  ],
 } satisfies Config
 
 export default config

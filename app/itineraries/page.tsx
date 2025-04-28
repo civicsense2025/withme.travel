@@ -23,6 +23,7 @@ interface Itinerary {
   slug: string
   is_public: boolean
   upvotes: number
+  is_published: boolean
   user: {
     id: string;
     name: string | null;
@@ -42,26 +43,32 @@ interface Itinerary {
 async function getItineraries() {
   const supabase = createClient()
   
-  const { data, error } = await supabase
-    .from("itinerary_templates")
-    .select("*, destinations(*), created_by:users(id, full_name, avatar_url)") 
-    .eq("is_published", true)
-    .order("created_at", { ascending: false })
-  
-  if (error) {
-    console.error("Error fetching itineraries:", error)
+  try {
+    // First attempt to get all templates (published and unpublished)
+    const { data, error } = await supabase
+      .from("itinerary_templates")
+      .select("*, destinations(*), creator:created_by(id, name, avatar_url)") 
+      .order("created_at", { ascending: false })
+      // .eq("is_published", true) - Removed to show all templates
+    
+    if (error) {
+      console.error("Error fetching itineraries:", error)
+      return []
+    }
+    
+    // Map data to ensure consistency, especially if created_by is null
+    return (data || []).map(item => ({
+      ...item,
+      author: item.creator ? { 
+        id: item.creator.id, 
+        name: item.creator.name, 
+        avatar_url: item.creator.avatar_url 
+      } : null,
+    }))
+  } catch (err) {
+    console.error("Exception fetching itineraries:", err)
     return []
   }
-  
-  // Map data to ensure consistency, especially if created_by is null
-  return (data || []).map(item => ({
-    ...item,
-    author: item.created_by ? { 
-      id: item.created_by.id, 
-      name: item.created_by.full_name, 
-      avatar_url: item.created_by.avatar_url 
-    } : null,
-  }))
 }
 
 export default async function ItinerariesPage() {
@@ -70,18 +77,24 @@ export default async function ItinerariesPage() {
   const hasItineraries = itineraries.length > 0
   const displayItineraries = hasItineraries ? itineraries : []
 
+  console.log(`Found ${displayItineraries.length} itineraries`)
+
   // Transform itineraries into a format compatible with the client component
   const formattedItineraries = displayItineraries.map((itinerary) => ({
     id: itinerary.id,
     title: itinerary.title,
     description: itinerary.description,
-    image: itinerary.cover_image_url || itinerary.destinations?.image_url || "/placeholder.svg",
-    location: itinerary.location || (itinerary.destinations ? `${itinerary.destinations.city}, ${itinerary.destinations.country}` : "Unknown Location"),
+    image: itinerary.cover_image_url || 
+           (itinerary.destinations ? itinerary.destinations.image_url : null) || 
+           "/images/placeholder-itinerary.jpg",
+    location: itinerary.location || 
+             (itinerary.destinations ? `${itinerary.destinations.city || ''}, ${itinerary.destinations.country || ''}` : "Unknown Location"),
     duration: itinerary.duration || `${itinerary.duration_days || "N/A"} days`,
     groupSize: itinerary.groupSize || "N/A",
     tags: itinerary.tags || [],
     category: itinerary.category || "uncategorized",
-    slug: itinerary.slug || itinerary.id
+    slug: itinerary.slug || itinerary.id,
+    is_published: itinerary.is_published || false
   }))
 
   return (

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from '@/components/page-header'
 
 export const metadata = {
   title: "Terms of Service | withme.travel",
@@ -9,7 +10,7 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="container mx-auto px-4 py-12 max-w-3xl">
       <div className="mb-6">
         <Link href="/">
           <Button variant="ghost" size="sm" className="gap-1">
@@ -19,7 +20,7 @@ export default function TermsPage() {
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold mb-6">Terms of Service</h1>
+      <h1 className="text-5xl leading-loose font-bold mb-6">Terms of Service</h1>
       <p className="text-muted-foreground mb-6">Last updated: April 22, 2023</p>
 
       <div className="prose dark:prose-invert max-w-none">

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, X, PlusCircle, LogOut, Settings, User, Map, Moon, Sun, Search, Bookmark } from "lucide-react"
@@ -19,7 +19,7 @@ import {
 import { useTheme } from "next-themes"
 import { Logo } from "@/components/logo"
 import { useSearch } from "@/contexts/search-context"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { PAGE_ROUTES, THEME } from "@/utils/constants"
 import { UserNav } from "@/components/layout/user-nav"
 
@@ -57,6 +57,70 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const { openSearch } = useSearch()
+  
+  // State to track how long loading has been active
+  const [loadingDuration, setLoadingDuration] = useState(0)
+  
+  // Use this ref to track auth state for debugging
+  const authStateRef = useRef({
+    isLoading,
+    hasUser: !!user,
+    userId: user?.id,
+    profileId: profile?.id
+  })
+  
+  // Update the ref when auth state changes (for debugging)
+  useEffect(() => {
+    authStateRef.current = {
+      isLoading,
+      hasUser: !!user,
+      userId: user?.id,
+      profileId: profile?.id
+    }
+    
+    // Log auth state changes for debugging
+    console.log("[Navbar] Auth state updated:", {
+      isLoading,
+      hasUser: !!user,
+      userId: user?.id?.substring(0, 8),
+      hasProfile: !!profile
+    })
+  }, [isLoading, user, profile])
+  
+  // Set up monitoring for prolonged loading state
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    
+    if (isLoading) {
+      // Start a timer when loading begins
+      timer = setInterval(() => {
+        setLoadingDuration(prev => prev + 500);
+      }, 500);
+    } else {
+      // Reset when loading completes
+      setLoadingDuration(0);
+    }
+    
+    // Clean up timer
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isLoading]);
+  
+  // Show a retry button if loading takes too long
+  const showRetryButton = loadingDuration > 3000; // 3 seconds
+  
+  // Handle manual auth state refresh
+  const handleForceRefresh = useCallback(() => {
+    console.log("[Navbar] Force refreshing auth state");
+    // This could dispatch a custom event that AuthProvider listens for,
+    // or reload the page in a worst-case scenario
+    
+    // Simple approach: reload the page
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await signOut()
@@ -90,8 +154,8 @@ export function Navbar() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background">
-      <div className="flex h-16 items-center justify-between py-4 px-3 sm:px-4 md:container md:px-6">
+    <header className="sticky top-0 z-40 border-b border-border/40 dark:border-border/20 bg-background/95 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between py-4 px-3 sm:px-4 md:px-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-4 md:gap-8">
           <div className="cursor-pointer" onClick={() => router.push("/")}>
             <Logo />
@@ -104,14 +168,6 @@ export function Navbar() {
             ) : user ? (
               <>
                 <Link
-                  href="/dashboard"
-                  className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                    isActive("/dashboard") ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  Dashboard
-                </Link>
-                <Link
                   href="/trips"
                   className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
                     isActive("/trips") ? "text-foreground" : "text-muted-foreground"
@@ -122,22 +178,6 @@ export function Navbar() {
               </>
             ) : null }
             
-            <Link
-              href={PAGE_ROUTES.DESTINATIONS}
-              className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                isActive(PAGE_ROUTES.DESTINATIONS) ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              destinations
-            </Link>
-            <Link
-              href="/itineraries"
-              className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                isActive("/itineraries") ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              itineraries
-            </Link>
             <Link
               href="/support"
               className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
@@ -212,6 +252,21 @@ export function Navbar() {
             ) : null }
           </div>
         </div>
+
+        {/* Add retry button when loading takes too long */}
+        {showRetryButton && isLoading && (
+          <div className="absolute top-16 left-0 right-0 bg-amber-100 dark:bg-amber-900 p-2 text-center">
+            <p className="text-xs text-amber-800 dark:text-amber-200">
+              Login status is taking longer than expected. 
+              <button 
+                onClick={handleForceRefresh}
+                className="underline ml-2 font-medium"
+              >
+                Refresh now
+              </button>
+            </p>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -284,15 +339,6 @@ export function Navbar() {
                    {!isLoading && user && (
                     <>
                       <Link
-                        href="/dashboard"
-                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                          isActive("/dashboard") ? "text-foreground" : "text-muted-foreground"
-                        }`}
-                        onClick={closeMenu}
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
                         href="/trips"
                         className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
                           isActive("/trips") ? "text-foreground" : "text-muted-foreground"
@@ -301,36 +347,8 @@ export function Navbar() {
                       >
                         My Trips
                       </Link>
-                      <Link
-                        href="/saved"
-                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                          isActive("/saved") ? "text-foreground" : "text-muted-foreground"
-                        }`}
-                        onClick={closeMenu}
-                      >
-                        <Bookmark className="inline-block mr-1 h-3.5 w-3.5" />
-                        Saved Items
-                      </Link>
                     </>
                    )}
-                  <Link
-                    href={PAGE_ROUTES.DESTINATIONS}
-                    className={`text-sm font-medium transition-colors hover:text-travel-purple lowercase ${
-                      isActive(PAGE_ROUTES.DESTINATIONS) ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                    onClick={closeMenu}
-                  >
-                    destinations
-                  </Link>
-                  <Link
-                    href="/itineraries"
-                    className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                      isActive("/itineraries") ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                    onClick={closeMenu}
-                  >
-                    itineraries
-                  </Link>
                   <Link
                     href="/support"
                     className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${

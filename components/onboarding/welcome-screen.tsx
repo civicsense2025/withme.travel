@@ -13,12 +13,12 @@ export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
     <Card className="border-0 shadow-lg">
       <CardContent className="pt-6 pb-8 px-6 text-center">
         <div className="mb-6 text-4xl">✨</div>
-        <h1 className="text-2xl font-bold mb-2 lowercase">welcome to withme.travel!</h1>
-        <p className="text-muted-foreground mb-8">
-          the easy way to plan trips with friends
-          <br />
-          (without losing your mind in group chats 😅)
-        </p>
+        <div className="text-center max-w-lg mx-auto">
+          <h1 className="text-5xl leading-loose font-bold mb-2 lowercase">welcome to withme.travel!</h1>
+          <p className="text-muted-foreground mb-8">
+            plan your next group adventure seamlessly. let's get you set up!
+          </p>
+        </div>
         <div className="flex flex-col gap-3">
           <Button onClick={onNext} size="lg" className="w-full lowercase">
             sign up

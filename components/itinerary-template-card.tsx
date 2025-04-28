@@ -16,21 +16,36 @@ interface ItineraryTemplateCardProps {
     tags: string[]
     category?: string
     slug?: string
+    is_published?: boolean
   }
   index?: number
 }
 
 export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplateCardProps) {
+  // Ensure we have an image, with fallbacks
+  const imageUrl = itinerary.image || "/images/placeholder-itinerary.jpg";
+  
   return (
     <Link href={`/itineraries/${itinerary.slug || itinerary.id}`}>
         <Card className="overflow-hidden h-full hover:shadow-md transition-all">
           <div className="relative h-48 overflow-hidden">
+              {/* Use error handling for images */}
               <Image
-                src={itinerary.image || "/placeholder.svg?height=400&width=800&query=travel destination"}
+                src={imageUrl}
                 alt={itinerary.title}
                 fill
                 className="object-cover"
+                onError={(e) => {
+                  // If image fails to load, replace with placeholder
+                  const imgElement = e.target as HTMLImageElement;
+                  imgElement.src = "/images/placeholder-itinerary.jpg";
+                }}
               />
+              {itinerary.is_published === false && (
+                <div className="absolute top-2 right-2 z-10">
+                  <Badge variant="destructive">Draft</Badge>
+                </div>
+              )}
           </div>
           <CardContent className="pt-6">
           <div className="flex items-start justify-between">
@@ -40,7 +55,7 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
               </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {itinerary.tags.map((tag) => (
+            {Array.isArray(itinerary.tags) && itinerary.tags.map((tag) => (
               <Badge key={tag} variant="outline">
                     {tag}
                   </Badge>

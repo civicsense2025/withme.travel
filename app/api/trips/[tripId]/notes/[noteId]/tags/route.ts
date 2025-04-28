@@ -1,6 +1,6 @@
-import { createClient } from "@/utils/supabase/server";
-import { NextResponse, NextRequest } from "next/server";
-import { DB_TABLES, DB_FIELDS } from "@/utils/constants";
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
 
 // Helper function - Assume is_trip_member_with_role exists from previous migration
 // Or define locally/import if moved to shared utils

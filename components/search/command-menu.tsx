@@ -27,7 +27,7 @@ import { useSearch } from "@/contexts/search-context"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useTheme } from "next-themes"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { cn } from "@/lib/utils"
 
 type SearchResult = {
@@ -236,17 +236,17 @@ export function CommandMenu() {
       <DialogTrigger asChild>
         {/* Placeholder for the children prop */}
       </DialogTrigger>
-      <DialogContent className="p-0 gap-0 max-w-[650px] rounded-xl border-0 shadow-xl">
+      <DialogContent className="p-0 gap-0 max-w-[650px] rounded-xl border-0 shadow-2xl bg-background/95 backdrop-blur-lg">
         <VisuallyHidden><DialogTitle>Search Menu</DialogTitle></VisuallyHidden>
         {showTooltip && (
-          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-travel-purple text-travel-purple-foreground px-4 py-2 rounded-md shadow-lg animate-fade-in">
+          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-travel-purple text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in">
             <p className="text-sm font-medium">Pro tip: Press {isMac ? "⌘K" : "Ctrl+K"} anytime to open this menu</p>
           </div>
         )}
 
-        <Command className="rounded-xl overflow-hidden border-0 shadow-none bg-background/95 backdrop-blur-sm" shouldFilter={false}>
+        <Command className="rounded-xl overflow-hidden border-0 shadow-none bg-transparent" shouldFilter={false}>
           <form onSubmit={handleSubmit}>
-            <div className="flex items-center border-b px-4 py-3 w-full">
+            <div className="flex items-center border-b border-border/30 px-5 py-4 w-full bg-gradient-to-r from-background to-muted/30">
               <Search className="mr-3 h-5 w-5 shrink-0 text-travel-purple" />
               <input
                 className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -388,13 +388,13 @@ export function CommandMenu() {
             )}
           </CommandList>
 
-          <div className="border-t py-3 px-4">
+          <div className="border-t border-border/30 py-3 px-5 bg-gradient-to-r from-background to-muted/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {/* Theme Toggle */}
                 <button
                   onClick={() => handleSelect("toggle-theme")}
-                  className="text-sm text-muted-foreground hover:text-foreground flex items-center space-x-1.5 py-1 px-2 rounded-md hover:bg-accent"
+                  className="text-sm text-muted-foreground hover:text-foreground flex items-center space-x-1.5 py-1 px-2 rounded-md hover:bg-accent transition-colors"
                 >
                   {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
                   <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
@@ -404,7 +404,7 @@ export function CommandMenu() {
                 {!user && (
                   <button
                     onClick={() => handleSelect("login")}
-                    className="text-sm text-muted-foreground hover:text-foreground flex items-center space-x-1.5 py-1 px-2 rounded-md hover:bg-accent"
+                    className="text-sm text-muted-foreground hover:text-foreground flex items-center space-x-1.5 py-1 px-2 rounded-md hover:bg-accent transition-colors"
                   >
                     <LogIn className="h-3.5 w-3.5" />
                     <span>Log in</span>
@@ -414,8 +414,12 @@ export function CommandMenu() {
 
               {/* Keyboard Shortcut */}
               <div className="text-xs text-muted-foreground flex items-center">
-                <CommandIcon className="h-3 w-3 mr-1" />
-                <span>Press {isMac ? "⌘K" : "Ctrl+K"}</span>
+                <kbd className="px-1.5 py-0.5 bg-muted border border-border/30 rounded text-[10px] font-mono mr-1">
+                  {isMac ? "⌘" : "Ctrl"}
+                </kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted border border-border/30 rounded text-[10px] font-mono">
+                  K
+                </kbd>
               </div>
             </div>
           </div>

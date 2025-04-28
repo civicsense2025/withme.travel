@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useAuth } from "./auth-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { Logo } from "@/components/logo"
 
 export function Footer() {
@@ -18,55 +18,36 @@ export function Footer() {
     "Oceania"
   ]
 
+  const exploreLinks = [
+    { href: "/destinations", label: "Destinations" },
+    { href: "/itineraries", label: "Itineraries" },
+    { href: "/trips/create", label: "Plan a Trip" },
+  ]
+  if (user) {
+    exploreLinks.push({ href: "/", label: "My Trips" })
+  }
+
+  const companyLinks = [
+    { href: "/support", label: "Support Us" },
+  ]
+  if (isAdmin) {
+    companyLinks.push({ href: "/admin", label: "Admin" })
+  }
+
+  const legalLinks = [
+    { href: "/terms", label: "Terms of Service" },
+    { href: "/privacy", label: "Privacy Policy" },
+  ]
+
   return (
-    <footer className="bg-muted/30 py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
-          <div className="space-y-4">
+    <footer className="bg-muted/30 py-12 text-center">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="grid grid-cols-1 gap-10 items-center">
+          <div className="space-y-4 flex flex-col items-center">
             <Logo />
             <p className="text-sm text-muted-foreground max-w-xs">
               Plan trips with friends without the chaos. Make group travel fun again.
             </p>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="font-semibold text-base lowercase">Explore</h3>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  href="/destinations"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                >
-                  Destinations
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/itineraries"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                >
-                  Itineraries
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/trips/create"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                >
-                  Plan a Trip
-                </Link>
-              </li>
-              {user && (
-                <li>
-                  <Link
-                    href="/"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                  >
-                    My Trips
-                  </Link>
-                </li>
-              )}
-            </ul>
           </div>
 
           <div className="space-y-4">
@@ -86,53 +67,42 @@ export function Footer() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-base lowercase">Company</h3>
             <ul className="space-y-3">
-              <li>
-                <Link
-                  href="/support"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                >
-                  Support Us
-                </Link>
-              </li>
-              {isAdmin && (
-                <li>
+              {exploreLinks.map((link) => (
+                <li key={link.href}>
                   <Link
-                    href="/admin"
+                    href={link.href}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
                   >
-                    Admin
+                    {link.label}
                   </Link>
                 </li>
-              )}
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="font-semibold text-base lowercase">Legal</h3>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  href="/terms"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                >
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/privacy"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
+              ))}
+              {companyLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              {legalLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-10 pt-6 border-t border-border flex flex-col items-center gap-4">
           <p className="text-sm text-muted-foreground lowercase">
             © {new Date().getFullYear()} withme.travel. all rights reserved.
           </p>

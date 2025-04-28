@@ -38,7 +38,7 @@ export async function PATCH(request, { params }) {
         if (authError || !user) {
             return NextResponse.json({ error: (authError === null || authError === void 0 ? void 0 : authError.message) || "Authentication required" }, { status: 401 });
         }
-        const tripId = params.tripId;
+        const { tripId } = await params;
         const itemId = params.itemId;
         // Check if user has permission to edit items (Contributors should also be able to edit items)
         const access = await checkTripAccess(supabase, tripId, user.id, [
@@ -124,7 +124,7 @@ export async function DELETE(request, { params }) {
         if (authError || !user) {
             return NextResponse.json({ error: (authError === null || authError === void 0 ? void 0 : authError.message) || "Authentication required" }, { status: 401 });
         }
-        const tripId = params.tripId;
+        const { tripId } = await params;
         const itemId = params.itemId;
         // Check if user has permission to delete items (Contributors should also be able to delete their own? TBD)
         // For now, restrict to Admin/Editor for simplicity

@@ -1,6 +1,6 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants';
+import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database";
 import { z } from 'zod';
 
 // Helper function to generate a simple slug
@@ -81,7 +81,7 @@ export async function PUT(
     .select('user_id')
     .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
     .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-    .in('role', ['admin', 'editor']) // Use actual role strings
+    .in('role', [DB_ENUMS.TRIP_ROLES.ADMIN, DB_ENUMS.TRIP_ROLES.EDITOR]) // Use role enum constants
     .maybeSingle();
 
   if (permissionError) {

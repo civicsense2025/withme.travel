@@ -1,12 +1,12 @@
-import { createClient } from "@/utils/supabase/server"
-import { NextResponse, NextRequest } from "next/server"
-import { DB_TABLES, TRIP_ROLES } from "@/utils/constants"
+import { createClient } from "@/utils/supabase/server";
+import { NextResponse, NextRequest } from 'next/server';
+import { DB_TABLES, DB_FIELDS, TRIP_ROLES } from "@/utils/constants";
 import { z } from 'zod';
 
 // Get all notes for a trip
-export async function GET(request: NextRequest, props: { params: { tripId: string } }) {
+export async function GET(request: NextRequest, context: { params: { tripId: string } }) {
   // Extract tripId properly
-  const { tripId } = props.params;
+  const { tripId } = context.params;
 
   if (!tripId) return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
 
@@ -25,7 +25,12 @@ export async function GET(request: NextRequest, props: { params: { tripId: strin
     const { data: isMember, error: memberCheckError } = await supabase.rpc('is_trip_member_with_role', {
         _trip_id: tripId,
         _user_id: user.id,
-        _roles: ['admin', 'editor', 'contributor', 'viewer']
+        _roles: [
+            TRIP_ROLES.ADMIN,
+            TRIP_ROLES.EDITOR,
+            TRIP_ROLES.CONTRIBUTOR,
+            TRIP_ROLES.VIEWER
+        ]
     });
 
     if (memberCheckError) {
@@ -75,9 +80,9 @@ const createNoteSchema = z.object({
 });
 
 // POST: Create a new note for a trip
-export async function POST(request: NextRequest, props: { params: { tripId: string } }) {
+export async function POST(request: NextRequest, context: { params: { tripId: string } }) {
   // Extract tripId properly
-  const { tripId } = props.params;
+  const { tripId } = context.params;
 
   if (!tripId) return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
 
@@ -92,11 +97,10 @@ export async function POST(request: NextRequest, props: { params: { tripId: stri
     }
 
     // Check if user has permission (Admin or Editor) to create notes
-    // (Using the helper function from the migration)
-     const { data: canCreate, error: permissionCheckError } = await supabase.rpc('is_trip_member_with_role', {
+    const { data: canCreate, error: permissionCheckError } = await supabase.rpc('is_trip_member_with_role', {
         _trip_id: tripId,
         _user_id: user.id,
-        _roles: ['admin', 'editor']
+        _roles: [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]
     });
 
     if (permissionCheckError) {
@@ -108,17 +112,26 @@ export async function POST(request: NextRequest, props: { params: { tripId: stri
       return NextResponse.json({ error: "Forbidden: You don't have permission to create notes for this trip" }, { status: 403 });
     }
 
-    // User has permission, proceed...
-    const { title, content } = await request.json();
+    // Validate request body using Zod schema
+    let validatedData: z.infer<typeof createNoteSchema>;
+    try {
+      const body = await request.json();
+      validatedData = createNoteSchema.parse(body);
+    } catch (validationError: any) {
+      if (validationError instanceof z.ZodError) {
+        console.error("[Notes API POST] Validation failed:", validationError.issues);
+        return NextResponse.json({ error: "Invalid input", issues: validationError.issues }, { status: 400 });
+      } else if (validationError instanceof SyntaxError) {
+         console.error("[Notes API POST] Invalid JSON:", validationError);
+         return NextResponse.json({ error: "Invalid JSON format in request body" }, { status: 400 });
+      }
+      // Handle other potential errors during body parsing
+      console.error("[Notes API POST] Error parsing request body:", validationError);
+      return NextResponse.json({ error: "Could not parse request body" }, { status: 400 });
+    }
 
-    // Validate input
-    if (!title || typeof title !== 'string' || title.trim() === '') {
-      return NextResponse.json({ error: "Title is required and must be a non-empty string" }, { status: 400 });
-    }
-    if (typeof content !== 'string') {
-      // Allow empty string for content, but ensure it's a string
-      return NextResponse.json({ error: "Content must be a string" }, { status: 400 });
-    }
+    // Use validated data
+    const { title, content, type, item_id } = validatedData;
 
     // Create new note
     const { data: newNote, error: insertError } = await supabase
@@ -127,6 +140,8 @@ export async function POST(request: NextRequest, props: { params: { tripId: stri
         trip_id: tripId,
         title: title.trim(), // Trim title
         content,
+        type,
+        item_id,
         updated_by: user.id,
         // updated_at is handled by trigger
       })
@@ -152,10 +167,6 @@ export async function POST(request: NextRequest, props: { params: { tripId: stri
     return NextResponse.json({ note: newNote }, { status: 201 }); // Return 201 Created status
 
   } catch (error: any) {
-     if (error instanceof SyntaxError) { // Catch JSON parsing errors
-      console.error("[Notes API POST] Invalid JSON:", error);
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-    }
     console.error("[Notes API POST] Unexpected error:", error);
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 });
   }

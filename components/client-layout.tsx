@@ -5,26 +5,34 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { CookieConsent } from "@/components/cookie-consent"
 import { Suspense } from "react"
+import { usePathname } from 'next/navigation'
 import { SearchProvider } from "@/contexts/search-context"
 import { CommandMenu } from "@/components/search/command-menu"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth-provider"
+import { AuthErrorBoundary } from "@/components/auth-error-boundary"
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const showNavbar = !pathname?.startsWith('/trips/public')
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <AuthProvider>
-        <SearchProvider>
-          <CommandMenu />
-          <Suspense>
-            <Navbar />
-          </Suspense>
-          <main className="min-h-[calc(100vh-4rem-4rem)]">{children}</main>
-          <Footer />
-          <CookieConsent />
-          <Toaster />
-        </SearchProvider>
-      </AuthProvider>
+      {/* Using AuthErrorBoundary to gracefully handle auth errors */}
+      <AuthErrorBoundary>
+        <AuthProvider>
+          <SearchProvider>
+            <CommandMenu />
+            <Suspense>
+              {showNavbar && <Navbar />}
+            </Suspense>
+            <main className="min-h-[calc(100vh-4rem-4rem)] max-w-3xl mx-auto px-4 sm:px-6 md:px-8">{children}</main>
+            <Footer />
+            <CookieConsent />
+            <Toaster />
+          </SearchProvider>
+        </AuthProvider>
+      </AuthErrorBoundary>
     </ThemeProvider>
   )
 } 

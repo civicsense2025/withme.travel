@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+// import { ImageDebug } from "@/components/debug/ImageDebug" // Import the debug component
 import { Heart, Info } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
@@ -69,12 +70,19 @@ interface DestinationCardProps {
     country: string
     continent: string
     description: string | null
+    byline?: string | null
+    highlights?: string[] | null
     image_url?: string | null
     emoji?: string | null
     image_metadata?: {
       alt_text?: string
       attribution?: string
       attributionHtml?: string
+      photographer_name?: string
+      photographer_url?: string
+      source?: string
+      source_id?: string
+      url?: string
     }
     cuisine_rating: number
     nightlife_rating: number
@@ -87,10 +95,17 @@ interface DestinationCardProps {
   }
   href?: string
   className?: string
+  hideAttributionMobile?: boolean
 }
 
-export function DestinationCard({ destination, href, className = "" }: DestinationCardProps) {
-  const { city, country, image_url, description, image_metadata, emoji } = destination
+export function DestinationCard({
+  destination,
+  href,
+  className = "",
+  hideAttributionMobile = false,
+}: DestinationCardProps) {
+  const { city, country, image_url, description, image_metadata, emoji, byline, highlights } = destination
+  
   const [showSneak, setShowSneak] = useState(false)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
   
@@ -147,22 +162,53 @@ export function DestinationCard({ destination, href, className = "" }: Destinati
 
   const altText = generateAltText();
 
+  // Helper function to create the attribution string with links
+  const createAttributionText = (metadata: DestinationCardProps['destination']['image_metadata']) => {
+    if (!metadata) return null;
+
+    // Prioritize structured data if available
+    const { photographer_name, photographer_url, source, source_id, url } = metadata;
+
+    if (photographer_name && source) {
+      const sourceName = source.charAt(0).toUpperCase() + source.slice(1); // Capitalize source
+      let sourceLink = url; // Use the direct image URL as default source link
+
+      // Specific source links if needed
+      if (source === 'pexels' && source_id) {
+        sourceLink = `https://www.pexels.com/photo/${source_id}`;
+      } else if (source === 'unsplash' && source_id) {
+        // Assuming Unsplash structure, adjust if needed
+        sourceLink = `https://unsplash.com/photos/${source_id}`; 
+      }
+
+      const photographerPart = photographer_url 
+        ? `<a href=\"${photographer_url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${photographer_name}</a>` 
+        : photographer_name;
+      
+      const sourcePart = sourceLink
+        ? `<a href=\"${sourceLink}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${sourceName}</a>`
+        : sourceName;
+
+      return `Photo by ${photographerPart} on ${sourcePart}`;
+    }
+
+    // Fallback to existing attribution strings
+    if (metadata.attributionHtml) return metadata.attributionHtml;
+    if (metadata.attribution) return metadata.attribution; // Basic text fallback
+
+    return null; // No attribution available
+  };
+
+  const attributionText = createAttributionText(image_metadata);
+
   // Handle like button click
   const handleLikeClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  // Generate highlights for sneak peek
-  const getHighlights = () => {
-    const highlights = [];
-    if (destination.cuisine_rating >= 4) highlights.push('Amazing Food');
-    if (destination.nightlife_rating >= 4) highlights.push('Vibrant Nightlife');
-    if (destination.cultural_attractions >= 4) highlights.push('Rich Culture');
-    if (destination.outdoor_activities >= 4) highlights.push('Outdoor Paradise');
-    if (destination.beach_quality >= 4) highlights.push('Beautiful Beaches');
-    return highlights.slice(0, 3); // Return top 3 highlights
-  };
+  // Use the highlights prop directly (or an empty array)
+  const displayHighlights = Array.isArray(highlights) ? highlights : [];
 
   return (
     <Link href={cardHref}>
@@ -177,14 +223,25 @@ export function DestinationCard({ destination, href, className = "" }: Destinati
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="relative aspect-[3/4] overflow-hidden rounded-xl">
-          {/* Gradient overlay */}
+        {/* Image container - Make this the relative parent for the fill Image */}
+        <div className="relative aspect-[3/4] overflow-hidden rounded-xl"> 
+          {/* Gradient overlay - Should be siblings of Image if Image uses fill */}
           <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent z-10"></div>
-          
-          {/* Texture overlay for depth */}
+          {/* Texture overlay */}
           <TextureOverlay />
           
-          {/* Destination info */}
+          {/* Image Component - Reverted back to next/image */}
+          <Image 
+            src={imageUrl}
+            alt={altText}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            // priority // Optional: Add priority to load first images faster
+          />
+          
+          {/* Other absolute elements should also be siblings */} 
+          {/* Destination info */}    
           <div className="absolute bottom-6 left-6 z-20">
             <h3 className="text-2xl font-bold mb-1 text-white group-hover:translate-y-[-4px] transition-transform duration-300">
               {emoji && <span className="mr-2" role="img" aria-label={`${city} emoji`}>{emoji}</span>}
@@ -192,8 +249,7 @@ export function DestinationCard({ destination, href, className = "" }: Destinati
             </h3>
             <p className="text-white/80 text-sm font-medium group-hover:translate-y-[-2px] transition-transform duration-300 delay-75">{country}</p>
           </div>
-          
-          {/* Like button */}
+          {/* Like button */}    
           <div className="absolute top-4 right-4 z-20" onClick={handleLikeClick}>
             <LikeButton 
               itemId={destination.id}
@@ -202,50 +258,38 @@ export function DestinationCard({ destination, href, className = "" }: Destinati
               className="shadow-sm"
             />
           </div>
-
-          {/* Attribution info button */}
-          {image_metadata?.attribution && (
-            <div className="absolute bottom-6 right-6 z-20">
+          {/* Attribution button */} 
+          {attributionText && (
+            <div className={`absolute bottom-6 right-6 z-20 ${hideAttributionMobile ? 'hidden md:block' : ''}`}>
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button 
+                    <button
                       className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
-                      onClick={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                       aria-label="Image attribution information"
                     >
                       <Info className="h-3.5 w-3.5" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent 
+                  <TooltipContent
                     side="left"
                     sideOffset={5}
-                    className="bg-black/90 text-white border-none shadow-lg"
+                    className="bg-black/90 text-white border-none shadow-lg max-w-xs"
                   >
                     <p 
                       className="text-xs"
-                      dangerouslySetInnerHTML={{ 
-                        __html: image_metadata.attributionHtml || image_metadata.attribution 
-                      }}
+                      dangerouslySetInnerHTML={{ __html: attributionText || '' }}
                     ></p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
           )}
-          
-          {/* Image with hover effect */}
-          <div className="relative h-full w-full">
-            <Image 
-              src={imageUrl}
-              alt={altText}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-            />
-          </div>
-
-          {/* Sneak peek panel */}
+          {/* Sneak peek panel - Needs to be sibling if Image uses fill */} 
           <AnimatePresence>
             {showSneak && (
               <motion.div
@@ -253,29 +297,42 @@ export function DestinationCard({ destination, href, className = "" }: Destinati
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
-                className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent z-30 flex flex-col justify-end p-6"
+                className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent z-30 flex flex-col justify-end p-4 md:p-6"
               >
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-lg font-semibold text-white mb-1">Highlights</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {getHighlights().map((highlight, index) => (
-                        <Badge 
-                          key={index}
-                          variant="outline" 
-                          className="bg-white/10 text-white border-white/20"
-                        >
-                          {highlight}
-                        </Badge>
-                      ))}
+                 {/* ... sneak peek content ... */} 
+                 <div className="space-y-3 md:space-y-4">
+                  {/* Byline Section - Use destination.byline */}
+                  {byline && (
+                     <div>
+                       {/* Removed explicit title, letting the text speak */}
+                       <p className="text-xs md:text-sm text-white/70 italic">{byline}</p>
+                     </div>
+                  )}
+  
+                  {/* Highlights Section - Use destination.highlights */}
+                  {displayHighlights.length > 0 && (
+                    <div>
+                      <h4 className="text-base md:text-lg font-semibold text-white mb-1">Highlights</h4>
+                      <div className="flex flex-wrap gap-1.5 md:gap-2">
+                        {displayHighlights.map((highlight, index) => (
+                          <Badge 
+                            key={index}
+                            variant="outline" 
+                            className="bg-white/10 text-white border-white/20 text-xs px-1.5 py-0.5 md:px-2 md:py-1"
+                          >
+                            {highlight}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
+                  {/* Existing Best Time & Details */}
                   <div>
-                    <h4 className="text-lg font-semibold text-white mb-1">Best Time to Visit</h4>
-                    <p className="text-white/80 text-sm">{destination.best_season || 'Year-round'}</p>
+                    <h4 className="text-base md:text-lg font-semibold text-white mb-1">Best Time to Visit</h4>
+                    <p className="text-xs md:text-sm text-white/80">{destination.best_season || 'Year-round'}</p>
                   </div>
-
+  
                   <div className="flex items-center gap-4">
                     {destination.avg_cost_per_day && (
                       <div>

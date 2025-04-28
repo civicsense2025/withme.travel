@@ -96,8 +96,8 @@ export default function SearchPage() {
   const totalResults = destinations.length + trips.length
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-2">Search Results</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-5xl leading-loose font-bold mb-2">Search Results</h1>
       <p className="text-muted-foreground mb-6">
         {isLoading ? (
           <span className="flex items-center">
