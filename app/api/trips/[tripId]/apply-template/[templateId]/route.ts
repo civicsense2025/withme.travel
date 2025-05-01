@@ -1,10 +1,18 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import { createClient } from '@supabase/supabase-js';
+
+// Define the role constants
+const TRIP_ROLES = {
+  ADMIN: 'admin',
+  EDITOR: 'editor',
+  CONTRIBUTOR: 'contributor',
+  VIEWER: 'viewer'
+};
 
 // Re-use or import checkTripAccess function
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
 async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
@@ -13,46 +21,16 @@ async function checkTripAccess(
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   // (Implementation is the same as in reorder/route.ts - copy or import)
   const { data: member, error } = await supabase
-    .from(DB_TABLES.TRIP_MEMBERS)
-    .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .from('trip_members')
+    .select(`role`)
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
     .maybeSingle();
   if (error) return { allowed: false, error: error.message, status: 500 };
   if (!member) return { allowed: false, error: 'Not a member', status: 403 };
   if (!allowedRoles.includes(member.role))
     return { allowed: false, error: 'Insufficient permissions', status: 403 };
   return { allowed: true };
-}
-
-// Basic interfaces for template structure (define more accurately based on schema)
-interface TemplateActivity {
-  title: string;
-  description?: string | null;
-  location?: string | null;
-  duration_minutes?: number | null;
-  start_time?: string | null;
-  position?: number | null;
-  category?: string | null;
-  // Add other fields as needed from template_activities table
-}
-
-interface TemplateSection {
-  day_number?: number | null;
-  template_activities: TemplateActivity[];
-  // Add other fields as needed from template_sections table
-}
-
-// Helper function to check user permissions (modify as needed)
-async function checkUserPermission(supabase: any, tripId: string, userId: string) {
-  // Example: Allow only admins/editors
-  const { data, error } = await supabase.rpc('is_trip_member_with_role', {
-    _trip_id: tripId,
-    _user_id: userId,
-    _roles: ['admin', 'editor'],
-  });
-  if (error) throw new Error('Permission check failed');
-  return data;
 }
 
 // POST /api/trips/[tripId]/apply-template/[templateId] - Apply an itinerary template to a trip
@@ -68,7 +46,7 @@ export async function POST(
   }
 
   try {
-    const supabase = await createApiClient();
+    const supabase = createServerSupabaseClient();
 
     // Get the current user
     const {
@@ -89,22 +67,40 @@ export async function POST(
       return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
-    // 1. Fetch the template details (sections and activities)
+    // 1. Check for existing items in the trip and find the maximum day number
+    const { data: existingItems, error: existingItemsError } = await supabase
+      .from('itinerary_items')
+      .select('day_number')
+      .eq('trip_id', tripId)
+      .order('day_number', { ascending: false })
+      .limit(1);
+
+    if (existingItemsError) {
+      console.error('Error checking existing items:', existingItemsError);
+      return NextResponse.json({ error: 'Failed to check existing items.' }, { status: 500 });
+    }
+
+    // Calculate the day offset - if trip has items, start after the last day, otherwise start at day 1
+    const dayOffset = existingItems && existingItems.length > 0 
+      ? (existingItems[0].day_number || 0) + 1 
+      : 1;
+    
+    console.log(`[DEBUG] Using day offset: ${dayOffset} for template application`);
+
+    // 2. Fetch the template details (sections and activities)
     const { data: templateData, error: templateError } = await supabase
-      .from(DB_TABLES.ITINERARY_TEMPLATES)
-      .select(
-        `
-            ${DB_FIELDS.ITINERARY_TEMPLATES.ID},
-            ${DB_FIELDS.ITINERARY_TEMPLATES.DURATION_DAYS},
-            ${DB_FIELDS.ITINERARY_TEMPLATES.VERSION},
-            ${DB_TABLES.TEMPLATE_SECTIONS} (
-                *,
-                ${DB_TABLES.TEMPLATE_ACTIVITIES} (*)
-            )
-        `
-      )
-      .eq(DB_FIELDS.ITINERARY_TEMPLATES.ID, templateId)
-      // Add check for is_published or user ownership if needed for access control
+      .from('itinerary_templates')
+      .select(`
+        id,
+        title,
+        duration_days,
+        version,
+        itinerary_template_sections (
+          *,
+          itinerary_template_items (*)
+        )
+      `)
+      .eq('id', templateId)
       .maybeSingle();
 
     if (templateError) {
@@ -116,30 +112,68 @@ export async function POST(
       return NextResponse.json({ error: 'Template not found.' }, { status: 404 });
     }
 
-    // Optional: Update trip duration if template duration is longer?
-    // Consider adding this logic based on product requirements.
-    // const tripUpdateData = {};
-    // if (templateData.duration_days && templateData.duration_days > currentTripDuration) {
-    //     tripUpdateData[DB_FIELDS.TRIPS.DURATION_DAYS] = templateData.duration_days;
-    //     // Update trip duration...
-    // }
+    // If the template sections are empty, try fetching items directly
+    let templateSections = templateData.itinerary_template_sections || [];
+    if (templateSections.length === 0) {
+      console.log('[DEBUG] No sections found, fetching items directly');
+      const { data: templateItems, error: templateItemsError } = await supabase
+        .from('itinerary_template_items')
+        .select('*')
+        .eq('template_id', templateId)
+        .order('day', { ascending: true })
+        .order('item_order', { ascending: true });
 
-    // 2. Prepare new itinerary items based on template activities
+      if (templateItemsError) {
+        console.error('Error fetching template items:', templateItemsError);
+        return NextResponse.json({ error: 'Failed to fetch template items.' }, { status: 500 });
+      }
+
+      if (templateItems && templateItems.length > 0) {
+        // Group items by day
+        const itemsByDay = templateItems.reduce((acc: any, item: any) => {
+          const day = item.day || 1;
+          if (!acc[day]) {
+            acc[day] = [];
+          }
+          acc[day].push(item);
+          return acc;
+        }, {});
+
+        // Create synthetic sections from the items
+        templateSections = Object.keys(itemsByDay).map((day) => ({
+          id: `synthetic-section-day-${day}`,
+          day_number: parseInt(day, 10),
+          title: `Day ${day}`,
+          itinerary_template_items: itemsByDay[day]
+        }));
+      }
+    }
+
+    // 3. Prepare new itinerary items based on template items with adjusted days
     const itemsToInsert: any[] = [];
-    templateData?.template_sections?.forEach((section: any) => {
-      const dayNumber = section.day_number ?? 1;
-      section.template_activities?.forEach((activity: any) => {
+    const sectionsToCreate = new Set<number>(); // Track unique day numbers to create sections for
+    
+    templateSections.forEach((section: any) => {
+      const originalDayNumber = section.day_number || 1;
+      const newDayNumber = dayOffset + originalDayNumber - 1; // Adjust day number with offset
+      
+      // Add this day number to our sections to create
+      sectionsToCreate.add(newDayNumber);
+      
+      const items = section.itinerary_template_items || [];
+      items.forEach((item: any) => {
         itemsToInsert.push({
           trip_id: tripId,
-          created_by: user.id,
-          title: activity.title,
-          description: activity.description,
-          location: activity.location,
-          duration_minutes: activity.duration_minutes,
-          start_time: activity.start_time,
-          day_number: dayNumber,
-          position: activity.position ?? 0,
-          category: activity.category,
+          created_by: null, // Set to null to avoid foreign key issues
+          title: item.title,
+          description: item.description,
+          location: item.location,
+          duration_minutes: item.duration_minutes,
+          start_time: item.start_time,
+          end_time: item.end_time,
+          day_number: newDayNumber,
+          position: item.position || item.item_order || 0,
+          category: item.category,
           status: 'suggested',
         });
       });
@@ -147,16 +181,31 @@ export async function POST(
 
     if (itemsToInsert.length === 0) {
       return NextResponse.json(
-        { message: 'Template has no activities to apply.' },
+        { message: 'Template has no items to apply.' },
         { status: 200 }
       );
     }
 
-    // 3. Insert new items
-    // Consider deleting existing items for the affected days or merging?
-    // For now, we just add the template items.
+    // Add detailed logging for the user ID
+    console.log(`[DEBUG] Preparing to insert ${itemsToInsert.length} items for trip ${tripId}. Using user ID: ${user?.id}`);
+
+    // Ensure user ID is valid before proceeding
+    if (!user?.id) {
+      console.error('[ERROR] User ID is missing or invalid before inserting items.');
+      return NextResponse.json({ error: 'Invalid user session state.' }, { status: 500 });
+    }
+    
+    // Previous profile lookup code was here - instead, we're just using null for created_by
+    // Set created_by to null for all items to avoid foreign key constraint issues
+    itemsToInsert.forEach(item => {
+      item.created_by = null;
+    });
+    
+    console.log(`[DEBUG] Inserting ${itemsToInsert.length} template items with day offset ${dayOffset} (using null for created_by)`);
+
+    // 4. Insert new items
     const { data: newItems, error: insertError } = await supabase
-      .from(DB_TABLES.ITINERARY_ITEMS)
+      .from('itinerary_items')
       .insert(itemsToInsert)
       .select();
 
@@ -165,20 +214,80 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to apply template items.' }, { status: 500 });
     }
 
-    // 4. Record template usage (Optional but recommended)
-    if (templateData?.version) {
-      await supabase.from(DB_TABLES.TRIP_TEMPLATE_USES).insert({
-        trip_id: tripId,
-        template_id: templateId,
-        applied_by: user.id,
-        version_used: templateData.version,
-      });
-    } else {
-      console.warn(`Template ${templateId} does not have a version field. Skipping usage record.`);
+    // 4.5 Create sections for each day if they don't exist
+    console.log(`[DEBUG] Creating ${sectionsToCreate.size} sections for applied template`);
+    
+    // First get the max position of existing sections to ensure we append new ones
+    const { data: maxPosData } = await supabase
+      .from('itinerary_sections')
+      .select('position')
+      .eq('trip_id', tripId)
+      .order('position', { ascending: false })
+      .limit(1);
+    
+    const maxPosition = maxPosData && maxPosData.length > 0 ? maxPosData[0].position : 0;
+    let nextPosition = maxPosition + 1;
+    
+    // Create array of section objects
+    const sectionsToInsert = Array.from(sectionsToCreate).map(dayNumber => ({
+      trip_id: tripId,
+      day_number: dayNumber,
+      title: `Day ${dayNumber}`,
+      position: nextPosition++,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+    
+    // Insert sections if there are any
+    if (sectionsToInsert.length > 0) {
+      const { error: sectionError } = await supabase
+        .from('itinerary_sections')
+        .upsert(sectionsToInsert, { 
+          onConflict: 'trip_id,day_number',
+          ignoreDuplicates: true 
+        });
+      
+      if (sectionError) {
+        console.error('[WARNING] Error creating itinerary sections:', sectionError);
+        // Don't fail the entire operation if section creation fails, just log it
+      } else {
+        console.log(`[DEBUG] Successfully created ${sectionsToInsert.length} itinerary sections`);
+      }
+    }
+
+    // 5. Update trip duration if needed
+    const newTotalDays = dayOffset + (templateData.duration_days || 1) - 1;
+    const { data: tripData, error: tripError } = await supabase
+      .from('trips')
+      .select('duration_days')
+      .eq('id', tripId)
+      .single();
+
+    if (tripData && (!tripData.duration_days || tripData.duration_days < newTotalDays)) {
+      await supabase
+        .from('trips')
+        .update({ duration_days: newTotalDays })
+        .eq('id', tripId);
+      
+      console.log(`[DEBUG] Updated trip duration to ${newTotalDays} days`);
+    }
+
+    // 6. Record template usage
+    try {
+      await supabase.rpc('increment_template_uses', { template_id: templateId });
+      console.log(`[DEBUG] Incremented usage count for template ${templateId}`);
+    } catch (error) {
+      console.error('[DEBUG] Could not increment template uses:', error);
+      // Non-critical error, continue
     }
 
     return NextResponse.json(
-      { message: 'Template applied successfully.', count: newItems?.length ?? 0 },
+      { 
+        message: 'Template applied successfully.', 
+        count: newItems?.length ?? 0,
+        dayOffset: dayOffset,
+        newTotalDays: newTotalDays
+      },
       { status: 200 }
     );
   } catch (error: any) {

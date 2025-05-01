@@ -28,7 +28,7 @@ export function useActivityTimeline(
   options: ActivityTimelineOptions = {}
 ): ActivityTimelineReturn {
   const {
-    limit = 20,
+    limit = 5,
     pollingInterval = 60000, // 1 minute by default, set to null to disable
     autoRefresh = true,
   } = options;

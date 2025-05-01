@@ -1,8 +1,9 @@
 'use server';
 
-import { db } from '@/utils/db';
+import db from '@/utils/db';
 import { cookies } from 'next/headers';
-import { getServerSession } from '@/utils/supabase/server';
+import { getServerSession } from '@/utils/supabase/unified';
+import { Session } from '@supabase/supabase-js';
 
 /**
  * Fetches recent trips for a user
@@ -36,9 +37,7 @@ export async function getTripCount(userId: string) {
  */
 export async function getUserProfile(userId: string) {
   try {
-    const {
-      data: { session },
-    } = await getServerSession();
+    const session = await getServerSession();
 
     if (!session || session.user.id !== userId) {
       throw new Error('Not authorized to access this profile');

@@ -1,7 +1,10 @@
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
+
+// Use imported ENUMS directly
+const TRIP_ROLES = ENUMS.TRIP_ROLES;
 
 export interface PermissionCheck {
   canView: boolean;
@@ -18,7 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createServerSupabaseClient();
 
   try {
     // First, get the current user
@@ -46,10 +49,10 @@ export async function GET(
 
     // Check if the user is a member of the trip
     const { data: membership, error: membershipError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from(TABLES.TRIP_MEMBERS)
+      .select(FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .single();
 
     if (membershipError && membershipError.code !== 'PGRST116') {
@@ -58,11 +61,16 @@ export async function GET(
     }
 
     // Check if user is the creator of the trip
+    // Define expected type for the trip query result
+    type TripCreatorCheck = {
+      created_by: string | null;
+      is_public: boolean | null;
+    }
     const { data: trip, error: tripError } = await supabase
-      .from(DB_TABLES.TRIPS)
-      .select(`${DB_FIELDS.TRIPS.CREATED_BY}, ${DB_FIELDS.TRIPS.IS_PUBLIC}`)
-      .eq(DB_FIELDS.TRIPS.ID, tripId)
-      .single();
+      .from(TABLES.TRIPS)
+      .select(`${FIELDS.TRIPS.CREATED_BY}, ${FIELDS.TRIPS.IS_PUBLIC}`)
+      .eq(FIELDS.TRIPS.ID, tripId)
+      .single<TripCreatorCheck>(); // Apply the type here
 
     if (tripError) {
       if (tripError.code === 'PGRST116') {
@@ -72,20 +80,27 @@ export async function GET(
       console.error('Error fetching trip details:', tripError);
       return NextResponse.json({ error: 'Failed to fetch trip details' }, { status: 500 });
     }
+    
+    // Add a null check for trip data, although .single() should guarantee it or throw
+    if (!trip) {
+      return NextResponse.json({ error: 'Trip data not found after query' }, { status: 404 });
+    }
 
-    const role = membership?.role;
+    // Simplify role handling - type assertion might be needed depending on DB type
+    const role: string | null = membership?.role || null;
     const isCreator = trip.created_by === user.id;
-    const isPublic = trip.is_public || false;
+    const isPublic = trip.is_public === true; // Explicit boolean check
 
     // Determine permissions based on role and creator status
     const permissions: PermissionCheck = {
       canView: !!role || isCreator || isPublic,
-      canEdit: (!!role && [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR].includes(role)) || isCreator,
-      canManage: (!!role && [TRIP_ROLES.ADMIN].includes(role)) || isCreator,
-      canAddMembers: (!!role && [TRIP_ROLES.ADMIN].includes(role)) || isCreator,
+      // Ensure role is not null and is a valid role string before checking includes
+      canEdit: (!!role && [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR].includes(role as any)) || isCreator,
+      canManage: (!!role && [TRIP_ROLES.ADMIN].includes(role as any)) || isCreator,
+      canAddMembers: (!!role && [TRIP_ROLES.ADMIN].includes(role as any)) || isCreator,
       canDeleteTrip: isCreator,
       isCreator,
-      role,
+      role: role, 
     };
 
     return NextResponse.json({ permissions });

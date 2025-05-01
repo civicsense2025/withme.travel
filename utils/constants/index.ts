@@ -25,15 +25,8 @@ export {
   TABLES,
   FIELDS,
   ENUMS,
-  DB_TABLES,
-  DB_FIELDS,
-  DB_ENUMS,
-  DB_FUNCTIONS,
-  DB_POLICIES,
-  TripRole,
+  RELATIONSHIPS,
 } from './database';
-
-export type { TripRoleType } from './database';
 
 // Re-export route constants
 export { API_ROUTES, PAGE_ROUTES } from './routes';

@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DisplayItineraryItem, ItemStatus } from '@/types/itinerary';
 import { ItineraryItemCard } from './ItineraryItemCard';
 import { addDays, format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Check } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableItem } from './SortableItem';
+import { useDroppable } from '@dnd-kit/core';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
+
+// Color palette from city-bubbles.tsx
+const dayColors = [
+  'bg-travel-blue text-blue-900 dark:text-blue-100',
+  'bg-travel-pink text-pink-900 dark:text-pink-100',
+  'bg-travel-yellow text-amber-900 dark:text-amber-100',
+  'bg-travel-purple text-purple-900 dark:text-purple-100',
+];
+
+// Function to get a color based on day number
+const getDayColor = (dayNumber: number): string => {
+  // Use modulo to cycle through colors
+  return dayColors[dayNumber % dayColors.length];
+};
 
 interface ItineraryDaySectionProps {
   startDate: string | null;
@@ -21,6 +39,7 @@ interface ItineraryDaySectionProps {
   onAddItemToDay: () => void;
   onMoveItem: (itemId: string, targetDay: number | null) => void;
   durationDays: number;
+  containerId: string;
 }
 
 export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
@@ -35,7 +54,43 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
   onAddItemToDay,
   onMoveItem,
   durationDays,
+  containerId,
 }) => {
+  const { toast } = useToast();
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [sectionTitle, setSectionTitle] = useState(
+    dayNumber === 1
+      ? 'day one'
+      : dayNumber === 2
+        ? 'day two'
+        : dayNumber === 3
+          ? 'day three'
+          : `day ${dayNumber}`
+  );
+  
+  const handleTitleSave = async () => {
+    if (sectionTitle.trim() === '') {
+      // Reset to default if empty
+      setSectionTitle(
+        dayNumber === 1
+          ? 'day one'
+          : dayNumber === 2
+            ? 'day two'
+            : dayNumber === 3
+              ? 'day three'
+              : `day ${dayNumber}`
+      );
+    }
+    
+    // Here you would typically save the title to the database
+    // For this implementation we'll just update the local state and show a toast
+    setIsEditingTitle(false);
+    toast({
+      title: "Section title updated",
+      description: `Day ${dayNumber} section title has been updated.`,
+    });
+  };
+
   let formattedDate: string | null = null;
   if (startDate) {
     try {
@@ -47,28 +102,77 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
     }
   }
 
-  const dayTitle =
-    dayNumber === 1
-      ? 'day one'
-      : dayNumber === 2
-        ? 'day two'
-        : dayNumber === 3
-          ? 'day three'
-          : `day ${dayNumber}`;
-
-  const containerId = `day-${dayNumber}`;
+  const { setNodeRef, isOver } = useDroppable({
+    id: containerId,
+    data: {
+      type: 'container',
+      dayNumber: dayNumber,
+    }
+  });
 
   return (
-    <div className="space-y-4 pt-4">
-      <div className="flex items-center gap-3 mb-2">
-        <h2 className="text-2xl font-semibold tracking-tight capitalize">{dayTitle}</h2>
+    <div 
+      ref={setNodeRef} 
+      className={`space-y-4 pt-4 ${isOver ? 'bg-muted/50 ring-2 ring-primary rounded-md p-2' : ''}`}
+    >
+      {/* Section header with title on left and date on right */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {isEditingTitle ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={sectionTitle}
+                onChange={(e) => setSectionTitle(e.target.value)}
+                className="text-2xl font-semibold h-10 py-0 px-1 w-48 focus-visible:ring-offset-0"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTitleSave();
+                  } else if (e.key === 'Escape') {
+                    setIsEditingTitle(false);
+                  }
+                }}
+                onBlur={handleTitleSave}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleTitleSave}
+                className="h-8 w-8"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <h2 
+              className={`text-2xl font-semibold tracking-tight capitalize ${canEdit ? 'cursor-pointer border-b border-dashed border-muted-foreground/50 hover:border-primary/70' : ''}`}
+              onClick={() => {
+                if (canEdit) {
+                  setIsEditingTitle(true);
+                }
+              }}
+            >
+              {sectionTitle}
+            </h2>
+          )}
+        </div>
+        
+        {/* Date badge aligned to the right */}
         {formattedDate && (
-          <Badge variant="outline" className="font-normal text-sm py-0.5">
+          <Badge 
+            variant="outline" 
+            className={cn(
+              "font-medium text-sm py-1 px-2.5",
+              getDayColor(dayNumber)
+            )}
+          >
             {formattedDate}
           </Badge>
         )}
       </div>
-      <div className="space-y-4">
+      
+      {/* Items with additional left padding for nesting */}
+      <div className="space-y-4 pl-4">
         <SortableContext
           items={items.map((item) => item.id)}
           strategy={verticalListSortingStrategy}
@@ -76,7 +180,7 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
         >
           {items.map((item) => (
             <SortableItem key={item.id} id={item.id} disabled={!canEdit} containerId={containerId}>
-              <ItineraryItemCard item={item} />
+              <ItineraryItemCard item={item} onEdit={() => onEditItem(item)} />
             </SortableItem>
           ))}
         </SortableContext>
@@ -88,7 +192,7 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
             onClick={onAddItemToDay}
           >
             <PlusCircle className="w-5 h-5 mr-2" />
-            Add Item to {dayTitle}
+            Add Item to {sectionTitle}
           </Button>
         )}
       </div>

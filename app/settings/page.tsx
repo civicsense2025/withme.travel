@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CursorSettings } from '@/components/presence/cursor-settings';
+// import { CursorSettings } from '@/components/presence/cursor-settings';
 import { PageHeader } from '@/components/page-header';
 
 export default function SettingsPage() {
@@ -272,8 +272,22 @@ export default function SettingsPage() {
 
         <TabsContent value="collaboration">
           <div className="space-y-6">
-            <CursorSettings />
-
+            <Card>
+              <CardHeader>
+                <CardTitle className="lowercase">collaboration settings</CardTitle>
+                <CardDescription className="lowercase">
+                  configure your preferences for collaborative features
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-muted/50 p-4 rounded-md border border-dashed">
+                  <h3 className="font-medium mb-2">Cursor Settings Temporarily Unavailable</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Cursor customization settings are currently disabled but kept in the codebase for future use.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
             {/* Other collaboration settings can go here */}
           </div>
         </TabsContent>

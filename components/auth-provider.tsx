@@ -335,9 +335,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
 
-      // Optionally force reload the page to ensure all state is cleared
-      // Uncomment if you're having persistent auth issues
-      // window.location.href = '/';
+      // Show toast with countdown and redirect after 3 seconds
+      const redirectToHome = () => {
+        window.location.href = '/';
+      };
+      
+      toast.success('You\'re now logged out. Redirecting to homepage in 3 seconds...', {
+        duration: 3000,
+        onAutoClose: redirectToHome
+      });
+      
+      // Force a page refresh to ensure all state is cleared
+      setTimeout(() => {
+        redirectToHome();
+      }, 3000);
     } catch (error) {
       console.error('[AuthProvider] Sign out error:', error);
       setError(error instanceof Error ? error : new Error('Sign out failed'));

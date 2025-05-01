@@ -18,7 +18,7 @@ import Autoplay from 'embla-carousel-autoplay';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '@/utils/constants';
+import { API_ROUTES } from '@/utils/constants/api';
 import { DestinationCard } from '@/components/destination-card';
 
 interface Destination {
@@ -107,7 +107,7 @@ export function TrendingDestinations() {
 
   // Using SWR for data fetching with stale-while-revalidate strategy
   const { data, error, isValidating } = useSWR<DestinationsResponse>(
-    API_ENDPOINTS.TRENDING_DESTINATIONS + '&limit=8',
+    `/api/destinations?trending=true&limit=8`,
     fetcher,
     {
       revalidateOnFocus: false, // Don't revalidate when window gets focus

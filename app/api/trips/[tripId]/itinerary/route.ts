@@ -11,39 +11,10 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
 import type { Database, TripRole } from '@/types/database.types';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 
 // Define TripRole based on ENUMS if not imported
 // type TripRole = (typeof ENUMS.TRIP_ROLES)[keyof typeof ENUMS.TRIP_ROLES];
-
-// Helper function to create Supabase client for Route Handlers
-async function createRouteHandlerClient() {
-  const cookieStore = await cookies();
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            console.warn(`Failed to set cookie ${name}:`, error);
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
-            console.warn(`Failed to remove cookie ${name}:`, error);
-          }
-        },
-      },
-    }
-  );
-}
 
 // Helper function to check user membership and role
 async function checkTripAccess(
@@ -154,7 +125,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
   console.log(`[API /trips/${tripId}/itinerary] GET handler started`); // Log start
 
@@ -238,7 +209,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
 
   try {
@@ -344,7 +315,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = createServerSupabaseClient();
     const {
       data: { user },
       error: authError,

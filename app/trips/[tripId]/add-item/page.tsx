@@ -1,5 +1,4 @@
 import { getServerComponentClient } from '@/utils/supabase/unified';
-import { TABLES, DB_FIELDS } from '@/utils/constants/database';
 import { ItineraryItem } from '@/types/database.types';
 import { AddItineraryItemClient } from './add-item-client'; // Import the new client component
 
@@ -11,7 +10,7 @@ interface DestinationInfo {
   country: string | null;
   latitude: number | null;
   longitude: number | null;
-  google_place_id: string | null;
+  mapbox_id: string | null;
 }
 
 interface TripWithDestination {
@@ -30,21 +29,21 @@ export default async function AddItineraryItemPage({
   let initialDestination: DestinationInfo | null = null;
   try {
     const { data: tripData, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .select(
         `
-        ${DB_FIELDS.TRIPS.DESTINATION_ID},
+        destination_id,
         destination:destinations (
           id,
           city,
           country,
           latitude,
           longitude,
-          google_place_id
+          mapbox_id
         )
       `
       )
-      .eq(DB_FIELDS.TRIPS.ID, tripId)
+      .eq('id', tripId)
       .maybeSingle<TripWithDestination>();
 
     if (tripError) throw tripError;

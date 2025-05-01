@@ -1,28 +1,36 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import TripsClientPage from './trips-client';
-import { createServerComponentClient } from '@/utils/supabase/ssr-client';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/database';
 
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
 
 export default async function TripsPage() {
-  // Authenticate on the server using the async client creator
-  const supabase = await createServerComponentClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  // Use the correct client creation function
+  const supabase = createServerSupabaseClient();
+  // Get user directly instead of session for better security
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  // Redirect to login if not authenticated
-  if (!session) {
+  // Redirect to login if not authenticated or error fetching user
+  if (userError || !user) {
+    if (userError) {
+      console.error('[TripsPage Server] Error fetching user:', userError);
+    }
     redirect('/login?redirectTo=/trips');
   }
   
+  // Log the specific User ID being used for the query
+  console.log('[TripsPage Server] Using User ID for query:', user.id);
+  
   // Fetch initial trips data for server side rendering
-  const { data: tripMembers } = await supabase
-    .from('trip_members')
+  const { data: tripMembers, error: queryError } = await supabase
+    .from(TABLES.TRIP_MEMBERS)
     .select(`
       role, 
       joined_at,
-      trip:trips (
+      trip:${TABLES.TRIPS} (
         id, name, start_date, 
         end_date, created_at,
         status, destination_id, destination_name,
@@ -30,14 +38,22 @@ export default async function TripsPage() {
         privacy_setting, description
       )
     `)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .order('start_date', {
-      foreignTable: 'trips',
+      foreignTable: TABLES.TRIPS,
       ascending: false,
       nullsFirst: false,
     })
-    .order('created_at', { foreignTable: 'trips', ascending: false });
+    .order('created_at', { foreignTable: TABLES.TRIPS, ascending: false });
   
+  // Log if there was a query error
+  if (queryError) {
+    console.error('[TripsPage Server] Error fetching tripMembers:', queryError);
+  }
+  
+  // Log the fetched data (which we know is currently null)
+  console.log('[TripsPage Server] Fetched tripMembers result:', JSON.stringify(tripMembers, null, 2));
+
   return (
     <Suspense fallback={
       <div className="container mx-auto px-4 py-8 md:py-12">
@@ -57,7 +73,7 @@ export default async function TripsPage() {
         </div>
       </div>
     }>
-      <TripsClientPage initialTrips={tripMembers || []} userId={session.user.id} />
+      <TripsClientPage initialTrips={tripMembers || []} userId={user.id} />
     </Suspense>
   );
 }

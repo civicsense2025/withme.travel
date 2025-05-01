@@ -10,7 +10,9 @@ import {
   ItinerarySection as DbItinerarySection,
 } from '@/types/database.types';
 import { createClient } from '@/utils/supabase/client';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { TABLES, FIELDS } from '@/utils/constants/index';
+// Default import for fast-deep-equal
+import deepEqual from 'fast-deep-equal';
 
 // Type for the full trip data with all related entities
 export interface TripData {
@@ -43,7 +45,7 @@ export interface TripTag {
 }
 
 interface TripContextType {
-  tripData: TripData;
+  tripData: TripData | null;
   isLoading: boolean;
   isItemsLoading: boolean;
   isMembersLoading: boolean;
@@ -54,12 +56,13 @@ interface TripContextType {
   refetchMembers: () => Promise<void>;
   optimisticUpdate: <T extends keyof TripData>(
     key: T,
-    updater: (currentData: TripData[T]) => TripData[T]
+    updater: (currentData: TripData[T] | undefined) => TripData[T]
   ) => Promise<void>;
 }
 
 // Custom fetcher that handles error responses and includes credentials
 const fetcher = async (url: string) => {
+  // console.log(`[Fetcher] Starting fetch for: ${url}`); // Removed log
   try {
     const response = await fetch(url, {
       headers: {
@@ -68,18 +71,35 @@ const fetcher = async (url: string) => {
       credentials: 'include', // Include cookies for authenticated requests
     });
 
+    // console.log(`[Fetcher] Response for ${url}: Status ${response.status}`); // Removed log
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      let errorData = { error: response.statusText };
+      try {
+        errorData = await response.json();
+        // console.error(`[Fetcher] Error JSON for ${url}:`, errorData); // Removed log
+      } catch (parseError) {
+        const textError = await response.text();
+        // console.error(`[Fetcher] Error Text for ${url} (JSON parse failed):`, textError); // Removed log
+        errorData = { error: textError || response.statusText };
+      }
       const error = new Error(errorData.error || 'An error occurred while fetching the data');
       (error as any).status = response.status;
       throw error;
     }
 
+    // Don't need to clone anymore
+    // const clonedResponse = response.clone();
+    // const rawBody = await clonedResponse.text();
+    // console.log(`[Fetcher] Raw Body for ${url}:`, rawBody); // Removed log
+
     const data = await response.json();
+    // console.log(`[Fetcher] Parsed Data for ${url}:`, data); // Removed log
     return data;
+
   } catch (err) {
-    // Log error to Sentry for monitoring
-    console.error(`Fetch error for ${url}:`, err);
+    // console.error(`[Fetcher] CATCH block error for ${url}:`, err); // Keep this one maybe?
+    console.error(`Fetch error for ${url}:`, err); // Revert to original simpler log
     throw err;
   }
 };
@@ -93,107 +113,161 @@ interface TripDataProviderProps {
 }
 
 export function TripDataProvider({ children, initialData, tripId }: TripDataProviderProps) {
-  // Use initialData's tripId if provided, otherwise use tripId prop
   const id = initialData?.tripId || tripId;
 
-  console.log('[TripDataProvider] Mounting for tripId:', id);
+  // --- Manage tripData with useState --- 
+  const [tripDataState, setTripDataState] = useState<TripData | null>(null);
+  const [errorState, setErrorState] = useState<Error | null>(null);
+  // --- End useState --- 
 
   if (!id) {
     console.error('[TripDataProvider] Requires either initialData with tripId or tripId prop');
+    // Handle error state appropriately, maybe set an error in state
   }
 
-  // Fetch trip data, fallback to initialData if provided
-  const {
-    data: tripResponse,
-    error: tripError,
-    mutate: refetchTrip,
-    isValidating: isTripValidating,
-  } = useSWR(`/api/trips/${id}`, fetcher, {
-    revalidateOnFocus: true,
-    suspense: false,
-    dedupingInterval: 2000, // Deduplicate requests within 2 seconds
-    fallbackData: initialData
-      ? {
-          data: {
-            id: initialData.tripId,
-            name: initialData.tripName,
-            description: initialData.tripDescription,
-            start_date: initialData.startDate,
-            end_date: initialData.endDate,
-            cover_image_url: initialData.coverImageUrl,
-            destination_id: initialData.destinationId,
-            destination_lat: initialData.destinationLat,
-            destination_lng: initialData.destinationLng,
-            budget: initialData.initialTripBudget,
-            tags: initialData.initialTags,
-            slug: initialData.slug,
-            privacy_setting: initialData.privacySetting,
-            playlist_url: initialData.playlistUrl,
-          },
-        }
-      : undefined,
-    onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-      // Only retry up to 3 times
-      if (retryCount >= 3) return;
-      // Retry after 5 seconds
-      setTimeout(() => revalidate({ retryCount }), 5000);
-    },
-  });
+  // Fetch trip data using SWR
+  const { data: tripResponse, error: tripError, mutate: refetchTrip, isValidating: isTripValidating } = useSWR(
+    id ? `/api/trips/${id}` : null, // Only fetch if id is present
+    fetcher, 
+    {
+      revalidateOnFocus: true,
+      suspense: false,
+      dedupingInterval: 2000, // Deduplicate requests within 2 seconds
+      fallbackData: initialData
+        ? {
+            data: {
+              id: initialData.tripId,
+              name: initialData.tripName,
+              description: initialData.tripDescription,
+              start_date: initialData.startDate,
+              end_date: initialData.endDate,
+              cover_image_url: initialData.coverImageUrl,
+              destination_id: initialData.destinationId,
+              destination_lat: initialData.destinationLat,
+              destination_lng: initialData.destinationLng,
+              budget: initialData.initialTripBudget,
+              tags: initialData.initialTags,
+              slug: initialData.slug,
+              privacy_setting: initialData.privacySetting,
+              playlist_url: initialData.playlistUrl,
+            },
+          }
+        : undefined,
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        // Only retry up to 3 times
+        if (retryCount >= 3) return;
+        // Retry after 5 seconds
+        setTimeout(() => revalidate({ retryCount }), 5000);
+      },
+    }
+  );
 
-  console.log('[TripDataProvider] Trip SWR:', { isTripValidating, tripError, tripDataExists: !!tripResponse?.data });
+  // Fetch itinerary data using SWR
+  const { data: itineraryResponse, error: itineraryError, mutate: refetchItinerary, isValidating: isItineraryValidating } = useSWR(
+    id ? `/api/trips/${id}/itinerary` : null, // Only fetch if id is present
+    fetcher, 
+    {
+      revalidateOnFocus: true,
+      suspense: false,
+      dedupingInterval: 2000, // Deduplicate requests within 2 seconds
+      fallbackData: initialData
+        ? {
+            data: {
+              sections: initialData.initialSections || [],
+              items: initialData.initialUnscheduledItems || [],
+            },
+          }
+        : undefined,
+    }
+  );
 
-  // Fetch itinerary data (sections and items)
-  const {
-    data: itineraryResponse,
-    error: itineraryError,
-    mutate: refetchItinerary,
-    isValidating: isItineraryValidating,
-  } = useSWR(`/api/trips/${id}/itinerary`, fetcher, {
-    revalidateOnFocus: true,
-    suspense: false,
-    dedupingInterval: 2000, // Deduplicate requests within 2 seconds
-    fallbackData: initialData
-      ? {
-          data: {
-            sections: initialData.initialSections || [],
-            items: initialData.initialUnscheduledItems || [],
-          },
-        }
-      : undefined,
-  });
+  // Fetch members using SWR
+  const { data: membersResponse, error: membersError, mutate: refetchMembers, isValidating: isMembersValidating } = useSWR(
+    id ? `/api/trips/${id}/members` : null, // Only fetch if id is present
+    fetcher, 
+    {
+      revalidateOnFocus: true,
+      suspense: false,
+      dedupingInterval: 2000, // Deduplicate requests within 2 seconds
+      fallbackData: initialData
+        ? {
+            data: initialData.initialMembers || [],
+          }
+        : undefined,
+    }
+  );
+  
+  // Effect to consolidate fetched data into the final state
+  useEffect(() => {
+    const allFetchesDone = !isTripValidating && !isItineraryValidating && !isMembersValidating;
+    const firstError = tripError || itineraryError || membersError; // Capture the first error
 
-  console.log('[TripDataProvider] Itinerary SWR:', { isItineraryValidating, itineraryError, itineraryDataExists: !!itineraryResponse?.data });
+    // Clear previous errors if fetches are starting/ongoing
+    if (isTripValidating || isItineraryValidating || isMembersValidating) {
+      setErrorState(null);
+    }
 
-  // Fetch members
-  const {
-    data: membersResponse,
-    error: membersError,
-    mutate: refetchMembers,
-    isValidating: isMembersValidating,
-  } = useSWR(`/api/trips/${id}/members`, fetcher, {
-    revalidateOnFocus: true,
-    suspense: false,
-    dedupingInterval: 2000, // Deduplicate requests within 2 seconds
-    fallbackData: initialData
-      ? {
-          data: initialData.initialMembers || [],
-        }
-      : undefined,
-  });
+    if (allFetchesDone) {
+      if (firstError) {
+        // Handle errors reported by SWR fetches
+        console.error('[TripDataProvider] SWR Error:', firstError);
+        setErrorState(firstError); // Set the first error encountered
+        setTripDataState(null); // Clear data on error
+        return; // Stop processing if there was an error
+      }
 
-  console.log('[TripDataProvider] Members SWR:', { isMembersValidating, membersError, membersDataExists: !!membersResponse?.data });
+      // --- Data Consolidation ---
+      // Access the actual data objects returned by SWR/fetcher
+      const actualTripData = tripResponse; // Trip API doesn't wrap in 'data'
+      const actualItineraryData = itineraryResponse?.data; // Itinerary API wraps in 'data'
+      const actualMembersData = membersResponse?.data; // Members API wraps in 'data'
 
-  // Extract and validate data
-  const trip = tripResponse?.data || null;
-  const sections = itineraryResponse?.data?.sections || [];
-  const items = itineraryResponse?.data?.items || [];
-  const members = membersResponse?.data || [];
-  const tags = tripResponse?.data?.tags || [];
+      // Validate the core trip data object
+      const isValidTripObject = actualTripData && typeof actualTripData === 'object' && !Array.isArray(actualTripData) && actualTripData.id;
 
-  // Validate trip data is complete (has required fields)
-  const validTripData = trip && 'id' in trip && 'name' in trip;
+      if (!isValidTripObject) {
+        // If trip fetch succeeded (no error) but data is invalid/missing AFTER fetch completes
+        console.error('[TripDataProvider] Invalid or missing core trip object after fetch completed.', actualTripData);
+        setErrorState(new Error('Failed to load essential trip details.'));
+        setTripDataState(null);
+        return; // Stop processing
+      }
 
-  // Loading states - include both initial load and revalidation state
+      // Proceed only if core trip data is valid
+      const newTripData: TripData = {
+        trip: actualTripData, // Assign validated data
+        // Safely access nested properties for itinerary and members
+        sections: actualItineraryData?.sections || [],
+        items: actualItineraryData?.items || [],
+        members: actualMembersData || [], // Assuming members API returns array directly under 'data'
+        tags: actualTripData.trip_tags?.map((t: any) => t.tags) || [], // Use validated actualTripData
+        manual_expenses: [], // Fetch separately
+      };
+
+      // Use deepEqual to prevent unnecessary updates/re-renders
+      if (!deepEqual(newTripData, tripDataState)) {
+        console.log('[TripDataProvider] Setting new tripDataState');
+        setTripDataState(newTripData);
+        setErrorState(null); // Clear error state on successful update
+      }
+
+    }
+    // If fetches are not done, do nothing yet, wait for the next effect run
+
+  }, [
+    tripResponse,
+    itineraryResponse,
+    membersResponse,
+    isTripValidating,
+    isItineraryValidating,
+    isMembersValidating,
+    tripError,
+    itineraryError,
+    membersError,
+    tripDataState // Include tripDataState for deepEqual comparison
+  ]);
+
+  // Loading states
   const isLoading = (!tripResponse && !tripError) || isTripValidating;
   const isItemsLoading = (!itineraryResponse && !itineraryError) || isItineraryValidating;
   const isMembersLoading = (!membersResponse && !membersError) || isMembersValidating;
@@ -203,97 +277,55 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
     tripError ||
     itineraryError ||
     membersError ||
-    (!validTripData && trip ? new Error('Invalid trip data received') : null);
-
-  // Combined trip data object
-  const tripData: TripData = {
-    trip: validTripData ? trip : null,
-    sections,
-    items,
-    members,
-    tags,
-    manual_expenses: [], // Initialize manual_expenses field
-  };
-
-  // Optimistic update helper - allows updating any part of the trip data optimistically
-  const optimisticUpdate = async <T extends keyof TripData>(
+    // Check state *after* useEffect might have set it
+    (tripDataState && !tripDataState.trip ? new Error('Invalid trip data processed') : null);
+    
+  // Optimistic update helper - needs adjustment to work with state
+  const optimisticUpdate = useCallback(async <T extends keyof TripData>(
     key: T,
-    updater: (currentData: TripData[T]) => TripData[T]
+    updater: (currentData: TripData[T] | undefined) => TripData[T]
   ) => {
-    try {
-      // Deep clone the current data to avoid unexpected mutations
-      // Track the optimistic update in Sentry
-      if (typeof window !== 'undefined' && (window as any).Sentry) {
-        (window as any).Sentry.addBreadcrumb({
-          category: 'optimistic-update',
-          message: `Optimistic update for ${String(key)}`,
-          level: 'info',
-          data: { tripId: id, dataKey: key },
-        });
-      }
+      // Use setTripDataState with a function to get the latest state
+      setTripDataState(currentState => {
+          if (!currentState) {
+              console.error("Cannot perform optimistic update on null state");
+              return null; 
+          }
+          const currentValue = currentState[key];
+          const updatedValue = updater(currentValue);
+          
+          // Return new state object
+          return { ...currentState, [key]: updatedValue };
+      });
 
-      const currentValue = JSON.parse(JSON.stringify(tripData[key]));
-
-      // Create a new data object with the updated property
-      const newData = {
-        ...tripData,
-        [key]: updater(currentValue),
-      };
-
+      // SWR mutation part remains similar but needs careful handling
       // Determine which refetch method to use based on the key
-      let refetchMethod;
+      let swrMutate, swrKey;
       switch (key) {
-        case 'trip':
-          refetchMethod = refetchTrip;
-          break;
-        case 'sections':
-        case 'items':
-          refetchMethod = refetchItinerary;
-          break;
-        case 'members':
-          refetchMethod = refetchMembers;
-          break;
-        case 'tags':
-          refetchMethod = refetchTrip;
-          break;
-        default:
-          refetchMethod = refetchTrip;
+          case 'trip': swrMutate = refetchTrip; swrKey = `/api/trips/${id}`; break;
+          case 'sections': case 'items': swrMutate = refetchItinerary; swrKey = `/api/trips/${id}/itinerary`; break;
+          case 'members': swrMutate = refetchMembers; swrKey = `/api/trips/${id}/members`; break;
+          case 'tags': swrMutate = refetchTrip; swrKey = `/api/trips/${id}`; break;
+          default: swrMutate = refetchTrip; swrKey = `/api/trips/${id}`; break;
       }
 
-      // TypeScript interface for SWR response data structure with generic typing
-      interface SWRResponseData<D = any> {
-        data: D;
-        [key: string]: any;
+      // Re-fetch immediately after optimistic update (or use SWR's optimisticData feature)
+      // For simplicity, just trigger revalidation here.
+      // A more robust implementation might use SWR's mutate(..., { optimisticData: ... }) 
+      if (swrMutate) {
+           await swrMutate(); // Revalidate to get fresh data
+      } else {
+          console.warn("No SWR mutation function found for key:", key);
       }
-
-      // Optimistically update the data
-      await refetchMethod((oldData: SWRResponseData) => {
-        if (!oldData) return { data: newData[key] };
-
-        return {
-          ...oldData,
-          data:
-            key === 'trip'
-              ? newData[key]
-              : {
-                  ...(oldData.data || {}),
-                  [key]: newData[key],
-                },
-        };
-      }, false);
-    } catch (error) {
-      console.error(`Error during optimistic update of ${String(key)}:`, error);
-      throw error;
-    }
-  };
+  }, [id, refetchTrip, refetchItinerary, refetchMembers]); // Add dependencies
 
   // Add combined loading state for easier checks
   const isFetching = isLoading || isItemsLoading || isMembersLoading;
 
-  console.log('[TripDataProvider] Context Values:', { isLoading, isItemsLoading, isMembersLoading, isFetching, error: error?.message, hasValidTripData: validTripData });
+  console.log('[TripDataProvider] Context Values:', { isLoading, isItemsLoading, isMembersLoading, isFetching, error: error?.message, hasValidTrip: !!tripDataState?.trip });
 
   const value = {
-    tripData,
+    tripData: tripDataState, // Use state variable
     isLoading,
     isItemsLoading,
     isMembersLoading,

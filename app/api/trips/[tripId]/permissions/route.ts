@@ -1,11 +1,50 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse, NextRequest } from 'next/server';
-import { TABLES, FIELDS, ENUMS, type TripRole } from '@/utils/constants/database';
+// Removed problematic constant imports
+// import { DB_TABLES, DB_FIELDS, DB_ENUMS, type TripRole } from '@/utils/constants/database'; 
 import { errorResponse, successResponse, validateInput, ApiError } from '@/lib/api-utils';
 import { requireAuth, withAuth } from '@/lib/auth-middleware';
 import { checkTripAccess, getTripPermissions, ensureTripAccess } from '@/lib/trip-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
+
+// --- Local Constant Definitions (Workaround) ---
+type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
+const LOCAL_TABLES = {
+  PERMISSION_REQUESTS: 'permission_requests',
+  TRIP_MEMBERS: 'trip_members',
+};
+const LOCAL_FIELDS = {
+  PERMISSION_REQUESTS: {
+    ID: 'id',
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    STATUS: 'status',
+    ROLE: 'role', // Field name is ROLE
+    MESSAGE: 'message',
+  },
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    ROLE: 'role',
+    INVITED_BY: 'invited_by',
+    JOINED_AT: 'joined_at',
+  },
+};
+const LOCAL_ENUMS = {
+  TRIP_ROLE: {
+    ADMIN: 'admin',
+    EDITOR: 'editor',
+    CONTRIBUTOR: 'contributor',
+    VIEWER: 'viewer',
+  } as const,
+  ACCESS_REQUEST_STATUS: {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+  } as const,
+};
+// --- End Local Definitions ---
 
 // Define response interface for permission checks
 export interface PermissionCheck {
@@ -18,17 +57,17 @@ export interface PermissionCheck {
   role: TripRole | null;
 }
 
-// Validation schema for permission request
+// Use LOCAL_ENUMS
 const permissionRequestSchema = z.object({
   role: z
     .enum([
-      ENUMS.TRIP_ROLES.ADMIN,
-      ENUMS.TRIP_ROLES.EDITOR,
-      ENUMS.TRIP_ROLES.CONTRIBUTOR,
-      ENUMS.TRIP_ROLES.VIEWER,
+      LOCAL_ENUMS.TRIP_ROLE.ADMIN,
+      LOCAL_ENUMS.TRIP_ROLE.EDITOR,
+      LOCAL_ENUMS.TRIP_ROLE.CONTRIBUTOR,
+      LOCAL_ENUMS.TRIP_ROLE.VIEWER,
     ])
     .optional()
-    .default(ENUMS.TRIP_ROLES.EDITOR),
+    .default(LOCAL_ENUMS.TRIP_ROLE.EDITOR),
   message: z.string().optional(),
 });
 
@@ -39,51 +78,53 @@ const permissionRequestSchema = z.object({
  * @returns A JSON response with the list of permission requests
  */
 export async function GET(request: NextRequest, context: { params: Promise<{ tripId: string }> }) {
-  // Apply rate limiting based on IP
-  const ip = request.headers.get('x-forwarded-for') || 'unknown';
-  const rateLimitKey = `get_permission_requests_${ip}`;
-  const rateLimitResponse = await rateLimit.applyLimit(request, rateLimitKey, 60, 60);
-  if (rateLimitResponse) return rateLimitResponse;
+  try {
+    // Apply rate limiting based on IP
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimitKey = `get_permission_requests_${ip}`;
+    const rateLimitResponse = await rateLimit.applyLimit(request, rateLimitKey, 60, 60);
+    if (rateLimitResponse) return rateLimitResponse;
 
-  return withAuth(async (user) => {
     const { tripId } = await context.params;
     if (!tripId) return errorResponse('Trip ID is required', 400);
 
-    const supabase = await createApiClient();
-    // Check if user is an admin or editor of this trip
-    const accessResponse = await ensureTripAccess(user.id, tripId, [
-      ENUMS.TRIP_ROLES.ADMIN,
-      ENUMS.TRIP_ROLES.EDITOR,
-    ]);
+    return await withAuth(async (user) => {
+      try {
+        const supabase = await createServerSupabaseClient();
+        const accessResponse = await ensureTripAccess(user.id, tripId, [
+          LOCAL_ENUMS.TRIP_ROLE.ADMIN,
+          LOCAL_ENUMS.TRIP_ROLE.EDITOR,
+        ]);
+        if (accessResponse) return accessResponse;
 
-    if (accessResponse) return accessResponse;
-
-    try {
-      // Get all pending permission requests for this trip
-      const { data: requests, error } = await supabase
-        .from(DB_TABLES.PERMISSION_REQUESTS)
-        .select(
+        const { data: requests, error } = await supabase
+          .from(LOCAL_TABLES.PERMISSION_REQUESTS)
+          .select(
+            `
+            *,
+            user:user_id(id, name, email, avatar_url)
           `
-          *,
-          user:user_id(id, name, email, avatar_url)
-        `
-        )
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.STATUS, ENUMS.ACCESS_REQUEST_STATUS.PENDING);
+          )
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.STATUS, LOCAL_ENUMS.ACCESS_REQUEST_STATUS.PENDING);
 
-      if (error) {
-        throw new ApiError(error.message, 500);
+        if (error) {
+          throw new ApiError(error.message, 500);
+        }
+
+        return successResponse({ requests });
+      } catch (error) {
+        console.error(`[Permissions GET Handler Error] Trip ${tripId}:`, error);
+        return errorResponse(
+          error instanceof ApiError ? error.message : 'Failed to fetch permissions',
+          error instanceof ApiError ? error.status : 500
+        );
       }
-
-      return successResponse({ requests });
-    } catch (error) {
-      console.error(`Error fetching permissions for trip ${tripId}:`, error);
-      return errorResponse(
-        error instanceof ApiError ? error.message : 'Failed to fetch permissions',
-        error instanceof ApiError ? error.status : 500
-      );
-    }
-  });
+    });
+  } catch (error) {
+      console.error(`[Permissions GET Top-Level Error]:`, error);
+      return errorResponse('An unexpected error occurred', 500);
+  }
 }
 
 /**
@@ -93,74 +134,85 @@ export async function GET(request: NextRequest, context: { params: Promise<{ tri
  * @returns A JSON response with the created request or error
  */
 export async function POST(request: NextRequest, context: { params: Promise<{ tripId: string }> }) {
-  return withAuth(async (user) => {
+  try {
     const { tripId } = await context.params;
     if (!tripId) return errorResponse('Trip ID is required', 400);
 
-    try {
-      const supabase = await createApiClient();
+    return await withAuth(async (user) => {
+      try {
+        const supabase = await createServerSupabaseClient();
 
-      // Check if user is already a member of this trip
-      const { data: existingMember, error: checkError } = await supabase
-        .from(DB_TABLES.TRIP_MEMBERS)
-        .select()
-        .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-        .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-        .maybeSingle();
+        // Check if user is already a member of this trip
+        const { data: existingMember, error: checkError } = await supabase
+          .from(LOCAL_TABLES.TRIP_MEMBERS)
+          .select()
+          .eq(LOCAL_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+          .eq(LOCAL_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+          .maybeSingle();
 
-      if (existingMember) {
-        return errorResponse('You are already a member of this trip', 400);
+        if (checkError) throw new ApiError(checkError.message, 500);
+        if (existingMember) {
+          return errorResponse('You are already a member of this trip', 400);
+        }
+
+        // Validate request body
+        const requestBody = await request.json();
+        const { role, message } = await validateInput(requestBody, permissionRequestSchema);
+
+        // Check if request already exists
+        const { data: existingRequest, error: requestError } = await supabase
+          .from(LOCAL_TABLES.PERMISSION_REQUESTS)
+          .select()
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.USER_ID, user.id)
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.STATUS, LOCAL_ENUMS.ACCESS_REQUEST_STATUS.PENDING)
+          .maybeSingle();
+
+        if (requestError) throw new ApiError(requestError.message, 500);
+        if (existingRequest) {
+          return errorResponse('You already have a pending request for this trip', 400);
+        }
+
+        // Create permission request
+        const { data, error } = await supabase
+          .from(LOCAL_TABLES.PERMISSION_REQUESTS)
+          .insert([
+            {
+              [LOCAL_FIELDS.PERMISSION_REQUESTS.TRIP_ID]: tripId,
+              [LOCAL_FIELDS.PERMISSION_REQUESTS.USER_ID]: user.id,
+              [LOCAL_FIELDS.PERMISSION_REQUESTS.ROLE]: role,
+              [LOCAL_FIELDS.PERMISSION_REQUESTS.MESSAGE]: message,
+              [LOCAL_FIELDS.PERMISSION_REQUESTS.STATUS]: LOCAL_ENUMS.ACCESS_REQUEST_STATUS.PENDING,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) {
+          throw new ApiError(error.message, 500);
+        }
+
+        return successResponse({ request: data }, 201);
+      } catch (error) {
+        console.error(`[Permissions POST Handler Error] Trip ${tripId}:`, error);
+        return errorResponse(
+          error instanceof ApiError ? error.message : 'Failed to create permission request',
+          error instanceof ApiError ? error.status : 500
+        );
       }
-
-      // Validate request body
-      const requestBody = await request.json();
-      const { role, message } = await validateInput(requestBody, permissionRequestSchema);
-
-      // Check if request already exists
-      const { data: existingRequest, error: requestError } = await supabase
-        .from(DB_TABLES.PERMISSION_REQUESTS)
-        .select()
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.USER_ID, user.id)
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.STATUS, ENUMS.ACCESS_REQUEST_STATUS.PENDING)
-        .maybeSingle();
-
-      if (existingRequest) {
-        return errorResponse('You already have a pending request for this trip', 400);
-      }
-
-      // Create permission request
-      const { data, error } = await supabase
-        .from(DB_TABLES.PERMISSION_REQUESTS)
-        .insert([
-          {
-            [DB_FIELDS.PERMISSION_REQUESTS.TRIP_ID]: tripId,
-            [DB_FIELDS.PERMISSION_REQUESTS.USER_ID]: user.id,
-            [DB_FIELDS.PERMISSION_REQUESTS.ROLE]: role,
-            [DB_FIELDS.PERMISSION_REQUESTS.MESSAGE]: message,
-            [DB_FIELDS.PERMISSION_REQUESTS.STATUS]: ENUMS.ACCESS_REQUEST_STATUS.PENDING,
-          },
-        ])
-        .select();
-
-      if (error) {
-        throw new ApiError(error.message, 500);
-      }
-
-      return successResponse({ request: data[0] }, 201);
-    } catch (error) {
-      console.error(`Error creating permission request for trip ${tripId}:`, error);
-      return errorResponse(
-        error instanceof ApiError ? error.message : 'Failed to create permission request',
-        error instanceof ApiError ? error.status : 500
-      );
-    }
-  });
+    });
+  } catch (error) {
+      console.error(`[Permissions POST Top-Level Error]:`, error);
+      return errorResponse('An unexpected error occurred', 500);
+  }
 }
 
-// Schema for updating a permission request status
+// Use LOCAL_ENUMS
 const updateStatusSchema = z.object({
-  status: z.enum([ENUMS.ACCESS_REQUEST_STATUS.APPROVED, ENUMS.ACCESS_REQUEST_STATUS.REJECTED]),
+  status: z.enum([
+    LOCAL_ENUMS.ACCESS_REQUEST_STATUS.APPROVED,
+    LOCAL_ENUMS.ACCESS_REQUEST_STATUS.REJECTED,
+  ]),
 });
 
 /**
@@ -173,81 +225,94 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ tripId: string; requestId: string }> }
 ) {
-  return withAuth(async (user) => {
+  try {
     const { tripId, requestId } = await context.params;
-
     if (!tripId || !requestId) {
       return errorResponse('Trip ID and Request ID are required', 400);
     }
 
-    try {
-      const supabase = await createApiClient();
+    return await withAuth(async (user) => {
+      try {
+        const supabase = await createServerSupabaseClient();
 
-      // Validate request body
-      const requestBody = await request.json();
-      const { status } = await validateInput(requestBody, updateStatusSchema);
+        // Validate request body
+        const requestBody = await request.json();
+        const { status } = await validateInput(requestBody, updateStatusSchema);
 
-      // Verify user is admin of the trip
-      const accessResponse = await ensureTripAccess(user.id, tripId, [ENUMS.TRIP_ROLES.ADMIN]);
+        // Verify user is admin of the trip
+        const accessResponse = await ensureTripAccess(user.id, tripId, [LOCAL_ENUMS.TRIP_ROLE.ADMIN]);
 
-      if (accessResponse) return accessResponse;
+        if (accessResponse) return accessResponse;
 
-      // Get the request to update
-      const { data: permRequest, error: fetchError } = await supabase
-        .from(DB_TABLES.PERMISSION_REQUESTS)
-        .select(DB_FIELDS.PERMISSION_REQUESTS.ID)
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.ID, requestId)
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
-        .single();
-
-      if (fetchError || !permRequest) {
-        return errorResponse('Permission request not found', 404);
-      }
-
-      // Update status
-      const { error } = await supabase
-        .from(DB_TABLES.PERMISSION_REQUESTS)
-        .update({ [DB_FIELDS.PERMISSION_REQUESTS.STATUS]: status })
-        .eq(DB_FIELDS.PERMISSION_REQUESTS.ID, requestId);
-
-      if (error) {
-        throw new ApiError(`Failed to update request status: ${error.message}`, 500);
-      }
-
-      // If approved, add user to trip members
-      if (status === ENUMS.ACCESS_REQUEST_STATUS.APPROVED) {
-        // Get the full request details
-        const { data: fullRequest, error: fullRequestError } = await supabase
-          .from(DB_TABLES.PERMISSION_REQUESTS)
-          .select('*')
-          .eq(DB_FIELDS.PERMISSION_REQUESTS.ID, requestId)
+        // Get the request to update
+        const { data: permRequest, error: fetchError } = await supabase
+          .from(LOCAL_TABLES.PERMISSION_REQUESTS)
+          .select(LOCAL_FIELDS.PERMISSION_REQUESTS.ID)
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.ID, requestId)
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
           .single();
 
-        if (fullRequestError || !fullRequest) {
-          return errorResponse('Failed to get request details', 500);
+        if (fetchError) {
+          if (fetchError.code === 'PGRST116') {
+            return errorResponse('Permission request not found', 404);
+          }
+          throw new ApiError(`Failed to fetch permission request: ${fetchError.message}`, 500);
+        }
+        if (!permRequest) {
+          return errorResponse('Permission request not found', 404);
         }
 
-        // Add user as a trip member
-        const { error: addError } = await supabase.from(DB_TABLES.TRIP_MEMBERS).insert({
-          [DB_FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
-          [DB_FIELDS.TRIP_MEMBERS.USER_ID]: fullRequest.user_id,
-          [DB_FIELDS.TRIP_MEMBERS.ROLE]: fullRequest.role,
-          [DB_FIELDS.TRIP_MEMBERS.INVITED_BY]: user.id,
-          [DB_FIELDS.TRIP_MEMBERS.JOINED_AT]: new Date().toISOString(),
-        });
+        // Update status
+        const { error } = await supabase
+          .from(LOCAL_TABLES.PERMISSION_REQUESTS)
+          .update({ [LOCAL_FIELDS.PERMISSION_REQUESTS.STATUS]: status })
+          .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.ID, requestId);
 
-        if (addError) {
-          throw new ApiError(`Failed to add member to trip: ${addError.message}`, 500);
+        if (error) {
+          throw new ApiError(`Failed to update request status: ${error.message}`, 500);
         }
+
+        // If approved, add user to trip members
+        if (status === LOCAL_ENUMS.ACCESS_REQUEST_STATUS.APPROVED) {
+          const { data: fullRequest, error: fullRequestError } = await supabase
+            .from(LOCAL_TABLES.PERMISSION_REQUESTS)
+            .select('*')
+            .eq(LOCAL_FIELDS.PERMISSION_REQUESTS.ID, requestId)
+            .single();
+
+          if (fullRequestError || !fullRequest) {
+            console.error(`[Permissions PATCH] Failed to re-fetch request ${requestId} after status update.`);
+            throw new ApiError('Failed to retrieve request details after update', 500);
+          }
+
+          const { error: addError } = await supabase.from(LOCAL_TABLES.TRIP_MEMBERS).insert({
+            [LOCAL_FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
+            [LOCAL_FIELDS.TRIP_MEMBERS.USER_ID]: fullRequest.user_id,
+            [LOCAL_FIELDS.TRIP_MEMBERS.ROLE]: fullRequest.role,
+            [LOCAL_FIELDS.TRIP_MEMBERS.INVITED_BY]: user.id,
+            [LOCAL_FIELDS.TRIP_MEMBERS.JOINED_AT]: new Date().toISOString(),
+          });
+
+          if (addError) {
+            if (addError.code === '23505') {
+              console.warn(`[Permissions PATCH] User ${fullRequest.user_id} already a member of trip ${tripId}. Ignoring insert error.`);
+            } else {
+              throw new ApiError(`Failed to add member to trip: ${addError.message}`, 500);
+            }
+          }
+        }
+
+        return successResponse({ success: true, status });
+      } catch (error) {
+        console.error(`[Permissions PATCH Handler Error] Trip ${tripId}, Request ${requestId}:`, error);
+        return errorResponse(
+          error instanceof ApiError ? error.message : 'Failed to update permission request',
+          error instanceof ApiError ? error.status : 500
+        );
       }
-
-      return successResponse({ success: true, status });
-    } catch (error) {
-      console.error(`Error updating permission request for trip ${tripId}:`, error);
-      return errorResponse(
-        error instanceof ApiError ? error.message : 'Failed to update permission request',
-        error instanceof ApiError ? error.status : 500
-      );
-    }
-  });
+    });
+  } catch (error) {
+      console.error(`[Permissions PATCH Top-Level Error]:`, error);
+      return errorResponse('An unexpected error occurred', 500);
+  }
 }

@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 
 // Force-dynamic export to ensure up-to-date information
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createServerSupabaseClient();
     
     // Check authentication status
     const { data: { session }, error: authError } = await supabase.auth.getSession();
@@ -16,34 +14,34 @@ export async function GET() {
     // Don't attempt database checks if not authenticated
     let dbConnected = false;
     let dbError = null;
+    let dbCheckErrorDetails: string | null = null;
     
-    if (session) {
-      // Only check database if authenticated
-      const dbResponse = await supabase
-        .from('profiles')
-        .select('count(*)')
-        .limit(1)
-        .single();
-      
-      dbError = dbResponse.error;
-      dbConnected = !dbError || (dbError && !dbError.message.includes('connect'));
-    } else {
-      // Since we're not authenticated, do a minimal DB check 
-      // that doesn't require auth just to test connection
-      try {
-        // Try a public table or view if available
-        const { error } = await supabase
+    try {
+      if (session) {
+        // Only check database if authenticated
+        // Use select with head: true and count: 'exact' for efficiency
+        const { error: profileError, count } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        
+        dbError = profileError;
+        dbConnected = !profileError;
+      } else {
+        // Since we're not authenticated, do a minimal DB check 
+        // that doesn't require auth just to test connection
+        // Use select with head: true and count: 'exact' for efficiency
+        const { error: destinationError, count } = await supabase
           .from('destinations')
-          .select('count(*)')
-          .limit(1)
-          .single();
-          
-        dbConnected = !error || (error && !error.message.includes('connect'));
-        dbError = error;
-      } catch (e) {
-        // DB connection likely failed
-        dbConnected = false;
+          .select('*', { count: 'exact', head: true });
+            
+        dbConnected = !destinationError;
+        dbError = destinationError;
       }
+    } catch (e) {
+        // Catch any unexpected errors during DB check
+        console.error('Unexpected DB check error:', e);
+        dbConnected = false;
+        dbCheckErrorDetails = e instanceof Error ? e.message : String(e);
     }
     
     // Get information about auth configuration

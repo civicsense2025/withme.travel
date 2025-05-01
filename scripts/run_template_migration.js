@@ -80,10 +80,10 @@ const runMigration = () => {
     console.log('Migration completed successfully!');
 
     // Remind to update constants
-    console.log('\nIMPORTANT: Make sure your constants.ts file includes:');
-    console.log("- DB_TABLES.ITINERARY_TEMPLATE_ITEMS = 'itinerary_template_items'");
-    console.log('- DB_FIELDS.ITINERARY_TEMPLATE_ITEMS = {...}');
-    console.log('- DB_RELATIONSHIPS with proper relationships defined');
+    console.log('\nIMPORTANT: Make sure your utils/constants/database.ts file includes:');
+    console.log("- TABLES.ITINERARY_TEMPLATE_ITEMS = 'itinerary_template_items'");
+    console.log('- FIELDS.ITINERARY_TEMPLATE_ITEMS = {...}');
+    console.log('- RELATIONSHIPS with proper relationships defined');
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);

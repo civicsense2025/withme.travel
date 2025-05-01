@@ -40,12 +40,20 @@ export interface FetchedItineraryItemData {
 
 // Define accepted categories
 export type ItineraryCategory =
-  | 'Accommodation'
-  | 'Activity'
-  | 'Flight'
-  | 'Food'
-  | 'Other'
-  | 'Transportation';
+  | 'Iconic Landmarks'
+  | 'Local Secrets'
+  | 'Cultural Experiences'
+  | 'Outdoor Adventures'
+  | 'Food & Drink'
+  | 'Nightlife'
+  | 'Relaxation'
+  | 'Shopping'
+  | 'Group Activities'
+  | 'Day Excursions'
+  | 'Accommodations'
+  | 'Transportation'
+  | 'Flexible Options'
+  | 'Special Occasions';
 
 /**
  * Interface for displaying itinerary items in the UI

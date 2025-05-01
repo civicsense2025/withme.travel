@@ -22,8 +22,6 @@ import * as Sentry from '@sentry/nextjs';
 
 // Context providers
 import { TripDataProvider, useTripData } from './context/trip-data-provider';
-import { usePresenceContext, PresenceProvider } from '@/components/presence/presence-context';
-import { FocusSessionProvider } from '@/contexts/focus-session-context';
 import { useAuth } from '@/lib/hooks/use-auth';
 
 // Custom hooks
@@ -130,7 +128,6 @@ import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
 import { EditTripForm, type EditTripFormValues } from '@/app/trips/components/EditTripForm';
 import { useToast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ClientFocusMode } from '@/components/trips/client-focus-mode';
 import { MapIcon, Share, Calendar, FileEdit, UserPlus2, LogOut, Settings, Heart } from 'lucide-react';
 import {
   DropdownMenu,
@@ -148,11 +145,9 @@ import type { TripMember } from './context/trip-data-provider';
 import type { ItemStatus } from '@/types/common';
 
 // --- Import Extracted Components ---
-import TripPresenceIndicator from '@/components/trips/trip-presence-indicator';
 import BudgetSnapshotSidebar from '@/components/trips/budget-snapshot-sidebar';
 import TripSidebarContent from '@/components/trips/trip-sidebar-content';
 // Types
-import type { ExtendedUserPresence } from '@/types/presence';
 import {
   ManualDbExpense,
   UnifiedExpense,
@@ -160,6 +155,7 @@ import {
   TripPrivacySetting,
 } from '@/types/trip';
 import { ProcessedVotes } from '@/types/votes';
+import { ActivityTabContent } from '@/app/trips/[tripId]/components/tab-contents/activity-tab-content';
 
 // Local utility functions to avoid import issues
 // Format error messages consistently
@@ -209,6 +205,20 @@ const IconMap: Record<string, React.ElementType> = {
 };
 
 // ----- INTERFACES -----
+
+// Define AccessRequest type (matching the structure from API response)
+interface AccessRequestUser {
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+}
+interface AccessRequest {
+  id: string;
+  user_id: string;
+  message: string | null;
+  created_at: string;
+  user: AccessRequestUser | null;
+}
 
 /**
  * Represents a trip member with associated profile information as stored in the database
@@ -299,7 +309,7 @@ const mapApiItemToDisplay = (item: any): DisplayItineraryItem => {
   // Explicitly handle the category mapping
   const mappedCategory = isValidCategory(item.category)
     ? item.category
-    : ITINERARY_CATEGORIES.OTHER;
+    : ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS; // Use FLEXIBLE_OPTIONS as fallback
 
   return {
     ...item,
@@ -335,15 +345,35 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   const { user } = useAuth(); // AppUser type from AuthProvider
 
   // Get data from context
+  const contextData = useTripData();
   const {
     tripData,
-    isFetching,
+    isLoading,
+    isItemsLoading,
+    isMembersLoading,
     error,
     refetchTrip,
     refetchItinerary,
     refetchMembers,
     optimisticUpdate,
-  } = useTripData();
+  } = contextData;
+
+  // --- Add Logging --- //
+  useEffect(() => {
+    console.log('[TripPageClient] Context State Update:', {
+      isLoading,
+      isItemsLoading,
+      isMembersLoading,
+      error,
+      tripDataExists: !!tripData,
+      tripExists: !!tripData?.trip,
+      itemsCount: tripData?.items?.length,
+      membersCount: tripData?.members?.length,
+      receivedItems: tripData?.items,
+      receivedSections: tripData?.sections,
+    });
+  }, [isLoading, isItemsLoading, isMembersLoading, error, tripData]);
+  // --- End Logging --- //
 
   // --- Calculate userRole --- //
   const userRole = useMemo<TripRole | null>(() => {
@@ -368,41 +398,18 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isSavingCover, setIsSavingCover] = useState(false);
   const [isSavingPlaylistUrl, setIsSavingPlaylistUrl] = useState(false);
-  const [showFocusMode, setShowFocusMode] = useState(false);
 
-  // Trip Details State (derived or initialized from props/context)
-  const [editedTripName, setEditedTripName] = useState(tripData?.trip?.name || '');
-  const [editedTripDescription, setEditedTripDescription] = useState<string | null>(
-    tripData?.trip?.description ?? ''
-  );
-  const [currentPrivacySetting, setCurrentPrivacySetting] = useState<TripPrivacySetting | null>(
-    (tripData?.trip?.privacy_setting as TripPrivacySetting | null) ?? 'private'
-  );
-  const [displayedCoverUrl, setDisplayedCoverUrl] = useState(
-    tripData?.trip?.cover_image_url ?? ''
-  );
-  const [editedTags, setEditedTags] = useState<{ id: string; name: string }[]>(
-    tripData?.tags || []
-  );
-  const [currentPlaylistUrl, setCurrentPlaylistUrl] = useState<string | null>(
-    tripData?.trip?.playlist_url ?? null
-  );
-  const [editedPlaylistUrl, setEditedPlaylistUrl] = useState(currentPlaylistUrl);
-  const [tripBudget, setTripBudget] = useState<number | null>(
-    tripData?.trip?.budget ?? null
-  );
-
-  // Itinerary & Expense State (derived or initialized from props/context)
-  const [allItineraryItems, setAllItineraryItems] = useState<DisplayItineraryItem[]>(() => {
-    const initialApiSections = tripData?.sections || [];
-    const mappedSections = mapApiSections(initialApiSections); // Use helper
-    const sectionItems = mappedSections.flatMap((s) => s.items || []);
-    const unscheduled = (tripData?.items || []).map(mapApiItemToDisplay); // Map unscheduled items too
-    return [...sectionItems, ...unscheduled];
-  });
+  // Re-add editedPlaylistUrl state, initialized from context
+  const [editedPlaylistUrl, setEditedPlaylistUrl] = useState(tripData?.trip?.playlist_url ?? null);
+  
+  // Keep local state for items and expenses
+  const [allItineraryItems, setAllItineraryItems] = useState<DisplayItineraryItem[]>([]);
   const [manualExpenses, setManualExpenses] = useState<ManualDbExpense[]>(
     tripData?.manual_expenses || []
   ); // Assuming expenses aren't in context yet
+  
+  // Add state for access requests
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
 
   // New Expense Form State
   const [newExpense, setNewExpense] = useState({
@@ -416,6 +423,13 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   // --- Derived State --- //
   const durationDays = tripData?.trip?.duration_days ?? 0;
   const isTripOver = tripData?.trip?.end_date ? new Date(tripData.trip.end_date) < new Date() : false;
+  const tripName = tripData?.trip?.name || 'Trip';
+  const tripDescription = tripData?.trip?.description ?? null;
+  const privacySetting = (tripData?.trip?.privacy_setting as TripPrivacySetting | null) ?? 'private';
+  const coverImageUrl = tripData?.trip?.cover_image_url ?? null;
+  const tripTags = tripData?.tags || [];
+  const playlistUrl = tripData?.trip?.playlist_url ?? null;
+  const tripBudget = tripData?.trip?.budget ?? null;
 
   const totalPlannedCost = useMemo(() => {
     return allItineraryItems
@@ -457,7 +471,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       level: 'info',
       data: {
         tripId: tripId,
-        tripName: editedTripName,
+        tripName: tripName,
       },
     });
 
@@ -470,7 +484,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         level: 'info',
       });
     };
-  }, [tripId, editedTripName]);
+  }, [tripId, tripName]);
 
   // Set up real-time subscriptions using custom hook
   useTripSubscriptions({
@@ -486,36 +500,35 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
    * This ensures the UI stays in sync with the latest data from the server
    */
   useEffect(() => {
-    setEditedTripName(tripData?.trip?.name || '');
-    setEditedTripDescription(tripData?.trip?.description ?? '');
-    setCurrentPrivacySetting(
-      (tripData?.trip?.privacy_setting as TripPrivacySetting | null) ?? 'private'
-    );
-    setDisplayedCoverUrl(tripData?.trip?.cover_image_url ?? '');
-    setEditedTags(tripData?.tags || []);
-    setCurrentPlaylistUrl(tripData?.trip?.playlist_url ?? null);
-    setTripBudget(tripData?.trip?.budget ?? null);
+    const incomingItems = tripData?.items || [];
+    const incomingSections = tripData?.sections || [];
+    
+    // Create IDs sets for comparison to avoid infinite loops from object references
+    const incomingItemIds = new Set(incomingItems.map(item => item.id));
+    const currentItemIds = new Set(allItineraryItems.map(item => item.id));
 
-    const apiSections = tripData?.sections;
-    const mappedSections = mapApiSections(apiSections); // Use helper
-    const sectionItems = mappedSections.flatMap((s) => s.items || []);
-    const unscheduledItems = (tripData?.items || []).map(mapApiItemToDisplay); // Map unscheduled items
-    const combinedItems = [...sectionItems, ...unscheduledItems];
+    // Check if sets are different (more robust than length check)
+    let areDifferent = incomingItemIds.size !== currentItemIds.size;
+    if (!areDifferent) {
+      for (const id of incomingItemIds) {
+        if (!currentItemIds.has(id)) {
+          areDifferent = true;
+          break;
+        }
+      }
+    }
 
-    // Update itinerary items if needed
-    if (combinedItems.length > 0) {
+    // Only update if the item sets are actually different
+    if (areDifferent) {
+      console.log("[TripPageClient] Syncing itinerary items from context because item sets differ.");
+      const mappedSections = mapApiSections(incomingSections); // Use helper
+      const sectionItems = mappedSections.flatMap((s) => s.items || []);
+      const unscheduledItems = incomingItems.map(mapApiItemToDisplay); // Map unscheduled items
+      const combinedItems = [...sectionItems, ...unscheduledItems];
       setAllItineraryItems(combinedItems);
     }
-  }, [
-    tripData,
-    editedTripName,
-    editedTripDescription,
-    currentPrivacySetting,
-    displayedCoverUrl,
-    editedTags,
-    currentPlaylistUrl,
-    tripBudget,
-  ]);
+
+  }, [tripData?.items, tripData?.sections]); // Depend only on context data, not local state
 
   /**
    * Update URL when activeTab changes to maintain tab state in the URL
@@ -533,28 +546,80 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
     }
   }, [activeTab, searchParams, router, pathname]); // Add pathname
 
+  // Update editedPlaylistUrl if the source changes (e.g., after save/refetch)
+  useEffect(() => {
+    setEditedPlaylistUrl(playlistUrl);
+  }, [playlistUrl]);
+
+  // Fetch access requests if user is admin
+  useEffect(() => {
+    if (userRole === 'admin') {
+      const fetchAccessRequests = async () => {
+        try {
+          const response = await fetch(API_ROUTES.PERMISSION_REQUESTS(tripId));
+          if (response.ok) {
+            const { data } = await response.json();
+            setAccessRequests(data || []);
+          } else if (response.status === 401) {
+            // Silently handle unauthorized errors
+            console.log('User lacks permission to fetch access requests');
+            setAccessRequests([]);
+          } else {
+            console.error('Failed to fetch access requests:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Error fetching access requests:', error);
+          // Don't show toast for errors in this background fetch
+          setAccessRequests([]);
+        }
+      };
+      fetchAccessRequests();
+    } else {
+      // If user is not admin, ensure access requests are empty
+      setAccessRequests([]);
+    }
+  }, [tripId, userRole]);
+
   // --- API Callbacks --- //
+
+  // Add callback for managing access requests
+  const handleManageAccessRequest = useCallback(async (requestId: string, approve: boolean) => {
+    try {
+      const response = await fetch(`${API_ROUTES.PERMISSION_REQUESTS(tripId)}/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: approve ? 'approved' : 'rejected' }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update access request');
+      }
+
+      // Remove the processed request from the local state
+      setAccessRequests((prev) => prev.filter((req) => req.id !== requestId));
+      toast({ title: `Request ${approve ? 'approved' : 'rejected'}` });
+      
+      // Optionally refetch members if approved, to ensure the new member appears
+      if (approve) {
+        refetchMembers(); 
+      }
+
+    } catch (error) {
+      console.error('Failed to manage access request:', error);
+      toast({
+        title: 'Error',
+        description: formatError(error, 'Could not update access request'),
+        variant: 'destructive',
+      });
+    }
+  }, [tripId, toast, refetchMembers]);
 
   const handleSaveTripDetails = useCallback(
     async (data: EditTripFormValues & { destination_id?: string | null }) => {
-      setIsEditTripSheetOpen(false); // Close sheet optimistically
-      const originalState = {
-        name: editedTripName,
-        description: editedTripDescription,
-        privacy: currentPrivacySetting,
-        tags: editedTags,
-      };
-
-      // Set local state for immediate UI feedback
-      setEditedTripName(data.name);
-      setEditedTripDescription(data.description || null);
-      setCurrentPrivacySetting(data.privacy_setting as TripPrivacySetting | null);
-      if (data.tags) {
-        // Assume tags are just names for now, adjust if API expects IDs
-        setEditedTags(data.tags.map((name, index) => ({ id: `temp-${name}-${index}`, name })));
-      }
-
-      // Use optimisticUpdate for trip data
+      setIsEditTripSheetOpen(false);
+      
+      // Optimistic update (use context tripData)
       try {
         await optimisticUpdate('trip', (currentTrip) => {
           if (!currentTrip) return null;
@@ -569,6 +634,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       } catch (error) {
         console.error('Failed optimistic update for trip:', error);
       }
+      
       try {
         const { tags: tagNames, ...tripUpdatePayload } = data;
 
@@ -593,11 +659,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         toast({ title: 'Trip Updated', description: `Successfully updated ${data.name}.` });
       } catch (error) {
         console.error('Error updating trip:', error);
-        // Revert optimistic updates on failure
-        setEditedTripName(originalState.name);
-        setEditedTripDescription(originalState.description);
-        setCurrentPrivacySetting(originalState.privacy);
-        setEditedTags(originalState.tags);
+        // Revert happens automatically via refetchTrip or SWR rollback
         toast({
           title: 'Error Updating Trip',
           description: formatError(error),
@@ -605,24 +667,14 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         });
       }
     },
-    [
-      tripId,
-      toast,
-      refetchTrip,
-      editedTripName,
-      editedTripDescription,
-      currentPrivacySetting,
-      editedTags,
-    ]
+    [tripId, toast, refetchTrip, optimisticUpdate]
   );
 
   const handleSaveBudget = useCallback(
     async (newBudget: number) => {
       setIsEditingBudget(false);
-      const originalBudget = tripBudget;
-      setTripBudget(newBudget); // Local state update
 
-      // Use optimisticUpdate for budget
+      // Optimistic update (use context tripData)
       try {
         await optimisticUpdate('trip', (currentTrip) => {
           if (!currentTrip) return null;
@@ -646,20 +698,16 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         await refetchTrip(); // Refetch for consistency
         toast({ title: 'Budget Updated', description: `Trip budget set.` });
       } catch (error) {
-        console.error('Error updating budget:', error);
-        setTripBudget(originalBudget); // Revert
+        // Revert via refetch
         toast({
           title: 'Failed to update budget',
           description: formatError(error),
           variant: 'destructive',
         });
-        Sentry.captureException(error, {
-          tags: { action: 'saveBudget', tripId },
-        });
-        throw error; // Re-throw for sidebar handling
+        throw error; 
       }
     },
-    [tripId, toast, refetchTrip, tripBudget]
+    [tripId, toast, refetchTrip, optimisticUpdate]
   );
 
   const handleAddExpense = useCallback(async () => {
@@ -726,10 +774,8 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
     async (selectedUrl: string) => {
       setIsSavingCover(true);
       setIsImageSelectorOpen(false);
-      const originalUrl = displayedCoverUrl;
-      setDisplayedCoverUrl(selectedUrl); // Local state update
 
-      // Use optimisticUpdate for cover image
+      // Optimistic update (use context tripData)
       try {
         await optimisticUpdate('trip', (currentTrip) => {
           if (!currentTrip) return null;
@@ -752,11 +798,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         await refetchTrip(); // Refetch
         toast({ title: 'Cover image updated!' });
       } catch (error: any) {
-        console.error('Error updating cover image:', error);
-        setDisplayedCoverUrl(originalUrl); // Revert
-        Sentry.captureException(error, {
-          tags: { action: 'updateCoverImage', tripId },
-        });
+        // Revert via refetch
         toast({
           title: 'Failed to update cover image',
           description: formatError(error),
@@ -766,7 +808,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         setIsSavingCover(false);
       }
     },
-    [tripId, toast, refetchTrip, displayedCoverUrl]
+    [tripId, toast, refetchTrip, optimisticUpdate]
   );
 
   const handleSavePlaylistUrl = useCallback(async () => {
@@ -779,9 +821,9 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       return;
     }
     setIsSavingPlaylistUrl(true);
-    const originalUrl = currentPlaylistUrl;
-    setCurrentPlaylistUrl(editedPlaylistUrl);
 
+    // Optimistic update (use context tripData) - maybe not needed for simple URL
+    // Directly fetch
     try {
       const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
         method: 'PATCH',
@@ -792,84 +834,120 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       await refetchTrip(); // Refetch
       toast({ title: 'Playlist URL updated' });
     } catch (error) {
-      setCurrentPlaylistUrl(originalUrl);
-      Sentry.captureException(error, {
-        tags: { action: 'savePlaylistUrl', tripId },
+      // Revert via refetch
+      setEditedPlaylistUrl(playlistUrl); // Reset input field if needed
+      toast({
+        title: 'Error',
+        description: formatError(error as Error),
+        variant: 'destructive',
       });
-      toast({ title: 'Error', description: formatError(error as Error), variant: 'destructive' });
     } finally {
       setIsSavingPlaylistUrl(false);
     }
-  }, [tripId, toast, refetchTrip, editedPlaylistUrl, currentPlaylistUrl]);
+  }, [tripId, toast, refetchTrip, editedPlaylistUrl, playlistUrl]);
 
-  // --- Itinerary Item Callbacks --- //
-  // (Assuming handleReorder, handleDeleteItem, handleVote, handleStatusChange, handleAddItem, handleEditItem are defined elsewhere or moved to a hook)
-  /**
-   * Handles reordering of itinerary items within or between sections
-   * Updates UI immediately and then persists changes to the server
-   */
-  const handleReorder = useCallback(
-    async (info: {
-      itemId: string;
-      newPosition: number;
-      sectionId?: string;
-      newSectionId?: string;
-    }) => {
+  const handleSectionReorder = useCallback(
+    async (orderedDayNumbers: (number | null)[]) => {
+      console.log('[handleSectionReorder Client] Triggered with:', orderedDayNumbers);
+      // Note: Optimistic update of section order already happened in ItineraryTab
+      // We just need to call the API here.
+      
       try {
-        // Optimistic update for reordering
-        const updatedItems = [...allItineraryItems];
-        const itemIndex = updatedItems.findIndex((item) => item.id === info.itemId);
-
-        if (itemIndex === -1) return;
-
-        // Update the item's position
-        const item = updatedItems[itemIndex];
-        updatedItems.splice(itemIndex, 1);
-
-        // Find new position and section
-        if (info.newSectionId && info.newSectionId !== item.section_id) {
-          // Item moved to a different section
-          item.section_id = info.newSectionId;
-        }
-
-        // Insert at new position
-        updatedItems.splice(info.newPosition, 0, item);
-
-        // Update local state
-        setAllItineraryItems(updatedItems);
-
-        // Call API to persist the change
-        const response = await fetch(
-          `/api/trips/${tripId}/itinerary/items/${info.itemId}/reorder`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              position: info.newPosition,
-              section_id: info.newSectionId,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to reorder item');
-        }
-
-        // Refetch to ensure consistency
-        await refetchItinerary();
-      } catch (error) {
-        console.error('Failed to reorder item:', error);
-        toast({
-          title: 'Error',
-          description: formatError(error as Error, 'Failed to reorder item'),
-          variant: 'destructive',
+        const response = await fetch(`/api/trips/${tripId}/sections/reorder`, { // Use the new endpoint
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderedDayNumbers }),
         });
 
-        // Refetch to ensure UI is in sync with server state
-        await refetchItinerary();
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to reorder sections. API response not readable.' }));
+          console.error(`[handleSectionReorder Client] API Error (${response.status}):`, errorData.error);
+          throw new Error(errorData.error || 'Failed to save section order');
+        }
+
+        console.log('[handleSectionReorder Client] API Success');
+        // Optionally refetch trip data if section order affects other parts, but maybe not needed
+        // await refetchTrip(); 
+        toast({ title: 'Day order saved.'}); // Confirmation toast
+
+      } catch (error) {
+        console.error('[handleSectionReorder Client] Error calling reorder API:', error);
+        toast({
+          title: 'Error Saving Day Order',
+          description: formatError(error as Error, 'Could not save the new day order.'),
+          variant: 'destructive',
+        });
+        // TODO: Implement revert logic if needed. This might involve:
+        // 1. Storing original section order on drag start in ItineraryTab
+        // 2. Passing a revert callback down to ItineraryTab or triggering refetch
+        console.warn("[handleSectionReorder Client] Reorder failed. UI state might be inconsistent until next fetch.");
+        // For now, a full refetch might be the simplest revert, although less smooth
+        // await refetchTrip(); // Or maybe just refetch itinerary/sections? 
       }
     },
-    [allItineraryItems, tripId, toast, refetchItinerary, setAllItineraryItems]
+    [tripId, toast, refetchTrip] // Add dependencies (refetchTrip might be needed for revert)
+  );
+
+  // --- Itinerary Item Callbacks --- //
+  /**
+   * Handles the API call to persist reordering after optimistic update in ItineraryTab
+   */
+  const handleReorder = useCallback(
+    // Update signature to match data from ItineraryTab.handleDragEnd
+    async (info: {
+      itemId: string;
+      newDayNumber: number | null; // Can be null for unscheduled
+      newPosition: number;
+    }) => {
+      console.log(`[handleReorder Client] Triggered for item ${info.itemId} to day ${info.newDayNumber} pos ${info.newPosition}`);
+      try {
+        // Optimistic update is now handled in ItineraryTab's handleDragEnd
+        // Just call the API endpoint here
+        
+        // Use the correct endpoint and method
+        const response = await fetch(`/api/trips/${tripId}/itinerary/reorder`, { // Correct endpoint
+          method: 'POST', // Correct method
+          headers: { 'Content-Type': 'application/json' },
+          // Send the payload expected by the API route
+          body: JSON.stringify({
+            itemId: info.itemId,
+            newDayNumber: info.newDayNumber,
+            newPosition: info.newPosition,
+          }),
+        });
+
+        if (!response.ok) {
+          // Log specific error from API if possible
+          const errorData = await response.json().catch(() => ({ error: 'Failed to reorder item. API response not readable.' }));
+          console.error(`[handleReorder Client] API Error (${response.status}):`, errorData.error);
+          throw new Error(errorData.error || 'Failed to reorder item');
+        }
+
+        // API call succeeded, optimistic update is confirmed.
+        // Optionally refetch for absolute consistency, but might not be needed
+        // if optimistic update was accurate.
+        console.log(`[handleReorder Client] API Success for item ${info.itemId}`);
+        // await refetchItinerary(); // Consider if this is needed
+
+      } catch (error) {
+        console.error('[handleReorder Client] Error calling reorder API:', error);
+        toast({
+          title: 'Error Saving Order',
+          description: formatError(error as Error, 'Could not save the new item order.'),
+          variant: 'destructive',
+        });
+        
+        // IMPORTANT: Trigger a state revert in ItineraryTab 
+        // Since optimistic update happened there, the revert must also happen there.
+        // We might need to pass the originalItems state back up or add a dedicated revert callback.
+        // For now, refetching is the simplest way to force UI sync after failure.
+        console.warn("[handleReorder Client] Reorder failed. Refetching itinerary to revert UI.");
+        await refetchItinerary(); 
+      }
+    },
+    // Dependencies: tripId, toast, refetchItinerary. 
+    // ItineraryItems state is managed within ItineraryTab now.
+    [tripId, toast, refetchItinerary]
   );
 
   /**
@@ -879,11 +957,17 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   const handleDeleteItem = useCallback(
     async (itemId: string) => {
       try {
-        // Optimistic update
+        // Optimistic update local state
         const updatedItems = allItineraryItems.filter((item) => item.id !== itemId);
         setAllItineraryItems(updatedItems);
 
-        // Call API to delete the item
+        // Use optimistic update for context - ADD CHECK
+        await optimisticUpdate('items', (currentItems) => {
+          // Ensure currentItems is an array before filtering
+          return Array.isArray(currentItems) ? currentItems.filter((item) => item.id !== itemId) : [];
+        });
+        
+        // API Call
         const response = await fetch(`/api/trips/${tripId}/itinerary/items/${itemId}`, {
           method: 'DELETE',
         });
@@ -894,10 +978,6 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
 
         toast({ title: 'Item deleted successfully' });
 
-        // Use optimistic update for context
-        await optimisticUpdate('items', (currentItems) => {
-          return currentItems.filter((item) => item.id !== itemId);
-        });
       } catch (error) {
         console.error('Failed to delete item:', error);
         toast({
@@ -976,7 +1056,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   const handleItemStatusChange = useCallback(
     async (itemId: string, status: ItemStatus | null) => {
       try {
-        // Optimistic update
+        // Optimistic update local state
         const updatedItems = allItineraryItems.map((item) => {
           if (item.id === itemId) {
             return {
@@ -989,7 +1069,19 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
 
         setAllItineraryItems(updatedItems);
 
-        // Call API to update the status
+        // Use optimistic update for context - ADD CHECK
+        await optimisticUpdate('items', (currentItems) => {
+           // Ensure currentItems is an array before mapping
+          if (!Array.isArray(currentItems)) return []; 
+          return currentItems.map((item) => {
+            if (item.id === itemId) {
+              return { ...item, status };
+            }
+            return item;
+          });
+        });
+        
+        // API Call
         const response = await fetch(`/api/trips/${tripId}/itinerary/items/${itemId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -999,19 +1091,6 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         if (!response.ok) {
           throw new Error('Failed to update item status');
         }
-
-        // Use optimistic update for context
-        await optimisticUpdate('items', (currentItems) => {
-          return currentItems.map((item) => {
-            if (item.id === itemId) {
-              return {
-                ...item,
-                status,
-              };
-            }
-            return item;
-          });
-        });
       } catch (error) {
         console.error('Failed to update item status:', error);
         toast({
@@ -1206,13 +1285,13 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
               allItineraryItems={allItineraryItems}
               setAllItineraryItems={setAllItineraryItems}
               userRole={userRole}
-              startDate={tripData?.trip?.start_date || ''}
               durationDays={durationDays}
-              handleReorder={handleReorder}
+              startDate={tripData?.trip?.start_date || null}
               handleDeleteItem={handleDeleteItem}
               handleVote={handleVote}
               handleItemStatusChange={handleItemStatusChange}
-              // handleAddItem={handleAddItem} // Removed as it's not a valid prop for ItineraryTabContent
+              handleReorder={handleReorder}
+              handleSectionReorder={handleSectionReorder}
             />
           </ErrorBoundary>
         ),
@@ -1239,11 +1318,31 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
               manualExpenses={manualExpenses}
               plannedExpenses={totalPlannedCost}
               members={tripData?.members ? adaptMembersToSSR(tripData.members) : []}
-              isLoading={isFetching}
+              isLoading={isLoading}
             />
           </ErrorBoundary>
         ),
       },
+      {
+        value: 'activity',
+        label: 'Activity',
+        content: (
+          <ErrorBoundary
+            FallbackComponent={(props) => (
+              <TabErrorFallback
+                {...props}
+                tripId={tripId}
+                section="activity"
+                refetchFn={refetchTrip} // Or a dedicated activity refetch
+              />
+            )}
+            onReset={() => refetchTrip()} // Or a dedicated activity refetch
+          >
+            <ActivityTabContent tripId={tripId} />
+          </ErrorBoundary>
+        ),
+      },
+      /* Commenting out Notes Tab for now due to 403 error
       {
         value: 'notes',
         label: 'Notes',
@@ -1261,34 +1360,11 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
           </ErrorBoundary>
         ),
       },
+      */
     ];
-    if (canEdit) {
-      baseTabs.push({
-        value: 'manage',
-        label: 'Manage',
-        content: (
-          <ErrorBoundary
-            FallbackComponent={(props) => (
-              <TabErrorFallback
-                {...props}
-                tripId={tripId}
-                section="members"
-                refetchFn={refetchMembers}
-              />
-            )}
-            onReset={() => refetchMembers()}
-          >
-            <ManageTabContent
-              tripId={tripId}
-              canEdit={canEdit}
-              userRole={userRole}
-              members={tripData?.members ? adaptMembersToSSR(tripData.members) : []}
-            />
-          </ErrorBoundary>
-        ),
-      });
-    }
-
+    
+    // Remove manage tab entirely
+    
     return baseTabs;
   }, [
     canEdit,
@@ -1301,32 +1377,41 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
     manualExpenses,
     totalPlannedCost,
     isTripOver,
-    isFetching,
+    isLoading,
     handleReorder,
     handleDeleteItem,
     handleVote,
     handleItemStatusChange,
     handleAddItem,
+    handleEditItem,
     refetchItinerary,
     refetchTrip,
     refetchMembers,
+    handleSectionReorder,
+    accessRequests,
+    handleManageAccessRequest,
   ]);
 
   // --- Rendering --- //
-  if (isFetching && !tripData) {
-    // Improved loading check
+  
+  // Combine loading states correctly
+  const combinedIsLoading = isLoading || isItemsLoading || isMembersLoading;
+
+  // Show skeleton if loading AND there's no existing trip data to display
+  if (combinedIsLoading && !tripData?.trip) {
     return <Skeleton className="h-screen w-full" />;
   }
 
+  // Show specific error message if context provides an error
   if (error) {
     return (
       <div className="container mx-auto p-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" /> <AlertTitle>Error Loading Trip</AlertTitle>
           <AlertDescription>
-            {formatError(error)}{' '}
+            {formatError(error)} {/* Display specific error from context */}{' '}
             <Button onClick={() => router.refresh()} variant="link">
-              Reload
+              Reload Page
             </Button>
           </AlertDescription>
         </Alert>
@@ -1334,368 +1419,282 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
     );
   }
 
-  if (!tripData?.trip) {
-    // Check if trip data itself is missing
+  // Show generic error only if not loading, no error, but trip data is still missing
+  if (!combinedIsLoading && !error && !tripData?.trip) {
     return (
       <div className="container mx-auto p-8 text-center">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle>
+          {/* Keep generic message here as a fallback */}
           <AlertDescription>Could not load trip data. Please try again later.</AlertDescription>
         </Alert>
       </div>
     );
   }
+  
+  // Add a final check to ensure tripData.trip is definitely available before rendering main content
+  // This prevents errors if loading finished but data somehow didn't arrive
+  if (!tripData?.trip) {
+      console.error("[TripPageClient] Reached render stage but tripData.trip is still null/undefined.", { isLoading, isItemsLoading, isMembersLoading, error });
+      return (
+          <div className="container mx-auto p-8 text-center">
+              <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" /> <AlertTitle>Unexpected State</AlertTitle>
+                  <AlertDescription>Failed to render trip information. Please refresh the page.</AlertDescription>
+              </Alert>
+          </div>
+      );
+  }
 
   // --- Main JSX --- //
   return (
     <TooltipProvider>
-      <FocusSessionProvider tripId={tripId}>
-        <div className="min-h-screen flex flex-col bg-background">
-          <TripHeader
-            tripId={tripId}
-            tripName={tripData.trip.name}
-            startDate={tripData.trip.start_date}
-            endDate={tripData.trip.end_date}
-            coverImageUrl={tripData.trip.cover_image_url}
-            canEdit={canEdit}
-            onEdit={() => setIsEditTripSheetOpen(true)}
-            onChangeCover={() => setIsImageSelectorOpen(true)}
-            onMembers={() => setActiveTab('manage')}
-            isSaving={isSavingCover}
-            privacySetting={tripData.trip.privacy_setting}
-            slug={tripData.trip.public_slug}
-            members={tripData.members ? adaptMembersToWithProfile(tripData.members) : []}
-            tags={tripData.tags || []}
-            extraContent={
-              <div className="flex items-center gap-2">
-                <TripPresenceIndicator />
-                {canEdit && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setShowFocusMode(!showFocusMode)}
-                    className="h-8 w-8"
-                  >
-                    <Coffee
-                      className={`h-4 w-4 transition-colors ${showFocusMode ? 'text-primary' : 'text-muted-foreground'}`}
-                    />
-                  </Button>
-                )}
-                <ShareTripButton
-                  slug={tripData.trip.public_slug}
-                  privacySetting={(tripData.trip.privacy_setting || 'private') as TripPrivacySetting}
-                  className="h-8"
-                />
-              </div>
-            }
-          />
-
-          {/* Focus Mode UI */}
-          {showFocusMode && canEdit && (
-            <div className="container mx-auto px-4 py-2 sticky top-[60px] z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-              <ClientFocusMode tripId={tripId} />
+      <div className="min-h-screen flex flex-col bg-background container mx-auto px-4">
+        <TripHeader
+          tripId={tripId}
+          tripName={tripName}
+          startDate={tripData.trip.start_date}
+          endDate={tripData.trip.end_date}
+          coverImageUrl={coverImageUrl}
+          canEdit={canEdit}
+          onEdit={() => setIsEditTripSheetOpen(true)}
+          onChangeCover={() => setIsImageSelectorOpen(true)}
+          onMembers={() => setActiveTab('manage')}
+          isSaving={isSavingCover}
+          privacySetting={privacySetting}
+          slug={tripData.trip.public_slug}
+          members={tripData.members ? adaptMembersToWithProfile(tripData.members) : []}
+          tags={tripTags}
+          extraContent={
+            <div className="flex items-center gap-2">
+              {/* Any additional components can go here, but not another Share button */}
             </div>
-          )}
+          }
+        />
 
-          {/* Main Content Area */}
-          <div className="flex-grow container mx-auto px-4 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {/* Sidebar */}
-              <div className="md:col-span-1 lg:col-span-1 space-y-6">
-                {/* Use Extracted BudgetSnapshotSidebar */}
-                <BudgetSnapshotSidebar
-                  targetBudget={tripBudget}
-                  totalPlanned={totalPlannedExpenses}
-                  totalSpent={totalSpent}
-                  canEdit={canEdit}
-                  isEditing={isEditingBudget}
-                  onEditToggle={setIsEditingBudget}
-                  onSave={handleSaveBudget}
-                  onLogExpenseClick={() => setIsAddExpenseOpen(true)} // Example handler
-                />
-                {/* Use Extracted TripSidebarContent */}
-                <TripSidebarContent
-                  description={tripData.trip.description}
-                  privacySetting={(tripData.trip.privacy_setting || 'private') as TripPrivacySetting}
-                  startDate={tripData.trip.start_date}
-                  endDate={tripData.trip.end_date}
-                  tags={tripData.tags || []}
-                  canEdit={canEdit}
-                  onEdit={() => setIsEditTripSheetOpen(true)}
-                />
-                {/* Playlist Section */}
-                <Card className="overflow-hidden">
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-green-500"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <circle cx="12" cy="12" r="4" />
-                          <path d="M12 6v2" />
-                          <path d="M12 16v2" />
-                          <path d="M6 12h2" />
-                          <path d="M16 12h2" />
-                        </svg>
-                        Trip Playlist
-                      </CardTitle>
-                      {canEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditedPlaylistUrl(currentPlaylistUrl);
-                            // A dialog could be shown here instead
-                          }}
-                        >
-                          <Pencil className="h-4 w-4 mr-1" />
-                          {currentPlaylistUrl ? 'Change' : 'Add'}
-                        </Button>
+        {/* Main Content Area - Remove container styles from here */}
+        <div className="flex-grow py-6"> 
+          {/* Change from grid to 2-column flex layout below header */}
+          <div className="flex flex-col md:flex-row gap-6 relative">
+            {/* Sidebar - Make it sticky */}
+            <div className="w-full md:w-[300px] flex-shrink-0 space-y-6 md:sticky md:top-24 self-start">
+              <BudgetSnapshotSidebar
+                targetBudget={tripBudget}
+                totalPlanned={totalPlannedExpenses}
+                totalSpent={totalSpent}
+                canEdit={canEdit}
+                isEditing={isEditingBudget}
+                onEditToggle={setIsEditingBudget}
+                onSave={handleSaveBudget}
+                onLogExpenseClick={() => setIsAddExpenseOpen(true)}
+              />
+              <TripSidebarContent
+                description={tripDescription}
+                privacySetting={privacySetting}
+                startDate={tripData.trip.start_date}
+                endDate={tripData.trip.end_date}
+                tags={tripTags}
+                canEdit={canEdit}
+                userRole={userRole}
+                accessRequests={accessRequests}
+                onEdit={() => setIsEditTripSheetOpen(true)}
+                onManageAccessRequest={handleManageAccessRequest}
+              />
+              {/* Commenting out Playlist Card for now to address CSP errors */}
+              {/*
+              <Card className="overflow-hidden">
+                <CardHeader className="p-4 pb-2">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-green-500"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 6v2" />
+                        <path d="M12 16v2" />
+                        <path d="M6 12h2" />
+                        <path d="M16 12h2" />
+                      </svg>
+                      Trip Playlist
+                    </CardTitle>
+                    {canEdit && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Set the input field value when starting edit
+                          setEditedPlaylistUrl(playlistUrl);
+                          // Potentially open a dialog here instead of inline edit
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        {playlistUrl ? 'Change' : 'Add'}
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  {playlistUrl ? (
+                    <div className="space-y-2">
+                      <div className="relative overflow-hidden pt-[56.25%] rounded-md">
+                        <iframe
+                          src={playlistUrl}
+                          className="absolute top-0 left-0 w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                      <div className="text-xs text-muted-foreground text-center">
+                        <span>
+                          <a
+                            href={playlistUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:text-primary/80"
+                          >
+                            Open in Spotify <ExternalLink className="h-3 w-3 inline" />
+                          </a>
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center p-4 text-muted-foreground text-sm">
+                      {canEdit ? (
+                        <div className="space-y-2">
+                          <p>Add a Spotify playlist to set the mood for your trip!</p>
+                          <div className="flex flex-col space-y-2">
+                            <Input
+                              placeholder="Paste Spotify embed URL"
+                              value={editedPlaylistUrl || ''} // Use state for input value
+                              onChange={(e) => setEditedPlaylistUrl(e.target.value)} // Update state on change
+                            />
+                            <Button
+                              disabled={!editedPlaylistUrl || editedPlaylistUrl.trim() === ''}
+                              onClick={handleSavePlaylistUrl}
+                              className="w-full"
+                            >
+                              {isSavingPlaylistUrl ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                'Save Playlist'
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p>No playlist has been added to this trip yet.</p>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-2">
-                    {currentPlaylistUrl ? (
-                      <div className="space-y-2">
-                        <div className="relative overflow-hidden pt-[56.25%] rounded-md">
-                          <iframe
-                            src={currentPlaylistUrl}
-                            className="absolute top-0 left-0 w-full h-full border-0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          ></iframe>
-                        </div>
-                        <div className="text-xs text-muted-foreground text-center">
-                          <span>
-                            <a
-                              href={currentPlaylistUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary underline hover:text-primary/80"
-                            >
-                              Open in Spotify <ExternalLink className="h-3 w-3 inline" />
-                            </a>
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center p-4 text-muted-foreground text-sm">
-                        {canEdit ? (
-                          <div className="space-y-2">
-                            <p>Add a Spotify playlist to set the mood for your trip!</p>
-                            <div className="flex flex-col space-y-2">
-                              <Input
-                                placeholder="Paste Spotify embed URL"
-                                value={editedPlaylistUrl || ''}
-                                onChange={(e) => setEditedPlaylistUrl(e.target.value)}
-                              />
-                              <Button
-                                disabled={!editedPlaylistUrl || editedPlaylistUrl.trim() === ''}
-                                onClick={handleSavePlaylistUrl}
-                                className="w-full"
-                              >
-                                {isSavingPlaylistUrl ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                  </>
-                                ) : (
-                                  'Save Playlist'
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <p>No playlist has been added to this trip yet.</p>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                  )}
+                </CardContent>
+              </Card>
+              */}
+            </div>
 
-              {/* Main Content Tabs */}
-              <div className="md:col-span-2 lg:col-span-3">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="mb-4">
-                    {tabs.map((tab) => (
-                      <TabsTrigger key={tab.value} value={tab.value}>
-                        {tab.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+            {/* Main Content Area - Flex-grow to take remaining space */}
+            <div className="flex-grow">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="mb-4 w-full justify-start">
                   {tabs.map((tab) => (
-                    <TabsContent key={tab.value} value={tab.value} className="min-h-[400px]">
-                      {tab.content}
-                    </TabsContent>
+                    <TabsTrigger key={tab.value} value={tab.value}>
+                      {tab.label}
+                    </TabsTrigger>
                   ))}
-                </Tabs>
-              </div>
+                </TabsList>
+                {tabs.map((tab) => (
+                  <TabsContent key={tab.value} value={tab.value} className="min-h-[400px]">
+                    {tab.content}
+                  </TabsContent>
+                ))}
+              </Tabs>
             </div>
           </div>
-
-          {/* --- Dialogs and Sheets --- */}
-          {/* Edit Trip Sheet */}
-          <Sheet open={isEditTripSheetOpen} onOpenChange={setIsEditTripSheetOpen}>
-            <SheetContent className="sm:max-w-md overflow-y-auto max-h-screen">
-              <SheetHeader>
-                <SheetTitle>Edit Trip</SheetTitle>
-                <SheetDescription>Make changes to your trip details.</SheetDescription>
-              </SheetHeader>
-              <div className="py-4">
-                <EditTripForm
-                  trip={{
-                    id: tripData.trip.id, // Pass ID if needed by form
-                    name: tripData.trip.name,
-                    description: tripData.trip.description || undefined,
-                    privacy_setting: tripData.trip.privacy_setting || 'private',
-                    start_date: tripData.trip.start_date || undefined,
-                    end_date: tripData.trip.end_date || undefined,
-                    tags: tripData.tags?.map((tag) => tag.name) || [],
-                    destination_id: tripData.trip.destination_id || null,
-                    cover_image_url: tripData.trip.cover_image_url || null
-                  }}
-                  initialDestinationName={tripData.trip.destination_name || null} // Pass initial destination name if available
-                  onSave={handleSaveTripDetails}
-                  onClose={() => setIsEditTripSheetOpen(false)} // Add onClose handler
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Add Expense Dialog */}
-          <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Expense</DialogTitle>
-                <DialogDescription>Log a new expense for your trip.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-2">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={newExpense.title}
-                    onChange={(e) => setNewExpense({ ...newExpense, title: e.target.value })}
-                    placeholder="Dinner at Restaurant"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={newExpense.amount}
-                    onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={newExpense.category}
-                    onValueChange={(value) => setNewExpense({ ...newExpense, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>
-                        {newExpense.category || <span className="text-muted-foreground">Select a category</span>}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="food">Food & Dining</SelectItem>
-                      <SelectItem value="transportation">Transportation</SelectItem>
-                      <SelectItem value="accommodation">Accommodation</SelectItem>
-                      <SelectItem value="activities">Activities</SelectItem>
-                      <SelectItem value="shopping">Shopping</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={newExpense.date}
-                    onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="paidBy">Paid By</Label>
-                  <Select
-                    value={newExpense.paidById}
-                    onValueChange={(value) => setNewExpense({ ...newExpense, paidById: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>
-                        {newExpense.paidById ? 
-                          tripData.members?.find(m => m.user_id === newExpense.paidById)?.profile?.name || newExpense.paidById 
-                          : <span className="text-muted-foreground">Select who paid</span>}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tripData.members?.map((member) => (
-                        <SelectItem key={member.user_id} value={member.user_id}>
-                          {member.profile?.name || member.user_id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" onClick={handleAddExpense}>
-                  Add Expense
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Image Selector Dialog */}
-          <Dialog open={isImageSelectorOpen} onOpenChange={setIsImageSelectorOpen}>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Choose a Cover Image</DialogTitle>
-                <DialogDescription>Select an image for your trip cover.</DialogDescription>
-              </DialogHeader>
-              <div className="h-[500px] overflow-y-auto">
-                <ImageSearchSelector
-                  isOpen={isImageSelectorOpen}
-                  onClose={() => setIsImageSelectorOpen(false)}
-                  onImageSelect={handleCoverImageSelect}
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Add/Edit Itinerary Item Sheets - These would be implemented in full version */}
-          {/* 
-          <Sheet>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Add Itinerary Item</SheetTitle>
-              </SheetHeader>
-              <ItineraryItemForm />
-            </SheetContent>
-          </Sheet>
-          */}
         </div>
-      </FocusSessionProvider>
+
+        {/* --- Dialogs and Sheets --- */}
+        <Dialog open={isEditTripSheetOpen} onOpenChange={setIsEditTripSheetOpen}>
+          <DialogContent className="sm:max-w-md overflow-y-auto max-h-[95vh]">
+            <DialogHeader>
+              <DialogTitle>Edit Trip Details</DialogTitle>
+              <DialogDescription>Make changes to your trip details.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <EditTripForm
+                trip={{
+                  id: tripData.trip.id,
+                  name: tripName,
+                  privacy_setting: privacySetting,
+                  start_date: tripData.trip.start_date || null,
+                  end_date: tripData.trip.end_date || null,
+                  tags: tripTags.map((tag) => tag.name) || [],
+                  destination_id: tripData.trip.destination_id || null,
+                  cover_image_url: coverImageUrl
+                }}
+                initialDestinationName={tripData.trip.destination_name || null}
+                onSave={handleSaveTripDetails}
+                onClose={() => setIsEditTripSheetOpen(false)}
+                onChangeCover={() => {
+                  setIsEditTripSheetOpen(false); // Close edit dialog
+                  setIsImageSelectorOpen(true); // Open image sheet
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Expense</DialogTitle>
+              <DialogDescription>Add a new expense to this trip.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {/* TODO: Implement Expense Form */}
+              <p>Expense form not yet implemented</p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddExpenseOpen(false)}>Cancel</Button>
+              <Button type="button">Add Expense</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Image Selector to a Dialog instead of Sheet */}
+        <Dialog open={isImageSelectorOpen} onOpenChange={setIsImageSelectorOpen}>
+          <DialogContent className="sm:max-w-xl w-[90vw] md:w-full overflow-y-auto max-h-[95vh]">
+            <DialogHeader>
+              <DialogTitle>Select Cover Image</DialogTitle>
+              <DialogDescription>
+                Choose an image from Unsplash, Pexels, or upload your own.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <ImageSearchSelector
+                isOpen={isImageSelectorOpen} // Pass state to manage internal reset
+                onClose={() => setIsImageSelectorOpen(false)}
+                onImageSelect={(url, position) => {
+                  handleCoverImageSelect(url);
+                  // Note: Position adjustment might need separate handling if required
+                }}
+                initialSearchTerm={tripName} // Use trip name as initial search
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </TooltipProvider>
   );
 }
-
-// Add explicit export of ItinerarySection type here to fix the import issue
-export type { ItinerarySection };

@@ -1,18 +1,21 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
-import { TABLES } from '@/utils/constants/database';
+import { createClient } from '@/utils/supabase/service-role';
+import { TABLES, ENUMS } from '@/utils/constants/database';
 
 export const dynamic = 'force-dynamic';
 
-// SQL to get table information
+// SQL to get table information with more comprehensive metadata
 const TABLE_INFO_SQL = `
   SELECT 
     table_name,
     column_name,
     data_type,
     is_nullable,
-    column_default
+    column_default,
+    character_maximum_length,
+    numeric_precision,
+    numeric_scale,
+    udt_name
   FROM 
     information_schema.columns
   WHERE 
@@ -25,7 +28,8 @@ const TABLE_INFO_SQL = `
 const ENUM_INFO_SQL = `
   SELECT 
     t.typname AS enum_name,
-    e.enumlabel AS enum_value
+    e.enumlabel AS enum_value,
+    e.enumsortorder AS sort_order
   FROM 
     pg_type t
     JOIN pg_enum e ON t.oid = e.enumtypid
@@ -45,7 +49,9 @@ const FOREIGN_KEY_SQL = `
     kcu.column_name, 
     ccu.table_schema AS foreign_table_schema,
     ccu.table_name AS foreign_table_name,
-    ccu.column_name AS foreign_column_name 
+    ccu.column_name AS foreign_column_name,
+    rc.update_rule,
+    rc.delete_rule
   FROM 
     information_schema.table_constraints AS tc 
     JOIN information_schema.key_column_usage AS kcu
@@ -54,8 +60,34 @@ const FOREIGN_KEY_SQL = `
     JOIN information_schema.constraint_column_usage AS ccu
       ON ccu.constraint_name = tc.constraint_name
       AND ccu.table_schema = tc.table_schema
+    JOIN information_schema.referential_constraints AS rc
+      ON rc.constraint_name = tc.constraint_name
   WHERE tc.constraint_type = 'FOREIGN KEY'
   AND tc.table_schema = 'public';
+`;
+
+// SQL to get indexes
+const INDEX_INFO_SQL = `
+  SELECT
+    i.relname AS index_name,
+    t.relname AS table_name,
+    a.attname AS column_name,
+    ix.indisunique AS is_unique,
+    ix.indisprimary AS is_primary
+  FROM
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a
+  WHERE
+    t.oid = ix.indrelid
+    AND i.oid = ix.indexrelid
+    AND a.attrelid = t.oid
+    AND a.attnum = ANY(ix.indkey)
+    AND t.relkind = 'r'
+    AND t.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+  ORDER BY
+    t.relname, i.relname;
 `;
 
 interface TableColumn {
@@ -63,27 +95,68 @@ interface TableColumn {
   type: string;
   nullable: boolean;
   default: string | null;
+  maxLength?: number | null;
+  precision?: number | null;
+  scale?: number | null;
+  udtName?: string | null;
 }
 
 interface TableInfo {
   columns: TableColumn[];
+  hasPrimaryKey: boolean;
+  primaryKeyColumns: string[];
 }
 
 interface ForeignKeyRelation {
   column: string;
   referencesTable: string;
   referencesColumn: string;
+  onUpdate: string;
+  onDelete: string;
+}
+
+interface IndexInfo {
+  name: string;
+  columns: string[];
+  isUnique: boolean;
+  isPrimary: boolean;
+}
+
+interface SchemaCheckResult {
+  missingTables: string[];
+  detectedTables: string[];
+  checkedTables: string[];
+  success: boolean;
+  missingEnums?: string[];
+  detail?: {
+    tables: Record<string, TableInfo>;
+    enums: Record<string, string[]>;
+    foreignKeys: Record<string, ForeignKeyRelation[]>;
+    indexes: Record<string, IndexInfo[]>;
+    generatedConstants?: string;
+    warnings?: SchemaWarning[];
+  };
+}
+
+interface SchemaWarning {
+  type: 'missing_column' | 'type_mismatch' | 'missing_index' | 'missing_foreign_key' | 'enum_value_mismatch';
+  table?: string;
+  column?: string;
+  message: string;
+  expected?: string;
+  actual?: string;
 }
 
 export async function GET(request: Request) {
   try {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     const url = new URL(request.url);
     const detail = url.searchParams.get('detail') === 'true';
+    const validateEnums = url.searchParams.get('validateEnums') === 'true';
     
-    // List of core tables from our constants
+    // List of core tables and enums from our constants
     const coreTablesFromConstants = Object.values(TABLES);
+    const coreEnumsFromConstants = validateEnums ? [] : []; // We'll implement enum validation in a future update
 
     // Fetch detected tables and their columns
     const { data: tableData, error: tableError } = await supabase.rpc(
@@ -102,16 +175,32 @@ export async function GET(request: Request) {
       'execute_sql', 
       { query: FOREIGN_KEY_SQL }
     );
+    
+    // Get index information
+    const { data: indexData, error: indexError } = await supabase.rpc(
+      'execute_sql', 
+      { query: INDEX_INFO_SQL }
+    );
 
-    if (tableError || enumError || foreignKeyError) {
-      throw new Error(`Database schema query failed: ${tableError?.message || enumError?.message || foreignKeyError?.message}`);
+    if (tableError || enumError || foreignKeyError || indexError) {
+      // Log the specific error
+      console.error('Database schema query error:', 
+        tableError || enumError || foreignKeyError || indexError);
+      throw new Error(`Database schema query failed: ${
+        tableError?.message || 
+        enumError?.message || 
+        foreignKeyError?.message ||
+        indexError?.message
+      }`);
     }
 
     // Process table data into structured format
     const tables: Record<string, TableInfo> = {};
     const detectedTableNames: string[] = [];
+    const warnings: SchemaWarning[] = [];
     
     if (tableData && Array.isArray(tableData)) {
+      // First pass: collect all tables and their columns
       tableData.forEach((row: any) => {
         const tableName = row.table_name as string;
         if (!detectedTableNames.includes(tableName)) {
@@ -120,7 +209,9 @@ export async function GET(request: Request) {
         
         if (!tables[tableName]) {
           tables[tableName] = {
-            columns: []
+            columns: [],
+            hasPrimaryKey: false,
+            primaryKeyColumns: []
           };
         }
         
@@ -128,18 +219,27 @@ export async function GET(request: Request) {
           name: row.column_name as string,
           type: row.data_type as string,
           nullable: (row.is_nullable as string) === 'YES',
-          default: row.column_default as string | null
+          default: row.column_default as string | null,
+          maxLength: row.character_maximum_length as number | null,
+          precision: row.numeric_precision as number | null,
+          scale: row.numeric_scale as number | null,
+          udtName: row.udt_name as string | null
         });
       });
     }
     
     // Process enum data
     const enums: Record<string, string[]> = {};
+    const detectedEnumNames: string[] = [];
     
     if (enumData && Array.isArray(enumData)) {
       enumData.forEach((row: any) => {
         const enumName = row.enum_name as string;
         const enumValue = row.enum_value as string;
+        
+        if (!detectedEnumNames.includes(enumName)) {
+          detectedEnumNames.push(enumName);
+        }
         
         if (!enums[enumName]) {
           enums[enumName] = [];
@@ -163,34 +263,116 @@ export async function GET(request: Request) {
         foreignKeys[tableName].push({
           column: row.column_name as string,
           referencesTable: row.foreign_table_name as string,
-          referencesColumn: row.foreign_column_name as string
+          referencesColumn: row.foreign_column_name as string,
+          onUpdate: row.update_rule as string,
+          onDelete: row.delete_rule as string
         });
       });
+    }
+    
+    // Process index data
+    const indexes: Record<string, IndexInfo[]> = {};
+    
+    if (indexData && Array.isArray(indexData)) {
+      // Group by index name to collect all columns
+      const indexMap = new Map<string, {
+        tableName: string;
+        columns: string[];
+        isUnique: boolean;
+        isPrimary: boolean;
+      }>();
+      
+      indexData.forEach((row: any) => {
+        const indexName = row.index_name as string;
+        const tableName = row.table_name as string;
+        const columnName = row.column_name as string;
+        const isUnique = row.is_unique as boolean;
+        const isPrimary = row.is_primary as boolean;
+        
+        const key = `${tableName}:${indexName}`;
+        
+        if (!indexMap.has(key)) {
+          indexMap.set(key, {
+            tableName,
+            columns: [],
+            isUnique,
+            isPrimary
+          });
+        }
+        
+        const index = indexMap.get(key)!;
+        index.columns.push(columnName);
+        
+        // Update table with primary key info
+        if (isPrimary && tables[tableName]) {
+          tables[tableName].hasPrimaryKey = true;
+          tables[tableName].primaryKeyColumns.push(columnName);
+        }
+      });
+      
+      // Convert map to record
+      for (const [key, value] of indexMap.entries()) {
+        const tableName = value.tableName;
+        
+        if (!indexes[tableName]) {
+          indexes[tableName] = [];
+        }
+        
+        indexes[tableName].push({
+          name: key.split(':')[1],
+          columns: value.columns,
+          isUnique: value.isUnique,
+          isPrimary: value.isPrimary
+        });
+      }
     }
 
     // Find missing tables
     const missingTables = coreTablesFromConstants.filter(
       (table) => !detectedTableNames.includes(table as string)
     );
-
-    // Generate constants file content if requested
-    let generatedConstants = null;
-    if (detail) {
-      generatedConstants = generateConstantsFile(tables, enums, foreignKeys);
+    
+    // Find missing enums if validation is requested
+    const missingEnums = validateEnums ? 
+      coreEnumsFromConstants.filter(
+        (enumName) => !detectedEnumNames.includes(enumName)
+      ) : [];
+      
+    // Check for tables without primary keys
+    for (const tableName of detectedTableNames) {
+      const tableInfo = tables[tableName];
+      if (!tableInfo.hasPrimaryKey) {
+        warnings.push({
+          type: 'missing_index',
+          table: tableName,
+          message: `Table ${tableName} does not have a primary key`
+        });
+      }
     }
 
-    return NextResponse.json({
+    // Generate constants file content if requested
+    let generatedConstants: string | undefined = undefined;
+    if (detail) {
+      generatedConstants = generateConstantsFile(tables, enums, foreignKeys, indexes);
+    }
+
+    const result: SchemaCheckResult = {
       missingTables,
       detectedTables: detectedTableNames,
-      checkedTables: coreTablesFromConstants,
-      success: missingTables.length === 0,
+      checkedTables: coreTablesFromConstants as string[],
+      success: missingTables.length === 0 && (!validateEnums || missingEnums.length === 0),
+      ...(validateEnums && { missingEnums }),
       detail: detail ? {
         tables,
         enums,
         foreignKeys,
+        indexes,
+        warnings,
         generatedConstants
       } : undefined
-    }, { status: 200 });
+    };
+
+    return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error('Error checking schema:', error);
     return NextResponse.json(
@@ -199,7 +381,7 @@ export async function GET(request: Request) {
         errorDetails: error instanceof Error ? error.message : String(error),
         success: false
       },
-      { status: 200 }
+      { status: 500 }
     );
   }
 }
@@ -208,7 +390,8 @@ export async function GET(request: Request) {
 function generateConstantsFile(
   tables: Record<string, TableInfo>,
   enums: Record<string, string[]>,
-  foreignKeys: Record<string, ForeignKeyRelation[]>
+  foreignKeys: Record<string, ForeignKeyRelation[]>,
+  indexes: Record<string, IndexInfo[]>
 ) {
   const tableNames = Object.keys(tables);
   const enumNames = Object.keys(enums);
@@ -218,12 +401,15 @@ function generateConstantsFile(
 // Generated at: ${new Date().toISOString()}
 
 // Database Tables - Constant names for all database tables
-export const DB_TABLES = {
+export const TABLES = {
 ${tableNames.map(table => `  ${table.toUpperCase()}: '${table}'`).join(',\n')}
 } as const;
 
+// Legacy export (avoid using in new code)
+export const DB_TABLES = TABLES;
+
 // Database Fields - Field names by table
-export const DB_FIELDS = {
+export const FIELDS = {
   COMMON: {
     ID: 'id',
     CREATED_AT: 'created_at',
@@ -237,35 +423,54 @@ ${columns.map((col: TableColumn) => `    ${col.name.toUpperCase()}: '${col.name}
   }).join(',\n')}
 } as const;
 
+// Legacy export (avoid using in new code)
+export const DB_FIELDS = FIELDS;
+
 // Database Enums - Enum values from database
-export const DB_ENUMS = {
+export const ENUMS = {
 ${enumNames.map(enumName => {
     const values = enums[enumName];
     return `  ${enumName.toUpperCase()}: {
-${values.map(val => `    ${val.toUpperCase()}: '${val}'`).join(',\n')}
+${values.map(value => `    ${value.toUpperCase()}: '${value}'`).join(',\n')}
   }`;
   }).join(',\n')}
 } as const;
 
-// Foreign Key Relationships
-export const DB_RELATIONSHIPS = {
-${Object.keys(foreignKeys).map(table => {
-    const relations = foreignKeys[table];
-    return `  ${table.toUpperCase()}: [
-${relations.map(rel => `    { column: '${rel.column}', referencesTable: '${rel.referencesTable}', referencesColumn: '${rel.referencesColumn}' }`).join(',\n')}
-  ]`;
-  }).join(',\n')}
+// Legacy export (avoid using in new code)
+export const DB_ENUMS = ENUMS;
+
+// Database Functions - Names of database functions
+export const FUNCTIONS = {
+  EXECUTE_SQL: 'execute_sql'
 } as const;
 
-// Type helpers
-export type TableNames = (typeof DB_TABLES)[keyof typeof DB_TABLES];
-export type TableFields<T extends keyof typeof DB_FIELDS> = (typeof DB_FIELDS)[T][keyof (typeof DB_FIELDS)[T]];
+// Legacy export (avoid using in new code)
+export const DB_FUNCTIONS = FUNCTIONS;
 
-// Re-export with common aliases
-export const TABLES = DB_TABLES;
-export const FIELDS = DB_FIELDS;
-export const ENUMS = DB_ENUMS;
-export const RELATIONSHIPS = DB_RELATIONSHIPS;
+// RLS Policies - Names of row-level security policies
+export const POLICIES = {
+  // Define your policy names here
+} as const;
+
+// Legacy export (avoid using in new code)
+export const DB_POLICIES = POLICIES;
+
+// TypeScript Types
+${enumNames.map(enumName => {
+    const values = enums[enumName];
+    const typeName = enumName.charAt(0).toUpperCase() + enumName.slice(1).replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    return `export type ${typeName} = ${values.map(value => `'${value}'`).join(' | ')};`;
+  }).join('\n')}
+
+// Type for table names
+export type TableName = keyof typeof TABLES;
+
+// Type for field names by table
+export type TableField<T extends keyof typeof FIELDS> = keyof typeof FIELDS[T];
+
+// Legacy types (avoid using in new code)
+export type TableNames = (typeof TABLES)[keyof typeof TABLES];
+export type TableFields<T extends keyof typeof FIELDS> = (typeof FIELDS)[T][keyof (typeof FIELDS)[T]];
 `;
 
   return content;

@@ -1,57 +1,22 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import type { Database } from '@/types/database.types';
+import { createServerSupabaseClient as createUnifiedServerClient } from './server'; // Import the unified client creator
 
-// Create a type-safe client using @supabase/ssr with proper cookie handling
-export async function createServerComponentClient() {
-  const cookieStore = await cookies();
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          try {
-            cookieStore.set(name, value, options);
-          } catch (error) {
-            // Handle edge cases with read-only cookie store
-            console.error('Failed to set cookie in server component:', error);
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set(name, '', { ...options, maxAge: 0 });
-          } catch (error) {
-            // Handle edge cases with read-only cookie store
-            console.error('Failed to remove cookie in server component:', error);
-          }
-        },
-      },
-    }
-  );
+// This file now acts as a wrapper/alias layer if needed,
+// ensuring all server-side clients use the same core logic from server.ts
+
+/**
+ * @deprecated Use createServerSupabaseClient from '@/utils/supabase/server' directly.
+ * Creates a Supabase client for Server Components using the unified server helper.
+ */
+export function createServerComponentClient() {
+  console.warn("createServerComponentClient from ssr-client.ts is deprecated. Use createServerSupabaseClient from server.ts instead.");
+  return createUnifiedServerClient();
 }
 
-// Create a client for API routes
-export async function createApiRouteClient() {
-  const cookieStore = await cookies();
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          cookieStore.set(name, value, options);
-        },
-        remove(name: string, options: any) {
-          cookieStore.set(name, '', { ...options, maxAge: 0 });
-        },
-      },
-    }
-  );
+/**
+ * @deprecated Use createServerSupabaseClient from '@/utils/supabase/server' directly.
+ * Creates a Supabase client for API Route Handlers using the unified server helper.
+ */
+export function createApiRouteClient() {
+  console.warn("createApiRouteClient from ssr-client.ts is deprecated. Use createServerSupabaseClient from server.ts instead.");
+  return createUnifiedServerClient();
 } 

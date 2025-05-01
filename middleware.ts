@@ -62,7 +62,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "img-src 'self' data: https://*.unsplash.com https://*.pexels.com https://images.unsplash.com https://res.cloudinary.com blob: https://maps.gstatic.com https://maps.googleapis.com https://*.ggpht.com https://*.googleusercontent.com",
     "font-src 'self' https://fonts.gstatic.com",
     // Allow connections to self, Supabase, Vercel, Google APIs, Stripe, Supabase websockets
-    "connect-src 'self' https://*.supabase.co https://*.vercel-scripts.com https://vitals.vercel-insights.com https://maps.googleapis.com https://www.google-analytics.com https://*.google.com https://api.stripe.com wss://*.supabase.io",
+    "connect-src 'self' https://*.supabase.co https://*.vercel-scripts.com https://vitals.vercel-insights.com https://maps.googleapis.com https://www.google-analytics.com https://*.google.com https://api.stripe.com wss://*.supabase.io wss://*.supabase.co",
     "media-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

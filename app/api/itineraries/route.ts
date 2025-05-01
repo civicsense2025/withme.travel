@@ -1,17 +1,14 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
 
 export async function GET(request: NextRequest) {
-  const supabase = await createApiClient();
+  const supabase = createServerSupabaseClient();
 
-  // Get user for authorization
+  // Get user for authorization (but don't require it for public templates)
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   // Get published itineraries
   const { data, error } = await supabase
@@ -34,7 +31,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createApiClient();
+  const supabase = createServerSupabaseClient();
 
   // Get user for authorization
   const {
@@ -48,25 +45,31 @@ export async function POST(request: NextRequest) {
     const itineraryData = await request.json();
 
     // Validate required fields
-    if (!itineraryData.title || !itineraryData.destination_id) {
+    if (
+      !itineraryData.title || 
+      !itineraryData.destination_id || 
+      !itineraryData.duration_days ||
+      !Array.isArray(itineraryData.sections)
+    ) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Start a transaction
+    // Generate a slug if not provided
+    const slug = itineraryData.slug || generateSlug(itineraryData.title);
+
     // 1. Insert the itinerary template
     const { data: template, error: templateError } = await supabase
       .from(DB_TABLES.ITINERARY_TEMPLATES)
       .insert({
-        [DB_FIELDS.ITINERARY_TEMPLATES.TITLE]: itineraryData.title,
-        [DB_FIELDS.ITINERARY_TEMPLATES.SLUG]:
-          itineraryData.slug || generateSlug(itineraryData.title),
-        [DB_FIELDS.ITINERARY_TEMPLATES.DESCRIPTION]: itineraryData.description,
-        [DB_FIELDS.ITINERARY_TEMPLATES.DESTINATION_ID]: itineraryData.destination_id,
-        [DB_FIELDS.ITINERARY_TEMPLATES.DURATION_DAYS]: itineraryData.duration_days,
-        [DB_FIELDS.ITINERARY_TEMPLATES.CATEGORY]: itineraryData.category,
-        [DB_FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED]: itineraryData.is_published,
-        [DB_FIELDS.ITINERARY_TEMPLATES.CREATED_BY]: user.id,
-        [DB_FIELDS.ITINERARY_TEMPLATES.TEMPLATE_TYPE]: 'user_created',
+        title: itineraryData.title,
+        slug: slug,
+        description: itineraryData.description,
+        destination_id: itineraryData.destination_id, 
+        duration_days: itineraryData.duration_days,
+        created_by: user.id,
+        is_published: itineraryData.is_published || false,
+        tags: itineraryData.tags || [],
+        metadata: itineraryData.metadata || {},
       })
       .select()
       .single();
@@ -77,64 +80,74 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Insert sections
-    const sectionsToInsert = itineraryData.sections.map((section: any, index: number) => ({
-      [DB_FIELDS.TEMPLATE_SECTIONS.TEMPLATE_ID]: template.id,
-      [DB_FIELDS.TEMPLATE_SECTIONS.POSITION]: index,
-      [DB_FIELDS.TEMPLATE_SECTIONS.TITLE]: section.title,
-    }));
+    const sectionPromises = itineraryData.sections.map(async (section: any, sectionIndex: number) => {
+      // Validate section data
+      if (!section.title || typeof section.day_number !== 'number') {
+        throw new Error(`Invalid section data at index ${sectionIndex}`);
+      }
 
-    const { data: sections, error: sectionsError } = await supabase
-      .from(DB_TABLES.TEMPLATE_SECTIONS)
-      .insert(sectionsToInsert)
-      .select();
+      const { data: sectionData, error: sectionError } = await supabase
+        .from(DB_TABLES.ITINERARY_TEMPLATE_SECTIONS)
+        .insert({
+          template_id: template.id,
+          day_number: section.day_number,
+          title: section.title,
+          position: sectionIndex,
+        })
+        .select()
+        .single();
 
-    if (sectionsError) {
-      console.error('Error creating template sections:', sectionsError);
-      return NextResponse.json({ error: sectionsError.message }, { status: 500 });
-    }
+      if (sectionError) {
+        throw sectionError;
+      }
 
-    // 3. Insert activities for each section
-    let allActivities: Array<any> = [];
-    for (let i = 0; i < sections.length; i++) {
-      const sectionItems = itineraryData.sections[i].items || [];
-
-      if (sectionItems.length > 0) {
-        const activitiesToInsert = sectionItems.map((item: any, itemIndex: number) => ({
-          [DB_FIELDS.ITINERARY_ITEMS.SECTION_ID]: sections[i].id,
-          [DB_FIELDS.ITINERARY_ITEMS.TITLE]: item.title,
-          [DB_FIELDS.ITINERARY_ITEMS.DESCRIPTION]: item.description,
-          [DB_FIELDS.ITINERARY_ITEMS.LOCATION]: item.location,
-          [DB_FIELDS.ITINERARY_ITEMS.START_TIME]: item.start_time || null,
-          [DB_FIELDS.ITINERARY_ITEMS.POSITION]: itemIndex,
-          [DB_FIELDS.ITINERARY_ITEMS.CATEGORY]: item.category || 'activity',
+      // 3. Insert items for this section
+      if (Array.isArray(section.items) && section.items.length > 0) {
+        const items = section.items.map((item: any, itemIndex: number) => ({
+          template_id: template.id,
+          section_id: sectionData.id,
+          day: section.day_number,
+          item_order: itemIndex,
+          title: item.title,
+          description: item.description || null,
+          start_time: item.start_time || null,
+          end_time: item.end_time || null,
+          location: item.location || null,
         }));
 
-        const { data: activities, error: activitiesError } = await supabase
-          .from(DB_TABLES.ITINERARY_ITEMS)
-          .insert(activitiesToInsert)
+        const { data: itemsData, error: itemsError } = await supabase
+          .from(DB_TABLES.ITINERARY_TEMPLATE_ITEMS)
+          .insert(items)
           .select();
 
-        if (activitiesError) {
-          console.error('Error creating template activities:', activitiesError);
-          return NextResponse.json({ error: activitiesError.message }, { status: 500 });
+        if (itemsError) {
+          throw itemsError;
         }
 
-        allActivities = [...allActivities, ...(activities || [])];
+        return {
+          ...sectionData,
+          items: itemsData,
+        };
       }
-    }
+
+      return {
+        ...sectionData,
+        items: [],
+      };
+    });
+
+    // Wait for all section and item insertions to complete
+    const sections = await Promise.all(sectionPromises);
 
     return NextResponse.json({
       data: {
         ...template,
-        sections: sections.map((section, idx) => ({
-          ...section,
-          items: allActivities.filter((activity) => activity.section_id === section.id),
-        })),
+        sections,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing itinerary creation:', error);
-    return NextResponse.json({ error: 'Failed to create itinerary' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to create itinerary' }, { status: 500 });
   }
 }
 

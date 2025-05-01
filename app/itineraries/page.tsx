@@ -1,13 +1,12 @@
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { ItineraryFilters } from '@/components/itinerary-filters';
 import { ItineraryTemplateCard } from '@/components/itinerary-template-card';
 import { ClientWrapper } from './client-wrapper';
-import { DB_TABLES } from '@/utils/constants/database';
 
 export const dynamic = 'force-dynamic'; // Ensure dynamic rendering
 
@@ -17,47 +16,43 @@ interface Itinerary {
   title: string;
   description: string | null;
   cover_image_url: string | null;
-  location: string | null;
-  duration: string | null;
-  duration_days: number | null;
-  category: string | null;
+  duration_days: number;
   slug: string;
-  is_public: boolean;
-  upvotes: number;
   is_published: boolean;
-  user: {
-    id: string;
-    name: string | null;
-    avatar_url: string | null;
-  } | null; // Should be object or null
+  view_count: number;
+  like_count: number;
+  tags: string[];
+  created_by: string;
   destinations: {
     city: string;
     country: string;
     image_url: string | null;
-  } | null; // Should be object or null
-  // Added fields (ensure they are selected or defaulted)
-  groupSize?: string | null;
-  tags?: string[];
+  } | null;
+  creator?: {
+    id: string;
+    name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 // Fetch itineraries from the database
 async function getItineraries() {
-  const supabase = await createApiClient();
+  const supabase = createServerSupabaseClient();
 
   try {
-    // First attempt to get all templates (published and unpublished)
+    // Get all published templates
     const { data, error } = await supabase
-      .from(DB_TABLES.ITINERARY_TEMPLATES)
+      .from('itinerary_templates')
       .select('*, destinations(*), creator:created_by(id, name, avatar_url)')
+      .eq('is_published', true)
       .order('created_at', { ascending: false });
-    // .eq("is_published", true) - Removed to show all templates
 
     if (error) {
       console.error('Error fetching itineraries:', error);
       return [];
     }
 
-    // Map data to ensure consistency, especially if created_by is null
+    // Map data to ensure consistency
     return (data || []).map((item) => ({
       ...item,
       author: item.creator
@@ -92,16 +87,14 @@ export default async function ItinerariesPage() {
       (itinerary.destinations ? itinerary.destinations.image_url : null) ||
       '/images/placeholder-itinerary.jpg',
     location:
-      itinerary.location ||
       (itinerary.destinations
         ? `${itinerary.destinations.city || ''}, ${itinerary.destinations.country || ''}`
         : 'Unknown Location'),
-    duration: itinerary.duration || `${itinerary.duration_days || 'N/A'} days`,
-    groupSize: itinerary.groupSize || 'N/A',
+    duration: `${itinerary.duration_days || 'N/A'} days`,
     tags: itinerary.tags || [],
-    category: itinerary.category || 'uncategorized',
     slug: itinerary.slug || itinerary.id,
     is_published: itinerary.is_published || false,
+    author: itinerary.author || null,
   }));
 
   return (

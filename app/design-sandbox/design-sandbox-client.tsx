@@ -4,8 +4,9 @@ import type { Database } from '@/types/database.types';
 type TripRole = Database['public']['Enums']['trip_role'];
 
 import React from 'react';
-import { FocusSession } from '@/components/presence/focus-session';
-import { PresenceProvider } from '@/components/presence/presence-context';
+// NOTE: These imports are intentionally disabled to prevent build errors while keeping the modules in the codebase
+// import { FocusSession } from '@/components/presence/focus-session';
+// import { PresenceProvider } from '@/components/presence/presence-context';
 import {
   Card,
   CardContent,
@@ -15,7 +16,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FocusSessionProvider } from '@/contexts/focus-session-context';
+// import { FocusSessionProvider } from '@/contexts/focus-session-context';
 import FocusSessionExample from '@/components/trips/components/FocusSessionExample';
 import { Todo } from '@/components/Todo';
 import Image from 'next/image';
@@ -843,22 +844,18 @@ export default function DesignSandboxClient() {
                 </p>
 
                 <div className="grid gap-6">
-                  {/* We create separate PresenceProvider instances for each session */}
-                  <PresenceProvider tripId="sandbox-demo-trip" trackCursor={true}>
-                    <FocusSession
-                      sessionId="collaborative-notes"
-                      title="Collaborative Notes"
-                      description="Work together on shared notes"
-                    />
-                  </PresenceProvider>
-
-                  <PresenceProvider tripId="sandbox-demo-trip" trackCursor={true}>
-                    <FocusSession
-                      sessionId="brainstorming-session"
-                      title="Brainstorming Session"
-                      description="Add ideas for our next trip"
-                    />
-                  </PresenceProvider>
+                  {/* Presence features are temporarily disabled */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="bg-muted/50 p-4 rounded-md border border-dashed">
+                        <h3 className="font-medium mb-2">Collaborative Features Disabled</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Real-time collaboration features are currently disabled in this sandbox.
+                          These features are kept in the codebase but not actively imported.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </section>
             </TabsContent>
@@ -872,9 +869,18 @@ export default function DesignSandboxClient() {
                 </p>
 
                 <div className="max-w-md mx-auto">
-                  <FocusSessionProvider tripId="sandbox-demo-trip">
-                    <FocusSessionExample sectionPath="itinerary" />
-                  </FocusSessionProvider>
+                  {/* Focus session features are temporarily disabled */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="bg-muted/50 p-4 rounded-md border border-dashed">
+                        <h3 className="font-medium mb-2">Focus Sessions Disabled</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Focus session features are currently disabled in this sandbox.
+                          These features are kept in the codebase but not actively imported.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </section>
             </TabsContent>

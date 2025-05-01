@@ -1,95 +1,86 @@
+'use client';
+
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { DroppableContainer } from './DroppableContainer';
+import { DisplayItineraryItem } from '@/types/itinerary';
+import { ItineraryItemCard } from './ItineraryItemCard';
+import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableItem } from './SortableItem';
-import { Button } from '@/components/ui/button';
-import { ItineraryItemCard } from './ItineraryItemCard';
-import { type TravelTimesResult } from '@/lib/mapbox';
-import { DisplayItineraryItem } from '@/types/itinerary';
 
 interface UnscheduledItemsSectionProps {
   items: DisplayItineraryItem[];
   canEdit: boolean;
-  tripId: string;
   onAddItem: () => void;
-  travelTimes?: Record<string, TravelTimesResult> | null;
-  loadingTravelTimes?: boolean;
-  onDeleteItem: (itemId: string) => void;
-  onEditItem?: (item: DisplayItineraryItem) => void;
-  onStartEdit?: (item: DisplayItineraryItem) => void;
-  editingItemId?: string | null;
-  inlineEditValue?: string;
-  handleInlineEditChange?: (value: string) => void;
-  onCancelEdit?: () => void;
-  onSaveEdit?: () => void;
-  onVote?: (itemId: string, type: 'up' | 'down') => void;
+  onEditItem: (item: DisplayItineraryItem) => void;
 }
 
-export function UnscheduledItemsSection({
+export const UnscheduledItemsSection: React.FC<UnscheduledItemsSectionProps> = ({
   items,
   canEdit,
-  tripId,
   onAddItem,
-  travelTimes,
-  loadingTravelTimes,
-  onVote,
   onEditItem,
-  onDeleteItem,
-  editingItemId,
-  inlineEditValue,
-  onStartEdit,
-  handleInlineEditChange,
-  onCancelEdit,
-  onSaveEdit,
-}: UnscheduledItemsSectionProps) {
-  return (
-    <div className="space-y-3 pt-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Unscheduled Items</h3>
-        {canEdit && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onAddItem}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            Add Item
-          </Button>
-        )}
-      </div>
+}) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'unscheduled',
+    data: {
+      type: 'unscheduled-section',
+      accepts: ['item'],
+    },
+  });
 
-      <DroppableContainer id="unscheduled" items={items}>
-        <SortableContext
-          items={items.map((item) => item.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {items && items.length > 0 ? (
-            <div className="space-y-3">
-              {items.map((item) => (
-                <SortableItem
-                  key={item.id}
-                  id={item.id}
-                  disabled={!canEdit}
-                  containerId="unscheduled"
-                >
-                  <ItineraryItemCard
-                    item={item}
-                    dayNumber={undefined}
-                    onClick={() => canEdit && onStartEdit?.(item)}
-                    className={canEdit ? 'cursor-pointer' : ''}
-                  />
-                </SortableItem>
-              ))}
+  // Get all item IDs for sortable context
+  const itemIds = items.map(item => item.id);
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={`rounded-xl p-1 transition-colors duration-200 ${isOver ? 'bg-primary/10' : ''}`}
+    >
+      <Card className="mb-6">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-xl">Unscheduled Items</CardTitle>
+          {canEdit && (
+            <Button 
+              onClick={onAddItem} 
+              variant="secondary" 
+              size="sm" 
+              className="gap-1.5"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>Add Item</span>
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {items.length === 0 ? (
+            <div className="py-6 text-center text-muted-foreground">
+              <p>No unscheduled items yet.</p>
+              <p className="text-sm mt-1">Add items here that you're considering for your trip.</p>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground italic pl-2 min-h-[50px] flex items-center justify-center border border-dashed rounded-md">
-              No unscheduled items. Drag items here or use the 'Add Item' button.
+            <div className="space-y-3">
+              <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                {items.map(item => (
+                  <SortableItem 
+                    key={item.id} 
+                    id={item.id} 
+                    containerId="unscheduled"
+                    disabled={!canEdit}
+                  >
+                    <ItineraryItemCard 
+                      item={item} 
+                      onEdit={() => onEditItem(item)}
+                    />
+                  </SortableItem>
+                ))}
+              </SortableContext>
             </div>
           )}
-        </SortableContext>
-      </DroppableContainer>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
