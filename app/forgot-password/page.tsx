@@ -1,86 +1,76 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, Mail } from "lucide-react"
-import { motion } from "framer-motion"
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Mail } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import { useCsrf } from "@/components/csrf-provider"
-import { fadeIn, staggerContainer } from "@/utils/animation"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { fadeIn, staggerContainer } from '@/utils/animation';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const { csrfToken, loading: csrfLoading } = useCsrf()
-  
-  const [email, setEmail] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // The formState variable was unused and causing a type error.
+  // Form status is handled by isSubmitting, error, and success states.
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError(null)
-    
+    e.preventDefault();
+    setError(null);
+
     // Simple email validation
     if (!email || !email.includes('@')) {
-      setError("Please enter a valid email address")
-      return
+      setError('Please enter a valid email address');
+      return;
     }
-    
-    // Check for CSRF token
-    if (!csrfToken) {
-      setError("Missing security token. Please refresh the page.")
-      return
-    }
-    
-    setIsSubmitting(true)
-    
+
+    setIsSubmitting(true);
+
+    // Send request to API
     try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": csrfToken,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          csrfToken,
-        }),
-      })
-      
-      const data = await response.json()
-      
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.error || "Failed to send reset email")
+        throw new Error(data.error || 'Failed to send reset email');
       }
-      
+
       // Show success message
-      setSuccess(true)
-      setEmail("")
-      
+      setSuccess(true);
+      setEmail('');
+
       toast({
-        title: "Reset Email Sent",
-        description: "If an account exists with this email, you will receive reset instructions.",
-      })
+        title: 'Reset Email Sent',
+        description: 'If an account exists with this email, you will receive reset instructions.',
+      });
     } catch (err: any) {
-      console.error("Forgot password error:", err)
-      setError(err.message || "Failed to send reset email")
-      
+      console.error('Forgot password error:', err);
+      setError(err.message || 'Failed to send reset email');
+
       toast({
-        title: "Request Failed",
-        description: err.message || "Failed to send reset email. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Request Failed',
+        description: err.message || 'Failed to send reset email. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="container max-w-md mx-auto py-16 px-4">
@@ -113,24 +103,16 @@ export default function ForgotPasswordPage() {
           >
             <p className="font-medium">Check your email</p>
             <p className="text-sm">
-              We've sent password reset instructions to your email address.
-              Please check your inbox and follow the link to reset your password.
+              We've sent password reset instructions to your email address. Please check your inbox
+              and follow the link to reset your password.
             </p>
-            <Button
-              onClick={() => router.push("/login")}
-              variant="outline"
-              className="mt-4"
-            >
+            <Button onClick={() => router.push('/login')} variant="outline" className="mt-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Login
             </Button>
           </motion.div>
         ) : (
-          <motion.form
-            variants={fadeIn}
-            className="space-y-4"
-            onSubmit={handleSubmit}
-          >
+          <motion.form variants={fadeIn} className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -144,13 +126,9 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting || csrfLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
-                "Sending Reset Email..."
+                'Sending Reset Email...'
               ) : (
                 <>
                   <Mail className="mr-2 h-4 w-4" />
@@ -158,12 +136,9 @@ export default function ForgotPasswordPage() {
                 </>
               )}
             </Button>
-            
+
             <div className="text-center mt-4">
-              <Link 
-                href="/login" 
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
+              <Link href="/login" className="text-sm text-muted-foreground hover:text-primary">
                 Back to login
               </Link>
             </div>
@@ -171,5 +146,5 @@ export default function ForgotPasswordPage() {
         )}
       </motion.div>
     </div>
-  )
+  );
 }

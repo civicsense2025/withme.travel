@@ -1,11 +1,11 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 /**
  * Combines class names with Tailwind CSS classes
  */
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -14,37 +14,40 @@ export function cn(...inputs: ClassValue[]) {
  * @param endDate The end date
  * @returns Formatted date range string
  */
-export function formatDateRange(startDate: Date | string | null | undefined, endDate: Date | string | null | undefined): string {
-  if (!startDate && !endDate) return "Dates not set"
-  
-  const start = startDate ? new Date(startDate) : null
-  const end = endDate ? new Date(endDate) : null
-  
+export function formatDateRange(
+  startDate: Date | string | null | undefined,
+  endDate: Date | string | null | undefined
+): string {
+  if (!startDate && !endDate) return 'Dates not set';
+
+  const start = startDate ? new Date(startDate) : null;
+  const end = endDate ? new Date(endDate) : null;
+
   if (start && end) {
     if (start.getFullYear() === end.getFullYear()) {
       if (start.getMonth() === end.getMonth()) {
         if (start.getDate() === end.getDate()) {
-          return start.toLocaleDateString(undefined, { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-          })
+          return start.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
         } else {
-          return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+          return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
         }
       } else {
-        return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+        return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
       }
     } else {
-      return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+      return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
     }
   } else if (start) {
-    return `From ${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+    return `From ${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
   } else if (end) {
-    return `Until ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+    return `Until ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
   }
-  
-  return "Dates not set"
+
+  return 'Dates not set';
 }
 
 /**
@@ -53,13 +56,13 @@ export function formatDateRange(startDate: Date | string | null | undefined, end
  * @returns Formatted date string
  */
 export function formatDate(date: Date | string | null | undefined): string {
-  if (!date) return "Date not set"
-  return new Date(date).toLocaleDateString(undefined, { 
+  if (!date) return 'Date not set';
+  return new Date(date).toLocaleDateString(undefined, {
     weekday: 'short',
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  })
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 /**
@@ -69,6 +72,6 @@ export function formatDate(date: Date | string | null | undefined): string {
  * @returns Truncated string
  */
 export function truncate(str: string, length: number): string {
-  if (!str) return ""
-  return str.length > length ? `${str.substring(0, length)}...` : str
-} 
+  if (!str) return '';
+  return str.length > length ? `${str.substring(0, length)}...` : str;
+}

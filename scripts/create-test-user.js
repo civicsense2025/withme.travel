@@ -23,7 +23,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Required environment variables are missing.');
-  console.error('Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local');
+  console.error(
+    'Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local'
+  );
   process.exit(1);
 }
 
@@ -45,41 +47,41 @@ async function createTestUser() {
       password: TEST_USER_PASSWORD,
       email_confirm: true, // Auto-confirm email so no verification is needed
       user_metadata: {
-        full_name: TEST_USER_NAME
-      }
+        full_name: TEST_USER_NAME,
+      },
     });
 
     if (authError) {
       console.error('Error creating test user in auth:', authError.message);
-      
+
       // Check if user already exists - we can try to reset their password
       if (authError.message.includes('already registered')) {
         console.log('User already exists, attempting to reset password...');
-        
+
         // Find user by email
         const { data: users, error: getUserError } = await supabase.auth.admin.listUsers();
-        
+
         if (getUserError) {
           console.error('Error listing users:', getUserError.message);
           return;
         }
-        
-        const existingUser = users.users.find(user => user.email === TEST_USER_EMAIL);
-        
+
+        const existingUser = users.users.find((user) => user.email === TEST_USER_EMAIL);
+
         if (existingUser) {
           // Update user with new password
-          const { error: updateError } = await supabase.auth.admin.updateUserById(
-            existingUser.id,
-            { password: TEST_USER_PASSWORD, email_confirm: true }
-          );
-          
+          const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+            password: TEST_USER_PASSWORD,
+            email_confirm: true,
+          });
+
           if (updateError) {
             console.error('Error updating existing user:', updateError.message);
             return;
           }
-          
+
           console.log(`Updated existing user ${TEST_USER_EMAIL} with new password`);
-          
+
           // Create or update profile
           await ensureUserProfile(existingUser.id);
           return;
@@ -88,23 +90,22 @@ async function createTestUser() {
           return;
         }
       }
-      
+
       return;
     }
 
     console.log('Successfully created user in Supabase Auth');
     console.log('User ID:', authData.user.id);
-    
+
     // 2. Create a profile for this user
     await ensureUserProfile(authData.user.id);
-    
+
     console.log('\nTest user created successfully!');
     console.log('-----------------------------');
     console.log('Email:', TEST_USER_EMAIL);
     console.log('Password:', TEST_USER_PASSWORD);
     console.log('-----------------------------');
     console.log('You can now log in with these credentials.');
-    
   } catch (error) {
     console.error('Unexpected error:', error);
   }
@@ -117,53 +118,51 @@ async function ensureUserProfile(userId) {
     .select('id')
     .eq('id', userId)
     .maybeSingle();
-    
+
   if (profileCheckError) {
     console.error('Error checking for existing profile:', profileCheckError.message);
     return;
   }
-  
+
   if (existingProfile) {
     console.log('User profile already exists, updating...');
-    
+
     // Update existing profile
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
         name: TEST_USER_NAME,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', userId);
-      
+
     if (updateError) {
       console.error('Error updating profile:', updateError.message);
       return;
     }
-    
+
     console.log('Profile updated successfully');
     return;
   }
-  
+
   // Create new profile
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .insert({
-      id: userId,
-      email: TEST_USER_EMAIL,
-      name: TEST_USER_NAME,
-      avatar_url: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_admin: false
-    });
-    
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: userId,
+    email: TEST_USER_EMAIL,
+    name: TEST_USER_NAME,
+    avatar_url: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_admin: false,
+  });
+
   if (profileError) {
     console.error('Error creating user profile:', profileError.message);
     return;
   }
-  
+
   console.log('Successfully created user profile');
 }
 
 // Run the function
-createTestUser(); 
+createTestUser();

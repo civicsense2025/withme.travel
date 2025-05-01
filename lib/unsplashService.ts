@@ -53,7 +53,11 @@ dotenv.config({ path: '.env.local' });
 
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 if (!UNSPLASH_ACCESS_KEY) {
-  console.error(chalk.red('Error: UNSPLASH_ACCESS_KEY not found in environment variables. Ensure it is set in .env.local'));
+  console.error(
+    chalk.red(
+      'Error: UNSPLASH_ACCESS_KEY not found in environment variables. Ensure it is set in .env.local'
+    )
+  );
   // Throw an error or handle appropriately for service context
   // Avoid process.exit(1) in library code
   // throw new Error('UNSPLASH_ACCESS_KEY is not configured.');
@@ -68,8 +72,12 @@ let lastRequestTime = Date.now(); // Track start of current hour window
 // Helper for rate limiting
 async function applyRateLimit() {
   if (!UNSPLASH_ACCESS_KEY) {
-      console.warn(chalk.yellow("Skipping rate limit check as UNSPLASH_ACCESS_KEY is missing. API calls will likely fail."));
-      return; // Don't proceed if key is missing
+    console.warn(
+      chalk.yellow(
+        'Skipping rate limit check as UNSPLASH_ACCESS_KEY is missing. API calls will likely fail.'
+      )
+    );
+    return; // Don't proceed if key is missing
   }
 
   const now = Date.now();
@@ -80,10 +88,14 @@ async function applyRateLimit() {
   }
 
   if (requestCount >= rateLimit) {
-    const waitTime = (lastRequestTime + 3600000) - now; // Time until the hour window ends
+    const waitTime = lastRequestTime + 3600000 - now; // Time until the hour window ends
     if (waitTime > 0) {
-      console.log(chalk.yellow(`Unsplash API rate limit reached (${rateLimit}/hour). Waiting ${(waitTime / 1000 / 60).toFixed(1)} minutes...`));
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      console.log(
+        chalk.yellow(
+          `Unsplash API rate limit reached (${rateLimit}/hour). Waiting ${(waitTime / 1000 / 60).toFixed(1)} minutes...`
+        )
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
       requestCount = 0; // Reset count after waiting
       lastRequestTime = Date.now(); // Start new window immediately
     } else {
@@ -98,12 +110,8 @@ async function applyRateLimit() {
 }
 
 // --- Keyword Sets for Queries ---
-const primaryKeywords = [
-  'landmark', 'cityscape', 'skyline', 'architecture', 'downtown', 'iconic'
-];
-const secondaryKeywords = [
-  'scenic', 'nature', 'travel', 'tourism', 'viewpoint', 'building'
-];
+const primaryKeywords = ['landmark', 'cityscape', 'skyline', 'architecture', 'downtown', 'iconic'];
+const secondaryKeywords = ['scenic', 'nature', 'travel', 'tourism', 'viewpoint', 'building'];
 
 // Helper function to get random element from an array
 function getRandomElement<T>(arr: T[]): T {
@@ -122,7 +130,7 @@ export async function searchUnsplashPhotos(
   perPage = 5 // Default to fetching 5 for random selection
 ): Promise<UnsplashSearchResponse> {
   if (!UNSPLASH_ACCESS_KEY) {
-      throw new Error("UNSPLASH_ACCESS_KEY is not configured. Cannot search photos.");
+    throw new Error('UNSPLASH_ACCESS_KEY is not configured. Cannot search photos.');
   }
   await applyRateLimit();
   const apiSpinner = createSpinner(`Searching Unsplash API for "${query}"...`).start();
@@ -136,24 +144,31 @@ export async function searchUnsplashPhotos(
   try {
     const response = await fetch(url.toString(), {
       headers: {
-        'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`,
-        'Accept-Version': 'v1'
-      }
+        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        'Accept-Version': 'v1',
+      },
     });
 
     if (!response.ok) {
       let errorDetails = response.statusText;
       try {
-          const errorData: any = await response.json();
-          if (typeof errorData === 'object' && errorData !== null && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
-              errorDetails = String(errorData.errors[0]);
-          }
-      } catch (parseError) { /* Ignore */ }
+        const errorData: any = await response.json();
+        if (
+          typeof errorData === 'object' &&
+          errorData !== null &&
+          Array.isArray(errorData.errors) &&
+          errorData.errors.length > 0
+        ) {
+          errorDetails = String(errorData.errors[0]);
+        }
+      } catch (parseError) {
+        /* Ignore */
+      }
       apiSpinner.error({ text: `Unsplash API Error: ${response.status} ${response.statusText}` });
       throw new Error(`API Error (${response.status}): ${errorDetails}`);
     }
 
-    const data = await response.json() as UnsplashSearchResponse;
+    const data = (await response.json()) as UnsplashSearchResponse;
     apiSpinner.success({ text: `Found ${data.total} results for "${query}"` });
     return data;
   } catch (error) {
@@ -169,19 +184,27 @@ export async function searchUnsplashPhotos(
 export async function getDestinationPhoto(
   city: string,
   country: string,
-  state: string | null,
-): Promise<{ photo: UnsplashPhoto, attribution: string, sourceQuery: string, attributionHtml: string } | null> {
-   if (!UNSPLASH_ACCESS_KEY) {
-      console.warn(chalk.yellow("UNSPLASH_ACCESS_KEY is not configured. Skipping Unsplash search."));
-      return null;
+  state: string | null
+): Promise<{
+  photo: UnsplashPhoto;
+  attribution: string;
+  sourceQuery: string;
+  attributionHtml: string;
+} | null> {
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.warn(chalk.yellow('UNSPLASH_ACCESS_KEY is not configured. Skipping Unsplash search.'));
+    return null;
   }
 
   // --- Dynamic Query Generation ---
   const randomKeyword1 = getRandomElement(primaryKeywords);
   const randomKeyword2 = getRandomElement(secondaryKeywords);
   // Ensure keywords are different if possible
-  const uniqueKeyword2 = randomKeyword2 !== randomKeyword1 ? randomKeyword2 : getRandomElement(secondaryKeywords.filter(k => k !== randomKeyword1));
-  
+  const uniqueKeyword2 =
+    randomKeyword2 !== randomKeyword1
+      ? randomKeyword2
+      : getRandomElement(secondaryKeywords.filter((k) => k !== randomKeyword1));
+
   const queries = [
     // Try more specific queries first with random keywords
     `${city} ${state ? state + ' ' : ''}${country} ${randomKeyword1}`,
@@ -193,7 +216,7 @@ export async function getDestinationPhoto(
     `${country} ${randomKeyword1}`,
     `${country} ${uniqueKeyword2}`,
     // Absolute fallback (optional)
-    // `${city} ${country}` 
+    // `${city} ${country}`
   ];
   console.log(chalk.dim(`  (Unsplash Query Keywords: ${randomKeyword1}, ${uniqueKeyword2})`));
   // --- End Dynamic Query Generation ---
@@ -205,16 +228,17 @@ export async function getDestinationPhoto(
 
       if (response.results.length > 0) {
         const randomIndex = Math.floor(Math.random() * response.results.length);
-        const photo = response.results[randomIndex]; 
+        const photo = response.results[randomIndex];
         spinner.success({ text: `Found Unsplash image using query: "${query}"` });
-        
-        const attributionLink = (url: string) => `${url}?utm_source=withme.travel&utm_medium=referral`;
+
+        const attributionLink = (url: string) =>
+          `${url}?utm_source=withme.travel&utm_medium=referral`;
         const userUrl = attributionLink(photo.user.links.html);
         const unsplashUrl = attributionLink('https://unsplash.com');
-        
+
         // Plain text attribution (keeping for backward compatibility)
         const textAttribution = `Photo by ${photo.user.name} (${userUrl}) on Unsplash (${unsplashUrl})`;
-        
+
         // HTML attribution with proper hyperlinks
         const attributionHtml = `Photo by <a href="${userUrl}" target="_blank" rel="noopener noreferrer">${photo.user.name}</a> on <a href="${unsplashUrl}" target="_blank" rel="noopener noreferrer">Unsplash</a>`;
 
@@ -227,11 +251,17 @@ export async function getDestinationPhoto(
       }
       spinner.warn({ text: `No Unsplash results for query: "${query}"` });
     } catch (error) {
-       spinner.error({ text: `Error during Unsplash search for "${query}": ${(error as Error).message}` });
+      spinner.error({
+        text: `Error during Unsplash search for "${query}": ${(error as Error).message}`,
+      });
     }
   }
 
-  console.warn(chalk.yellow(`Could not find any suitable Unsplash image for ${city}, ${country} after trying multiple random queries.`));
+  console.warn(
+    chalk.yellow(
+      `Could not find any suitable Unsplash image for ${city}, ${country} after trying multiple random queries.`
+    )
+  );
   return null;
 }
 
@@ -240,29 +270,41 @@ export async function getDestinationPhoto(
  * IMPORTANT: Call this *before* initiating the actual image download.
  */
 export async function trackUnsplashDownload(photo: UnsplashPhoto): Promise<void> {
-    if (!UNSPLASH_ACCESS_KEY) {
-      console.warn(chalk.yellow("Skipping Unsplash download tracking as UNSPLASH_ACCESS_KEY is missing."));
-      return; // Don't proceed if key is missing
-    }
-    if (!photo?.links?.download_location) {
-        console.warn(chalk.yellow(`Photo object missing download_location link. Cannot track download for photo ID: ${photo?.id}`));
-        return;
-    }
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.warn(
+      chalk.yellow('Skipping Unsplash download tracking as UNSPLASH_ACCESS_KEY is missing.')
+    );
+    return; // Don't proceed if key is missing
+  }
+  if (!photo?.links?.download_location) {
+    console.warn(
+      chalk.yellow(
+        `Photo object missing download_location link. Cannot track download for photo ID: ${photo?.id}`
+      )
+    );
+    return;
+  }
 
-    const trackSpinner = createSpinner(`Tracking Unsplash download for photo ID: ${photo.id}...`).start();
-    try {
-        await applyRateLimit(); // Count tracking as an API interaction
-        const response = await fetch(photo.links.download_location, {
-            headers: { 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}` }
-        });
+  const trackSpinner = createSpinner(
+    `Tracking Unsplash download for photo ID: ${photo.id}...`
+  ).start();
+  try {
+    await applyRateLimit(); // Count tracking as an API interaction
+    const response = await fetch(photo.links.download_location, {
+      headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` },
+    });
 
-        if (!response.ok) {
-            trackSpinner.warn({ text: `Failed to trigger Unsplash download tracking for ${photo.id}. Status: ${response.status} ${response.statusText}`});
-        } else {
-            trackSpinner.success({ text: `Download tracked for photo ID: ${photo.id}` });
-        }
-    } catch (error) {
-        trackSpinner.error({ text: `Error tracking Unsplash download for photo ${photo.id}: ${(error as Error).message}` });
-        // Log error but don't necessarily stop the process
+    if (!response.ok) {
+      trackSpinner.warn({
+        text: `Failed to trigger Unsplash download tracking for ${photo.id}. Status: ${response.status} ${response.statusText}`,
+      });
+    } else {
+      trackSpinner.success({ text: `Download tracked for photo ID: ${photo.id}` });
     }
-} 
+  } catch (error) {
+    trackSpinner.error({
+      text: `Error tracking Unsplash download for photo ${photo.id}: ${(error as Error).message}`,
+    });
+    // Log error but don't necessarily stop the process
+  }
+}

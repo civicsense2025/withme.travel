@@ -1,26 +1,48 @@
-"use client"
+'use client';
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, CalendarIcon, Clock, MapPin } from "lucide-react"
-import { format } from "date-fns"
+import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn, formatError } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
-import MapboxGeocoderComponent from "@/components/maps/mapbox-geocoder"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { FormControl, FormMessage } from "@/components/ui/form"
-import { useToast } from "@/hooks/use-toast"
-import { API_ROUTES, PAGE_ROUTES } from "@/utils/constants"
+import type React from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, CalendarIcon, Clock, MapPin } from 'lucide-react';
+import { format } from 'date-fns';
+
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FormControl, FormMessage } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
+
+// Define a local formatError function since it's not available in utils
+function formatError(error: any): string {
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error) return String(error.message);
+  return 'An unknown error occurred';
+}
 
 interface DestinationInfo {
   id: string;
@@ -45,20 +67,30 @@ interface GeocoderResult {
   [key: string]: any;
 }
 
-export function AddItineraryItemClient({ tripId, initialDestination }: AddItineraryItemClientProps) {
-  const router = useRouter()
+export function AddItineraryItemClient({
+  tripId,
+  initialDestination,
+}: AddItineraryItemClientProps) {
+  const router = useRouter();
   const { toast } = useToast();
-  const [date, setDate] = useState<Date>()
-  const [selectedPlace, setSelectedPlace] = useState<GeocoderResult | null>(initialDestination ? {
-    text: initialDestination.city || 'Unknown Location',
-    place_name: initialDestination.city && initialDestination.country ? `${initialDestination.city}, ${initialDestination.country}` : (initialDestination.city || initialDestination.country || 'Unknown Address'),
-    id: initialDestination.google_place_id || undefined,
-    geometry: {
-      coordinates: [initialDestination.longitude ?? 0, initialDestination.latitude ?? 0],
-      type: 'Point'
-    },
-  } : null);
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [date, setDate] = useState<Date>();
+  const [selectedPlace, setSelectedPlace] = useState<GeocoderResult | null>(
+    initialDestination
+      ? {
+          text: initialDestination.city || 'Unknown Location',
+          place_name:
+            initialDestination.city && initialDestination.country
+              ? `${initialDestination.city}, ${initialDestination.country}`
+              : initialDestination.city || initialDestination.country || 'Unknown Address',
+          id: initialDestination.google_place_id || undefined,
+          geometry: {
+            coordinates: [initialDestination.longitude ?? 0, initialDestination.latitude ?? 0],
+            type: 'Point',
+          },
+        }
+      : null
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Define proximity value explicitly
@@ -68,8 +100,8 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
     setErrorMessage(null);
 
     const formData = new FormData(e.currentTarget);
@@ -83,13 +115,15 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
       end_time: formValues.endTime || null,
       estimated_cost: formValues.cost ? parseFloat(formValues.cost as string) : null,
       notes: formValues.notes,
-      ...(selectedPlace ? {
-        place_name: selectedPlace.text,
-        address: selectedPlace.place_name,
-        mapbox_id: selectedPlace.id,
-        latitude: selectedPlace.geometry?.coordinates[1],
-        longitude: selectedPlace.geometry?.coordinates[0],
-      } : {}),
+      ...(selectedPlace
+        ? {
+            place_name: selectedPlace.text,
+            address: selectedPlace.place_name,
+            mapbox_id: selectedPlace.id,
+            latitude: selectedPlace.geometry?.coordinates[1],
+            longitude: selectedPlace.geometry?.coordinates[0],
+          }
+        : {}),
     };
 
     try {
@@ -102,41 +136,40 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to add item. Please check the details.");
+        throw new Error(result.error || 'Failed to add item. Please check the details.');
       }
 
       toast({
-        title: "Item Added!",
+        title: 'Item Added!',
         description: `${newItemData.title} has been added to the itinerary.`,
-        variant: "default",
+        variant: 'default',
       });
 
-      router.push(`/trips/${tripId}?tab=itinerary`); 
+      router.push(`/trips/${tripId}?tab=itinerary`);
       router.refresh();
-      
     } catch (error: any) {
-      console.error("Failed to add itinerary item:", error);
+      console.error('Failed to add itinerary item:', error);
       const errMsg = formatError(error);
       setErrorMessage(errMsg);
       toast({
-        title: "Failed to Add Item",
+        title: 'Failed to Add Item',
         description: errMsg,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   const handleGeocoderResult = (result: GeocoderResult) => {
-    console.log("Geocoder Result:", result);
+    console.log('Geocoder Result:', result);
     setSelectedPlace(result);
   };
 
   return (
     <div className="container py-8">
       <div className="mb-6">
-        <Link href={`/trips/${tripId}?tab=itinerary`}> 
+        <Link href={`/trips/${tripId}?tab=itinerary`}>
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" />
             Back to Itinerary
@@ -148,7 +181,9 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
         <form onSubmit={handleSubmit}>
           <CardHeader>
             <CardTitle>Add Itinerary Item</CardTitle>
-            <CardDescription>Add a new activity, accommodation, or transportation to your trip</CardDescription>
+            <CardDescription>
+              Add a new activity, accommodation, or transportation to your trip
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {errorMessage && (
@@ -156,7 +191,7 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
                 <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
               <Input id="title" name="title" placeholder="Visit Sagrada Familia" required />
@@ -166,7 +201,7 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
               <Label htmlFor="type">Type</Label>
               <Select name="type" required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="activity">Activity</SelectItem>
@@ -183,10 +218,13 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !date && 'text-muted-foreground'
+                    )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : "Select date"}
+                    {date ? format(date, 'PPP') : 'Select date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -217,15 +255,19 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
               <Label>Location</Label>
               <MapboxGeocoderComponent
                 onResult={handleGeocoderResult}
-                options={{
-                   proximity: proximityValue,
-                  // types: 'poi,address,place',
-                } as any}
+                options={
+                  {
+                    proximity: proximityValue,
+                    // types: 'poi,address,place',
+                  } as any
+                }
               />
               {selectedPlace && (
                 <div className="flex items-center gap-2 mt-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{selectedPlace.text || selectedPlace.place_name || 'Selected Location'}</span>
+                  <span>
+                    {selectedPlace.text || selectedPlace.place_name || 'Selected Location'}
+                  </span>
                 </div>
               )}
             </div>
@@ -237,7 +279,12 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" name="notes" placeholder="Any additional details about this item" className="min-h-24" />
+              <Textarea
+                id="notes"
+                name="notes"
+                placeholder="Any additional details about this item"
+                className="min-h-24"
+              />
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
@@ -245,11 +292,11 @@ export function AddItineraryItemClient({ tripId, initialDestination }: AddItiner
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add to Itinerary"}
+              {isSubmitting ? 'Adding...' : 'Add to Itinerary'}
             </Button>
           </CardFooter>
         </form>
       </Card>
     </div>
   );
-} 
+}

@@ -1,23 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createApiClient } from "@/utils/supabase/server";
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants'
+// app/api/destinations/[id]/reviews/route.ts
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createApiClient } from '@/utils/supabase/server';
+import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
 
 // Placeholder for database fetching logic
-async function getReviewsForDestination(destinationId: string, sortBy: string | null, season: string | null, travelType: string | null) {
+async function getReviewsForDestination(
+  destinationId: string,
+  sortBy: string | null,
+  season: string | null,
+  travelType: string | null
+): Promise<any[]> {
   console.log(`Fetching reviews for destination: ${destinationId}`);
   console.log(`Sort by: ${sortBy}, Season: ${season}, Travel Type: ${travelType}`);
   // TODO: Implement actual database query to fetch reviews based on ID and filters
-  // Example: const { data, error } = await supabase.from('trip_reviews').select('*').eq('destination_id', destinationId).order(...) 
+  // Example:
+  // const supabase = createApiClient()
+  // const { data, error } = await supabase
+  //   .from(DB_TABLES.TRIP_REVIEWS)
+  //   .select('*')
+  //   .eq(DB_FIELDS.DESTINATION_ID, destinationId)
+  //   .order(sortBy || DB_FIELDS.CREATED_AT, { ascending: false })
+  // if (error) throw error
+  // return data
+
   return []; // Return empty array for now
 }
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
-  // Properly await and destructure the params object
-  const { id: destinationId } = context.params;
-  const searchParams = request.nextUrl.searchParams;
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const destinationId = id;
+
+  const { searchParams } = request.nextUrl;
   const sortBy = searchParams.get('sort_by');
   const season = searchParams.get('season');
   const travelType = searchParams.get('travel_type');
@@ -33,4 +47,4 @@ export async function GET(
     console.error('Error fetching destination reviews:', error);
     return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
   }
-} 
+}

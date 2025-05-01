@@ -1,4 +1,6 @@
-'use client'
+import { TripRole } from '@/utils/constants/database';
+import { API_ROUTES } from '@/utils/constants/routes';
+('use client');
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -9,22 +11,29 @@ import { Button } from '@/components/ui/button';
 import { TagInput } from '@/components/ui/tag-input';
 import { LocationSearch } from '@/components/location-search';
 import { formatDateRange, formatError } from '@/lib/utils';
-import { TripRole, API_ROUTES } from '@/utils/constants';
 import { Tag } from '@/types/tag';
-import { ItineraryTab } from '@/components/itinerary-tab';
-import { MembersTab, TripMemberFromSSR } from "@/components/members-tab";
-import { DisplayItineraryItem } from '@/app/trips/[tripId]/page';
-import { ItinerarySection } from '@/app/trips/[tripId]/page';
+import { ItineraryTab } from '@/components/itinerary/itinerary-tab';
+import { MembersTab, TripMemberFromSSR } from '@/components/members-tab';
+import { DisplayItineraryItem, ItinerarySection, ItemStatus } from '@/types/itinerary';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { Profile } from '@/types/profile';
 
 const overviewFormSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(100),
-  description: z.string().max(500, "Description must be 500 characters or less").nullable(),
+  name: z.string().min(3, 'Name must be at least 3 characters').max(100),
+  description: z.string().max(500, 'Description must be 500 characters or less').nullable(),
 });
 
 type OverviewFormValues = z.infer<typeof overviewFormSchema>;
@@ -43,7 +52,7 @@ interface TripOverviewTabProps {
   userRole: TripRole | null;
 }
 
-export function TripOverviewTab({ 
+export function TripOverviewTab({
   tripId,
   tripName,
   tripDescription,
@@ -56,17 +65,27 @@ export function TripOverviewTab({
   initialUnscheduledItems,
   userRole,
 }: TripOverviewTabProps) {
-
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth();
+
+  const [itineraryItems, setItineraryItems] = useState<DisplayItineraryItem[]>(() => {
+    const scheduled = initialSections.flatMap((section) => section.items || []);
+    return [...scheduled, ...initialUnscheduledItems];
+  });
+
+  useEffect(() => {
+    const scheduled = initialSections.flatMap((section) => section.items || []);
+    setItineraryItems([...scheduled, ...initialUnscheduledItems]);
+  }, [initialSections, initialUnscheduledItems]);
 
   const form = useForm<OverviewFormValues>({
     resolver: zodResolver(overviewFormSchema),
     defaultValues: {
       name: tripName || '',
       description: tripDescription || '',
-    }
+    },
   });
 
   useEffect(() => {
@@ -95,24 +114,68 @@ export function TripOverviewTab({
         throw new Error(errorData.error || 'Failed to update trip details');
       }
 
-      toast({ title: "Success", description: "Trip details updated." });
+      toast({ title: 'Success', description: 'Trip details updated.' });
       setIsEditing(false);
-      
     } catch (error) {
-      console.error("Error updating trip details:", error);
-      toast({ 
-        title: "Error Updating Details", 
-        description: formatError(error), 
-        variant: "destructive" 
+      console.error('Error updating trip details:', error);
+      toast({
+        title: 'Error Updating Details',
+        description: formatError(error),
+        variant: 'destructive',
       });
     } finally {
       setIsSaving(false);
     }
   };
-  
+
+  const placeholderOnDeleteItem = async (id: string) => {
+    console.warn('Delete action not implemented in overview tab');
+  };
+  const placeholderOnVote = async (
+    itemId: string,
+    dayNumber: number | null,
+    voteType: 'up' | 'down'
+  ) => {
+    console.warn('Vote action not implemented in overview tab');
+  };
+  const placeholderOnEditItem = async (item: DisplayItineraryItem) => {
+    console.warn('Edit action not implemented in overview tab');
+  };
+  const placeholderOnItemStatusChange = async (id: string, status: ItemStatus | null) => {
+    console.warn('Status change action not implemented in overview tab');
+  };
+  const placeholderOnAddItem = (dayNumber: number | null) => {
+    console.warn('Add item action not implemented in overview tab');
+  };
+  const placeholderOnReorder = async (reorderInfo: {
+    itemId: string;
+    newDayNumber: number | null;
+    newPosition: number;
+  }) => {
+    console.warn('Reorder action not implemented in overview tab');
+  };
+
+  // --- Create a Profile object suitable for ItineraryTab ---
+  const profileForTab: Profile | null = user?.profile
+    ? {
+        id: user.profile.id,
+        email: user.profile.email, // Use email from UserProfile
+        name: user.profile.name || 'User', // Ensure name is string, default if null
+        avatar_url: user.profile.avatar_url,
+        username: user.profile.username,
+        // Add defaults for fields required by Profile but optional in UserProfile
+        bio: user.profile.bio ?? null,
+        location: user.profile.location ?? null,
+        website: user.profile.website ?? null,
+        is_verified: user.profile.is_verified ?? false,
+        created_at: user.profile.created_at ?? new Date().toISOString(),
+        updated_at: user.profile.updated_at ?? user.profile.created_at ?? new Date().toISOString(),
+      }
+    : null;
+  // --- End Profile object creation ---
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      
       <div className="md:col-span-1 space-y-6">
         <Card>
           <Form {...form}>
@@ -120,8 +183,13 @@ export function TripOverviewTab({
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Trip Details</CardTitle>
                 {canEdit && !isEditing && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-                     <Pencil className="mr-2 h-4 w-4" /> Edit
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" /> Edit
                   </Button>
                 )}
               </CardHeader>
@@ -137,16 +205,20 @@ export function TripOverviewTab({
                           <Input {...field} disabled={isSaving} />
                         </FormControl>
                       ) : (
-                        <p className="text-sm font-medium py-2 min-h-[40px] flex items-center">{field.value || tripName}</p>
+                        <p className="text-sm font-medium py-2 min-h-[40px] flex items-center">
+                          {field.value || tripName}
+                        </p>
                       )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="space-y-1">
                   <Label>Dates</Label>
-                  <p className="text-sm font-medium py-2">{formatDateRange(startDate || undefined, endDate || undefined) || 'Not set'}</p>
+                  <p className="text-sm font-medium py-2">
+                    {formatDateRange(startDate || undefined, endDate || undefined) || 'Not set'}
+                  </p>
                 </div>
 
                 <FormField
@@ -155,20 +227,20 @@ export function TripOverviewTab({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Description</FormLabel>
-                       {isEditing ? (
+                      {isEditing ? (
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             value={field.value ?? ''}
-                            disabled={isSaving} 
+                            disabled={isSaving}
                             className="min-h-[80px]"
                           />
                         </FormControl>
-                       ) : (
+                      ) : (
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap py-2 min-h-[40px]">
                           {field.value || tripDescription || 'No description provided.'}
                         </p>
-                       )}
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -176,9 +248,16 @@ export function TripOverviewTab({
               </CardContent>
               {isEditing && (
                 <CardFooter className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancel</Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </Button>
                   <Button type="submit" disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Changes
                   </Button>
                 </CardFooter>
@@ -208,18 +287,25 @@ export function TripOverviewTab({
             <CardTitle>Itinerary</CardTitle>
           </CardHeader>
           <CardContent>
-            <ItineraryTab 
-              tripId={tripId} 
-              initialSections={initialSections} 
-              initialUnscheduledItems={initialUnscheduledItems}
-              canEdit={canEdit} 
+            <ItineraryTab
+              tripId={tripId}
+              itineraryItems={itineraryItems}
+              setItineraryItems={setItineraryItems}
+              userId={user?.id || ''}
+              user={profileForTab}
+              userRole={userRole}
+              durationDays={tripDurationDays || 0}
               startDate={startDate}
-              endDate={endDate}
-              tripDurationDays={tripDurationDays}
+              onDeleteItem={placeholderOnDeleteItem}
+              onVote={placeholderOnVote}
+              onEditItem={placeholderOnEditItem}
+              onItemStatusChange={placeholderOnItemStatusChange}
+              onAddItem={placeholderOnAddItem}
+              onReorder={placeholderOnReorder}
             />
           </CardContent>
         </Card>
       </div>
     </div>
   );
-} 
+}

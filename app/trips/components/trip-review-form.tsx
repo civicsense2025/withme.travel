@@ -1,9 +1,10 @@
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Star, Calendar, Users, ThumbsUp, ThumbsDown } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Star, Calendar, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { API_ROUTES } from '@/utils/constants/routes';
 import {
   Dialog,
   DialogContent,
@@ -11,95 +12,94 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { API_ROUTES } from "@/utils/constants"
+} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 interface TripReviewFormProps {
-  tripId: string
-  destinationId: string
-  destinationName: string
-  startDate: Date
-  endDate: Date
-  onReviewSubmitted?: () => void
+  tripId: string;
+  destinationId: string;
+  destinationName: string;
+  startDate: Date;
+  endDate: Date;
+  onReviewSubmitted?: () => void;
 }
 
 interface RatingCriteria {
-  id: keyof typeof ratingLabels
-  label: string
-  description: string
+  id: keyof typeof ratingLabels;
+  label: string;
+  description: string;
 }
 
 const ratingLabels = {
-  overall_rating: "Overall Experience",
-  safety_rating: "Safety",
-  cuisine_rating: "Food & Cuisine",
-  cultural_rating: "Cultural Attractions",
-  nightlife_rating: "Nightlife",
-  outdoor_rating: "Outdoor Activities",
-  transportation_rating: "Public Transportation",
-  value_rating: "Value for Money",
-} as const
+  overall_rating: 'Overall Experience',
+  safety_rating: 'Safety',
+  cuisine_rating: 'Food & Cuisine',
+  cultural_rating: 'Cultural Attractions',
+  nightlife_rating: 'Nightlife',
+  outdoor_rating: 'Outdoor Activities',
+  transportation_rating: 'Public Transportation',
+  value_rating: 'Value for Money',
+} as const;
 
 const ratingCriteria: RatingCriteria[] = [
   {
-    id: "overall_rating",
-    label: "Overall Experience",
-    description: "How would you rate your overall trip experience?",
+    id: 'overall_rating',
+    label: 'Overall Experience',
+    description: 'How would you rate your overall trip experience?',
   },
   {
-    id: "safety_rating",
-    label: "Safety",
-    description: "How safe did you feel during your visit?",
+    id: 'safety_rating',
+    label: 'Safety',
+    description: 'How safe did you feel during your visit?',
   },
   {
-    id: "cuisine_rating",
-    label: "Food & Cuisine",
-    description: "Quality and variety of local food options",
+    id: 'cuisine_rating',
+    label: 'Food & Cuisine',
+    description: 'Quality and variety of local food options',
   },
   {
-    id: "cultural_rating",
-    label: "Cultural Attractions",
-    description: "Museums, historical sites, and local experiences",
+    id: 'cultural_rating',
+    label: 'Cultural Attractions',
+    description: 'Museums, historical sites, and local experiences',
   },
   {
-    id: "nightlife_rating",
-    label: "Nightlife",
-    description: "Evening entertainment and activities",
+    id: 'nightlife_rating',
+    label: 'Nightlife',
+    description: 'Evening entertainment and activities',
   },
   {
-    id: "outdoor_rating",
-    label: "Outdoor Activities",
-    description: "Parks, nature, and outdoor recreation",
+    id: 'outdoor_rating',
+    label: 'Outdoor Activities',
+    description: 'Parks, nature, and outdoor recreation',
   },
   {
-    id: "transportation_rating",
-    label: "Public Transportation",
-    description: "Ease of getting around using public transit",
+    id: 'transportation_rating',
+    label: 'Public Transportation',
+    description: 'Ease of getting around using public transit',
   },
   {
-    id: "value_rating",
-    label: "Value for Money",
-    description: "Overall value considering costs",
+    id: 'value_rating',
+    label: 'Value for Money',
+    description: 'Overall value considering costs',
   },
-]
+];
 
 const travelTypes = [
-  { value: "solo", label: "Solo Travel" },
-  { value: "couple", label: "Couple" },
-  { value: "family", label: "Family" },
-  { value: "friends", label: "Friends" },
-  { value: "business", label: "Business" },
-]
+  { value: 'solo', label: 'Solo Travel' },
+  { value: 'couple', label: 'Couple' },
+  { value: 'family', label: 'Family' },
+  { value: 'friends', label: 'Friends' },
+  { value: 'business', label: 'Business' },
+];
 
 export function TripReviewForm({
   tripId,
@@ -109,31 +109,31 @@ export function TripReviewForm({
   endDate,
   onReviewSubmitted,
 }: TripReviewFormProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isOpen, setIsOpen] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [ratings, setRatings] = useState<Record<string, number>>({})
-  const [reviewText, setReviewText] = useState("")
-  const [travelType, setTravelType] = useState<string[]>([])
-  const [wouldVisitAgain, setWouldVisitAgain] = useState<boolean | null>(null)
-  const [tripHighlights, setTripHighlights] = useState("")
-  const [tripTips, setTripTips] = useState("")
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [reviewText, setReviewText] = useState('');
+  const [travelType, setTravelType] = useState<string[]>([]);
+  const [wouldVisitAgain, setWouldVisitAgain] = useState<boolean | null>(null);
+  const [tripHighlights, setTripHighlights] = useState('');
+  const [tripTips, setTripTips] = useState('');
 
   const getSeason = (date: Date) => {
-    const month = date.getMonth()
-    if (month >= 2 && month <= 4) return "spring"
-    if (month >= 5 && month <= 7) return "summer"
-    if (month >= 8 && month <= 10) return "fall"
-    return "winter"
-  }
+    const month = date.getMonth();
+    if (month >= 2 && month <= 4) return 'spring';
+    if (month >= 5 && month <= 7) return 'summer';
+    if (month >= 8 && month <= 10) return 'fall';
+    return 'winter';
+  };
 
   const handleSubmit = async () => {
     try {
       const response = await fetch(API_ROUTES.TRIP_REVIEWS, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           trip_id: tripId,
@@ -148,38 +148,38 @@ export function TripReviewForm({
           visit_start_date: startDate,
           visit_end_date: endDate,
         }),
-      })
+      });
 
-      if (!response.ok) throw new Error("Failed to submit review")
+      if (!response.ok) throw new Error('Failed to submit review');
 
       toast({
-        title: "Review Submitted",
-        description: "Thank you for sharing your experience!",
-      })
-      setIsOpen(false)
-      onReviewSubmitted?.()
+        title: 'Review Submitted',
+        description: 'Thank you for sharing your experience!',
+      });
+      setIsOpen(false);
+      onReviewSubmitted?.();
     } catch (error) {
-      console.error("Error submitting review:", error)
+      console.error('Error submitting review:', error);
       toast({
-        title: "Error",
-        description: "Failed to submit review. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Error',
+        description: 'Failed to submit review. Please try again.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const isStepComplete = () => {
     switch (currentStep) {
       case 1:
-        return Object.keys(ratings).length === ratingCriteria.length
+        return Object.keys(ratings).length === ratingCriteria.length;
       case 2:
-        return reviewText.length >= 50 && travelType.length > 0
+        return reviewText.length >= 50 && travelType.length > 0;
       case 3:
-        return wouldVisitAgain !== null && tripHighlights.length > 0
+        return wouldVisitAgain !== null && tripHighlights.length > 0;
       default:
-        return false
+        return false;
     }
-  }
+  };
 
   return (
     <>
@@ -211,7 +211,7 @@ export function TripReviewForm({
                         {[1, 2, 3, 4, 5].map((rating) => (
                           <Button
                             key={rating}
-                            variant={ratings[criteria.id] === rating ? "default" : "outline"}
+                            variant={ratings[criteria.id] === rating ? 'default' : 'outline'}
                             size="sm"
                             className="w-10 h-10"
                             onClick={() =>
@@ -237,7 +237,7 @@ export function TripReviewForm({
                     {travelTypes.map((type) => (
                       <Badge
                         key={type.value}
-                        variant={travelType.includes(type.value) ? "default" : "outline"}
+                        variant={travelType.includes(type.value) ? 'default' : 'outline'}
                         className="cursor-pointer"
                         onClick={() =>
                           setTravelType((prev) =>
@@ -261,9 +261,7 @@ export function TripReviewForm({
                     placeholder="Share your experience in detail..."
                     rows={6}
                   />
-                  <p className="text-sm text-muted-foreground text-right">
-                    {reviewText.length}/50
-                  </p>
+                  <p className="text-sm text-muted-foreground text-right">{reviewText.length}/50</p>
                 </div>
               </div>
             )}
@@ -291,10 +289,8 @@ export function TripReviewForm({
                 <div className="space-y-3">
                   <Label>Would you visit again?</Label>
                   <RadioGroup
-                    value={wouldVisitAgain === null ? "" : wouldVisitAgain.toString()}
-                    onValueChange={(value) =>
-                      setWouldVisitAgain(value === "true" ? true : false)
-                    }
+                    value={wouldVisitAgain === null ? '' : wouldVisitAgain.toString()}
+                    onValueChange={(value) => setWouldVisitAgain(value === 'true' ? true : false)}
                     className="flex gap-4"
                   >
                     <div className="flex items-center space-x-2">
@@ -335,5 +331,5 @@ export function TripReviewForm({
         </DialogContent>
       </Dialog>
     </>
-  )
-} 
+  );
+}

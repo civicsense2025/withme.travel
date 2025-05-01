@@ -1,17 +1,7 @@
 import * as React from 'react';
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
-export function DataTable<TData>({
-  columns,
-  data,
-}: {
-  columns: any[];
-  data: TData[];
-}) {
+export function DataTable<TData>({ columns, data }: { columns: any[]; data: TData[] }) {
   const table = useReactTable({
     data,
     columns,
@@ -28,10 +18,7 @@ export function DataTable<TData>({
                 <th key={header.id} className="px-4 py-2 text-left">
                   {header.isPlaceholder
                     ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                    : flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
             </tr>
@@ -51,4 +38,4 @@ export function DataTable<TData>({
       </table>
     </div>
   );
-} 
+}

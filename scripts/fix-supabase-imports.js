@@ -26,19 +26,20 @@ function execCommand(command) {
 
 // Find all files that import createClient from utils/supabase/server
 async function findFilesToFix() {
-  const grepCommand = "grep -r --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \"createClient.*from.*@/utils/supabase/server\" . --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist";
-  
+  const grepCommand =
+    "grep -r --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \"createClient.*from.*@/utils/supabase/server\" . --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist";
+
   try {
     const output = await execCommand(grepCommand);
     const filePaths = output
       .split('\n')
-      .filter(line => line.trim() !== '')
-      .map(line => {
+      .filter((line) => line.trim() !== '')
+      .map((line) => {
         const match = line.match(/^\.\/([^:]+):/);
         return match ? match[1] : null;
       })
       .filter(Boolean);
-    
+
     return [...new Set(filePaths)]; // Remove duplicates
   } catch (error) {
     console.error('Error finding files:', error);
@@ -48,36 +49,39 @@ async function findFilesToFix() {
 
 // Check if a file is in an API route
 function isApiRoute(filePath) {
-  return filePath.includes('/api/') && (filePath.includes('/route.') || filePath.includes('/index.'));
+  return (
+    filePath.includes('/api/') && (filePath.includes('/route.') || filePath.includes('/index.'))
+  );
 }
 
 // Fix imports in a file
 async function fixImports(filePath) {
   try {
     const content = fs.readFileSync(path.join(projectRoot, filePath), 'utf8');
-    
+
     // Determine which client to use based on the file path
     const replacement = isApiRoute(filePath) ? 'createApiClient' : 'createServerClient';
-    
+
     // Replace different import patterns
     let newContent = content;
-    
+
     // Pattern 1: import { createServerClient } from "@/utils/supabase/server";
     newContent = newContent.replace(
       /import\s*{\s*createClient\s*}\s*from\s*["']@\/utils\/supabase\/server["'];?/g,
       `import { ${replacement} } from "@/utils/supabase/server";`
     );
-    
+
     // Pattern 2: import { createServerClient, otherStuff  } from "@/utils/supabase/server";
     newContent = newContent.replace(
       /import\s*{\s*createClient\s*,\s*([^}]+)\s*}\s*from\s*["']@\/utils\/supabase\/server["'];?/g,
       `import { ${replacement}, $1 } from "@/utils/supabase/server";`
     );
-    
+
     // Pattern 3: Aliased imports - import { createServerClient as someAlias } from "@/utils/supabase/server";
-    const aliasPattern = /import\s*{\s*createClient\s+as\s+([a-zA-Z0-9_]+)\s*}\s*from\s*["']@\/utils\/supabase\/server["'];?/g;
+    const aliasPattern =
+      /import\s*{\s*createClient\s+as\s+([a-zA-Z0-9_]+)\s*}\s*from\s*["']@\/utils\/supabase\/server["'];?/g;
     const aliasMatches = [...newContent.matchAll(aliasPattern)];
-    
+
     for (const match of aliasMatches) {
       const alias = match[1];
       newContent = newContent.replace(
@@ -85,13 +89,13 @@ async function fixImports(filePath) {
         `import { ${replacement} as ${alias} } from "@/utils/supabase/server";`
       );
     }
-    
+
     // Replace usages of createClient with the appropriate function
     if (content !== newContent) {
       fs.writeFileSync(path.join(projectRoot, filePath), newContent, 'utf8');
       return true;
     }
-    
+
     return false;
   } catch (error) {
     console.error(`Error fixing imports in ${filePath}:`, error);
@@ -103,10 +107,10 @@ async function fixImports(filePath) {
 async function main() {
   console.log('Finding files with incorrect Supabase imports...');
   const filesToFix = await findFilesToFix();
-  
+
   console.log(`Found ${filesToFix.length} files to fix.`);
   let fixedCount = 0;
-  
+
   for (const filePath of filesToFix) {
     const fixed = await fixImports(filePath);
     if (fixed) {
@@ -114,11 +118,11 @@ async function main() {
       fixedCount++;
     }
   }
-  
+
   console.log(`\nFixed imports in ${fixedCount} out of ${filesToFix.length} files.`);
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('Error running the script:', error);
   process.exit(1);
-}); 
+});

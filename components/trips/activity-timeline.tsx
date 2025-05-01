@@ -7,21 +7,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Plus, 
-  X, 
-  Edit, 
-  User, 
-  Users, 
-  MessageCircle, 
-  Check, 
-  Vote, 
-  Image, 
-  Tag, 
-  FileText, 
+import {
+  Plus,
+  X,
+  Edit,
+  User,
+  Users,
+  MessageCircle,
+  Check,
+  Vote,
+  Image,
+  Tag,
+  FileText,
   Target,
   Clock,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 
 interface ActivityTimelineProps {
@@ -39,18 +39,14 @@ export function ActivityTimeline({
   showRefreshButton = true,
   className = '',
 }: ActivityTimelineProps) {
-  const { 
-    activities, 
-    loading, 
-    error, 
-    pagination, 
-    refreshTimeline, 
-    loadMore 
-  } = useActivityTimeline(tripId, {
-    limit,
-    pollingInterval: 30000, // 30 seconds
-  });
-  
+  const { activities, loading, error, pagination, refreshTimeline, loadMore } = useActivityTimeline(
+    tripId,
+    {
+      limit,
+      pollingInterval: 30000, // 30 seconds
+    }
+  );
+
   const getActivityIcon = (actionType: ActionType) => {
     switch (actionType) {
       case 'ITINERARY_ITEM_ADDED':
@@ -90,10 +86,10 @@ export function ActivityTimeline({
         return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
-  
+
   const getActivityMessage = (activity: ActivityTimelineItem): string => {
     const actorName = activity.actor_name || 'Someone';
-    
+
     switch (activity.action_type) {
       case 'ITINERARY_ITEM_ADDED':
         return `${actorName} added "${activity.details.title || 'an item'}" to the itinerary`;
@@ -137,31 +133,26 @@ export function ActivityTimeline({
         return `${actorName} updated the trip`;
     }
   };
-  
+
   if (error) {
     return (
       <div className="p-4 text-center text-red-500">
         <p>Error loading activity timeline</p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={refreshTimeline}
-          className="mt-2"
-        >
+        <Button variant="outline" size="sm" onClick={refreshTimeline} className="mt-2">
           Try Again
         </Button>
       </div>
     );
   }
-  
+
   return (
     <div className={`border rounded-md ${className}`}>
       <div className="flex items-center justify-between p-3 border-b bg-muted/30">
         <h3 className="font-medium text-sm">Activity Timeline</h3>
         {showRefreshButton && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={refreshTimeline}
             className="h-7 w-7 p-0"
             disabled={loading}
@@ -171,7 +162,7 @@ export function ActivityTimeline({
           </Button>
         )}
       </div>
-      
+
       <ScrollArea style={{ maxHeight }} className="p-0">
         {loading && activities.length === 0 ? (
           <div className="p-4 space-y-4">
@@ -192,11 +183,14 @@ export function ActivityTimeline({
         ) : (
           <div className="relative">
             {/* Timeline line */}
-            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted/50" aria-hidden="true"></div>
-            
+            <div
+              className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted/50"
+              aria-hidden="true"
+            ></div>
+
             {/* Activity items */}
             <div className="relative space-y-0">
-              {activities.map(activity => (
+              {activities.map((activity) => (
                 <div key={activity.id} className="relative pl-10 pr-4 py-3 hover:bg-muted/30">
                   {/* Timeline dot with icon */}
                   <div className="absolute left-4 top-4 flex items-center justify-center z-10">
@@ -204,24 +198,22 @@ export function ActivityTimeline({
                       {getActivityIcon(activity.action_type)}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <Avatar className="h-8 w-8 flex-shrink-0">
                       {activity.actor_avatar ? (
-                        <AvatarImage 
-                          src={activity.actor_avatar} 
-                          alt={`${activity.actor_name || 'User'}'s avatar`} 
+                        <AvatarImage
+                          src={activity.actor_avatar}
+                          alt={`${activity.actor_name || 'User'}'s avatar`}
                         />
                       ) : null}
                       <AvatarFallback>
                         {activity.actor_name?.substring(0, 2).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm">
-                        {getActivityMessage(activity)}
-                      </p>
+                      <p className="text-sm">{getActivityMessage(activity)}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                       </p>
@@ -229,13 +221,13 @@ export function ActivityTimeline({
                   </div>
                 </div>
               ))}
-              
+
               {/* Load more button */}
               {pagination.hasMore && (
                 <div className="relative py-4 flex justify-center">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={loadMore}
                     disabled={loading}
                     className="relative z-10"
@@ -250,4 +242,4 @@ export function ActivityTimeline({
       </ScrollArea>
     </div>
   );
-} 
+}

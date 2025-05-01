@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useAuth } from "@/lib/hooks/use-auth";
+import { useAuth } from '@/lib/hooks/use-auth';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 // Import map components - assuming @vis.gl/react-google-maps is set up
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'; 
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 
 interface Destination {
   id: string;
@@ -58,29 +58,33 @@ export default function TravelMapPage() {
           .not('latitude', 'is', null) // Only fetch destinations with coordinates
           .not('longitude', 'is', null);
 
-        if (destinationsError) throw new Error(`Failed to fetch destinations: ${destinationsError.message}`);
-        
-        setDestinations(destinationsData || []);
+        if (destinationsError)
+          throw new Error(`Failed to fetch destinations: ${destinationsError.message}`);
 
+        setDestinations(destinationsData || []);
       } catch (err: any) {
-        console.error("Error loading travel map data:", err);
-        setError(err.message || "An unexpected error occurred.");
+        console.error('Error loading travel map data:', err);
+        setError(err.message || 'An unexpected error occurred.');
       } finally {
         setIsLoading(false);
       }
     };
 
     if (!authLoading) {
-       fetchData();
+      fetchData();
     }
   }, [user, authLoading, supabase]);
 
   if (!googleMapsApiKey) {
     return (
       <div className="container py-12">
-        <PageHeader heading="My Travel Map" description="Visualize your journeys across the globe." />
+        <PageHeader
+          heading="My Travel Map"
+          description="Visualize your journeys across the globe."
+        />
         <div className="mt-8 text-center text-red-600 bg-red-100 p-4 rounded-md">
-          Configuration Error: Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your environment variables.
+          Configuration Error: Google Maps API key is missing. Please set
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your environment variables.
         </div>
       </div>
     );
@@ -94,9 +98,9 @@ export default function TravelMapPage() {
         {isLoading ? (
           <Skeleton className="h-full w-full" />
         ) : error ? (
-           <div className="flex items-center justify-center h-full bg-muted">
-             <p className="text-destructive">Error loading map: {error}</p>
-           </div>
+          <div className="flex items-center justify-center h-full bg-muted">
+            <p className="text-destructive">Error loading map: {error}</p>
+          </div>
         ) : (
           <APIProvider apiKey={googleMapsApiKey}>
             <Map
@@ -115,26 +119,24 @@ export default function TravelMapPage() {
                     key={destination.id}
                     position={{ lat: destination.latitude!, lng: destination.longitude! }}
                   >
-                    <div 
+                    <div
                       onMouseEnter={() => setHoveredDestinationId(destination.id)}
                       onMouseLeave={() => setHoveredDestinationId(null)}
                       className="relative cursor-pointer"
-                      style={{ 
-                        transition: 'transform 0.1s ease-in-out', 
-                        transform: isHovered ? 'scale(1.3)' : 'scale(1)', 
-                        zIndex: isHovered ? 10 : 1
+                      style={{
+                        transition: 'transform 0.1s ease-in-out',
+                        transform: isHovered ? 'scale(1.3)' : 'scale(1)',
+                        zIndex: isHovered ? 10 : 1,
                       }}
                     >
-                      <span style={{ fontSize: '24px' }}>
-                        {isVisited ? '✅' : '📍'}
-                      </span>
+                      <span style={{ fontSize: '24px' }}>{isVisited ? '✅' : '📍'}</span>
                       {isHovered && (
-                        <div 
-                          className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-background px-2 py-1 text-xs shadow-lg border"
-                        >
+                        <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-background px-2 py-1 text-xs shadow-lg border">
                           {`${destination.city}, ${destination.country}`}
-                          <span className={`ml-1 font-medium ${isVisited ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                           {isVisited ? '(Visited)' : '(Not Visited)'}
+                          <span
+                            className={`ml-1 font-medium ${isVisited ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}
+                          >
+                            {isVisited ? '(Visited)' : '(Not Visited)'}
                           </span>
                         </div>
                       )}
@@ -146,9 +148,9 @@ export default function TravelMapPage() {
           </APIProvider>
         )}
       </div>
-       <p className="text-sm text-muted-foreground mt-4 text-center">
-         {visited.length} destinations visited out of {destinations.length} trackable locations.
-       </p>
+      <p className="text-sm text-muted-foreground mt-4 text-center">
+        {visited.length} destinations visited out of {destinations.length} trackable locations.
+      </p>
     </div>
   );
-} 
+}

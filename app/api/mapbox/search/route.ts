@@ -67,7 +67,7 @@ export async function GET(request: Request) {
   try {
     const response = await fetch(mapboxUrl, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     });
 
@@ -81,7 +81,6 @@ export async function GET(request: Request) {
 
     // Return only the features array to the client
     return NextResponse.json({ features: data.features || [] });
-
   } catch (error: any) {
     console.error('Error fetching Mapbox data:', error);
     return NextResponse.json(
@@ -89,4 +88,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { imageService } from '@/lib/services/image-service';
-import { getRandomUnsplashPhoto } from '@/utils/unsplash';
+import { getDestinationPhoto, UnsplashPhoto } from '@/lib/unsplashService';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error("Supabase URL or Service Key is missing in environment variables.");
+  console.error('Supabase URL or Service Key is missing in environment variables.');
   process.exit(1);
 }
 
@@ -30,7 +30,7 @@ async function migrateImages() {
 
   for (const destination of destinations) {
     console.log(`Processing destination: ${destination.city}, ${destination.country}`);
-    
+
     try {
       // If the destination already has an image, create metadata for it
       if (destination.image_url) {
@@ -43,17 +43,26 @@ async function migrateImages() {
         });
       } else {
         // Get a new image from Unsplash
-        const photo = await getRandomUnsplashPhoto(
-          `${destination.city} ${destination.country} landmark travel destination`,
-          true
-        );
+        const photoData = await getDestinationPhoto(destination.city, destination.country, null);
+
+        let photo: UnsplashPhoto | null = null;
+        if (photoData) {
+          photo = photoData.photo;
+        } else {
+          console.warn(
+            `  Could not find photo for ${destination.city}, ${destination.country} via getDestinationPhoto`
+          );
+        }
 
         if (photo) {
           await imageService.upsertImageMetadata({
             entity_id: destination.id,
             entity_type: 'destination',
             url: photo.urls.regular,
-            alt_text: photo.description || photo.alt_description || `Travel photo of ${destination.city}, ${destination.country}`,
+            alt_text:
+              photo.description ||
+              photo.alt_description ||
+              `Travel photo of ${destination.city}, ${destination.country}`,
             attribution: `Photo by ${photo.user.name} on Unsplash`,
             photographer_name: photo.user.name,
             photographer_url: photo.user.links.html,
@@ -87,7 +96,7 @@ async function migrateImages() {
 
   for (const trip of trips) {
     console.log(`Processing trip: ${trip.name}`);
-    
+
     try {
       await imageService.upsertImageMetadata({
         entity_id: trip.id,
@@ -115,7 +124,7 @@ async function migrateImages() {
 
   for (const profile of profiles) {
     console.log(`Processing profile: ${profile.name || profile.id}`);
-    
+
     try {
       await imageService.upsertImageMetadata({
         entity_id: profile.id,
@@ -143,7 +152,7 @@ async function migrateImages() {
 
   for (const template of templates) {
     console.log(`Processing template: ${template.title}`);
-    
+
     try {
       await imageService.upsertImageMetadata({
         entity_id: template.id,
@@ -161,4 +170,4 @@ async function migrateImages() {
 }
 
 // Run the migration
-migrateImages().catch(console.error); 
+migrateImages().catch(console.error);

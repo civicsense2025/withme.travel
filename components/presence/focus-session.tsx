@@ -2,9 +2,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { usePresenceContext } from './presence-context';
-import { CursorPosition } from '@/types/presence';
+import { CursorPosition, ExtendedUserPresence } from '@/types/presence';
 import { PresenceIndicator } from './presence-indicator';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Cursor } from './cursor';
@@ -33,12 +40,7 @@ interface FocusSessionProps {
   className?: string;
 }
 
-export function FocusSession({ 
-  sessionId, 
-  title, 
-  description, 
-  className 
-}: FocusSessionProps) {
+export function FocusSession({ sessionId, title, description, className }: FocusSessionProps) {
   const { activeUsers, startEditing, stopEditing, myPresence } = usePresenceContext();
   const [notes, setNotes] = useState<string>('');
   const [showCursors, setShowCursors] = useLocalStorage<boolean>('withme-show-cursors', true);
@@ -50,7 +52,7 @@ export function FocusSession({
   useEffect(() => {
     const focusId = `focus-session-${sessionId}`;
     startEditing(focusId);
-    
+
     return () => {
       // Clear focus when component unmounts
       stopEditing();
@@ -62,39 +64,39 @@ export function FocusSession({
     if (!containerRef.current || !showCursors || !myPresence) return;
 
     const container = containerRef.current;
-    
+
     // Debounce cursor updates to reduce network traffic
     const debouncedUpdateCursor = debounce(async (x: number, y: number) => {
       try {
         const cursorPosition = { x, y, timestamp: Date.now() };
-        
+
         // Update cursor position in Supabase Realtime Presence
-        // This is a simplified version - in a real implementation, 
+        // This is a simplified version - in a real implementation,
         // this would be done through a dedicated presence channel
         const channel = supabase.channel(`focus-session-${sessionId}`);
         await channel.track({
           user_id: myPresence.user_id,
-          cursor_position: cursorPosition
+          cursor_position: cursorPosition,
         });
       } catch (error) {
         console.error('Failed to update cursor position:', error);
       }
     }, 50);
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       // Get position relative to the container
       const rect = container.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       // Only update if the mouse is inside the container
       if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
         debouncedUpdateCursor(x, y);
       }
     };
-    
+
     container.addEventListener('mousemove', handleMouseMove);
-    
+
     return () => {
       container.removeEventListener('mousemove', handleMouseMove);
       debouncedUpdateCursor.cancel();
@@ -104,14 +106,14 @@ export function FocusSession({
   // Subscribe to cursor updates from other users
   useEffect(() => {
     if (!sessionId || !showCursors) return;
-    
+
     const channel = supabase.channel(`focus-session-${sessionId}`);
-    
+
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const cursors: Record<string, CursorPosition> = {};
-        
+
         // Extract cursor positions from presence state
         Object.entries(state).forEach(([userId, userStates]) => {
           // Type assertion for userStates
@@ -120,29 +122,35 @@ export function FocusSession({
             cursors[userId] = userState.cursor_position as CursorPosition;
           }
         });
-        
+
         setLocalCursors(cursors);
       })
       .subscribe();
-      
+
     return () => {
       channel.unsubscribe();
     };
   }, [sessionId, showCursors, supabase]);
 
   // Filter users in this focus session
-  const sessionUsers = activeUsers.filter(user => 
-    user.editing_item_id === `focus-session-${sessionId}` && 
-    (user.status === 'online' || user.status === 'editing')
-  );
+  const sessionUsers = activeUsers.filter(
+    (user) =>
+      user.editing_item_id === `focus-session-${sessionId}` &&
+      (user.status === 'online' || user.status === 'editing')
+  ) as ExtendedUserPresence[];
 
   // Transform session users for AvatarGroup
-  const avatarItems = sessionUsers.map(user => ({
-    src: user.avatar_url || undefined,
-    fallback: user.name ? 
-      user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 
-      '??',
-    alt: user.name || 'Unknown user'
+  const avatarItems = sessionUsers.map((user) => ({
+    src: user.avatar_url ?? undefined,
+    fallback: user.name
+      ? user.name
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .toUpperCase()
+          .substring(0, 2)
+      : '??',
+    alt: user.name ?? 'Unknown user',
   }));
 
   // Toggle cursor visibility
@@ -158,17 +166,13 @@ export function FocusSession({
             <CardTitle>{title}</CardTitle>
             {description && <CardDescription>{description}</CardDescription>}
           </div>
-          <AvatarGroup 
-            items={avatarItems}
-            max={3}
-            avatarSize="h-8 w-8"
-          />
+          <AvatarGroup items={avatarItems} max={3} avatarSize="h-8 w-8" />
         </div>
       </CardHeader>
-      
+
       <CardContent>
-        <div 
-          ref={containerRef} 
+        <div
+          ref={containerRef}
           className="relative min-h-[200px] border rounded-md p-4 focus-within:ring-1 focus-within:ring-ring"
         >
           <Textarea
@@ -177,41 +181,36 @@ export function FocusSession({
             className="min-h-[150px] border-0 focus-visible:ring-0 p-0 resize-none"
             placeholder="Start typing to collaborate..."
           />
-          
+
           {/* Render other users' cursors */}
-          {showCursors && sessionUsers
-            .filter(user => 
-              myPresence && user.user_id !== myPresence.user_id && 
-              user.cursor_position && 
-              user.status !== 'offline' && 
-              user.status !== 'away'
-            )
-            .map(user => (
-              user.cursor_position && (
-                <Cursor 
-                  key={user.user_id} 
-                  user={user} 
-                  position={user.cursor_position} 
-                />
+          {showCursors &&
+            sessionUsers
+              .filter(
+                (user) =>
+                  myPresence &&
+                  user.user_id !== myPresence.user_id &&
+                  user.cursor_position &&
+                  user.status !== 'offline' &&
+                  user.status !== 'away'
               )
-            ))
-          }
+              .map(
+                (user: ExtendedUserPresence) =>
+                  user.cursor_position && (
+                    <Cursor key={user.user_id} user={user} position={user.cursor_position} />
+                  )
+              )}
         </div>
       </CardContent>
-      
+
       <CardFooter className="flex justify-between">
-        <PresenceIndicator 
-          users={sessionUsers} 
+        <PresenceIndicator
+          users={sessionUsers}
           showStatus={true}
           showEditingItem={true}
           itemLabels={{ [`focus-session-${sessionId}`]: 'this document' }}
         />
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={toggleCursorVisibility}
-        >
+
+        <Button variant="ghost" size="sm" onClick={toggleCursorVisibility}>
           {showCursors ? (
             <>
               <MousePointerClick className="h-4 w-4 mr-2" />
@@ -227,4 +226,4 @@ export function FocusSession({
       </CardFooter>
     </Card>
   );
-} 
+}

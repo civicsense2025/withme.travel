@@ -29,7 +29,7 @@ interface PresenceProviderProps {
   announceConnectionChanges?: boolean;
 }
 
-export function PresenceProvider({ 
+export function PresenceProvider({
   children,
   tripId,
   trackCursor: forceTrackCursor,
@@ -37,10 +37,10 @@ export function PresenceProvider({
 }: PresenceProviderProps) {
   // Check user preference for cursor tracking
   const [trackMyCursor] = useLocalStorage<boolean>('withme-track-my-cursor', true);
-  
+
   // Respect user preference for cursor tracking, unless explicitly overridden
   const shouldTrackCursor = forceTrackCursor !== undefined ? forceTrackCursor : trackMyCursor;
-  
+
   const presence = usePresence(tripId, {
     trackCursor: shouldTrackCursor,
     updateInterval: 15000, // 15 seconds
@@ -53,26 +53,26 @@ export function PresenceProvider({
       const announceMessages: Record<ConnectionState, string> = {
         connected: 'Connected to collaborative editing',
         connecting: 'Connecting to collaborative editing...',
-        disconnected: 'Disconnected from collaborative editing. Attempting to reconnect...'
+        disconnected: 'Disconnected from collaborative editing. Attempting to reconnect...',
       };
-      
+
       // Skip the initial connecting state to avoid unnecessary announcements on first load
       if (presence.connectionState !== 'connecting' || presence.error) {
-        const message = presence.error 
-          ? `Connection error: ${presence.error.message}` 
+        const message = presence.error
+          ? `Connection error: ${presence.error.message}`
           : announceMessages[presence.connectionState];
-        
+
         // Create and use an ARIA live region for announcements
         const liveRegion = document.createElement('div');
         liveRegion.setAttribute('aria-live', 'polite');
         liveRegion.setAttribute('role', 'status');
         liveRegion.classList.add('sr-only'); // visually hidden
         document.body.appendChild(liveRegion);
-        
+
         // Set the message after a short delay to ensure screen readers catch it
         setTimeout(() => {
           liveRegion.textContent = message;
-          
+
           // Remove the element after announcement
           setTimeout(() => {
             document.body.removeChild(liveRegion);
@@ -98,11 +98,11 @@ export function PresenceProvider({
 // Custom hook to use the presence context
 export function usePresenceContext(): PresenceContextType {
   const context = useContext(PresenceContext);
-  
+
   if (context === undefined) {
     throw new Error('usePresenceContext must be used within a PresenceProvider');
   }
-  
+
   return context;
 }
 
@@ -113,25 +113,25 @@ interface EditingWrapperProps {
   autoMarkAsEditing?: boolean;
 }
 
-export function EditingWrapper({ 
-  children, 
+export function EditingWrapper({
+  children,
   itemId,
   autoMarkAsEditing = true,
 }: EditingWrapperProps) {
   const { startEditing, stopEditing, editingItemId } = usePresenceContext();
-  
+
   // Automatically mark the item as being edited when mounted
   useEffect(() => {
     if (autoMarkAsEditing) {
       startEditing(itemId);
-      
+
       // Mark as not editing when unmounted
       return () => {
         stopEditing();
       };
     }
   }, [itemId, autoMarkAsEditing, startEditing, stopEditing]);
-  
+
   return <>{children}</>;
 }
 
@@ -143,26 +143,26 @@ interface ActiveUsersProps {
 
 export function ActiveUsers({ maxAvatars = 3, size = 'md' }: ActiveUsersProps) {
   const { activeUsers } = usePresenceContext();
-  
+
   // Dynamically import the PresenceIndicator component
-  const PresenceIndicator = React.lazy(() => 
-    import('./presence-indicator').then(mod => ({ default: mod.PresenceIndicator }))
+  const PresenceIndicator = React.lazy(() =>
+    import('./presence-indicator').then((mod) => ({ default: mod.PresenceIndicator }))
   );
-  
+
   return (
-    <Suspense fallback={<div className="flex space-x-2 animate-pulse" aria-label="Loading active users">
-      {Array.from({ length: Math.min(activeUsers.length, maxAvatars) }).map((_, i) => (
-        <div 
-          key={i} 
-          className={`rounded-full bg-muted ${size === 'sm' ? 'h-6 w-6' : size === 'md' ? 'h-8 w-8' : 'h-10 w-10'}`} 
-        />
-      ))}
-    </div>}>
-      <PresenceIndicator 
-        users={activeUsers} 
-        maxAvatars={maxAvatars}
-        size={size}
-      />
+    <Suspense
+      fallback={
+        <div className="flex space-x-2 animate-pulse" aria-label="Loading active users">
+          {Array.from({ length: Math.min(activeUsers.length, maxAvatars) }).map((_, i) => (
+            <div
+              key={i}
+              className={`rounded-full bg-muted ${size === 'sm' ? 'h-6 w-6' : size === 'md' ? 'h-8 w-8' : 'h-10 w-10'}`}
+            />
+          ))}
+        </div>
+      }
+    >
+      <PresenceIndicator users={activeUsers} maxAvatars={maxAvatars} size={size} />
     </Suspense>
   );
 }

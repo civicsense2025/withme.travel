@@ -13,4 +13,4 @@ export function ClientFocusMode({ tripId }: ClientFocusModeProps) {
       <FocusMode tripId={tripId} />
     </FocusSessionProvider>
   );
-} 
+}

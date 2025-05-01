@@ -1,19 +1,19 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface BasicInfoScreenProps {
   userData: {
-    firstName: string
-    email: string
-    password: string
-  }
-  onInputChange: (field: string, value: string) => void
-  onNext: () => void
-  onBack: () => void
+    firstName: string;
+    email: string;
+    password: string;
+  };
+  onInputChange: (field: string, value: string) => void;
+  onNext: () => void;
+  onBack: () => void;
 }
 
 export function BasicInfoScreen({ userData, onInputChange, onNext, onBack }: BasicInfoScreenProps) {
@@ -22,14 +22,16 @@ export function BasicInfoScreen({ userData, onInputChange, onNext, onBack }: Bas
       <CardContent className="pt-6 pb-8 px-6">
         <div className="text-center mb-6">
           <div className="mb-4 text-4xl">👋</div>
-          <h1 className="text-5xl leading-loose font-bold mb-2 lowercase">let's get to know each other!</h1>
+          <h1 className="text-5xl leading-loose font-bold mb-2 lowercase">
+            let's get to know each other!
+          </h1>
         </div>
 
         <form
           className="space-y-4"
           onSubmit={(e) => {
-            e.preventDefault()
-            onNext()
+            e.preventDefault();
+            onNext();
           }}
         >
           <div className="space-y-2">
@@ -37,7 +39,7 @@ export function BasicInfoScreen({ userData, onInputChange, onNext, onBack }: Bas
             <Input
               id="firstName"
               value={userData.firstName}
-              onChange={(e) => onInputChange("firstName", e.target.value)}
+              onChange={(e) => onInputChange('firstName', e.target.value)}
               placeholder="your name"
               required
             />
@@ -49,7 +51,7 @@ export function BasicInfoScreen({ userData, onInputChange, onNext, onBack }: Bas
               id="email"
               type="email"
               value={userData.email}
-              onChange={(e) => onInputChange("email", e.target.value)}
+              onChange={(e) => onInputChange('email', e.target.value)}
               placeholder="you@example.com"
               required
             />
@@ -61,10 +63,11 @@ export function BasicInfoScreen({ userData, onInputChange, onNext, onBack }: Bas
               id="password"
               type="password"
               value={userData.password}
-              onChange={(e) => onInputChange("password", e.target.value)}
+              onChange={(e) => onInputChange('password', e.target.value)}
               placeholder="••••••••"
               required
               minLength={6}
+              autoComplete="new-password"
             />
             <p className="text-xs text-muted-foreground">at least 6 characters</p>
           </div>
@@ -80,5 +83,5 @@ export function BasicInfoScreen({ userData, onInputChange, onNext, onBack }: Bas
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

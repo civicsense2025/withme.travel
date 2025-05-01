@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Lock } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState } from 'react';
+import { Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,60 +11,60 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 interface RequestAccessDialogProps {
-  tripId: string
+  tripId: string;
 }
 
 export function RequestAccessDialog({ tripId }: RequestAccessDialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [message, setMessage] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [hasRequested, setHasRequested] = useState(false)
-  const { toast } = useToast()
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasRequested, setHasRequested] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async () => {
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
 
       const response = await fetch(`/api/trips/${tripId}/request-access`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ message }),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to submit request")
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to submit request');
       }
 
-      setHasRequested(true)
+      setHasRequested(true);
       toast({
-        title: "Request submitted",
-        description: "Trip organizers have been notified of your request",
-      })
+        title: 'Request submitted',
+        description: 'Trip organizers have been notified of your request',
+      });
 
       // Close dialog after a short delay
       setTimeout(() => {
-        setIsOpen(false)
-        setMessage("")
-      }, 2000)
+        setIsOpen(false);
+        setMessage('');
+      }, 2000);
     } catch (error: any) {
-      console.error("Error requesting access:", error)
+      console.error('Error requesting access:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to submit request",
-        variant: "destructive",
-      })
+        title: 'Error',
+        description: error.message || 'Failed to submit request',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -77,7 +77,9 @@ export function RequestAccessDialog({ tripId }: RequestAccessDialogProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Request Edit Access</DialogTitle>
-          <DialogDescription>Send a request to the trip organizers for permission to edit this trip.</DialogDescription>
+          <DialogDescription>
+            Send a request to the trip organizers for permission to edit this trip.
+          </DialogDescription>
         </DialogHeader>
 
         {hasRequested ? (
@@ -107,12 +109,12 @@ export function RequestAccessDialog({ tripId }: RequestAccessDialogProps) {
                 Cancel
               </Button>
               <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? "Submitting..." : "Submit Request"}
+                {isSubmitting ? 'Submitting...' : 'Submit Request'}
               </Button>
             </DialogFooter>
           </>
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

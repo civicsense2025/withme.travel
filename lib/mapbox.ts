@@ -1,5 +1,3 @@
-import { DB_TABLES } from '@/utils/constants';
-
 // Helper function to format seconds into minutes/hours
 export function formatDuration(seconds: number): string {
   if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -26,13 +24,13 @@ export interface TravelTimesResult {
 
 // Define expected structure for itinerary items needed for calculation
 interface ItineraryItemCoords {
-  id: string | number; 
+  id: string | number;
   latitude: number | null;
   longitude: number | null;
   // We might need day_number or similar for grouping/sorting if not pre-sorted
   day_number?: number | null;
-  position?: number | null; 
-  start_time?: string | null; 
+  position?: number | null;
+  start_time?: string | null;
 }
 
 // Define structure for the Mapbox Directions API response
@@ -54,48 +52,48 @@ export async function calculateTravelTimes(
 ): Promise<Record<string | number, TravelTimesResult>> {
   const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   // Initialize with the new result structure
-  const travelTimes: Record<string | number, TravelTimesResult> = {}; 
+  const travelTimes: Record<string | number, TravelTimesResult> = {};
 
   if (!mapboxAccessToken) {
-    console.error("Mapbox Access Token is not configured. Cannot calculate travel times.");
-    return travelTimes; 
+    console.error('Mapbox Access Token is not configured. Cannot calculate travel times.');
+    return travelTimes;
   }
   if (!items || items.length < 2) {
-    return travelTimes; 
+    return travelTimes;
   }
 
   // Assume items might need grouping by day if day_number is provided
   const itemsByDay: Record<number, ItineraryItemCoords[]> = {};
   let hasDayNumber = false;
-  items.forEach(item => {
+  items.forEach((item) => {
     if (item.day_number !== undefined && item.day_number !== null) {
-        hasDayNumber = true;
-        const day = item.day_number;
-        if (!itemsByDay[day]) {
-            itemsByDay[day] = [];
-        }
-        // Sort within day if position/start_time is available
-        itemsByDay[day].push(item);
+      hasDayNumber = true;
+      const day = item.day_number;
+      if (!itemsByDay[day]) {
+        itemsByDay[day] = [];
+      }
+      // Sort within day if position/start_time is available
+      itemsByDay[day].push(item);
     } else {
-        // Items without day number go into a default group (e.g., day 0)
-        const day = 0;
-         if (!itemsByDay[day]) {
-            itemsByDay[day] = [];
-        }
-        itemsByDay[day].push(item);
+      // Items without day number go into a default group (e.g., day 0)
+      const day = 0;
+      if (!itemsByDay[day]) {
+        itemsByDay[day] = [];
+      }
+      itemsByDay[day].push(item);
     }
   });
 
   // Sort items within each day group if sorting fields are present
   for (const day in itemsByDay) {
-      itemsByDay[day].sort((a, b) => {
-          // Basic sort: position first, then start_time
-          const posCompare = (a.position ?? Infinity) - (b.position ?? Infinity);
-          if (posCompare !== 0) return posCompare;
-          const timeA = a.start_time ?? ''
-          const timeB = b.start_time ?? ''
-          return timeA.localeCompare(timeB);
-      });
+    itemsByDay[day].sort((a, b) => {
+      // Basic sort: position first, then start_time
+      const posCompare = (a.position ?? Infinity) - (b.position ?? Infinity);
+      if (posCompare !== 0) return posCompare;
+      const timeA = a.start_time ?? '';
+      const timeB = b.start_time ?? '';
+      return timeA.localeCompare(timeB);
+    });
   }
 
   const fetchPromises: Promise<void>[] = [];
@@ -110,7 +108,7 @@ export async function calculateTravelTimes(
       if (startItem.latitude && startItem.longitude && endItem.latitude && endItem.longitude) {
         const promise = (async () => {
           // Initialize result for this segment
-          const segmentResult: TravelTimesResult = {}; 
+          const segmentResult: TravelTimesResult = {};
 
           for (const profile of profiles) {
             const startCoords = `${startItem.longitude},${startItem.latitude}`;
@@ -120,9 +118,11 @@ export async function calculateTravelTimes(
             try {
               const response = await fetch(url);
               if (!response.ok) {
-                console.warn(`Mapbox API error for ${profile} (${response.status}): ${await response.text()}`);
+                console.warn(
+                  `Mapbox API error for ${profile} (${response.status}): ${await response.text()}`
+                );
                 segmentResult[profile] = null; // Indicate error/no route for this profile
-                continue; 
+                continue;
               }
               const data: MapboxDirectionResponse = await response.json();
 
@@ -144,7 +144,6 @@ export async function calculateTravelTimes(
 
           // Store the results for this segment (walking/driving)
           travelTimes[startItem.id.toString()] = segmentResult;
-          
         })();
         fetchPromises.push(promise);
       }
@@ -153,4 +152,4 @@ export async function calculateTravelTimes(
 
   await Promise.all(fetchPromises);
   return travelTimes;
-} 
+}

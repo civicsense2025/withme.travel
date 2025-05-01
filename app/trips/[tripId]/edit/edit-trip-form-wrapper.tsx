@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { TripFocusContainer } from '@/components/trips/trip-focus-container';
 
 // Dynamically import the client component with no SSR
 const EditTripForm = dynamic(
-  () => import("@/app/trips/components/EditTripForm").then(mod => ({ default: mod.EditTripForm })),
+  () => import('@/app/trips/components/EditTripForm').then((mod) => mod.EditTripForm),
   { ssr: false }
 );
 
@@ -38,22 +38,22 @@ interface EditTripFormWrapperProps {
   tripId: string;
 }
 
-export default function EditTripFormWrapper({ 
-  trip, 
+export default function EditTripFormWrapper({
+  trip,
   initialDestinationName,
-  tripId
+  tripId,
 }: EditTripFormWrapperProps) {
   const router = useRouter();
-  
+
   const handleSave = async (data: TripFormData) => {
-    console.log("Save data:", data);
-    
+    console.log('Save data:', data);
+
     // After successful save, redirect back to trip page
     router.push(`/trips/${tripId}`);
-    
+
     return Promise.resolve();
   };
-  
+
   const handleClose = () => {
     router.push(`/trips/${tripId}`);
   };
@@ -71,4 +71,4 @@ export default function EditTripFormWrapper({
       </div>
     </TripFocusContainer>
   );
-} 
+}

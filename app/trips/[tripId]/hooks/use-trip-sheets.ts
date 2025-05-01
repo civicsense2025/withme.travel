@@ -92,7 +92,7 @@ export function useTripSheets() {
     editingItem,
     addingItemToDay,
     targetSectionId,
-    
+
     // Setters
     setIsEditTripSheetOpen,
     setIsEditItemSheetOpen,
@@ -103,7 +103,7 @@ export function useTripSheets() {
     setEditingItem,
     setAddingItemToDay,
     setTargetSectionId,
-    
+
     // Actions
     openEditTripSheet,
     openEditItemSheet,
@@ -113,4 +113,4 @@ export function useTripSheets() {
     openPlaylistForm,
     resetSheetStates,
   };
-} 
+}

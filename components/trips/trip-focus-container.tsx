@@ -16,11 +16,11 @@ interface TripFocusContainerProps {
 /**
  * A container component that wraps trip-related pages and adds focus mode functionality
  */
-export function TripFocusContainer({ 
-  tripId, 
-  canEdit, 
+export function TripFocusContainer({
+  tripId,
+  canEdit,
   children,
-  className = "" 
+  className = '',
 }: TripFocusContainerProps) {
   const [showFocusMode, setShowFocusMode] = useState(false);
 
@@ -31,13 +31,15 @@ export function TripFocusContainer({
           {canEdit && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  variant="outline"
+                  size="icon"
                   onClick={() => setShowFocusMode(!showFocusMode)}
                   className="h-8 w-8 bg-background/80 backdrop-blur-sm"
                 >
-                  <Coffee className={`h-4 w-4 transition-colors ${showFocusMode ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <Coffee
+                    className={`h-4 w-4 transition-colors ${showFocusMode ? 'text-primary' : 'text-muted-foreground'}`}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -59,4 +61,4 @@ export function TripFocusContainer({
       </div>
     </TooltipProvider>
   );
-} 
+}

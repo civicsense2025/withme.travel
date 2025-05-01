@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -13,7 +13,7 @@ interface FallbackProps {
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
   const router = useRouter();
-  
+
   return (
     <div className="p-8 text-center">
       <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
@@ -23,7 +23,9 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
       <p className="text-muted-foreground mb-4 max-w-lg mx-auto">{error.message}</p>
       <div className="flex gap-4 justify-center">
         <Button onClick={() => router.push('/trips')}>Return to Trips</Button>
-        <Button variant="outline" onClick={resetErrorBoundary}>Try Again</Button>
+        <Button variant="outline" onClick={resetErrorBoundary}>
+          Try Again
+        </Button>
       </div>
     </div>
   );
@@ -38,13 +40,10 @@ export function TripErrorBoundary({ children }: TripErrorBoundaryProps) {
     // Any cleanup logic here
     console.log('Error boundary reset');
   };
-  
+
   return (
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={handleReset}
-    >
+    <ErrorBoundary FallbackComponent={ErrorFallback} onReset={handleReset}>
       {children}
     </ErrorBoundary>
   );
-} 
+}

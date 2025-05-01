@@ -22,13 +22,15 @@ export function FocusToggle({ tripId, canEdit }: FocusToggleProps) {
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon" 
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => setShowFocusMode(!showFocusMode)}
             className="h-8 w-8"
           >
-            <Coffee className={`h-4 w-4 transition-colors ${showFocusMode ? 'text-primary' : 'text-muted-foreground'}`} />
+            <Coffee
+              className={`h-4 w-4 transition-colors ${showFocusMode ? 'text-primary' : 'text-muted-foreground'}`}
+            />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
@@ -43,4 +45,4 @@ export function FocusToggle({ tripId, canEdit }: FocusToggleProps) {
       )}
     </>
   );
-} 
+}

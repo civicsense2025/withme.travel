@@ -39,36 +39,39 @@ export function ConnectionStatusIndicator({
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   // Refs to store Supabase client and subscription
   const supabaseRef = useRef(createClient());
   const subscriptionRef = useRef<RealtimeChannel | null>(null);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Helper to determine if the browser is online
   const isBrowserOnline = () => {
     return typeof navigator !== 'undefined' ? navigator.onLine : true;
   };
 
   // Update connection status and notify parent component
-  const updateStatus = useCallback((newStatus: ConnectionState, error?: Error) => {
-    setStatus(newStatus);
-    
-    if (error) {
-      setErrorMessage(error.message);
-    } else {
-      setErrorMessage(null);
-    }
-    
-    if (newStatus === ConnectionState.Connected) {
-      setLastConnected(new Date());
-    }
-    
-    // Notify parent component if callback exists
-    if (onStatusChange) {
-      onStatusChange(newStatus);
-    }
-  }, [onStatusChange]);
+  const updateStatus = useCallback(
+    (newStatus: ConnectionState, error?: Error) => {
+      setStatus(newStatus);
+
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(null);
+      }
+
+      if (newStatus === ConnectionState.Connected) {
+        setLastConnected(new Date());
+      }
+
+      // Notify parent component if callback exists
+      if (onStatusChange) {
+        onStatusChange(newStatus);
+      }
+    },
+    [onStatusChange]
+  );
 
   // Initialize real-time subscription
   const initializeSubscription = useCallback(async () => {
@@ -83,21 +86,21 @@ export function ConnectionStatusIndicator({
       try {
         await supabaseRef.current.removeChannel(subscriptionRef.current);
       } catch (removeError) {
-        console.warn("Error removing previous channel:", removeError);
+        console.warn('Error removing previous channel:', removeError);
       }
       subscriptionRef.current = null;
     }
-    
+
     // Set initial status based on retry count
     updateStatus(retryCount === 0 ? ConnectionState.Connecting : ConnectionState.Reconnecting);
     setIsRetrying(true);
 
     // Set a timeout for the connection attempt
     connectionTimeoutRef.current = setTimeout(() => {
-      console.warn("Connection attempt timed out after 10 seconds");
+      console.warn('Connection attempt timed out after 10 seconds');
       if (status === ConnectionState.Connecting || status === ConnectionState.Reconnecting) {
-         updateStatus(ConnectionState.Error, new Error('Connection timed out'));
-         setIsRetrying(false);
+        updateStatus(ConnectionState.Error, new Error('Connection timed out'));
+        setIsRetrying(false);
       }
     }, 10000); // 10 second timeout
 
@@ -107,7 +110,7 @@ export function ConnectionStatusIndicator({
         .channel(`trip:${tripId}`)
         .on('presence', { event: 'sync' }, () => {
           // This is the main sync event, but we rely on 'SUBSCRIBED' for initial connection confirmation
-          console.log("Presence sync received");
+          console.log('Presence sync received');
         })
         .on('presence', { event: 'join' }, ({ newPresences }) => {
           console.log('New users joined:', newPresences);
@@ -121,14 +124,15 @@ export function ConnectionStatusIndicator({
             clearTimeout(connectionTimeoutRef.current);
             connectionTimeoutRef.current = null;
           }
-          
+
           if (subscribeStatus === 'SUBSCRIBED') {
-            console.log("Successfully subscribed to channel");
-            const previouslyDisconnected = status === ConnectionState.Disconnected || status === ConnectionState.Error;
+            console.log('Successfully subscribed to channel');
+            const previouslyDisconnected =
+              status === ConnectionState.Disconnected || status === ConnectionState.Error;
             updateStatus(ConnectionState.Connected);
             setRetryCount(0);
             setIsRetrying(false);
-            
+
             if (previouslyDisconnected) {
               toast({
                 title: 'Connection restored',
@@ -136,9 +140,16 @@ export function ConnectionStatusIndicator({
                 variant: 'default',
               });
             }
-          } else if (subscribeStatus === 'CHANNEL_ERROR' || subscribeStatus === 'TIMED_OUT' || err) {
+          } else if (
+            subscribeStatus === 'CHANNEL_ERROR' ||
+            subscribeStatus === 'TIMED_OUT' ||
+            err
+          ) {
             console.error('Subscription error:', { status: subscribeStatus, err });
-            updateStatus(ConnectionState.Error, err || new Error(`Subscription failed: ${subscribeStatus || 'unknown error'}`));
+            updateStatus(
+              ConnectionState.Error,
+              err || new Error(`Subscription failed: ${subscribeStatus || 'unknown error'}`)
+            );
             setIsRetrying(false);
             toast({
               title: 'Connection Error',
@@ -146,14 +157,14 @@ export function ConnectionStatusIndicator({
               variant: 'destructive',
             });
           } else if (subscribeStatus === 'CLOSED') {
-             console.log('Realtime channel closed, attempting reconnect if browser is online...');
-             if (isBrowserOnline()) {
-                updateStatus(ConnectionState.Reconnecting);
-                // Optionally add a delay before retrying
-                setTimeout(() => initializeSubscription(), 1000 * (retryCount + 1)); // Basic backoff
-             } else {
-                updateStatus(ConnectionState.Disconnected);
-             }
+            console.log('Realtime channel closed, attempting reconnect if browser is online...');
+            if (isBrowserOnline()) {
+              updateStatus(ConnectionState.Reconnecting);
+              // Optionally add a delay before retrying
+              setTimeout(() => initializeSubscription(), 1000 * (retryCount + 1)); // Basic backoff
+            } else {
+              updateStatus(ConnectionState.Disconnected);
+            }
           }
         });
 
@@ -182,14 +193,14 @@ export function ConnectionStatusIndicator({
     const handleOnline = () => {
       // Only attempt reconnection if we were previously disconnected or errored
       if (status === ConnectionState.Disconnected || status === ConnectionState.Error) {
-        console.log("Browser back online, attempting to reconnect...");
-        setRetryCount(prevCount => prevCount + 1);
+        console.log('Browser back online, attempting to reconnect...');
+        setRetryCount((prevCount) => prevCount + 1);
         initializeSubscription();
       }
     };
 
     const handleOffline = () => {
-      console.log("Browser offline, setting status to disconnected.");
+      console.log('Browser offline, setting status to disconnected.');
       updateStatus(ConnectionState.Disconnected);
       // Clear any pending retry timeout
       if (connectionTimeoutRef.current) {
@@ -215,7 +226,7 @@ export function ConnectionStatusIndicator({
   // Initialize subscription on mount and cleanup on unmount
   useEffect(() => {
     const currentSupabase = supabaseRef.current; // Capture ref value
-    
+
     if (isBrowserOnline()) {
       initializeSubscription();
     } else {
@@ -224,7 +235,7 @@ export function ConnectionStatusIndicator({
 
     // Cleanup function
     return () => {
-      console.log("Cleaning up ConnectionStatusIndicator...");
+      console.log('Cleaning up ConnectionStatusIndicator...');
       // Clear connection timeout
       if (connectionTimeoutRef.current) {
         clearTimeout(connectionTimeoutRef.current);
@@ -232,10 +243,11 @@ export function ConnectionStatusIndicator({
       }
       // Remove subscription
       if (subscriptionRef.current && currentSupabase) {
-        console.log("Removing Supabase channel...");
-        currentSupabase.removeChannel(subscriptionRef.current)
-          .then(() => console.log("Channel removed successfully."))
-          .catch(err => console.error("Error removing channel:", err));
+        console.log('Removing Supabase channel...');
+        currentSupabase
+          .removeChannel(subscriptionRef.current)
+          .then(() => console.log('Channel removed successfully.'))
+          .catch((err) => console.error('Error removing channel:', err));
         subscriptionRef.current = null;
       }
     };
@@ -245,7 +257,7 @@ export function ConnectionStatusIndicator({
 
   // Manual retry handler
   const handleRetry = () => {
-    setRetryCount(prevCount => prevCount + 1);
+    setRetryCount((prevCount) => prevCount + 1);
     initializeSubscription();
   };
 
@@ -284,9 +296,8 @@ export function ConnectionStatusIndicator({
   };
 
   // Icon based on status
-  const StatusIcon = status === ConnectionState.Connected || status === ConnectionState.Connecting
-    ? Wifi
-    : WifiOff;
+  const StatusIcon =
+    status === ConnectionState.Connected || status === ConnectionState.Connecting ? Wifi : WifiOff;
 
   // Time since last connected (if disconnected)
   const timeSinceConnected = lastConnected
@@ -298,23 +309,23 @@ export function ConnectionStatusIndicator({
       <Tooltip>
         <TooltipTrigger asChild>
           <div className={`flex items-center ${className}`}>
-            <Badge 
-              variant={getBadgeVariant()} 
-              className="flex items-center gap-1.5 px-2 py-0 h-6"
-            >
-              {status === ConnectionState.Connecting || status === ConnectionState.Reconnecting || isRetrying 
-                ? <RefreshCw className="h-3 w-3 animate-spin" /> 
-                : <StatusIcon className="h-3 w-3" />
-              }
+            <Badge variant={getBadgeVariant()} className="flex items-center gap-1.5 px-2 py-0 h-6">
+              {status === ConnectionState.Connecting ||
+              status === ConnectionState.Reconnecting ||
+              isRetrying ? (
+                <RefreshCw className="h-3 w-3 animate-spin" />
+              ) : (
+                <StatusIcon className="h-3 w-3" />
+              )}
               <span className="text-xs">
                 {status === ConnectionState.Connected ? 'Live' : 'Offline'}
               </span>
             </Badge>
-            
+
             {(status === ConnectionState.Disconnected || status === ConnectionState.Error) && (
-              <Button 
-                size="icon" 
-                variant="ghost" 
+              <Button
+                size="icon"
+                variant="ghost"
                 className="h-6 w-6 ml-1"
                 onClick={handleRetry}
                 disabled={isRetrying || !isBrowserOnline()}
@@ -342,4 +353,3 @@ export function ConnectionStatusIndicator({
     </TooltipProvider>
   );
 }
-

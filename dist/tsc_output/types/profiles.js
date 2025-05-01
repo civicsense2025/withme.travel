@@ -1,2 +1,0 @@
-// types/profiles.ts
-export {};

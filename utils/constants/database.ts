@@ -1,5 +1,5 @@
 // Database Tables - Constant names for all database tables
-export const DB_TABLES = {
+export const TABLES = {
   PROFILES: 'profiles',
   TRIPS: 'trips',
   TRIP_MEMBERS: 'trip_members',
@@ -8,8 +8,8 @@ export const DB_TABLES = {
   USER_PRESENCE: 'user_presence',
   VOTES: 'votes',
   COLLABORATIVE_SESSIONS: 'collaborative_sessions',
-  TEMPLATE_SECTIONS: 'template_sections',
-  TEMPLATE_ACTIVITIES: 'template_activities',
+  ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
+  ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items',
   INVITATIONS: 'invitations',
   EXPENSES: 'expenses',
   REFERRALS: 'referrals',
@@ -17,388 +17,391 @@ export const DB_TABLES = {
   LIKES: 'likes',
   TRIP_IMAGES: 'trip_images',
   TRIP_NOTES: 'trip_notes',
+  NOTE_TAGS: 'note_tags',
   IMAGE_METADATA: 'image_metadata',
   ITINERARY_TEMPLATES: 'itinerary_templates',
   TRIP_TEMPLATE_USES: 'trip_template_uses',
   ALBUMS: 'albums',
+  TRIP_TAGS: 'trip_tags',
+  USER_LOGIN_HISTORY: 'user_login_history',
+  TAGS: 'tags',
+  PLACES: 'places',
+  ACCESS_REQUESTS: 'access_requests',
+  COLLABORATIVE_NOTES: 'collaborative_notes',
+  USERS: 'users',
+  BUDGET_ITEMS: 'budget_items',
+  CONTENT_CUSTOMIZATIONS: 'content_customizations',
+  CONTENT_QUALITY_METRICS: 'content_quality_metrics',
+  CONTENT_SHARING_HISTORY: 'content_sharing_history',
+  CONTENT_SLUGS: 'content_slugs',
+  DESTINATION_TAGS: 'destination_tags',
+  FOCUS_SESSIONS: 'focus_sessions',
+  ITINERARY_ITEM_VOTES: 'itinerary_item_votes',
+  ITINERARY_SECTIONS: 'itinerary_sections',
+  ITEM_POPULARITY_METRICS: 'item_popularity_metrics',
+  LOCATIONS: 'locations',
+  NOTIFICATION_PREFERENCES: 'notification_preferences',
+  NOTIFICATIONS: 'notifications',
+  PREFERENCE_WEIGHTS: 'preference_weights',
+  TEMPLATE_APPLICATIONS: 'template_applications',
+  TRIP_COMMENT_LIKES: 'trip_comment_likes',
+  TRIP_HISTORY: 'trip_history',
+  TRIP_ITEM_COMMENTS: 'trip_item_comments',
+  TRIP_VOTE_OPTIONS: 'trip_vote_options',
+  TRIP_VOTE_POLLS: 'trip_vote_polls',
+  TRIP_VOTES: 'trip_votes',
+  USER_ACTIVITY_HISTORY: 'user_activity_history',
+  USER_INTERACTIONS: 'user_interactions',
+  USER_INTERESTS: 'user_interests',
+  USER_PREFERENCES: 'user_preferences',
+  USER_SUGGESTED_TAGS: 'user_suggested_tags',
+  USER_TRAVEL: 'user_travel',
+  VALIDATION_LOGS: 'validation_logs',
+} as const;
+
+// Database Fields - Common field names across tables
+export const FIELDS = {
+  COMMON: {
+    ID: 'id',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+  PROFILES: {
+    NAME: 'name',
+    AVATAR_URL: 'avatar_url',
+    EMAIL: 'email',
+    USERNAME: 'username',
+  },
+  USER_PRESENCE: {
+    USER_ID: 'user_id',
+    TRIP_ID: 'trip_id',
+    STATUS: 'status',
+    EDITING_ITEM_ID: 'editing_item_id',
+    CURSOR_POSITION: 'cursor_position',
+    PAGE_PATH: 'page_path',
+    LAST_ACTIVE: 'last_active',
+  },
 } as const;
 
 // Database Enums - Type-safe enum values from supabase.ts
-export const DB_ENUMS = {
+export const ENUMS = {
   TRIP_ROLES: {
     ADMIN: 'admin',
     EDITOR: 'editor',
     VIEWER: 'viewer',
-    CONTRIBUTOR: 'contributor'
+    CONTRIBUTOR: 'contributor',
   },
   CONTENT_TYPES: {
     TRIP: 'trip',
     ITINERARY_ITEM: 'itinerary_item',
     DESTINATION: 'destination',
-    TEMPLATE: 'template'
+    TEMPLATE: 'template',
+    COLLECTION: 'collection',
   },
   URL_FORMATS: {
-    SLUG: 'slug',
-    UUID: 'uuid',
-    CUSTOM: 'custom'
-  },
-  QUALITY_TIERS: {
-    PREMIUM: 'premium',
-    VERIFIED: 'verified',
-    STANDARD: 'standard',
-    COMMUNITY: 'community'
+    CANONICAL: 'canonical',
+    SHORT: 'short',
+    SOCIAL: 'social',
+    TRACKING: 'tracking',
   },
   IMAGE_TYPES: {
     DESTINATION: 'destination',
     TRIP_COVER: 'trip_cover',
     USER_AVATAR: 'user_avatar',
-    TEMPLATE_COVER: 'template_cover'
+    TEMPLATE_COVER: 'template_cover',
   },
   INVITATION_STATUS: {
     PENDING: 'pending',
     ACCEPTED: 'accepted',
     DECLINED: 'declined',
-    EXPIRED: 'expired'
+    EXPIRED: 'expired',
   },
   PRESENCE_STATUS: {
     ONLINE: 'online',
     AWAY: 'away',
     OFFLINE: 'offline',
-    EDITING: 'editing'
-  },
-  REQUEST_STATUSES: {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    REJECTED: 'rejected'
+    EDITING: 'editing',
   },
   ACCESS_REQUEST_STATUS: {
     PENDING: 'pending',
     APPROVED: 'approved',
-    REJECTED: 'rejected'
-  }
-} as const;
-
-// Database Field names by table
-// Note: We're using DB_FIELDS instead of DB_COLUMNS for better naming consistency
-export const DB_FIELDS = {
-  // Common fields across tables
-  COMMON: {
-    ID: 'id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    REJECTED: 'rejected',
   },
-  
-  // Profiles table fields
-  PROFILES: {
-    ID: 'id',
-    NAME: 'name',
-    EMAIL: 'email',
-    AVATAR_URL: 'avatar_url',
-    USERNAME: 'username',
-    BIO: 'bio',
-    IS_ADMIN: 'is_admin',
-    IS_VERIFIED: 'is_verified',
-    UPDATED_AT: 'updated_at',
-    COVER_IMAGE_URL: 'cover_image_url',
-    LOCATION: 'location',
-    WEBSITE: 'website'
+  BUDGET_CATEGORY: {
+    ACCOMMODATION: 'accommodation',
+    TRANSPORTATION: 'transportation',
+    FOOD: 'food',
+    ACTIVITIES: 'activities',
+    SHOPPING: 'shopping',
+    OTHER: 'other',
   },
-  
-  // Trips table fields
-  TRIPS: {
-    ID: 'id',
-    NAME: 'name',
-    DESCRIPTION: 'description',
-    START_DATE: 'start_date',
-    END_DATE: 'end_date',
-    DESTINATION_ID: 'destination_id',
-    DESTINATION_NAME: 'destination_name',
-    TRAVELERS_COUNT: 'travelers_count',
-    VIBE: 'vibe',
+  INTERACTION_TYPE: {
+    LIKE: 'like',
+    VISIT: 'visit',
+    BOOKMARK: 'bookmark',
+    TAG: 'tag',
+  },
+  ITEM_STATUS: {
+    SUGGESTED: 'suggested',
+    CONFIRMED: 'confirmed',
+    REJECTED: 'rejected',
+  },
+  ITINERARY_CATEGORY: {
+    FLIGHT: 'flight',
+    ACCOMMODATION: 'accommodation',
+    ATTRACTION: 'attraction',
+    RESTAURANT: 'restaurant',
+    CAFE: 'cafe',
+    TRANSPORTATION: 'transportation',
+    ACTIVITY: 'activity',
+    CUSTOM: 'custom',
+    OTHER: 'other',
+  },
+  ITINERARY_ITEM_STATUS: {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+  },
+  PLACE_CATEGORY: {
+    ATTRACTION: 'attraction',
+    RESTAURANT: 'restaurant',
+    CAFE: 'cafe',
+    HOTEL: 'hotel',
+    LANDMARK: 'landmark',
+    SHOPPING: 'shopping',
+    TRANSPORT: 'transport',
+    OTHER: 'other',
+  },
+  PRIVACY_SETTING: {
+    PRIVATE: 'private',
+    SHARED_WITH_LINK: 'shared_with_link',
+    PUBLIC: 'public',
+  },
+  TAG_STATUS: {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+  },
+  TRAVEL_PACE: {
+    VERY_SLOW: 'very_slow',
+    SLOW: 'slow',
+    MODERATE: 'moderate',
+    FAST: 'fast',
+    VERY_FAST: 'very_fast',
+  },
+  TRAVEL_PERSONALITY_TYPE: {
+    PLANNER: 'planner',
+    ADVENTURER: 'adventurer',
+    FOODIE: 'foodie',
+    SIGHTSEER: 'sightseer',
+    RELAXER: 'relaxer',
+    CULTURE: 'culture',
+  },
+  TRAVEL_SQUAD_TYPE: {
+    SOLO: 'solo',
+    COUPLE: 'couple',
+    FAMILY: 'family',
+    FRIENDS: 'friends',
+    BUSINESS: 'business',
+    GROUP: 'group',
+  },
+  TRAVEL_STYLE: {
+    ADVENTUROUS: 'adventurous',
+    RELAXED: 'relaxed',
+    CULTURAL: 'cultural',
+    LUXURY: 'luxury',
     BUDGET: 'budget',
-    IS_PUBLIC: 'is_public',
-    SLUG: 'slug',
-    PUBLIC_SLUG: 'public_slug',
-    COVER_IMAGE_URL: 'cover_image_url',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    DELETED: 'deleted',
-    FEATURED: 'featured',
-    LOCATION: 'location',
-    LATITUDE: 'latitude',
-    LONGITUDE: 'longitude',
-    LIKE_COUNT: 'likes_count',
-    VIEW_COUNT: 'view_count',
-    USE_COUNT: 'use_count',
-    TRIP_TYPE: 'trip_type',
-    CREATED_BY: 'created_by',
-    DURATION_DAYS: 'duration_days',
-    DATE_FLEXIBILITY: 'date_flexibility',
-    MEMBER_COUNT: 'member_count',
-    TRIP_EMOJI: 'trip_emoji',
-    STATUS: 'status',
-    COMMENTS_COUNT: 'comments_count',
-    SHARED_URL: 'shared_url',
-    PRIVACY_SETTING: 'privacy_setting'
+    FAMILY: 'family',
+    SOLO: 'solo',
+    NIGHTLIFE: 'nightlife',
+    NATURE: 'nature',
+    FOOD_FOCUSED: 'food_focused',
   },
-  
-  // Trip members table fields
-  TRIP_MEMBERS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    ROLE: 'role',
-    CREATED_AT: 'created_at',
-    INVITED_BY: 'invited_by',
-    JOINED_AT: 'joined_at',
-    EXTERNAL_EMAIL: 'external_email'
+  TRIP_ACTION_TYPE: {
+    TRIP_CREATED: 'TRIP_CREATED',
+    TRIP_UPDATED: 'TRIP_UPDATED',
+    ITINERARY_ITEM_ADDED: 'ITINERARY_ITEM_ADDED',
+    ITINERARY_ITEM_UPDATED: 'ITINERARY_ITEM_UPDATED',
+    ITINERARY_ITEM_DELETED: 'ITINERARY_ITEM_DELETED',
+    MEMBER_ADDED: 'MEMBER_ADDED',
+    MEMBER_REMOVED: 'MEMBER_REMOVED',
+    MEMBER_ROLE_UPDATED: 'MEMBER_ROLE_UPDATED',
+    INVITATION_SENT: 'INVITATION_SENT',
+    ACCESS_REQUEST_SENT: 'ACCESS_REQUEST_SENT',
+    ACCESS_REQUEST_UPDATED: 'ACCESS_REQUEST_UPDATED',
+    NOTE_CREATED: 'NOTE_CREATED',
+    NOTE_UPDATED: 'NOTE_UPDATED',
+    NOTE_DELETED: 'NOTE_DELETED',
+    IMAGE_UPLOADED: 'IMAGE_UPLOADED',
+    TAG_ADDED: 'TAG_ADDED',
+    TAG_REMOVED: 'TAG_REMOVED',
+    SPLITWISE_GROUP_LINKED: 'SPLITWISE_GROUP_LINKED',
+    SPLITWISE_GROUP_UNLINKED: 'SPLITWISE_GROUP_UNLINKED',
+    SPLITWISE_GROUP_CREATED_AND_LINKED: 'SPLITWISE_GROUP_CREATED_AND_LINKED',
+    COMMENT_ADDED: 'COMMENT_ADDED',
+    COMMENT_UPDATED: 'COMMENT_UPDATED',
+    COMMENT_DELETED: 'COMMENT_DELETED',
+    VOTE_CAST: 'VOTE_CAST',
+    FOCUS_INITIATED: 'FOCUS_INITIATED',
   },
-  
-  // Itinerary items table fields
-  ITINERARY_ITEMS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TITLE: 'title',
-    LOCATION: 'location',
-    ADDRESS: 'address',
-    START_TIME: 'start_time',
-    END_TIME: 'end_time',
-    DATE: 'date',
-    CREATED_BY: 'created_by',
-    CREATED_AT: 'created_at',
-    CATEGORY: 'category',
-    POSITION: 'position',
-    STATUS: 'status',
-    LATITUDE: 'latitude',
-    LONGITUDE: 'longitude',
-    TYPE: 'type',
-    COVER_IMAGE_URL: 'cover_image_url',
-    DAY_NUMBER: 'day_number',
-    ESTIMATED_COST: 'estimated_cost',
-    CURRENCY: 'currency',
-    DURATION_MINUTES: 'duration_minutes',
-    NOTES: 'notes',
-    SECTION_ID: 'section_id',
-    PLACE_ID: 'place_id',
-    ITEM_TYPE: 'item_type',
-    IS_CUSTOM: 'is_custom',
-    DESCRIPTION: 'description',
-    // Content sharing fields
-    ORIGINAL_DESCRIPTION: 'original_description',
-    PERSONAL_NOTES: 'personal_notes',
-    SOURCE_ITEM_ID: 'source_item_id',
-    ORIGINAL_CREATOR_ID: 'original_creator_id',
-    ATTRIBUTION_TEXT: 'attribution_text',
-    // Quality metrics
-    QUALITY_TIER: 'quality_tier',
-    QUALITY_SCORE: 'quality_score',
-    POPULARITY_SCORE: 'popularity_score',
-    // SEO fields
-    CANONICAL_ID: 'canonical_id',
-    CANONICAL_URL: 'canonical_url',
-    PUBLIC_SLUG: 'public_slug',
-    META_TITLE: 'meta_title',
-    META_DESCRIPTION: 'meta_description'
+  TRIP_PRIVACY_SETTING: {
+    PRIVATE: 'private',
+    SHARED_WITH_LINK: 'shared_with_link',
+    PUBLIC: 'public',
   },
-  
-  // User presence table fields
-  USER_PRESENCE: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TRIP_ID: 'trip_id',
-    STATUS: 'status',
-    LAST_ACTIVE: 'last_active',
-    DOCUMENT_ID: 'document_id',
-    EDITING_ITEM_ID: 'editing_item_id',
-    CURSOR_POSITION: 'cursor_position',
-    PAGE_PATH: 'page_path'
+  TRIP_STATUS: {
+    PLANNING: 'planning',
+    UPCOMING: 'upcoming',
+    IN_PROGRESS: 'in_progress',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled',
   },
-  
-  // Destinations table fields
-  DESTINATIONS: {
-    ID: 'id',
-    CITY: 'city',
-    COUNTRY: 'country',
-    CONTINENT: 'continent',
-    IMAGE_URL: 'image_url',
-    POPULARITY: 'popularity',
-    DESCRIPTION: 'description',
-    COUNTRY_CODE: 'country_code',
-    CODE_POSTAL: 'code_postal',
-    LATITUDE: 'latitude',
-    LONGITUDE: 'longitude',
-    TIMEZONE: 'timezone',
-    LANGUAGES: 'languages',
-    CURRENCY: 'currency',
-    SAFETY_RATING: 'safety_rating',
-    WALKABILITY: 'walkability',
-    FAMILY_FRIENDLY: 'family_friendly',
-    NIGHTLIFE_RATING: 'nightlife_rating',
-    BEACH_QUALITY: 'beach_quality',
-    SHOPPING_RATING: 'shopping_rating',
-    WINTER_RATING: 'winter_rating',
-    WIFI_CONNECTIVITY: 'wifi_connectivity',
-    PUBLIC_TRANSPORTATION: 'public_transportation',
-    ECO_FRIENDLY_OPTIONS: 'eco_friendly_options',
-    OUTDOOR_ACTIVITIES: 'outdoor_activities',
-    INSTAGRAM_WORTHY_SPOTS: 'instagram_worthy_spots',
-    OFF_PEAK_APPEAL: 'off_peak_appeal',
-    DIGITAL_NOMAD_FRIENDLY: 'digital_nomad_friendly',
-    NAME: 'name',
-    TRAVELERS_COUNT: 'travelers_count',
-    AVG_DAYS: 'avg_days'
+  TRIP_TYPE: {
+    LEISURE: 'leisure',
+    BUSINESS: 'business',
+    FAMILY: 'family',
+    SOLO: 'solo',
+    GROUP: 'group',
+    OTHER: 'other',
   },
-  
-  // Collaborative notes table fields
-  COLLABORATIVE_NOTES: {
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    CONTENT: 'content',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
-  },
-  
-  // Votes table fields
-  VOTES: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    VOTE_TYPE: 'vote_type', 
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
-  },
-  
-  // Collaborative sessions table fields
-  COLLABORATIVE_SESSIONS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    SESSION_ID: 'session_id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
-  },
-  
-  // Template sections table fields
-  TEMPLATE_SECTIONS: {
-    ID: 'id',
-    TEMPLATE_ID: 'template_id', 
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    POSITION: 'position',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
-  },
-  
-  // Item customizations table fields
-  ITEM_CUSTOMIZATIONS: {
-    ID: 'id',
-    ITEM_ID: 'item_id',
-    USER_ID: 'user_id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    PERSONAL_NOTES: 'personal_notes',
-    CUSTOM_TIME: 'custom_time',
-    CUSTOM_DATE: 'custom_date',
-    CUSTOM_DURATION: 'custom_duration',
-    VISIBILITY: 'visibility'
-  },
-  
-  // User preferences table fields
-  USER_PREFERENCES: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TRAVEL_PACE: 'travel_pace',
-    PREFERRED_TIMING: 'preferred_timing',
-    PREFERRED_CATEGORIES: 'preferred_categories',
-    BUDGET_LEVEL: 'budget_level',
-    ACCESSIBILITY_NEEDS: 'accessibility_needs',
-    ADVENTURE_LEVEL: 'adventure_level',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
-  },
-  
-  PERMISSION_REQUESTS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    ROLE: 'role',
-    MESSAGE: 'message',
-    STATUS: 'status',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+  VOTE_TYPE: {
+    UP: 'up',
+    DOWN: 'down',
   },
 } as const;
 
 // Functions that use database columns
-export const DB_FUNCTIONS = {
+export const FUNCTIONS = {
   IS_TRIP_MEMBER: 'is_trip_member',
   HAS_TRIP_ROLE: 'has_trip_role',
   CREATE_TRIP_WITH_OWNER: 'create_trip_with_owner',
   COPY_TEMPLATE_TO_TRIP: 'copy_template_to_trip',
   GENERATE_RANDOM_SLUG: 'generate_random_slug',
-  COPY_ITINERARY_ITEMS: 'copy_itinerary_items',
   GENERATE_RANDOM_ITINERARY: 'generate_random_itinerary',
-  CALCULATE_PREFERENCE_MATCH: 'calculate_preference_match'
+  CALCULATE_PREFERENCE_MATCH: 'calculate_preference_match',
+  APPLY_TEMPLATE_TO_TRIP: 'apply_template_to_trip',
+  APPROVE_USER_SUGGESTED_TAG: 'approve_user_suggested_tag',
+  APPROVE_USER_TAG: 'approve_user_tag',
+  CAN_MANAGE_TRIP_MEMBERS: 'can_manage_trip_members',
+  CLEANUP_OLD_METRICS: 'cleanup_old_metrics',
+  COPY_AND_CUSTOMIZE_ITEM: 'copy_and_customize_item',
+  COUNT_ITEM_COMMENTS: 'count_item_comments',
+  GENERATE_SLUG: 'generate_slug',
+  GENERATE_UNIQUE_SLUG: 'generate_unique_slug',
+  GET_DESTINATION_RECOMMENDATIONS: 'get_destination_recommendations',
+  GET_POLL_RESULTS: 'get_poll_results',
+  GET_POLL_WITH_OPTIONS: 'get_poll_with_options',
+  GET_TRIP_ACTIVITY_TIMELINE: 'get_trip_activity_timeline',
+  GET_UNREAD_NOTIFICATION_COUNT: 'get_unread_notification_count',
+  GET_USER_POLL_VOTE: 'get_user_poll_vote',
+  GET_USER_VOTES: 'get_user_votes',
+  HAS_USER_LIKED_COMMENT: 'has_user_liked_comment',
+  HAS_USER_VOTED: 'has_user_voted',
+  INCREMENT_COUNTER: 'increment_counter',
+  INSERT_TAG_IF_NOT_EXISTS: 'insert_tag_if_not_exists',
+  IS_POLL_EXPIRED: 'is_poll_expired',
+  IS_TRIP_MEMBER_WITH_ROLE: 'is_trip_member_with_role',
+  RECOMMEND_BY_GEOGRAPHY: 'recommend_by_geography',
+  RECOMMEND_POPULAR_DESTINATIONS: 'recommend_popular_destinations',
+  UPDATE_ITINERARY_ITEM_POSITION: 'update_itinerary_item_position',
+  UPDATE_POPULARITY_METRICS: 'update_popularity_metrics',
+  UPDATE_PROFILE_ONBOARDING: 'update_profile_onboarding',
+  VALIDATE_ITINERARY: 'validate_itinerary',
 } as const;
 
 // RLS Policy names for reference
-export const DB_POLICIES = {
+export const POLICIES = {
   TRIPS: {
     ALLOW_PUBLIC_READ: 'Allow public read access',
     ALLOW_MEMBER_READ: 'Allow member read access',
     ALLOW_ADMIN_EDITOR_UPDATE: 'Allow admin/editor update access',
-    ALLOW_ADMIN_DELETE: 'Allow admin delete access'
+    ALLOW_ADMIN_DELETE: 'Allow admin delete access',
   },
   ITINERARY_ITEMS: {
     ALLOW_MEMBERS_VIEW: 'Allow members to view itinerary items',
-    ALLOW_CONTRIBUTORS_MANAGE: 'Allow contributors to manage itinerary items'
+    ALLOW_CONTRIBUTORS_MANAGE: 'Allow contributors to manage itinerary items',
   },
   COLLABORATIVE_SESSIONS: {
     ALLOW_MEMBERS_VIEW: 'Allow members to view collaborative sessions',
-    ALLOW_ADMIN_UPDATE: 'Allow admin to update collaborative sessions'
+    ALLOW_ADMIN_UPDATE: 'Allow admin to update collaborative sessions',
   },
 } as const;
 
 // Type helpers for improved type safety
-export type TableNames = typeof DB_TABLES[keyof typeof DB_TABLES];
-// TODO: Clarify the intent of this line and fix the syntax
-// export const DB_FIELDS_BY_TABLE = {
-//   [type: keyof DB_TABLES]: DB_FIELDS[DB_TABLES[type]]
-// };
-export type TripRole = typeof DB_ENUMS.TRIP_ROLES[keyof typeof DB_ENUMS.TRIP_ROLES];
-export type ContentType = typeof DB_ENUMS.CONTENT_TYPES[keyof typeof DB_ENUMS.CONTENT_TYPES];
-export type UrlFormat = typeof DB_ENUMS.URL_FORMATS[keyof typeof DB_ENUMS.URL_FORMATS];
-export type QualityTier = typeof DB_ENUMS.QUALITY_TIERS[keyof typeof DB_ENUMS.QUALITY_TIERS];
-export type ImageType = typeof DB_ENUMS.IMAGE_TYPES[keyof typeof DB_ENUMS.IMAGE_TYPES];
-export type InvitationStatus = typeof DB_ENUMS.INVITATION_STATUS[keyof typeof DB_ENUMS.INVITATION_STATUS];
-export type PresenceStatus = typeof DB_ENUMS.PRESENCE_STATUS[keyof typeof DB_ENUMS.PRESENCE_STATUS];
-export type RequestStatus = typeof DB_ENUMS.REQUEST_STATUSES[keyof typeof DB_ENUMS.REQUEST_STATUSES];
-export type AccessRequestStatus = typeof DB_ENUMS.ACCESS_REQUEST_STATUS[keyof typeof DB_ENUMS.ACCESS_REQUEST_STATUS];
+export type TableNames = (typeof TABLES)[keyof typeof TABLES];
+
+// Define table field types by table
+export type TableFields<T extends keyof typeof FIELDS> =
+  (typeof FIELDS)[T][keyof (typeof FIELDS)[T]];
+
+// Define the TripRole type from the Database enum
+export type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
+
+// Type definitions using explicit types instead of imports
+// Define all types explicitly to avoid module import issues
+
+// For more specific types, define them explicitly
+export type ContentType = 'trip' | 'itinerary_item' | 'destination' | 'collection' | 'template';
+export type UrlFormat = 'canonical' | 'short' | 'social' | 'tracking';
+export type ImageType = 'destination' | 'trip_cover' | 'user_avatar' | 'template_cover';
+export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+export type PresenceStatus = (typeof ENUMS.PRESENCE_STATUS)[keyof typeof ENUMS.PRESENCE_STATUS];
+export type BudgetCategory = 'accommodation' | 'transportation' | 'food' | 'activities' | 'shopping' | 'other';
+export type InteractionType = 'like' | 'visit' | 'bookmark' | 'tag';
+export type ItemStatus = 'suggested' | 'confirmed' | 'rejected';
+export type ItineraryCategory = 'flight' | 'accommodation' | 'attraction' | 'restaurant' | 'cafe' | 'transportation' | 'activity' | 'custom' | 'other';
+export type ItineraryItemStatus = 'pending' | 'approved' | 'rejected';
+export type PlaceCategory = 'attraction' | 'restaurant' | 'cafe' | 'hotel' | 'landmark' | 'shopping' | 'transport' | 'other';
+export type PrivacySetting = 'private' | 'shared_with_link' | 'public';
+export type TagStatus = 'pending' | 'approved' | 'rejected';
+export type TravelPace = 'very_slow' | 'slow' | 'moderate' | 'fast' | 'very_fast';
+export type TravelPersonalityType = 'planner' | 'adventurer' | 'foodie' | 'sightseer' | 'relaxer' | 'culture';
+export type TravelSquadType = 'friends' | 'family' | 'partner' | 'solo' | 'coworkers' | 'mixed';
+export type TravelStyle = 'adventurous' | 'relaxed' | 'cultural' | 'luxury' | 'budget' | 'family' | 'solo' | 'nightlife' | 'nature' | 'food_focused';
+export type TripActionType = 'TRIP_CREATED' | 'TRIP_UPDATED' | 'ITINERARY_ITEM_ADDED' | 'ITINERARY_ITEM_UPDATED' | 'ITINERARY_ITEM_DELETED' | 'MEMBER_ADDED' | 'MEMBER_REMOVED' | 'MEMBER_ROLE_UPDATED' | 'INVITATION_SENT' | 'ACCESS_REQUEST_SENT' | 'ACCESS_REQUEST_UPDATED' | 'NOTE_CREATED' | 'NOTE_UPDATED' | 'NOTE_DELETED' | 'IMAGE_UPLOADED' | 'TAG_ADDED' | 'TAG_REMOVED' | 'SPLITWISE_GROUP_LINKED' | 'SPLITWISE_GROUP_UNLINKED' | 'SPLITWISE_GROUP_CREATED_AND_LINKED' | 'COMMENT_ADDED' | 'COMMENT_UPDATED' | 'COMMENT_DELETED' | 'VOTE_CAST' | 'FOCUS_INITIATED';
+export type TripPrivacySetting = 'private' | 'shared_with_link' | 'public';
+export type TripStatus = 'planning' | 'upcoming' | 'in_progress' | 'completed' | 'cancelled';
+export type TripType = 'leisure' | 'business' | 'family' | 'solo' | 'group' | 'other';
+export type VoteType = 'up' | 'down';
+
+// Define RequestStatus as a constant object
+export const RequestStatus = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+} as const;
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus];
 
 /**
  * Example usage:
- * 
+ *
  * // Using table names
  * const { data } = await supabase
- *   .from(DB_TABLES.TRIPS)
+ *   .from(TABLES.TRIPS)
  *   .select('*');
- * 
- * // Using column names
+ *
+ * // Using column names with type safety (assuming `userId` is defined)
  * const { data: tripData } = await supabase
- *   .from(DB_TABLES.TRIPS)
+ *   .from(TABLES.TRIPS)
  *   .select(`
- *     ${DB_FIELDS.COMMON.ID},
- *     ${DB_FIELDS.TRIPS.NAME},
- *     ${DB_FIELDS.TRIPS.DESCRIPTION}
+ *     ${FIELDS.TRIPS.ID},
+ *     ${FIELDS.TRIPS.NAME},
+ *     ${FIELDS.TRIPS.DESCRIPTION}
  *   `)
- *   .eq(DB_FIELDS.TRIPS.CREATED_BY, userId);
- * 
+ *   .eq(FIELDS.TRIPS.CREATED_BY, userId); // FIELDS.TRIPS.CREATED_BY resolves to 'created_by'
+ *
  * // Using enums
- * const isAdmin = member.role === DB_ENUMS.TRIP_ROLES.ADMIN;
- * 
+ * const isAdmin = member.role === TripRole.ADMIN; // Use the imported enum/const object
+ *
  * // Using with type safety
- * function updateTripRole(userId: string, tripId: string, role: TripRole) {
+ * function updateTripRole(userId: string, tripId: string, role: TripRole) { // Use the exported type
  *   // Type-safe role parameter
  * }
  */
 
+// For backward compatibility with existing imports
+export const DB_TABLES = TABLES;
+export const DB_FIELDS = FIELDS;
+export const DB_ENUMS = ENUMS;
+export const DB_FUNCTIONS = FUNCTIONS;
+export const DB_POLICIES = POLICIES;

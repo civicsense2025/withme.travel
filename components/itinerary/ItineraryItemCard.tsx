@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { MapPin, Heart, Clock, CalendarDays } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { MapPin, Heart, Clock, CalendarDays } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { DisplayItineraryItem } from '@/types/itinerary';
 
 export interface ItineraryItemCardProps {
   item: DisplayItineraryItem;
   className?: string;
   dayNumber?: number;
+  [key: string]: any;
 }
 
 export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
@@ -24,20 +25,22 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
   };
 
   const address = item.address || item.location;
-  const scheduleTime = item.start_time ? 
-    (item.end_time ? `${item.start_time} - ${item.end_time}` : item.start_time) 
+  const scheduleTime = item.start_time
+    ? item.end_time
+      ? `${item.start_time} - ${item.end_time}`
+      : item.start_time
     : null;
 
   // Generate a gradient based on day number or random if not provided
-  const gradientClass = dayNumber 
+  const gradientClass = dayNumber
     ? `bg-gradient-to-r from-travel-purple/10 to-travel-pink/5`
     : `bg-gradient-to-r from-travel-blue/5 via-white to-travel-mint/10`;
 
   return (
-    <div 
+    <div
       className={cn(
-        "rounded-xl relative group transition-shadow duration-200 ease-in-out overflow-hidden",
-        "border border-border/20 dark:border-border/10 hover:shadow-md dark:hover:border-border/30",
+        'rounded-xl relative group transition-shadow duration-200 ease-in-out overflow-hidden',
+        'border border-border/20 dark:border-border/10 hover:shadow-md dark:hover:border-border/30',
         gradientClass,
         className
       )}
@@ -60,34 +63,36 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
           {/* Main content */}
           <div className="flex-grow min-w-0">
             <h3 className="font-semibold text-sm truncate" title={item.title ?? 'Untitled'}>
-              {item.title || "Untitled Item"}
+              {item.title || 'Untitled Item'}
             </h3>
-            
-            {scheduleTime && (
-              <p className="text-xs text-muted-foreground">
-                {scheduleTime}
-              </p>
-            )}
-            
+
+            {scheduleTime && <p className="text-xs text-muted-foreground">{scheduleTime}</p>}
+
             {address && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1" title={address}>
+              <p
+                className="text-xs text-muted-foreground flex items-center gap-1 mt-1"
+                title={address}
+              >
                 <MapPin className="w-3 h-3 flex-shrink-0 opacity-70" />
                 <span className="truncate">{address}</span>
               </p>
             )}
           </div>
 
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleLikeClick}
             className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8 flex-shrink-0"
-            title={isLiked ? "Unlike item" : "Like item"}
+            title={isLiked ? 'Unlike item' : 'Like item'}
           >
-            <Heart 
-              className={cn("w-4 h-4 transition-all", isLiked ? "fill-destructive text-destructive" : "fill-none")}
+            <Heart
+              className={cn(
+                'w-4 h-4 transition-all',
+                isLiked ? 'fill-destructive text-destructive' : 'fill-none'
+              )}
             />
-            <span className="sr-only">{isLiked ? "Unlike" : "Like"} item</span>
+            <span className="sr-only">{isLiked ? 'Unlike' : 'Like'} item</span>
           </Button>
         </div>
       </div>

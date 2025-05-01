@@ -1,78 +1,85 @@
-import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Slider } from '@/components/ui/slider'
-import { useTags } from '@/hooks/use-tags'
-import { useToast } from '@/components/ui/use-toast'
-import { Loader2 } from 'lucide-react'
-import { Tag } from '@/hooks/use-tags'
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { useTags } from '@/hooks/use-tags';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
+import { Tag } from '@/hooks/use-tags';
 
 interface InterestSelectorProps {
-  onComplete: () => void
-  onBack: () => void
-  onSkip: () => void
-  suggestedInterests: Record<string, number>
+  onComplete: () => void;
+  onBack: () => void;
+  onSkip: () => void;
+  suggestedInterests: Record<string, number>;
 }
 
-export function InterestSelector({ onComplete, onBack, onSkip, suggestedInterests }: InterestSelectorProps) {
-  const { toast } = useToast()
-  const { getTags, updateUserInterest, isLoading } = useTags()
-  const [tags, setTags] = useState<Tag[]>([])
-  const [selectedInterests, setSelectedInterests] = useState<Record<string, number>>(suggestedInterests || {})
-  const [isSaving, setIsSaving] = useState(false)
+export function InterestSelector({
+  onComplete,
+  onBack,
+  onSkip,
+  suggestedInterests,
+}: InterestSelectorProps) {
+  const { toast } = useToast();
+  const { getTags, updateUserInterest, isLoading } = useTags();
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<Record<string, number>>(
+    suggestedInterests || {}
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const loadTags = async () => {
-      const fetchedTags = await getTags()
-      setTags(fetchedTags)
-      
+      const fetchedTags = await getTags();
+      setTags(fetchedTags);
+
       // Pre-select interests based on personality type
       if (Object.keys(suggestedInterests).length > 0) {
-        const tagSuggestions: Record<string, number> = {}
-        fetchedTags.forEach(tag => {
+        const tagSuggestions: Record<string, number> = {};
+        fetchedTags.forEach((tag) => {
           if (suggestedInterests[tag.slug]) {
-            tagSuggestions[tag.id] = suggestedInterests[tag.slug]
+            tagSuggestions[tag.id] = suggestedInterests[tag.slug];
           }
-        })
-        setSelectedInterests(prev => ({
+        });
+        setSelectedInterests((prev) => ({
           ...prev,
-          ...tagSuggestions
-        }))
+          ...tagSuggestions,
+        }));
       }
-    }
-    loadTags()
-  }, [getTags, suggestedInterests])
+    };
+    loadTags();
+  }, [getTags, suggestedInterests]);
 
   const handleInterestChange = (tagId: string, value: number[]) => {
-    setSelectedInterests(prev => ({
+    setSelectedInterests((prev) => ({
       ...prev,
       [tagId]: value[0],
-    }))
-  }
+    }));
+  };
 
   const handleComplete = async () => {
     try {
-      setIsSaving(true)
-      const promises = Object.entries(selectedInterests).map(([tagId, strength]) => 
+      setIsSaving(true);
+      const promises = Object.entries(selectedInterests).map(([tagId, strength]) =>
         updateUserInterest(tagId, strength)
-      )
-      await Promise.all(promises)
+      );
+      await Promise.all(promises);
       toast({
         title: 'Success',
         description: 'Your interests have been saved!',
-      })
-      onComplete()
+      });
+      onComplete();
     } catch (error) {
-      console.error('Error saving interests:', error)
+      console.error('Error saving interests:', error);
       toast({
         title: 'Error',
         description: 'Failed to save your interests',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -83,17 +90,17 @@ export function InterestSelector({ onComplete, onBack, onSkip, suggestedInterest
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   // Sort tags by whether they have suggested values
   const sortedTags = [...tags].sort((a, b) => {
-    const aHasSuggestion = suggestedInterests[a.slug] !== undefined
-    const bHasSuggestion = suggestedInterests[b.slug] !== undefined
-    if (aHasSuggestion && !bHasSuggestion) return -1
-    if (!aHasSuggestion && bHasSuggestion) return 1
-    return 0
-  })
+    const aHasSuggestion = suggestedInterests[a.slug] !== undefined;
+    const bHasSuggestion = suggestedInterests[b.slug] !== undefined;
+    if (aHasSuggestion && !bHasSuggestion) return -1;
+    if (!aHasSuggestion && bHasSuggestion) return 1;
+    return 0;
+  });
 
   return (
     <Card className="border-0 shadow-lg">
@@ -105,13 +112,13 @@ export function InterestSelector({ onComplete, onBack, onSkip, suggestedInterest
             We've suggested some interests based on your travel style. Adjust them or add new ones!
           </p>
         </div>
-        
+
         <div className="grid gap-4 sm:grid-cols-2 mb-6">
           {sortedTags.map((tag) => {
-            const isSuggested = suggestedInterests[tag.slug] !== undefined
+            const isSuggested = suggestedInterests[tag.slug] !== undefined;
             return (
-              <Card 
-                key={tag.id} 
+              <Card
+                key={tag.id}
                 className={`p-4 space-y-4 group hover:shadow-md transition-shadow ${
                   isSuggested ? 'border-primary/20' : ''
                 }`}
@@ -119,7 +126,11 @@ export function InterestSelector({ onComplete, onBack, onSkip, suggestedInterest
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium flex items-center gap-2">
-                      {tag.emoji && <span className="group-hover:scale-110 transition-transform">{tag.emoji}</span>}
+                      {tag.emoji && (
+                        <span className="group-hover:scale-110 transition-transform">
+                          {tag.emoji}
+                        </span>
+                      )}
                       {tag.name}
                       {isSuggested && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
@@ -131,9 +142,7 @@ export function InterestSelector({ onComplete, onBack, onSkip, suggestedInterest
                       <p className="text-xs text-muted-foreground mt-1">{tag.description}</p>
                     )}
                   </div>
-                  <span className="text-sm font-medium">
-                    {selectedInterests[tag.id] || 0}%
-                  </span>
+                  <span className="text-sm font-medium">{selectedInterests[tag.id] || 0}%</span>
                 </div>
                 <Slider
                   defaultValue={[selectedInterests[tag.id] || 0]}
@@ -144,17 +153,13 @@ export function InterestSelector({ onComplete, onBack, onSkip, suggestedInterest
                   className="w-full"
                 />
               </Card>
-            )
+            );
           })}
         </div>
 
         <div className="flex flex-col gap-3">
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onBack}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={onBack} className="flex-1">
               back
             </Button>
             <Button
@@ -166,15 +171,11 @@ export function InterestSelector({ onComplete, onBack, onSkip, suggestedInterest
               {isSaving ? 'Saving...' : 'continue'}
             </Button>
           </div>
-          <Button
-            variant="ghost"
-            onClick={onSkip}
-            className="text-muted-foreground"
-          >
+          <Button variant="ghost" onClick={onSkip} className="text-muted-foreground">
             skip for now
           </Button>
         </div>
       </CardContent>
     </Card>
-  )
-} 
+  );
+}

@@ -1,164 +1,168 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Save, Loader2, User, Tag, X } from "lucide-react"
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Save, Loader2, User, Tag, X } from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/hooks/use-auth"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CursorSettings } from '@/components/presence/cursor-settings'
-import { PageHeader } from '@/components/page-header'
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CursorSettings } from '@/components/presence/cursor-settings';
+import { PageHeader } from '@/components/page-header';
 
 export default function SettingsPage() {
-  const { user, isLoading: isAuthLoading } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const [isSaving, setIsSaving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: "",
-    bio: "",
-    location: "",
-    avatar_url: "",
-  })
+    name: '',
+    bio: '',
+    location: '',
+    avatar_url: '',
+  });
 
-  const [interests, setInterests] = useState<string[]>([])
-  const [newInterest, setNewInterest] = useState("")
+  const [interests, setInterests] = useState<string[]>([]);
+  const [newInterest, setNewInterest] = useState('');
 
-  const [isLoadingUserData, setIsLoadingUserData] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Redirect if not logged in
   useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push("/login?redirect=/settings")
+      router.push('/login?redirect=/settings');
     }
-  }, [user, isAuthLoading, router])
+  }, [user, isAuthLoading, router]);
 
   // Fetch user data
   useEffect(() => {
     if (user) {
       const fetchUserData = async () => {
         try {
-          setIsLoadingUserData(true)
-          setError(null)
+          setIsLoadingUserData(true);
+          setError(null);
 
-          const response = await fetch("/api/user/profile")
+          const response = await fetch('/api/user/profile');
 
           if (!response.ok) {
-            throw new Error("Failed to fetch user data")
+            throw new Error('Failed to fetch user data');
           }
 
-          const data = await response.json()
+          const data = await response.json();
 
           setProfileData({
-            name: data.name || "",
-            bio: data.bio || "",
-            location: data.location || "",
-            avatar_url: data.avatar_url || "",
-          })
+            name: data.name || '',
+            bio: data.bio || '',
+            location: data.location || '',
+            avatar_url: data.avatar_url || '',
+          });
 
           // Handle interests as an array
-          setInterests(Array.isArray(data.interests) ? data.interests : [])
+          setInterests(Array.isArray(data.interests) ? data.interests : []);
         } catch (err: any) {
-          console.error("Error fetching user data:", err)
-          setError(err.message || "Failed to load user data")
+          console.error('Error fetching user data:', err);
+          setError(err.message || 'Failed to load user data');
           toast({
-            title: "Error",
-            description: "Failed to load your profile data",
-            variant: "destructive",
-          })
+            title: 'Error',
+            description: 'Failed to load your profile data',
+            variant: 'destructive',
+          });
         } finally {
-          setIsLoadingUserData(false)
+          setIsLoadingUserData(false);
         }
-      }
+      };
 
-      fetchUserData()
+      fetchUserData();
     }
-  }, [user, toast])
+  }, [user, toast]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setProfileData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setProfileData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleAddInterest = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newInterest.trim()) return
+    e.preventDefault();
+    if (!newInterest.trim()) return;
 
     if (!interests.includes(newInterest.trim())) {
-      setInterests([...interests, newInterest.trim()])
+      setInterests([...interests, newInterest.trim()]);
     }
 
-    setNewInterest("")
-  }
+    setNewInterest('');
+  };
 
   const handleRemoveInterest = (interest: string) => {
-    setInterests(interests.filter((i) => i !== interest))
-  }
+    setInterests(interests.filter((i) => i !== interest));
+  };
 
   const handleSaveProfile = async () => {
     try {
-      setIsSaving(true)
+      setIsSaving(true);
 
-      const response = await fetch("/api/user/profile", {
-        method: "PUT",
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...profileData,
           interests,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile")
+        throw new Error('Failed to update profile');
       }
 
       toast({
-        title: "profile updated",
-        description: "your profile has been updated successfully",
-      })
+        title: 'profile updated',
+        description: 'your profile has been updated successfully',
+      });
     } catch (err: any) {
-      console.error("Error updating profile:", err)
+      console.error('Error updating profile:', err);
       toast({
-        title: "Error",
-        description: err.message || "Failed to update profile",
-        variant: "destructive",
-      })
+        title: 'Error',
+        description: err.message || 'Failed to update profile',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Don't render anything while checking auth
   if (isAuthLoading) {
-    return null
+    return null;
   }
 
   // Handle case where user is definitely not logged in after loading check
   if (!user) {
-    return <p>Please log in to view settings.</p>
+    return <p>Please log in to view settings.</p>;
   }
 
   return (
     <div className="container max-w-screen-md py-6">
-      <PageHeader
-        heading="Settings"
-        description="Manage your account settings and preferences"
-      />
+      <PageHeader heading="Settings" description="Manage your account settings and preferences" />
 
       <Tabs defaultValue="profile" className="mt-6">
         <TabsList className="mb-4">
@@ -171,7 +175,9 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="lowercase">your profile</CardTitle>
-              <CardDescription className="lowercase">update your personal information</CardDescription>
+              <CardDescription className="lowercase">
+                update your personal information
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {isLoadingUserData ? (
@@ -186,7 +192,7 @@ export default function SettingsPage() {
                 <>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
-                      <AvatarImage src={profileData.avatar_url || ""} alt={profileData.name} />
+                      <AvatarImage src={profileData.avatar_url || ''} alt={profileData.name} />
                       <AvatarFallback>
                         <User className="h-8 w-8 text-muted-foreground" />
                       </AvatarFallback>
@@ -240,14 +246,24 @@ export default function SettingsPage() {
                       onChange={handleProfileChange}
                       placeholder="https://example.com/avatar.jpg"
                     />
-                    <p className="text-xs text-muted-foreground">enter a URL to an image for your profile picture</p>
+                    <p className="text-xs text-muted-foreground">
+                      enter a URL to an image for your profile picture
+                    </p>
                   </div>
                 </>
               )}
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveProfile} disabled={isLoadingUserData || isSaving} className="gap-2 lowercase">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <Button
+                onClick={handleSaveProfile}
+                disabled={isLoadingUserData || isSaving}
+                className="gap-2 lowercase"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
                 save changes
               </Button>
             </CardFooter>
@@ -257,7 +273,7 @@ export default function SettingsPage() {
         <TabsContent value="collaboration">
           <div className="space-y-6">
             <CursorSettings />
-            
+
             {/* Other collaboration settings can go here */}
           </div>
         </TabsContent>
@@ -267,18 +283,14 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Notifications</CardTitle>
-              <CardDescription>
-                Configure how you would like to be notified
-              </CardDescription>
+              <CardDescription>Configure how you would like to be notified</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Notification settings coming soon...
-              </p>
+              <p className="text-sm text-muted-foreground">Notification settings coming soon...</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

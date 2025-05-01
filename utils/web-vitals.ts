@@ -56,9 +56,9 @@ export function getPerformanceRating(
   value: number
 ): 'good' | 'needs-improvement' | 'poor' {
   const thresholds = PERFORMANCE_THRESHOLDS[name as keyof typeof PERFORMANCE_THRESHOLDS];
-  
+
   if (!thresholds) return 'needs-improvement';
-  
+
   if (value <= thresholds.GOOD) return 'good';
   if (value > thresholds.POOR) return 'poor';
   return 'needs-improvement';
@@ -74,12 +74,12 @@ export function getConnectionInfo(): {
   if (typeof navigator === 'undefined' || !('connection' in navigator)) {
     return null;
   }
-  
+
   // TypeScript doesn't know about the Navigator connection property
   const connection = (navigator as any).connection;
-  
+
   if (!connection) return null;
-  
+
   return {
     effectiveType: connection.effectiveType || 'unknown',
     saveData: !!connection.saveData,
@@ -91,7 +91,7 @@ export function getConnectionInfo(): {
 // Collect browser and device information
 export function getDeviceInfo() {
   if (typeof window === 'undefined') return null;
-  
+
   return {
     userAgent: navigator.userAgent,
     viewport: {
@@ -122,13 +122,13 @@ export function trackWebVitals({
     console.log(`[Web Vitals] ${name}: ${value}`);
     return;
   }
-  
+
   try {
     const rating = getPerformanceRating(name, value);
     const page = getCurrentPage();
     const connectionInfo = getConnectionInfo();
     const deviceInfo = getDeviceInfo();
-    
+
     // Only send metrics to analytics for production
     if (process.env.NODE_ENV === 'production') {
       // Send metrics to your analytics endpoint
@@ -155,25 +155,20 @@ export function trackWebVitals({
         console.error('Failed to send Web Vitals:', error);
       });
     }
-    
+
     // Additionally, report poor metrics for monitoring
     if (rating === 'poor') {
-      logError(
-        `Poor ${name} detected: ${value}`,
-        ErrorCategory.UNKNOWN,
-        'web-vitals',
-        {
-          metric: {
-            id,
-            name,
-            value,
-            rating,
-            page,
-          },
-          connection: connectionInfo,
-          device: deviceInfo,
-        }
-      );
+      logError(`Poor ${name} detected: ${value}`, ErrorCategory.UNKNOWN, 'web-vitals', {
+        metric: {
+          id,
+          name,
+          value,
+          rating,
+          page,
+        },
+        connection: connectionInfo,
+        device: deviceInfo,
+      });
     }
   } catch (error) {
     console.error('Error tracking web vitals:', error);
@@ -186,7 +181,7 @@ export function trackWebVitals({
  */
 export function initPerformanceMonitoring(): void {
   if (typeof window === 'undefined') return;
-  
+
   try {
     // Using dynamic import to avoid requiring the package server-side
     // We don't need type checking for this dynamic import
@@ -194,32 +189,32 @@ export function initPerformanceMonitoring(): void {
       try {
         // @ts-ignore - web-vitals may not be installed yet
         const webVitals = await import('web-vitals');
-        
+
         webVitals.onCLS((metric: WebVitalsMetric) => {
           console.log('CLS:', metric.value);
           trackCustomMetric('CLS', metric.value);
         });
-        
+
         webVitals.onFID((metric: WebVitalsMetric) => {
           console.log('FID:', metric.value);
           trackCustomMetric('FID', metric.value);
         });
-        
+
         webVitals.onLCP((metric: WebVitalsMetric) => {
           console.log('LCP:', metric.value);
           trackCustomMetric('LCP', metric.value);
         });
-        
+
         webVitals.onTTFB((metric: WebVitalsMetric) => {
           console.log('TTFB:', metric.value);
           trackCustomMetric('TTFB', metric.value);
         });
-        
+
         webVitals.onFCP((metric: WebVitalsMetric) => {
           console.log('FCP:', metric.value);
           trackCustomMetric('FCP', metric.value);
         });
-        
+
         webVitals.onINP((metric: WebVitalsMetric) => {
           console.log('INP:', metric.value);
           trackCustomMetric('INP', metric.value);
@@ -228,7 +223,7 @@ export function initPerformanceMonitoring(): void {
         console.warn('Web Vitals library not available:', error);
       }
     };
-    
+
     importWebVitals();
   } catch (error) {
     console.error('Failed to initialize performance monitoring:', error);
@@ -240,18 +235,18 @@ export function initPerformanceMonitoring(): void {
  */
 export function trackCustomMetric(name: string, value: number): void {
   if (typeof window === 'undefined') return;
-  
+
   try {
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Custom Metric] ${name}: ${value}`);
     }
-    
+
     // Add to browser's performance entries if available
     if ('performance' in window && 'mark' in window.performance) {
       performance.mark(`${name}:${value}`);
     }
-    
+
     // In production, send to analytics
     if (process.env.NODE_ENV === 'production') {
       fetch('/api/analytics/custom-metric', {
@@ -273,4 +268,4 @@ export function trackCustomMetric(name: string, value: number): void {
   } catch (error) {
     console.error('Error tracking custom metric:', error);
   }
-} 
+}

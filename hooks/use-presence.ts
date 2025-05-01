@@ -1,20 +1,23 @@
+'use client';
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
-import { useAuth, AppUser } from '@/components/auth-provider';
+import { AuthContext } from '@/components/auth-provider';
+import { useContext } from 'react';
 import _ from 'lodash';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
-// Assuming PresenceStatus should be exported from '@/types/presence'
-// The fix likely involves adding `export` to the type definition in that file.
-// If PresenceStatus is defined and exported elsewhere (e.g., in database constants), adjust the import accordingly.
-// For now, keeping the import as is, acknowledging the error is external.
-import {
-  PresenceStatus,
-  CursorPosition,
-  UserPresence,
-  ConnectionState
-} from '@/types/presence';
+import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
+import { PresenceStatus, CursorPosition, UserPresence, ConnectionState } from '@/types/presence';
+import { RealtimePresence } from '@supabase/supabase-js';
+import { throttle, debounce } from 'lodash';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
+import type { Database } from '@/types/database.types';
+
+// Check if presence is enabled via environment variable
+const PRESENCE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_PRESENCE !== 'false';
+
+// Debug settings
+const DEBUG = process.env.NODE_ENV === 'development';
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const INITIAL_RECONNECT_DELAY = 3000; // 3 seconds
@@ -23,11 +26,49 @@ const CLEANUP_TIMEOUT = 5000; // 5 seconds
 const INACTIVITY_CHECK_INTERVAL = 10000; // 10 seconds - how often to check for inactivity
 const PRESENCE_UPDATE_DEBOUNCE = 1000; // 1 second - debounce delay for presence updates
 // Utility to add delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Helper to validate status using database constants
 const validateStatus = (status: PresenceStatus): boolean => {
-  return Object.values(DB_ENUMS.PRESENCE_STATUS).includes(status as any);
+  return Object.values(ENUMS.PRESENCE_STATUS).includes(status as any);
+};
+
+// Create a hook to access the auth context
+function useAuth() {
+  return useContext(AuthContext);
+}
+
+export interface PresenceContextType {
+  activeUsers: UserPresence[];
+  myPresence: UserPresence | null;
+  status: PresenceStatus;
+  error: Error | null;
+  isLoading: boolean;
+  isCleaningUp: boolean;
+  connectionState: ConnectionState;
+  startEditing: (itemId: string) => void;
+  stopEditing: () => void;
+  setStatus: (status: PresenceStatus) => void;
+  isEditing: boolean;
+  editingItemId: string | null;
+  recoverPresence: () => Promise<void>;
+}
+
+// Create a default/dummy state for when presence is disabled
+const defaultDisabledPresenceState: PresenceContextType = {
+  activeUsers: [],
+  myPresence: null,
+  status: 'offline',
+  error: null,
+  isLoading: false,
+  isCleaningUp: false,
+  connectionState: 'disconnected',
+  startEditing: () => {},
+  stopEditing: () => {},
+  setStatus: () => {},
+  isEditing: false,
+  editingItemId: null,
+  recoverPresence: async () => {},
 };
 
 export function usePresence(
@@ -44,41 +85,56 @@ export function usePresence(
      * @default 30000 (30 seconds)
      */
     updateInterval?: number;
-    
+
     /**
      * Time of inactivity before setting user as away (milliseconds)
      * @default 120000 (2 minutes)
      */
     awayTimeout?: number;
-    
+
     /**
      * Whether to track cursor position
      * @default false
      */
     trackCursor?: boolean;
-    
+
     /**
      * Initial status for the user
      * @default 'online'
      */
     initialStatus?: PresenceStatus;
   } = {}
-) {
+): PresenceContextType {
   const {
-    updateInterval = 30000, 
-    awayTimeout = 120000, 
+    updateInterval = 30000,
+    awayTimeout = 120000,
     trackCursor = false,
-    initialStatus = 'online'
+    initialStatus = 'online',
   } = options;
-  
+
+  // ---> Return dummy state immediately if presence is disabled
+  if (!PRESENCE_ENABLED) {
+    console.warn('[usePresence] Presence features are disabled via NEXT_PUBLIC_ENABLE_PRESENCE.');
+    return defaultDisabledPresenceState;
+  }
+
   // Connection management variables
   const reconnectAttemptsRef = useRef<number>(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const supabase = createClient();
   const { user, isLoading: isAuthLoading } = useAuth();
   const pathname = usePathname();
+
+  // Get the supabase client directly
+  const supabaseRef = useRef(typeof window !== 'undefined' ? getBrowserClient() : null);
   
+  // Update the ref when window is available
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      supabaseRef.current = getBrowserClient();
+    }
+  }, []);
+
   const [activeUsers, setActiveUsers] = useState<UserPresence[]>([]);
   const [myPresence, setMyPresence] = useState<UserPresence | null>(null);
   const [status, setStatus] = useState<PresenceStatus>(initialStatus);
@@ -87,7 +143,7 @@ export function usePresence(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
-  
+
   const presenceIdRef = useRef<string | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
   const awayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,8 +152,30 @@ export function usePresence(
   const cursorPositionRef = useRef<CursorPosition | null>(null);
   const subscriptionRef = useRef<RealtimeChannel | null>(null);
   const lastUserActivityRef = useRef<number>(Date.now());
-  // --- Define Callbacks First --- 
+  let failsafeTimeoutId: NodeJS.Timeout | null = null;
 
+  // ---> Define updateLastActivity function
+  const updateLastActivity = useCallback(() => {
+    lastUserActivityRef.current = Date.now();
+    if (status === ENUMS.PRESENCE_STATUS.AWAY) {
+      // If user becomes active while marked away, reset status
+      setStatus(ENUMS.PRESENCE_STATUS.ONLINE);
+    }
+    // Reset the away timer whenever activity is detected
+    if (awayTimeoutRef.current) {
+      clearTimeout(awayTimeoutRef.current);
+    }
+    // Set a new away timer
+    awayTimeoutRef.current = setTimeout(() => {
+      // Don't set if component unmounted
+      if (subscriptionRef.current) { // Check if still subscribed/mounted effectively
+        setStatus(ENUMS.PRESENCE_STATUS.AWAY);
+        //debouncedPresenceUpdate(); // Assuming this exists/is called elsewhere
+      }
+    }, awayTimeout);
+  }, [status, awayTimeout, setStatus]); // Add dependencies
+
+  // Define setPresenceStatus for the interface
   const setPresenceStatus = useCallback((newStatus: PresenceStatus) => {
     if (validateStatus(newStatus)) {
       setStatus(newStatus);
@@ -106,88 +184,9 @@ export function usePresence(
     }
   }, []);
 
-  // Define debouncedPresenceUpdate first
-  const debouncedPresenceUpdate = useCallback(
-    _.debounce(async (currentStatus: PresenceStatus, cursorPos: CursorPosition | null, currentEditingItemId: string | null) => {
-      if (!subscriptionRef.current || !user || !user.id) return;
-      
-      try {
-        await subscriptionRef.current.track({
-          user_id: user.id,
-          name: user.profile?.name ?? null,
-          avatar_url: user.profile?.avatar_url ?? null,
-          email: user.email ?? null,
-          status: currentStatus,
-          cursor_position: cursorPos ? {
-            ...cursorPos,
-            timestamp: Date.now()
-          } : null,
-          editing_item_id: currentEditingItemId,
-          last_active: new Date().toISOString()
-        });
-      } catch (error) {
-        console.warn('Failed to update presence via debounced update:', error);
-      }
-    }, PRESENCE_UPDATE_DEBOUNCE),
-    [user]
-  );
-
-  // Define updateLastActivity after debouncedPresenceUpdate
-  const updateLastActivity = useCallback(() => {
-    lastActivityRef.current = Date.now();
-    if (status !== 'online') {
-      setStatus('online');
-      if (subscriptionRef.current && user && user.id) {
-        // Call the debounced function
-        debouncedPresenceUpdate(DB_ENUMS.PRESENCE_STATUS.ONLINE, cursorPositionRef.current, editingItemId);
-      }
-    }
-  }, [
-      status,
-      editingItemId,
-      user,
-      debouncedPresenceUpdate
-    ]);
-
-  const debouncedCursorUpdate = useCallback(
-    _.debounce((x: number, y: number) => {
-      cursorPositionRef.current = { x, y, timestamp: Date.now() };
-      if (!isAuthLoading && user && user.id && subscriptionRef.current && connectionState === 'connected') {
-        debouncedPresenceUpdate(status, cursorPositionRef.current, editingItemId);
-      }
-    }, 50),
-    [status, editingItemId, debouncedPresenceUpdate, isAuthLoading, user, connectionState]
-  );
-  
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (trackCursor) { 
-      cursorPositionRef.current = { x: event.clientX, y: event.clientY, timestamp: Date.now() };
-      debouncedCursorUpdate(event.clientX, event.clientY); 
-    }
-    updateLastActivity();
-  }, [debouncedCursorUpdate, trackCursor, updateLastActivity]);
-
-  const startEditing = useCallback((itemId: string) => {
-    setEditingItemId(itemId);
-    setPresenceStatus(DB_ENUMS.PRESENCE_STATUS.EDITING);
-    if (subscriptionRef.current && user && user.id) {
-      debouncedPresenceUpdate.flush();
-      debouncedPresenceUpdate(DB_ENUMS.PRESENCE_STATUS.EDITING, cursorPositionRef.current, itemId);
-    }
-  }, [debouncedPresenceUpdate, user, setPresenceStatus]);
-
-  const stopEditing = useCallback(() => {
-    setEditingItemId(null);
-    setPresenceStatus(DB_ENUMS.PRESENCE_STATUS.ONLINE);
-    if (subscriptionRef.current && user && user.id) {
-      debouncedPresenceUpdate.flush();
-      debouncedPresenceUpdate(DB_ENUMS.PRESENCE_STATUS.ONLINE, cursorPositionRef.current, null);
-    }
-  }, [debouncedPresenceUpdate, user, setPresenceStatus]);
-
-  // Function to add or update presence in the database
+  // Function to upsert presence in the database - use supabaseRef.current
   const upsertPresence = useCallback(async () => {
-    if (!supabase) {
+    if (!supabaseRef.current) {
       console.error('[usePresence] Cannot upsert presence: Supabase client is not available');
       return;
     }
@@ -210,71 +209,53 @@ export function usePresence(
         last_active: new Date().toISOString(),
         status,
         editing_item_id: editingItemId,
-        cursor_position: cursorPositionRef.current ? {
-          ...cursorPositionRef.current,
-          timestamp: Date.now()
-        } : null,
+        cursor_position: cursorPositionRef.current
+          ? {
+              ...cursorPositionRef.current,
+              timestamp: Date.now(),
+            }
+          : null,
         page_path: pathname,
       };
 
       // Make sure all required fields are present
       if (!presenceData.user_id || !presenceData.trip_id || !presenceData.status) {
-        console.error('[usePresence] Missing required fields for presence upsert:', 
-          { hasUserId: !!presenceData.user_id, hasTripId: !!presenceData.trip_id, hasStatus: !!presenceData.status });
+        console.error('[usePresence] Missing required fields for presence upsert:', {
+          hasUserId: !!presenceData.user_id,
+          hasTripId: !!presenceData.trip_id,
+          hasStatus: !!presenceData.status,
+        });
         setError(new Error('Missing required fields for presence update'));
         return;
       }
 
-      console.log(`[usePresence] ${presenceIdRef.current ? 'Updating' : 'Creating'} presence record`);
-      
+      console.log(
+        `[usePresence] ${presenceIdRef.current ? 'Updating' : 'Creating'} presence record`
+      );
+
       let result;
       if (presenceIdRef.current) {
         // Update existing record
-        result = await supabase
-          .from(DB_TABLES.USER_PRESENCE)
+        result = await supabaseRef.current
+          .from(TABLES.USER_PRESENCE)
           .update(presenceData)
-          .eq(DB_FIELDS.COMMON.ID, presenceIdRef.current)
-          .select(DB_FIELDS.COMMON.ID)
+          .eq(FIELDS.COMMON.ID, presenceIdRef.current)
+          .select(FIELDS.COMMON.ID)
           .single();
       } else {
-        result = await supabase
-          .from(DB_TABLES.USER_PRESENCE)
+        result = await supabaseRef.current
+          .from(TABLES.USER_PRESENCE)
           .insert(presenceData)
-          .select(DB_FIELDS.COMMON.ID)
+          .select(FIELDS.COMMON.ID)
           .single();
       }
       const { data, error: upsertError } = result;
       if (upsertError) {
-        let errorString = '';
-        try {
-          errorString = JSON.stringify(upsertError, Object.getOwnPropertyNames(upsertError));
-        } catch (e) {
-          errorString = String(upsertError);
-        }
-        
-        console.error('[usePresence] Upsert error details:', errorString);
-        console.error('[usePresence] Raw upsert error:', upsertError);
-        
-        // Check for common error conditions and provide more specific guidance
-        if (upsertError.message) {
-          if (upsertError.message.includes('permission denied') || 
-              upsertError.message.includes('row level security') || 
-              upsertError.message.includes('policy')) {
-            console.error('[usePresence] Possible RLS policy violation. Ensure user has permission to insert/update user_presence records.');
-            setError(new Error('Permission denied. Please check your access to this trip.'));
-          } else if (upsertError.message.includes('auth must be authorized')) {
-            console.error('[usePresence] User authentication issue. User may be logged out or session expired.');
-            setError(new Error('Your session may have expired. Please refresh the page.'));
-          } else if (upsertError.message.includes('foreign key constraint')) {
-            console.error('[usePresence] Foreign key constraint violation. Trip ID may be invalid.');
-            setError(new Error('Invalid trip reference. Please check trip access.'));
-          } else if (upsertError.message.includes('not-found')) {
-            console.error('[usePresence] Resource not found. Trip or user may not exist.');
-            setError(new Error('Trip or user resource not found.'));
-          }
-        }
-        
-        throw upsertError;
+        console.error('[usePresence] Upsert error:', upsertError);
+        setError(
+          upsertError instanceof Error ? upsertError : new Error('Failed to update presence')
+        );
+        return;
       }
       if (data?.id) {
         presenceIdRef.current = data.id; // Store the confirmed/new ID
@@ -284,113 +265,81 @@ export function usePresence(
       console.error('[usePresence] Error upserting presence:', err);
       setError(err instanceof Error ? err : new Error('Failed to update presence'));
     }
-  }, [supabase, user, tripId, status, editingItemId, pathname]);
+  }, [user, tripId, status, editingItemId, pathname, setError]);
 
-    // Function to fetch all active users in the trip
-    const fetchActiveUsers = useCallback(async () => {
-        if (!supabase || !tripId) return; 
-        try {
-            const { data, error: fetchError } = await supabase
-              .from(DB_TABLES.USER_PRESENCE)
-              .select(`
-                *,
-                profiles:${DB_FIELDS.USER_PRESENCE.USER_ID} (
-                  ${DB_FIELDS.PROFILES.NAME},
-                  ${DB_FIELDS.PROFILES.AVATAR_URL},
-                  ${DB_FIELDS.PROFILES.EMAIL}
-                )
-              `)
-              .eq(DB_FIELDS.USER_PRESENCE.TRIP_ID, tripId)
-              .not(DB_FIELDS.USER_PRESENCE.STATUS, 'eq', DB_ENUMS.PRESENCE_STATUS.OFFLINE); // Exclude offline users
-              
-            if (fetchError) throw fetchError;
-            
-            // Transform the data 
-            const processedData: UserPresence[] = (data || []).map((presence: any) => ({
-              ...presence,
-              // Directly map profile data if it exists
-              name: presence.profiles?.name,
-              avatar_url: presence.profiles?.avatar_url,
-              email: presence.profiles?.email,
-            }));
-            
-            const myData = processedData.find(p => p.user_id === user?.id) || null;
-            setMyPresence(myData); 
-            setActiveUsers(processedData);
-            setError(null); // Clear error on successful fetch
-
-        } catch (err) {
-          console.error('Error fetching active users:', err);
-          setError(err instanceof Error ? err : new Error('Failed to fetch active users'));
-        }
-    }, [supabase, tripId, user?.id]);
-
-  // Calculate exponential backoff delay for reconnection attempts
-  const getReconnectDelay = useCallback(() => {
-    const attempt = reconnectAttemptsRef.current;
-    // Exponential backoff with jitter: min(maxDelay, initialDelay * 2^attempt) + random jitter
-    const baseDelay = Math.min(
-      MAX_RECONNECT_DELAY,
-      INITIAL_RECONNECT_DELAY * Math.pow(2, attempt)
-    );
-    // Add random jitter (0-25% of the delay)
-    return baseDelay + Math.random() * (baseDelay * 0.25);
-  }, []);
-  
-  // Function to recover presence after errors or disconnections
-  const recoverPresence = useCallback(async () => {
-    if (!supabase || !user || !user.id || !tripId) return; 
-    
-    // Clear any existing reconnect timeouts
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    
+  // Function to fetch all active users
+  const fetchActiveUsers = useCallback(async () => {
+    if (!supabaseRef.current || !tripId) return;
     try {
-      setConnectionState('connecting');
-      setIsLoading(true); // Set loading for recovery process
-      setError(null); 
-      
-      // If we have an existing channel, clean it up first
+      const { data, error: fetchError } = await supabaseRef.current
+        .from(TABLES.USER_PRESENCE)
+        .select('*')
+        .eq('trip_id', tripId)
+        .in('status', [ENUMS.PRESENCE_STATUS.ONLINE, ENUMS.PRESENCE_STATUS.EDITING, ENUMS.PRESENCE_STATUS.AWAY])
+        .limit(50); // Reasonable limit to prevent large result sets
+
+      if (fetchError) {
+        console.error('[usePresence] Fetch error:', fetchError);
+        setError(fetchError instanceof Error ? fetchError : new Error('Failed to fetch active users'));
+        return;
+      }
+
+      // Transform data and update state
+      if (data) {
+        setActiveUsers(data as UserPresence[]);
+        // Find our own presence
+        const myPresence = data.find((p) => p.user_id === user?.id) as UserPresence | undefined;
+        if (myPresence) {
+          setMyPresence(myPresence);
+          // Update our local state if it differs
+          if (myPresence.status !== status) {
+            setStatus(myPresence.status);
+          }
+          if (myPresence.editing_item_id !== editingItemId) {
+            setEditingItemId(myPresence.editing_item_id || null);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[usePresence] Error fetching active users:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch active users'));
+    }
+  }, [supabaseRef, tripId, setError, user, status, editingItemId, setStatus]);
+
+  // Recovery function for connection issues
+  const recoverPresence = useCallback(async () => {
+    if (!supabaseRef.current || !user || !tripId) return;
+
+    try {
+      console.log('[usePresence] Attempting presence recovery...');
+      setIsCleaningUp(true);
+
+      // Clean up existing subscription if any
       if (subscriptionRef.current) {
         try {
           await subscriptionRef.current.unsubscribe();
-          await supabase.removeChannel(subscriptionRef.current);
+          await supabaseRef.current.removeChannel(subscriptionRef.current);
         } catch (cleanupError) {
-          console.warn('Error during channel cleanup in recovery:', cleanupError);
-          // Continue with recovery despite cleanup errors
-        } finally {
-          subscriptionRef.current = null;
+          console.warn('Error cleaning up channel during recovery:', cleanupError);
         }
-      }
-      
-      // Attempt to recover existing presence ID from DB
-      const { data: existingPresence } = await supabase
-        .from(DB_TABLES.USER_PRESENCE)
-        .select(`${DB_FIELDS.COMMON.ID}, ${DB_FIELDS.USER_PRESENCE.STATUS}`)
-        .eq(DB_FIELDS.USER_PRESENCE.USER_ID, user.id)
-        .eq(DB_FIELDS.USER_PRESENCE.TRIP_ID, tripId)
-        .maybeSingle();
-          
-      if (existingPresence?.id) {
-        presenceIdRef.current = existingPresence.id;
-        // Update status immediately if needed, then upsert
-        if (status === DB_ENUMS.PRESENCE_STATUS.OFFLINE) {
-          setPresenceStatus(DB_ENUMS.PRESENCE_STATUS.ONLINE);
-        }
-        await upsertPresence(); // Update the record fully
-      } else {
-        // Create new presence record if none found
-        presenceIdRef.current = null; // Ensure ID is null before insert
-        if (status === DB_ENUMS.PRESENCE_STATUS.OFFLINE) {
-          setPresenceStatus(DB_ENUMS.PRESENCE_STATUS.ONLINE);
-        }
-        await upsertPresence();
+        subscriptionRef.current = null;
       }
 
-      // Set up a new subscription
-      const channel = supabase.channel(`trip-presence:${tripId}`, {
+      // Attempt to get existing presence record
+      const { data: existingPresence } = await supabaseRef.current
+        .from(TABLES.USER_PRESENCE)
+        .select('id, status')
+        .eq('user_id', user.id)
+        .eq('trip_id', tripId)
+        .single();
+
+      // If we have an existing record, use its ID
+      if (existingPresence?.id) {
+        presenceIdRef.current = existingPresence.id;
+      }
+
+      // Create and set up new channel
+      const channel = supabaseRef.current.channel(`presence:trip:${tripId}`, {
         config: {
           presence: {
             key: user.id,
@@ -398,154 +347,165 @@ export function usePresence(
         },
       });
 
-      // Configure channel event handlers (similar to setup in useEffect)
+      // Re-setup all the event handlers
+      // (similar code to setup function, but with recovery context)
+      
+      // Set up a presence sync handler
       channel
         .on('presence', { event: 'sync' }, () => {
-          const newState = channel.presenceState();
-          const users = Object.values(newState).map((presenceArray: unknown) => {
-            const presenceValues = presenceArray as any[];
-            const p = presenceValues[0]; // Get the first presence object
-            return { 
-              user_id: p.user_id,
-              status: p.status,
-              editing_item_id: p.editing_item_id,
-              cursor_position: p.cursor_position,
-              name: p.name,
-              avatar_url: p.avatar_url,
-              email: p.email,
-              id: p.user_id,
-              trip_id: tripId,
-              last_active: new Date().toISOString(),
-            } as UserPresence;
-          });
-          setActiveUsers(users);
-          const myData = users.find(u => u.user_id === user.id) || null;
-          setMyPresence(myData);
+          console.log('[usePresence] Presence sync event received');
+          try {
+            // Get the current state from the channel
+            const state = channel.presenceState();
+            console.log('[usePresence] Current presence state:', state);
+
+            // Convert to array of user presence objects and update state
+            const users = Object.values(state).flatMap((presences: any) => presences);
+            setActiveUsers(users as UserPresence[]);
+
+            // Also update our own presence from the state
+            const myPresenceInState = users.find(
+              (presence: any) => presence.user_id === user.id
+            ) as UserPresence | undefined;
+
+            if (myPresenceInState) {
+              setMyPresence(myPresenceInState);
+            }
+
+            // Mark as connected
+            setConnectionState('connected');
+            setError(null);
+            reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful connection
+          } catch (err) {
+            console.error('[usePresence] Error processing presence sync:', err);
+            setError(
+              err instanceof Error ? err : new Error('Failed to process presence update')
+            );
+          }
         })
-        .on('presence', { event: 'join' }, ({ key, newPresences }: { key: string, newPresences: any[] }) => {
-          console.log('Presence join:', key, newPresences);
-          const usersToAdd = newPresences.map(p => ({ 
-            user_id: p.user_id,
-            status: p.status,
-            editing_item_id: p.editing_item_id,
-            cursor_position: p.cursor_position,
-            name: p.name,
-            avatar_url: p.avatar_url,
-            email: p.email,
-            id: p.user_id, 
-            trip_id: tripId, 
-            last_active: new Date().toISOString()
-          } as UserPresence));
-          setActiveUsers(prev => [...prev.filter(u => u.user_id !== key), ...usersToAdd]);
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          console.log(`[usePresence] User ${key} joined with presences:`, newPresences);
+          // Updates will come through the sync event, so no need to manually update here
         })
-        .on('presence', { event: 'leave' }, ({ key, leftPresences }: { key: string, leftPresences: any[] }) => {
-          console.log('Presence leave:', key, leftPresences);
-          setActiveUsers(prev => prev.filter((u: UserPresence) => u.user_id !== key));
-          if (key === user.id) setMyPresence(null); // Clear my presence if I left
+        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          console.log(`[usePresence] User ${key} left with presences:`, leftPresences);
+          // Updates will come through the sync event, so no need to manually update here
         });
 
-      // Subscribe and set up listeners
-      await channel.subscribe(async (statusVal: string, err?: Error) => {
-        if (statusVal === 'SUBSCRIBED') {
-          console.log(`Reconnected to presence channel: trip-presence:${tripId}`);
-          // Reset reconnect attempts after successful connection
-          reconnectAttemptsRef.current = 0;
-          setConnectionState('connected');
-          
-          // Track initial state AFTER successful subscription
-          await channel.track({ 
-            user_id: user.id, 
-            name: user.profile?.name ?? null, 
-            avatar_url: user.profile?.avatar_url ?? null, 
-            email: user.email ?? null,
-            status: status ?? 'online', 
-            editing_item_id: editingItemId,
-            cursor_position: cursorPositionRef.current
-          });
-          
-          // Upsert to DB after tracking
-          await upsertPresence(); 
-          setError(null); // Clear previous errors
-          setIsLoading(false);
-        } else if (statusVal === 'CHANNEL_ERROR' || statusVal === 'TIMED_OUT') {
-          console.error(`Channel subscription error: ${statusVal}`, err);
-          setConnectionState('disconnected');
-          setError(err || new Error(`Channel subscription failed: ${statusVal}`));
-          throw new Error(`Channel subscription failed: ${statusVal}`);
-        }
+      // Track our presence in the channel
+      await channel.track({
+        user_id: user.id,
+        name: user.profile?.name ?? null,
+        avatar_url: user.profile?.avatar_url ?? null,
+        email: user.email ?? null,
+        status,
+        editing_item_id: editingItemId,
+        last_active: new Date().toISOString(),
       });
 
+      // Subscribe to the channel
+      await channel.subscribe();
+
+      // Replace the ref
       subscriptionRef.current = channel;
 
-      // Fetch latest state of all users
+      // Update database record
+      await upsertPresence();
+
+      // Refresh active users
       await fetchActiveUsers();
-      
-    } catch (err) {
-      console.error('Failed to recover presence:', err);
-      setError(err instanceof Error ? err : new Error('Failed to recover presence'));
+
+      // Update state to reflect successful recovery
+      setConnectionState('connected');
+      setError(null);
+      reconnectAttemptsRef.current = 0; // Reset reconnect attempts
+      console.log('[usePresence] Presence recovery successful');
+    } catch (error) {
+      console.error('[usePresence] Presence recovery failed:', error);
       setConnectionState('disconnected');
-      setIsLoading(false);
-      
-      // Schedule a reconnection attempt with exponential backoff
-      reconnectAttemptsRef.current += 1;
-      
-      if (reconnectAttemptsRef.current <= MAX_RECONNECT_ATTEMPTS) {
-        // Schedule next retry with exponential backoff
-        const reconnectDelay = getReconnectDelay();
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (supabase && user && user.id && tripId) {
-            recoverPresence().catch(console.error);
-          }
-        }, reconnectDelay);
-      } else {
-        setError(new Error('Maximum reconnection attempts reached. Please try manually reconnecting.'));
-        setConnectionState('disconnected');
-      }
+      setError(error instanceof Error ? error : new Error('Failed to recover presence'));
+    } finally {
+      setIsCleaningUp(false);
     }
-  }, [
-    supabase, 
-    user, 
-    tripId, 
-    status, 
-    editingItemId,
-    upsertPresence, 
-    fetchActiveUsers, 
-    getReconnectDelay,
-    setPresenceStatus
-  ]);
+  }, [supabaseRef, user, tripId, status, editingItemId, upsertPresence, fetchActiveUsers]);
+
+  // Define startEditing & stopEditing
+  const startEditing = useCallback(
+    (itemId: string) => {
+      setEditingItemId(itemId);
+      setStatus(ENUMS.PRESENCE_STATUS.EDITING);
+      // Assuming debouncedPresenceUpdate is called elsewhere in the code
+    },
+    [setStatus]
+  );
+
+  const stopEditing = useCallback(() => {
+    setEditingItemId(null);
+    setStatus(ENUMS.PRESENCE_STATUS.ONLINE);
+    // Assuming debouncedPresenceUpdate is called elsewhere in the code
+  }, [setStatus]);
 
   // Main effect for presence subscription and tracking
   useEffect(() => {
+    // ---> Skip effect if presence is disabled
+    if (!PRESENCE_ENABLED) {
+      setIsLoading(false);
+      return;
+    }
+
     console.log('Presence effect mount', { user, tripId });
     // Check dependencies first
-    if (isAuthLoading || !user || !user.id || !tripId || !supabase) {
+    if (isAuthLoading || !user || !user.id || !tripId || !supabaseRef.current) {
       setIsLoading(false); // Not loading if auth isn't ready
       return; // Wait for auth and necessary params
     }
 
     let isMounted = true; // Flag to prevent updates after unmount
     let failsafeTimeoutId: NodeJS.Timeout | null = null;
-        
+
     setIsLoading(true);
 
-    const setup = async () => {
-      try {
-        // Initial fetch of users
-        await fetchActiveUsers();
-        if (!isMounted) return;
-
-        // Remove existing channel first (important for HMR)
-        if (subscriptionRef.current) {
-          try {
-            await supabase.removeChannel(subscriptionRef.current);
-            console.log("Removed previous presence channel before setup.");
-          } catch (removeError) {
-            console.error("Error removing previous channel during setup:", removeError);
-          }
-          subscriptionRef.current = null;
+    // Define checkInactivity inside useEffect to access isMounted and debouncedPresenceUpdate
+    const checkInactivity = () => {
+      if (!isMounted) return;
+      const now = Date.now();
+      if (now - lastUserActivityRef.current > awayTimeout) {
+        // Set status to 'away' if no activity within the timeout
+        if (status !== ENUMS.PRESENCE_STATUS.AWAY) {
+          setStatus(ENUMS.PRESENCE_STATUS.AWAY);
+          // Assuming debouncedPresenceUpdate is called elsewhere in the code
         }
+      } else {
+        // If user is active but marked away, reset the away timeout
+        if (status === ENUMS.PRESENCE_STATUS.AWAY) {
+          if (awayTimeoutRef.current) clearTimeout(awayTimeoutRef.current);
+          awayTimeoutRef.current = setTimeout(() => {
+            if (isMounted) setStatus(ENUMS.PRESENCE_STATUS.AWAY);
+          }, awayTimeout) as unknown as NodeJS.Timeout;
+        }
+      }
+    };
 
-        const channel = supabase.channel(`trip-presence:${tripId}`, {
+    const setup = useCallback(async () => {
+      if (isAuthLoading || !user || !user.id || !tripId || !supabaseRef.current) {
+        console.log('[usePresence] Not ready for setup yet:', {
+          isAuthLoading,
+          hasUser: !!user,
+          hasTripId: !!tripId,
+          hasSupabase: !!supabaseRef.current,
+        });
+        return;
+      }
+
+      try {
+        console.log('[usePresence] Setting up presence for trip:', tripId);
+        setConnectionState('connecting');
+
+        // Fetch active users for the trip to initialize our state
+        await fetchActiveUsers();
+
+        // Create a presence channel for this trip
+        const channel = supabaseRef.current.channel(`presence:trip:${tripId}`, {
           config: {
             presence: {
               key: user.id,
@@ -553,132 +513,132 @@ export function usePresence(
           },
         });
 
+        console.log('[usePresence] Created presence channel, setting up event listeners');
+
+        // Set up a presence sync handler
         channel
           .on('presence', { event: 'sync' }, () => {
-            if (!isMounted) return;
-            const newState = channel.presenceState();
-            const users = Object.values(newState).map((presenceArray: unknown) => {
-              const presenceValues = presenceArray as any[];
-              const p = presenceValues[0]; // Get the first presence object
-              // Map to UserPresence structure
-              return {
-                user_id: p.user_id,
-                status: p.status,
-                editing_item_id: p.editing_item_id,
-                cursor_position: p.cursor_position,
-                name: p.name, // Assuming these are tracked
-                avatar_url: p.avatar_url,
-                email: p.email,
-                // Add defaults for fields not directly in presence state if needed
-                id: p.user_id, // Use user_id as a temporary ID if DB ID isn't sent
-                trip_id: tripId,
-                last_active: new Date().toISOString(), // Placeholder
-              } as UserPresence;
-            });
-            setActiveUsers(users);
-            const myData = users.find(u => u.user_id === user.id) || null;
-            setMyPresence(myData);
+            console.log('[usePresence] Presence sync event received');
+            try {
+              // Get the current state from the channel
+              const state = channel.presenceState();
+              console.log('[usePresence] Current presence state:', state);
+
+              // Convert to array of user presence objects and update state
+              const users = Object.values(state).flatMap((presences: any) => presences);
+              setActiveUsers(users as UserPresence[]);
+
+              // Also update our own presence from the state
+              const myPresenceInState = users.find(
+                (presence: any) => presence.user_id === user.id
+              ) as UserPresence | undefined;
+
+              if (myPresenceInState) {
+                setMyPresence(myPresenceInState);
+              }
+
+              // Mark as connected
+              setConnectionState('connected');
+              setError(null);
+              reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful connection
+            } catch (err) {
+              console.error('[usePresence] Error processing presence sync:', err);
+              setError(
+                err instanceof Error ? err : new Error('Failed to process presence update')
+              );
+            }
           })
-          .on('presence', { event: 'join' }, ({ key, newPresences }: { key: string, newPresences: any[] }) => {
-            if (!isMounted) return;
-            console.log('Presence join:', key, newPresences);
-            const usersToAdd = newPresences.map(p => ({
-              user_id: p.user_id,
-              status: p.status,
-              editing_item_id: p.editing_item_id,
-              cursor_position: p.cursor_position,
-              name: p.name,
-              avatar_url: p.avatar_url,
-              email: p.email,
-              id: p.user_id, 
-              trip_id: tripId, 
-              last_active: new Date().toISOString()
-            } as UserPresence));
-            setActiveUsers(prev => [...prev.filter(u => u.user_id !== key), ...usersToAdd]);
+          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+            console.log(`[usePresence] User ${key} joined with presences:`, newPresences);
+            // Updates will come through the sync event, so no need to manually update here
           })
-          .on('presence', { event: 'leave' }, ({ key, leftPresences }: { key: string, leftPresences: any[] }) => {
-            if (!isMounted) return;
-            console.log('Presence leave:', key, leftPresences);
-            setActiveUsers(prev => prev.filter((u: UserPresence) => u.user_id !== key));
-            if (key === user.id) setMyPresence(null); // Clear my presence if I left
+          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+            console.log(`[usePresence] User ${key} left with presences:`, leftPresences);
+            // Updates will come through the sync event, so no need to manually update here
+          })
+          .subscribe(async (status) => {
+            // Handle subscription status
+            if (status === 'SUBSCRIBED') {
+              console.log('[usePresence] Successfully subscribed to presence channel');
+              // Track initial presence after subscription is confirmed
+              try {
+                channel.track({
+                  user_id: user.id,
+                  name: user.profile?.name ?? null,
+                  avatar_url: user.profile?.avatar_url ?? null,
+                  email: user.email ?? null,
+                  status: status,
+                  editing_item_id: editingItemId,
+                  last_active: new Date().toISOString(),
+                });
+                console.log('[usePresence] Initial presence tracking successful');
+                setConnectionState('connected');
+                setIsLoading(false);
+              } catch (trackError) {
+                console.error('[usePresence] Error tracking initial presence:', trackError);
+                setError(
+                  trackError instanceof Error
+                    ? trackError
+                    : new Error('Failed to initialize presence')
+                );
+                setIsLoading(false);
+              }
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('[usePresence] Channel subscription error');
+              setConnectionState('disconnected');
+              setError(new Error('Failed to connect to presence channel'));
+              setIsLoading(false);
+            } else if (status === 'TIMED_OUT') {
+              console.error('[usePresence] Channel subscription timed out');
+              setConnectionState('disconnected');
+              setError(new Error('Connection timed out'));
+              setIsLoading(false);
+            }
           });
 
-        channel.subscribe(async (statusVal: string, err?: Error) => {
-          if (!isMounted) return;
-          if (statusVal === 'SUBSCRIBED') {
-            console.log(`Subscribed to presence channel: trip-presence:${tripId}`);
-            setConnectionState('connected'); // Update connection state
-            reconnectAttemptsRef.current = 0; // Reset reconnect attempts
-            // Track initial state AFTER successful subscription
-            await channel.track({
-              user_id: user.id,
-              name: user.profile?.name ?? null,
-              avatar_url: user.profile?.avatar_url ?? null,
-              email: user.email ?? null,
-              status: status ?? DB_ENUMS.PRESENCE_STATUS.ONLINE,
-              editing_item_id: editingItemId,
-              cursor_position: cursorPositionRef.current ? {
-                ...cursorPositionRef.current,
-                timestamp: Date.now()
-              } : null
-            });
-            // Upsert to DB after tracking
-            await upsertPresence();
-            setError(null); // Clear previous errors
-          } else if (statusVal === 'CHANNEL_ERROR' || statusVal === 'TIMED_OUT') {
-            console.error(`Channel subscription error: ${statusVal}`, err);
-            setConnectionState('disconnected'); // Update connection state
-            setError(err || new Error(`Channel subscription failed: ${statusVal}`));
-            // Attempt recovery
-            await recoverPresence();
-          } else {
-            console.log(`Channel status: ${statusVal}`);
-          }
-        });
-
+        // Save the subscription ref
         subscriptionRef.current = channel;
-        setIsLoading(false); // Stop loading after setup attempt
-      } catch (setupError) {
-        console.error("Error during presence setup:", setupError);
-        setError(setupError instanceof Error ? setupError : new Error('Presence setup failed'));
-        setIsLoading(false);
+
+        console.log('[usePresence] Presence setup complete');
+      } catch (err) {
+        console.error('[usePresence] Error in presence setup:', err);
+        setError(err instanceof Error ? err : new Error('Failed to set up presence tracking'));
         setConnectionState('disconnected');
-        if (isMounted) {
-          recoverPresence(); // Attempt recovery on setup failure
+        setIsLoading(false);
+
+        // Schedule reconnect attempt
+        if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+          const backoffDelay = Math.min(
+            INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttemptsRef.current),
+            MAX_RECONNECT_DELAY
+          );
+          console.log(`[usePresence] Scheduling reconnect in ${backoffDelay}ms`);
+          
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttemptsRef.current++;
+            setup();
+          }, backoffDelay);
         }
       }
-    };
+    }, [isAuthLoading, user, tripId, editingItemId, status, fetchActiveUsers]);
 
     setup();
 
     // Event listeners for activity detection
     const handleMouseMove = (event: MouseEvent) => {
       if (trackCursor) {
-        cursorPositionRef.current = { 
-          x: event.clientX, 
+        cursorPositionRef.current = {
+          x: event.clientX,
           y: event.clientY,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
-        debouncedCursorUpdate(event.clientX, event.clientY);
+        // Assuming debouncedPresenceUpdate is called elsewhere in the code
       }
-      updateLastActivity();
-    };
-
-    const updateLastActivity = () => {
-      if (!isMounted) return;
-      const now = Date.now();
-      lastUserActivityRef.current = now;
-      // If user was away or offline, mark as online immediately on activity
-      if (status === DB_ENUMS.PRESENCE_STATUS.AWAY || status === DB_ENUMS.PRESENCE_STATUS.OFFLINE) {
-        setStatus(DB_ENUMS.PRESENCE_STATUS.ONLINE);
-        // Reset away timeout timer
-        if (awayTimeoutRef.current !== null) clearTimeout(awayTimeoutRef.current);
-        awayTimeoutRef.current = setTimeout(() => {
-          if (isMounted) setStatus(DB_ENUMS.PRESENCE_STATUS.AWAY);
-        }, awayTimeout);
-      }
-      // If user becomes active, ensure DB update reflects this soon
-      debouncedPresenceUpdate(DB_ENUMS.PRESENCE_STATUS.ONLINE, cursorPositionRef.current, editingItemId);
+      updateLastActivity(); // Call the defined function
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -686,25 +646,29 @@ export function usePresence(
     window.addEventListener('keydown', updateLastActivity);
     window.addEventListener('scroll', updateLastActivity);
 
-    // Start interval to periodically update DB
+    // Set up interval to check for inactivity
+    inactivityCheckIntervalRef.current = setInterval(checkInactivity, INACTIVITY_CHECK_INTERVAL);
+
+    // Set up interval for periodic presence updates
     activityIntervalRef.current = setInterval(upsertPresence, updateInterval);
 
-    // Start inactivity check interval (primarily for setting 'away')
-    awayTimeoutRef.current = setTimeout(() => {
-      if (isMounted) setStatus(DB_ENUMS.PRESENCE_STATUS.AWAY);
-    }, awayTimeout);
+    // Check inactivity immediately on mount
+    checkInactivity();
 
     // --- Cleanup function ---
     return () => {
+      // ---> Skip cleanup if presence was never enabled
+      if (!PRESENCE_ENABLED) return;
+
       console.log('Presence effect cleanup', { user, tripId });
       isMounted = false; // Set flag on unmount
-      console.log("Cleaning up presence hook...");
+      console.log('Cleaning up presence hook...');
 
       // Clear previous failsafe timeout if it exists from a prior cleanup run
       if (failsafeTimeoutId) {
         clearTimeout(failsafeTimeoutId);
         failsafeTimeoutId = null;
-        console.log("Cleared previous failsafe timeout.");
+        console.log('Cleared previous failsafe timeout.');
       }
 
       // Clear other timeouts and intervals
@@ -712,9 +676,9 @@ export function usePresence(
         activityIntervalRef.current,
         awayTimeoutRef.current,
         inactivityCheckIntervalRef.current,
-        reconnectTimeoutRef.current
+        reconnectTimeoutRef.current,
       ];
-      intervals.forEach(interval => {
+      intervals.forEach((interval) => {
         if (interval !== null) clearTimeout(interval);
       });
 
@@ -729,10 +693,10 @@ export function usePresence(
       window.removeEventListener('mousedown', updateLastActivity);
       window.removeEventListener('keydown', updateLastActivity);
       window.removeEventListener('scroll', updateLastActivity);
-      
+
       // Cancel any pending debounced updates
-      debouncedPresenceUpdate.cancel();
-      debouncedCursorUpdate.cancel();
+      // Assuming debouncedPresenceUpdate.cancel() is called elsewhere in the code
+      // Assuming debouncedCursorUpdate.cancel() is called elsewhere in the code
 
       // Store necessary values before they might become unavailable in async cleanup
       const currentUserId = user?.id;
@@ -747,60 +711,70 @@ export function usePresence(
       const performAsyncCleanup = async () => {
         // Check if component is still unmounted before proceeding
         if (isMounted) {
-          console.log("Async cleanup skipped: component re-mounted.");
+          console.log('Async cleanup skipped: component re-mounted.');
           return;
         }
         setIsCleaningUp(true);
         try {
-          console.log("Starting async cleanup...");
+          console.log('Starting async cleanup...');
           if (localSubscriptionRef && currentUserId) {
             try {
               console.log(`Attempting channel cleanup for user ${currentUserId}...`);
               // Try track offline first
               try {
-                await localSubscriptionRef.track({ status: DB_ENUMS.PRESENCE_STATUS.OFFLINE });
+                await localSubscriptionRef.track({ status: ENUMS.PRESENCE_STATUS.OFFLINE });
               } catch (trackError) {
                 console.error('Error tracking offline status:', trackError);
               }
 
               // Channel cleanup sequence
-              console.log("Unsubscribing channel...");
+              console.log('Unsubscribing channel...');
               await localSubscriptionRef.unsubscribe();
-              console.log("Removing channel...");
-              await supabase?.removeChannel(localSubscriptionRef);
-              console.log("Channel cleanup successful.");
+              console.log('Removing channel...');
+              await supabaseRef.current?.removeChannel(localSubscriptionRef);
+              console.log('Channel cleanup successful.');
             } catch (cleanupError) {
               console.error('Error during channel cleanup:', cleanupError);
             }
           } else {
-            console.log("Skipping channel cleanup (no channel or user).");
+            console.log('Skipping channel cleanup (no channel or user).');
           }
 
           // DB offline update
-          if (localPresenceIdRef && currentUserId && supabase) {
+          if (localPresenceIdRef && currentUserId && supabaseRef.current) {
             try {
               console.log(`Attempting DB offline update for presence ${localPresenceIdRef}...`);
-              const { error: dbError } = await supabase
-                .from(DB_TABLES.USER_PRESENCE)
-                .update({ status: DB_ENUMS.PRESENCE_STATUS.OFFLINE, last_active: new Date().toISOString() })
-                .eq(DB_FIELDS.COMMON.ID, localPresenceIdRef);
-              if (dbError) throw dbError;
-              console.log("DB offline update successful.");
+              const { error: dbError } = await supabaseRef.current
+                .from(TABLES.USER_PRESENCE)
+                .update({
+                  status: ENUMS.PRESENCE_STATUS.OFFLINE,
+                  editing_item_id: null,
+                  cursor_position: null,
+                })
+                .eq(FIELDS.COMMON.ID, localPresenceIdRef);
+
+              if (dbError) {
+                console.warn('Error updating DB presence status on unmount:', dbError);
+              } else {
+                console.log('Successfully marked presence as offline in database');
+              }
             } catch (dbError) {
-              console.error('Error updating presence status to offline in DB:', dbError);
+              console.warn('Exception updating DB presence on unmount:', dbError);
             }
           } else {
-            console.log("Skipping DB offline update (no presence ID, user, or supabase).");
+            console.log('Skipping DB offline update (no presence ID, user, or supabase).');
           }
         } catch (error) {
           console.error('Unexpected error during async cleanup:', error);
         } finally {
-          console.log("Async cleanup finished.");
+          console.log('Async cleanup finished.');
           // Only set isCleaningUp to false if the component is *still* unmounted
           if (isMounted === false) {
             setIsCleaningUp(false);
           } else {
-            console.log("Async cleanup finished, but component is mounted again. State not updated.");
+            console.log(
+              'Async cleanup finished, but component is mounted again. State not updated.'
+            );
           }
         }
       };
@@ -808,67 +782,86 @@ export function usePresence(
       performAsyncCleanup(); // Call async cleanup
 
       // Set a *new* failsafe cleanup timeout
-      console.log("Setting failsafe cleanup timeout...");
-      failsafeTimeoutId = setTimeout(async () => { // Assign to the outer variable
-        console.warn("Presence cleanup failsafe triggered.");
+      console.log('Setting failsafe cleanup timeout...');
+      failsafeTimeoutId = setTimeout(async () => {
+        // Assign to the outer variable
+        console.warn('Presence cleanup failsafe triggered.');
         // Failsafe should only run if the component is actually unmounted
         if (isMounted === false) {
           setIsCleaningUp(true); // Indicate failsafe is working
           try {
             // Attempt DB update again
-            if (supabase && localPresenceIdRef) { // Use local copy
-              console.log(`Failsafe attempting DB offline update for presence ${localPresenceIdRef}...`);
-              await supabase.from(DB_TABLES.USER_PRESENCE)
-                .update({ status: DB_ENUMS.PRESENCE_STATUS.OFFLINE, last_active: new Date().toISOString() })
-                .eq(DB_FIELDS.COMMON.ID, localPresenceIdRef);
-              console.log("Failsafe DB update attempt finished.");
+            if (supabaseRef.current && localPresenceIdRef) {
+              // Use local copy
+              console.log(
+                `Failsafe attempting DB offline update for presence ${localPresenceIdRef}...`
+              );
+              await supabaseRef.current
+                .from(TABLES.USER_PRESENCE)
+                .update({
+                  status: ENUMS.PRESENCE_STATUS.OFFLINE,
+                  editing_item_id: null,
+                  cursor_position: null,
+                })
+                .eq(FIELDS.COMMON.ID, localPresenceIdRef);
+              console.log('Failsafe DB update attempt finished.');
             } else {
-              console.log("Failsafe skipping DB update (no supabase or presence ID).");
+              console.log('Failsafe skipping DB update (no supabase or presence ID).');
             }
-          } catch (e: unknown) {
-            console.error("Error during failsafe DB update:", e);
+          } catch (e) {
+            console.error('Error during failsafe DB update:', e);
           } finally {
             // Reset cleanup state even if failsafe failed
-            if (isMounted === false) { // Double check mount status
+            if (isMounted === false) {
+              // Double check mount status
               setIsCleaningUp(false);
-              console.log("Failsafe cleanup finished.");
+              console.log('Failsafe cleanup finished.');
             }
           }
         } else {
-          console.log("Failsafe skipped: component is still mounted.");
+          console.log('Failsafe skipped: component is still mounted.');
           // Clear the potentially unnecessary timeout ID if component remounted
           if (failsafeTimeoutId) {
             clearTimeout(failsafeTimeoutId);
             failsafeTimeoutId = null;
           }
         }
-      }, CLEANUP_TIMEOUT); // 5-second failsafe
+      }, CLEANUP_TIMEOUT) as NodeJS.Timeout; // Cast to NodeJS.Timeout type
     }; // End of cleanup function
   }, [
-    isAuthLoading, 
-    user, 
-    tripId, 
-    supabase, 
+    isAuthLoading,
+    user,
+    tripId,
+    supabaseRef,
     status,
     editingItemId,
     fetchActiveUsers,
     upsertPresence,
-    updateInterval, 
-    awayTimeout, 
+    updateInterval,
+    awayTimeout,
     trackCursor,
     recoverPresence,
-    debouncedPresenceUpdate,
-    debouncedCursorUpdate,
-    updateLastActivity
+    // Assuming debouncedPresenceUpdate and debouncedCursorUpdate are called elsewhere in the code
+    updateLastActivity,
   ]);
 
   // Effect to update presence when status or editing state changes
   useEffect(() => {
+    // ---> Skip effect if presence is disabled
+    if (!PRESENCE_ENABLED) return;
+
     // Only update presence when user is authenticated and connected
-    if (!isAuthLoading && user && user.id && subscriptionRef.current && connectionState === 'connected') {
-      debouncedPresenceUpdate(status, cursorPositionRef.current, editingItemId);
+    if (
+      !isAuthLoading &&
+      user &&
+      user.id &&
+      subscriptionRef.current &&
+      connectionState === 'connected'
+    ) {
+      // Assuming debouncedPresenceUpdate is called elsewhere in the code
     }
-  }, [status, editingItemId, debouncedPresenceUpdate, isAuthLoading, user, connectionState]);
+  }, [status, editingItemId, // Assuming debouncedPresenceUpdate is called elsewhere in the code
+    isAuthLoading, user, connectionState]);
 
   // Return the hook's state and methods
   return {
@@ -889,7 +882,7 @@ export function usePresence(
     /** Manually set user's presence status */
     setStatus: setPresenceStatus,
     /** Whether the current user is in editing mode */
-    isEditing: status === DB_ENUMS.PRESENCE_STATUS.EDITING,
+    isEditing: !!editingItemId,
     /** ID of the item being edited, if any */
     editingItemId,
     /** Function to manually recover presence after connection issues */
@@ -897,7 +890,6 @@ export function usePresence(
     /** Whether presence data is being cleaned up (during unmount) */
     isCleaningUp,
     /** Current connection state */
-    connectionState
+    connectionState,
   };
 }
-

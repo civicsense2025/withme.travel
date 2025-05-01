@@ -1,4 +1,4 @@
-import { Variants } from "framer-motion";
+import { Variants } from 'framer-motion';
 
 // Constants for consistent durations
 export const ANIMATION_DURATIONS = {
@@ -21,146 +21,146 @@ export const easings = {
 // Fade animations
 export const fadeIn: Variants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
+      ease: easings.smooth,
+    },
   },
-  exit: { 
+  exit: {
     opacity: 0,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.fast,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Fade + scale animations
 export const fadeInScale: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
+      ease: easings.smooth,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     scale: 0.95,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.fast,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Slide up animation
 export const slideUp: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
+      ease: easings.smooth,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     y: 20,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.fast,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Slide down animation
 export const slideDown: Variants = {
   hidden: { opacity: 0, y: -20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
+      ease: easings.smooth,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     y: -20,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.fast,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Slide in from left animation
 export const slideInLeft: Variants = {
   hidden: { opacity: 0, x: -50 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     x: 0,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
+      ease: easings.smooth,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     x: 50,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Slide in from right animation
 export const slideInRight: Variants = {
   hidden: { opacity: 0, x: 50 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     x: 0,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
+      ease: easings.smooth,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     x: -50,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Bounce animation for important elements
 export const bounceIn: Variants = {
   hidden: { opacity: 0, scale: 0.8 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.bounce
-    } 
+      ease: easings.bounce,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     scale: 0.8,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.fast,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Staggered children animation (parent)
@@ -171,60 +171,60 @@ export const staggerContainer: Variants = {
     transition: {
       staggerChildren: 0.1,
       delayChildren: 0.1,
-    }
+    },
   },
-  exit: { 
+  exit: {
     opacity: 0,
-    transition: { 
+    transition: {
       staggerChildren: 0.05,
-      staggerDirection: -1
-    }
-  }
+      staggerDirection: -1,
+    },
+  },
 };
 
 // Toast notification animations
 export const toastAnimation: Variants = {
   hidden: { opacity: 0, y: 50, scale: 0.9 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
+  visible: {
+    opacity: 1,
+    y: 0,
     scale: 1,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
-      ease: easings.spring
-    } 
+      ease: easings.spring,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     scale: 0.9,
     y: 20,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.fast,
-      ease: easings.smooth
-    } 
-  }
+      ease: easings.smooth,
+    },
+  },
 };
 
 // Page transitions
 export const pageTransition: Variants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.medium,
       ease: easings.smooth,
-      when: "beforeChildren",
-      staggerChildren: 0.15
-    } 
+      when: 'beforeChildren',
+      staggerChildren: 0.15,
+    },
   },
-  exit: { 
+  exit: {
     opacity: 0,
-    transition: { 
+    transition: {
       duration: ANIMATION_DURATIONS.fast,
       ease: easings.smooth,
-      when: "afterChildren",
+      when: 'afterChildren',
       staggerChildren: 0.05,
-      staggerDirection: -1
-    } 
-  }
-}; 
+      staggerDirection: -1,
+    },
+  },
+};

@@ -1,15 +1,19 @@
-"use client";
+'use client';
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 // Importing design system components. Adjust the import path as needed to match our design system.
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
-import Link from "next/link"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
-const TravelTracker: React.FC = () => {
+interface TravelTrackerProps {
+  userId?: string; // Optional userId prop
+}
+
+const TravelTracker: React.FC<TravelTrackerProps> = ({ userId }) => {
   // State to hold destinations from Supabase
   const [destinations, setDestinations] = useState<any[]>([]);
   const [visited, setVisited] = useState<string[]>([]);
@@ -17,14 +21,27 @@ const TravelTracker: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!supabase) {
+        console.error("Supabase client not initialized");
+        return;
+      }
+      
+      let userIdToUse = userId;
+      
+      // If userId prop isn't provided, try to get the current user
+      if (!userIdToUse) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+        userIdToUse = user.id;
+      }
 
       // Fetch visited destinations
       const { data: visitedData, error: visitedError } = await supabase
         .from('user_travel')
         .select('destination_id')
-        .eq('user_id', user.id);
+        .eq('user_id', userIdToUse);
 
       if (visitedError) {
         console.error('Error fetching travel data', visitedError);
@@ -46,7 +63,7 @@ const TravelTracker: React.FC = () => {
     };
 
     fetchData();
-  }, [supabase]);
+  }, [supabase, userId]);
 
   const MAX_DISPLAY_DESTINATIONS = 20;
 
@@ -56,16 +73,18 @@ const TravelTracker: React.FC = () => {
         <CardTitle className="text-lg lowercase font-semibold">my travel tracker</CardTitle>
       </CardHeader>
       <CardContent className="pt-0 pb-4">
-        <ScrollArea className="h-[250px] pr-3"> {/* Adjust height as needed */}
+        <ScrollArea className="h-[250px] pr-3">
+          {' '}
+          {/* Adjust height as needed */}
           <div className="space-y-3">
-            {destinations.slice(0, MAX_DISPLAY_DESTINATIONS).map(destination => {
+            {destinations.slice(0, MAX_DISPLAY_DESTINATIONS).map((destination) => {
               const displayName = `${destination.city}, ${destination.country}`;
               const isChecked = visited.includes(destination.id);
               return (
                 <div key={destination.id} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`dest-${destination.id}`} 
-                    checked={isChecked} 
+                  <Checkbox
+                    id={`dest-${destination.id}`}
+                    checked={isChecked}
                     // Add onCheckedChange handler if needed
                     // onCheckedChange={(checked) => handleCheckChange(destination.id, checked)}
                   />
@@ -81,12 +100,14 @@ const TravelTracker: React.FC = () => {
           </div>
         </ScrollArea>
         {destinations.length > MAX_DISPLAY_DESTINATIONS && (
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             className="w-full justify-start lowercase mt-2 px-0 text-sm h-auto py-1"
             asChild
           >
-            <Link href="/travel-map"> {/* Link to the future map page */}
+            <Link href="/travel-map">
+              {' '}
+              {/* Link to the future map page */}
               view all {destinations.length} destinations
               <ArrowRight className="ml-1 h-3 w-3" />
             </Link>
@@ -97,4 +118,4 @@ const TravelTracker: React.FC = () => {
   );
 };
 
-export default TravelTracker; 
+export default TravelTracker;

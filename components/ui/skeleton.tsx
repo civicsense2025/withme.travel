@@ -1,15 +1,20 @@
-import { cn } from "@/lib/utils"
+'use client';
 
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+import { cn } from '@/lib/utils';
+
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-muted", className)}
+      className={cn(
+        'rounded-md bg-muted',
+        // Only apply animation when motion is safe and enabled
+        'motion-safe:animate-pulse',
+        // Allow custom classes to override defaults
+        className
+      )}
       {...props}
     />
-  )
+  );
 }
 
-export { Skeleton }
+export { Skeleton };

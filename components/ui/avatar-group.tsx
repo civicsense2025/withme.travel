@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,7 +35,7 @@ interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
 
 /**
  * AvatarGroup component for displaying multiple avatars with overlap
- * 
+ *
  * Can be used in two ways:
  * 1. With items prop: <AvatarGroup items={[...]} />
  * 2. With children: <AvatarGroup>{avatars}</AvatarGroup>
@@ -51,48 +51,37 @@ export function AvatarGroup({
 }: AvatarGroupProps) {
   // Handle both items prop and children
   const hasChildren = React.Children.count(children) > 0;
-  
+
   // If using children approach
   if (hasChildren) {
     const childrenArray = React.Children.toArray(children);
     const visibleChildren = childrenArray.slice(0, max);
     const extraCount = Math.max(0, childrenArray.length - max);
-    
+
     return (
-      <div
-        className={cn('flex items-center -space-x-2', className)}
-        {...props}
-      >
+      <div className={cn('flex items-center -space-x-2', className)} {...props}>
         {visibleChildren.map((child, i) => (
           <div key={i} className="relative">
             {child}
           </div>
         ))}
-        
+
         {showCount && extraCount > 0 && (
-          <Avatar
-            className={cn(
-              avatarSize,
-              'border-2 border-background bg-muted'
-            )}
-          >
+          <Avatar className={cn(avatarSize, 'border-2 border-background bg-muted')}>
             <AvatarFallback>+{extraCount}</AvatarFallback>
           </Avatar>
         )}
       </div>
     );
   }
-  
+
   // Otherwise use items prop approach
   const itemsToRender = items || [];
   const visibleItems = itemsToRender.slice(0, max);
   const extraCount = Math.max(0, itemsToRender.length - max);
-  
+
   return (
-    <div
-      className={cn('flex items-center -space-x-2', className)}
-      {...props}
-    >
+    <div className={cn('flex items-center -space-x-2', className)} {...props}>
       {visibleItems.map((item, i) => (
         <Avatar
           key={i}
@@ -107,17 +96,12 @@ export function AvatarGroup({
           <AvatarFallback>{item.fallback}</AvatarFallback>
         </Avatar>
       ))}
-      
+
       {showCount && extraCount > 0 && (
-        <Avatar
-          className={cn(
-            avatarSize,
-            'border-2 border-background bg-muted'
-          )}
-        >
+        <Avatar className={cn(avatarSize, 'border-2 border-background bg-muted')}>
           <AvatarFallback>+{extraCount}</AvatarFallback>
         </Avatar>
       )}
     </div>
   );
-} 
+}

@@ -10,7 +10,7 @@ import { AlertTriangle, RefreshCw, Loader } from 'lucide-react';
 const Icons = {
   AlertTriangle,
   RefreshCw,
-  Loader
+  Loader,
 };
 
 interface Props {
@@ -30,7 +30,7 @@ export class PresenceErrorBoundary extends React.Component<Props, State> {
     this.state = {
       hasError: false,
       error: null,
-      isRecovering: false
+      isRecovering: false,
     };
   }
 
@@ -38,7 +38,7 @@ export class PresenceErrorBoundary extends React.Component<Props, State> {
     return {
       hasError: true,
       error,
-      isRecovering: false
+      isRecovering: false,
     };
   }
 
@@ -48,19 +48,21 @@ export class PresenceErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return <PresenceErrorDisplay 
-        error={this.state.error} 
-        isRecovering={this.state.isRecovering}
-        onRecover={() => this.setState({ isRecovering: true })}
-        onRecoveryComplete={() => {
-          this.setState({
-            hasError: false,
-            error: null,
-            isRecovering: false
-          });
-        }}
-        onRecoveryFailed={this.props.onRecoveryFailed}
-      />;
+      return (
+        <PresenceErrorDisplay
+          error={this.state.error}
+          isRecovering={this.state.isRecovering}
+          onRecover={() => this.setState({ isRecovering: true })}
+          onRecoveryComplete={() => {
+            this.setState({
+              hasError: false,
+              error: null,
+              isRecovering: false,
+            });
+          }}
+          onRecoveryFailed={this.props.onRecoveryFailed}
+        />
+      );
     }
 
     return this.props.children;
@@ -75,12 +77,12 @@ interface PresenceErrorDisplayProps {
   onRecoveryFailed?: () => void;
 }
 
-function PresenceErrorDisplay({ 
-  error, 
+function PresenceErrorDisplay({
+  error,
   isRecovering,
   onRecover,
   onRecoveryComplete,
-  onRecoveryFailed
+  onRecoveryFailed,
 }: PresenceErrorDisplayProps) {
   const { recoverPresence, isLoading, connectionState } = usePresenceContext();
 
@@ -104,9 +106,7 @@ function PresenceErrorDisplay({
           <p className="text-sm">
             {error?.message || 'An error occurred while tracking real-time presence'}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Connection status: {connectionState}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">Connection status: {connectionState}</p>
           <Button
             variant="outline"
             className="mt-4"

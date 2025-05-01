@@ -3,6 +3,12 @@
  * Centralized error logging mechanism for client-side errors
  */
 
+import {
+  getSafeSentry,
+  configureScopeIfAvailable,
+  captureExceptionSafely,
+} from './sentry-safe-init';
+
 // Constants for error categories
 export enum ErrorCategory {
   API = 'API',
@@ -27,13 +33,8 @@ export interface ErrorLog {
   };
 }
 
-// Check if Sentry is available
-let Sentry: any;
-try {
-  Sentry = require('@sentry/nextjs');
-} catch (e) {
-  // Sentry is not available
-}
+// Create a safe Sentry instance
+const safeSentry = getSafeSentry();
 
 /**
  * Log an error to the console and to analytics/monitoring services
@@ -46,7 +47,7 @@ export function logError(
 ): void {
   const errorMessage = typeof error === 'string' ? error : error.message;
   const errorStack = typeof error === 'string' ? undefined : error.stack;
-  
+
   // Create the error log object
   const errorLog: ErrorLog = {
     message: errorMessage,
@@ -56,32 +57,30 @@ export function logError(
     stack: errorStack,
     context,
   };
-  
+
   // Always log to console in development
   if (process.env.NODE_ENV === 'development') {
     console.error('[ERROR]', errorLog);
   }
-  
-  // Send to your analytics or monitoring service
-  if (Sentry) {
-    try {
-      Sentry.captureException(error);
-      
-      // Add additional context for Sentry
-      Sentry.configureScope((scope: any) => {
-        scope.setTag('category', category);
-        scope.setTag('source', source);
-        
-        Object.entries(context).forEach(([key, value]) => {
-          scope.setExtra(key, value);
-        });
+
+  // Use safe Sentry methods that won't throw errors
+  try {
+    captureExceptionSafely(error);
+
+    // Add additional context using the safe wrapper
+    configureScopeIfAvailable((scope) => {
+      scope.setTag('category', category);
+      scope.setTag('source', source);
+
+      Object.entries(context).forEach(([key, value]) => {
+        scope.setExtra(key, value);
       });
-    } catch (e) {
-      // Don't let Sentry errors cause additional issues
-      console.error('Failed to send error to Sentry:', e);
-    }
+    });
+  } catch (e) {
+    // This shouldn't happen due to our safe wrappers, but just in case
+    console.error('Failed to log error with Sentry:', e);
   }
-  
+
   // Log to your own API endpoint in production
   if (process.env.NODE_ENV === 'production') {
     try {
@@ -118,7 +117,7 @@ export function logApiError(
     method,
     ...additionalContext,
   };
-  
+
   logError(error, ErrorCategory.API, 'api-client', context);
 }
 
@@ -135,7 +134,7 @@ export function logNetworkError(
     online: typeof navigator !== 'undefined' ? navigator.onLine : null,
     ...additionalContext,
   };
-  
+
   logError(error, ErrorCategory.NETWORK, 'fetch', context);
 }
 
@@ -150,50 +149,40 @@ export function initializeErrorLogging(): void {
         event.error || new Error(event.message),
         ErrorCategory.UNKNOWN,
         event.filename || 'window',
-        { 
+        {
           lineno: event.lineno,
           colno: event.colno,
           timestamp: event.timeStamp,
         }
       );
     });
-    
+
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
-      const error = event.reason instanceof Error
-        ? event.reason
-        : new Error(String(event.reason));
-      
-      logError(
-        error,
-        ErrorCategory.UNKNOWN,
-        'promise',
-        { 
-          timestamp: event.timeStamp,
-          reason: String(event.reason),
-        }
-      );
+      const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+
+      logError(error, ErrorCategory.UNKNOWN, 'promise', {
+        timestamp: event.timeStamp,
+        reason: String(event.reason),
+      });
     });
-    
+
     // Optionally intercept fetch requests to log network errors
     const originalFetch = window.fetch;
-    window.fetch = async function(input, init) {
+    window.fetch = async function (input, init) {
       try {
         const response = await originalFetch(input, init);
-        
+
         // You could also log failed responses (4xx, 5xx) here
-        
+
         return response;
       } catch (error) {
-        const url = typeof input === 'string' 
-          ? input 
-          : input instanceof Request 
-            ? input.url 
-            : 'unknown';
-            
+        const url =
+          typeof input === 'string' ? input : input instanceof Request ? input.url : 'unknown';
+
         logNetworkError(error as Error, url);
         throw error;
       }
     };
   }
-} 
+}

@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import Link from "next/link"
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
 
 interface WelcomeScreenProps {
-  onNext: () => void
+  onNext: () => void;
 }
 
 export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
@@ -14,7 +14,9 @@ export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
       <CardContent className="pt-6 pb-8 px-6 text-center">
         <div className="mb-6 text-4xl">✨</div>
         <div className="text-center max-w-lg mx-auto">
-          <h1 className="text-5xl leading-loose font-bold mb-2 lowercase">welcome to withme.travel!</h1>
+          <h1 className="text-5xl leading-loose font-bold mb-2 lowercase">
+            welcome to withme.travel!
+          </h1>
           <p className="text-muted-foreground mb-8">
             plan your next group adventure seamlessly. let's get you set up!
           </p>
@@ -31,5 +33,5 @@ export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

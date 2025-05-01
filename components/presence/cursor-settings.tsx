@@ -20,7 +20,10 @@ interface CursorSettingsProps {
  */
 export function CursorSettings({ className }: CursorSettingsProps) {
   const [showCursors, setShowCursors] = useLocalStorage<boolean>('withme-show-cursors', true);
-  const [trackMyCursor, setTrackMyCursor] = useLocalStorage<boolean>('withme-track-my-cursor', true);
+  const [trackMyCursor, setTrackMyCursor] = useLocalStorage<boolean>(
+    'withme-track-my-cursor',
+    true
+  );
 
   return (
     <Card className={className}>
@@ -41,13 +44,9 @@ export function CursorSettings({ className }: CursorSettingsProps) {
               See where others are pointing and working
             </p>
           </div>
-          <Switch
-            id="show-cursors"
-            checked={showCursors}
-            onCheckedChange={setShowCursors}
-          />
+          <Switch id="show-cursors" checked={showCursors} onCheckedChange={setShowCursors} />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="share-cursor">Share my cursor position</Label>
@@ -55,18 +54,14 @@ export function CursorSettings({ className }: CursorSettingsProps) {
               Allow others to see where your cursor is located
             </p>
           </div>
-          <Switch
-            id="share-cursor"
-            checked={trackMyCursor}
-            onCheckedChange={setTrackMyCursor}
-          />
+          <Switch id="share-cursor" checked={trackMyCursor} onCheckedChange={setTrackMyCursor} />
         </div>
-        
+
         <p className="text-xs text-muted-foreground mt-4">
-          Cursor tracking helps with collaborative planning by showing where each person 
-          is focusing. You can toggle these settings at any time.
+          Cursor tracking helps with collaborative planning by showing where each person is
+          focusing. You can toggle these settings at any time.
         </p>
       </CardContent>
     </Card>
   );
-} 
+}

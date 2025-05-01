@@ -1,23 +1,23 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import Collaboration from "@tiptap/extension-collaboration"
-import CollaborationCursor from "@tiptap/extension-collaboration-cursor"
-import { Button } from "@/components/ui/button"
-import { Loader2, Bold, Italic, List, ListOrdered, Save, X } from "lucide-react"
-import { useAuth } from "@/lib/hooks/use-auth"
-import { useToast } from "@/hooks/use-toast"
-import * as Y from "yjs"
-import { WebrtcProvider } from "y-webrtc"
+import { useState, useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import { Button } from '@/components/ui/button';
+import { Loader2, Bold, Italic, List, ListOrdered, Save, X } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import * as Y from 'yjs';
+import { WebrtcProvider } from 'y-webrtc';
 
 interface CollaborativeEditorProps {
-  initialContent: string
-  documentId: string
-  tripId: string
-  onSave: (content: any) => void
-  onCancel: () => void
+  initialContent: string;
+  documentId: string;
+  tripId: string;
+  onSave: (content: any) => void;
+  onCancel: () => void;
 }
 
 export function CollaborativeEditor({
@@ -27,39 +27,39 @@ export function CollaborativeEditor({
   onSave,
   onCancel,
 }: CollaborativeEditorProps) {
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const [isSaving, setIsSaving] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
-  const [provider, setProvider] = useState<WebrtcProvider | null>(null)
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
+  const [provider, setProvider] = useState<WebrtcProvider | null>(null);
 
   // Initialize the collaborative editing session
   useEffect(() => {
-    const doc = new Y.Doc()
-    const roomName = `withme-travel-${tripId}-${documentId}`
+    const doc = new Y.Doc();
+    const roomName = `withme-travel-${tripId}-${documentId}`;
 
     // In a production app, you would use a more secure provider
     // This is just for demonstration purposes
     const webrtcProvider = new WebrtcProvider(roomName, doc, {
-      signaling: ["wss://signaling.yjs.dev"],
-    })
+      signaling: ['wss://signaling.yjs.dev'],
+    });
 
-    setYdoc(doc)
-    setProvider(webrtcProvider)
+    setYdoc(doc);
+    setProvider(webrtcProvider);
 
     // Set initial content if the document is empty
-    const ytext = doc.getText("content")
-    if (ytext.toString() === "" && initialContent) {
-      ytext.insert(0, initialContent)
+    const ytext = doc.getText('content');
+    if (ytext.toString() === '' && initialContent) {
+      ytext.insert(0, initialContent);
     }
 
-    setIsLoading(false)
+    setIsLoading(false);
 
     return () => {
-      webrtcProvider.destroy()
-    }
-  }, [tripId, documentId, initialContent])
+      webrtcProvider.destroy();
+    };
+  }, [tripId, documentId, initialContent]);
 
   // Set up the editor with collaboration extensions
   const editor = useEditor(
@@ -72,49 +72,51 @@ export function CollaborativeEditor({
         CollaborationCursor.configure({
           provider: provider,
           user: {
-            name: user?.profile?.name || user?.email?.split('@')[0] || "Anonymous",
+            name: user?.profile?.name || user?.email?.split('@')[0] || 'Anonymous',
             color: getRandomColor(),
-            avatar: user?.profile?.avatar_url || `/api/avatar?name=${encodeURIComponent(user?.profile?.name || 'User')}`,
+            avatar:
+              user?.profile?.avatar_url ||
+              `/api/avatar?name=${encodeURIComponent(user?.profile?.name || 'User')}`,
           },
         }),
       ],
-      content: "",
+      content: '',
       editorProps: {
         attributes: {
-          class: "prose prose-sm focus:outline-none min-h-[100px] p-4",
+          class: 'prose prose-sm focus:outline-none min-h-[100px] p-4',
         },
       },
     },
-    [ydoc, provider],
-  )
+    [ydoc, provider]
+  );
 
   // Handle save
   const handleSave = () => {
-    if (!editor) return
+    if (!editor) return;
 
-    setIsSaving(true)
+    setIsSaving(true);
 
     try {
-      const content = editor.getHTML()
-      onSave(content)
+      const content = editor.getHTML();
+      onSave(content);
     } catch (error) {
-      console.error("Error saving content:", error)
+      console.error('Error saving content:', error);
       toast({
-        title: "Error",
-        description: "Failed to save content",
-        variant: "destructive",
-      })
+        title: 'Error',
+        description: 'Failed to save content',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   return (
@@ -125,7 +127,7 @@ export function CollaborativeEditor({
           size="icon"
           className="h-8 w-8"
           onClick={() => editor?.chain().focus().toggleBold().run()}
-          data-active={editor?.isActive("bold")}
+          data-active={editor?.isActive('bold')}
         >
           <Bold className="h-4 w-4" />
         </Button>
@@ -134,7 +136,7 @@ export function CollaborativeEditor({
           size="icon"
           className="h-8 w-8"
           onClick={() => editor?.chain().focus().toggleItalic().run()}
-          data-active={editor?.isActive("italic")}
+          data-active={editor?.isActive('italic')}
         >
           <Italic className="h-4 w-4" />
         </Button>
@@ -143,7 +145,7 @@ export function CollaborativeEditor({
           size="icon"
           className="h-8 w-8"
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          data-active={editor?.isActive("bulletList")}
+          data-active={editor?.isActive('bulletList')}
         >
           <List className="h-4 w-4" />
         </Button>
@@ -152,7 +154,7 @@ export function CollaborativeEditor({
           size="icon"
           className="h-8 w-8"
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          data-active={editor?.isActive("orderedList")}
+          data-active={editor?.isActive('orderedList')}
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
@@ -180,28 +182,28 @@ export function CollaborativeEditor({
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
 // Helper function to generate random colors for user cursors
 function getRandomColor() {
   const colors = [
-    "#f44336",
-    "#e91e63",
-    "#9c27b0",
-    "#673ab7",
-    "#3f51b5",
-    "#2196f3",
-    "#03a9f4",
-    "#00bcd4",
-    "#009688",
-    "#4caf50",
-    "#8bc34a",
-    "#cddc39",
-    "#ffeb3b",
-    "#ffc107",
-    "#ff9800",
-    "#ff5722",
-  ]
-  return colors[Math.floor(Math.random() * colors.length)]
+    '#f44336',
+    '#e91e63',
+    '#9c27b0',
+    '#673ab7',
+    '#3f51b5',
+    '#2196f3',
+    '#03a9f4',
+    '#00bcd4',
+    '#009688',
+    '#4caf50',
+    '#8bc34a',
+    '#cddc39',
+    '#ffeb3b',
+    '#ffc107',
+    '#ff9800',
+    '#ff5722',
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
 }

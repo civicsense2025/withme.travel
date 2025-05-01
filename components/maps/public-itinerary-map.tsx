@@ -1,8 +1,18 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react'
-import Map, { Marker, Popup, NavigationControl, GeolocateControl, ScaleControl, FullscreenControl, MapMouseEvent, ViewStateChangeEvent, MarkerEvent } from 'react-map-gl/mapbox'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Map, {
+  Marker,
+  Popup,
+  NavigationControl,
+  GeolocateControl,
+  ScaleControl,
+  FullscreenControl,
+  MapMouseEvent,
+  ViewStateChangeEvent,
+  MarkerEvent,
+} from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 // Define the structure for a location point derived from itinerary items
 interface LocationPoint {
@@ -23,10 +33,10 @@ export default function PublicItineraryMap({ locations, mapboxToken }: PublicIti
   const mapRef = useRef<any>(null); // Ref for map instance
   const [viewport, setViewport] = useState({
     latitude: 40.7128, // Default: New York City
-    longitude: -74.0060,
+    longitude: -74.006,
     zoom: 2, // Start zoomed out
     pitch: 0,
-    bearing: 0
+    bearing: 0,
   });
   const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null);
 
@@ -38,45 +48,52 @@ export default function PublicItineraryMap({ locations, mapboxToken }: PublicIti
 
       // Use Mapbox LngLatBounds for fitting
       const bounds = new mapboxgl.LngLatBounds();
-      locations.forEach(loc => {
+      locations.forEach((loc) => {
         bounds.extend([loc.longitude, loc.latitude]);
       });
 
       if (!bounds.isEmpty()) {
-          map.fitBounds(bounds, {
-            padding: { top: 50, bottom: 50, left: 50, right: 50 },
-            maxZoom: 15,
-            duration: 1000 // Animate zoom
-          });
+        map.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          maxZoom: 15,
+          duration: 1000, // Animate zoom
+        });
       }
     }
   }, [locations]); // Re-run when locations change
 
   // Memoize markers to prevent unnecessary re-renders
-  const markers = useMemo(() => locations?.map(loc => (
-    <Marker
-      key={`marker-${loc.id}`}
-      longitude={loc.longitude}
-      latitude={loc.latitude}
-      anchor="bottom"
-      onClick={(e: MarkerEvent<MouseEvent>) => {
-        if (e.originalEvent) { 
-          e.originalEvent.stopPropagation();
-        }
-        setSelectedLocation(loc);
-      }}
-    >
-      {/* Basic marker style - can be customized */}
-      <div className="w-3 h-3 bg-blue-600 rounded-full border-2 border-white cursor-pointer" />
-    </Marker>
-  )), [locations]);
+  const markers = useMemo(
+    () =>
+      locations?.map((loc) => (
+        <Marker
+          key={`marker-${loc.id}`}
+          longitude={loc.longitude}
+          latitude={loc.latitude}
+          anchor="bottom"
+          onClick={(e: MarkerEvent<MouseEvent>) => {
+            if (e.originalEvent) {
+              e.originalEvent.stopPropagation();
+            }
+            setSelectedLocation(loc);
+          }}
+        >
+          {/* Basic marker style - can be customized */}
+          <div className="w-3 h-3 bg-blue-600 rounded-full border-2 border-white cursor-pointer" />
+        </Marker>
+      )),
+    [locations]
+  );
 
   const handleMapClick = (event: MapMouseEvent) => {
     // If clicking on a marker, ignore map click to keep popup open
-    if (event.originalEvent.target && (event.originalEvent.target as HTMLElement).closest('.mapboxgl-marker')) {
+    if (
+      event.originalEvent.target &&
+      (event.originalEvent.target as HTMLElement).closest('.mapboxgl-marker')
+    ) {
       // ... existing code ...
     }
-  }
+  };
 
   if (!mapboxToken) {
     return <div className="text-center p-4 text-red-600">Mapbox token is not configured.</div>;
@@ -110,7 +127,9 @@ export default function PublicItineraryMap({ locations, mapboxToken }: PublicIti
             closeOnClick={false} // Keep popup open until explicitly closed
           >
             <div>
-              {selectedLocation.day && <p className="text-xs text-muted-foreground">Day {selectedLocation.day}</p>}
+              {selectedLocation.day && (
+                <p className="text-xs text-muted-foreground">Day {selectedLocation.day}</p>
+              )}
               <p className="font-medium text-sm">{selectedLocation.name || 'Selected Location'}</p>
             </div>
           </Popup>
@@ -123,11 +142,11 @@ export default function PublicItineraryMap({ locations, mapboxToken }: PublicIti
 // Need to import mapboxgl at the top to use LngLatBounds
 import mapboxgl from 'mapbox-gl';
 
-// REMOVE WORKER WORKAROUND 
+// REMOVE WORKER WORKAROUND
 // // Prevent Mapbox from using worker threads outside the main browser thread
 // // This is often needed for compatibility with bundlers/frameworks like Next.js
 // // Check if mapboxgl exists (might not in SSR or test environments)
 // if (typeof mapboxgl !== 'undefined') {
 //   // @ts-ignore
 //   mapboxgl.workerClass = require('worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker').default;
-// } 
+// }

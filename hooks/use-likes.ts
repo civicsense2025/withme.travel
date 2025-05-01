@@ -1,144 +1,156 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/components/auth-provider'
-import { useToast } from '@/components/ui/use-toast'
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useToast } from '@/components/ui/use-toast';
 
-type LikeItemType = 'destination' | 'itinerary' | 'attraction'
+type LikeItemType = 'destination' | 'itinerary' | 'attraction';
 
 interface Like {
-  id: string
-  user_id: string
-  item_id: string
-  item_type: LikeItemType
-  created_at: string
+  id: string;
+  user_id: string;
+  item_id: string;
+  item_type: LikeItemType;
+  created_at: string;
 }
 
 export function useLikes() {
-  const { user, isLoading: isAuthLoading } = useAuth()
-  const { toast } = useToast()
-  const [likes, setLikes] = useState<Like[]>([])
-  const [likedItemIds, setLikedItemIds] = useState<Set<string>>(new Set())
-  const [isLoading, setIsLoading] = useState(false)
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const { toast } = useToast();
+  const [likes, setLikes] = useState<Like[]>([]);
+  const [likedItemIds, setLikedItemIds] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch likes when user changes
   useEffect(() => {
     if (!isAuthLoading) {
       if (user) {
-        fetchLikes()
+        fetchLikes();
       } else {
         // Clear likes if user logs out
-        setLikes([])
-        setLikedItemIds(new Set())
+        setLikes([]);
+        setLikedItemIds(new Set());
       }
     }
-  }, [user, isAuthLoading])
+  }, [user, isAuthLoading]);
 
   // Fetch all likes for current user
   const fetchLikes = async () => {
+    // Don't make API call if user isn't logged in
+    if (!user) {
+      setLikes([]);
+      setLikedItemIds(new Set());
+      return;
+    }
+
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const response = await fetch('/api/likes', {
-        credentials: 'include'
-      })
+        credentials: 'include',
+      });
 
       if (response.status === 401) {
         // Clear likes if unauthorized
-        setLikes([])
-        setLikedItemIds(new Set())
-        return
+        setLikes([]);
+        setLikedItemIds(new Set());
+        return;
       }
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to fetch likes')
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch likes');
       }
 
-      const data = await response.json()
-      setLikes(data)
-      setLikedItemIds(new Set(data.map((like: Like) => like.item_id)))
+      const responseData = await response.json();
+      // Access the data property from the API response
+      const likesData = responseData.data || [];
+      setLikes(likesData);
+      setLikedItemIds(new Set(likesData.map((like: Like) => like.item_id)));
     } catch (error) {
-      console.error('Error fetching likes:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch likes. Please try again later.',
-        variant: 'destructive'
-      })
+      console.error('Error fetching likes:', error);
+      // Only show error toast if user is logged in to avoid unnecessary errors
+      if (user) {
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch likes. Please try again later.',
+          variant: 'destructive',
+        });
+      }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Check if an item is liked
   const isLiked = (itemId: string) => {
-    return likedItemIds.has(itemId)
-  }
+    return likedItemIds.has(itemId);
+  };
 
   // Toggle like status for an item
   const toggleLike = async (itemId: string, itemType: LikeItemType): Promise<boolean> => {
-    if (!user) return false
+    if (!user) return false;
 
-    const currentlyLiked = isLiked(itemId)
-    
+    const currentlyLiked = isLiked(itemId);
+
     try {
       if (currentlyLiked) {
         // Unlike
         const response = await fetch(`/api/likes?itemId=${itemId}&itemType=${itemType}`, {
           method: 'DELETE',
-          credentials: 'include'
-        })
+          credentials: 'include',
+        });
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.message || 'Failed to unlike item')
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to unlike item');
         }
 
-        setLikes(prev => prev.filter(like => like.item_id !== itemId))
-        setLikedItemIds(prev => {
-          const next = new Set(prev)
-          next.delete(itemId)
-          return next
-        })
+        setLikes((prev) => prev.filter((like) => like.item_id !== itemId));
+        setLikedItemIds((prev) => {
+          const next = new Set(prev);
+          next.delete(itemId);
+          return next;
+        });
 
-        return false
+        return false;
       } else {
         // Like
         const response = await fetch('/api/likes', {
           method: 'POST',
           credentials: 'include',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             itemId,
-            itemType
-          })
-        })
+            itemType,
+          }),
+        });
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.message || 'Failed to like item')
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to like item');
         }
 
-        const newLike = await response.json()
-        setLikes(prev => [...prev, newLike])
-        setLikedItemIds(prev => new Set([...prev, itemId]))
+        const newLike = await response.json();
+        setLikes((prev) => [...prev, newLike]);
+        setLikedItemIds((prev) => new Set([...prev, itemId]));
 
-        return true
+        return true;
       }
     } catch (error) {
-      console.error('Error toggling like:', error)
+      console.error('Error toggling like:', error);
       toast({
         title: 'Error',
         description: 'Failed to update like status. Please try again later.',
-        variant: 'destructive'
-      })
-      return currentlyLiked
+        variant: 'destructive',
+      });
+      return currentlyLiked;
     }
-  }
+  };
 
   return {
     likes,
     isLiked,
     toggleLike,
-    isLoading: isLoading || isAuthLoading
-  }
-} 
+    isLoading: isLoading || isAuthLoading,
+  };
+}

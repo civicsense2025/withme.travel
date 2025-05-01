@@ -1,336 +1,191 @@
-"use client"
+'use client';
 
-import type React from "react"
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { Eye, EyeOff, LogIn } from "lucide-react"
-import { motion } from "framer-motion"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { createClient, resetClient } from "@/utils/supabase/client"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/hooks/use-auth"
-import { useCsrf, fetchWithCsrf } from "@/components/csrf-provider"
-import { fadeIn, slideUp, staggerContainer } from "@/utils/animation"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { fadeIn, slideUp, staggerContainer } from '@/utils/animation';
 
 export function LoginForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectPath = searchParams.get("redirect") || "/"
-  const urlError = searchParams.get("error")
-  const { toast } = useToast()
-  const { signIn, isLoading, error: authError, user } = useAuth()
-  const { csrfToken, loading: csrfLoading } = useCsrf()
-  const [inlineError, setInlineError] = useState<string | null>(null)
-  
-  // Handle decoded redirect path
-  const [decodedRedirectPath, setDecodedRedirectPath] = useState("/")
-  const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  })
-  const supabase = createClient()!
-  
-  // Handle URL error parameter when component mounts
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const { signIn, isLoading, error: authError, refreshAuth } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Get and process redirect path
+  const redirectPath = searchParams.get('redirect') || '/';
+  const [decodedRedirectPath, setDecodedRedirectPath] = useState('/');
+
+  // Check for URL error parameter
   useEffect(() => {
+    const urlError = searchParams.get('error');
     if (urlError) {
-      console.error("[LoginForm] URL error parameter:", urlError);
-      let errorMessage = 'Authentication error';
-      
-      // Handle known error codes from callback
-      if (urlError === 'pkce_failed') {
-        errorMessage = 'authentication process interrupted, please try again';
-        
-        // Clear local storage auth tokens to help with PKCE issues
-        if (typeof window !== 'undefined') {
-          try {
-            console.log("[LoginForm] Clearing auth storage due to PKCE failure");
-            localStorage.removeItem('supabase-auth-token');
-            sessionStorage.removeItem('supabase-auth-token');
-            // Also check for and clear any old format tokens
-            localStorage.removeItem('sb-access-token');
-            localStorage.removeItem('sb-refresh-token');
-            sessionStorage.removeItem('sb-access-token');
-            sessionStorage.removeItem('sb-refresh-token');
-          } catch (e) {
-            console.warn("[LoginForm] Error clearing auth storage:", e);
-          }
-        }
-        
-        // Reset the Supabase client to ensure a clean session
-        try {
-          resetClient();
-        } catch (e) {
-          console.warn("[LoginForm] Failed to reset client after PKCE failure:", e);
-        }
-      } else if (urlError === 'invalid_redirect') {
-        errorMessage = 'invalid redirect url, please try again';
-      } else if (urlError === 'email_not_confirmed') {
-        errorMessage = 'please confirm your email before signing in';
-      } else if (urlError.includes('invalid_login')) {
-        errorMessage = 'invalid email or password';
-      } else {
-        // Try to make the error more user-friendly
-        errorMessage = urlError.replace(/_/g, ' ').toLowerCase();
-      }
-      
-      setInlineError(errorMessage);
+      const errorMessage = urlError.replace(/_/g, ' ').toLowerCase();
+      setLocalError(errorMessage);
       toast({
-        title: 'login failed',
+        title: 'Login failed',
         description: errorMessage,
         variant: 'destructive',
       });
-      
-      // Remove the error from URL to prevent showing it again on refresh
+
+      // Remove error from URL
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.delete('error');
-      
-      // Replace the URL without the error param, but keep other params
-      const newPath = window.location.pathname + 
-        (newParams.toString() ? `?${newParams.toString()}` : '');
-      
+      const newPath =
+        window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : '');
       router.replace(newPath);
     }
-  }, [urlError, toast, router, searchParams]);
-  
-  // Decode redirect path once when component mounts or redirectPath changes
+  }, [searchParams, toast, router]);
+
+  // Decode redirect path
   useEffect(() => {
     try {
       let decoded = redirectPath;
       if (redirectPath.includes('%')) {
-        // Only decode once to avoid issues with double-encoding
         decoded = decodeURIComponent(redirectPath);
-        console.log("Decoded redirect path:", decoded);
       }
-      
-      // Ensure it starts with a slash if it's a relative path
+
+      // Ensure path starts with slash if relative
       if (!decoded.startsWith('/') && !decoded.startsWith('http')) {
         decoded = '/' + decoded;
       }
-      
+
       setDecodedRedirectPath(decoded);
     } catch (e) {
-      console.error("Error decoding redirect path:", e);
-      setDecodedRedirectPath(redirectPath);
+      console.error('Error decoding redirect path:', e);
+      setDecodedRedirectPath('/');
     }
   }, [redirectPath]);
-  
-  // Handle successful authentication and redirect
-  useEffect(() => {
-    console.log("[LoginForm] Auth state updated - User:", !!user, "isLoading:", isLoading);
-    
-    if (user) {
-      console.log("[LoginForm] User authenticated, redirecting to:", decodedRedirectPath);
-      router.push(decodedRedirectPath);
-    }
-  }, [user, decodedRedirectPath, router, isLoading]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Add a retry handler
+  const handleRetry = async () => {
+    setLocalError(null);
     
-    // Ensure CSRF token is available
-    if (!csrfToken) {
-      console.error("[LoginForm] Missing CSRF token");
-      setInlineError("Security token missing. Please refresh the page and try again.");
-      toast({
-        title: 'Security Error',
-        description: "Missing security token. Please refresh the page.",
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    setInlineError(null);
     try {
-      console.log("[LoginForm] Submitting login form with email:", formData.email);
-      // Reset Supabase client if there was a previous error to ensure a clean session
-      if (authError && authError.message && authError.message.includes('timed out')) {
-        try {
-          console.log("[LoginForm] Resetting Supabase client due to previous timeout");
-          await resetClient();
-        } catch (e) {
-          console.warn("[LoginForm] Failed to reset client", e);
-        }
-      }
+      // First, try to refresh auth state
+      await refreshAuth();
       
-      // Use a custom login implementation that includes the CSRF token
-      const response = await fetchWithCsrf('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      }, csrfToken);
+      // Then try to sign in again
+      await signIn(email, password);
+    } catch (error) {
+      console.error('Retry login error:', error);
+      setLocalError('Login retry failed. Please check your network connection and try again.');
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Login failed');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Let the AuthProvider handle the session
-        await signIn(formData.email, formData.password);
-        console.log("[LoginForm] Sign-in successful");
-        
-        toast({
-          title: 'welcome back!',
-          description: 'successfully logged in',
-          variant: 'default',
-        });
-      } else {
-        throw new Error(data.error || 'Login failed');
-      }
-    } catch (error: any) {
-      console.error('[LoginForm] Login error:', error);
-      
-      // Try to extract more information about the error
-      const errorDetails = {
-        message: error.message || 'Unknown error',
-        code: error.code || 'no_code',
-        status: error.status || 'no_status',
-        stack: error.stack || 'no_stack'
-      };
-      console.error('[LoginForm] Error details:', errorDetails);
-      
-      let errorMessage = 'please check your credentials and try again';
-      if (error.message) {
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'invalid email or password';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'please confirm your email address before logging in';
-        } else if (error.message.includes('rate limit')) {
-          errorMessage = 'too many login attempts, please try again later';
-        } else {
-          errorMessage = error.message.toLowerCase();
-        }
-      }
-      setInlineError(errorMessage);
+      // Show a toast with more info
       toast({
-        title: 'login failed',
-        description: errorMessage,
+        title: 'Authentication Error',
+        description: 'Login failed after retry. Please try again later.',
         variant: 'destructive',
       });
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLocalError(null);
+
+    if (!email || !password) {
+      setLocalError('Please enter both email and password');
+      return;
+    }
+
     try {
-      // Clear any existing auth session storage to prevent PKCE conflicts
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('supabase-auth-token');
-          sessionStorage.removeItem('supabase-auth-token');
-          console.log("[LoginForm] Cleared previous auth tokens before Google sign-in");
-        } catch (e) {
-          console.warn("[LoginForm] Failed to clear tokens", e);
+      console.log('Attempting sign in...');
+      
+      // Clear any previous errors
+      if (authError) {
+        console.log('Clearing previous auth error before sign in');
+      }
+
+      await signIn(email, password);
+      // Auth provider will handle the session, and router will redirect in parent component
+    } catch (error) {
+      console.error('Login error:', error);
+      setRetryCount(prev => prev + 1);
+      
+      // Format user-friendly error message
+      let errorMessage = 'An error occurred during login. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid login credentials') || 
+            error.message.includes('Invalid email or password')) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (error.message.includes('rate limit')) {
+          errorMessage = 'Too many login attempts. Please try again later.';
+        } else {
+          errorMessage = error.message;
         }
       }
       
-      // Build the OAuth callback URL with the redirect path
-      const callbackUrl = new URL('/auth/callback', window.location.origin);
+      setLocalError(errorMessage);
       
-      // Only add the redirect parameter if it's not the default homepage
-      if (redirectPath !== '/') {
-        callbackUrl.searchParams.set('redirect', redirectPath);
+      // Show toast for persistent errors
+      if (errorMessage.includes('rate limit') || errorMessage.includes('service')) {
+        toast({
+          title: 'Login Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
       }
-      
-      // Add timestamp to prevent caching issues with PKCE
-      callbackUrl.searchParams.set('_t', Date.now().toString());
-      
-      // Add CSRF token to help validate the response
-      if (csrfToken) {
-        callbackUrl.searchParams.set('csrf', csrfToken);
+    }
+  };
+
+  // Handle Google sign-in
+  const handleGoogleSignIn = async () => {
+    try {
+      // Create browser client directly for social login
+      const { createClient } = await import('@/utils/supabase/client');
+      const supabase = createClient();
+
+      if (!supabase) {
+        throw new Error('Authentication service not available');
       }
-      
-      console.log("[LoginForm] Google sign-in callback URL:", callbackUrl.toString());
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
         options: {
-          redirectTo: callbackUrl.toString(),
-          skipBrowserRedirect: false,
+          redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(decodedRedirectPath)}`,
         },
       });
 
-      if (error) {
-        console.error("[LoginForm] Google sign-in error:", error);
-        throw error;
-      }
-      
-      if (!data?.url) {
-        console.error("[LoginForm] No OAuth URL returned");
-        throw new Error("No OAuth URL returned");
-      }
-      
-      console.log("[LoginForm] Google sign-in initiated successfully, redirecting to:", data.url);
-      
-      // The auth library will handle the redirect automatically
-    } catch (error: any) {
-      console.error("[LoginForm] Google sign-in exception:", error);
-      toast({
-        title: "google sign-in failed",
-        description: error.message || "please try again later",
-        variant: "destructive",
-      });
-    }
-  }
+      if (error) throw error;
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      setLocalError(
+        error instanceof Error ? error.message : 'Failed to sign in with Google. Please try again.'
+      );
 
-  // Debug information
-  useEffect(() => {
-    if (authError) {
-      console.error("[LoginForm] Auth error from context:", authError);
-      
-      // Extract error message from authError object
-      let errorMessage = '';
-      if (typeof authError === 'string') {
-        errorMessage = authError;
-      } else if (authError?.message) {
-        errorMessage = authError.message;
-        
-        // Handle specific error cases
-        if (errorMessage.includes('timed out')) {
-          errorMessage = 'Authentication is taking longer than expected. Please try again.';
-        } else if (errorMessage.includes('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please try again.';
-        } else if (errorMessage.includes('Email not confirmed')) {
-          errorMessage = 'Please confirm your email address before logging in.';
-        }
-      } else {
-        errorMessage = 'An unknown error occurred during authentication.';
-      }
-      
-      // Set error message for display
-      setInlineError(errorMessage);
-      
-      // Show toast notification for auth errors
       toast({
-        title: 'authentication error',
-        description: errorMessage,
+        title: 'Google Sign In Failed',
+        description: error instanceof Error ? error.message : 'Please try again',
         variant: 'destructive',
       });
     }
-    
-    if (urlError) {
-      console.error("[LoginForm] URL error parameter:", urlError);
-      // Set URL error message for display
-      setInlineError(urlError);
+  };
+
+  // Display auth errors from context
+  useEffect(() => {
+    if (authError) {
+      setLocalError(authError.message);
     }
-  }, [authError, urlError, toast]);
+  }, [authError]);
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-6"
       initial="hidden"
       animate="visible"
@@ -361,43 +216,43 @@ export function LoginForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground lowercase">or continue with</span>
+          <span className="bg-background px-2 text-muted-foreground lowercase">
+            or continue with
+          </span>
         </div>
       </motion.div>
 
-      <motion.form 
-        onSubmit={handleSubmit} 
-        className="space-y-4"
-        variants={slideUp}
-      >
+      <motion.form onSubmit={handleSubmit} className="space-y-4" variants={slideUp}>
         <motion.div variants={fadeIn} className="space-y-2">
           <Label htmlFor="email">email</Label>
           <Input
             id="email"
-            name="email"
             type="email"
             placeholder="hello@example.com"
-            value={formData.email}
-            onChange={handleChange}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </motion.div>
         <motion.div variants={fadeIn} className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">password</Label>
-            <Link href="/forgot-password" className="text-xs text-primary hover:underline lowercase">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-primary hover:underline lowercase"
+            >
               forgot password?
             </Link>
           </div>
           <div className="relative">
             <Input
               id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
             <Button
               type="button"
@@ -410,14 +265,10 @@ export function LoginForm() {
             </Button>
           </div>
         </motion.div>
-        <motion.div
-          variants={fadeIn}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-        >
+        <motion.div variants={fadeIn} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
           <Button type="submit" className="w-full gap-1 lowercase" disabled={isLoading}>
             {isLoading ? (
-              "signing in..."
+              'signing in...'
             ) : (
               <>
                 <LogIn className="h-4 w-4" />
@@ -426,18 +277,28 @@ export function LoginForm() {
             )}
           </Button>
         </motion.div>
-        {(urlError || inlineError || authError) && (
+        {localError && (
           <motion.div
             variants={fadeIn}
             className="text-destructive text-sm mt-2 text-center"
             role="alert"
             aria-live="polite"
           >
-            {urlError || inlineError || (typeof authError === 'string' ? authError : authError?.message)}
+            <div>{localError}</div>
+            {retryCount > 0 && !localError.includes('Invalid email or password') && (
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="px-0 text-primary hover:underline"
+                onClick={handleRetry}
+                disabled={isLoading}
+              >
+                Try again with a network refresh
+              </Button>
+            )}
           </motion.div>
         )}
       </motion.form>
     </motion.div>
-  )
+  );
 }
-

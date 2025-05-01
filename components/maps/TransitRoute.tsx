@@ -1,7 +1,5 @@
 // Transit-specific component for bus and subway routes
-// @ts-expect-error - Ensure react-map-gl and @types/react-map-gl are installed
 import React, { useEffect, useState } from 'react';
-// @ts-expect-error - Ensure react-map-gl and @types/react-map-gl are installed
 import { Source, Layer } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css'; // Ensure CSS is imported if not globally
 
@@ -30,7 +28,7 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
   start,
   end,
   mapboxToken,
-  onRouteData
+  onRouteData,
 }) => {
   const [transitSteps, setTransitSteps] = useState<TransitStep[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,15 +46,17 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
         );
 
         if (!response.ok) {
-            const errorData = await response.text();
-            throw new Error(`Transit API Error (${response.status}): ${errorData || 'Failed to fetch transit route'}`);
+          const errorData = await response.text();
+          throw new Error(
+            `Transit API Error (${response.status}): ${errorData || 'Failed to fetch transit route'}`
+          );
         }
 
         const data = await response.json();
 
         // Basic validation of response structure
         if (!data || !Array.isArray(data.steps)) {
-            throw new Error("Invalid response format from transit API");
+          throw new Error('Invalid response format from transit API');
         }
 
         // Transform the data into our TransitStep format
@@ -64,21 +64,23 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
         const mappedSteps = data.steps.map((step: any): TransitStep | null => {
           // Add validation for each step if necessary
           if (!step.mode || !step.route_name || !step.duration || !step.geometry) {
-            console.warn("Skipping invalid transit step:", step);
+            console.warn('Skipping invalid transit step:', step);
             return null; // Return null for invalid steps
           }
           return {
-              type: step.mode,
-              route: step.route_name,
-              color: getTransitColor(step.mode),
-              duration: step.duration,
-              geometry: step.geometry, // Assuming API provides valid GeoJSON LineString
-              stops: step.stops // Assuming stops are optional or validated
+            type: step.mode,
+            route: step.route_name,
+            color: getTransitColor(step.mode),
+            duration: step.duration,
+            geometry: step.geometry, // Assuming API provides valid GeoJSON LineString
+            stops: step.stops, // Assuming stops are optional or validated
           };
         });
 
         // Filter out null steps and assert type
-        const steps: TransitStep[] = mappedSteps.filter((step: TransitStep | null): step is TransitStep => step !== null);
+        const steps: TransitStep[] = mappedSteps.filter(
+          (step: TransitStep | null): step is TransitStep => step !== null
+        );
 
         setTransitSteps(steps);
         onRouteData?.(steps);
@@ -91,29 +93,32 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
 
     // Only fetch if start and end are valid
     if (start.lat && start.lng && end.lat && end.lng) {
-        fetchTransitRoute();
+      fetchTransitRoute();
     } else {
-        setTransitSteps([]); // Clear steps if coordinates are invalid
+      setTransitSteps([]); // Clear steps if coordinates are invalid
     }
-
   }, [start.lat, start.lng, end.lat, end.lng, mapboxToken, onRouteData]); // Depend on specific lat/lng
 
   const getTransitColor = (mode: string) => {
     switch (mode) {
-      case 'bus': return '#f59e0b'; // Amber 500
-      case 'subway': return '#ef4444'; // Red 500
-      case 'walk': return '#6b7280'; // Gray 500
-      case 'train': return '#3b82f6'; // Blue 500
-      default: return '#374151'; // Gray 700
+      case 'bus':
+        return '#f59e0b'; // Amber 500
+      case 'subway':
+        return '#ef4444'; // Red 500
+      case 'walk':
+        return '#6b7280'; // Gray 500
+      case 'train':
+        return '#3b82f6'; // Blue 500
+      default:
+        return '#374151'; // Gray 700
     }
   };
 
   // Don't render layers if no steps or loading/error
   if (transitSteps.length === 0) {
-     // Optionally show loading/error message here instead of in the info panel
-     return null;
+    // Optionally show loading/error message here instead of in the info panel
+    return null;
   }
-
 
   return (
     <>
@@ -126,7 +131,7 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
             data={{
               type: 'Feature',
               properties: {},
-              geometry: step.geometry
+              geometry: step.geometry,
             }}
           >
             <Layer
@@ -136,45 +141,46 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
                 'line-color': step.color,
                 'line-width': step.type === 'walk' ? 3 : 5,
                 'line-opacity': 0.8,
-                'line-dasharray': step.type === 'walk' ? [2, 2] : [1, 0]
+                'line-dasharray': step.type === 'walk' ? [2, 2] : [1, 0],
               }}
               layout={{
                 'line-join': 'round',
-                'line-cap': 'round'
+                'line-cap': 'round',
               }}
             />
           </Source>
 
           {/* Transit stops - Render only if stops exist */}
-          {step.stops && step.stops.map((stop, stopIndex) => (
-            <Source
-              key={`stop-${index}-${stopIndex}`}
-              id={`transit-stop-${index}-${stopIndex}`}
-              type="geojson"
-              data={{
-                type: 'Feature',
-                properties: { name: stop.name },
-                geometry: {
-                  type: 'Point',
-                  coordinates: stop.coordinates
-                }
-              }}
-            >
-              <Layer
-                id={`stop-layer-${index}-${stopIndex}`}
-                type="circle"
-                paint={{
-                  'circle-radius': step.type === 'walk' ? 3 : 5, // Smaller radius for walk stops?
-                  'circle-color': step.color,
-                  'circle-stroke-width': 1.5,
-                  'circle-stroke-color': '#ffffff'
+          {step.stops &&
+            step.stops.map((stop, stopIndex) => (
+              <Source
+                key={`stop-${index}-${stopIndex}`}
+                id={`transit-stop-${index}-${stopIndex}`}
+                type="geojson"
+                data={{
+                  type: 'Feature',
+                  properties: { name: stop.name },
+                  geometry: {
+                    type: 'Point',
+                    coordinates: stop.coordinates,
+                  },
                 }}
-                // Optional: Add text labels for stops
-                // layout={{ 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.5] }}
-                // paint={{ 'text-color': '#000000', 'text-halo-color': '#ffffff', 'text-halo-width': 1 }}
-              />
-            </Source>
-          ))}
+              >
+                <Layer
+                  id={`stop-layer-${index}-${stopIndex}`}
+                  type="circle"
+                  paint={{
+                    'circle-radius': step.type === 'walk' ? 3 : 5, // Smaller radius for walk stops?
+                    'circle-color': step.color,
+                    'circle-stroke-width': 1.5,
+                    'circle-stroke-color': '#ffffff',
+                  }}
+                  // Optional: Add text labels for stops
+                  // layout={{ 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.5] }}
+                  // paint={{ 'text-color': '#000000', 'text-halo-color': '#ffffff', 'text-halo-width': 1 }}
+                />
+              </Source>
+            ))}
         </React.Fragment>
       ))}
 
@@ -213,4 +219,4 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
       */}
     </>
   );
-}; 
+};

@@ -1,264 +1,288 @@
-// Server-side database functions that were previously in lib/db.ts
-// These functions use the createClient from @/utils/supabase/server and should only be used in API routes
+// Server-side database functions that use the Supabase server client
+// These should only be used in API routes or server components
 
-import { createServerClient } from "@/utils/supabase/server";
-// import { cookies } from "next/headers" // No longer needed directly
+import { createSupabaseServerClient } from '@/utils/supabase/server';
 
-export async function getTrips() {
-  // const cookieStore = cookies() // Handled by createClient
-  const supabase = createClient() // Corrected
-  const { data, error } = await supabase
-    .from("trips")
-    .select("*, trip_members(count)")
-    .order("created_at", { ascending: false })
+// ----- NOTE ON TYPE HANDLING -----
+// This file uses an untyped Supabase client to work around complex TypeScript issues.
+// We manually define the interfaces for all returned data and use explicit type
+// conversions to ensure type safety within our application code.
+// A more type-safe approach will be implemented in the future as the database
+// schema and types stabilize.
+// ------------------------------------
+
+// Type definitions
+interface ItineraryItemWithVotes {
+  id: string;
+  trip_id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  date?: string;
+  start_time?: string;
+  end_time?: string;
+  location?: string;
+  user_vote?: 'up' | 'down' | null;
+  votes?: number;
+}
+
+// Type for expense data
+interface ExpenseWithUser {
+  id: string;
+  trip_id: string;
+  amount: number;
+  category: string;
+  description?: string;
+  paid_by_user: {
+    id: string;
+    name?: string;
+    email?: string;
+    avatar_url?: string;
+  };
+}
+
+// Type for expense by category
+interface ExpenseCategory {
+  name: string;
+  amount: number;
+  color: string;
+}
+
+// Type for trip member with user data
+interface TripMemberWithUser {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: string;
+    name?: string;
+    email?: string;
+    avatar_url?: string;
+  };
+}
+
+// Type for trip with member count
+interface TripWithMembers {
+  id: string;
+  created_by: string | null;
+  name: string;
+  destination_id: string | null;
+  destination_name: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  description: string | null;
+  cover_image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  members: number;
+  created_by_user?: {
+    id: string;
+    name?: string;
+    email?: string;
+    avatar_url?: string;
+  };
+}
+
+// Type for vote response
+interface VoteResponse {
+  newVoteCount: number;
+}
+
+// Trip-related functions
+export async function getTrips(): Promise<TripWithMembers[]> {
+  const supabase = await createSupabaseServerClient();
+  
+  // Use SQL query to avoid TypeScript issues
+  const { data, error } = await supabase.rpc('get_trips_with_member_count');
 
   if (error) {
-    console.error("Error fetching trips:", error)
-    return []
+    console.error('Error fetching trips:', error);
+    return [];
   }
 
-  return data.map((trip) => ({
-    ...trip,
-    members: trip.trip_members[0]?.count || 0,
-  }))
+  return (data || []) as TripWithMembers[];
 }
 
-export async function getTripById(id: string) {
-  // const cookieStore = cookies() // Handled by createClient
-  const supabase = createClient() // Corrected
-  const { data, error } = await supabase
-    .from("trips")
-    .select(`
-      *,
-      trip_members(count),
-      created_by(id, name, email, avatar_url)
-    `)
-    .eq("id", id)
-    .single()
-
-  if (error) {
-    console.error("Error fetching trip:", error)
-    return null
-  }
-
-  return {
-    ...data,
-    members: data.trip_members[0]?.count || 0,
-  }
-}
-
-export async function getTripMembers(tripId: string) {
-  // const cookieStore = cookies() // Handled by createClient
-  const supabase = createClient() // Corrected
-  const { data, error } = await supabase
-    .from("trip_members")
-    .select(`
-      *,
-      user:user_id(id, name, email, avatar_url)
-    `)
-    .eq("trip_id", tripId)
-
-  if (error) {
-    console.error("Error fetching trip members:", error)
-    return []
-  }
-
-  return data
-}
-
-export async function getItineraryItems(tripId: string, userId?: string) {
-  // const cookieStore = cookies() // Handled by createClient
-  const supabase = createClient() // Corrected
-
-  // First get the itinerary items
-  const { data: items, error } = await supabase
-    .from("itinerary_items")
-    .select("*")
-    .eq("trip_id", tripId)
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true })
-
-  if (error) {
-    console.error("Error fetching itinerary items:", error)
-    return []
-  }
-
-  // If we have a userId, get the votes for this user
-  if (userId) {
-    const { data: votes, error: votesError } = await supabase
-      .from("votes")
-      .select("itinerary_item_id, vote_type")
-      .eq("user_id", userId)
-      .in(
-        "itinerary_item_id",
-        items.map((item) => item.id),
-      )
-
-    if (!votesError && votes) {
-      // Create a map of item_id to vote_type
-      const voteMap = votes.reduce(
-        (acc: Record<string, string>, vote) => { // Added type annotation for acc
-          acc[vote.itinerary_item_id] = vote.vote_type
-          return acc
-        },
-        {} as Record<string, string>,
-      )
-
-      // Add user_vote to each item
-      items.forEach((item: any) => { // Added type annotation for item
-        item.user_vote = (voteMap[item.id] as "up" | "down" | null) || null
-      })
-    }
-  }
-
-  // Get vote counts for each item
-  const { data: voteCounts, error: countError } = await supabase
-    .from("votes")
-    .select("itinerary_item_id, vote_type")
-    .in(
-      "itinerary_item_id",
-      items.map((item) => item.id),
-    )
-
-  if (!countError && voteCounts) {
-    // Calculate net votes for each item
-    const voteCountMap = voteCounts.reduce(
-      (acc: Record<string, number>, vote) => { // Added type annotation for acc
-        if (!acc[vote.itinerary_item_id]) {
-          acc[vote.itinerary_item_id] = 0
-        }
-        acc[vote.itinerary_item_id] += vote.vote_type === "up" ? 1 : -1
-        return acc
-      },
-      {} as Record<string, number>,
-    )
-
-    // Add votes to each item
-    items.forEach((item: any) => { // Added type annotation for item
-      item.votes = voteCountMap[item.id] || 0
-    })
-  }
-
-  return items
-}
-
-export async function getExpenses(tripId: string) {
-  // const cookieStore = cookies() // Handled by createClient
-  const supabase = createClient() // Corrected
-  const { data, error } = await supabase
-    .from("expenses")
-    .select(`
-      *,
-      paid_by_user:paid_by(id, name, email, avatar_url)
-    `)
-    .eq("trip_id", tripId)
-    .order("date", { ascending: false })
-
-  if (error) {
-    console.error("Error fetching expenses:", error)
-    return []
-  }
-
-  return data
-}
-
-export async function getExpensesByCategory(tripId: string) {
-  // const cookieStore = cookies() // Handled by createClient
-  const supabase = createClient() // Corrected
-  const { data, error } = await supabase.from("expenses").select("category, amount").eq("trip_id", tripId)
-
-  if (error) {
-    console.error("Error fetching expenses by category:", error)
-    return []
-  }
-
-  // Group by category and sum amounts
-  const categories = data.reduce(
-    (acc: Record<string, number>, expense) => { // Added type annotation for acc
-      const category = expense.category || "Other"
-      if (!acc[category]) {
-        acc[category] = 0
-      }
-      acc[category] += Number(expense.amount)
-      return acc
-    },
-    {} as Record<string, number>,
-  )
-
-  // Convert to array format
-  return Object.entries(categories).map(([name, amount]) => ({
-    name,
-    amount,
-    color: getCategoryColor(name),
-  }))
-}
-
-// Helper function
-function getCategoryColor(category: string): string {
-  const colors: Record<string, string> = {
-    Accommodation: "bg-blue-500",
-    "Food & Dining": "bg-green-500",
-    Activities: "bg-yellow-500",
-    Transportation: "bg-purple-500",
-    Shopping: "bg-pink-500",
-    Other: "bg-gray-500",
-  }
-
-  return colors[category] || colors.Other
-}
-
-// New function to handle voting on itinerary items
-export async function voteForItem(itemId: string, userId: string, voteType: "up" | "down" | null) {
-  const supabase = createClient();
-
-  if (!userId) {
-    throw new Error("User must be logged in to vote.");
-  }
-
-  if (voteType === null) {
-    // Remove existing vote
-    const { error } = await supabase
-      .from('votes')
-      .delete()
-      .match({ itinerary_item_id: itemId, user_id: userId });
+export async function getTripById(id: string): Promise<TripWithMembers | null> {
+  const supabase = await createSupabaseServerClient();
+  
+  try {
+    // Use SQL query to avoid TypeScript issues
+    const { data, error } = await supabase.rpc('get_trip_by_id', { trip_id: id });
 
     if (error) {
-      console.error("Error removing vote:", error);
-      throw new Error("Failed to remove vote.");
+      console.error('Error fetching trip:', error);
+      return null;
     }
-  } else {
-    // Upsert vote (add or update)
-    const { error } = await supabase
-      .from('votes')
-      .upsert({
-        itinerary_item_id: itemId,
-        user_id: userId,
-        vote_type: voteType
-      }, {
-        onConflict: 'itinerary_item_id, user_id' // Specify conflict columns
-      });
 
-    if (error) {
-      console.error("Error casting vote:", error);
-      throw new Error("Failed to cast vote.");
+    // Safe type checking for the response data
+    if (!data) {
+      return null;
     }
+    
+    // Check if the result is an array and has elements
+    const dataArray = Array.isArray(data) ? data : [data];
+    if (dataArray.length === 0) {
+      return null;
+    }
+
+    return dataArray[0] as TripWithMembers;
+  } catch (e) {
+    console.error('Exception fetching trip:', e);
+    return null;
+  }
+}
+
+export async function getTripMembers(tripId: string): Promise<TripMemberWithUser[]> {
+  const supabase = await createSupabaseServerClient();
+  
+  // Use SQL query to avoid TypeScript issues
+  const { data, error } = await supabase.rpc('get_trip_members', { trip_id: tripId });
+
+  if (error) {
+    console.error('Error fetching trip members:', error);
+    return [];
   }
 
-  // Optionally, fetch and return the updated vote count for the item
-  const { data: counts, error: countError } = await supabase
-    .from('votes')
-    .select('vote_type')
-    .eq('itinerary_item_id', itemId);
+  return (data || []) as TripMemberWithUser[];
+}
 
-  if (countError) {
-    console.error("Error fetching updated vote counts:", countError);
-    // Don't throw error here, just return 0 maybe?
-    return { newVoteCount: 0 }; 
+// Itinerary item functions
+export async function getItineraryItems(
+  tripId: string,
+  userId?: string
+): Promise<ItineraryItemWithVotes[]> {
+  const supabase = await createSupabaseServerClient();
+
+  // Use SQL query to avoid TypeScript issues
+  const { data, error } = await supabase.rpc('get_itinerary_items_with_votes', { 
+    trip_id: tripId,
+    user_id: userId || null 
+  });
+
+  if (error) {
+    console.error('Error fetching itinerary items:', error);
+    return [];
   }
 
-  const newVoteCount = counts.reduce((acc, vote) => {
-    return acc + (vote.vote_type === 'up' ? 1 : -1);
-  }, 0);
+  return (data || []) as ItineraryItemWithVotes[];
+}
 
+/**
+ * Get the trip ID for an itinerary item
+ */
+async function getItemTripId(itemId: string): Promise<string> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.rpc('get_item_trip_id', { item_id: itemId });
+
+  if (error) {
+    console.error('Error getting item trip ID:', error);
+    throw new Error('Failed to get item trip ID');
+  }
+
+  // Ensure we return a string
+  if (typeof data === 'string') {
+    return data;
+  }
+  
+  // If data is an object with a trip_id property, return that
+  if (data && typeof data === 'object' && 'trip_id' in data) {
+    return String(data.trip_id);
+  }
+  
+  throw new Error('Failed to get trip ID: unexpected data format');
+}
+
+/**
+ * Get the vote count for an itinerary item
+ */
+async function getItemVoteCount(itemId: string): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.rpc('get_item_vote_count', { item_id: itemId });
+
+  if (error) {
+    console.error('Error getting vote count:', error);
+    throw new Error('Failed to get vote count');
+  }
+
+  // Ensure we return a number
+  if (typeof data === 'number') {
+    return data;
+  }
+  
+  // If data is an object with a count property, return that
+  if (data && typeof data === 'object' && 'count' in data) {
+    return Number(data.count);
+  }
+  
+  return 0; // Default to 0 if no valid count is found
+}
+
+/**
+ * Cast a vote on an itinerary item
+ * @param itemId - The ID of the itinerary item
+ * @param userId - The ID of the user casting the vote
+ * @param voteType - The type of vote (up, down, or null to remove the vote)
+ * @returns An object containing the new vote count for the item
+ */
+export async function castVote(
+  itemId: string,
+  userId: string,
+  voteType: 'up' | 'down' | null
+): Promise<VoteResponse> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.rpc('cast_vote', {
+    item_id: itemId,
+    user_id: userId,
+    vote_type: voteType
+  });
+
+  if (error) {
+    console.error('Error casting vote:', error);
+    throw new Error('Failed to cast vote');
+  }
+
+  // Get the updated vote count
+  const newVoteCount = await getItemVoteCount(itemId);
   return { newVoteCount };
+}
+
+/**
+ * Get the expenses by category for a trip
+ * @param tripId - The ID of the trip
+ * @returns An array of expense categories with amounts
+ */
+export async function getExpensesByCategory(tripId: string): Promise<ExpenseCategory[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.rpc('get_expenses_by_category', { trip_id: tripId });
+
+  if (error) {
+    console.error('Error fetching expenses by category:', error);
+    return [];
+  }
+
+  // Define category colors
+  const categoryColors: Record<string, string> = {
+    accommodation: '#4f46e5', // indigo
+    food: '#16a34a', // green
+    transportation: '#f59e0b', // amber
+    activities: '#06b6d4', // cyan
+    shopping: '#ec4899', // pink
+    other: '#6b7280', // gray
+  };
+
+  // Add colors to the categories
+  return (Array.isArray(data) ? data : []).map((category: any) => ({
+    name: category.name || 'other',
+    amount: Number(category.amount) || 0,
+    color: categoryColors[category.name || 'other'] || '#6b7280', // default to gray if no color defined
+  }));
 }

@@ -1,13 +1,13 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { TIME_FORMATS, THEME } from "@/utils/constants"
-import { format as formatFns, parseISO } from 'date-fns'
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { TIME_FORMATS, THEME } from '@/utils/constants/ui';
+import { format as formatFns, parseISO } from 'date-fns';
 
 /**
  * Combine multiple class names with clsx and twMerge
  */
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -20,18 +20,18 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDateRange(
   startDate?: string | Date | null,
   endDate?: string | Date | null,
-  format: keyof typeof TIME_FORMATS = "DISPLAY_DATE"
+  format: keyof typeof TIME_FORMATS = 'DISPLAY_DATE'
 ): string {
   const startStr = startDate ? formatDate(startDate, format) : null;
   const endStr = endDate ? formatDate(endDate, format) : null;
-  
-  if (!startStr && !endStr) return "Dates not set";
+
+  if (!startStr && !endStr) return 'Dates not set';
   if (startStr && !endStr) return `From ${startStr}`;
   if (!startStr && endStr) return `Until ${endStr}`;
   if (startStr && endStr) {
-      return `${startStr} - ${endStr}`;
+    return `${startStr} - ${endStr}`;
   }
-  return "Invalid date range";
+  return 'Invalid date range';
 }
 
 /**
@@ -40,33 +40,36 @@ export function formatDateRange(
  * @param format - Optional format type from TIME_FORMATS
  * @returns Formatted date string
  */
-export function formatDate(date: string | Date | undefined | null, formatType: keyof typeof TIME_FORMATS = "DISPLAY_DATE"): string {
-  if (!date) return "Unscheduled";
-  
+export function formatDate(
+  date: string | Date | undefined | null,
+  formatType: keyof typeof TIME_FORMATS = 'DISPLAY_DATE'
+): string {
+  if (!date) return 'Unscheduled';
+
   let dateObj: Date;
   try {
-     dateObj = typeof date === "string" ? parseISO(date) : date;
-     // Check if the date is valid after parsing/initialization
-     if (isNaN(dateObj.getTime())) {
-        throw new Error("Invalid date provided");
-     }
+    dateObj = typeof date === 'string' ? parseISO(date) : date;
+    // Check if the date is valid after parsing/initialization
+    if (isNaN(dateObj.getTime())) {
+      throw new Error('Invalid date provided');
+    }
   } catch (e) {
-     console.error("Error parsing date in formatDate:", e);
-     return "Invalid Date";
+    console.error('Error parsing date in formatDate:', e);
+    return 'Invalid Date';
   }
-  
+
   // Use date-fns format for more control and reliability
   switch (formatType) {
-    case "DISPLAY_DATE":
-      return formatFns(dateObj, "MMM d, yyyy");
-    case "DISPLAY_TIME":
-      return formatFns(dateObj, "h:mm a");
-    case "FULL_DATE":
-      return formatFns(dateObj, "EEEE, MMMM d, yyyy");
-    case "SHORT_DATE":
-      return formatFns(dateObj, "MMM d");
+    case 'DISPLAY_DATE':
+      return formatFns(dateObj, 'MMM d, yyyy');
+    case 'DISPLAY_TIME':
+      return formatFns(dateObj, 'h:mm a');
+    case 'FULL_DATE':
+      return formatFns(dateObj, 'EEEE, MMMM d, yyyy');
+    case 'SHORT_DATE':
+      return formatFns(dateObj, 'MMM d');
     default:
-      return formatFns(dateObj, "P"); // Default to locale-aware date format
+      return formatFns(dateObj, 'P'); // Default to locale-aware date format
   }
 }
 
@@ -77,35 +80,135 @@ export function formatDate(date: string | Date | undefined | null, formatType: k
  * @returns Truncated string
  */
 export function truncate(str: string, length: number): string {
-  if (!str) return ""
-  return str.length > length ? `${str.substring(0, length)}...` : str
+  if (!str) return '';
+  return str.length > length ? `${str.substring(0, length)}...` : str;
 }
 
 // List of common stop words
 const stopWords = new Set([
-  'a', 'an', 'and', 'the', 'in', 'on', 'at', 'for', 'to', 'of',
-  'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
-  'my', 'your', 'his', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs',
-  'am', 'is', 'are', 'was', 'were', 'be', 'being', 'been',
-  'have', 'has', 'had', 'having',
-  'do', 'does', 'did', 'doing',
-  'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might', 'must',
-  'about', 'above', 'after', 'again', 'against', 'all', 'any', 'around', 'as',
-  'because', 'before', 'below', 'between', 'both', 'but', 'by',
-  'down', 'during',
-  'each', 'few', 'from', 'further',
-  'here', 'how',
-  'into', 'if',
+  'a',
+  'an',
+  'and',
+  'the',
+  'in',
+  'on',
+  'at',
+  'for',
+  'to',
+  'of',
+  'i',
+  'you',
+  'he',
+  'she',
+  'it',
+  'we',
+  'they',
+  'me',
+  'him',
+  'her',
+  'us',
+  'them',
+  'my',
+  'your',
+  'his',
+  'its',
+  'our',
+  'their',
+  'mine',
+  'yours',
+  'hers',
+  'ours',
+  'theirs',
+  'am',
+  'is',
+  'are',
+  'was',
+  'were',
+  'be',
+  'being',
+  'been',
+  'have',
+  'has',
+  'had',
+  'having',
+  'do',
+  'does',
+  'did',
+  'doing',
+  'will',
+  'would',
+  'shall',
+  'should',
+  'can',
+  'could',
+  'may',
+  'might',
+  'must',
+  'about',
+  'above',
+  'after',
+  'again',
+  'against',
+  'all',
+  'any',
+  'around',
+  'as',
+  'because',
+  'before',
+  'below',
+  'between',
+  'both',
+  'but',
+  'by',
+  'down',
+  'during',
+  'each',
+  'few',
+  'from',
+  'further',
+  'here',
+  'how',
+  'into',
+  'if',
   'just',
-  'more', 'most',
-  'no', 'nor', 'not',
-  'only', 'or', 'other', 'out', 'over',
-  'same', 'so', 'some', 'still', 'such',
-  'than', 'that', 'then', 'there', 'these', 'this', 'those', 'through',
-  'under', 'until', 'up',
+  'more',
+  'most',
+  'no',
+  'nor',
+  'not',
+  'only',
+  'or',
+  'other',
+  'out',
+  'over',
+  'same',
+  'so',
+  'some',
+  'still',
+  'such',
+  'than',
+  'that',
+  'then',
+  'there',
+  'these',
+  'this',
+  'those',
+  'through',
+  'under',
+  'until',
+  'up',
   'very',
-  'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why',
-  'with', 'within', 'without',
+  'what',
+  'when',
+  'where',
+  'which',
+  'while',
+  'who',
+  'whom',
+  'why',
+  'with',
+  'within',
+  'without',
   // Add more as needed
 ]);
 
@@ -115,19 +218,21 @@ const stopWords = new Set([
  * and removes leading/trailing/duplicate hyphens.
  */
 export function generateSlug(text: string): string {
-  if (!text) return "";
+  if (!text) return '';
 
   // 1. Convert to lowercase
   let slug = text.toLowerCase();
 
   // 2. Remove stop words (split, filter, join)
-  slug = slug.split(' ')
-             .filter(word => !stopWords.has(word))
-             .join(' ');
+  slug = slug
+    .split(' ')
+    .filter((word) => !stopWords.has(word))
+    .join(' ');
 
   // 3. Replace spaces and non-alphanumeric characters (except hyphens) with a hyphen
-  slug = slug.replace(/\s+/g, '-') // Replace spaces with hyphens
-             .replace(/[^a-z0-9-]/g, '') // Remove invalid characters
+  slug = slug
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, ''); // Remove invalid characters
 
   // 4. Remove duplicate hyphens
   slug = slug.replace(/-{2,}/g, '-');
@@ -144,14 +249,17 @@ export function generateSlug(text: string): string {
  * @returns Formatted time string in 12-hour format with AM/PM
  */
 export function formatTime(timeStr?: string): string {
-  if (!timeStr) return "";
+  if (!timeStr) return '';
   try {
-    const [hours, minutes] = timeStr.split(":");
-    return new Date(0, 0, 0, Number.parseInt(hours), Number.parseInt(minutes)).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const [hours, minutes] = timeStr.split(':');
+    return new Date(0, 0, 0, Number.parseInt(hours), Number.parseInt(minutes)).toLocaleTimeString(
+      [],
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }
+    );
   } catch (e) {
     return timeStr;
   }
@@ -166,15 +274,16 @@ export function getColorClassFromId(id?: string): string {
   const colorClasses = [
     `bg-${THEME.COLORS.BLUE} text-blue-900`,
     `bg-${THEME.COLORS.PINK} text-pink-900`,
-    `bg-${THEME.COLORS.YELLOW} text-amber-900`, 
+    `bg-${THEME.COLORS.YELLOW} text-amber-900`,
     `bg-${THEME.COLORS.PURPLE} text-purple-900`,
     `bg-${THEME.COLORS.MINT} text-emerald-900`,
     `bg-${THEME.COLORS.PEACH} text-orange-900`,
   ];
 
   if (!id) return colorClasses[0];
-  
-  const colorIndex = Math.abs(id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % colorClasses.length;
+
+  const colorIndex =
+    Math.abs(id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % colorClasses.length;
   return colorClasses[colorIndex];
 }
 
@@ -183,84 +292,144 @@ export function getColorClassFromId(id?: string): string {
  * @returns CSS class for card styling
  */
 export function getCardClass(): string {
-  return "bg-background dark:bg-slate-900/60";
+  return 'bg-background dark:bg-slate-900/60';
 }
 
 /**
- * Format a number as a currency amount
- * @param amount Number to format
- * @param currency Currency code (default: USD)
+ * Get initials from a name
+ * @param name The name to get initials from
+ * @returns Initials (up to 2 characters)
+ */
+export function getInitials(name?: string | null): string {
+  if (!name) return '';
+  
+  return name
+    .split(' ')
+    .map(part => part.charAt(0))
+    .filter(char => char.match(/[A-Za-z]/)) // Only include letters
+    .slice(0, 2) // Max 2 initials
+    .join('')
+    .toUpperCase();
+}
+
+/**
+ * Format an error into a readable string
+ * @param error Any error object or string
+ * @param fallback Fallback message if error can't be parsed
+ * @returns Formatted error message
+ */
+export function formatError(
+  error: unknown,
+  fallback: string = 'An unexpected error occurred'
+): string {
+  if (!error) return fallback;
+  
+  // If it's a string, return it directly
+  if (typeof error === 'string') return error;
+  
+  // If it's an Error object with a message
+  if (error instanceof Error) return error.message;
+  
+  // If it's an object with a message property
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const msg = (error as { message: unknown }).message;
+    if (typeof msg === 'string') return msg;
+  }
+  
+  // If it's an object with an error property containing a message
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'error' in error &&
+    typeof (error as { error: unknown }).error === 'object' &&
+    (error as { error: unknown }).error !== null &&
+    'message' in (error as { error: { message?: unknown } }).error
+  ) {
+    const msg = (error as { error: { message?: unknown } }).error.message;
+    if (typeof msg === 'string') return msg;
+  }
+  
+  // If it can be stringified, stringify it
+  try {
+    if (typeof error === 'object' && error !== null) {
+      return JSON.stringify(error);
+    }
+  } catch (e) {
+    // Ignore stringification errors
+  }
+  
+  // Default fallback
+  return fallback;
+}
+
+/**
+ * Format a currency amount
+ * @param amount The amount to format
+ * @param currency The currency code
  * @returns Formatted currency string
  */
-export function formatCurrency(amount: number | string | undefined, currency: string = 'USD'): string {
-  if (amount === undefined || amount === null) return '$0.00';
+export function formatCurrency(
+  amount: number | string | undefined,
+  currency: string = 'USD'
+): string {
+  if (amount === undefined || amount === null) return '';
   
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(numAmount);
+  if (isNaN(numericAmount)) return '';
+  
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(numericAmount);
+  } catch (error) {
+    console.error('Error formatting currency:', error);
+    return `${numericAmount} ${currency}`;
+  }
 }
 
 /**
- * Limit array items to a certain number and return info about hidden items
- * @param items Array of items to limit 
- * @param limit Maximum number of items to show
- * @returns Object with limited items and count of hidden items
+ * Limit an array of items with info about hidden items
+ * @param items Array of items to limit
+ * @param limit Maximum number of items to return
+ * @returns Object with limited items and info about hidden items
  */
-export function limitItems<T>(items: T[], limit: number = 10): { 
+export function limitItems<T>(
   items: T[],
-  hiddenCount: number,
-  hasMore: boolean 
+  limit: number = 10
+): {
+  items: T[];
+  hiddenCount: number;
+  hasMore: boolean;
 } {
   if (!items || !Array.isArray(items)) {
     return { items: [], hiddenCount: 0, hasMore: false };
   }
   
-  const hiddenCount = Math.max(0, items.length - limit);
-  const hasMore = hiddenCount > 0;
-  
-  return {
-    items: items.slice(0, limit),
-    hiddenCount,
-    hasMore
-  };
-}
-
-/**
- * Format error messages consistently
- * @param error Error object or string
- * @param fallback Fallback message if error is undefined
- * @returns Formatted error message
- */
-export function formatError(error: unknown, fallback: string = "An unexpected error occurred"): string {
-  if (!error) return fallback;
-  
-  if (typeof error === 'string') return error;
-  
-  if (error instanceof Error) return error.message;
-  
-  if (typeof error === 'object' && error !== null) {
-    // Handle Supabase or other API errors that might have a message property
-    if ('message' in error && typeof error.message === 'string') {
-      return error.message;
-    }
-    
-    // Handle objects with error property
-    if ('error' in error && typeof error.error === 'string') {
-      return error.error;
-    }
+  // If items are less than or equal to the limit, return them all
+  if (items.length <= limit) {
+    return {
+      items,
+      hiddenCount: 0,
+      hasMore: false,
+    };
   }
   
-  return fallback;
+  // Otherwise, return the limited items and info about hidden items
+  return {
+    items: items.slice(0, limit),
+    hiddenCount: items.length - limit,
+    hasMore: true,
+  };
 }
 
 /**
  * Formats a date relative to the current time.
  * Example: "2 hours ago", "yesterday", "in 3 days"
- * 
+ *
  * @param date The date to format (string or Date object)
  * @returns A string representing the relative time, or the formatted date if error.
  */
@@ -268,9 +437,9 @@ export function formatRelativeTime(date: Date | string): string {
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     if (isNaN(dateObj.getTime())) {
-       throw new Error("Invalid date provided");
+      throw new Error('Invalid date provided');
     }
-    
+
     const now = new Date();
     const diffSeconds = (now.getTime() - dateObj.getTime()) / 1000;
     const diffDays = Math.round(diffSeconds / (60 * 60 * 24));
@@ -282,31 +451,12 @@ export function formatRelativeTime(date: Date | string): string {
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    
-    // For dates more than a year ago, return formatted date
-    return formatDate(dateObj, "DISPLAY_DATE");
 
+    // For dates more than a year ago, return formatted date
+    return formatDate(dateObj, 'DISPLAY_DATE');
   } catch (error) {
-    console.error("Error formatting relative time:", error);
+    console.error('Error formatting relative time:', error);
     // Fallback to standard date format if relative calculation fails
-    return formatDate(date, "DISPLAY_DATE"); 
+    return formatDate(date, 'DISPLAY_DATE');
   }
 }
-
-/**
- * Get initials from a name string.
- * Handles null/undefined names and multiple words.
- * 
- * @param name The name string.
- * @returns Initials (e.g., "JD") or empty string.
- */
-export function getInitials(name?: string | null): string {
-  if (!name) return "";
-  
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .filter((char, index, arr) => index === 0 || index === arr.length - 1) // Get first and last initial
-    .join('')
-    .toUpperCase();
-} 

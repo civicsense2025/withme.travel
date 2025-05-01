@@ -1,191 +1,316 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Menu, X, PlusCircle, LogOut, Settings, User, Map, Moon, Sun, Search, Bookmark } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { PAGE_ROUTES } from '@/utils/constants/routes';
+import * as React from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X, PlusCircle, LogOut, Moon, Sun, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider
-} from "@/components/ui/tooltip"
-import { useTheme } from "next-themes"
-import { Logo } from "@/components/logo"
-import { useSearch } from "@/contexts/search-context"
-import { useAuth } from "@/lib/hooks/use-auth"
-import { PAGE_ROUTES, THEME } from "@/utils/constants"
-import { UserNav } from "@/components/layout/user-nav"
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useTheme } from 'next-themes';
+import { Logo } from '@/components/logo';
+import { useSearch } from '@/contexts/search-context';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { UserNav } from '@/components/layout/user-nav';
+import { ErrorBoundary } from '@sentry/nextjs';
 
 // Create a client-only wrapper for the tooltip component
-function ClientOnlyTooltip({ children, text }: { children: React.ReactNode, text: string }) {
+function ClientOnlyTooltip({ children, text }: { children: React.ReactNode; text: string }) {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
   if (!mounted) {
     return <>{children}</>;
   }
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-        <TooltipContent>
-          {text}
-        </TooltipContent>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent>{text}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
 }
 
+// Create a static Skeleton component that renders the same on server and client
+function ClientSkeleton(props: React.ComponentProps<typeof Skeleton>) {
+  const finalClassName = cn('bg-muted', props.className);
+
+  return <div className={finalClassName} style={{ animation: 'none' }} aria-hidden="true" />;
+}
+
+// Create a dedicated NavItem component to handle loading states
+function NavItem({
+  href,
+  isActive,
+  isLoading,
+  children,
+}: {
+  href: string;
+  isActive: boolean;
+  isLoading: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="h-5">
+      {isLoading ? (
+        <ClientSkeleton className="h-full w-16 rounded" />
+      ) : (
+        <Link
+          href={href}
+          className={cn(
+            'text-sm font-medium transition-colors lowercase',
+            isActive ? 'text-foreground' : 'text-muted-foreground',
+            'hover:text-purple-500' // Static class instead of dynamic
+          )}
+        >
+          {children}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// Loading placeholders with consistent DOM structure
+function LoadingUserNavPlaceholder() {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="h-5 w-16">
+        <ClientSkeleton className="h-full w-full rounded" />
+      </div>
+    </div>
+  );
+}
+
+function LoadingUserAvatarPlaceholder() {
+  return (
+    <div className="h-8 w-8">
+      <ClientSkeleton className="h-full w-full rounded-full" />
+    </div>
+  );
+}
+
+// Simple fallback component for auth errors
+function AuthErrorFallback() {
+  return (
+    <div className="flex items-center gap-2">
+      <Link href="/login">
+        <Button variant="outline" size="sm" className="lowercase rounded-full">
+          Login
+        </Button>
+      </Link>
+      {process.env.NODE_ENV === 'development' && (
+        <div
+          onClick={() => window.location.reload()}
+          className="text-xs text-muted-foreground underline cursor-pointer"
+        >
+          Reload
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Get profile initials - shared function to ensure consistency
+function getProfileInitials(profile: any, user: any): string {
+  if (profile?.name) {
+    // Get first letters of each word in the name
+    return profile.name
+      .split(' ')
+      .map((part: string) => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  }
+  return user?.email?.charAt(0).toUpperCase() || 'U';
+}
+
 export function Navbar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { user, profile, signOut, isLoading } = useAuth()
-  const isAdmin = profile?.is_admin
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
-  const { openSearch } = useSearch()
-  
+  const pathname = usePathname();
+  const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, profile, signOut, isLoading } = useAuth();
+  const isAdmin = profile?.is_admin ?? false;
+  // Single mounting state
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Combine loading states for consistency
+  // We want to show the UI even if we're loading the auth state
+  // This helps with UI stability and prevents flashing
+  const isLoadingState = isLoading || !hasMounted;
+  const { theme, setTheme } = useTheme();
+  const { openSearch } = useSearch();
+
+  // Mobile detection for responsive behavior
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  // Merged resize effect
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setIsMobileView(isMobile);
+
+      // Close menu when viewport becomes desktop
+      if (!isMobile && isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add listener
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isMenuOpen]);
+
+  // Add a click handler for closing the menu when clicking outside
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.navbar-menu') && !target.closest('button[aria-label*="menu"]')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    // Close menu on Escape key press
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isMenuOpen]);
+
   // State to track how long loading has been active
-  const [loadingDuration, setLoadingDuration] = useState(0)
-  
+  const [loadingDuration, setLoadingDuration] = useState(0);
+
   // Use this ref to track auth state for debugging
-  const authStateRef = useRef({
-    isLoading,
-    hasUser: !!user,
-    userId: user?.id,
-    profileId: profile?.id
-  })
-  
+  // const authStateRef = useRef({
+  //   isLoading,
+  //   hasUser: !!user,
+  //   userId: user?.id,
+  //   profileId: profile?.id,
+  // });
+
   // Update the ref when auth state changes (for debugging)
   useEffect(() => {
-    authStateRef.current = {
-      isLoading,
-      hasUser: !!user,
-      userId: user?.id,
-      profileId: profile?.id
-    }
-    
-    // Log auth state changes for debugging
-    console.log("[Navbar] Auth state updated:", {
-      isLoading,
-      hasUser: !!user,
-      userId: user?.id?.substring(0, 8),
-      hasProfile: !!profile
-    })
-  }, [isLoading, user, profile])
-  
+    // authStateRef.current = {
+    //   isLoading,
+    //   hasUser: !!user,
+    //   userId: user?.id,
+    //   profileId: profile?.id,
+    // };
+    // Log auth state changes for debugging - guard with development check
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log('[Navbar] Auth state updated:', {
+    //     isLoading,
+    //     hasUser: !!user,
+    //     userId: typeof user?.id === 'string' ? user.id.substring(0, 8) : undefined,
+    //     hasProfile: !!profile,
+    //   });
+    // }
+  }, [isLoading, user, profile]);
+
   // Set up monitoring for prolonged loading state
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
-    
+
     if (isLoading) {
       // Start a timer when loading begins
       timer = setInterval(() => {
-        setLoadingDuration(prev => prev + 500);
+        setLoadingDuration((prev) => prev + 500);
       }, 500);
     } else {
       // Reset when loading completes
       setLoadingDuration(0);
     }
-    
+
     // Clean up timer
     return () => {
       if (timer) clearInterval(timer);
     };
   }, [isLoading]);
-  
+
   // Show a retry button if loading takes too long
   const showRetryButton = loadingDuration > 3000; // 3 seconds
-  
+
   // Handle manual auth state refresh
   const handleForceRefresh = useCallback(() => {
-    console.log("[Navbar] Force refreshing auth state");
-    // This could dispatch a custom event that AuthProvider listens for,
-    // or reload the page in a worst-case scenario
-    
-    // Simple approach: reload the page
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log('[Navbar] Force refreshing auth state');
+    // }
+
     if (typeof window !== 'undefined') {
       window.location.reload();
     }
   }, []);
 
   const handleSignOut = async () => {
-    await signOut()
-  }
+    await signOut();
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen((prevState) => !prevState);
-  }
+  };
 
   const closeMenu = () => {
-    setIsMenuOpen(false)
-  }
+    setIsMenuOpen(false);
+  };
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
-  }
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   const isActive = (path: string) => {
-    return pathname === path
-  }
-
-  // Placeholder for user-specific items while loading
-  const LoadingUserNavPlaceholder = () => (
-    <div className="flex items-center gap-4">
-      <Skeleton className="h-5 w-16 rounded" />
-    </div>
-  );
-  
-  const LoadingUserAvatarPlaceholder = () => (
-    <Skeleton className="h-8 w-8 rounded-full" />
-  );
+    return pathname === path;
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 dark:border-border/20 bg-background/95 backdrop-blur-sm">
       <div className="flex h-16 items-center justify-between py-4 px-3 sm:px-4 md:px-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-4 md:gap-8">
-          <div className="cursor-pointer" onClick={() => router.push("/")}>
+          <div className="cursor-pointer" onClick={() => router.push('/')}>
             <Logo />
           </div>
 
           {/* Desktop Navigation - hidden on mobile */}
           <nav className="hidden md:flex gap-6 items-center">
-            {isLoading ? (
-               <Skeleton className="h-5 w-16 rounded" /> 
-            ) : user ? (
-              <>
-                <Link
-                  href="/trips"
-                  className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                    isActive("/trips") ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  My Trips
-                </Link>
-              </>
-            ) : null }
-            
-            <Link
-              href="/support"
-              className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                isActive("/support") ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
+            {/* Show My Trips link during loading or when user is logged in */}
+            {(isLoadingState || user) && (
+              <NavItem href="/trips" isActive={isActive('/trips')} isLoading={isLoadingState}>
+                My Trips
+              </NavItem>
+            )}
+
+            {/* Support Us link should always be visible */}
+            <NavItem href="/support" isActive={isActive('/support')} isLoading={isLoadingState}>
               support us
-            </Link>
+            </NavItem>
           </nav>
         </div>
 
@@ -207,61 +332,64 @@ export function Navbar() {
           </div>
 
           {/* Plan a trip button - visible on all screens */}
-          <Link href={isLoading ? "#" : (user ? "/trips/create" : "/login?redirect=/trips/create")}>
-            <ClientOnlyTooltip text={isLoading ? "Loading..." : (user ? "Plan a new trip" : "login to manage your trips")}>
-              <Button 
-                disabled={isLoading}
-                className="
-                  relative overflow-hidden
-                  lowercase rounded-full 
-                  bg-travel-purple hover:bg-purple-400 text-purple-900 
-                  text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8 
-                  animate-pulse-soft-scale 
-                  before:absolute before:inset-0 before:bg-shimmer-gradient 
-                  before:bg-no-repeat before:bg-200% 
-                  before:animate-shimmer
-                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple
-                  disabled:opacity-70 disabled:cursor-not-allowed
-                "
-              >
-                <span className="relative z-10 flex items-center">
-                  <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                  <span>manage my trips</span>
-                </span>
-              </Button>
-            </ClientOnlyTooltip>
-          </Link>
+          <div className="relative">
+            {!isLoadingState && (
+              <Link href={user ? '/trips/create' : '/login?redirect=/trips/create'}>
+                <ClientOnlyTooltip text={user ? 'Plan a new trip' : 'login to manage your trips'}>
+                  <Button
+                    className={cn(
+                      'relative overflow-hidden lowercase rounded-full',
+                      'bg-travel-purple hover:bg-purple-400 text-purple-900',
+                      'text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8',
+                      'animate-pulse-soft-scale',
+                      'before:absolute before:inset-0 before:bg-shimmer-gradient',
+                      'before:bg-no-repeat before:bg-200%',
+                      'before:animate-shimmer',
+                      'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple'
+                    )}
+                  >
+                    <span className="relative z-10 flex items-center">
+                      <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                      <span>{user ? 'manage my trips' : 'sign in'}</span>
+                    </span>
+                  </Button>
+                </ClientOnlyTooltip>
+              </Link>
+            )}
+            {isLoadingState && (
+              <div className="h-7 sm:h-8">
+                <ClientSkeleton className="h-full w-24 sm:w-32 rounded-full" />
+              </div>
+            )}
+          </div>
 
           {/* Mobile menu toggle - visible only on mobile */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleMenu}
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMenuOpen}
             className="h-8 w-8 rounded-full md:hidden"
           >
             {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
 
           {/* User dropdown - hidden on mobile, now using UserNav component */}
+          {/* User dropdown - hidden on mobile, now using UserNav component with error boundary */}
           <div className="hidden md:flex items-center gap-4">
-            {isLoading ? (
-              <LoadingUserAvatarPlaceholder />
-            ) : user ? (
-              <UserNav />
-            ) : null }
+            <ErrorBoundary fallback={<AuthErrorFallback />}>
+              {isLoadingState ? <LoadingUserAvatarPlaceholder /> : user ? <UserNav /> : null}
+            </ErrorBoundary>
           </div>
         </div>
 
         {/* Add retry button when loading takes too long */}
-        {showRetryButton && isLoading && (
+        {showRetryButton && isLoadingState && (
           <div className="absolute top-16 left-0 right-0 bg-amber-100 dark:bg-amber-900 p-2 text-center">
             <p className="text-xs text-amber-800 dark:text-amber-200">
-              Login status is taking longer than expected. 
-              <button 
-                onClick={handleForceRefresh}
-                className="underline ml-2 font-medium"
-              >
+              Login status is taking longer than expected.
+              <button onClick={handleForceRefresh} className="underline ml-2 font-medium">
                 Refresh now
               </button>
             </p>
@@ -269,48 +397,51 @@ export function Navbar() {
         )}
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isMenuOpen && (
           <>
-            {/* Backdrop overlay */}
+            {/* Backdrop overlay - increased z-index */}
             <motion.div
-              className="fixed inset-0 z-40 bg-black/70 md:hidden"
+              key="mobile-menu-backdrop"
+              className="fixed inset-0 z-50 bg-black/70 md:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeMenu}
-              key="mobile-menu-backdrop"
             />
-            
+
             {/* Mobile menu */}
             <motion.div
-              className="fixed left-0 right-0 top-16 bottom-0 z-[100] md:hidden border-t bg-background/95 shadow-lg overflow-y-auto"
+              key="mobile-menu-content"
+              className="fixed left-0 right-0 top-16 bottom-0 z-[51] md:hidden border-t bg-background/95 shadow-lg overflow-y-auto navbar-menu"
+              aria-label="Mobile navigation menu"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              key="mobile-menu-content"
             >
               <div className="container py-6 h-full flex flex-col">
-                {isLoading ? (
-                   <div className="pb-6 border-b mb-6">
-                     <Skeleton className="h-8 w-full rounded-full" />
-                   </div>
-                 ) : !user && (
+                {isLoadingState ? (
+                  <div className="pb-6 border-b mb-6">
+                    <div className="h-8 w-full">
+                      <ClientSkeleton className="h-full w-full rounded-full" />
+                    </div>
+                  </div>
+                ) : !user ? (
                   <div className="pb-6 border-b mb-6">
                     <Link href="/login?redirect=/trips/create">
-                      <Button 
-                        className="
-                          relative overflow-hidden w-full
-                          lowercase rounded-full 
-                          bg-travel-purple hover:bg-purple-400 text-purple-900 
-                          text-sm px-3 py-1 h-8
-                          animate-pulse-soft-scale 
-                          before:absolute before:inset-0 before:bg-shimmer-gradient 
-                          before:bg-no-repeat before:bg-200% 
-                          before:animate-shimmer
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple
-                        "
+                      <Button
+                        className={cn(
+                          'relative overflow-hidden w-full',
+                          'lowercase rounded-full',
+                          'bg-travel-purple hover:bg-purple-400 text-purple-900',
+                          'text-sm px-3 py-1 h-8',
+                          'animate-pulse-soft-scale',
+                          'before:absolute before:inset-0 before:bg-shimmer-gradient',
+                          'before:bg-no-repeat before:bg-200%',
+                          'before:animate-shimmer',
+                          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple'
+                        )}
                         onClick={closeMenu}
                       >
                         <span className="relative z-10 flex items-center justify-center">
@@ -320,7 +451,7 @@ export function Navbar() {
                       </Button>
                     </Link>
                   </div>
-                )}
+                ) : null}
 
                 <Button
                   variant="outline"
@@ -329,40 +460,40 @@ export function Navbar() {
                     openSearch();
                     closeMenu();
                   }}
-                  className="mb-6 w-full justify-start"
+                  className={cn('mb-6 w-full justify-start')}
                 >
                   <Search className="h-4 w-4 mr-2" />
                   Search
                 </Button>
 
                 <nav className="flex flex-col space-y-6 flex-grow">
-                   {!isLoading && user && (
+                  {!isLoadingState && user && (
                     <>
                       <Link
                         href="/trips"
-                        className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                          isActive("/trips") ? "text-foreground" : "text-muted-foreground"
+                        className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
+                          isActive('/trips') ? 'text-foreground' : 'text-muted-foreground'
                         }`}
                         onClick={closeMenu}
                       >
                         My Trips
                       </Link>
                     </>
-                   )}
+                  )}
                   <Link
                     href="/support"
-                    className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                      isActive("/support") ? "text-foreground" : "text-muted-foreground"
+                    className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
+                      isActive('/support') ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                     onClick={closeMenu}
                   >
                     support us
                   </Link>
-                  {!isLoading && isAdmin && (
+                  {!isLoadingState && isAdmin && (
                     <Link
                       href="/admin/dashboard"
-                      className={`text-sm font-medium transition-colors hover:text-${THEME.COLORS.PURPLE} lowercase ${
-                        isActive("/admin/dashboard") ? "text-foreground" : "text-muted-foreground"
+                      className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
+                        isActive('/admin/dashboard') ? 'text-foreground' : 'text-muted-foreground'
                       }`}
                       onClick={closeMenu}
                     >
@@ -373,50 +504,67 @@ export function Navbar() {
                   <div className="flex items-center justify-between pt-2">
                     <span className="text-sm font-medium lowercase">Theme</span>
                     <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                      {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                      {theme === 'dark' ? (
+                        <Sun className="h-5 w-5" />
+                      ) : (
+                        <Moon className="h-5 w-5" />
+                      )}
                       <span className="sr-only">Toggle theme</span>
                     </Button>
                   </div>
 
                   <div className="flex-grow"></div>
 
-                  {isLoading ? (
+                  {isLoadingState ? (
                     <div className="pt-4 mt-auto border-t">
                       <div className="flex items-center gap-3 p-2">
-                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="h-9 w-9">
+                          <ClientSkeleton className="h-full w-full rounded-full" />
+                        </div>
                         <div className="flex flex-col gap-1">
-                           <Skeleton className="h-4 w-24 rounded" />
-                           <Skeleton className="h-3 w-16 rounded" />
+                          <div className="h-4 w-24">
+                            <ClientSkeleton className="h-full w-full rounded" />
+                          </div>
+                          <div className="h-3 w-16">
+                            <ClientSkeleton className="h-full w-full rounded" />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  ) : user && (
-                    <div className="pt-4 mt-auto border-t">
-                      <Link 
-                        href={PAGE_ROUTES.SETTINGS}
-                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
-                        onClick={closeMenu}
-                      >
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || user?.email || 'User'} />
-                          <AvatarFallback>{profile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col text-sm">
-                          <span className="font-medium truncate">{profile?.name || user?.email}</span>
-                          <span className="text-muted-foreground">view account</span>
-                        </div>
-                      </Link>
-                    </div>
+                  ) : (
+                    user && (
+                      <div className="pt-4 mt-auto border-t">
+                        <Link
+                          href={PAGE_ROUTES.SETTINGS}
+                          className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                          onClick={closeMenu}
+                        >
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage
+                              src={profile?.avatar_url || user.user_metadata?.avatar_url || ''}
+                              alt={profile?.name || user?.email || 'User'}
+                            />
+                            <AvatarFallback>{getProfileInitials(profile, user)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col text-sm">
+                            <span className="font-medium truncate">
+                              {profile?.name || user?.email}
+                            </span>
+                            <span className="text-muted-foreground">view account</span>
+                          </div>
+                        </Link>
+                      </div>
+                    )
                   )}
 
-                  {!isLoading && user && (
-                    <div className={'pt-2'}>
+                  {!isLoadingState && user && (
+                    <div className="pt-2">
                       <Button
                         variant="ghost"
                         className="w-full justify-start text-sm font-medium text-destructive lowercase p-2 hover:bg-destructive/10 focus:bg-destructive/10"
                         onClick={() => {
-                          handleSignOut()
-                          closeMenu()
+                          handleSignOut();
+                          closeMenu();
                         }}
                       >
                         <LogOut className="mr-2 h-4 w-4" />
@@ -431,5 +579,5 @@ export function Navbar() {
         )}
       </AnimatePresence>
     </header>
-  )
+  );
 }

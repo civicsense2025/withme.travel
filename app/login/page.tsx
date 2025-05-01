@@ -1,206 +1,135 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-import Link from "next/link"
-import { useAuth } from "@/lib/hooks/use-auth"
-import { createClient } from "@/utils/supabase/client"
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/lib/hooks/use-auth';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { LoginForm } from "@/components/login-form"
-import { Logo } from "@/components/logo"
-import { AuthSellingPoints } from "@/components/auth-selling-points"
-import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-
-// Add a debugging component to show Supabase connection status
-function SupabaseDebug() {
-  // Only show in development
-  if (process.env.NODE_ENV !== 'development') return null;
-  
-  const checkSupabaseVars = () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    return {
-      hasUrl: !!url,
-      hasKey: !!key,
-      urlPreview: url ? `${url.substring(0, 15)}...` : 'Not set',
-      keyLength: key ? key.length : 0
-    };
-  };
-  
-  const vars = checkSupabaseVars();
-  
-  return (
-    <div style={{
-      padding: '12px',
-      margin: '8px 0',
-      background: '#f8f8f8',
-      border: '1px solid #eaeaea',
-      borderRadius: '4px',
-      fontSize: '12px'
-    }}>
-      <h4 style={{ margin: '0 0 8px 0' }}>Supabase Debug Info</h4>
-      <div>URL Set: {vars.hasUrl ? '✅' : '❌'} ({vars.urlPreview})</div>
-      <div>Key Set: {vars.hasKey ? '✅' : '❌'} (Length: {vars.keyLength})</div>
-    </div>
-  );
-}
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoginForm } from '@/components/login-form';
+import { Logo } from '@/components/logo';
+import { AuthSellingPoints } from '@/components/auth-selling-points';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const { user, isLoading, error, signOut } = useAuth()
-  const { toast } = useToast()
-  const [message, setMessage] = useState<string | null>(null)
-  const [loginContext, setLoginContext] = useState<string | null>(null)
-  const [isRedirecting, setIsRedirecting] = useState(false)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+  const { toast } = useToast();
+  const [message, setMessage] = useState<string | null>(null);
+  const [loginContext, setLoginContext] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Get redirect path and decode safely
-  const redirectPath = useSafeRedirectPath(searchParams.get("redirect") || "/")
-  
-  console.log('[LoginPage] Auth state:', { user: !!user, isLoading, error: !!error })
-  console.log('[LoginPage] Redirect path:', redirectPath)
+  const redirectPath = searchParams.get('redirect') || '/';
+  const [safeRedirectPath, setSafeRedirectPath] = useState('/');
 
-  // Helper function for safe redirect path processing
-  function useSafeRedirectPath(path: string): string {
-    const [safePath, setSafePath] = useState("/")
-    
-    useEffect(() => {
-      try {
-        // Remove any leading/trailing whitespace
-        let cleanPath = path.trim()
-        
-        // If the path looks URL-encoded (contains %), try to decode it once
-        if (cleanPath.includes('%')) {
-          // Only decode once to avoid double-decoding issues
-          cleanPath = decodeURIComponent(cleanPath)
-        }
-        
-        // Ensure it starts with a slash if it's a relative path and not an absolute URL
-        if (!cleanPath.startsWith('/') && !cleanPath.startsWith('http')) {
-          cleanPath = '/' + cleanPath
-        }
-        
-        setSafePath(cleanPath)
-      } catch (e) {
-        console.error('[LoginPage] Error processing redirect path:', e)
-        setSafePath("/")
+  // Process the redirect path safely
+  useEffect(() => {
+    try {
+      // Remove leading/trailing whitespace
+      let cleanPath = redirectPath.trim();
+
+      // Try to decode if it looks URL-encoded
+      if (cleanPath.includes('%')) {
+        cleanPath = decodeURIComponent(cleanPath);
       }
-    }, [path])
-    
-    return safePath
-  }
+
+      // Ensure path starts with a slash if it's a relative path
+      if (!cleanPath.startsWith('/') && !cleanPath.startsWith('http')) {
+        cleanPath = '/' + cleanPath;
+      }
+
+      setSafeRedirectPath(cleanPath);
+    } catch (e) {
+      console.error('Error processing redirect path:', e);
+      setSafeRedirectPath('/');
+    }
+  }, [redirectPath]);
 
   // Redirect if already logged in
   useEffect(() => {
     if (!isLoading && user) {
-      console.log('[LoginPage] User authenticated, redirecting to:', redirectPath)
-      setIsRedirecting(true)
-      
-      // Add a small delay for UI feedback
-      setTimeout(() => {
-        router.replace(redirectPath)
-      }, 100)
-    }
-  }, [user, isLoading, redirectPath, router])
+      setIsRedirecting(true);
 
-  // Process url parameters - message and login context
+      // Add small delay for UI feedback
+      const timer = setTimeout(() => {
+        router.push(safeRedirectPath);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, isLoading, safeRedirectPath, router]);
+
+  // Process URL parameters - message and login context
   useEffect(() => {
     // Handle message from query params
-    const message = searchParams.get("message")
+    const message = searchParams.get('message');
     if (message) {
-      setMessage(message)
-      
+      setMessage(message);
+
       // Show toast for important messages
-      if (message.includes("expired") || message.includes("out") || message.includes("failed")) {
+      if (message.includes('expired') || message.includes('out') || message.includes('failed')) {
         toast({
-          title: "Authentication Notice",
+          title: 'Authentication Notice',
           description: message,
-          variant: "default"
-        })
+        });
       }
     }
-    
-    // Detect where the user is coming from and provide appropriate context
-    const redirectParam = searchParams.get("redirect")
+
+    // Detect login context from redirect path
+    const redirectParam = searchParams.get('redirect');
     if (redirectParam) {
       if (redirectParam.includes('/trips/create')) {
-        setLoginContext("to create a new trip")
+        setLoginContext('to create a new trip');
       } else if (redirectParam.includes('/trips')) {
-        setLoginContext("to access your trips")
+        setLoginContext('to access your trips');
       } else if (redirectParam.includes('/saved')) {
-        setLoginContext("to view your saved items")
+        setLoginContext('to view your saved items');
       } else if (redirectParam.includes('/profile')) {
-        setLoginContext("to access your profile")
+        setLoginContext('to access your profile');
       }
     }
-  }, [searchParams, toast])
+  }, [searchParams, toast]);
 
   // Show loading state while checking auth or redirecting
   if (isLoading || isRedirecting) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
+        <div className="w-full max-w-md flex flex-col text-center">
+          <div className="p-3">
+            <Spinner size="xl" variant="primary" />
+          </div>
           <p className="text-muted-foreground">
-            {isRedirecting ? "Redirecting..." : "Checking authentication..."}
+            {isRedirecting ? 'Redirecting you now...' : 'Checking authentication status...'}
           </p>
         </div>
       </div>
-    )
+    );
   }
-  
+
   // Don't render login form if already logged in
   if (user) {
-    return null
+    return null;
   }
 
-  // Handler for clearing auth state
-  const handleClearAuthData = async () => {
-    try {
-      setMessage("Clearing authentication data...");
-      
-      // Call the server endpoint to clear cookies
-      await fetch('/api/auth/clear-cookies', { 
-        method: 'POST',
-        credentials: 'include'
-      });
-      
-      // Use signOut from auth context to properly clear state
-      await signOut();
-      
-      toast({
-        title: "Auth data cleared",
-        description: "You can now try logging in again",
-        variant: "default"
-      });
-      
-      setMessage("Auth data cleared. Try logging in again.");
-    } catch (error) {
-      console.error("Error clearing auth data:", error);
-      setMessage("Error clearing auth data. Please try again.");
-      
-      toast({
-        title: "Error",
-        description: "Could not clear authentication data. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background py-12 px-4 sm:px-0">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md flex flex-col">
-        <SupabaseDebug />
-        
         <div className="md:hidden mb-6">
           <AuthSellingPoints />
         </div>
-        
+
         <Card className="border border-border/10 dark:border-border/10 shadow-xl dark:shadow-2xl dark:shadow-black/20">
           <CardHeader className="space-y-3">
             <CardTitle className="text-2xl font-bold text-center">welcome back!</CardTitle>
@@ -218,39 +147,26 @@ export default function LoginPage() {
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
-            
+
             <LoginForm />
-            
-            {/* Debug utility for clearing auth data */}
-            <div className="pt-4 border-t border-border/10 dark:border-border/10 mt-4">
-              <p className="text-xs text-muted-foreground mb-2">Having trouble logging in?</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-xs border-border/20 dark:border-border/10 hover:bg-muted/50"
-                onClick={handleClearAuthData}
-              >
-                Clear Auth Data & Try Again
-              </Button>
-            </div>
           </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-center text-sm text-muted-foreground">
-              don't have an account yet?{" "}
-              <Link 
-                href={redirectPath !== "/" ? `/signup?redirect=${encodeURIComponent(redirectPath)}` : "/signup"} 
-                className="text-primary hover:underline font-medium"
+          <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2">
+            <div className="text-center text-sm">
+              <span className="text-muted-foreground">don't have an account?</span>{' '}
+              <Link
+                href={`/signup${redirectPath !== '/' ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`}
+                className="text-primary hover:underline"
               >
                 sign up
               </Link>
-            </p>
+            </div>
           </CardFooter>
         </Card>
-        
+
         <div className="hidden md:block mt-8">
           <AuthSellingPoints />
         </div>
       </div>
     </div>
-  )
+  );
 }

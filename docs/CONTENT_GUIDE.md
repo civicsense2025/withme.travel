@@ -1,12 +1,11 @@
-
-
 # Content Quality & Style Guide for withme.travel City Profiles
 
-*A comprehensive guide for creating authentic, engaging city profiles that capture the true essence of each destination through the eyes of a well-traveled friend.*
+_A comprehensive guide for creating authentic, engaging city profiles that capture the true essence of each destination through the eyes of a well-traveled friend._
 
 ## Core Principles
 
 ### Authentic Insider Perspective
+
 - Write as a well-traveled friend sharing genuine insights
 - Focus on local knowledge that only residents would know
 - Balance appreciation with honest acknowledgment of challenges
@@ -14,6 +13,7 @@
 - Highlight neighborhood-specific characteristics and dynamics
 
 ### Conversational Warmth
+
 - Use casual, engaging language that flows naturally
 - Incorporate local slang and colloquialisms authentically
 - Vary sentence structure to mimic natural speech patterns
@@ -21,6 +21,7 @@
 - Balance information with personality and warmth
 
 ### Distinctive City Character
+
 - Adapt writing style to match each city's unique personality
 - Highlight what makes each location genuinely unique
 - Capture the rhythm and pace of local life authentically
@@ -28,6 +29,7 @@
 - Balance tourist attractions with hidden local favorites
 
 ### Organic Structure
+
 - Break free from rigid paragraph organization
 - Start with something genuinely distinctive about the city
 - Let content flow naturally between related topics
@@ -37,6 +39,7 @@
 ## Content Elements
 
 ### Specific Local References
+
 - Include named establishments (restaurants, shops, venues)
 - Reference specific neighborhoods and their distinct characteristics
 - Mention street names and local landmarks
@@ -44,6 +47,7 @@
 - Reference local events, traditions, and cultural institutions
 
 ### Sensory Experience
+
 - Incorporate vivid sensory details (sights, sounds, smells, tastes)
 - Use specific descriptors rather than generic adjectives
 - Include weather and seasonal elements as they affect daily life
@@ -53,6 +57,7 @@
 ## Authentic Local Experience
 
 ### Community Dynamics
+
 - Acknowledge economic and social tensions naturally
 - Show how residents navigate challenges and contradictions
 - Include gentrification and preservation issues when relevant
@@ -60,6 +65,7 @@
 - Describe interactions between different community groups
 
 ### Local Rhythms
+
 - Capture daily routines and patterns unique to each city
 - Describe how seasons affect local activities and atmosphere
 - Include unique weekly rituals (farmers markets, events)
@@ -67,6 +73,7 @@
 - Mention morning/afternoon/evening transitions in key areas
 
 ### Language Elements
+
 - Use active, vibrant language instead of passive constructions
 - Incorporate authentic local slang and colloquialisms
 - Vary sentence length for natural rhythm and emphasis
@@ -76,6 +83,7 @@
 ## Style Guidelines
 
 ### Balance of Elements
+
 - Mix practical information with atmospheric description
 - Blend historical context with current trends
 - Balance iconic attractions with hidden gems
@@ -83,6 +91,7 @@
 - Cover both indoor and outdoor aspects of city life
 
 ### Tonal Characteristics
+
 - Avoid overly promotional or tourism-brochure language
 - Balance enthusiasm with honesty about challenges
 - Use humor that feels appropriate to each city's character
@@ -90,6 +99,7 @@
 - Maintain warmth while avoiding excessive sentimentality
 
 ### Engagement Through Authenticity
+
 - Create connection through specific, relatable observations
 - Use mini-narratives about typical local experiences
 - Include small contradictions that feel true to life
@@ -99,6 +109,7 @@
 ## Technical Guidelines
 
 ### HTML Structure
+
 - Use proper HTML format with semantic elements
 - Include 4 paragraphs wrapped in `<p>` tags
 - Ensure each city has an appropriate heading with `<h2>` tags
@@ -106,6 +117,7 @@
 - Maintain consistent structure across all city profiles
 
 ### Content Distribution
+
 - Ensure all 4 paragraphs have substantial content (150-250 words each)
 - Distribute topics organically across paragraphs
 - Avoid dedicating entire paragraphs to single themes
@@ -115,6 +127,7 @@
 ## withme.travel Brand Alignment
 
 ### Brand Voice Integration
+
 - Maintain the "friendly organizer" personality
 - Balance adventure enthusiasm with practical knowledge
 - Incorporate the inclusive, welcoming tone
@@ -122,6 +135,7 @@
 - Maintain approachable expertise without pretension
 
 ### Content Priorities
+
 - Emphasize authentic experiences over tourist clichés
 - Focus on how groups can enjoy the city together
 - Subtly highlight practical logistics without being dry
@@ -131,6 +145,7 @@
 ## Quality Standards & Anti-Patterns
 
 ### Quality Markers
+
 - Contains specific local references (named establishments, streets)
 - Includes authentic local terminology and expressions
 - Balances appreciation with honest acknowledgment of challenges
@@ -138,6 +153,7 @@
 - Maintains conversational flow without formulaic structure
 
 ### Anti-Patterns to Avoid
+
 - Generic travel brochure language and clichés
 - Overly formal or academic tone
 - Segregated topics in rigid paragraph structure
@@ -147,6 +163,7 @@
 ## Instructions for AI Generation
 
 ### Prompt Enhancement
+
 - Include all relevant context from city CSV data
 - Specify HTML output format requirements
 - Provide examples of successful city profiles
@@ -154,6 +171,7 @@
 - Set clear expectations for paragraph structure
 
 ### Output Evaluation Criteria
+
 - Distinctiveness from other city profiles
 - Authentic insider perspective
 - Natural conversational flow

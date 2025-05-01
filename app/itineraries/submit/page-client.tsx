@@ -1,4 +1,6 @@
-"use client";
+'use client';
+
+import { API_ROUTES } from '@/utils/constants/routes';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,14 +12,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LocationSearch } from '@/components/location-search';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { API_ROUTES } from '@/utils/constants';
-
 interface Activity {
   id: string;
   title: string;
@@ -42,7 +48,7 @@ export function CreateItineraryClient() {
   const { user } = useAuth();
   const [currentTab, setCurrentTab] = useState('details');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [itinerary, setItinerary] = useState({
     title: '',
     slug: '',
@@ -53,41 +59,41 @@ export function CreateItineraryClient() {
     destination_country: '',
     duration_days: 3,
     category: 'city',
-    is_published: false
+    is_published: false,
   });
-  
+
   const [sections, setSections] = useState<Section[]>([]);
-  
+
   // Initialize sections based on duration days
   useEffect(() => {
     // Only generate if sections are empty AND duration is set
-    if (!sections.length && itinerary.duration_days > 0) { 
+    if (!sections.length && itinerary.duration_days > 0) {
       generateSections(itinerary.duration_days);
     }
     // The effect should run if duration changes OR if sections become empty
   }, [itinerary.duration_days, sections.length]); // Add missing dependencies
-  
+
   const generateSections = (days: number) => {
     const newSections = Array.from({ length: days }, (_, i) => ({
       id: `day-${i + 1}-${Date.now()}`,
       day_number: i + 1,
       title: `Day ${i + 1}`,
       position: i,
-      activities: []
+      activities: [],
     }));
-    
+
     setSections(newSections);
   };
-  
+
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
     setItinerary({
       ...itinerary,
       title,
-      slug: generateSlug(title)
+      slug: generateSlug(title),
     });
   };
-  
+
   const generateSlug = (text: string) => {
     return text
       .toLowerCase()
@@ -96,24 +102,24 @@ export function CreateItineraryClient() {
       .replace(/-+/g, '-')
       .trim();
   };
-  
+
   const handleDestinationSelect = (destination: any) => {
     setItinerary({
       ...itinerary,
       destination_id: destination.id,
       destination_name: `${destination.city}, ${destination.country}`,
       destination_city: destination.city,
-      destination_country: destination.country
+      destination_country: destination.country,
     });
   };
-  
+
   const handleDurationChange = (value: string) => {
     const days = parseInt(value);
     setItinerary({
       ...itinerary,
-      duration_days: days
+      duration_days: days,
     });
-    
+
     // If increasing days, add new sections
     if (days > sections.length) {
       const newSections = [...sections];
@@ -123,23 +129,23 @@ export function CreateItineraryClient() {
           day_number: i + 1,
           title: `Day ${i + 1}`,
           position: i,
-          activities: []
+          activities: [],
         });
       }
       setSections(newSections);
-    } 
+    }
     // If decreasing days, remove sections
     else if (days < sections.length) {
       setSections(sections.slice(0, days));
     }
   };
-  
+
   const handleSectionTitleChange = (sectionIndex: number, title: string) => {
     const updatedSections = [...sections];
     updatedSections[sectionIndex].title = title;
     setSections(updatedSections);
   };
-  
+
   const handleAddActivity = (sectionIndex: number) => {
     const updatedSections = [...sections];
     const newActivity = {
@@ -149,17 +155,17 @@ export function CreateItineraryClient() {
       location: '',
       start_time: '',
       position: updatedSections[sectionIndex].activities.length,
-      category: 'activity'
+      category: 'activity',
     };
-    
+
     updatedSections[sectionIndex].activities.push(newActivity);
     setSections(updatedSections);
   };
-  
+
   const handleActivityChange = (
-    sectionIndex: number, 
-    activityIndex: number, 
-    field: keyof Activity, 
+    sectionIndex: number,
+    activityIndex: number,
+    field: keyof Activity,
     value: string
   ) => {
     const updatedSections = [...sections];
@@ -183,105 +189,105 @@ export function CreateItineraryClient() {
 
     setSections(updatedSections);
   };
-  
+
   const handleDeleteActivity = (sectionIndex: number, activityIndex: number) => {
     const updatedSections = [...sections];
     updatedSections[sectionIndex].activities.splice(activityIndex, 1);
-    
+
     // Update positions
     updatedSections[sectionIndex].activities.forEach((activity, idx) => {
       activity.position = idx;
     });
-    
+
     setSections(updatedSections);
   };
-  
+
   const handleDragEnd = (result: any) => {
     const { source, destination } = result;
-    
+
     // Dropped outside the list
     if (!destination) return;
-    
+
     const sourceDroppableId = source.droppableId;
     const destinationDroppableId = destination.droppableId;
-    
+
     // If moving within the same section
     if (sourceDroppableId === destinationDroppableId) {
       const sectionIndex = parseInt(sourceDroppableId.split('-')[1]);
       const updatedSections = [...sections];
       const [removed] = updatedSections[sectionIndex].activities.splice(source.index, 1);
       updatedSections[sectionIndex].activities.splice(destination.index, 0, removed);
-      
+
       // Update positions
       updatedSections[sectionIndex].activities.forEach((activity, idx) => {
         activity.position = idx;
       });
-      
+
       setSections(updatedSections);
-    } 
+    }
     // If moving between sections
     else {
       const sourceSectionIndex = parseInt(sourceDroppableId.split('-')[1]);
       const destinationSectionIndex = parseInt(destinationDroppableId.split('-')[1]);
-      
+
       const updatedSections = [...sections];
       const [removed] = updatedSections[sourceSectionIndex].activities.splice(source.index, 1);
       updatedSections[destinationSectionIndex].activities.splice(destination.index, 0, removed);
-      
+
       // Update positions for both sections
       updatedSections[sourceSectionIndex].activities.forEach((activity, idx) => {
         activity.position = idx;
       });
-      
+
       updatedSections[destinationSectionIndex].activities.forEach((activity, idx) => {
         activity.position = idx;
       });
-      
+
       setSections(updatedSections);
     }
   };
-  
+
   const validateItinerary = () => {
     if (!itinerary.title.trim()) {
       toast({
-        title: "Missing title",
-        description: "Please provide a title for your itinerary",
-        variant: "destructive"
+        title: 'Missing title',
+        description: 'Please provide a title for your itinerary',
+        variant: 'destructive',
       });
       setCurrentTab('details');
       return false;
     }
-    
+
     if (!itinerary.destination_id) {
       toast({
-        title: "Missing destination",
-        description: "Please select a destination for your itinerary",
-        variant: "destructive"
+        title: 'Missing destination',
+        description: 'Please select a destination for your itinerary',
+        variant: 'destructive',
       });
       setCurrentTab('details');
       return false;
     }
-    
+
     // Check if at least one section has activities
-    const hasActivities = sections.some(section => section.activities.length > 0);
+    const hasActivities = sections.some((section) => section.activities.length > 0);
     if (!hasActivities) {
       toast({
-        title: "No activities",
-        description: "Please add at least one activity to your itinerary",
-        variant: "destructive"
+        title: 'No activities',
+        description: 'Please add at least one activity to your itinerary',
+        variant: 'destructive',
       });
       setCurrentTab('schedule');
       return false;
     }
-    
+
     return true;
   };
-  
+
   const handleSubmit = async () => {
     if (!validateItinerary()) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       const payload = {
         title: itinerary.title,
@@ -291,68 +297,67 @@ export function CreateItineraryClient() {
         duration_days: itinerary.duration_days,
         category: itinerary.category,
         is_published: itinerary.is_published,
-        sections: sections.map(section => ({
+        sections: sections.map((section) => ({
           day_number: section.day_number,
           title: section.title,
           position: section.position,
-          items: section.activities.map(activity => ({
+          items: section.activities.map((activity) => ({
             title: activity.title,
             description: activity.description,
             location: activity.location,
             start_time: activity.start_time,
             position: activity.position,
-            category: activity.category
-          }))
-        }))
+            category: activity.category,
+          })),
+        })),
       };
-      
+
       const response = await fetch(API_ROUTES.ITINERARIES, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create itinerary');
       }
-      
+
       const data = await response.json();
-      
+
       toast({
-        title: "Success!",
-        description: "Your itinerary has been created successfully",
+        title: 'Success!',
+        description: 'Your itinerary has been created successfully',
       });
-      
+
       router.push(`/itineraries/${data.data.slug}`);
     } catch (error) {
       console.error('Error creating itinerary:', error);
       // Check if error is an instance of Error before accessing message
-      const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again later.";
+      const errorMessage =
+        error instanceof Error ? error.message : 'Something went wrong. Please try again later.';
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive"
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <h1 className="text-2xl font-bold mb-4">Login Required</h1>
         <p className="mb-6">Please log in to create an itinerary</p>
-        <Button onClick={() => router.push('/login?redirect=/itineraries/submit')}>
-          Log In
-        </Button>
+        <Button onClick={() => router.push('/login?redirect=/itineraries/submit')}>Log In</Button>
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -361,14 +366,14 @@ export function CreateItineraryClient() {
           Share your travel expertise by creating a detailed itinerary that others can use
         </p>
       </div>
-      
+
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="details">Basic Details</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="publish">Publish</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="details" className="space-y-6">
           <Card>
             <CardHeader>
@@ -384,7 +389,7 @@ export function CreateItineraryClient() {
                   onChange={handleTitleChange}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="slug">URL Slug</Label>
                 <Input
@@ -394,10 +399,11 @@ export function CreateItineraryClient() {
                   onChange={(e) => setItinerary({ ...itinerary, slug: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This will be used in the URL: withme.travel/itineraries/{itinerary.slug || 'your-slug'}
+                  This will be used in the URL: withme.travel/itineraries/
+                  {itinerary.slug || 'your-slug'}
                 </p>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -408,15 +414,15 @@ export function CreateItineraryClient() {
                   onChange={(e) => setItinerary({ ...itinerary, description: e.target.value })}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Destination *</Label>
-                <LocationSearch 
+                <LocationSearch
                   onLocationSelect={handleDestinationSelect}
                   initialValue={itinerary.destination_name}
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration (days) *</Label>
@@ -436,7 +442,7 @@ export function CreateItineraryClient() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Select
@@ -458,16 +464,14 @@ export function CreateItineraryClient() {
                   </Select>
                 </div>
               </div>
-              
+
               <div className="flex justify-end">
-                <Button onClick={() => setCurrentTab('schedule')}>
-                  Continue to Schedule
-                </Button>
+                <Button onClick={() => setCurrentTab('schedule')}>Continue to Schedule</Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="schedule" className="space-y-6">
           <DragDropContext onDragEnd={handleDragEnd}>
             {sections.map((section, sectionIndex) => (
@@ -500,39 +504,59 @@ export function CreateItineraryClient() {
                                 className="border rounded-md p-4 bg-background"
                               >
                                 <div className="flex items-center justify-between mb-3">
-                                  <div
-                                    {...provided.dragHandleProps}
-                                    className="cursor-move"
-                                  >
+                                  <div {...provided.dragHandleProps} className="cursor-move">
                                     <DragHandleDots2 className="h-5 w-5 text-muted-foreground" />
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => handleDeleteActivity(sectionIndex, activityIndex)}
+                                    onClick={() =>
+                                      handleDeleteActivity(sectionIndex, activityIndex)
+                                    }
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
-                                
+
                                 <div className="space-y-3">
                                   <Input
                                     placeholder="Activity title"
                                     value={activity.title}
-                                    onChange={(e) => handleActivityChange(sectionIndex, activityIndex, 'title', e.target.value)}
+                                    onChange={(e) =>
+                                      handleActivityChange(
+                                        sectionIndex,
+                                        activityIndex,
+                                        'title',
+                                        e.target.value
+                                      )
+                                    }
                                   />
-                                  
+
                                   <div className="grid grid-cols-2 gap-3">
                                     <Input
                                       type="time"
                                       placeholder="Start time"
                                       value={activity.start_time}
-                                      onChange={(e) => handleActivityChange(sectionIndex, activityIndex, 'start_time', e.target.value)}
+                                      onChange={(e) =>
+                                        handleActivityChange(
+                                          sectionIndex,
+                                          activityIndex,
+                                          'start_time',
+                                          e.target.value
+                                        )
+                                      }
                                     />
-                                    
+
                                     <Select
                                       value={activity.category}
-                                      onValueChange={(value) => handleActivityChange(sectionIndex, activityIndex, 'category', value)}
+                                      onValueChange={(value) =>
+                                        handleActivityChange(
+                                          sectionIndex,
+                                          activityIndex,
+                                          'category',
+                                          value
+                                        )
+                                      }
                                     >
                                       <SelectTrigger>
                                         <SelectValue placeholder="Category" />
@@ -541,24 +565,40 @@ export function CreateItineraryClient() {
                                         <SelectItem value="activity">Activity</SelectItem>
                                         <SelectItem value="attraction">Attraction</SelectItem>
                                         <SelectItem value="restaurant">Restaurant</SelectItem>
-                                        <SelectItem value="transportation">Transportation</SelectItem>
+                                        <SelectItem value="transportation">
+                                          Transportation
+                                        </SelectItem>
                                         <SelectItem value="accommodation">Accommodation</SelectItem>
                                         <SelectItem value="other">Other</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
-                                  
+
                                   <Input
                                     placeholder="Location"
                                     value={activity.location}
-                                    onChange={(e) => handleActivityChange(sectionIndex, activityIndex, 'location', e.target.value)}
+                                    onChange={(e) =>
+                                      handleActivityChange(
+                                        sectionIndex,
+                                        activityIndex,
+                                        'location',
+                                        e.target.value
+                                      )
+                                    }
                                   />
-                                  
+
                                   <Textarea
                                     placeholder="Description"
                                     rows={2}
                                     value={activity.description}
-                                    onChange={(e) => handleActivityChange(sectionIndex, activityIndex, 'description', e.target.value)}
+                                    onChange={(e) =>
+                                      handleActivityChange(
+                                        sectionIndex,
+                                        activityIndex,
+                                        'description',
+                                        e.target.value
+                                      )
+                                    }
                                   />
                                 </div>
                               </div>
@@ -569,7 +609,7 @@ export function CreateItineraryClient() {
                       </div>
                     )}
                   </Droppable>
-                  
+
                   <Button
                     variant="outline"
                     className="w-full"
@@ -582,17 +622,15 @@ export function CreateItineraryClient() {
               </Card>
             ))}
           </DragDropContext>
-          
+
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setCurrentTab('details')}>
               Back to Details
             </Button>
-            <Button onClick={() => setCurrentTab('publish')}>
-              Continue to Publish
-            </Button>
+            <Button onClick={() => setCurrentTab('publish')}>Continue to Publish</Button>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="publish" className="space-y-6">
           <Card>
             <CardHeader>
@@ -603,14 +641,17 @@ export function CreateItineraryClient() {
                 <Switch
                   id="publish"
                   checked={itinerary.is_published}
-                  onCheckedChange={(checked) => setItinerary({ ...itinerary, is_published: checked })}
+                  onCheckedChange={(checked) =>
+                    setItinerary({ ...itinerary, is_published: checked })
+                  }
                 />
                 <Label htmlFor="publish">Make this itinerary public</Label>
               </div>
               <p className="text-sm text-muted-foreground">
-                When published, your itinerary will be visible to other users and can be used as a template for their trips.
+                When published, your itinerary will be visible to other users and can be used as a
+                template for their trips.
               </p>
-              
+
               <div className="flex justify-between mt-8">
                 <Button variant="outline" onClick={() => setCurrentTab('schedule')}>
                   Back to Schedule
@@ -625,4 +666,4 @@ export function CreateItineraryClient() {
       </Tabs>
     </div>
   );
-} 
+}

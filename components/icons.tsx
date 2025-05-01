@@ -23,9 +23,9 @@ import {
   Twitter,
   User,
   X,
-} from "lucide-react"
+} from 'lucide-react';
 
-export type Icon = typeof AlertTriangle
+export type Icon = typeof AlertTriangle;
 
 export const Icons = {
   logo: Command,
@@ -51,4 +51,4 @@ export const Icons = {
   laptop: Laptop,
   check: Check,
   twitter: Twitter,
-} as const 
+} as const;

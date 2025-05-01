@@ -1,38 +1,40 @@
-import { createServerClientComponent } from "@/utils/supabase/server";
+import { createApiClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { ItineraryDetailClient } from './page-client';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants';
+import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
 
-interface ItineraryPageProps {
-  params: {
+export interface ItineraryPageProps {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: ItineraryPageProps): Promise<Metadata> {
-  const { slug } = params;
-  const supabase = await createServerClientComponent();
-  
+  const { slug } = await params;
+  const supabase = await createApiClient();
+
   try {
     // Fetch the itinerary template
     const { data: template, error: templateError } = await supabase
       .from(DB_TABLES.ITINERARY_TEMPLATES)
-      .select(`
+      .select(
+        `
         *,
         ${DB_TABLES.DESTINATIONS}(*),
         creator:${DB_FIELDS.ITINERARY_TEMPLATES.CREATED_BY}(id, name, avatar_url)
-      `)
+      `
+      )
       .eq(DB_FIELDS.ITINERARY_TEMPLATES.SLUG, slug)
       .single();
-    
+
     if (templateError || !template) {
       return {
         title: 'Itinerary Not Found',
-        description: 'The requested itinerary could not be found'
+        description: 'The requested itinerary could not be found',
       };
     }
-    
+
     return {
       title: template.title || 'Itinerary Template',
       description: template.description || 'View this trip itinerary template',
@@ -50,22 +52,24 @@ export async function generateMetadata({ params }: ItineraryPageProps): Promise<
 }
 
 export default async function ItineraryPage({ params }: ItineraryPageProps) {
-  const { slug } = params;
-  const supabase = await createServerClientComponent();
-  
+  const { slug } = await params;
+  const supabase = await createApiClient();
+
   // Fetch the itinerary template
   const { data: template, error: templateError } = await supabase
     .from(DB_TABLES.ITINERARY_TEMPLATES)
-    .select(`
+    .select(
+      `
       *,
       ${DB_TABLES.DESTINATIONS}(*),
       creator:${DB_FIELDS.ITINERARY_TEMPLATES.CREATED_BY}(id, name, avatar_url)
-    `)
+    `
+    )
     .eq(DB_FIELDS.ITINERARY_TEMPLATES.SLUG, slug)
     .single();
-  
+
   if (templateError || !template) {
-    console.error("Error fetching template:", templateError);
+    console.error('Error fetching template:', templateError);
     notFound();
   }
 
@@ -76,32 +80,32 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
       .select('*')
       .eq('template_id', template.id)
       .order('position', { ascending: true });
-    
+
     if (sectionsError) {
       console.error('Error fetching template sections:', sectionsError);
       // Continue with empty sections rather than notFound()
       const itinerary = {
         ...template,
-        sections: []
+        sections: [],
       };
       return <ItineraryDetailClient itinerary={itinerary} />;
     }
-    
+
     // Fetch activities for each section - using the correct table from constants
     const sectionsWithActivities = await Promise.all(
       sections.map(async (section) => {
         try {
           const { data: activities, error: activitiesError } = await supabase
-            .from(DB_TABLES.ITINERARY_TEMPLATE_ITEMS)
+            .from(DB_TABLES.TEMPLATE_ACTIVITIES)
             .select('*')
             .eq('section_id', section.id)
-            .order('item_order', { ascending: true });
-          
+            .order('position', { ascending: true });
+
           if (activitiesError) {
             console.error('Error fetching template activities:', activitiesError);
             return { ...section, activities: [] };
           }
-          
+
           return { ...section, activities };
         } catch (err) {
           console.error('Exception fetching activities:', err);
@@ -109,7 +113,7 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
         }
       })
     );
-    
+
     // Increment view count
     try {
       await supabase
@@ -120,19 +124,19 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
       console.error('Error incrementing view count:', err);
       // Continue even if view count update fails
     }
-    
+
     const itinerary = {
       ...template,
-      sections: sectionsWithActivities
+      sections: sectionsWithActivities,
     };
-    
+
     return <ItineraryDetailClient itinerary={itinerary} />;
   } catch (err) {
     console.error('Unexpected error in itinerary page:', err);
     // Return a basic version of the template without sections
     const itinerary = {
       ...template,
-      sections: []
+      sections: [],
     };
     return <ItineraryDetailClient itinerary={itinerary} />;
   }

@@ -1,56 +1,58 @@
-import { NextResponse } from "next/server"
-import { createApiClient } from "@/utils/supabase/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { createApiClient } from '@/utils/supabase/server';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const query = searchParams.get("q")
-    const type = searchParams.get("type") || "all" // all, destinations, trips
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q');
+    const type = searchParams.get('type') || 'all'; // all, destinations, trips
 
     if (!query) {
-      return NextResponse.json({ results: [] })
+      return NextResponse.json({ results: [] });
     }
 
-    const supabase = createClient()
+    const supabase = await createApiClient();
 
-    let destinations = []
-    let trips = []
+    let destinations = [];
+    let trips = [];
 
     // Search destinations if type is "all" or "destinations"
-    if (type === "all" || type === "destinations") {
+    if (type === 'all' || type === 'destinations') {
       const { data: destinationsData, error: destinationsError } = await supabase
-        .from("destinations")
-        .select("*")
-        .or(`city.ilike.%${query}%,state_province.ilike.%${query}%,country.ilike.%${query}%,name.ilike.%${query}%`)
-        .order("popularity", { ascending: false })
-        .limit(20)
+        .from('destinations')
+        .select('*')
+        .or(
+          `city.ilike.%${query}%,state_province.ilike.%${query}%,country.ilike.%${query}%,name.ilike.%${query}%`
+        )
+        .order('popularity', { ascending: false })
+        .limit(20);
 
       if (destinationsError) {
-        console.error("Error searching destinations:", destinationsError)
+        console.error('Error searching destinations:', destinationsError);
       } else {
-        destinations = destinationsData || []
+        destinations = destinationsData || [];
       }
     }
 
     // Search trips if type is "all" or "trips" and user is authenticated
-    if (type === "all" || type === "trips") {
+    if (type === 'all' || type === 'trips') {
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await supabase.auth.getSession();
 
       if (session) {
         const { data: tripsData, error: tripsError } = await supabase
-          .from("trips")
-          .select("*")
+          .from('trips')
+          .select('*')
           .or(`title.ilike.%${query}%,destination.ilike.%${query}%,description.ilike.%${query}%`)
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false })
-          .limit(20)
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
 
         if (tripsError) {
-          console.error("Error searching trips:", tripsError)
+          console.error('Error searching trips:', tripsError);
         } else {
-          trips = tripsData || []
+          trips = tripsData || [];
         }
       }
     }
@@ -60,9 +62,9 @@ export async function GET(request: Request) {
         destinations,
         trips,
       },
-    })
+    });
   } catch (error: any) {
-    console.error("Unexpected error in search:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Unexpected error in search:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

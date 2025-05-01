@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { API_ROUTES } from '@/utils/constants/routes';
 import {
   Star,
   Calendar,
@@ -10,112 +11,101 @@ import {
   ArrowUpDown,
   ChevronDown,
   Info,
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { API_ROUTES } from "@/utils/constants"
+} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TripReview {
-  id: string
+  id: string;
   user: {
-    id: string
-    name: string
-    avatar_url?: string
-  }
-  overall_rating: number
-  review_text: string
-  travel_season: string
-  travel_type: string[]
-  trip_highlights: string
-  trip_tips: string
-  would_visit_again: boolean
-  visit_start_date: string
-  visit_end_date: string
-  created_at: string
+    id: string;
+    name: string;
+    avatar_url?: string;
+  };
+  overall_rating: number;
+  review_text: string;
+  travel_season: string;
+  travel_type: string[];
+  trip_highlights: string;
+  trip_tips: string;
+  would_visit_again: boolean;
+  visit_start_date: string;
+  visit_end_date: string;
+  created_at: string;
 }
 
 interface DestinationReviewsProps {
-  destinationId: string
-  destinationName: string
+  destinationId: string;
+  destinationName: string;
 }
 
 const seasonEmoji: Record<string, string> = {
-  spring: "🌸",
-  summer: "☀️",
-  fall: "🍂",
-  winter: "❄️",
-}
+  spring: '🌸',
+  summer: '☀️',
+  fall: '🍂',
+  winter: '❄️',
+};
 
 const travelTypeEmoji: Record<string, string> = {
-  solo: "🚶",
-  couple: "👫",
-  family: "👨‍👩‍👧‍👦",
-  friends: "👥",
-  business: "💼",
-}
+  solo: '🚶',
+  couple: '👫',
+  family: '👨‍👩‍👧‍👦',
+  friends: '👥',
+  business: '💼',
+};
 
-export function DestinationReviews({
-  destinationId,
-  destinationName,
-}: DestinationReviewsProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [reviews, setReviews] = useState<TripReview[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [sortBy, setSortBy] = useState<"recent" | "rating">("recent")
-  const [filterSeason, setFilterSeason] = useState<string | null>(null)
-  const [filterTravelType, setFilterTravelType] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export function DestinationReviews({ destinationId, destinationName }: DestinationReviewsProps) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [reviews, setReviews] = useState<TripReview[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<'recent' | 'rating'>('recent');
+  const [filterSeason, setFilterSeason] = useState<string | null>(null);
+  const [filterTravelType, setFilterTravelType] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchReviews = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         sort_by: sortBy,
         ...(filterSeason && { season: filterSeason }),
         ...(filterTravelType && { travel_type: filterTravelType }),
-      })
+      });
 
-      const response = await fetch(
-        `${API_ROUTES.DESTINATION_REVIEWS(destinationId)}?${params}`
-      )
-      if (!response.ok) throw new Error("Failed to fetch reviews")
+      const response = await fetch(`${API_ROUTES.DESTINATION_REVIEWS(destinationId)}?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch reviews');
 
-      const data = await response.json()
-      setReviews(data.reviews)
+      const data = await response.json();
+      setReviews(data.reviews);
     } catch (error) {
-      console.error("Error fetching reviews:", error)
+      console.error('Error fetching reviews:', error);
       toast({
-        title: "Error",
-        description: "Failed to load reviews. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Error',
+        description: 'Failed to load reviews. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [destinationId, sortBy, filterSeason, filterTravelType, toast])
+  }, [destinationId, sortBy, filterSeason, filterTravelType, toast]);
 
   useEffect(() => {
-    fetchReviews()
-  }, [fetchReviews])
+    fetchReviews();
+  }, [fetchReviews]);
 
   const renderStars = (rating: number) => {
     return (
@@ -124,20 +114,20 @@ export function DestinationReviews({
           <Star
             key={star}
             className={`h-4 w-4 ${
-              star <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+              star <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
             }`}
           />
         ))}
       </div>
-    )
-  }
+    );
+  };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    })
-  }
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+  };
 
   return (
     <Card>
@@ -153,7 +143,10 @@ export function DestinationReviews({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Reviews are submitted by verified users who have completed a trip to this destination.</p>
+                  <p>
+                    Reviews are submitted by verified users who have completed a trip to this
+                    destination.
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -172,10 +165,7 @@ export function DestinationReviews({
                   All Seasons
                 </DropdownMenuItem>
                 {Object.entries(seasonEmoji).map(([season, emoji]) => (
-                  <DropdownMenuItem
-                    key={season}
-                    onClick={() => setFilterSeason(season)}
-                  >
+                  <DropdownMenuItem key={season} onClick={() => setFilterSeason(season)}>
                     {emoji} {season.charAt(0).toUpperCase() + season.slice(1)}
                   </DropdownMenuItem>
                 ))}
@@ -184,10 +174,7 @@ export function DestinationReviews({
                   All Travel Types
                 </DropdownMenuItem>
                 {Object.entries(travelTypeEmoji).map(([type, emoji]) => (
-                  <DropdownMenuItem
-                    key={type}
-                    onClick={() => setFilterTravelType(type)}
-                  >
+                  <DropdownMenuItem key={type} onClick={() => setFilterTravelType(type)}>
                     {emoji} {type.charAt(0).toUpperCase() + type.slice(1)}
                   </DropdownMenuItem>
                 ))}
@@ -203,10 +190,8 @@ export function DestinationReviews({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSortBy("recent")}>
-                  Most Recent
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("rating")}>
+                <DropdownMenuItem onClick={() => setSortBy('recent')}>Most Recent</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('rating')}>
                   Highest Rated
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -231,8 +216,7 @@ export function DestinationReviews({
             {filterTravelType && (
               <Badge variant="secondary" className="gap-1">
                 {travelTypeEmoji[filterTravelType]}
-                {filterTravelType.charAt(0).toUpperCase() +
-                  filterTravelType.slice(1)}
+                {filterTravelType.charAt(0).toUpperCase() + filterTravelType.slice(1)}
                 <button
                   className="ml-1 hover:text-destructive"
                   onClick={() => setFilterTravelType(null)}
@@ -250,10 +234,7 @@ export function DestinationReviews({
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="animate-pulse space-y-3"
-                >
+                <div key={i} className="animate-pulse space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 rounded-full bg-muted" />
                     <div className="space-y-2">
@@ -280,15 +261,15 @@ export function DestinationReviews({
                         <AvatarImage src={review.user.avatar_url} />
                         <AvatarFallback>
                           {review.user.name
-                            .split(" ")
+                            .split(' ')
                             .map((n) => n[0])
-                            .join("")}
+                            .join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">{review.user.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {formatDate(review.visit_start_date)} -{" "}
+                          {formatDate(review.visit_start_date)} -{' '}
                           {formatDate(review.visit_end_date)}
                         </div>
                       </div>
@@ -299,8 +280,7 @@ export function DestinationReviews({
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="gap-1">
                       {seasonEmoji[review.travel_season]}
-                      {review.travel_season.charAt(0).toUpperCase() +
-                        review.travel_season.slice(1)}
+                      {review.travel_season.charAt(0).toUpperCase() + review.travel_season.slice(1)}
                     </Badge>
                     {review.travel_type.map((type) => (
                       <Badge key={type} variant="outline" className="gap-1">
@@ -309,7 +289,7 @@ export function DestinationReviews({
                       </Badge>
                     ))}
                     <Badge
-                      variant={review.would_visit_again ? "default" : "destructive"}
+                      variant={review.would_visit_again ? 'default' : 'destructive'}
                       className="gap-1"
                     >
                       {review.would_visit_again ? (
@@ -317,9 +297,7 @@ export function DestinationReviews({
                       ) : (
                         <ThumbsDown className="h-3 w-3" />
                       )}
-                      {review.would_visit_again
-                        ? "Would visit again"
-                        : "Would not visit again"}
+                      {review.would_visit_again ? 'Would visit again' : 'Would not visit again'}
                     </Badge>
                   </div>
 
@@ -328,17 +306,13 @@ export function DestinationReviews({
                     {review.trip_highlights && (
                       <div>
                         <div className="font-medium text-sm">Highlights</div>
-                        <p className="text-sm text-muted-foreground">
-                          {review.trip_highlights}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{review.trip_highlights}</p>
                       </div>
                     )}
                     {review.trip_tips && (
                       <div>
                         <div className="font-medium text-sm">Tips</div>
-                        <p className="text-sm text-muted-foreground">
-                          {review.trip_tips}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{review.trip_tips}</p>
                       </div>
                     )}
                   </div>
@@ -351,5 +325,5 @@ export function DestinationReviews({
         </ScrollArea>
       </CardContent>
     </Card>
-  )
-} 
+  );
+}

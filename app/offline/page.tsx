@@ -1,12 +1,11 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { WifiOff, Home } from "lucide-react";
+'use client';
 
-export const metadata = {
-  title: "You're Offline | withme.travel",
-  description: "You appear to be offline. Some features may be unavailable.",
-};
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { WifiOff, Home } from 'lucide-react';
 
+// Metadata needs to be in a separate file or defined in a server component
+// Removing the metadata export from this client component
 export default function OfflinePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-16 text-center">
@@ -17,7 +16,8 @@ export default function OfflinePage() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight">You&apos;re Offline</h1>
           <p className="text-muted-foreground">
-            It looks like you&apos;re currently offline. Some features and content may be unavailable until you reconnect to the internet.
+            It looks like you&apos;re currently offline. Some features and content may be
+            unavailable until you reconnect to the internet.
           </p>
         </div>
 
@@ -39,20 +39,16 @@ export default function OfflinePage() {
                 Go to Homepage
               </Link>
             </Button>
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={() => window.location.reload()}
-            >
+            <Button className="w-full" variant="outline" onClick={() => window.location.reload()}>
               Retry Connection
             </Button>
           </div>
         </div>
-        
+
         <p className="pt-6 text-sm text-muted-foreground">
           withme.travel works offline for many features thanks to Progressive Web App technology.
         </p>
       </div>
     </div>
   );
-} 
+}

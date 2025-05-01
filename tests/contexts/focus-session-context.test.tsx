@@ -21,24 +21,24 @@ jest.mock('@/utils/supabase/client', () => ({
     auth: {
       getUser: jest.fn().mockResolvedValue({
         data: {
-          user: { id: 'current-user-id', email: 'test@example.com' }
-        }
-      })
-    }
+          user: { id: 'current-user-id', email: 'test@example.com' },
+        },
+      }),
+    },
   })),
 }));
 
 // Test component that uses the focus session hook
 function TestComponent({ onSessionChange }: { onSessionChange?: (session: any) => void }) {
-  const { 
-    activeFocusSession, 
-    loading, 
-    error, 
-    startFocusSession, 
-    joinFocusSession, 
-    endFocusSession 
+  const {
+    activeFocusSession,
+    loading,
+    error,
+    startFocusSession,
+    joinFocusSession,
+    endFocusSession,
   } = useFocusSession();
-  
+
   // Notify parent component when session changes for testing
   useState(() => {
     if (onSessionChange && activeFocusSession) {
@@ -53,21 +53,21 @@ function TestComponent({ onSessionChange }: { onSessionChange?: (session: any) =
       <div data-testid="session-status">
         {activeFocusSession ? `Active session: ${activeFocusSession.id}` : 'No active session'}
       </div>
-      
+
       <button data-testid="start-btn" onClick={() => startFocusSession('itinerary')}>
         Start Session
       </button>
-      
-      <button 
-        data-testid="join-btn" 
+
+      <button
+        data-testid="join-btn"
         onClick={() => activeFocusSession && joinFocusSession(activeFocusSession)}
         disabled={!activeFocusSession}
       >
         Join Session
       </button>
-      
-      <button 
-        data-testid="end-btn" 
+
+      <button
+        data-testid="end-btn"
         onClick={() => endFocusSession()}
         disabled={!activeFocusSession}
       >
@@ -88,7 +88,7 @@ describe('FocusSessionContext', () => {
         <TestComponent />
       </FocusSessionProvider>
     );
-    
+
     expect(screen.getByTestId('loading')).toHaveTextContent('Not loading');
     expect(screen.getByTestId('error')).toHaveTextContent('No error');
     expect(screen.getByTestId('session-status')).toHaveTextContent('No active session');
@@ -97,19 +97,24 @@ describe('FocusSessionContext', () => {
   it('shows loading state initially', async () => {
     // Mock initial loading state
     const supabaseMock = require('@/utils/supabase/client').createClient();
-    supabaseMock.from().select().eq().order().single.mockImplementationOnce(() => 
-      new Promise(resolve => setTimeout(() => resolve({ data: null, error: null }), 100))
-    );
-    
+    supabaseMock
+      .from()
+      .select()
+      .eq()
+      .order()
+      .single.mockImplementationOnce(
+        () => new Promise((resolve) => setTimeout(() => resolve({ data: null, error: null }), 100))
+      );
+
     render(
       <FocusSessionProvider tripId="trip-123">
         <TestComponent />
       </FocusSessionProvider>
     );
-    
+
     // Initially should be loading
     expect(screen.getByTestId('loading')).toHaveTextContent('Loading...');
-    
+
     // After data loads, loading should be false
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('Not loading');
@@ -126,72 +131,76 @@ describe('FocusSessionContext', () => {
       current_user_id: 'current-user-id',
       participants: [{ id: 'current-user-id', name: 'Test User', avatar_url: null }],
       expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-      has_joined: true
+      has_joined: true,
     };
-    
+
     // Mock the insert response
     const supabaseMock = require('@/utils/supabase/client').createClient();
-    supabaseMock.insert.mockResolvedValueOnce({ 
-      data: { id: 'new-session-id' }, 
-      error: null 
+    supabaseMock.insert.mockResolvedValueOnce({
+      data: { id: 'new-session-id' },
+      error: null,
     });
-    
+
     // Mock fetching the session after creation
     supabaseMock.from().select().eq().order().single.mockResolvedValueOnce({
       data: mockSession,
-      error: null
+      error: null,
     });
-    
+
     // Mock session change handler
     const handleSessionChange = jest.fn();
-    
+
     render(
       <FocusSessionProvider tripId="trip-123">
         <TestComponent onSessionChange={handleSessionChange} />
       </FocusSessionProvider>
     );
-    
+
     // Wait for initial loading to complete
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('Not loading');
     });
-    
+
     // Click start button
     await user.click(screen.getByTestId('start-btn'));
-    
+
     // Session should update
     await waitFor(() => {
-      expect(screen.getByTestId('session-status')).toHaveTextContent('Active session: new-session-id');
-      expect(handleSessionChange).toHaveBeenCalledWith(expect.objectContaining({
-        id: 'new-session-id'
-      }));
+      expect(screen.getByTestId('session-status')).toHaveTextContent(
+        'Active session: new-session-id'
+      );
+      expect(handleSessionChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'new-session-id',
+        })
+      );
     });
   });
 
   it('handles errors when starting a session', async () => {
     const user = userEvent.setup();
-    
+
     // Mock an error response
     const supabaseMock = require('@/utils/supabase/client').createClient();
     supabaseMock.insert.mockResolvedValueOnce({
       data: null,
-      error: { message: 'Failed to create session' }
+      error: { message: 'Failed to create session' },
     });
-    
+
     render(
       <FocusSessionProvider tripId="trip-123">
         <TestComponent />
       </FocusSessionProvider>
     );
-    
+
     // Wait for initial loading to complete
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('Not loading');
     });
-    
+
     // Click start button
     await user.click(screen.getByTestId('start-btn'));
-    
+
     // Should show error
     await waitFor(() => {
       expect(screen.getByTestId('error')).toHaveTextContent('Failed to create session');
@@ -208,44 +217,46 @@ describe('FocusSessionContext', () => {
       current_user_id: 'current-user-id',
       participants: [{ id: 'current-user-id', name: 'Test User', avatar_url: null }],
       expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-      has_joined: true
+      has_joined: true,
     };
-    
+
     // Mock that we have an existing session
     const supabaseMock = require('@/utils/supabase/client').createClient();
     supabaseMock.from().select().eq().order().single.mockResolvedValueOnce({
       data: mockSession,
-      error: null
+      error: null,
     });
-    
+
     // Mock update for ending the session
     supabaseMock.update.mockResolvedValueOnce({
       data: null,
-      error: null
+      error: null,
     });
-    
+
     render(
       <FocusSessionProvider tripId="trip-123">
         <TestComponent />
       </FocusSessionProvider>
     );
-    
+
     // Wait for session to load
     await waitFor(() => {
-      expect(screen.getByTestId('session-status')).toHaveTextContent('Active session: existing-session-id');
+      expect(screen.getByTestId('session-status')).toHaveTextContent(
+        'Active session: existing-session-id'
+      );
     });
-    
+
     // End the session
     await user.click(screen.getByTestId('end-btn'));
-    
+
     // Session should be cleared
     await waitFor(() => {
       expect(screen.getByTestId('session-status')).toHaveTextContent('No active session');
     });
-    
+
     // Verify update was called
     expect(supabaseMock.update).toHaveBeenCalledWith({
-      is_active: false
+      is_active: false,
     });
   });
-}); 
+});

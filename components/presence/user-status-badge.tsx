@@ -30,11 +30,11 @@ export function UserStatusBadge({ status, className, ...props }: UserStatusBadge
   };
 
   return (
-    <div 
+    <div
       className={cn('rounded-full', statusColors[status], className)}
       aria-label={statusDescriptions[status]}
       role="status"
       {...props}
     />
   );
-} 
+}

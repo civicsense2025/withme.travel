@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, useEffect, ReactNode 
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/components/auth-provider';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 // Types
 export interface FocusSessionParticipant {
@@ -62,8 +62,10 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
 
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('focus_sessions')
-        .select(`
+      const { data, error } = await supabase
+        .from('focus_sessions')
+        .select(
+          `
           id,
           trip_id,
           created_by_id,
@@ -80,7 +82,8 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
               avatar_url
             )
           )
-        `)
+        `
+        )
         .eq('trip_id', tripId)
         .gt('expires_at', new Date().toISOString())
         .single();
@@ -93,7 +96,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
           id: p.user_id,
           name: p.profiles.name,
           avatar_url: p.profiles.avatar_url,
-          joined_at: p.joined_at
+          joined_at: p.joined_at,
         }));
 
         // Check if current user has joined
@@ -104,7 +107,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
           ...data,
           has_joined: hasJoined,
           current_user_id: user.id,
-          participants
+          participants,
         });
       } else {
         setActiveFocusSession(null);
@@ -118,80 +121,86 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
   }, [tripId, user, supabase]);
 
   // Start a new focus session
-  const startFocusSession = useCallback(async (sectionPath: string) => {
-    if (!tripId || !user) {
-      throw new Error('User must be authenticated to start a focus session');
-    }
+  const startFocusSession = useCallback(
+    async (sectionPath: string) => {
+      if (!tripId || !user) {
+        throw new Error('User must be authenticated to start a focus session');
+      }
 
-    try {
-      setLoading(true);
-      
-      // Session duration - 30 minutes
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-      
-      // Create the focus session
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('focus_sessions')
-        .insert({
-          trip_id: tripId,
-          created_by_id: user.id,
-          section_path: sectionPath,
-          expires_at: expiresAt.toISOString()
-        })
-        .select('id')
-        .single();
+      try {
+        setLoading(true);
 
-      if (sessionError) throw sessionError;
-      
-      // Add creator as first participant
-      const { error: participantError } = await supabase
-        .from('focus_session_participants')
-        .insert({
-          focus_session_id: sessionData.id,
-          user_id: user.id
-        });
-        
-      if (participantError) throw participantError;
-      
-      // Refresh to get the complete session data
-      await refreshSession();
-    } catch (err) {
-      console.error('Error starting focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to start focus session'));
-    } finally {
-      setLoading(false);
-    }
-  }, [tripId, user, supabase, refreshSession]);
+        // Session duration - 30 minutes
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
+        // Create the focus session
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('focus_sessions')
+          .insert({
+            trip_id: tripId,
+            created_by_id: user.id,
+            section_path: sectionPath,
+            expires_at: expiresAt.toISOString(),
+          })
+          .select('id')
+          .single();
+
+        if (sessionError) throw sessionError;
+
+        // Add creator as first participant
+        const { error: participantError } = await supabase
+          .from('focus_session_participants')
+          .insert({
+            focus_session_id: sessionData.id,
+            user_id: user.id,
+          });
+
+        if (participantError) throw participantError;
+
+        // Refresh to get the complete session data
+        await refreshSession();
+      } catch (err) {
+        console.error('Error starting focus session:', err);
+        setError(err instanceof Error ? err : new Error('Failed to start focus session'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [tripId, user, supabase, refreshSession]
+  );
 
   // Join an existing focus session
-  const joinFocusSession = useCallback(async (session: FocusSession) => {
-    if (!user) {
-      throw new Error('User must be authenticated to join a focus session');
-    }
+  const joinFocusSession = useCallback(
+    async (session: FocusSession) => {
+      if (!user) {
+        throw new Error('User must be authenticated to join a focus session');
+      }
 
-    try {
-      setLoading(true);
-      
-      // Add user as a participant
-      const { error: participantError } = await supabase
-        .from('focus_session_participants')
-        .insert({
-          focus_session_id: session.id,
-          user_id: user.id
-        });
-        
-      if (participantError) throw participantError;
-      
-      // Refresh to get the updated session data
-      await refreshSession();
-    } catch (err) {
-      console.error('Error joining focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to join focus session'));
-    } finally {
-      setLoading(false);
-    }
-  }, [user, supabase, refreshSession]);
+      try {
+        setLoading(true);
+
+        // Add user as a participant
+        const { error: participantError } = await supabase
+          .from('focus_session_participants')
+          .insert({
+            focus_session_id: session.id,
+            user_id: user.id,
+          });
+
+        if (participantError) throw participantError;
+
+        // Refresh to get the updated session data
+        await refreshSession();
+      } catch (err) {
+        console.error('Error joining focus session:', err);
+        setError(err instanceof Error ? err : new Error('Failed to join focus session'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, supabase, refreshSession]
+  );
 
   // End a focus session (only creator can do this)
   const endFocusSession = useCallback(async () => {
@@ -205,15 +214,15 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
 
     try {
       setLoading(true);
-      
+
       // Set expires_at to now to end the session
       const { error } = await supabase
         .from('focus_sessions')
         .update({ expires_at: new Date().toISOString() })
         .eq('id', activeFocusSession.id);
-        
+
       if (error) throw error;
-      
+
       // Refresh to clear the active session
       setActiveFocusSession(null);
     } catch (err) {
@@ -237,7 +246,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
           event: '*',
           schema: 'public',
           table: 'focus_sessions',
-          filter: `trip_id=eq.${tripId}`
+          filter: `trip_id=eq.${tripId}`,
         },
         () => {
           refreshSession();
@@ -248,7 +257,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
         {
           event: '*',
           schema: 'public',
-          table: 'focus_session_participants'
+          table: 'focus_session_participants',
         },
         () => {
           refreshSession();
@@ -273,27 +282,23 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
     startFocusSession,
     endFocusSession,
     joinFocusSession,
-    refreshSession
+    refreshSession,
   };
 
-  return (
-    <FocusSessionContext.Provider value={value}>
-      {children}
-    </FocusSessionContext.Provider>
-  );
+  return <FocusSessionContext.Provider value={value}>{children}</FocusSessionContext.Provider>;
 }
 
 export function useFocusSession(tripId?: string) {
   const context = useContext(FocusSessionContext);
-  
+
   // If tripId is provided but we're not inside a provider, create a new instance
   if (!context && tripId) {
     throw new Error('useFocusSession must be used with a tripId or within a FocusSessionProvider');
   }
-  
+
   if (!context) {
     throw new Error('useFocusSession must be used within a FocusSessionProvider');
   }
-  
+
   return context;
-} 
+}

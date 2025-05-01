@@ -45,21 +45,17 @@ interface FocusSessionParticipant {
 1. Wrap your trip-related components with the `FocusSessionProvider`:
 
 ```tsx
-import { FocusSessionProvider } from "@/contexts/focus-session-context";
+import { FocusSessionProvider } from '@/contexts/focus-session-context';
 
 function TripPage({ tripId, children }) {
-  return (
-    <FocusSessionProvider tripId={tripId}>
-      {children}
-    </FocusSessionProvider>
-  );
+  return <FocusSessionProvider tripId={tripId}>{children}</FocusSessionProvider>;
 }
 ```
 
 2. For simpler integration, you can use the `TripFocusContainer` component:
 
 ```tsx
-import { TripFocusContainer } from "@/components/trips/trip-focus-container";
+import { TripFocusContainer } from '@/components/trips/trip-focus-container';
 
 function TripPage({ tripId, canEdit, children }) {
   return (
@@ -82,7 +78,7 @@ interface FocusSessionContextType {
   activeFocusSession: FocusSession | null;
   loading: boolean;
   error: Error | null;
-  
+
   // Actions
   startFocusSession: (sectionPath: string) => Promise<void>;
   joinFocusSession: (session: FocusSession) => Promise<void>;
@@ -136,16 +132,16 @@ interface TripFocusContainerProps {
 ```tsx
 function ItinerarySection() {
   const { startFocusSession, activeFocusSession, loading } = useFocusSession();
-  
+
   const handleStartFocus = async () => {
     try {
-      await startFocusSession("itinerary");
+      await startFocusSession('itinerary');
       // Session started successfully
     } catch (error) {
-      console.error("Failed to start focus session:", error);
+      console.error('Failed to start focus session:', error);
     }
   };
-  
+
   return (
     <div>
       <h2>Itinerary</h2>
@@ -163,18 +159,17 @@ function ItinerarySection() {
 ```tsx
 function TripSection() {
   const { activeFocusSession, joinFocusSession } = useFocusSession();
-  
+
   // Check if there's an active session for this section that the user hasn't joined
-  const canJoin = activeFocusSession?.section_path === "itinerary" && !activeFocusSession.has_joined;
-  
+  const canJoin =
+    activeFocusSession?.section_path === 'itinerary' && !activeFocusSession.has_joined;
+
   return (
     <div>
       {canJoin && (
         <div>
           <p>Someone is focusing on this section</p>
-          <Button onClick={() => joinFocusSession(activeFocusSession)}>
-            Join Focus Session
-          </Button>
+          <Button onClick={() => joinFocusSession(activeFocusSession)}>Join Focus Session</Button>
         </div>
       )}
     </div>
@@ -187,18 +182,16 @@ function TripSection() {
 ```tsx
 function ActiveFocusIndicator() {
   const { activeFocusSession, endFocusSession } = useFocusSession();
-  
+
   // Only the creator can end the session
   const isCreator = activeFocusSession?.created_by_id === activeFocusSession?.current_user_id;
-  
+
   if (!activeFocusSession) return null;
-  
+
   return (
     <div>
       <p>Currently focusing on: {activeFocusSession.section_path}</p>
-      {isCreator && (
-        <Button onClick={endFocusSession}>End Focus Session</Button>
-      )}
+      {isCreator && <Button onClick={endFocusSession}>End Focus Session</Button>}
     </div>
   );
 }
@@ -218,14 +211,14 @@ This simplified integration ensures consistent behavior across all trip-related 
 
 ```tsx
 // app/trips/[tripId]/page.tsx
-import { TripFocusContainer } from "@/components/trips/trip-focus-container";
-import { TripHeader } from "@/components/trips/trip-header";
-import { TripItinerary } from "@/components/trips/trip-itinerary";
+import { TripFocusContainer } from '@/components/trips/trip-focus-container';
+import { TripHeader } from '@/components/trips/trip-header';
+import { TripItinerary } from '@/components/trips/trip-itinerary';
 
 export default function TripPage({ params }) {
   const tripId = params.tripId;
   const canEdit = true; // Determined by permissions check
-  
+
   return (
     <TripFocusContainer tripId={tripId} canEdit={canEdit}>
       <TripHeader tripId={tripId} />
@@ -271,12 +264,14 @@ Handle errors gracefully to prevent disrupting the user experience:
 const { error, startFocusSession } = useFocusSession();
 
 // Display error if present
-{error && <ErrorBanner message={error.message} />}
+{
+  error && <ErrorBanner message={error.message} />;
+}
 
 // Handle errors in actions
 const handleStartFocus = async () => {
   try {
-    await startFocusSession("itinerary");
+    await startFocusSession('itinerary');
   } catch (error) {
     // Handle error locally if needed
   }
@@ -290,6 +285,7 @@ Focus sessions automatically expire after a set period (default: 30 minutes). Do
 ### UI Consistency
 
 Maintain consistent UI patterns for focus-related functionality:
+
 - Use the coffee cup icon for focus toggles
 - Position toggles in the top-right corner of sections or pages
 - Use consistent terminology ("Focus", "Join Session", "End Session")
@@ -299,11 +295,13 @@ Maintain consistent UI patterns for focus-related functionality:
 ### Common Issues
 
 1. **Focus session not updating in real-time**
+
    - Check if Supabase real-time is configured correctly
    - Ensure the current user has proper permissions
    - Verify network connectivity
 
 2. **Cannot start a focus session**
+
    - Ensure the user has edit permissions for the trip
    - Check if there's already an active session for the selected section
    - Verify the API endpoint is functioning correctly
@@ -337,11 +335,13 @@ Planned enhancements to the focus session system include:
 The Focus Session Context is complemented by the following UI components:
 
 1. **FocusMode**: The core UI component that displays focus session information and controls
+
    - Shows active sessions with participants, timers, and section information
    - Provides interface for starting new focus sessions
    - Displays join/end session controls based on user permissions
 
 2. **ClientFocusMode**: Client-side wrapper for the FocusMode component
+
    - Wraps FocusMode with the FocusSessionProvider
    - Ensures proper context initialization in client components
 
@@ -367,7 +367,7 @@ useEffect(() => {
         event: '*',
         schema: 'public',
         table: 'focus_sessions',
-        filter: `trip_id=eq.${tripId}`
+        filter: `trip_id=eq.${tripId}`,
       },
       () => {
         refreshSession();
@@ -378,7 +378,7 @@ useEffect(() => {
       {
         event: '*',
         schema: 'public',
-        table: 'focus_session_participants'
+        table: 'focus_session_participants',
       },
       () => {
         refreshSession();
@@ -398,10 +398,12 @@ The focus session system integrates with predefined trip sections defined in the
 
 ```typescript
 // Example of how trip sections are used in focus mode
-const sectionName = TRIP_SECTIONS.find(s => s.id === activeFocusSession.section_path)?.name || 'Unknown Section';
+const sectionName =
+  TRIP_SECTIONS.find((s) => s.id === activeFocusSession.section_path)?.name || 'Unknown Section';
 ```
 
 Available sections include:
+
 - Itinerary
 - Budget
 - Notes
@@ -415,7 +417,7 @@ When a user starts a focus session, they select which section they want to focus
 ### Basic Usage with ClientFocusMode
 
 ```tsx
-import { ClientFocusMode } from "@/components/trips/client-focus-mode";
+import { ClientFocusMode } from '@/components/trips/client-focus-mode';
 
 function TripHeader({ tripId }) {
   return (
@@ -433,33 +435,27 @@ function TripHeader({ tripId }) {
 
 ```tsx
 import { useState } from 'react';
-import { ClientFocusMode } from "@/components/trips/client-focus-mode";
-import { Button } from "@/components/ui/button";
-import { Coffee } from "lucide-react";
+import { ClientFocusMode } from '@/components/trips/client-focus-mode';
+import { Button } from '@/components/ui/button';
+import { Coffee } from 'lucide-react';
 
 function TripPage({ tripId, canEdit }) {
   const [showFocusMode, setShowFocusMode] = useState(false);
-  
+
   if (!canEdit) return null;
-  
+
   return (
     <div className="trip-page">
       <div className="trip-header">
         <h1>Trip Details</h1>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={() => setShowFocusMode(!showFocusMode)}
-        >
+        <Button variant="ghost" size="sm" onClick={() => setShowFocusMode(!showFocusMode)}>
           <Coffee className="h-4 w-4 mr-1" />
           {showFocusMode ? 'Hide Focus Mode' : 'Show Focus Mode'}
         </Button>
       </div>
-      
-      {showFocusMode && (
-        <ClientFocusMode tripId={tripId} />
-      )}
-      
+
+      {showFocusMode && <ClientFocusMode tripId={tripId} />}
+
       {/* Rest of trip content */}
     </div>
   );
@@ -471,12 +467,14 @@ function TripPage({ tripId, canEdit }) {
 To maintain consistent appearance across the application, Focus Mode components follow these visual guidelines:
 
 1. **Active Session Card**:
+
    - Amber/yellow background for visibility
    - Badge with timer showing remaining time
    - Clear section identification
    - Compact participant list with avatars
 
 2. **Creation UI**:
+
    - Section selector with dropdown
    - Primary action button with target icon
    - Clear spacing and alignment with other UI elements
@@ -486,4 +484,4 @@ To maintain consistent appearance across the application, Focus Mode components 
    - End button (X icon) only shown to session creator
    - Tooltip explanations for all interactive elements
 
-Following these guidelines ensures that the Focus Mode components integrate seamlessly with the rest of the application's UI. 
+Following these guidelines ensures that the Focus Mode components integrate seamlessly with the rest of the application's UI.

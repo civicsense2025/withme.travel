@@ -9,6 +9,7 @@ The collaboration system consists of the following key components:
 ### Core Components
 
 1. **PresenceProvider** (`components/presence/presence-context.tsx`)
+
    - React context provider that manages user presence state
    - Wraps sections of the application where collaboration is required
    - Provides presence data and methods to child components
@@ -22,25 +23,30 @@ The collaboration system consists of the following key components:
 ### UI Components
 
 3. **PresenceIndicator** (`components/presence/presence-indicator.tsx`)
+
    - Displays avatars of active users with status indicators
    - Shows what users are editing
    - Provides tooltips with additional user information
 
 4. **CursorTracker** (`components/presence/cursor-tracker.tsx`)
+
    - Displays remote users' cursor positions in real-time
    - Includes a toggle for showing/hiding cursors
    - Shows tooltips with user information on hover
 
 5. **Cursor** (`components/presence/cursor.tsx`)
+
    - Individual cursor component for a remote user
    - Displays cursor with user's unique color
    - Shows tooltip with user name and status on hover
 
 6. **UserStatusBadge** (`components/presence/user-status-badge.tsx`)
+
    - Small colored indicator showing user status
    - Green for online, yellow for away, gray for offline, blue for editing
 
 7. **AvatarGroup** (`components/ui/avatar-group.tsx`)
+
    - Displays multiple user avatars with overlap
    - Shows additional count for hidden avatars
    - Consistent styling for presence visualization
@@ -55,11 +61,13 @@ The collaboration system consists of the following key components:
 The collaboration system uses Supabase Realtime for presence tracking:
 
 1. **Presence Channels**
+
    - Each collaborative area (like a trip) has a dedicated presence channel
    - Users join the channel when they enter the area
    - Users' status, cursor position, and editing state are broadcasted to all channel members
 
 2. **Real-time Updates**
+
    - Status changes are reflected immediately across all connected clients
    - Cursor positions are updated with throttling to prevent overwhelming the network
    - Editing status prevents conflicts when multiple users are collaborating
@@ -81,11 +89,13 @@ The system defines several presence statuses:
 ## User Experience Features
 
 1. **Cursor Tracking**
+
    - Real-time visualization of where other users are on the page
    - Opt-in feature that respects user preferences
    - Visual indications of who is editing what
 
 2. **Editing Indicators**
+
    - Shows what item each user is currently editing
    - Prevents editing conflicts
    - Provides visual feedback when multiple users are working together
@@ -123,14 +133,11 @@ import { usePresenceContext } from '@/components/presence/presence-context';
 
 function ActiveUsersSection() {
   const { activeUsers } = usePresenceContext();
-  
+
   return (
     <div>
       <h3>Active Users</h3>
-      <PresenceIndicator 
-        users={activeUsers} 
-        showStatus={true}
-      />
+      <PresenceIndicator users={activeUsers} showStatus={true} />
     </div>
   );
 }
@@ -161,11 +168,7 @@ Prevent editing conflicts by showing what's being edited:
 import { EditingWrapper } from '@/components/presence/presence-context';
 
 function EditableItem({ itemId, children }) {
-  return (
-    <EditingWrapper itemId={itemId}>
-      {children}
-    </EditingWrapper>
-  );
+  return <EditingWrapper itemId={itemId}>{children}</EditingWrapper>;
 }
 ```
 
@@ -181,9 +184,9 @@ function CollaborationPage() {
   return (
     <div className="container">
       <h1>Team Collaboration</h1>
-      
+
       <PresenceProvider tripId="team-project" trackCursor={true}>
-        <FocusSession 
+        <FocusSession
           sessionId="project-notes"
           title="Project Notes"
           description="Collaborate on project documentation"
@@ -197,10 +200,12 @@ function CollaborationPage() {
 ## Performance Considerations
 
 1. **Throttling and Debouncing**
+
    - Cursor updates are debounced to prevent overwhelming the network
    - Presence updates are throttled to reduce real-time database load
 
 2. **Selective Rendering**
+
    - Components only render what's necessary based on active users
    - Status updates only trigger re-renders when relevant
 
@@ -211,10 +216,12 @@ function CollaborationPage() {
 ## Future Improvements
 
 1. **Conflict Resolution**
+
    - More sophisticated conflict resolution for simultaneous edits
    - Operational transformation or CRDT for text collaboration
 
 2. **Enhanced Visualization**
+
    - User activity heatmaps
    - Visual history of recent edits
    - Animation improvements for smoother cursor tracking
@@ -231,4 +238,4 @@ A demonstration of these features can be found in the Design Sandbox:
 /app/design-sandbox
 ```
 
-This page showcases all the collaborative features working together in a real-world scenario. 
+This page showcases all the collaborative features working together in a real-world scenario.

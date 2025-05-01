@@ -1,7 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { TripVoting, VoteOption } from '@/components/trips/TripVoting';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, VoteIcon } from 'lucide-react';
@@ -26,33 +32,28 @@ export function TripVotingModal({
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const supabase = createClient();
-  
+
   // Filter polls into active and completed
-  const activePolls = polls.filter(poll => poll.is_active);
-  const completedPolls = polls.filter(poll => !poll.is_active);
-  
+  const activePolls = polls.filter((poll) => poll.is_active);
+  const completedPolls = polls.filter((poll) => !poll.is_active);
+
   const handleVote = (pollId: string, optionId: string) => {
     onVote();
   };
-  
+
   return (
     <>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="gap-1"
-        onClick={() => setIsOpen(true)}
-      >
+      <Button variant="outline" size="sm" className="gap-1" onClick={() => setIsOpen(true)}>
         <VoteIcon className="h-4 w-4" />
         Group Vote {activePolls.length > 0 && `(${activePolls.length})`}
       </Button>
-      
+
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Trip Voting</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             <Tabs defaultValue="active">
               <TabsList>
@@ -68,10 +69,7 @@ export function TripVotingModal({
                 {activePolls.length === 0 ? (
                   <div className="text-center py-10">
                     <p className="text-muted-foreground">No active votes</p>
-                    <CreatePollModal 
-                      tripId={tripId} 
-                      onPollCreated={onCreatePoll}
-                    >
+                    <CreatePollModal tripId={tripId} onPollCreated={onCreatePoll}>
                       <Button className="mt-4">
                         <PlusCircle className="h-4 w-4 mr-2" />
                         Create New Vote
@@ -80,8 +78,8 @@ export function TripVotingModal({
                   </div>
                 ) : (
                   <div className="space-y-8">
-                    {activePolls.map(poll => (
-                      <TripVoting 
+                    {activePolls.map((poll) => (
+                      <TripVoting
                         key={poll.id}
                         tripId={tripId}
                         pollId={poll.id}
@@ -93,7 +91,7 @@ export function TripVotingModal({
                           description: option.description || undefined,
                           imageUrl: option.image_url || undefined,
                           votes: option.votes || 0,
-                          hasVoted: option.has_voted || false
+                          hasVoted: option.has_voted || false,
                         }))}
                         isActive={true}
                         expiresAt={poll.expires_at ? new Date(poll.expires_at) : null}
@@ -111,8 +109,8 @@ export function TripVotingModal({
                   </div>
                 ) : (
                   <div className="space-y-8">
-                    {completedPolls.map(poll => (
-                      <TripVoting 
+                    {completedPolls.map((poll) => (
+                      <TripVoting
                         key={poll.id}
                         tripId={tripId}
                         pollId={poll.id}
@@ -124,7 +122,7 @@ export function TripVotingModal({
                           description: option.description || undefined,
                           imageUrl: option.image_url || undefined,
                           votes: option.votes || 0,
-                          hasVoted: option.has_voted || false
+                          hasVoted: option.has_voted || false,
                         }))}
                         isActive={false}
                         showResults={true}
@@ -135,12 +133,9 @@ export function TripVotingModal({
                 )}
               </TabsContent>
             </Tabs>
-            
+
             <div className="text-center pt-4 pb-2">
-              <CreatePollModal 
-                tripId={tripId} 
-                onPollCreated={onCreatePoll}
-              >
+              <CreatePollModal tripId={tripId} onPollCreated={onCreatePoll}>
                 <Button variant="outline">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create New Vote
@@ -152,4 +147,4 @@ export function TripVotingModal({
       </Dialog>
     </>
   );
-} 
+}

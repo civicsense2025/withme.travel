@@ -12,7 +12,7 @@ try {
   Sentry = {
     captureException: (error: Error) => {
       console.warn('Sentry not available, error not reported:', error.message);
-    }
+    },
   };
 }
 
@@ -31,31 +31,31 @@ interface State {
 /**
  * Global Error Boundary component that can be used at the root level
  * to catch all unhandled errors in the application.
- * 
+ *
  * This can be used in the root layout to provide a global fallback UI.
  */
 export class GlobalErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
-    errorInfo: null
+    errorInfo: null,
   };
 
   public static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI
-    return { 
+    return {
       hasError: true,
       error,
-      errorInfo: null
+      errorInfo: null,
     };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
-    
+
     // Log the error to the console
     console.error('Global error caught by boundary:', error, errorInfo);
-    
+
     // Report to error monitoring service if available
     try {
       if (Sentry) {
@@ -64,7 +64,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     } catch (sentryError) {
       console.error('Failed to report error:', sentryError);
     }
-    
+
     // Call the onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -75,7 +75,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     this.setState({
       hasError: false,
       error: null,
-      errorInfo: null
+      errorInfo: null,
     });
   };
 
@@ -99,7 +99,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
-                  height="24" 
+                  height="24"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -121,8 +121,12 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               {/* Show a more technical error in development */}
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <div className="mt-4 p-4 bg-muted text-left rounded-md overflow-auto w-full">
-                  <p className="text-sm font-medium">Error details (only visible in development):</p>
-                  <p className="mt-1 text-xs font-mono text-muted-foreground">{this.state.error.message}</p>
+                  <p className="text-sm font-medium">
+                    Error details (only visible in development):
+                  </p>
+                  <p className="mt-1 text-xs font-mono text-muted-foreground">
+                    {this.state.error.message}
+                  </p>
                   {this.state.error.stack && (
                     <pre className="mt-2 text-xs font-mono text-muted-foreground whitespace-pre-wrap">
                       {this.state.error.stack}
@@ -139,7 +143,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 </div>
               )}
             </div>
-            
+
             <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
               <Button onClick={this.handleReset} variant="default">
                 Try Again
@@ -159,7 +163,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
 /**
  * A higher-order component that wraps a component with the GlobalErrorBoundary.
- * 
+ *
  * @param Component The component to wrap with the error boundary
  * @param fallback Optional custom fallback UI
  */
@@ -169,15 +173,15 @@ export function withErrorBoundary<P extends object>(
   onError?: (error: Error, errorInfo: ErrorInfo) => void
 ): React.FC<P> {
   const displayName = Component.displayName || Component.name || 'Component';
-  
+
   const WithErrorBoundary: React.FC<P> = (props) => (
     <GlobalErrorBoundary fallback={fallback} onError={onError}>
       <Component {...props} />
     </GlobalErrorBoundary>
   );
-  
+
   WithErrorBoundary.displayName = `WithErrorBoundary(${displayName})`;
-  
+
   return WithErrorBoundary;
 }
 
@@ -188,4 +192,4 @@ export function useErrorBoundary(): (error: Error) => void {
   return (error: Error) => {
     throw error;
   };
-} 
+}

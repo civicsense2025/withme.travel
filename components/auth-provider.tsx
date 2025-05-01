@@ -1,505 +1,491 @@
-"use client"
+'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient, repairAuthState } from "@/utils/supabase/client";
-import type { User, Session, AuthError, AuthChangeEvent } from '@supabase/supabase-js'; // Import Supabase types
-import { DB_TABLES, DB_FIELDS } from "@/utils/constants/database";
-import { Database, Profile } from "@/types/database.types";
+import { createBrowserClient } from '@supabase/ssr';
+import type { User, Session, SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/utils/constants/database';
+import { Database } from '@/types/database.types';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
-// Define a type for the profile data (matching profiles table)
-interface UserProfile extends Omit<Profile, 'created_at' | 'updated_at'> {
-  username: string | null;
-}
+// User profile type from database
+export type UserProfile = Database['public']['Tables']['profiles']['Row'];
 
-// Combine Supabase User and local Profile
-export interface AppUser extends User {
-  profile: UserProfile | null; // Profile is now part of AppUser
-}
+// Enhanced user type with profile data
+export type AppUser = User & {
+  profile: UserProfile | null;
+};
 
-interface AuthState {
-  session: Session | null;
-  user: AppUser | null; 
-  isLoading: boolean;
-  error: AuthError | Error | null; // Can be Supabase auth error or general error
-  errorMessage?: string; // User-friendly error message
-}
-
-// Define the auth context type
-export interface AuthContextType {
+// State interface for auth context
+export interface AuthState {
   session: Session | null;
   user: AppUser | null;
   profile: UserProfile | null;
   isLoading: boolean;
-  error: AuthError | Error | null;
-  errorMessage?: string;
-  supabase: ReturnType<typeof createClient>;
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, username: string) => Promise<any>;
-  signOut: () => Promise<void>;
+  error: Error | null;
 }
 
-// Create the context
-export const AuthContext = createContext<AuthContextType | null>(null);
+// Initial auth state
+const initialAuthState: AuthState = {
+  session: null,
+  user: null,
+  profile: null,
+  isLoading: true,
+  error: null,
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // === INITIALIZATION - all initializations at the top ===
-  // Create supabase client first as it doesn't depend on any state
-  const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
-  
-  // === STATE INITIALIZATION - all state in a single object at the top ===
-  const [authState, setAuthState] = useState<AuthState>({
-    session: null,
-    user: null,
-    isLoading: true,
-    error: null,
-    errorMessage: undefined,
-  });
-
-  // === REFS - all refs defined together ===
-  // Track refs for initialization and lifecycle
-  const initialSetupCompleted = useRef(false);
-  const authCheckInProgress = useRef(false);
-  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const mounted = useRef(true); // Track component lifecycle
-  const shouldUpdate = useRef(true); // Track if we should update state
-  const pendingRequests = useRef<AbortController[]>([]); // Track pending requests
-  const fallbackTimerFired = useRef(false); // Track if fallback timer has fired
-
-  // === STATE UPDATE HELPERS - basic helpers that don't depend on other functions ===
-  // Helper to set loading state - simple helper defined early
-  const setIsLoading = useCallback((loading: boolean) => {
-    if (shouldUpdate.current) {
-      setAuthState(prev => ({ ...prev, isLoading: loading }));
-    }
-  }, []);
-
-  // Helper to get user-friendly error message
-  const getFriendlyErrorMessage = (error: AuthError | Error): string => {
-    // Log the technical error details for debugging
-    console.error('[AuthProvider] Original error:', error);
-    
-    // Common Supabase auth error codes and messages
-    if ('code' in error) {
-      switch (error.code) {
-        case 'auth/invalid-email':
-        case 'invalid_email':
-          return 'Please enter a valid email address';
-        case 'auth/wrong-password':
-        case 'invalid_credentials':
-          return 'Incorrect email or password. Please try again';
-        case 'auth/user-not-found':
-        case 'user_not_found':
-          return 'No account found with this email';
-        case 'auth/too-many-requests':
-        case 'too_many_requests':
-          return 'Too many attempts. Please try again later';
-        case 'auth/email-already-in-use':
-        case 'email_taken':
-          return 'An account already exists with this email';
-        case 'auth/weak-password':
-        case 'weak_password':
-          return 'Password is too weak. Please use a stronger password';
-      }
-    }
-    
-    // Handle specific error messages
-    const msg = error.message.toLowerCase();
-    
-    if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
-      return 'Unable to connect to the server. Please check your internet connection';
-    }
-    
-    if (msg.includes('timeout')) {
-      return 'The request timed out. Please try again';
-    }
-    
-    if (msg.includes('invalid login')) {
-      return 'Incorrect email or password. Please try again';
-    }
-    
-    if (msg.includes('email not confirmed')) {
-      return 'Please verify your email address before signing in';
-    }
-    
-    if (msg.includes('password')) {
-      return 'There was an issue with your password. Please try again';
-    }
-    
-    // Generic but still friendly message as fallback
-    return 'An unexpected error occurred. Please try again';
+// Helper to create AppUser with profile
+function createAppUser(user: User, profile: UserProfile | null): AppUser {
+  return {
+    ...user,
+    profile,
   };
+}
 
-  // Helper to set error state and show a toast notification
-  const setError = useCallback((error: AuthError | Error | null) => {
-    // Only update state if we should (not during unmount or transitions)
-    if (shouldUpdate.current) {
-      const errorMessage = error ? getFriendlyErrorMessage(error) : undefined;
-      
-      // Log more detailed information about the error for debugging
-      if (error) {
-        console.error("[AuthProvider] Authentication error:", error);
-        
-        // Log additional details if available
-        if ('code' in error) {
-          console.error("[AuthProvider] Error code:", error.code);
-        }
-        
-        if ('status' in error) {
-          console.error("[AuthProvider] Error status:", (error as any).status);
-        }
-        
-        // Try to log the stack trace if available
-        if (error.stack) {
-          console.error("[AuthProvider] Error stack:", error.stack);
-        }
-      }
-      
-      // Update auth state with error information
-      setAuthState(prev => ({ ...prev, error, errorMessage }));
-      
-      // Show a toast notification if there's an error
-      if (error) {
-        toast.error('Authentication error', {
-          description: errorMessage,
-          duration: 5000,
-          id: 'auth-error', // Add ID to prevent duplicate toasts
-        });
-      }
-    } else if (error) {
-      // Just log the error if we shouldn't update state
-      console.error("[AuthProvider] Error occurred during cleanup/transition:", error);
-    }
-  }, []);
+// Auth context type definition
+export interface AuthContextType extends AuthState {
+  supabase: SupabaseClient<Database> | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  clearError: () => void;
+  refreshAuth: () => Promise<void>;
+}
 
-  // Helper to clear error state
-  const clearError = useCallback(() => {
-    if (shouldUpdate.current) {
-      setAuthState(prev => ({ ...prev, error: null, errorMessage: undefined }));
-    }
-  }, []);
-  
-  // Enhanced profile fetch with better error handling
-  const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
-    if (!userId) return null;
-    if (!supabase) return null;
+// Create default context
+const defaultContext: AuthContextType = {
+  ...initialAuthState,
+  supabase: null,
+  signIn: async () => {
+    console.warn('AuthContext not initialized: signIn called');
+  },
+  signUp: async () => {
+    console.warn('AuthContext not initialized: signUp called');
+  },
+  signOut: async () => {
+    console.warn('AuthContext not initialized: signOut called');
+  },
+  clearError: () => {
+    console.warn('AuthContext not initialized: clearError called');
+  },
+  refreshAuth: async () => {
+    console.warn('AuthContext not initialized: refreshAuth called');
+  },
+};
+
+// Export context
+export const AuthContext = createContext<AuthContextType>(defaultContext);
+
+// Auth provider component
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const mounted = useRef(true);
+  const initialized = useRef(false);
+
+  // State
+  const [state, setState] = useState<AuthState>(initialAuthState);
+
+  // Create supabase client for browser - simplified to reduce chunking issues
+  const supabase = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+
     try {
-      console.log("[AuthProvider] Fetching profile for user:", userId);
-      const { data, error } = await supabase
-        .from(DB_TABLES.PROFILES)
-        .select('id, name, avatar_url, username, is_admin')
-        .eq('id', userId)
-        .single();
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-      if (error) {
-        console.error("[AuthProvider] Error fetching profile:", error);
-        return null; 
+      if (!url || !key) {
+        console.error('[AuthProvider] Missing Supabase environment variables');
+        return null;
       }
-      console.log("[AuthProvider] Profile fetched successfully:", !!data);
-      return data as UserProfile;
-    } catch (e) {
-      console.error("[AuthProvider] Exception fetching profile:", e);
+
+      console.log('[AuthProvider] Creating browser client with @supabase/ssr');
+      
+      // Use createBrowserClient from @supabase/ssr with minimal options
+      // to avoid type conflicts
+      return createBrowserClient<Database>(url, key, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+        }
+      });
+    } catch (error) {
+      console.error('[AuthProvider] Failed to create Supabase client:', error);
       return null;
     }
-  }, [supabase]);
+  }, []);
 
-  // === INTERNAL HELPER FUNCTIONS (useCallback for stability) ===
+  // Helper functions
+  const setIsLoading = useCallback((loading: boolean) => {
+    if (mounted.current) {
+      setState((prev) => ({ ...prev, isLoading: loading }));
+    }
+  }, []);
 
-  // Define _refreshSession first
-  const _refreshSession = useCallback(async (): Promise<{ session: Session | null }> => {
-    if (!supabase) return { session: null };
-    if (!mounted.current) return { session: null }; // Check if component is mounted
+  const setError = useCallback((error: Error) => {
+    if (mounted.current) {
+      setState((prev) => ({ ...prev, error }));
+      toast.error(error.message);
+    }
+  }, []);
 
-    console.log("[AuthProvider] Attempting to refresh session...");
+  const clearError = useCallback(() => {
+    if (mounted.current) {
+      setState((prev) => ({ ...prev, error: null }));
+    }
+  }, []);
+
+  // Fetch profile data
+  const fetchProfile = useCallback(
+    async (user: User) => {
+      if (!supabase) throw new Error('Supabase client not initialized');
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        if (!profile) throw new Error('User profile not found');
+
+        return profile as UserProfile;
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        throw error;
+      }
+    },
+    [supabase]
+  );
+
+  // Update session state
+  const updateSessionState = useCallback(
+    async (session: Session | null) => {
+      try {
+        if (!session) {
+          setState({
+            ...initialAuthState,
+            isLoading: false,
+          });
+          return;
+        }
+
+        // If session exists, fetch profile
+        const profile = session.user ? await fetchProfile(session.user) : null;
+        const user = profile ? createAppUser(session.user, profile) : null;
+
+        setState({
+          session,
+          user,
+          profile,
+          isLoading: false,
+          error: null,
+        });
+      } catch (error) {
+        console.error('Error updating session state:', error);
+        setError(error instanceof Error ? error : new Error('Failed to update session'));
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+        }));
+      }
+    },
+    [fetchProfile, setError]
+  );
+
+  // Auth methods implementation
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      if (!supabase) {
+        throw new Error('Authentication client not initialized');
+      }
+
+      setIsLoading(true);
+      clearError();
+
+      try {
+        console.log('[AuthProvider] Attempting sign in for:', email);
+        
+        // First verify supabase client is properly initialized
+        if (!supabase.auth || typeof supabase.auth.signInWithPassword !== 'function') {
+          throw new Error('Supabase auth client is not properly initialized');
+        }
+
+        // Attempt sign in with better error handling
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password
+        });
+
+        if (error) {
+          console.error('[AuthProvider] Sign in error:', error.message, error);
+          throw error;
+        }
+
+        if (!data.session) {
+          console.error('[AuthProvider] No session returned after sign in');
+          throw new Error('No session returned after sign in');
+        }
+
+        console.log('[AuthProvider] Sign in successful, updating session state');
+        await updateSessionState(data.session);
+        
+        // Trigger a browser refresh of the Supabase client after successful login
+        // This helps ensure client and server are in sync
+        if (typeof window !== 'undefined') {
+          const refreshEvent = new CustomEvent('supabase:auth:refresh');
+          window.dispatchEvent(refreshEvent);
+        }
+      } catch (error) {
+        console.error('[AuthProvider] Sign in error:', error);
+        
+        // Format the error message to be more user-friendly
+        let errorMessage = 'Sign in failed';
+        
+        if (error instanceof Error) {
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Invalid email or password';
+          } else if (error.message.includes('Rate limit')) {
+            errorMessage = 'Too many sign in attempts. Please try again later.';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
+        setError(error instanceof Error ? new Error(errorMessage) : new Error('Sign in failed'));
+        setState((prev) => ({
+          ...prev,
+          session: null,
+          user: null,
+          profile: null,
+        }));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [supabase, setIsLoading, clearError, updateSessionState, setError]
+  );
+
+  // Other methods similar, simplified for brevity
+  const signUp = useCallback(
+    async (email: string, password: string) => {
+      if (!supabase) throw new Error('Authentication client not initialized');
+
+      setIsLoading(true);
+      clearError();
+
+      try {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+
+        if (data.session) {
+          await updateSessionState(data.session);
+        } else {
+          setIsLoading(false);
+          toast.success('Please check your email to confirm your account');
+        }
+      } catch (error) {
+        console.error('Sign up error:', error);
+        setError(error instanceof Error ? error : new Error('Sign up failed'));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [supabase, setIsLoading, clearError, updateSessionState, setError]
+  );
+
+  const signOut = useCallback(async () => {
+    if (!supabase) throw new Error('Authentication client not initialized');
+
+    setIsLoading(true);
+    clearError();
+
     try {
-      // Use refreshSession method
+      // Use scope: 'global' to ensure all devices get signed out
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) throw error;
+
+      // Also call the API route to ensure cookies are properly cleared
+      try {
+        const response = await fetch('/api/auth/clear-cookies');
+        if (!response.ok) {
+          console.warn(
+            '[AuthProvider] Cookie clearing API call failed, but continuing with sign out'
+          );
+        }
+      } catch (cookieError) {
+        console.error('[AuthProvider] Error calling cookie clear API:', cookieError);
+        // Continue even if this fails
+      }
+
+      console.log('[AuthProvider] User signed out successfully');
+
+      setState({
+        ...initialAuthState,
+        isLoading: false,
+      });
+
+      // Optionally force reload the page to ensure all state is cleared
+      // Uncomment if you're having persistent auth issues
+      // window.location.href = '/';
+    } catch (error) {
+      console.error('[AuthProvider] Sign out error:', error);
+      setError(error instanceof Error ? error : new Error('Sign out failed'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [supabase, setIsLoading, clearError, setError]);
+
+  // Add refresh auth function
+  const refreshAuth = useCallback(async () => {
+    if (!supabase) {
+      throw new Error('Authentication client not initialized');
+    }
+
+    setIsLoading(true);
+    clearError();
+
+    try {
+      console.log('[AuthProvider] Refreshing auth state');
       const { data, error } = await supabase.auth.refreshSession();
 
       if (error) {
-        console.error("[AuthProvider] Error refreshing session:", error);
-        // If refresh fails, likely the refresh token is invalid or expired, treat as signed out
-        if (mounted.current) {
-          setAuthState({ session: null, user: null, isLoading: false, error, errorMessage: getFriendlyErrorMessage(error) });
-          setError(error);
-        }
-        return { session: null };
+        console.error('[AuthProvider] Session refresh error:', error);
+        throw error;
       }
 
-      if (data.session && mounted.current) {
-        console.log("[AuthProvider] Session refreshed successfully.");
-        const userWithProfile = data.user ? { ...data.user, profile: await fetchProfile(data.user.id) } : null;
-        setAuthState(prev => ({ ...prev, session: data.session, user: userWithProfile, isLoading: false, error: null, errorMessage: undefined }));
-        
-        // If session has expiry, set up the next refresh
-        // NOTE: We cannot call _setupSessionRefresh directly here anymore due to reordering
-        // Instead, the effect hook will handle setting up the refresh based on the updated session
-        // if (data.session.expires_at) {
-        //   _setupSessionRefresh(data.session.expires_at); 
-        // }
-        return { session: data.session };
-      }
-      
-      return { session: null }; // Should not happen if no error, but added for safety
-
-    } catch (err) {
-      console.error("[AuthProvider] Unexpected error during session refresh:", err);
-      if (mounted.current) {
-        setError(err as Error);
-      }
-      return { session: null };
-    }
-  // Dependencies: supabase, fetchProfile, mounted ref (removed _setupSessionRefresh)
-  }, [supabase, fetchProfile, mounted]);
-
-  // Define _setupSessionRefresh, depends on _refreshSession
-  const _setupSessionRefresh = useCallback((expiresAt: number): void => {
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-    }
-
-    const currentTime = Math.floor(Date.now() / 1000);
-    const expiresIn = expiresAt - currentTime;
-    // Refresh slightly before expiry (e.g., 1 minute)
-    const refreshTime = Math.max(10, expiresIn - 60) * 1000; // In milliseconds
-
-    console.log(`[AuthProvider] Setting session refresh timer for ${refreshTime / 1000} seconds`);
-
-    refreshTimerRef.current = setTimeout(async () => {
-      console.log("[AuthProvider] Refresh timer fired. Attempting to refresh session.");
-      // Call the refresh function directly here - it will be the latest version available in this scope
-      await _refreshSession(); 
-    }, refreshTime);
-  // Dependencies: Only external setters/refs it directly uses, plus _refreshSession
-  }, [setError, _refreshSession]);
-
-  // Define _checkSessionState, depends on _setupSessionRefresh
-  const _checkSessionState = useCallback(async (isInitialCheck = false): Promise<void> => {
-    if (!supabase || authCheckInProgress.current) return;
-    authCheckInProgress.current = true;
-    if (isInitialCheck) {
-      setIsLoading(true); 
-    }
-    console.log(`[AuthProvider] Checking session state (Initial: ${isInitialCheck})...`);
-    try {
-      // Attempt to repair potentially corrupted auth state first
-      await repairAuthState();
-      
-      // Fetch current session
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error("[AuthProvider] Error fetching session:", error);
-        setError(error);
-        setAuthState(prev => ({ ...prev, session: null, user: null }));
-        return;
-      }
-
-      const { session } = data;
-      console.log("[AuthProvider] Fetched session:", !!session);
-
-      if (session) {
-        const userWithProfile = session.user ? { ...session.user, profile: await fetchProfile(session.user.id) } : null;
-        setAuthState(prev => ({ ...prev, session, user: userWithProfile, error: null, errorMessage: undefined }));
-        if (session.expires_at) {
-          _setupSessionRefresh(session.expires_at);
-        }
-      } else {
-        setAuthState(prev => ({ ...prev, session: null, user: null }));
-      }
-    } catch (err) {
-      console.error("[AuthProvider] Unexpected error during session check:", err);
-      setError(err as Error);
+      await updateSessionState(data.session);
+      console.log('[AuthProvider] Auth state refreshed successfully');
+    } catch (error) {
+      console.error('[AuthProvider] Auth refresh error:', error);
+      setError(error instanceof Error ? error : new Error('Failed to refresh authentication'));
     } finally {
-      if (mounted.current) {
-        setIsLoading(false);
-        authCheckInProgress.current = false;
-      }
+      setIsLoading(false);
     }
-  // Dependencies: supabase, fetchProfile, setError, setIsLoading, _setupSessionRefresh, mounted ref
-  }, [supabase, fetchProfile, setError, setIsLoading, _setupSessionRefresh, mounted]);
+  }, [supabase, clearError, updateSessionState, setError, setIsLoading]);
 
-  // Define _initialSessionCheck, depends on _checkSessionState
-  const _initialSessionCheck = useCallback(async (): Promise<void> => {
-    console.log("[AuthProvider] Performing initial session check...");
-    await _checkSessionState(true);
-  // Dependency: _checkSessionState
-  }, [_checkSessionState]);
-
-  // === USECALLBACK WRAPPERS (Expose stable functions to context/effects) ===
-  // These are not strictly necessary if the internal functions are already stable via useCallback,
-  // but kept for clarity or potential future refactoring where internal functions might change.
-  const checkSessionState = _checkSessionState;
-  const initialSessionCheck = _initialSessionCheck;
-  const refreshSession = _refreshSession;
-  const setupSessionRefresh = _setupSessionRefresh;
-
-  // === EFFECTS ===
-  // Effect for initial auth state check and listener setup
+  // Initialize the client and auth state
   useEffect(() => {
-    if (!initialSetupCompleted.current && !authState.isLoading) {
-      console.log("[AuthProvider] Running initial session check effect");
-      initialSessionCheck(); // Call the check function defined earlier
-      initialSetupCompleted.current = true; // Mark as completed
-    }
-
-    // Setup refresh timer based on current session expiry
-    if (authState.session?.expires_at) {
-      setupSessionRefresh(authState.session.expires_at);
-    }
+    mounted.current = true;
     
-    return () => {
-      if (refreshTimerRef.current) {
-        clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-    };
-  }, [authState.session, authState.isLoading, initialSessionCheck, setupSessionRefresh]);
+    // Check if supabase client is available
+    if (!supabase) {
+      console.error('[AuthProvider] No Supabase client available. Authentication will not work.');
+      setState(prev => ({ ...prev, isLoading: false, error: new Error('Authentication service unavailable') }));
+      return;
+    }
 
-  // === CONTEXT VALUE ===
-  const value: AuthContextType = useMemo(() => {
-    // Auth Methods using Supabase Client
-    const signIn = async (email: string, password: string) => {
-      if (!supabase) throw new Error("Supabase client not initialized");
-      setIsLoading(true);
-      clearError(); // Clear previous errors
+    const initialize = async () => {
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        // State will update via onAuthStateChange listener
-        return data;
-      } catch (error: any) {
-        console.error("Sign in error:", error);
-        setError(error);
-        // Ensure loading is false even on error, state change listener might not fire
-        setIsLoading(false);
-        throw error; // Re-throw for component handling
-      }
-    };
+        console.log('[AuthProvider] Initializing auth state');
+        
+        // Only attempt to get session if client is available
+        if (!supabase) {
+          throw new Error('Supabase client not initialized');
+        }
 
-    const signUp = async (email: string, password: string, username: string) => {
-      if (!supabase) throw new Error("Supabase client not initialized");
-      setIsLoading(true);
-      clearError(); // Clear previous errors
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { 
-              username: username
+        // Get current session
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('[AuthProvider] Error getting session:', error);
+          throw error;
+        }
+
+        initialized.current = true;
+        
+        // Update state based on session
+        if (data.session) {
+          console.log('[AuthProvider] Session found, fetching profile data');
+          try {
+            const profile = await fetchProfile(data.session.user);
+            if (mounted.current) {
+              setState({
+                session: data.session,
+                user: createAppUser(data.session.user, profile),
+                profile,
+                isLoading: false,
+                error: null,
+              });
+            }
+          } catch (profileError) {
+            console.error('[AuthProvider] Error fetching profile:', profileError);
+            if (mounted.current) {
+              setState({
+                session: data.session,
+                user: createAppUser(data.session.user, null),
+                profile: null,
+                isLoading: false,
+                error: profileError instanceof Error ? profileError : new Error('Failed to fetch profile'),
+              });
             }
           }
+        } else {
+          console.log('[AuthProvider] No session found, user is not authenticated');
+          if (mounted.current) {
+            setState({
+              ...initialAuthState,
+              isLoading: false,
+            });
+          }
+        }
+
+        // Set up auth state change listener
+        const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log(`[AuthProvider] Auth state change: ${event}`);
+          if (mounted.current) {
+            await updateSessionState(session);
+          }
         });
-        if (error) throw error;
-        // State will update via onAuthStateChange listener
-        return data;
-      } catch (error: any) {
-        console.error("Sign up error:", error);
-        setError(error);
-        // Ensure loading is false even on error
-        setIsLoading(false);
-        throw error; // Re-throw for component handling
+
+        // Return cleanup function
+        return () => {
+          subscription.subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('[AuthProvider] Initialization error:', error);
+        if (mounted.current) {
+          setState({
+            ...initialAuthState,
+            isLoading: false,
+            error: error instanceof Error ? error : new Error('Failed to initialize auth'),
+          });
+        }
       }
     };
 
-    const signOut = async () => {
-      shouldUpdate.current = false; // Prevent updates during sign-out transition
-      console.log("[AuthProvider] Attempting sign out...");
-      setIsLoading(true);
-      setError(null);
+    initialize();
 
-      // Cancel any pending requests
-      pendingRequests.current.forEach(controller => controller.abort());
-      pendingRequests.current = [];
-
-      // Clear any refresh timers immediately
-      if (refreshTimerRef.current) {
-        clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-
-      try {
-        if (!supabase) throw new Error("Supabase client not initialized");
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error('[AuthProvider] Error during sign out:', error);
-          // Set error state even if update flag is false during transition
-          setAuthState(prev => ({ ...prev, error, errorMessage: getFriendlyErrorMessage(error), isLoading: false }));
-          // Do not re-enable updates here, let the auth state change handle it
-          return; // Exit early on error
-        } 
-        
-        console.log("[AuthProvider] Supabase signOut successful, clearing state...");
-        // Clear local state immediately after successful sign out
-        // Note: onAuthStateChange will also fire, but this ensures faster UI update
-        setAuthState({
-          session: null,
-          user: null,
-          isLoading: false, // Set loading false after sign out attempt
-          error: null,
-        });
-        
-        // Re-enable state updates after sign out process is complete
-        shouldUpdate.current = true; 
-        
-        // Show success message
-        toast.success("Signed out successfully", {
-          description: "You have been signed out of your account",
-          duration: 3000,
-        });
-        
-        // Navigate to home page
-        router.push('/');
-        
-      } catch (error: any) {
-        console.error("[AuthProvider] Sign out error:", error);
-        setError(error);
-        setIsLoading(false);
-        throw error; // Re-throw for component handling
-      }
+    // Cleanup on unmount
+    return () => {
+      mounted.current = false;
     };
-    
-    return {
-      session: authState.session,
-      user: authState.user,
-      profile: authState.user?.profile || null,
-      isLoading: authState.isLoading,
-      error: authState.error,
-      errorMessage: authState.errorMessage,
-      signIn,
-      signUp,
-      signOut,
-      supabase
-    };
-  }, [
-    authState.session,
-    authState.user,
-    authState.isLoading,
-    authState.error,
-    authState.errorMessage,
-    supabase,
-    setIsLoading,
-    setError,
-    clearError,
-    router,
-    refreshTimerRef,
-    shouldUpdate,
-    pendingRequests
-  ]); // List each dependency explicitly for better performance tracking
+  }, [supabase, fetchProfile, updateSessionState]);
 
+  // Provide context
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        supabase,
+        signIn,
+        signUp,
+        signOut,
+        clearError,
+        refreshAuth,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }

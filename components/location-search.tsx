@@ -1,12 +1,14 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useRef } from "react"
-import { MapPin, Loader2 } from "lucide-react"
+import { API_ROUTES } from '@/utils/constants/routes';
 
-import { Input } from "@/components/ui/input"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, Loader2 } from 'lucide-react';
+
+import { Input } from '@/components/ui/input';
+import { useDebounce } from '@/hooks/use-debounce';
 // Update API route constant if you have one, otherwise use string directly
-// import { API_ROUTES } from "@/utils/constants"
+//
 
 // --- Define Mapbox Feature Structure (subset needed) ---
 // This should align with the structure returned by your /api/mapbox/search route
@@ -38,34 +40,34 @@ export interface MapboxPlace {
 
 interface LocationSearchProps {
   onLocationSelect: (location: MapboxPlace | null) => void; // Updated type
-  placeholder?: string
-  className?: string
-  containerClassName?: string
-  initialValue?: string
-  onClear?: () => void
+  placeholder?: string;
+  className?: string;
+  containerClassName?: string;
+  initialValue?: string;
+  onClear?: () => void;
 }
 
 export function LocationSearch({
   onLocationSelect,
-  placeholder = "Search place or address...", // Updated placeholder
-  className = "",
-  containerClassName = "",
-  initialValue = "",
+  placeholder = 'Search place or address...', // Updated placeholder
+  className = '',
+  containerClassName = '',
+  initialValue = '',
   onClear,
 }: LocationSearchProps) {
-  const [searchQuery, setSearchQuery] = useState(initialValue)
+  const [searchQuery, setSearchQuery] = useState(initialValue);
   // Update state to hold Mapbox features
-  const [searchResults, setSearchResults] = useState<MapboxFeature[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchError, setSearchError] = useState<string | null>(null)
-  const searchRef = useRef<HTMLDivElement>(null)
+  const [searchResults, setSearchResults] = useState<MapboxFeature[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Reset error when query changes
   useEffect(() => {
-    setSearchError(null)
-  }, [searchQuery])
+    setSearchError(null);
+  }, [searchQuery]);
 
   // Sync with initialValue prop changes
   useEffect(() => {
@@ -76,21 +78,21 @@ export function LocationSearch({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setSearchResults([])
+        setSearchResults([]);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch logic using the new Mapbox proxy route
   useEffect(() => {
     async function fetchMapboxPlaces() {
       if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) {
-        setSearchResults([])
-        return
+        setSearchResults([]);
+        return;
       }
       // Check if the query looks like it came from a previous selection
       // If the current query is exactly the `place_name` of a previously selected item,
@@ -99,36 +101,38 @@ export function LocationSearch({
       // For simplicity, we'll skip this check for now.
 
       try {
-        setSearchError(null)
-        setIsSearching(true)
+        setSearchError(null);
+        setIsSearching(true);
         // Call the new backend proxy route
-        const response = await fetch(`/api/mapbox/search?query=${encodeURIComponent(debouncedSearchQuery)}`)
+        const response = await fetch(
+          `/api/mapbox/search?query=${encodeURIComponent(debouncedSearchQuery)}`
+        );
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Failed to fetch locations: ${response.status}`)
+          throw new Error(errorData.error || `Failed to fetch locations: ${response.status}`);
         }
 
-        const data = await response.json()
+        const data = await response.json();
         // Expecting { features: MapboxFeature[] }
-        setSearchResults(data.features || [])
-
-      } catch (error: any) { // Explicitly type error as any or unknown
-        console.error("Error fetching Mapbox places:", error)
-        setSearchResults([])
-        setSearchError("Unable to search locations. Please try again later.")
+        setSearchResults(data.features || []);
+      } catch (error: any) {
+        // Explicitly type error as any or unknown
+        console.error('Error fetching Mapbox places:', error);
+        setSearchResults([]);
+        setSearchError('Unable to search locations. Please try again later.');
       } finally {
-        setIsSearching(false)
+        setIsSearching(false);
       }
     }
-    fetchMapboxPlaces()
-  }, [debouncedSearchQuery])
+    fetchMapboxPlaces();
+  }, [debouncedSearchQuery]);
 
-  // --- Handle Location Selection --- 
+  // --- Handle Location Selection ---
   const handleSelectLocation = (feature: MapboxFeature) => {
     // Set the input display value to the full place name
-    setSearchQuery(feature.place_name)
-    setSearchResults([]) // Hide results dropdown
+    setSearchQuery(feature.place_name);
+    setSearchResults([]); // Hide results dropdown
 
     // --- Parse the Mapbox Feature into our desired MapboxPlace structure ---
     let city: string | undefined;
@@ -145,7 +149,7 @@ export function LocationSearch({
     }
 
     // Extract context info (often has city, state, country)
-    feature.context?.forEach(ctx => {
+    feature.context?.forEach((ctx) => {
       const type = ctx.id.split('.')[0]; // e.g., 'place', 'region', 'country'
       if (type === 'place') {
         city = ctx.text;
@@ -171,12 +175,12 @@ export function LocationSearch({
     };
     // --- End Parsing ---
 
-    onLocationSelect(selectedPlace) // Pass structured data out
-  }
+    onLocationSelect(selectedPlace); // Pass structured data out
+  };
   // --- End Handle Location Selection ---
 
   const handleClear = () => {
-    setSearchQuery("");
+    setSearchQuery('');
     setSearchResults([]);
     if (onClear) {
       onClear();
@@ -204,27 +208,31 @@ export function LocationSearch({
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground z-10" // z-index to be above loader
             aria-label="Clear search"
           >
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-             </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-4 h-4"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         )}
         {/* Loading Spinner - show only when searching and input isn't empty */}
         {isSearching && searchQuery && (
-          <div className="absolute right-10 top-1/2 -translate-y-1/2" // Adjust position if clear button exists
+          <div
+            className="absolute right-10 top-1/2 -translate-y-1/2" // Adjust position if clear button exists
           >
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         )}
       </div>
 
-      {searchError && (
-        <div className="mt-1 text-sm text-destructive">
-          {searchError}
-        </div>
-      )}
+      {searchError && <div className="mt-1 text-sm text-destructive">{searchError}</div>}
 
-      {/* Update rendering logic for Mapbox features */} 
+      {/* Update rendering logic for Mapbox features */}
       {searchResults.length > 0 && (
         <div className="absolute z-20 mt-1 w-full rounded-md border bg-background shadow-lg max-h-60 overflow-y-auto">
           {searchResults.map((feature) => (
@@ -235,10 +243,10 @@ export function LocationSearch({
             >
               <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               <div>
-                 {/* Display the full place name from Mapbox */}
-                 <p className="font-medium text-sm">{feature.place_name}</p>
-                 {/* Optionally display context like city/country if needed */}
-                 {/* <p className="text-xs text-muted-foreground">Context: {feature.context?.map(c => c.text).join(', ')}</p> */}
+                {/* Display the full place name from Mapbox */}
+                <p className="font-medium text-sm">{feature.place_name}</p>
+                {/* Optionally display context like city/country if needed */}
+                {/* <p className="text-xs text-muted-foreground">Context: {feature.context?.map(c => c.text).join(', ')}</p> */}
               </div>
             </div>
           ))}
@@ -249,5 +257,5 @@ export function LocationSearch({
         </div>
       )}
     </div>
-  )
+  );
 }

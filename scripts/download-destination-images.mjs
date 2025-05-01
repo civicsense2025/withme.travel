@@ -8,12 +8,14 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 
 // Load environment variables from .env.local
-dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env.local') });
+dotenv.config({
+  path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env.local'),
+});
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 // IMPORTANT: Use the Service Role Key for server-side/script operations
 // Keep this key secure and DO NOT commit it to version control.
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public');
 const targetImageDir = path.join(publicDir, 'destinations');
 
@@ -50,7 +52,7 @@ async function downloadImage(sourceUrl, targetPath) {
       console.log(`Skipping: ${path.basename(targetPath)} already exists.`);
       return false; // Indicate skipped
     } catch (err) {
-       // File doesn't exist, proceed
+      // File doesn't exist, proceed
     }
 
     console.log(`Downloading: ${sourceUrl} -> ${path.basename(targetPath)}`);
@@ -89,7 +91,7 @@ async function main() {
       const { data, error, count } = await supabase
         .from('destinations')
         // Select image_metadata as a top-level column, not a related table
-        .select('id, city, image_url, image_metadata', { count: 'exact' }) 
+        .select('id, city, image_url, image_metadata', { count: 'exact' })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (error) {
@@ -98,27 +100,32 @@ async function main() {
 
       destinations = data || [];
       totalProcessed += destinations.length;
-      console.log(`Fetched page ${page + 1}, ${destinations.length} destinations... (Total: ${count})`);
-
+      console.log(
+        `Fetched page ${page + 1}, ${destinations.length} destinations... (Total: ${count})`
+      );
 
       for (const dest of destinations) {
         // Sanitize city and country for filename
-        const sanitize = (str) => str?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') || '';
+        const sanitize = (str) =>
+          str
+            ?.toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9\-]/g, '') || '';
         const citySlug = sanitize(dest.city);
-        const countrySlug = sanitize(dest.country); 
-        
+        const countrySlug = sanitize(dest.country);
+
         // Construct the filename, using only city if country is missing
         let filename = '';
         if (citySlug && countrySlug) {
-            filename = `${citySlug}-${countrySlug}.jpg`;
+          filename = `${citySlug}-${countrySlug}.jpg`;
         } else if (citySlug) {
-            filename = `${citySlug}.jpg`;
-            console.warn(`Warning: Missing country for ${dest.city}. Using filename: ${filename}`);
+          filename = `${citySlug}.jpg`;
+          console.warn(`Warning: Missing country for ${dest.city}. Using filename: ${filename}`);
         } else {
-            // Skip if city is also missing (unlikely but possible)
-            console.error(`Skipping download for ID ${dest.id}: Missing city information.`);
-            failedCount++;
-            continue; // Move to the next destination
+          // Skip if city is also missing (unlikely but possible)
+          console.error(`Skipping download for ID ${dest.id}: Missing city information.`);
+          failedCount++;
+          continue; // Move to the next destination
         }
 
         // Get the source URL directly from image_url
@@ -129,15 +136,22 @@ async function main() {
 
         // Check if we have a valid source URL (looks like http/https)
         if (sourceUrl && (sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://'))) {
-          
           const success = await downloadImage(sourceUrl, targetPath); // Use targetPath directly
-           if (success === true) downloadedCount++;
-           else if (success === false && await fs.access(targetPath).then(() => true).catch(() => false)) skippedCount++; // Count as skipped only if it exists
-           else failedCount++;
-
+          if (success === true) downloadedCount++;
+          else if (
+            success === false &&
+            (await fs
+              .access(targetPath)
+              .then(() => true)
+              .catch(() => false))
+          )
+            skippedCount++; // Count as skipped only if it exists
+          else failedCount++;
         } else {
-           console.warn(`Skipping ${dest.city} (ID: ${dest.id}): Invalid or missing source image_url (${sourceUrl})`);
-           failedCount++; // Count as failed if skipped due to missing data
+          console.warn(
+            `Skipping ${dest.city} (ID: ${dest.id}): Invalid or missing source image_url (${sourceUrl})`
+          );
+          failedCount++; // Count as failed if skipped due to missing data
         }
       }
 
@@ -151,7 +165,6 @@ async function main() {
     console.log(`Images Failed/Skipped (Missing Data/Error): ${failedCount}`);
     console.log('------------------------');
     console.log('Script finished.');
-
   } catch (error) {
     console.error('\n--- Script Failed ---');
     console.error('An error occurred:', error.message);
@@ -160,4 +173,4 @@ async function main() {
   }
 }
 
-main(); 
+main();

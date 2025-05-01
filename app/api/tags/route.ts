@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 // Remove the old helper import
-// import { createApiClient } from "@/utils/supabase/server"; 
+// import { createApiClient } from "@/utils/supabase/server";
 import { cookies } from 'next/headers'; // Keep this? Maybe not needed if createClient handles it
-import { createApiClient } from "@/utils/supabase/server"; // Import your SSR client creator
-import { DB_TABLES } from '@/utils/constants';
+import { createApiClient } from '@/utils/supabase/server'; // Import your SSR client creator
+import { DB_TABLES } from '@/utils/constants/database';
 
 // Fetch all existing tags
 export async function GET(request: Request) {
@@ -27,4 +27,4 @@ export async function GET(request: Request) {
     console.error('Unexpected error fetching tags:', error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
-} 
+}

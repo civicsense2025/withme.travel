@@ -1,96 +1,103 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useRef } from "react"
-import { MapPin, Loader2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface Destination {
-  id: string
-  name: string
-  city: string
-  state_province: string | null
-  country: string
-  continent: string
-  description: string | null
-  image_url: string | null
+  id: string;
+  name: string;
+  city: string;
+  state_province: string | null;
+  country: string;
+  continent: string;
+  description: string | null;
+  image_url: string | null;
 }
 
 interface PlaceSearchProps {
-  onPlaceSelect: (place: { name: string; placeId: string; latitude?: number; longitude?: number }) => void
-  placeholder?: string
-  className?: string
-  containerClassName?: string
-  defaultValue?: string
+  onPlaceSelect: (place: {
+    name: string;
+    placeId: string;
+    latitude?: number;
+    longitude?: number;
+  }) => void;
+  placeholder?: string;
+  className?: string;
+  containerClassName?: string;
+  defaultValue?: string;
 }
 
 export function PlaceSearch({
   onPlaceSelect,
-  placeholder = "Search for a place...",
-  className = "",
-  containerClassName = "",
-  defaultValue = "",
+  placeholder = 'Search for a place...',
+  className = '',
+  containerClassName = '',
+  defaultValue = '',
 }: PlaceSearchProps) {
-  const [searchQuery, setSearchQuery] = useState(defaultValue)
-  const [searchResults, setSearchResults] = useState<Destination[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const searchRef = useRef<HTMLDivElement>(null)
+  const [searchQuery, setSearchQuery] = useState(defaultValue);
+  const [searchResults, setSearchResults] = useState<Destination[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Debounce search query to avoid too many API calls
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Close search results when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setSearchResults([])
+        setSearchResults([]);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch search results when debounced query changes
   useEffect(() => {
     async function fetchDestinations() {
       if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) {
-        setSearchResults([])
-        return
+        setSearchResults([]);
+        return;
       }
 
       try {
-        setIsSearching(true)
-        const response = await fetch(`/api/destinations/search?query=${encodeURIComponent(debouncedSearchQuery)}`)
+        setIsSearching(true);
+        const response = await fetch(
+          `/api/destinations/search?query=${encodeURIComponent(debouncedSearchQuery)}`
+        );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch destinations")
+          throw new Error('Failed to fetch destinations');
         }
 
-        const data = await response.json()
-        setSearchResults(data.destinations || [])
+        const data = await response.json();
+        setSearchResults(data.destinations || []);
       } catch (error) {
-        console.error("Error fetching destinations:", error)
-        setSearchResults([])
+        console.error('Error fetching destinations:', error);
+        setSearchResults([]);
       } finally {
-        setIsSearching(false)
+        setIsSearching(false);
       }
     }
 
-    fetchDestinations()
-  }, [debouncedSearchQuery])
+    fetchDestinations();
+  }, [debouncedSearchQuery]);
 
   const handleSelectPlace = (place: Destination) => {
-    setSearchQuery(place.city)
-    setSearchResults([])
+    setSearchQuery(place.city);
+    setSearchResults([]);
     onPlaceSelect({
       name: place.city,
       placeId: place.id,
       // Note: If your destinations table has latitude and longitude, add them here
-    })
-  }
+    });
+  };
 
   return (
     <div className={`relative ${containerClassName}`} ref={searchRef}>
@@ -122,7 +129,7 @@ export function PlaceSearch({
               <div>
                 <p className="font-medium">{place.city}</p>
                 <p className="text-xs text-muted-foreground">
-                  {place.state_province ? `${place.state_province}, ` : ""}
+                  {place.state_province ? `${place.state_province}, ` : ''}
                   {place.country} • {place.continent}
                 </p>
               </div>
@@ -131,5 +138,5 @@ export function PlaceSearch({
         </div>
       )}
     </div>
-  )
+  );
 }

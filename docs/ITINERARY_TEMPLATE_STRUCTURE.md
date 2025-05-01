@@ -12,12 +12,15 @@ The application uses templates to help users quickly create itineraries for thei
 ## Core Functionality
 
 ### Template Creation & Management
+
 - Templates (`itinerary_templates`) define the overall structure, linking to a destination, creator, and basic metadata (duration, category, etc.).
 - Sections (`itinerary_template_sections`) organize template items, typically by day, providing logical grouping (e.g., "Day 1: Arrival & Check-in").
 - Items (`itinerary_template_items`) represent the specific activities, places, or notes within a template section.
 
 ### Applying Templates to Trips
+
 When a user applies a template (identified by its `slug`) to their trip:
+
 1. The application fetches the `itinerary_templates` record.
 2. It retrieves all associated `itinerary_template_sections`.
 3. For the target trip, it creates corresponding `itinerary_sections` records.
@@ -27,27 +30,34 @@ When a user applies a template (identified by its `slug`) to their trip:
 6. The application records this usage event in the `template_applications` table, potentially including the template version used.
 
 ### Data Separation Benefits
+
 The migration separating template items (`itinerary_template_items`) from user itinerary items (`itinerary_items`) provides key advantages:
-- **Template Stability**: Modifications to a template do *not* retroactively change user trips that have already applied it.
+
+- **Template Stability**: Modifications to a template do _not_ retroactively change user trips that have already applied it.
 - **User Customization**: Users can freely modify their itinerary items (derived from a template) without affecting the original template.
 - **Schema Clarity**: Template-specific fields (like quality scores or internal flags) can be managed separately without cluttering the user item schema.
+
 ### Integration with the Trips Feature
+
 The itinerary template system is tightly integrated with the `app/trips` feature in the following ways:
-* **Trip Creation Flow**: In `app/trips/create/components/CreateTripForm.tsx`, the `CreateTripForm` component offers built-in trip templates (`TRIP_TEMPLATES`) for quickstart. Selecting a template populates the form with default values (title, dates, tags, etc.).
-* **Dynamic Template Listing**: On the trips listing page (`app/trips/page.tsx`), a dedicated section can render public templates by fetching from `GET /api/itineraries/[slug]` and displaying them via `ItineraryTemplateCard` components.
-* **Apply Template to Existing Trips**: The `POST /api/itineraries/[slug]/use` endpoint (implemented in `app/api/itineraries/[slug]/use/route.ts`) is invoked by trip management pages (`app/trips/[tripId]/manage`) to apply a selected template, creating corresponding `itinerary_sections` and `itinerary_items` in the target trip.
-* **Empty State Quickstarts**: The `EmptyTrips` component (`components/empty-trips.tsx`) presents quickstart destination suggestions, linking into the create flow (`/trips/create?destination=...`), which can tie into both default templates and new trip creation logic.
-* **API Usage**: Both client-side code (React components) and server-side actions in the trips feature leverage the template API routes (`app/api/itineraries/[slug]` and its `use` sub-route) to fetch, display, and apply templates in a seamless user experience.
+
+- **Trip Creation Flow**: In `app/trips/create/components/CreateTripForm.tsx`, the `CreateTripForm` component offers built-in trip templates (`TRIP_TEMPLATES`) for quickstart. Selecting a template populates the form with default values (title, dates, tags, etc.).
+- **Dynamic Template Listing**: On the trips listing page (`app/trips/page.tsx`), a dedicated section can render public templates by fetching from `GET /api/itineraries/[slug]` and displaying them via `ItineraryTemplateCard` components.
+- **Apply Template to Existing Trips**: The `POST /api/itineraries/[slug]/use` endpoint (implemented in `app/api/itineraries/[slug]/use/route.ts`) is invoked by trip management pages (`app/trips/[tripId]/manage`) to apply a selected template, creating corresponding `itinerary_sections` and `itinerary_items` in the target trip.
+- **Empty State Quickstarts**: The `EmptyTrips` component (`components/empty-trips.tsx`) presents quickstart destination suggestions, linking into the create flow (`/trips/create?destination=...`), which can tie into both default templates and new trip creation logic.
+- **API Usage**: Both client-side code (React components) and server-side actions in the trips feature leverage the template API routes (`app/api/itineraries/[slug]` and its `use` sub-route) to fetch, display, and apply templates in a seamless user experience.
 
 ## Database Structure
 
 ### Main Tables
 
 1. **`itinerary_templates`** - Stores the main template information:
+
    - `id`, `title`, `slug`, `description`, `destination_id`, `duration_days`, etc.
    - References a destination and creator
 
 2. **`itinerary_template_sections`** - Organizes template items by day/section:
+
    - `id`, `template_id`, `day_number`, `title`, `position`
    - Groups items logically, such as "Day 1: Arrival" or "Day 2: City Exploration"
 
@@ -87,8 +97,7 @@ The application uses constants for table names and field names, found in `utils/
 - `DB_TABLES.ITINERARY_TEMPLATE_SECTIONS`
 - `DB_FIELDS.ITINERARY_TEMPLATE_ITEMS.*`
 
-Relationships between these tables are defined in the `DB_RELATIONSHIPS` object. 
-
+Relationships between these tables are defined in the `DB_RELATIONSHIPS` object.
 
 ## Relevant Table Schemas
 
@@ -325,7 +334,7 @@ These tables store user-specific trip data, which interacts with templates when 
     CREATE INDEX IF NOT EXISTS idx_template_applications_template_id ON public.template_applications USING btree (template_id) TABLESPACE pg_default;
     ```
 
-2.  **`validation_logs`** - Logs validation status of templates or applied items. *Purpose: Primarily for internal tracking of template quality or automated checks.*
+2.  **`validation_logs`** - Logs validation status of templates or applied items. _Purpose: Primarily for internal tracking of template quality or automated checks._
 
     ```sql
     CREATE TABLE public.validation_logs (
@@ -354,42 +363,42 @@ These tables form the core structure for managing itinerary templates (`itinerar
 
 ## Best Practices
 
-*   **Data Integrity**:
-    *   Review foreign key actions (`ON DELETE CASCADE`, `ON DELETE SET NULL`) carefully to match the desired data integrity behavior upon deletion of parent records (e.g., deleting a template should likely cascade to its sections and items).
-    *   Use PostgreSQL `ENUM` types where appropriate (e.g., `template_type`, `category`, `status`) to enforce consistency and valid values. Define these types clearly.
-    *   Ensure consistency between `itinerary_template_sections.day_number` and `itinerary_template_items.day`. Consider if `itinerary_template_items.day` is strictly necessary if `section_id` reliably links to the day via `itinerary_template_sections`. If kept, ensure they are synchronized.
-*   **Attribute Correctly**: When applying templates, diligently populate attribution fields (`source_template_item_id`, `attribution_type`, `original_creator_id` if applicable) in the created `itinerary_items` records.
-*   **Slug Management**: Ensure `itinerary_templates.slug` values are unique and URL-friendly. Implement a robust slug generation and update strategy.
-*   **Performance**:
-    *   Regularly review and optimize indexing strategies based on common query patterns (e.g., fetching templates by destination, fetching items for a section). The provided indices are a good starting point.
-    *   Be mindful of query complexity when fetching templates and their nested items, especially for display purposes. Consider optimized queries or denormalization if performance becomes an issue.
-*   **Security**:
-    *   Implement and rigorously test Row Level Security (RLS) policies on all relevant tables. Policies should control:
-        *   Who can create, view, update, or delete templates (`itinerary_templates`, `_sections`, `_items`).
-        *   Visibility of templates (e.g., based on `is_published` status or `template_type`).
-        *   Access to user-specific data (`itinerary_items`, `itinerary_sections`, `template_applications`).
-*   **Consistency**: Maintain consistency between template fields and the corresponding `itinerary_items` fields where data is copied (e.g., `title`, `description`, `place_id`).
-*   **Constants**: Continue using constants for table and field names (`utils/constants.ts`) to improve maintainability and reduce typos.
+- **Data Integrity**:
+  - Review foreign key actions (`ON DELETE CASCADE`, `ON DELETE SET NULL`) carefully to match the desired data integrity behavior upon deletion of parent records (e.g., deleting a template should likely cascade to its sections and items).
+  - Use PostgreSQL `ENUM` types where appropriate (e.g., `template_type`, `category`, `status`) to enforce consistency and valid values. Define these types clearly.
+  - Ensure consistency between `itinerary_template_sections.day_number` and `itinerary_template_items.day`. Consider if `itinerary_template_items.day` is strictly necessary if `section_id` reliably links to the day via `itinerary_template_sections`. If kept, ensure they are synchronized.
+- **Attribute Correctly**: When applying templates, diligently populate attribution fields (`source_template_item_id`, `attribution_type`, `original_creator_id` if applicable) in the created `itinerary_items` records.
+- **Slug Management**: Ensure `itinerary_templates.slug` values are unique and URL-friendly. Implement a robust slug generation and update strategy.
+- **Performance**:
+  - Regularly review and optimize indexing strategies based on common query patterns (e.g., fetching templates by destination, fetching items for a section). The provided indices are a good starting point.
+  - Be mindful of query complexity when fetching templates and their nested items, especially for display purposes. Consider optimized queries or denormalization if performance becomes an issue.
+- **Security**:
+  - Implement and rigorously test Row Level Security (RLS) policies on all relevant tables. Policies should control:
+    - Who can create, view, update, or delete templates (`itinerary_templates`, `_sections`, `_items`).
+    - Visibility of templates (e.g., based on `is_published` status or `template_type`).
+    - Access to user-specific data (`itinerary_items`, `itinerary_sections`, `template_applications`).
+- **Consistency**: Maintain consistency between template fields and the corresponding `itinerary_items` fields where data is copied (e.g., `title`, `description`, `place_id`).
+- **Constants**: Continue using constants for table and field names (`utils/constants.ts`) to improve maintainability and reduce typos.
 
 ## Ideas for Expansion
 
-*   **Template Versioning**: Enhance the `itinerary_templates.version` field to allow users to apply specific historical versions of a template. Track `template_version_used` more rigorously in `template_applications`. Consider how template updates affect existing versions.
-*   **User-Generated Templates**: Refine the process for users creating templates (`template_type = 'user_created'` or `'trip_based'`). Implement moderation, quality control, and potentially sharing/visibility settings.
-*   **Template Ratings & Reviews**: Add tables to allow users to rate and review templates, helping others discover high-quality options. Link reviews to `itinerary_templates`.
-*   **Dynamic Content Adaptation**: Explore mechanisms to adapt template items based on user preferences, trip dates (seasonality), or group size when applying a template. This could involve rules or conditional logic stored perhaps in `itinerary_template_items.metadata`.
-*   **Forking/Remixing Templates**: Allow users to "fork" an existing template to create their own customized version, maintaining a link to the original source.
-*   **Template Categories/Themes**: Expand beyond basic categories to include more nuanced themes (e.g., "Romantic Getaway", "Family Adventure", "Budget Travel").
-*   **Advanced Place Linking**: Improve the relationship between `itinerary_template_items` and `places`. Potentially store multiple place suggestions for a single template item slot.
-*   **Template Analytics**: Enhance tracking (`view_count`, `use_count`, `like_count`, `copied_count`) and potentially build dashboards to understand template popularity and usage patterns.
-*   **AI Integration**: Explore using AI to:
-    *   Generate template suggestions based on user input.
-    *   Validate or improve the quality of template items.
-    *   Suggest personalized modifications after a template is applied.
-*   **Component/Block Library**: Develop a concept of reusable template "blocks" (e.g., a standard "Museum Visit" block) that can be inserted into multiple templates.
+- **Template Versioning**: Enhance the `itinerary_templates.version` field to allow users to apply specific historical versions of a template. Track `template_version_used` more rigorously in `template_applications`. Consider how template updates affect existing versions.
+- **User-Generated Templates**: Refine the process for users creating templates (`template_type = 'user_created'` or `'trip_based'`). Implement moderation, quality control, and potentially sharing/visibility settings.
+- **Template Ratings & Reviews**: Add tables to allow users to rate and review templates, helping others discover high-quality options. Link reviews to `itinerary_templates`.
+- **Dynamic Content Adaptation**: Explore mechanisms to adapt template items based on user preferences, trip dates (seasonality), or group size when applying a template. This could involve rules or conditional logic stored perhaps in `itinerary_template_items.metadata`.
+- **Forking/Remixing Templates**: Allow users to "fork" an existing template to create their own customized version, maintaining a link to the original source.
+- **Template Categories/Themes**: Expand beyond basic categories to include more nuanced themes (e.g., "Romantic Getaway", "Family Adventure", "Budget Travel").
+- **Advanced Place Linking**: Improve the relationship between `itinerary_template_items` and `places`. Potentially store multiple place suggestions for a single template item slot.
+- **Template Analytics**: Enhance tracking (`view_count`, `use_count`, `like_count`, `copied_count`) and potentially build dashboards to understand template popularity and usage patterns.
+- **AI Integration**: Explore using AI to:
+  - Generate template suggestions based on user input.
+  - Validate or improve the quality of template items.
+  - Suggest personalized modifications after a template is applied.
+- **Component/Block Library**: Develop a concept of reusable template "blocks" (e.g., a standard "Museum Visit" block) that can be inserted into multiple templates.
 
 ### Deprecated/Review Field Notes (from itinerary_items)
 
-*   Fields like `type`, `item_type`, `is_custom`, `source_trip_id`, `share_status` noted in the `itinerary_items` schema seem potentially redundant or replaceable by newer fields (`category`, `content_layer`, `attribution_metadata`, `is_published`). Review and formally deprecate/remove if no longer needed to simplify the schema.
-*   Clarify the purpose and referential integrity of `canonical_id` and `fk_itinerary_items_canonical`. Should it point to `itinerary_items` or `itinerary_template_items`?
+- Fields like `type`, `item_type`, `is_custom`, `source_trip_id`, `share_status` noted in the `itinerary_items` schema seem potentially redundant or replaceable by newer fields (`category`, `content_layer`, `attribution_metadata`, `is_published`). Review and formally deprecate/remove if no longer needed to simplify the schema.
+- Clarify the purpose and referential integrity of `canonical_id` and `fk_itinerary_items_canonical`. Should it point to `itinerary_items` or `itinerary_template_items`?
 
-*This document should be kept up-to-date as the template system evolves.*
+_This document should be kept up-to-date as the template system evolves._

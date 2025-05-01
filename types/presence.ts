@@ -1,29 +1,34 @@
-import { PresenceStatus } from "@/utils/constants/database";
+import { DB_ENUMS } from '@/utils/constants/database';
+
+// Re-export the PresenceStatus type from database constants
+export type PresenceStatus = (typeof DB_ENUMS.PRESENCE_STATUS)[keyof typeof DB_ENUMS.PRESENCE_STATUS];
 
 export interface CursorPosition {
   x: number;
   y: number;
-  timestamp?: number;
+  timestamp: number;
 }
 
 // Basic user presence interface
 export interface UserPresence {
-  id: string;
-  user_id: string; 
-  trip_id: string;
+  user_id: string;
   status: PresenceStatus;
-  last_active: string;
-  document_id?: string;
-  editing_item_id?: string;
-  cursor_position?: CursorPosition;
-  page_path?: string;
+  editing_item_id?: string | null;
+  cursor_position?: CursorPosition | null;
+  page_path?: string | null;
+  last_active?: string; // ISO timestamp
+  id?: string;
+  trip_id?: string;
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+  // Added to satisfy requirements of various parts of the app
+  [key: string]: any;
 }
 
 // Extended user presence with profile information
 export interface ExtendedUserPresence extends UserPresence {
-  name?: string;
   email?: string;
-  avatar_url?: string;
   username?: string;
 }
 
@@ -43,7 +48,7 @@ export interface TripSection {
   path: string;
 }
 
-export type ConnectionState = 'connected' | 'connecting' | 'disconnected';
+export type ConnectionState = 'connected' | 'disconnected' | 'connecting' | 'reconnecting';
 
 export interface PresenceContextType {
   activeUsers: UserPresence[];
@@ -60,4 +65,3 @@ export interface PresenceContextType {
   editingItemId: string | null;
   recoverPresence: () => Promise<void>;
 }
-

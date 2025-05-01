@@ -1,4 +1,4 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Creates a Supabase admin client with the service role key
@@ -6,17 +6,17 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
  * that are properly guarded with additional auth checks.
  */
 export const createAdminClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing Supabase service role credentials')
+    throw new Error('Missing Supabase service role credentials');
   }
-  
+
   return createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
-  })
-} 
+      persistSession: false,
+    },
+  });
+};

@@ -6,4 +6,4 @@ export interface Profile {
   avatar_url: string | null;
   username: string | null;
   // Add other profile fields if needed
-} 
+}

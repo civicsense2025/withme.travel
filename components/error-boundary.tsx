@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { ErrorBoundaryButton } from './error-boundary-button';
+import * as Sentry from '@sentry/nextjs';
 
 interface ErrorBoundaryProps {
   error: Error & { digest?: string };
@@ -20,7 +21,7 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
-              height="24" 
+              height="24"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -52,7 +53,7 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
             </div>
           )}
         </div>
-        
+
         {/* Using the client component for interactive elements */}
         <ErrorBoundaryButton onReset={reset} />
       </div>
@@ -63,6 +64,8 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
 interface ClassErrorBoundaryProps {
   children: ReactNode;
   fallback: ReactNode;
+  tripId?: string;
+  section?: string;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
@@ -87,10 +90,23 @@ export class ClassErrorBoundary extends Component<ClassErrorBoundaryProps, Error
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // You can log the error to an error reporting service
+    // Log the error to the console
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
-    // Call the onError callback if provided
+
+    // Report to Sentry with context information
+    try {
+      Sentry.captureException(error, {
+        tags: { 
+          tripId: this.props.tripId,
+          section: this.props.section || 'unknown'
+        },
+        extra: { errorInfo }
+      });
+    } catch (sentryError) {
+      console.error('Failed to report error to Sentry:', sentryError);
+    }
+
+    // Call the onError callback if provided (for backward compatibility)
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
@@ -109,7 +125,7 @@ export class ClassErrorBoundary extends Component<ClassErrorBoundaryProps, Error
 /**
  * A hook that allows functional components to throw errors that will be caught
  * by the nearest error boundary.
- * 
+ *
  * @param error The error to throw
  */
 export function useErrorBoundary(): (error: Error) => void {
@@ -117,4 +133,3 @@ export function useErrorBoundary(): (error: Error) => void {
     throw error;
   };
 }
-

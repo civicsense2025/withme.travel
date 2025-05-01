@@ -3,10 +3,16 @@
  */
 
 export type NotificationPriority = 'high' | 'normal' | 'low';
-export type NotificationType = 'itinerary_change' | 'trip_update' | 'comment' | 'vote' | 'focus' | 'member_activity';
+export type NotificationType =
+  | 'itinerary_change'
+  | 'trip_update'
+  | 'comment'
+  | 'vote'
+  | 'focus'
+  | 'member_activity';
 export type ReferenceType = 'itinerary_item' | 'comment' | 'vote' | 'focus_session' | 'trip';
 
-export type ActionType = 
+export type ActionType =
   | 'TRIP_CREATED'
   | 'TRIP_UPDATED'
   | 'ITINERARY_ITEM_ADDED'
@@ -100,9 +106,9 @@ export type MarkNotificationReadFn = (notificationId: string) => Promise<void>;
 export type MarkAllNotificationsReadFn = () => Promise<void>;
 export type GetUnreadCountFn = () => Promise<number>;
 export type StartFocusSessionFn = (
-  sectionId: string, 
-  sectionPath: string, 
-  sectionName: string, 
+  sectionId: string,
+  sectionPath: string,
+  sectionName: string,
   message?: string
 ) => Promise<FocusSession | null>;
-export type EndFocusSessionFn = (sessionId: string) => Promise<void>; 
+export type EndFocusSessionFn = (sessionId: string) => Promise<void>;

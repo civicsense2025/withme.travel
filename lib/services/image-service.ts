@@ -65,11 +65,14 @@ class ImageService {
   async upsertImageMetadata(metadata: Omit<ImageMetadata, 'id' | 'created_at' | 'updated_at'>) {
     const { data, error } = await this.supabase
       .from('image_metadata')
-      .upsert({
-        ...metadata,
-      }, {
-        onConflict: 'entity_id,entity_type'
-      })
+      .upsert(
+        {
+          ...metadata,
+        },
+        {
+          onConflict: 'entity_id,entity_type',
+        }
+      )
       .select()
       .single();
 
@@ -130,4 +133,4 @@ class ImageService {
 }
 
 // Export singleton instance
-export const imageService = new ImageService(); 
+export const imageService = new ImageService();

@@ -5,7 +5,7 @@ import { createClient } from 'pexels';
 const pexelsApiKey = process.env.PEXELS_API_KEY;
 
 if (!pexelsApiKey) {
-  console.error("PEXELS_API_KEY environment variable is not set.");
+  console.error('PEXELS_API_KEY environment variable is not set.');
 }
 
 // Initialize Pexels client
@@ -28,25 +28,28 @@ export async function GET(request: Request) {
   try {
     // Pexels SDK types might be inaccurate or incomplete, using 'as any' as a workaround
     // if needed, but prefer explicit typing if possible.
-    const response = await pexelsClient.photos.search({ 
-      query, 
-      page, 
-      per_page: perPage, 
-      orientation: 'landscape' // Prefer landscape
+    const response = await pexelsClient.photos.search({
+      query,
+      page,
+      per_page: perPage,
+      orientation: 'landscape', // Prefer landscape
     });
 
     // Check if the response indicates an error (structure might vary)
     if ('error' in response) {
       console.error('Pexels API Error:', (response as any).error);
-      return NextResponse.json({ error: 'Failed to fetch from Pexels', details: (response as any).error }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to fetch from Pexels', details: (response as any).error },
+        { status: 500 }
+      );
     }
-    
+
     // Check if photos exist in the response (structure may vary based on SDK version)
     if (!('photos' in response) || !Array.isArray(response.photos)) {
-       console.error('Pexels API Error: Invalid response structure', response);
-       return NextResponse.json({ error: 'Invalid response from Pexels API' }, { status: 500 });
+      console.error('Pexels API Error: Invalid response structure', response);
+      return NextResponse.json({ error: 'Invalid response from Pexels API' }, { status: 500 });
     }
-    
+
     // Define expected photo structure based on Pexels API docs
     type PexelsPhoto = {
       id: number;
@@ -74,14 +77,16 @@ export async function GET(request: Request) {
       photographer: photo.photographer,
       photographerUrl: photo.photographer_url,
     }));
-    
+
     // Determine if there are more pages (Pexels API might include next_page URL)
-    const totalPages = response.total_results ? Math.ceil(response.total_results / perPage) : page; 
+    const totalPages = response.total_results ? Math.ceil(response.total_results / perPage) : page;
 
     return NextResponse.json({ photos: photos, totalPages });
-
   } catch (error: any) {
     console.error('Error fetching Pexels photos:', error);
-    return NextResponse.json({ error: 'Internal server error fetching Pexels photos', details: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error fetching Pexels photos', details: error.message },
+      { status: 500 }
+    );
   }
-} 
+}

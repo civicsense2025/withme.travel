@@ -1,19 +1,26 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { useFocusSession } from "@/contexts/focus-session-context";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AvatarGroup } from "@/components/ui/avatar-group";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Clock, Users } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useState, useEffect } from 'react';
+import { useFocusSession } from '@/contexts/focus-session-context';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AvatarGroup } from '@/components/ui/avatar-group';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, Clock, Users } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 /**
  * This component demonstrates how to use the FocusSession context
- * 
+ *
  * Notes:
  * - Wrap components that need focus session access in FocusSessionProvider
  * - Use useFocusSession() hook to access the focus session state and methods
@@ -24,7 +31,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 /**
  * Example component showing how to implement focus sessions in a trip section
  */
-export default function FocusSessionExample({ sectionPath = "itinerary" }: { sectionPath?: string }) {
+export default function FocusSessionExample({
+  sectionPath = 'itinerary',
+}: {
+  sectionPath?: string;
+}) {
   const {
     activeFocusSession,
     loading,
@@ -33,61 +44,61 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
     joinFocusSession,
     endFocusSession,
   } = useFocusSession();
-  
-  const [timeRemaining, setTimeRemaining] = useState<string>("");
-  
+
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
+
   // Calculate time remaining for active session
   useEffect(() => {
     if (!activeFocusSession) return;
-    
+
     const calculateTimeRemaining = () => {
       const expiresAt = new Date(activeFocusSession.expires_at).getTime();
       const now = Date.now();
       const diff = expiresAt - now;
-      
+
       if (diff <= 0) {
-        return "Expired";
+        return 'Expired';
       }
-      
+
       const minutes = Math.floor(diff / 60000);
       const seconds = Math.floor((diff % 60000) / 1000);
-      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
-    
+
     setTimeRemaining(calculateTimeRemaining());
     const intervalId = setInterval(() => {
       setTimeRemaining(calculateTimeRemaining());
     }, 1000);
-    
+
     return () => clearInterval(intervalId);
   }, [activeFocusSession]);
-  
+
   const handleStartSession = async () => {
     try {
       await startFocusSession(sectionPath);
     } catch (err) {
-      console.error("Failed to start focus session:", err);
+      console.error('Failed to start focus session:', err);
     }
   };
-  
+
   const handleJoinSession = async () => {
     if (!activeFocusSession) return;
-    
+
     try {
       await joinFocusSession(activeFocusSession);
     } catch (err) {
-      console.error("Failed to join focus session:", err);
+      console.error('Failed to join focus session:', err);
     }
   };
-  
+
   const handleEndSession = async () => {
     try {
       await endFocusSession();
     } catch (err) {
-      console.error("Failed to end focus session:", err);
+      console.error('Failed to end focus session:', err);
     }
   };
-  
+
   // Show loading state
   if (loading) {
     return (
@@ -106,7 +117,7 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
       </Card>
     );
   }
-  
+
   // Show error state
   if (error) {
     return (
@@ -114,12 +125,12 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>
-          {error.message || "An error occurred with focus session"}
+          {error.message || 'An error occurred with focus session'}
         </AlertDescription>
       </Alert>
     );
   }
-  
+
   // No active session - show start button
   if (!activeFocusSession) {
     return (
@@ -138,7 +149,7 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
       </Card>
     );
   }
-  
+
   // Session exists but user hasn't joined
   if (activeFocusSession && !activeFocusSession.has_joined) {
     return (
@@ -164,9 +175,7 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
             {activeFocusSession.participants.map((participant) => (
               <Avatar key={participant.id} title={participant.name}>
                 <AvatarImage src={participant.avatar_url || undefined} alt={participant.name} />
-                <AvatarFallback>
-                  {participant.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback>{participant.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
             ))}
           </AvatarGroup>
@@ -179,7 +188,7 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
       </Card>
     );
   }
-  
+
   // Active session that user has joined
   return (
     <Card>
@@ -192,7 +201,8 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
           </Badge>
         </div>
         <CardDescription>
-          You and {activeFocusSession.participants.length - 1} others are focusing on {activeFocusSession.section_path}
+          You and {activeFocusSession.participants.length - 1} others are focusing on{' '}
+          {activeFocusSession.section_path}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -202,9 +212,7 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
             {activeFocusSession.participants.map((participant) => (
               <Avatar key={participant.id} title={participant.name}>
                 <AvatarImage src={participant.avatar_url || undefined} alt={participant.name} />
-                <AvatarFallback>
-                  {participant.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback>{participant.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
             ))}
           </AvatarGroup>
@@ -220,4 +228,4 @@ export default function FocusSessionExample({ sectionPath = "itinerary" }: { sec
       </CardFooter>
     </Card>
   );
-} 
+}

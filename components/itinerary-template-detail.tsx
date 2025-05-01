@@ -1,53 +1,56 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { toast } from "@/components/ui/use-toast"
-import { format } from "date-fns"
+import { useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/use-toast';
+import { format } from 'date-fns';
 
 interface ItineraryDay {
-  day_number: number
+  day_number: number;
   items: {
-    title: string
-    description: string
-    location: string
-    start_time: string | null
-    end_time: string | null
-  }[]
+    title: string;
+    description: string;
+    location: string;
+    start_time: string | null;
+    end_time: string | null;
+  }[];
 }
 
 interface ItineraryTemplateDetailProps {
   template: {
-    id: string
-    title: string
-    slug: string
-    description: string
-    duration_days: number
-    category: string
-    days: ItineraryDay[]
-    view_count: number
-    use_count: number
-    like_count: number
-    created_at: string
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    duration_days: number;
+    category: string;
+    days: ItineraryDay[];
+    view_count: number;
+    use_count: number;
+    like_count: number;
+    created_at: string;
     destinations: {
-      id: string
-      name: string
-      country: string
-      image_url: string
-      latitude: number
-      longitude: number
-    }
+      id: string;
+      name: string;
+      country: string;
+      image_url: string;
+      latitude: number;
+      longitude: number;
+    };
     users: {
-      id: string
-      full_name: string
-      avatar_url: string
-    }
-  }
-  isLiked?: boolean
+      id: string;
+      full_name: string;
+      avatar_url: string;
+    };
+  };
+  isLiked?: boolean;
 }
 
-export function ItineraryTemplateDetail({ template, isLiked = false }: ItineraryTemplateDetailProps) {
+export function ItineraryTemplateDetail({
+  template,
+  isLiked = false,
+}: ItineraryTemplateDetailProps) {
   const router = useRouter();
   const [liked, setLiked] = useState(isLiked);
   const [likeCount, setLikeCount] = useState(template.like_count);
@@ -68,10 +71,10 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
       const response = await fetch(`/api/itineraries/${template.slug}/like`, {
         method: liked ? 'DELETE' : 'POST',
       });
-      
+
       if (response.ok) {
         setLiked(!liked);
-        setLikeCount(prev => liked ? prev - 1 : prev + 1);
+        setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
       }
     } catch (error) {
       console.error('Error liking template:', error);
@@ -81,9 +84,9 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
   const handleUseTemplate = async () => {
     if (!dateRange.from || !dateRange.to) {
       toast({
-        title: "Missing dates",
-        description: "Please select a start and end date for your trip.",
-        variant: "destructive",
+        title: 'Missing dates',
+        description: 'Please select a start and end date for your trip.',
+        variant: 'destructive',
       });
       return;
     }
@@ -107,8 +110,8 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
 
       if (response.ok) {
         toast({
-          title: "Success!",
-          description: "Your trip has been created from this template.",
+          title: 'Success!',
+          description: 'Your trip has been created from this template.',
         });
         setIsUseDialogOpen(false);
         router.push(`/trips/${data.trip_id}`);
@@ -117,9 +120,9 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create trip",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create trip',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -130,8 +133,8 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
     const url = `${window.location.origin}/itineraries/${template.slug}`;
     navigator.clipboard.writeText(url);
     toast({
-      title: "Link copied!",
-      description: "The link to this template has been copied to your clipboard.",
+      title: 'Link copied!',
+      description: 'The link to this template has been copied to your clipboard.',
     });
     setIsShareDialogOpen(false);
   };
@@ -145,7 +148,10 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
       {/* Hero section */}
       <div className="relative h-64 md:h-80 rounded-lg overflow-hidden">
         <Image
-          src={template.destinations.image_url || '/placeholder.svg?height=800&width=1200&query=travel destination'}
+          src={
+            template.destinations.image_url ||
+            '/placeholder.svg?height=800&width=1200&query=travel destination'
+          }
           alt={template.title}
           fill
           className="object-cover"
@@ -154,12 +160,9 @@ export function ItineraryTemplateDetail({ template, isLiked = false }: Itinerary
         {/* Add gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
       </div>
-      
+
       {/* Placeholder for the rest of the content */}
       <div>Rest of the component content goes here...</div>
-
     </div>
   );
 }
-
-

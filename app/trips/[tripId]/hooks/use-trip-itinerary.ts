@@ -1,10 +1,10 @@
 'use client';
 
+import { API_ROUTES } from '@/utils/constants/routes';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useToast } from "@/components/ui/use-toast";
-import { formatError } from "@/lib/utils";
-import { API_ROUTES, ItemStatus } from "@/utils/constants";
-import type { DisplayItineraryItem } from '@/types/itinerary';
+import { useToast } from '@/components/ui/use-toast';
+import { formatError } from '@/lib/utils';
+import type { DisplayItineraryItem, ItemStatus } from '@/types/itinerary';
 import type { TravelTimesResult } from '@/lib/mapbox';
 
 export interface TripItineraryInitialData {
@@ -26,16 +26,18 @@ export function useTripItinerary({
   initialUnscheduledItems,
   canEdit,
   userRole,
-  userId
+  userId,
 }: TripItineraryInitialData) {
   const { toast } = useToast();
-  
+
   // Itinerary state
   const [sections, setSections] = useState(initialSections || []);
-  const [unscheduledItems, setUnscheduledItems] = useState<DisplayItineraryItem[]>(initialUnscheduledItems || []);
+  const [unscheduledItems, setUnscheduledItems] = useState<DisplayItineraryItem[]>(
+    initialUnscheduledItems || []
+  );
   const [allItems, setAllItems] = useState<DisplayItineraryItem[]>([]);
   const [travelTimes, setTravelTimes] = useState<Record<string, TravelTimesResult> | null>(null);
-  
+
   // UI state
   const [isAddingItemToDay, setIsAddingItemToDay] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<DisplayItineraryItem | null>(null);
@@ -44,10 +46,10 @@ export function useTripItinerary({
   // Initialize the combined items list when sections or unscheduled items change
   useEffect(() => {
     const combinedItems = [
-      ...(sections?.flatMap(s => s.items) || []),
+      ...(sections?.flatMap((s) => s.items) || []),
       ...(unscheduledItems || []),
     ];
-    
+
     // Sort items by day (nulls/undefined last) and then position
     combinedItems.sort((a, b) => {
       const dayA = a.day_number ?? Number.MAX_SAFE_INTEGER;
@@ -61,7 +63,7 @@ export function useTripItinerary({
         return posA - posB; // If days are the same, sort by position
       }
     });
-    
+
     setAllItems(combinedItems);
   }, [sections, unscheduledItems]);
 
@@ -69,10 +71,10 @@ export function useTripItinerary({
   const itineraryDurationDays = useMemo(() => {
     // Calculate the duration based on the highest day number in the itinerary
     const days = allItems
-      .filter(item => item.day_number !== null && item.day_number !== undefined)
-      .map(item => item.day_number);
-    
-    return days.length > 0 ? Math.max(...days as number[]) : 0;
+      .filter((item) => item.day_number !== null && item.day_number !== undefined)
+      .map((item) => item.day_number);
+
+    return days.length > 0 ? Math.max(...(days as number[])) : 0;
   }, [allItems]);
 
   /**
@@ -84,39 +86,39 @@ export function useTripItinerary({
         setTravelTimes({});
         return;
       }
-      
+
       setLoadingTravelTimes(true);
-      
+
       try {
         const controller = new AbortController();
         const signal = controller.signal;
-        
+
         const response = await fetch(API_ROUTES.TRIP_TRAVEL_TIMES(tripId), {
-          signal
+          signal,
         });
-        
+
         if (!response.ok) throw new Error('Failed to fetch travel times');
-        
+
         const data: Record<string, TravelTimesResult> = await response.json();
         setTravelTimes(data);
       } catch (error: any) {
         // Don't show error for aborted requests
         if (error.name !== 'AbortError') {
-          console.error("Error fetching travel times:", error);
+          console.error('Error fetching travel times:', error);
           setTravelTimes(null);
           toast({
-            title: "Could not load travel times",
+            title: 'Could not load travel times',
             description: formatError(error),
-            variant: "default"
+            variant: 'default',
           });
         }
       } finally {
         setLoadingTravelTimes(false);
       }
     };
-    
+
     fetchTravelTimes();
-    
+
     return () => {
       // This will be used for the AbortController when we add it
     };
@@ -125,82 +127,96 @@ export function useTripItinerary({
   /**
    * Update sections and unscheduled items after an item is added or edited
    */
-  const updateItemsAfterEdit = useCallback((itemId: string, updatedData: Partial<DisplayItineraryItem>) => {
-    const dayNumber = updatedData.day_number;
+  const updateItemsAfterEdit = useCallback(
+    (itemId: string, updatedData: Partial<DisplayItineraryItem>) => {
+      const dayNumber = updatedData.day_number;
 
-    setSections(prevSections => {
-      let newSections = [...prevSections];
-      let itemFound = false;
+      setSections((prevSections) => {
+        let newSections = [...prevSections];
+        let itemFound = false;
 
-      // Remove item from its old position (if it exists)
-      newSections = newSections.map(section => ({
-        ...section,
-        items: section.items.filter((item: DisplayItineraryItem) => {
-          if (item.id === itemId) {
-            itemFound = true;
-            return false; // Remove from old section
+        // Remove item from its old position (if it exists)
+        newSections = newSections.map((section) => ({
+          ...section,
+          items: section.items.filter((item: DisplayItineraryItem) => {
+            if (item.id === itemId) {
+              itemFound = true;
+              return false; // Remove from old section
+            }
+            return true;
+          }),
+        }));
+
+        // Add item to its new section (if it has a day number)
+        if (dayNumber !== null && dayNumber !== undefined) {
+          const targetSectionIndex = newSections.findIndex((s) => s.day_number === dayNumber);
+          if (targetSectionIndex !== -1) {
+            // Combine updated data with existing item data (if found)
+            // This assumes the full item data isn't always in updatedData
+            const existingItem = allItems.find((i) => i.id === itemId) || {};
+            const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem;
+
+            newSections[targetSectionIndex] = {
+              ...newSections[targetSectionIndex],
+              items: [...newSections[targetSectionIndex].items, newItem].sort(
+                (a, b) => (a.position ?? 0) - (b.position ?? 0)
+              ),
+            };
+          } else {
+            // Handle case where section for dayNumber doesn't exist (should ideally not happen if sections match duration)
+            console.warn(`Section for day ${dayNumber} not found while updating item ${itemId}`);
           }
-          return true;
-        })
-      }));
-
-      // Add item to its new section (if it has a day number)
-      if (dayNumber !== null && dayNumber !== undefined) {
-        const targetSectionIndex = newSections.findIndex(s => s.day_number === dayNumber);
-        if (targetSectionIndex !== -1) {
-          // Combine updated data with existing item data (if found)
-          // This assumes the full item data isn't always in updatedData
-          const existingItem = allItems.find(i => i.id === itemId) || {}; 
-          const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem; 
-          
-          newSections[targetSectionIndex] = {
-            ...newSections[targetSectionIndex],
-            items: [...newSections[targetSectionIndex].items, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-          };
-        } else {
-          // Handle case where section for dayNumber doesn't exist (should ideally not happen if sections match duration)
-          console.warn(`Section for day ${dayNumber} not found while updating item ${itemId}`);
         }
-      } 
-      
-      return newSections;
-    });
 
-    setUnscheduledItems(prevUnscheduled => {
-      let newUnscheduled = prevUnscheduled.filter(item => item.id !== itemId);
-      // If item is now unscheduled (dayNumber is null/undefined)
-      if (dayNumber === null || dayNumber === undefined) {
-        const existingItem = allItems.find(i => i.id === itemId) || {};
-        const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem;
-        newUnscheduled = [...newUnscheduled, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-      }
-      return newUnscheduled;
-    });
-  }, [setSections, setUnscheduledItems, allItems]);
-  
+        return newSections;
+      });
+
+      setUnscheduledItems((prevUnscheduled) => {
+        let newUnscheduled = prevUnscheduled.filter((item) => item.id !== itemId);
+        // If item is now unscheduled (dayNumber is null/undefined)
+        if (dayNumber === null || dayNumber === undefined) {
+          const existingItem = allItems.find((i) => i.id === itemId) || {};
+          const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem;
+          newUnscheduled = [...newUnscheduled, newItem].sort(
+            (a, b) => (a.position ?? 0) - (b.position ?? 0)
+          );
+        }
+        return newUnscheduled;
+      });
+    },
+    [setSections, setUnscheduledItems, allItems]
+  );
+
   /**
    * Add a newly created item to the correct section or unscheduled list
    */
-  const handleItemAdded = useCallback((newItem: DisplayItineraryItem) => {
-    if (newItem.day_number !== null && newItem.day_number !== undefined) {
-      setSections(prevSections => {
-        const targetSectionIndex = prevSections.findIndex(s => s.day_number === newItem.day_number);
-        if (targetSectionIndex !== -1) {
-          const newSections = [...prevSections];
-          newSections[targetSectionIndex] = {
-            ...newSections[targetSectionIndex],
-            items: [...newSections[targetSectionIndex].items, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-          };
-          return newSections;
-        }
-        return prevSections; // Section not found, maybe log an error?
-      });
-    } else {
-      setUnscheduledItems(prev => 
-        [...prev, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-      );
-    }
-  }, [setSections, setUnscheduledItems]);
+  const handleItemAdded = useCallback(
+    (newItem: DisplayItineraryItem) => {
+      if (newItem.day_number !== null && newItem.day_number !== undefined) {
+        setSections((prevSections) => {
+          const targetSectionIndex = prevSections.findIndex(
+            (s) => s.day_number === newItem.day_number
+          );
+          if (targetSectionIndex !== -1) {
+            const newSections = [...prevSections];
+            newSections[targetSectionIndex] = {
+              ...newSections[targetSectionIndex],
+              items: [...newSections[targetSectionIndex].items, newItem].sort(
+                (a, b) => (a.position ?? 0) - (b.position ?? 0)
+              ),
+            };
+            return newSections;
+          }
+          return prevSections; // Section not found, maybe log an error?
+        });
+      } else {
+        setUnscheduledItems((prev) =>
+          [...prev, newItem].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        );
+      }
+    },
+    [setSections, setUnscheduledItems]
+  );
 
   /**
    * Handler for adding a new item
@@ -223,236 +239,266 @@ export function useTripItinerary({
   /**
    * Handler for saving an edited item
    */
-  const handleSaveEditedItem = useCallback(async (updatedItemData: Partial<DisplayItineraryItem>) => {
-    if (!editingItem) return;
+  const handleSaveEditedItem = useCallback(
+    async (updatedItemData: Partial<DisplayItineraryItem>) => {
+      if (!editingItem) return;
 
-    const originalItems = [...allItems];
-    
-    // Optimistic update
-    setAllItems(currentItems =>
-      currentItems.map(item =>
-        item.id === editingItem.id
-          ? { ...item, ...updatedItemData, day_number: updatedItemData.day_number ?? item.day_number }
-          : item
-      )
-    );
+      const originalItems = [...allItems];
 
-    try {
-      const response = await fetch(API_ROUTES.ITINERARY_ITEM(tripId, editingItem.id), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedItemData),
-      });
+      // Optimistic update
+      setAllItems((currentItems) =>
+        currentItems.map((item) =>
+          item.id === editingItem.id
+            ? {
+                ...item,
+                ...updatedItemData,
+                day_number: updatedItemData.day_number ?? item.day_number,
+              }
+            : item
+        )
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update item');
+      try {
+        const response = await fetch(API_ROUTES.ITINERARY_ITEM(tripId, editingItem.id), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedItemData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update item');
+        }
+
+        toast({ title: 'Item updated' });
+
+        // Update sections and unscheduled items based on the updated item
+        updateItemsAfterEdit(editingItem.id, updatedItemData);
+      } catch (error) {
+        console.error('Error updating item:', error);
+        setAllItems(originalItems); // Revert
+        toast({
+          title: 'Error Updating Item',
+          description: formatError(error as Error, 'Failed to update item'),
+          variant: 'destructive',
+        });
       }
-
-      toast({ title: "Item updated" });
-      
-      // Update sections and unscheduled items based on the updated item
-      updateItemsAfterEdit(editingItem.id, updatedItemData);
-    } catch (error) {
-      console.error("Error updating item:", error);
-      setAllItems(originalItems); // Revert
-      toast({
-        title: "Error Updating Item",
-        description: formatError(error as Error, "Failed to update item"),
-        variant: "destructive"
-      });
-    }
-  }, [tripId, editingItem, allItems, toast, updateItemsAfterEdit]);
+    },
+    [tripId, editingItem, allItems, toast, updateItemsAfterEdit]
+  );
 
   /**
    * Handler for reordering items
    */
-  const handleReorder = useCallback(async (reorderInfo: {
-    itemId: string;
-    newDayNumber: number | null;
-    newPosition: number;
-  }): Promise<void> => {
-    const { itemId, newDayNumber, newPosition } = reorderInfo;
-    
-    try {
-      const response = await fetch(API_ROUTES.TRIP_ITINERARY_REORDER(tripId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId, newDayNumber, newPosition }),
-      });
+  const handleReorder = useCallback(
+    async (reorderInfo: {
+      itemId: string;
+      newDayNumber: number | null;
+      newPosition: number;
+    }): Promise<void> => {
+      const { itemId, newDayNumber, newPosition } = reorderInfo;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to reorder items');
+      try {
+        const response = await fetch(API_ROUTES.TRIP_ITINERARY_REORDER(tripId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId, newDayNumber, newPosition }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to reorder items');
+        }
+
+        // Update the UI optimistically - actual update will come from real-time
+      } catch (error) {
+        console.error('Reorder failed:', error);
+        toast({
+          title: 'Reorder Failed',
+          description: formatError(error as Error),
+          variant: 'destructive',
+        });
+        throw error;
       }
-      
-      // Update the UI optimistically - actual update will come from real-time
-    } catch (error) {
-      console.error("Reorder failed:", error);
-      toast({
-        title: "Reorder Failed",
-        description: formatError(error as Error),
-        variant: "destructive"
-      });
-      throw error;
-    }
-  }, [tripId, toast]);
+    },
+    [tripId, toast]
+  );
 
   /**
    * Handler for saving a new item
    */
-  const handleSaveNewItem = useCallback(async (newItemData: Partial<DisplayItineraryItem>): Promise<DisplayItineraryItem> => {
-    try {
-      const response = await fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItemData),
-      });
+  const handleSaveNewItem = useCallback(
+    async (newItemData: Partial<DisplayItineraryItem>): Promise<DisplayItineraryItem> => {
+      try {
+        const response = await fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newItemData),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create item');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create item');
+        }
+
+        const createdItem = await response.json();
+        toast({ title: 'Item Added' });
+
+        // Add the new item to the appropriate section or unscheduled items
+        handleItemAdded(createdItem);
+
+        return createdItem;
+      } catch (error) {
+        console.error('Failed to create item:', error);
+        toast({
+          title: 'Error Creating Item',
+          description: formatError(error as Error),
+          variant: 'destructive',
+        });
+        throw error;
       }
-
-      const createdItem = await response.json();
-      toast({ title: "Item Added" });
-      
-      // Add the new item to the appropriate section or unscheduled items
-      handleItemAdded(createdItem);
-      
-      return createdItem;
-    } catch (error) {
-      console.error("Failed to create item:", error);
-      toast({
-        title: "Error Creating Item",
-        description: formatError(error as Error),
-        variant: "destructive"
-      });
-      throw error;
-    }
-  }, [tripId, toast, handleItemAdded]);
+    },
+    [tripId, toast, handleItemAdded]
+  );
 
   /**
    * Handler for updating item status
    */
-  const handleStatusChange = useCallback(async (itemId: string, status: ItemStatus | null): Promise<void> => {
-    try {
-      const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId) + `/items/${itemId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
+  const handleStatusChange = useCallback(
+    async (itemId: string, status: ItemStatus | null): Promise<void> => {
+      try {
+        const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId) + `/items/${itemId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to update status');
+        if (!response.ok) {
+          throw new Error('Failed to update status');
+        }
+
+        toast({ title: 'Status updated' });
+
+        // Update the item status in allItems
+        setAllItems((prevItems) =>
+          prevItems.map((item) => (item.id === itemId ? { ...item, status } : item))
+        );
+
+        // Also update in sections or unscheduled items
+        updateItemsAfterEdit(itemId, { status });
+      } catch (error) {
+        console.error('Failed to update status:', error);
+        toast({
+          title: 'Error updating status',
+          variant: 'destructive',
+        });
+        throw error;
       }
-      
-      toast({ title: "Status updated" });
-      
-      // Update the item status in allItems
-      setAllItems(prevItems => 
-        prevItems.map(item => 
-          item.id === itemId ? { ...item, status } : item
-        )
-      );
-      
-      // Also update in sections or unscheduled items
-      updateItemsAfterEdit(itemId, { status });
-    } catch (error) {
-      console.error("Failed to update status:", error);
-      toast({
-        title: "Error updating status",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  }, [tripId, toast, updateItemsAfterEdit, setAllItems]);
+    },
+    [tripId, toast, updateItemsAfterEdit, setAllItems]
+  );
 
   /**
    * Handler for deleting an item
    */
-  const handleDeleteItem = useCallback(async (itemId: string): Promise<void> => {
-    if (!canEdit) return;
+  const handleDeleteItem = useCallback(
+    async (itemId: string): Promise<void> => {
+      if (!canEdit) return;
 
-    // Store the current state in case we need to revert
-    const originalItems = [...allItems];
-    const originalSections = [...sections];
-    const originalUnscheduled = [...unscheduledItems];
+      // Store the current state in case we need to revert
+      const originalItems = [...allItems];
+      const originalSections = [...sections];
+      const originalUnscheduled = [...unscheduledItems];
 
-    // Optimistically remove the item from the UI
-    setAllItems(prevItems => prevItems.filter(item => item.id !== itemId));
-    
-    // Also remove from sections or unscheduled items
-    const itemToDelete = allItems.find(item => item.id === itemId);
-    if (itemToDelete?.day_number === null) {
-      setUnscheduledItems(prev => prev.filter(item => item.id !== itemId));
-    } else {
-      setSections(prevSections => {
-        return prevSections.map(section => {
-          if (section.day_number === itemToDelete?.day_number) {
-            return {
-              ...section,
-              items: section.items.filter((item: DisplayItineraryItem) => item.id !== itemId)
-            };
-          }
-          return section;
+      // Optimistically remove the item from the UI
+      setAllItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+
+      // Also remove from sections or unscheduled items
+      const itemToDelete = allItems.find((item) => item.id === itemId);
+      if (itemToDelete?.day_number === null) {
+        setUnscheduledItems((prev) => prev.filter((item) => item.id !== itemId));
+      } else {
+        setSections((prevSections) => {
+          return prevSections.map((section) => {
+            if (section.day_number === itemToDelete?.day_number) {
+              return {
+                ...section,
+                items: section.items.filter((item: DisplayItineraryItem) => item.id !== itemId),
+              };
+            }
+            return section;
+          });
         });
-      });
-    }
-
-    try {
-      const response = await fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        // If API fails, throw an error to trigger the catch block
-        throw new Error('Failed to delete item on server');
       }
 
-      toast({ title: "Item deleted" });
-    } catch (error) {
-      console.error("Failed to delete item:", error);
-      toast({
-        title: "Error deleting item",
-        description: "Could not delete item. Reverting changes.",
-        variant: "destructive"
-      });
-      // Revert the state if the API call failed
-      setAllItems(originalItems);
-      setSections(originalSections);
-      setUnscheduledItems(originalUnscheduled);
-      throw error;
-    }
-  }, [tripId, canEdit, allItems, sections, unscheduledItems, toast, setAllItems, setSections, setUnscheduledItems]);
+      try {
+        const response = await fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          // If API fails, throw an error to trigger the catch block
+          throw new Error('Failed to delete item on server');
+        }
+
+        toast({ title: 'Item deleted' });
+      } catch (error) {
+        console.error('Failed to delete item:', error);
+        toast({
+          title: 'Error deleting item',
+          description: 'Could not delete item. Reverting changes.',
+          variant: 'destructive',
+        });
+        // Revert the state if the API call failed
+        setAllItems(originalItems);
+        setSections(originalSections);
+        setUnscheduledItems(originalUnscheduled);
+        throw error;
+      }
+    },
+    [
+      tripId,
+      canEdit,
+      allItems,
+      sections,
+      unscheduledItems,
+      toast,
+      setAllItems,
+      setSections,
+      setUnscheduledItems,
+    ]
+  );
 
   /**
    * Handler for voting on an item
    */
-  const handleVote = useCallback(async (itemId: string, voteType: 'up' | 'down'): Promise<void> => {
-    try {
-      const response = await fetch(API_ROUTES.ITINERARY_ITEM_VOTE(tripId, itemId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voteType }),
-      });
+  const handleVote = useCallback(
+    async (itemId: string, voteType: 'up' | 'down'): Promise<void> => {
+      try {
+        const response = await fetch(API_ROUTES.ITINERARY_ITEM_VOTE(tripId, itemId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voteType }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit vote');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to submit vote');
+        }
+
+        toast({ title: 'Vote recorded' });
+      } catch (error) {
+        console.error('Vote failed:', error);
+        toast({
+          title: 'Error',
+          description: formatError(error as Error, 'Failed to submit vote'),
+          variant: 'destructive',
+        });
+        throw error;
       }
-
-      toast({ title: "Vote recorded" });
-    } catch (error) {
-      console.error("Vote failed:", error);
-      toast({
-        title: "Error",
-        description: formatError(error as Error, "Failed to submit vote"),
-        variant: "destructive"
-      });
-      throw error;
-    }
-  }, [tripId, toast]);
+    },
+    [tripId, toast]
+  );
 
   return {
     // State
@@ -476,4 +522,4 @@ export function useTripItinerary({
     handleItemAdded,
     handleVote,
   };
-} 
+}

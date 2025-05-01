@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { createApiClient } from "@/utils/supabase/server";
-import { DB_TABLES } from '@/utils/constants';
+import { NextResponse, NextRequest } from 'next/server';
+import { createApiClient } from '@/utils/supabase/server';
 import { Place, GooglePhotoReference, PlaceCategory } from '@/types/places';
+import { DB_TABLES } from '@/utils/constants/database';
 
 // Define the expected request body structure
 interface LookupRequest {
@@ -11,7 +11,7 @@ interface LookupRequest {
 // Custom error types for better error handling
 class PlaceError extends Error {
   statusCode: number;
-  
+
   constructor(message: string, statusCode: number = 500) {
     super(message);
     this.statusCode = statusCode;
@@ -57,31 +57,49 @@ function mapGoogleTypeToCategory(googleTypes: string[] | undefined): PlaceCatego
   if (googleTypes.includes('park')) return 'attraction';
   if (googleTypes.includes('tourist_attraction')) return 'attraction';
   if (googleTypes.includes('landmark')) return 'landmark';
-  if (googleTypes.includes('shopping_mall') || googleTypes.includes('store') || googleTypes.includes('book_store') || googleTypes.includes('department_store')) return 'shopping';
-  if (googleTypes.includes('transit_station') || googleTypes.includes('airport') || googleTypes.includes('bus_station') || googleTypes.includes('subway_station') || googleTypes.includes('train_station')) return 'transport';
+  if (
+    googleTypes.includes('shopping_mall') ||
+    googleTypes.includes('store') ||
+    googleTypes.includes('book_store') ||
+    googleTypes.includes('department_store')
+  )
+    return 'shopping';
+  if (
+    googleTypes.includes('transit_station') ||
+    googleTypes.includes('airport') ||
+    googleTypes.includes('bus_station') ||
+    googleTypes.includes('subway_station') ||
+    googleTypes.includes('train_station')
+  )
+    return 'transport';
   if (googleTypes.includes('food')) return 'restaurant';
   if (googleTypes.includes('point_of_interest')) return 'other';
   if (googleTypes.includes('establishment')) return 'other';
   return 'other';
 }
 
-export async function POST(request: Request) {
-  console.log("Lookup/Create API route hit"); // Log when the route is hit
-  const supabase = createClient();
+export async function POST(request: NextRequest) {
+  console.log('Lookup/Create API route hit'); // Log when the route is hit
+  const supabase = await createApiClient();
 
   // 1. Check user authentication (standard way)
-  const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: getUserError,
+  } = await supabase.auth.getUser();
 
   // Log the result of getUser
   if (getUserError) {
-    console.error("Error getting user:", getUserError);
+    console.error('Error getting user:', getUserError);
   }
-  console.log("User object from getUser:", user ? { id: user.id, email: user.email } : null);
-
+  console.log('User object from getUser:', user ? { id: user.id, email: user.email } : null);
 
   if (getUserError || !user) {
-    console.log("Authentication failed or user not found.");
-    return NextResponse.json({ error: 'Unauthorized', detail: getUserError?.message }, { status: 401 });
+    console.log('Authentication failed or user not found.');
+    return NextResponse.json(
+      { error: 'Unauthorized', detail: getUserError?.message },
+      { status: 401 }
+    );
   }
 
   console.log(`Authenticated as user: ${user.id}`);
@@ -93,7 +111,7 @@ export async function POST(request: Request) {
     if (!reqBody.googlePlaceId) {
       throw new PlaceError('Missing googlePlaceId', 400);
     }
-    
+
     // Validate Google Place ID format
     // Google Place IDs are typically alphanumeric with some special chars and at least 20+ chars long
     const placeIdRegex = /^[a-zA-Z0-9_-]{20,}$/;
@@ -101,14 +119,17 @@ export async function POST(request: Request) {
       throw new PlaceError('Invalid Google Place ID format', 400);
     }
   } catch (error) {
-    console.error("Error parsing request body:", error);
+    console.error('Error parsing request body:', error);
     const statusCode = error instanceof PlaceError ? error.statusCode : 400;
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Invalid request body' }, { status: statusCode });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Invalid request body' },
+      { status: statusCode }
+    );
   }
 
   const { googlePlaceId } = reqBody;
   const source = 'google';
-  
+
   // Set rate limit counters
   const rateLimit = 100; // Requests per hour
   const rateLimitRemaining = 99; // Example value, should be tracked properly in production
@@ -149,7 +170,8 @@ export async function POST(request: Request) {
       throw new PlaceError('Server configuration error.', 500);
     }
 
-    const fields = 'place_id,name,formatted_address,geometry,type,rating,user_ratings_total,price_level,photo,website,opening_hours,formatted_phone_number';
+    const fields =
+      'place_id,name,formatted_address,geometry,type,rating,user_ratings_total,price_level,photo,website,opening_hours,formatted_phone_number';
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${googlePlaceId}&fields=${fields}&key=${apiKey}`;
 
     const googleResponse = await fetch(url);
@@ -161,27 +183,30 @@ export async function POST(request: Request) {
     }
 
     const placeDetails = googleData.result;
-    const photoReferences = placeDetails.photos?.map(p => p.photo_reference) ?? null;
+    const photoReferences = placeDetails.photos?.map((p) => p.photo_reference) ?? null;
 
     // 5. Prepare data for insertion
-    const newPlaceData: Omit<Place, 'id' | 'created_at' | 'updated_at' | 'suggested_by' | 'is_verified'> = {
-       name: placeDetails.name ?? 'Unknown Place',
-       description: null,
-       category: mapGoogleTypeToCategory(placeDetails.types),
-       address: placeDetails.formatted_address ?? null,
-       latitude: placeDetails.geometry?.location.lat ?? null,
-       longitude: placeDetails.geometry?.location.lng ?? null,
-       destination_id: null,
-       price_level: placeDetails.price_level ?? null,
-       rating: placeDetails.rating ?? null,
-       rating_count: placeDetails.user_ratings_total ?? null,
-       images: photoReferences,
-       tags: placeDetails.types ?? null,
-       opening_hours: placeDetails.opening_hours ?? null,
-       website: placeDetails.website ?? null,
-       phone_number: placeDetails.formatted_phone_number ?? null,
-       source: source,
-       source_id: googlePlaceId,
+    const newPlaceData: Omit<
+      Place,
+      'id' | 'created_at' | 'updated_at' | 'suggested_by' | 'is_verified'
+    > = {
+      name: placeDetails.name ?? 'Unknown Place',
+      description: null,
+      category: mapGoogleTypeToCategory(placeDetails.types),
+      address: placeDetails.formatted_address ?? null,
+      latitude: placeDetails.geometry?.location.lat ?? null,
+      longitude: placeDetails.geometry?.location.lng ?? null,
+      destination_id: null,
+      price_level: placeDetails.price_level ?? null,
+      rating: placeDetails.rating ?? null,
+      rating_count: placeDetails.user_ratings_total ?? null,
+      images: photoReferences,
+      tags: placeDetails.types ?? null,
+      opening_hours: placeDetails.opening_hours ?? null,
+      website: placeDetails.website ?? null,
+      phone_number: placeDetails.formatted_phone_number ?? null,
+      source: source,
+      source_id: googlePlaceId,
     };
 
     // 6. Insert into Supabase
@@ -193,37 +218,38 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-        console.error('Supabase insert error:', insertError);
-        if (insertError.code === '23505') { // Handle potential race condition
-             console.warn(`Race condition detected for Google Place ID: ${googlePlaceId}. Refetching.`);
-             // Refetching logic starts here
-             const { data: racePlace, error: raceError } = await supabase // Use supabase directly here
-                 .from(DB_TABLES.PLACES)
-                 .select('*')
-                 .eq('source', source)
-                 .eq('source_id', googlePlaceId)
-                 .single(); // Ensure you fetch a single result
+      console.error('Supabase insert error:', insertError);
+      if (insertError.code === '23505') {
+        // Handle potential race condition
+        console.warn(`Race condition detected for Google Place ID: ${googlePlaceId}. Refetching.`);
+        // Refetching logic starts here
+        const { data: racePlace, error: raceError } = await supabase // Use supabase directly here
+          .from(DB_TABLES.PLACES)
+          .select('*')
+          .eq('source', source)
+          .eq('source_id', googlePlaceId)
+          .single(); // Ensure you fetch a single result
 
-             if (raceError || !racePlace) {
-                 console.error('Database error resolving insert race condition:', raceError);
-                 throw new PlaceError('Database error resolving insert race condition.', 500);
-             }
-             // Return the successfully fetched place from the race condition
-             const response = NextResponse.json(racePlace as Place, { status: 200 });
-             // Add rate limiting headers
-             response.headers.set('X-RateLimit-Limit', rateLimit.toString());
-             response.headers.set('X-RateLimit-Remaining', rateLimitRemaining.toString());
-             response.headers.set('X-RateLimit-Reset', Math.floor(Date.now() / 1000 + 3600).toString());
-             return response;
+        if (raceError || !racePlace) {
+          console.error('Database error resolving insert race condition:', raceError);
+          throw new PlaceError('Database error resolving insert race condition.', 500);
         }
-        // If it's not a race condition error, throw a generic DB error
-        throw new PlaceError('Database error saving new place.', 500);
+        // Return the successfully fetched place from the race condition
+        const response = NextResponse.json(racePlace as Place, { status: 200 });
+        // Add rate limiting headers
+        response.headers.set('X-RateLimit-Limit', rateLimit.toString());
+        response.headers.set('X-RateLimit-Remaining', rateLimitRemaining.toString());
+        response.headers.set('X-RateLimit-Reset', Math.floor(Date.now() / 1000 + 3600).toString());
+        return response;
       }
+      // If it's not a race condition error, throw a generic DB error
+      throw new PlaceError('Database error saving new place.', 500);
+    }
 
     // Check if insertedPlace is actually populated before accessing its id
     if (!insertedPlace) {
-       console.error(`Insert operation for ${googlePlaceId} did not return a place.`);
-       throw new PlaceError('Failed to retrieve the newly created place from database.', 500);
+      console.error(`Insert operation for ${googlePlaceId} did not return a place.`);
+      throw new PlaceError('Failed to retrieve the newly created place from database.', 500);
     }
 
     console.log(`Place inserted into DB: ${googlePlaceId}, ID: ${insertedPlace.id}`);
@@ -233,9 +259,8 @@ export async function POST(request: Request) {
     response.headers.set('X-RateLimit-Remaining', rateLimitRemaining.toString());
     response.headers.set('X-RateLimit-Reset', Math.floor(Date.now() / 1000 + 3600).toString());
     return response;
-
   } catch (error: unknown) {
-    console.error("Lookup/Create Place Error:", error);
+    console.error('Lookup/Create Place Error:', error);
 
     // Improved error status determination
     let status = 500;
@@ -258,7 +283,10 @@ export async function POST(request: Request) {
     // Use dummy/default values if real ones aren't available in error state
     const currentRateLimitRemaining = rateLimitRemaining - 1; // Decrement example
     response.headers.set('X-RateLimit-Limit', rateLimit.toString());
-    response.headers.set('X-RateLimit-Remaining', Math.max(0, currentRateLimitRemaining).toString()); // Ensure non-negative
+    response.headers.set(
+      'X-RateLimit-Remaining',
+      Math.max(0, currentRateLimitRemaining).toString()
+    ); // Ensure non-negative
     response.headers.set('X-RateLimit-Reset', Math.floor(Date.now() / 1000 + 3600).toString());
     return response;
   }

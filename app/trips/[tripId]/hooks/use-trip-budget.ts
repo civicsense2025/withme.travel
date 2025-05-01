@@ -1,9 +1,9 @@
 'use client';
 
+import { API_ROUTES } from '@/utils/constants/routes';
 import { useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { formatError } from '@/lib/utils';
-import { API_ROUTES } from '@/utils/constants';
 import type { DisplayItineraryItem } from '@/types/itinerary';
 
 // Define ManualDbExpense type
@@ -23,11 +23,11 @@ export interface ManualDbExpense {
 
 export interface UnifiedExpense {
   id: string | number;
-  title: string | null; 
+  title: string | null;
   amount: number | null;
   currency: string | null;
   category: string | null;
-  date: string | null; 
+  date: string | null;
   paidBy?: string | null; // Optional for planned items
   source: 'manual' | 'planned';
 }
@@ -56,24 +56,24 @@ export function useTripBudget({
   initialBudget,
   initialExpenses,
   allItineraryItems,
-  canEdit
+  canEdit,
 }: TripBudgetProps) {
   const { toast } = useToast();
-  
+
   // Budget state
   const [budget, setBudget] = useState<number | null>(initialBudget);
   const [expenses, setExpenses] = useState<ManualDbExpense[]>(initialExpenses || []);
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [isSavingBudget, setIsSavingBudget] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  
+
   // New expense form state
   const [newExpense, setNewExpense] = useState<NewExpenseFormData>({
     title: '',
     amount: '',
     category: '',
     date: new Date().toISOString().split('T')[0],
-    paidById: ''
+    paidById: '',
   });
 
   /**
@@ -82,16 +82,16 @@ export function useTripBudget({
   const plannedExpenses = useMemo(() => {
     // Map itinerary items with costs to UnifiedExpense format
     return allItineraryItems
-      .filter(item => item.estimated_cost && item.estimated_cost > 0)
-      .map(item => ({
+      .filter((item) => item.estimated_cost && item.estimated_cost > 0)
+      .map((item) => ({
         id: item.id,
         title: item.title,
         amount: item.estimated_cost ?? null,
-        currency: item.currency ?? null, 
+        currency: item.currency ?? null,
         category: item.category || null,
-        date: item.day_number ? item.date : null, 
-        source: 'planned' as const, 
-        paidBy: null
+        date: item.day_number ? item.date : null,
+        source: 'planned' as const,
+        paidBy: null,
       }));
   }, [allItineraryItems]);
 
@@ -110,9 +110,8 @@ export function useTripBudget({
     const manualExpenses = Array.isArray(expenses) ? expenses : [];
     const manualTotal = manualExpenses.reduce((sum, expense) => {
       // Make sure amount is a number, default to 0 if null/undefined/NaN
-      const amount = typeof expense.amount === 'number' && !isNaN(expense.amount) 
-        ? expense.amount 
-        : 0;
+      const amount =
+        typeof expense.amount === 'number' && !isNaN(expense.amount) ? expense.amount : 0;
       return sum + amount;
     }, 0);
     return manualTotal;
@@ -121,40 +120,43 @@ export function useTripBudget({
   /**
    * Save updated budget to API
    */
-  const handleSaveBudget = useCallback(async (newBudget: number) => {
-    if (!canEdit) return;
-    
-    setIsSavingBudget(true);
-    try {
-      const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ budget: newBudget }),
-      });
+  const handleSaveBudget = useCallback(
+    async (newBudget: number) => {
+      if (!canEdit) return;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update budget');
+      setIsSavingBudget(true);
+      try {
+        const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ budget: newBudget }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update budget');
+        }
+
+        setBudget(newBudget);
+        setIsEditingBudget(false);
+        toast({
+          title: 'Budget Updated',
+          description: `Trip budget set to $${newBudget.toFixed(2)}`,
+        });
+      } catch (error: any) {
+        console.error('Error updating budget:', error);
+        toast({
+          title: 'Failed to update budget',
+          description: formatError(error),
+          variant: 'destructive',
+        });
+        throw error;
+      } finally {
+        setIsSavingBudget(false);
       }
-
-      setBudget(newBudget);
-      setIsEditingBudget(false);
-      toast({ 
-        title: "Budget Updated", 
-        description: `Trip budget set to $${newBudget.toFixed(2)}` 
-      });
-    } catch (error: any) {
-      console.error("Error updating budget:", error);
-      toast({ 
-        title: "Failed to update budget", 
-        description: formatError(error), 
-        variant: "destructive" 
-      });
-      throw error;
-    } finally {
-      setIsSavingBudget(false);
-    }
-  }, [tripId, canEdit, toast]);
+    },
+    [tripId, canEdit, toast]
+  );
 
   /**
    * Add new expense
@@ -162,20 +164,20 @@ export function useTripBudget({
   const handleAddExpense = useCallback(async () => {
     try {
       if (!newExpense.title || !newExpense.amount || !newExpense.category || !newExpense.paidById) {
-        toast({ 
-          title: "Missing information", 
-          description: "Please fill all fields including Paid By", 
-          variant: "destructive" 
+        toast({
+          title: 'Missing information',
+          description: 'Please fill all fields including Paid By',
+          variant: 'destructive',
         });
         return;
       }
-      
+
       const amountValue = Number.parseFloat(newExpense.amount);
       if (isNaN(amountValue) || amountValue <= 0) {
-        toast({ 
-          title: "Invalid Amount", 
-          description: "Please enter a valid positive amount.", 
-          variant: "destructive" 
+        toast({
+          title: 'Invalid Amount',
+          description: 'Please enter a valid positive amount.',
+          variant: 'destructive',
         });
         return;
       }
@@ -185,21 +187,21 @@ export function useTripBudget({
         amount: amountValue,
         category: newExpense.category,
         date: newExpense.date,
-        paid_by: newExpense.paidById, 
-        currency: "USD",
+        paid_by: newExpense.paidById,
+        currency: 'USD',
         trip_id: tripId,
       };
 
       const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId) + '/expenses', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(expensePayload),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to add expense");
+        throw new Error(result.error || 'Failed to add expense');
       }
 
       const newManualExpenseEntry: ManualDbExpense = {
@@ -212,29 +214,29 @@ export function useTripBudget({
         paid_by: expensePayload.paid_by,
         date: expensePayload.date,
         created_at: new Date().toISOString(),
-        source: 'manual'
+        source: 'manual',
       };
-      
-      setExpenses(prev => [newManualExpenseEntry, ...prev]);
-      
-      toast({ title: "Expense Added" });
-      
+
+      setExpenses((prev) => [newManualExpenseEntry, ...prev]);
+
+      toast({ title: 'Expense Added' });
+
       // Reset form
       setNewExpense({
-        title: "",
-        amount: "",
-        category: "",
-        date: new Date().toISOString().split("T")[0],
-        paidById: ""
+        title: '',
+        amount: '',
+        category: '',
+        date: new Date().toISOString().split('T')[0],
+        paidById: '',
       });
-      
+
       setIsAddExpenseOpen(false);
-    } catch (error) { 
-      console.error("Failed to add expense:", error);
-      toast({ 
-        title: "Error", 
-        description: formatError(error as Error, "Failed to add expense"), 
-        variant: "destructive" 
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+      toast({
+        title: 'Error',
+        description: formatError(error as Error, 'Failed to add expense'),
+        variant: 'destructive',
       });
     }
   }, [newExpense, tripId, toast]);
@@ -250,16 +252,16 @@ export function useTripBudget({
     plannedExpenses,
     totalPlannedExpenses,
     totalSpent,
-    
+
     // Setters
     setBudget,
     setExpenses,
     setIsEditingBudget,
     setIsAddExpenseOpen,
     setNewExpense,
-    
+
     // Actions
     handleSaveBudget,
     handleAddExpense,
   };
-} 
+}

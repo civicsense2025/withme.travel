@@ -1,4 +1,6 @@
-"use client";
+'use client';
+
+import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,7 +13,6 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Activity {
@@ -70,26 +71,26 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
   const [selectedTripId, setSelectedTripId] = useState('');
   const [userTrips, setUserTrips] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
-  
+
   const handleUseTemplate = async () => {
     if (!user) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to use this template",
-        variant: "destructive"
+        title: 'Authentication required',
+        description: 'Please log in to use this template',
+        variant: 'destructive',
       });
       router.push(`/login?redirect=/itineraries/${itinerary.slug}`);
       return;
     }
-    
+
     try {
       setIsLoading(true);
       const response = await fetch(`${API_ROUTES.TRIPS}`);
@@ -101,63 +102,65 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
     } catch (error) {
       console.error('Error fetching trips:', error);
       toast({
-        title: "Error",
-        description: "Could not load your trips. Please try again later.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Could not load your trips. Please try again later.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleApplyTemplate = async () => {
     if (!selectedTripId) {
       toast({
-        title: "Trip required",
-        description: "Please select a trip to apply this template to",
-        variant: "destructive"
+        title: 'Trip required',
+        description: 'Please select a trip to apply this template to',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     try {
       setIsLoading(true);
       const response = await fetch(`${API_ROUTES.ITINERARY_DETAILS(itinerary.slug)}/use`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ tripId: selectedTripId })
+        body: JSON.stringify({ tripId: selectedTripId }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to apply template');
       }
-      
+
       toast({
-        title: "Success!",
-        description: "Template applied to your trip successfully",
+        title: 'Success!',
+        description: 'Template applied to your trip successfully',
       });
-      
+
       setIsApplyDialogOpen(false);
       router.push(`${PAGE_ROUTES.TRIP_DETAILS(selectedTripId)}?tab=itinerary`);
     } catch (error) {
       console.error('Error applying template:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Something went wrong. Please try again later.';
       toast({
-        title: "Error",
-        description: error.message || "Something went wrong. Please try again later.",
-        variant: "destructive"
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleCreateTrip = () => {
     router.push(`/trips/create?templateId=${itinerary.id}`);
   };
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -165,27 +168,31 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
         <div className="lg:col-span-2">
           <div className="relative aspect-video overflow-hidden rounded-xl mb-6">
             <Image
-              src={itinerary.destination?.image_url || '/images/destinations/default-destination.jpg'}
+              src={
+                itinerary.destination?.image_url || '/images/destinations/default-destination.jpg'
+              }
               alt={itinerary.title}
               fill
               className="object-cover"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                {itinerary.title}
-              </h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{itinerary.title}</h1>
               <div className="flex items-center gap-2 text-white">
                 <MapPin className="h-4 w-4" />
-                <span>{itinerary.destination?.city}, {itinerary.destination?.country}</span>
+                <span>
+                  {itinerary.destination?.city}, {itinerary.destination?.country}
+                </span>
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm">{itinerary.duration_days} {itinerary.duration_days === 1 ? 'day' : 'days'}</span>
+              <span className="text-sm">
+                {itinerary.duration_days} {itinerary.duration_days === 1 ? 'day' : 'days'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-muted-foreground" />
@@ -193,55 +200,61 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
             </div>
             <div className="flex items-center gap-2">
               <Tag className="h-5 w-5 text-muted-foreground" />
-              <Badge variant="outline" className="capitalize">{itinerary.category}</Badge>
+              <Badge variant="outline" className="capitalize">
+                {itinerary.category}
+              </Badge>
             </div>
           </div>
-          
+
           {itinerary.description && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-3">Overview</h2>
               <p className="text-muted-foreground">{itinerary.description}</p>
             </div>
           )}
-          
+
           <div className="space-y-8 mb-8">
             <h2 className="text-xl font-semibold mb-3">Itinerary</h2>
-            
-            {itinerary.sections.sort((a, b) => a.day_number - b.day_number).map((section) => (
-              <Card key={section.id} className="overflow-hidden">
-                <div className="bg-muted p-4">
-                  <h3 className="font-medium">{section.title}</h3>
-                </div>
-                <CardContent className="p-0">
-                  {section.activities.sort((a, b) => a.position - b.position).map((activity, idx) => (
-                    <div key={activity.id} className="p-4 border-b last:border-b-0">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium">{activity.title}</h4>
-                          {activity.location && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                              <MapPin className="h-3 w-3" />
-                              <span>{activity.location}</span>
+
+            {itinerary.sections
+              .sort((a, b) => a.day_number - b.day_number)
+              .map((section) => (
+                <Card key={section.id} className="overflow-hidden">
+                  <div className="bg-muted p-4">
+                    <h3 className="font-medium">{section.title}</h3>
+                  </div>
+                  <CardContent className="p-0">
+                    {section.activities
+                      .sort((a, b) => a.position - b.position)
+                      .map((activity, idx) => (
+                        <div key={activity.id} className="p-4 border-b last:border-b-0">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium">{activity.title}</h4>
+                              {activity.location && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{activity.location}</span>
+                                </div>
+                              )}
+                              {activity.description && (
+                                <p className="text-sm mt-2">{activity.description}</p>
+                              )}
                             </div>
-                          )}
-                          {activity.description && (
-                            <p className="text-sm mt-2">{activity.description}</p>
-                          )}
-                        </div>
-                        {activity.start_time && (
-                          <div className="text-sm text-muted-foreground whitespace-nowrap">
-                            {activity.start_time}
+                            {activity.start_time && (
+                              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                                {activity.start_time}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         </div>
-        
+
         {/* Right Column - Sidebar */}
         <div className="space-y-6">
           <Card>
@@ -253,7 +266,7 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
                   <span>{itinerary.copied_count || 0} uses</span>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <Button onClick={handleUseTemplate} className="w-full" disabled={isLoading}>
                   Apply to Trip
@@ -264,17 +277,17 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <h3 className="text-lg font-medium mb-4">Created By</h3>
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarImage src={itinerary.creator?.avatar_url || undefined} />
-                  <AvatarFallback>{itinerary.creator?.name?.substring(0, 2) || "U"}</AvatarFallback>
+                  <AvatarFallback>{itinerary.creator?.name?.substring(0, 2) || 'U'}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{itinerary.creator?.name || "Anonymous"}</p>
+                  <p className="font-medium">{itinerary.creator?.name || 'Anonymous'}</p>
                   <p className="text-sm text-muted-foreground">
                     {formatDate(itinerary.created_at)}
                   </p>
@@ -282,7 +295,7 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <h3 className="text-lg font-medium mb-4">Share</h3>
@@ -300,15 +313,15 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
           </Card>
         </div>
       </div>
-      
+
       {/* Apply Template Dialog */}
       {isApplyDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-background rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-medium mb-4">Apply to Trip</h3>
             <p className="mb-4">Select which trip you want to apply this itinerary to:</p>
-            
-            <select 
+
+            <select
               className="w-full p-2 border rounded mb-4"
               value={selectedTripId}
               onChange={(e) => setSelectedTripId(e.target.value)}
@@ -320,18 +333,12 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
                 </option>
               ))}
             </select>
-            
+
             <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsApplyDialogOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setIsApplyDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleApplyTemplate}
-                disabled={isLoading || !selectedTripId}
-              >
+              <Button onClick={handleApplyTemplate} disabled={isLoading || !selectedTripId}>
                 {isLoading ? 'Applying...' : 'Apply Template'}
               </Button>
             </div>
@@ -340,4 +347,4 @@ export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
       )}
     </div>
   );
-} 
+}

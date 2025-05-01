@@ -4,13 +4,13 @@ import React, { useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { UserPresence, PresenceStatus } from '@/types/presence';
+import { UserPresence, ExtendedUserPresence, PresenceStatus } from '@/types/presence';
 import { UserStatusBadge } from './user-status-badge';
 import { Pencil } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PresenceIndicatorProps {
-  users: UserPresence[];
+  users: ExtendedUserPresence[];
   maxAvatars?: number;
   showStatus?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -54,9 +54,9 @@ export function PresenceIndicator({
 
   // Group users by what they're editing for better visualization
   const usersByEditingItem = useMemo(() => {
-    const grouped: Record<string, UserPresence[]> = {};
+    const grouped: Record<string, ExtendedUserPresence[]> = {};
     if (showEditingItem) {
-      activeUsers.forEach(user => {
+      activeUsers.forEach((user) => {
         if (user.status === 'editing' && user.editing_item_id) {
           const itemId = user.editing_item_id;
           if (!grouped[itemId]) {
@@ -89,44 +89,44 @@ export function PresenceIndicator({
   }
 
   return (
-    <div 
-      className="flex items-center gap-1 flex-wrap" 
-      role="status"
-      aria-label="Active users"
-    >
+    <div className="flex items-center gap-1 flex-wrap" role="status" aria-label="Active users">
       <div className="flex items-center -space-x-1.5">
         {visibleUsers.map((user) => {
           const userInitials = getUserInitials(user.name);
           const isEditing = user.status === 'editing';
-          const editingItemName = isEditing && user.editing_item_id && itemLabels[user.editing_item_id] 
-            ? itemLabels[user.editing_item_id]
-            : user.editing_item_id 
-              ? 'an item'
-              : null;
-          
+          const editingItemName =
+            isEditing && user.editing_item_id && itemLabels[user.editing_item_id]
+              ? itemLabels[user.editing_item_id]
+              : user.editing_item_id
+                ? 'an item'
+                : null;
+
           const userAvatar = (
-            <Avatar 
-              key={user.user_id} 
+            <Avatar
+              key={user.user_id}
               className={cn(
                 sizeClasses[size],
                 'border-2 border-background relative',
                 isEditing && 'ring-2 ring-blue-500'
               )}
-              aria-label={`${user.name || 'Unknown user'} is ${user.status}${isEditing && editingItemName ? ` editing ${editingItemName}` : ''}`}
+              aria-label={`${user.name ?? 'Unknown user'} is ${user.status}${isEditing && editingItemName ? ` editing ${editingItemName}` : ''}`}
             >
-              <AvatarImage src={user.avatar_url || undefined} alt="" />
+              <AvatarImage src={user.avatar_url ?? undefined} alt="" />
               <AvatarFallback>{userInitials}</AvatarFallback>
-              
+
               {showStatus && (
                 <div className="absolute bottom-0 right-0">
-                  <UserStatusBadge 
+                  <UserStatusBadge
                     status={user.status as PresenceStatus}
                     className={statusSizeClasses[size]}
                     aria-hidden="true"
                   />
-                  
+
                   {isEditing && (
-                    <span className="absolute -top-1 -right-1 rounded-full bg-blue-500 p-0.5" aria-hidden="true">
+                    <span
+                      className="absolute -top-1 -right-1 rounded-full bg-blue-500 p-0.5"
+                      aria-hidden="true"
+                    >
                       <Pencil className="h-2 w-2 text-white" />
                     </span>
                   )}
@@ -138,11 +138,9 @@ export function PresenceIndicator({
           return withTooltip ? (
             <TooltipProvider key={user.user_id}>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  {userAvatar}
-                </TooltipTrigger>
+                <TooltipTrigger asChild>{userAvatar}</TooltipTrigger>
                 <TooltipContent>
-                  <p className="font-medium">{user.name || 'Unknown user'}</p>
+                  <p className="font-medium">{user.name ?? 'Unknown user'}</p>
                   <p className="text-xs text-muted-foreground capitalize">{user.status}</p>
                   {isEditing && editingItemName && (
                     <p className="text-xs text-blue-500">Editing: {editingItemName}</p>
@@ -158,8 +156,11 @@ export function PresenceIndicator({
         {extraUsers > 0 && (
           <HoverCard>
             <HoverCardTrigger asChild>
-              <Avatar 
-                className={cn(sizeClasses[size], 'border-2 border-background bg-muted hover:bg-muted/80 cursor-pointer')}
+              <Avatar
+                className={cn(
+                  sizeClasses[size],
+                  'border-2 border-background bg-muted hover:bg-muted/80 cursor-pointer'
+                )}
                 role="button"
                 aria-haspopup="true"
                 aria-label={`${extraUsers} more active users`}
@@ -172,17 +173,13 @@ export function PresenceIndicator({
                 <p className="text-sm font-medium">Additional users</p>
                 <ul className="space-y-1">
                   {activeUsers.slice(maxAvatars).map((user) => (
-                    <li 
-                      key={user.user_id} 
-                      className="flex items-center gap-2"
-                      role="listitem"
-                    >
-                      <UserStatusBadge 
-                        status={user.status as PresenceStatus} 
+                    <li key={user.user_id} className="flex items-center gap-2" role="listitem">
+                      <UserStatusBadge
+                        status={user.status as PresenceStatus}
                         className="h-2 w-2"
                         aria-hidden="true"
                       />
-                      <span className="text-sm">{user.name || 'Unknown user'}</span>
+                      <span className="text-sm">{user.name ?? 'Unknown user'}</span>
                       {user.status === 'editing' && (
                         <>
                           <Pencil className="h-3 w-3 text-blue-500 ml-auto" aria-hidden="true" />
@@ -205,7 +202,7 @@ export function PresenceIndicator({
       {showEditingItem && Object.keys(usersByEditingItem).length > 0 && (
         <div className="inline-flex flex-wrap gap-1 ml-2 text-xs">
           {Object.entries(usersByEditingItem).map(([itemId, itemUsers]) => (
-            <div 
+            <div
               key={itemId}
               className="inline-flex items-center bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-full px-2 py-0.5"
             >
@@ -213,23 +210,27 @@ export function PresenceIndicator({
                 {itemLabels[itemId] || 'Item'}:
               </span>
               <div className="flex -space-x-1">
-                {itemUsers.slice(0, 3).map(user => (
+                {itemUsers.slice(0, 3).map((user) => (
                   <TooltipProvider key={user.user_id}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Avatar className="h-4 w-4 border border-blue-100 dark:border-blue-800">
-                          <AvatarImage src={user.avatar_url || undefined} alt="" />
-                          <AvatarFallback className="text-[8px]">{getUserInitials(user.name)}</AvatarFallback>
+                          <AvatarImage src={user.avatar_url ?? undefined} alt="" />
+                          <AvatarFallback className="text-[8px]">
+                            {getUserInitials(user.name)}
+                          </AvatarFallback>
                         </Avatar>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="text-xs">{user.name || 'Unknown user'}</p>
+                        <p className="text-xs">{user.name ?? 'Unknown user'}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ))}
                 {itemUsers.length > 3 && (
-                  <span className="text-xs text-blue-800 dark:text-blue-300 ml-1">+{itemUsers.length - 3}</span>
+                  <span className="text-xs text-blue-800 dark:text-blue-300 ml-1">
+                    +{itemUsers.length - 3}
+                  </span>
                 )}
               </div>
             </div>

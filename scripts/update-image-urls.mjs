@@ -6,10 +6,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Load environment variables from .env.local
-dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env.local') });
+dotenv.config({
+  path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env.local'),
+});
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl) {
   console.error('Error: NEXT_PUBLIC_SUPABASE_URL is not defined in .env.local');
@@ -24,7 +26,11 @@ if (!supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Use the exact same sanitization function as the download script
-const sanitize = (str) => str?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') || '';
+const sanitize = (str) =>
+  str
+    ?.toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '') || '';
 
 async function main() {
   console.log('Starting script to update image_url to relative paths...');
@@ -53,18 +59,20 @@ async function main() {
 
       destinations = data || [];
       totalProcessed += destinations.length;
-      console.log(`Fetched page ${page + 1}, ${destinations.length} destinations... (Total estimated: ${count})`);
+      console.log(
+        `Fetched page ${page + 1}, ${destinations.length} destinations... (Total estimated: ${count})`
+      );
 
       // Process updates for the current batch
       const updatePromises = [];
       for (const dest of destinations) {
         const citySlug = sanitize(dest.city);
-        
+
         // Ensure citySlug exists
         if (!citySlug) {
-            console.warn(`Skipping update for ID ${dest.id}: Missing or invalid city information.`);
-            failedCount++;
-            continue; // Skip this destination
+          console.warn(`Skipping update for ID ${dest.id}: Missing or invalid city information.`);
+          failedCount++;
+          continue; // Skip this destination
         }
 
         // *** ALWAYS construct filename as city.jpg ***
@@ -79,7 +87,10 @@ async function main() {
             .eq('id', dest.id)
             .then(({ error: updateError }) => {
               if (updateError) {
-                console.error(`Failed to update ID ${dest.id} (${dest.city}):`, updateError.message);
+                console.error(
+                  `Failed to update ID ${dest.id} (${dest.city}):`,
+                  updateError.message
+                );
                 failedCount++;
               } else {
                 // console.log(`Updated ID ${dest.id} (${dest.city}) to ${newRelativePath}`); // Optional: Verbose logging
@@ -88,7 +99,7 @@ async function main() {
             })
         );
       }
-      
+
       // Wait for all updates in the current batch to complete
       await Promise.all(updatePromises);
       console.log(`Finished processing batch on page ${page + 1}.`);
@@ -102,7 +113,6 @@ async function main() {
     console.log(`Failed/Skipped: ${failedCount}`);
     console.log('----------------------');
     console.log('Script finished.');
-
   } catch (error) {
     console.error('\n--- Script Failed ---');
     console.error('An unexpected error occurred during fetching:', error.message);
@@ -111,4 +121,4 @@ async function main() {
   }
 }
 
-main(); 
+main();

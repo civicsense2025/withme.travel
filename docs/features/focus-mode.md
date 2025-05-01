@@ -17,15 +17,18 @@ Focus Mode is a collaborative tool in withme.travel that enables real-time coord
 ### Core Components
 
 1. **`FocusMode`** (`components/trips/focus-mode.tsx`)
+
    - Primary component that interfaces with the focus session context
    - Displays active focus sessions and participants
    - Provides UI for joining or ending sessions
 
 2. **`ClientFocusMode`** (`components/trips/client-focus-mode.tsx`)
+
    - Client-side wrapper for the FocusMode component
    - Handles client-side state and interactions
 
 3. **`FocusToggle`** (`components/trips/focus-toggle.tsx`)
+
    - Toggle button component for showing/hiding the focus mode UI
    - Typically positioned in the top-right corner of trip pages
 
@@ -37,6 +40,7 @@ Focus Mode is a collaborative tool in withme.travel that enables real-time coord
 ### Data Layer
 
 1. **`FocusSessionContext`** (`contexts/focus-session-context.tsx`)
+
    - React context that manages focus session state
    - Provides hooks and methods for interacting with focus sessions
    - Handles real-time updates using Supabase subscriptions
@@ -59,7 +63,7 @@ Focus Mode is a collaborative tool in withme.travel that enables real-time coord
 The simplest way to add Focus Mode to a trip page is using the `TripFocusContainer`:
 
 ```tsx
-import { TripFocusContainer } from "@/components/trips/trip-focus-container";
+import { TripFocusContainer } from '@/components/trips/trip-focus-container';
 
 export default function TripPage({ tripId, canEdit }) {
   return (
@@ -71,6 +75,7 @@ export default function TripPage({ tripId, canEdit }) {
 ```
 
 This container:
+
 - Wraps children with the FocusSessionProvider
 - Renders the FocusToggle button in the top-right corner
 - Shows the FocusMode UI when activated
@@ -81,30 +86,28 @@ This container:
 For more control, you can integrate the components manually:
 
 ```tsx
-import { FocusSessionProvider } from "@/contexts/focus-session-context";
-import { ClientFocusMode } from "@/components/trips/client-focus-mode";
-import { FocusToggle } from "@/components/trips/focus-toggle";
-import { useState } from "react";
+import { FocusSessionProvider } from '@/contexts/focus-session-context';
+import { ClientFocusMode } from '@/components/trips/client-focus-mode';
+import { FocusToggle } from '@/components/trips/focus-toggle';
+import { useState } from 'react';
 
 export default function CustomTripPage({ tripId, canEdit }) {
   const [showFocusMode, setShowFocusMode] = useState(false);
-  
+
   return (
     <FocusSessionProvider tripId={tripId}>
       <div className="relative">
         {canEdit && (
-          <FocusToggle 
-            show={showFocusMode} 
-            onToggle={() => setShowFocusMode(!showFocusMode)} 
+          <FocusToggle
+            show={showFocusMode}
+            onToggle={() => setShowFocusMode(!showFocusMode)}
             className="absolute top-4 right-4"
           />
         )}
-        
+
         {/* Trip content */}
-        
-        {showFocusMode && canEdit && (
-          <ClientFocusMode tripId={tripId} />
-        )}
+
+        {showFocusMode && canEdit && <ClientFocusMode tripId={tripId} />}
       </div>
     </FocusSessionProvider>
   );
@@ -116,46 +119,33 @@ export default function CustomTripPage({ tripId, canEdit }) {
 To add focus controls to specific sections (e.g., the itinerary):
 
 ```tsx
-import { useFocusSession } from "@/contexts/focus-session-context";
-import { Button } from "@/components/ui/button";
+import { useFocusSession } from '@/contexts/focus-session-context';
+import { Button } from '@/components/ui/button';
 
 export function ItinerarySection() {
-  const { 
-    activeFocusSession, 
-    startFocusSession, 
-    joinFocusSession,
-    loading 
-  } = useFocusSession();
-  
-  const isItineraryFocused = activeFocusSession?.section_path === "itinerary";
+  const { activeFocusSession, startFocusSession, joinFocusSession, loading } = useFocusSession();
+
+  const isItineraryFocused = activeFocusSession?.section_path === 'itinerary';
   const canJoin = isItineraryFocused && !activeFocusSession.has_joined;
-  
+
   return (
     <div className="itinerary-section">
       <div className="flex items-center justify-between">
         <h2>Itinerary</h2>
-        
+
         {!isItineraryFocused && !loading && (
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => startFocusSession("itinerary")}
-          >
+          <Button size="sm" variant="outline" onClick={() => startFocusSession('itinerary')}>
             Focus on Itinerary
           </Button>
         )}
-        
+
         {canJoin && (
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => joinFocusSession(activeFocusSession)}
-          >
+          <Button size="sm" variant="outline" onClick={() => joinFocusSession(activeFocusSession)}>
             Join Focus Session
           </Button>
         )}
       </div>
-      
+
       {/* Itinerary content */}
     </div>
   );
@@ -199,10 +189,10 @@ CREATE TABLE focus_sessions (
   created_by_id UUID NOT NULL REFERENCES auth.users(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  
+
   -- Constraints
   UNIQUE(trip_id, section_path),
-  
+
   -- Ensure expiration is in the future
   CONSTRAINT expires_in_future CHECK (expires_at > created_at)
 );
@@ -220,7 +210,7 @@ CREATE TABLE focus_session_participants (
   session_id UUID NOT NULL REFERENCES focus_sessions(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id),
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   -- Prevent duplicate participants
   UNIQUE(session_id, user_id)
 );
@@ -235,49 +225,49 @@ CREATE INDEX focus_session_participants_session_id_idx ON focus_session_particip
 
 ```tsx
 // components/trips/focus-mode-demo.tsx
-import { useState } from "react";
-import { useFocusSession } from "@/contexts/focus-session-context";
-import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
+import { useState } from 'react';
+import { useFocusSession } from '@/contexts/focus-session-context';
+import { Button } from '@/components/ui/button';
+import { Avatar } from '@/components/ui/avatar';
+import { formatDistanceToNow } from 'date-fns';
 
 export function FocusModeDemo() {
-  const { 
+  const {
     activeFocusSession,
     loading,
     error,
     startFocusSession,
     joinFocusSession,
-    endFocusSession
+    endFocusSession,
   } = useFocusSession();
-  
-  const [section, setSection] = useState("itinerary");
-  
+
+  const [section, setSection] = useState('itinerary');
+
   if (loading) {
     return <div>Loading focus session data...</div>;
   }
-  
+
   if (error) {
     return <div className="text-red-500">Error: {error.message}</div>;
   }
-  
+
   const handleStartSession = async () => {
     try {
       await startFocusSession(section);
     } catch (err) {
-      console.error("Failed to start session:", err);
+      console.error('Failed to start session:', err);
     }
   };
-  
+
   return (
     <div className="p-4 border rounded-lg">
       <h3 className="text-lg font-medium mb-4">Focus Mode Demo</h3>
-      
+
       {!activeFocusSession ? (
         <div>
           <div className="mb-4">
             <label className="block mb-2">Section to focus on:</label>
-            <select 
+            <select
               value={section}
               onChange={(e) => setSection(e.target.value)}
               className="p-2 border rounded w-full"
@@ -288,10 +278,8 @@ export function FocusModeDemo() {
               <option value="general">General Info</option>
             </select>
           </div>
-          
-          <Button onClick={handleStartSession}>
-            Start Focus Session
-          </Button>
+
+          <Button onClick={handleStartSession}>Start Focus Session</Button>
         </div>
       ) : (
         <div>
@@ -300,21 +288,17 @@ export function FocusModeDemo() {
             <p>
               Section: <span className="font-bold">{activeFocusSession.section_path}</span>
             </p>
-            <p>
-              Started: {formatDistanceToNow(new Date(activeFocusSession.created_at))} ago
-            </p>
-            <p>
-              Expires: {formatDistanceToNow(new Date(activeFocusSession.expires_at))}
-            </p>
+            <p>Started: {formatDistanceToNow(new Date(activeFocusSession.created_at))} ago</p>
+            <p>Expires: {formatDistanceToNow(new Date(activeFocusSession.expires_at))}</p>
           </div>
-          
+
           <div className="mb-4">
             <h4 className="font-medium mb-2">Participants</h4>
             <div className="flex gap-2">
-              {activeFocusSession.participants.map(participant => (
+              {activeFocusSession.participants.map((participant) => (
                 <div key={participant.id} className="flex flex-col items-center">
-                  <Avatar 
-                    src={participant.avatar_url || undefined} 
+                  <Avatar
+                    src={participant.avatar_url || undefined}
                     alt={participant.name}
                     className="w-10 h-10"
                   />
@@ -323,22 +307,16 @@ export function FocusModeDemo() {
               ))}
             </div>
           </div>
-          
+
           <div className="flex gap-4">
             {!activeFocusSession.has_joined && (
-              <Button 
-                onClick={() => joinFocusSession(activeFocusSession)}
-                variant="outline"
-              >
+              <Button onClick={() => joinFocusSession(activeFocusSession)} variant="outline">
                 Join Session
               </Button>
             )}
-            
+
             {activeFocusSession.created_by_id === activeFocusSession.current_user_id && (
-              <Button 
-                onClick={endFocusSession}
-                variant="destructive"
-              >
+              <Button onClick={endFocusSession} variant="destructive">
                 End Session
               </Button>
             )}
@@ -379,14 +357,17 @@ When testing Focus Mode, verify these key scenarios:
 ## Common Troubleshooting
 
 1. **Focus Mode Toggle Not Visible**
+
    - **Cause**: User doesn't have edit permissions or context provider is missing
    - **Solution**: Verify permissions and ensure the page is wrapped with TripFocusContainer
 
 2. **Real-time Updates Not Working**
+
    - **Cause**: Supabase real-time subscription issues or network problems
    - **Solution**: Check network connectivity and ensure Supabase is properly configured
 
 3. **Unable to Start Focus Session**
+
    - **Cause**: Another session might already be active for that section
    - **Solution**: Look for existing sessions and join them instead of creating new ones
 
@@ -406,4 +387,4 @@ When testing Focus Mode, verify these key scenarios:
 
 - [Focus Session Context Documentation](../focus-session-context.md)
 - [Trip Collaboration Features](./trip-collaboration.md)
-- [Real-time Features](./real-time-features.md) 
+- [Real-time Features](./real-time-features.md)

@@ -1,12 +1,12 @@
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { PageHeader } from '@/components/page-header'
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
 
 export const metadata = {
-  title: "Privacy Policy | withme.travel",
-  description: "Learn how withme.travel collects, uses, and protects your personal information.",
-}
+  title: 'Privacy Policy | withme.travel',
+  description: 'Learn how withme.travel collects, uses, and protects your personal information.',
+};
 
 export default function PrivacyPage() {
   return (
@@ -25,7 +25,8 @@ export default function PrivacyPage() {
 
       <div className="prose dark:prose-invert max-w-none">
         <p>
-          At withme.travel, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your information when you use our service.
+          At withme.travel, we take your privacy seriously. This Privacy Policy explains how we
+          collect, use, and protect your information when you use our service.
         </p>
 
         <h2>Information We Collect</h2>
@@ -56,7 +57,9 @@ export default function PrivacyPage() {
           <li>Respond to your comments and questions</li>
           <li>Develop new features and services</li>
           <li>Monitor and analyze trends and usage</li>
-          <li>Detect, investigate, and prevent fraudulent transactions and other illegal activities</li>
+          <li>
+            Detect, investigate, and prevent fraudulent transactions and other illegal activities
+          </li>
         </ul>
 
         <h2>Sharing Your Information</h2>
@@ -80,49 +83,54 @@ export default function PrivacyPage() {
 
         <h2>Cookies and Tracking Technologies</h2>
         <p>
-          We use cookies and similar tracking technologies to track activity on our service and hold certain
-          information. Cookies help us provide and improve our service, personalize your experience, and understand how
-          our service is being used.
+          We use cookies and similar tracking technologies to track activity on our service and hold
+          certain information. Cookies help us provide and improve our service, personalize your
+          experience, and understand how our service is being used.
         </p>
         <p>
-          You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if
-          you do not accept cookies, you may not be able to use some portions of our service.
+          You can instruct your browser to refuse all cookies or to indicate when a cookie is being
+          sent. However, if you do not accept cookies, you may not be able to use some portions of
+          our service.
         </p>
 
         <h2>Data Security</h2>
         <p>
-          We implement appropriate security measures to protect your personal information. However, no method of
-          transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute
-          security.
+          We implement appropriate security measures to protect your personal information. However,
+          no method of transmission over the Internet or electronic storage is 100% secure, and we
+          cannot guarantee absolute security.
         </p>
 
         <h2>International Data Transfers</h2>
         <p>
-          Your information may be transferred to and processed in countries other than the country in which you reside.
-          These countries may have different data protection laws than your country.
+          Your information may be transferred to and processed in countries other than the country
+          in which you reside. These countries may have different data protection laws than your
+          country.
         </p>
 
         <h2>Children's Privacy</h2>
         <p>
-          Our service is not intended for children under 13 years of age, and we do not knowingly collect personal
-          information from children under 13.
+          Our service is not intended for children under 13 years of age, and we do not knowingly
+          collect personal information from children under 13.
         </p>
 
         <h2>Changes to This Privacy Policy</h2>
         <p>
-          We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new
-          Privacy Policy on this page and updating the "Last updated" date.
+          We may update our Privacy Policy from time to time. We will notify you of any changes by
+          posting the new Privacy Policy on this page and updating the "Last updated" date.
         </p>
 
         <h2>Contact Us</h2>
         <p>
-          If you have any questions about this Privacy Policy, please contact us at{" "}
-          <a href="mailto:privacy@withme.travel" className="text-green-600 hover:underline dark:text-green-400">
+          If you have any questions about this Privacy Policy, please contact us at{' '}
+          <a
+            href="mailto:privacy@withme.travel"
+            className="text-green-600 hover:underline dark:text-green-400"
+          >
             privacy@withme.travel
           </a>
           .
         </p>
       </div>
     </div>
-  )
+  );
 }

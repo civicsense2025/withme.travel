@@ -24,42 +24,36 @@ export function SectionAwareness({
   className,
 }: SectionAwarenessProps) {
   const [usersBySection, setUsersBySection] = useState<Record<string, UserPresence[]>>({});
-  
+
   useEffect(() => {
     // Group users by section they're in
     const sectionMap: Record<string, UserPresence[]> = {};
-    
-    sections.forEach(section => {
+
+    sections.forEach((section) => {
       // Find users in this section based on page_path
-      const usersInSection = activeUsers.filter(user => 
-        user.page_path?.includes(section.path)
-      );
-      
+      const usersInSection = activeUsers.filter((user) => user.page_path?.includes(section.path));
+
       sectionMap[section.id] = usersInSection;
     });
-    
+
     setUsersBySection(sectionMap);
   }, [sections, activeUsers]);
-  
+
   return (
     <Tabs
       value={currentSection}
       onValueChange={onSectionChange}
-      className={cn("w-full", className)}
+      className={cn('w-full', className)}
     >
       <TabsList className="w-full justify-start gap-0.5 overflow-x-auto">
-        {sections.map(section => {
+        {sections.map((section) => {
           const usersInSection = usersBySection[section.id] || [];
           const hasUsers = usersInSection.length > 0;
-          
+
           return (
-            <TabsTrigger 
-              key={section.id} 
-              value={section.id}
-              className="relative px-4 py-1.5"
-            >
+            <TabsTrigger key={section.id} value={section.id} className="relative px-4 py-1.5">
               {section.name}
-              
+
               {hasUsers && (
                 <Badge
                   variant="secondary"
@@ -82,59 +76,47 @@ interface CurrentlyActiveProps {
   activeUsers?: UserPresence[];
 }
 
-export function CurrentlyActive({
-  sections,
-  className,
-  activeUsers = [],
-}: CurrentlyActiveProps) {
+export function CurrentlyActive({ sections, className, activeUsers = [] }: CurrentlyActiveProps) {
   const [usersBySection, setUsersBySection] = useState<Record<string, UserPresence[]>>({});
-  
+
   useEffect(() => {
     // Group users by section
     const sectionMap: Record<string, UserPresence[]> = {};
-    
-    sections.forEach(section => {
-      const usersInSection = activeUsers.filter(user => 
-        user.page_path?.includes(section.path)
-      );
-      
+
+    sections.forEach((section) => {
+      const usersInSection = activeUsers.filter((user) => user.page_path?.includes(section.path));
+
       if (usersInSection.length > 0) {
         sectionMap[section.id] = usersInSection;
       }
     });
-    
+
     setUsersBySection(sectionMap);
   }, [sections, activeUsers]);
-  
+
   // If no users in any section, don't render anything
   if (Object.keys(usersBySection).length === 0) {
     return null;
   }
-  
+
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       <h3 className="text-sm font-semibold">Currently Active</h3>
-      
+
       <div className="space-y-2">
-        {sections.map(section => {
+        {sections.map((section) => {
           const usersInSection = usersBySection[section.id] || [];
-          
+
           if (usersInSection.length === 0) return null;
-          
+
           return (
             <div key={section.id} className="flex flex-col gap-1">
-              <div className="text-xs text-muted-foreground">
-                {section.name}
-              </div>
-              <PresenceIndicator 
-                users={usersInSection}
-                maxAvatars={5}
-                size="sm"
-              />
+              <div className="text-xs text-muted-foreground">{section.name}</div>
+              <PresenceIndicator users={usersInSection} maxAvatars={5} size="sm" />
             </div>
           );
         })}
       </div>
     </div>
   );
-} 
+}

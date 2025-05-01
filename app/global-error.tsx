@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import NextError from "next/error";
-import { useEffect } from "react";
+import NextError from 'next/error';
+import { useEffect } from 'react';
 
 // Make Sentry optional to avoid build errors
 let Sentry: any;
 try {
-  Sentry = require("@sentry/nextjs");
+  Sentry = require('@sentry/nextjs');
 } catch (e) {
   // Fallback if Sentry is not available
   Sentry = {
     captureException: (error: Error) => {
-      console.error("Error captured (Sentry not available):", error);
-    }
+      console.error('Error captured (Sentry not available):', error);
+    },
   };
 }
 
@@ -21,7 +21,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     try {
       Sentry.captureException(error);
     } catch (e) {
-      console.error("Failed to report error to Sentry:", e);
+      console.error('Failed to report error to Sentry:', e);
     }
   }, [error]);
 

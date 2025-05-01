@@ -39,25 +39,25 @@ export function EnhancedEditingWrapper({
 }: EnhancedEditingWrapperProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [othersEditing, setOthersEditing] = useState<UserPresence[]>([]);
-  
+
   // Check if others are editing this item
   useEffect(() => {
-    const itemEditors = activeUsers.filter(user => 
-      user.status === 'editing' && user.editing_item_id === itemId
+    const itemEditors = activeUsers.filter(
+      (user) => user.status === 'editing' && user.editing_item_id === itemId
     );
-    
+
     setOthersEditing(itemEditors);
   }, [activeUsers, itemId]);
 
   const handleStartEditing = useCallback(() => {
     if (readOnly) return;
-    
+
     setIsEditing(true);
-    
+
     if (startEditing) {
       startEditing(itemId);
     }
-    
+
     if (onEdit) {
       onEdit();
     }
@@ -65,11 +65,11 @@ export function EnhancedEditingWrapper({
 
   const handleStopEditing = useCallback(() => {
     setIsEditing(false);
-    
+
     if (stopEditing) {
       stopEditing();
     }
-    
+
     if (onEditEnd) {
       onEditEnd();
     }
@@ -86,24 +86,24 @@ export function EnhancedEditingWrapper({
 
   const isOthersEditing = othersEditing.length > 0;
   const canEdit = !readOnly && !isOthersEditing;
-  
+
   const renderContent = () => {
     // If others are editing and we have fallback content, show that instead
     if (isOthersEditing && fallbackContent) {
       return fallbackContent;
     }
-    
+
     // Otherwise show editable content
     return children;
   };
 
   return (
-    <div 
+    <div
       className={cn(
-        "relative transition-all",
-        isOthersEditing && "opacity-70",
-        showBorder && "border p-4 rounded-md",
-        isOthersEditing && showBorder && "border-blue-500 bg-blue-50 dark:bg-blue-950/20",
+        'relative transition-all',
+        isOthersEditing && 'opacity-70',
+        showBorder && 'border p-4 rounded-md',
+        isOthersEditing && showBorder && 'border-blue-500 bg-blue-50 dark:bg-blue-950/20',
         className
       )}
     >
@@ -113,19 +113,13 @@ export function EnhancedEditingWrapper({
           <div className="text-xs text-blue-800 dark:text-blue-300 mr-1.5">
             <span className="font-medium">Editing:</span> {itemName}
           </div>
-          <PresenceIndicator 
-            users={othersEditing}
-            size="sm"
-          />
+          <PresenceIndicator users={othersEditing} size="sm" />
         </div>
       )}
-      
+
       {/* The actual content */}
-      <div 
-        className={cn(
-          "transition-all",
-          isOthersEditing && !canEdit && "pointer-events-none"
-        )}
+      <div
+        className={cn('transition-all', isOthersEditing && !canEdit && 'pointer-events-none')}
         onFocus={handleStartEditing}
         onBlur={handleStopEditing}
       >
@@ -133,4 +127,4 @@ export function EnhancedEditingWrapper({
       </div>
     </div>
   );
-} 
+}

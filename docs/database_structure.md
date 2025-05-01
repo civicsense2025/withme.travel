@@ -3,7 +3,9 @@
 ## 1. User Management & Profiles
 
 ### Core Tables:
+
 - **profiles**
+
   - `id` (FK to auth.users)
   - `name`, `email`, `avatar_url`, `bio`
   - `is_admin`, `location`, `website`
@@ -12,6 +14,7 @@
   - Links to profile via ID
 
 ### User Preferences & Metadata:
+
 - **user_interests** - User's travel interests/preferences
 - **user_travel** - User's travel history and preferences
 - **user_presence** - Track online/active status during collaboration
@@ -21,7 +24,9 @@
 ## 2. Trip Core Structure
 
 ### Primary Tables:
+
 - **trips**
+
   - `id` (primary key)
   - `created_by` (FK → profiles)
   - `name`, `description`, `trip_emoji`
@@ -40,6 +45,7 @@
   - `joined_at` (timestamp)
 
 ### Trip Change & Historical Data:
+
 - **trip_history** - Track changes to trips
 - **trip_tags** - Link trips to tags for categorization
 - **trip_images** - Photos associated with trips
@@ -47,14 +53,17 @@
 ## 3. Location Management
 
 ### Primary Tables:
+
 - **destinations**
+
   - `id`
   - `city`, `country`, `continent`
   - `description`, `image_url`
   - Geographic data (latitude/longitude)
   - Metadata (ratings, descriptions, etc.)
 
-- **places** 
+- **places**
+
   - Specific locations within destinations
   - `id`
   - `name`, `description`
@@ -68,12 +77,14 @@
 ## 4. Itinerary System
 
 ### Primary Tables:
+
 - **itinerary_items**
+
   - `trip_id` (FK → trips)
   - `created_by` (FK → profiles)
   - `title`, `description`
   - `date`, `start_time`, `end_time`
-  - `day_number` 
+  - `day_number`
   - `place_id` (FK → places)
   - `category` (flight/accommodation/restaurant/etc.)
   - Location details, status, etc.
@@ -85,13 +96,16 @@
   - Allows for organizing items into sections
 
 ### Voting/Feedback:
+
 - **votes** - General voting table
 - **itinerary_item_votes** - Track votes on itinerary items
 
 ## 5. Templates & Reusable Content
 
 ### Primary Tables:
+
 - **itinerary_templates**
+
   - `id`
   - `title`, `description`
   - `destination_id` (FK → destinations)
@@ -108,12 +122,15 @@
 ## 6. Collaboration Features
 
 ### Primary Tables:
+
 - **collaborative_sessions**
+
   - Track real-time collaborative editing
   - `trip_id`, `document_id`, `document_type`
   - User presence and content
 
 - **trip_notes**
+
   - Shared notes for a trip
   - `trip_id`, `content`
   - `updated_by`, `updated_at`
@@ -124,11 +141,14 @@
 ## 7. Media & Content Management
 
 ### Primary Tables:
+
 - **albums**
+
   - Collections of images
   - `user_id`, `title`, `description`
 
 - **trip_images**
+
   - Images associated with trips
   - `trip_id`, `album_id`
   - File info, metadata
@@ -141,7 +161,9 @@
 ## 8. Expense Tracking
 
 ### Primary Tables:
+
 - **budget_items**
+
   - `trip_id`, `title`, `amount`
   - `category`, `paid_by`
   - Split information
@@ -154,7 +176,9 @@
 ## 9. Tagging & Categorization
 
 ### Primary Tables:
+
 - **tags**
+
   - General purpose tags
   - `id`, `name`
 
@@ -166,22 +190,27 @@
 ## Key Relationships:
 
 1. **Trip-Member-Profile Chain**:
+
    - `trips` → `trip_members` (via trip_id)
    - `trip_members` → `profiles` (via user_id)
 
 2. **Trip-Itinerary Hierarchy**:
+
    - `trips` → `itinerary_sections` (via trip_id)
    - `itinerary_sections` → `itinerary_items` (via section_id)
 
 3. **Location Hierarchy**:
+
    - `destinations` contain `places`
    - `itinerary_items` reference `places`
 
 4. **Template Structure**:
+
    - `itinerary_templates` → `itinerary_template_sections`
    - `itinerary_template_sections` → `itinerary_template_items`
 
 5. **User Content Ownership**:
+
    - `profiles` own `trips` (via created_by)
    - `profiles` own `itinerary_items` (via created_by)
    - `profiles` own content (notes, images, etc.)
@@ -199,4 +228,3 @@
 - **itinerary_category**: flight, accommodation, attraction, restaurant, etc.
 - **place_category**: attraction, restaurant, cafe, hotel, etc.
 - **invitation_status**: pending, accepted, declined, expired
-

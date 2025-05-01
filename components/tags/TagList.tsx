@@ -1,60 +1,72 @@
-import { useState, useEffect } from 'react'
-import { Tag as TagIcon, Plus, ThumbsUp, ThumbsDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useTags, Tag } from '@/hooks/use-tags'
-import { cn } from '@/lib/utils'
+import { useState, useEffect } from 'react';
+import { Tag as TagIcon, Plus, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useTags, Tag } from '@/hooks/use-tags';
+import { cn } from '@/lib/utils';
 
 interface TagListProps {
-  destinationId: string
-  className?: string
+  destinationId: string;
+  className?: string;
 }
 
 interface DestinationTag {
-  tag: Tag
+  tag: Tag;
 }
 
 export function TagList({ destinationId, className }: TagListProps) {
-  const { getDestinationTags, suggestTag, voteOnTag, isLoading } = useTags()
-  const [tags, setTags] = useState<Tag[]>([])
-  const [showSuggestDialog, setShowSuggestDialog] = useState(false)
+  const { getDestinationTags, suggestTag, voteOnTag, isLoading } = useTags();
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [showSuggestDialog, setShowSuggestDialog] = useState(false);
   const [newTag, setNewTag] = useState({
     name: '',
     category: 'general',
     emoji: '',
-  })
+  });
 
   // Load tags on mount
   useEffect(() => {
     const loadTags = async () => {
-      const data = await getDestinationTags(destinationId)
-      setTags(data?.map((dt: DestinationTag) => dt.tag) || [])
-    }
-    loadTags()
-  }, [destinationId, getDestinationTags])
+      const data = await getDestinationTags(destinationId);
+      setTags(data?.map((dt: DestinationTag) => dt.tag) || []);
+    };
+    loadTags();
+  }, [destinationId, getDestinationTags]);
 
   const handleSuggestTag = async () => {
-    if (!newTag.name) return
+    if (!newTag.name) return;
 
-    const success = await suggestTag(destinationId, newTag)
+    const success = await suggestTag(destinationId, newTag);
     if (success) {
-      setShowSuggestDialog(false)
-      setNewTag({ name: '', category: 'general', emoji: '' })
+      setShowSuggestDialog(false);
+      setNewTag({ name: '', category: 'general', emoji: '' });
     }
-  }
+  };
 
   const handleVote = async (tagId: string, isUpvote: boolean) => {
-    const success = await voteOnTag(destinationId, tagId, isUpvote)
+    const success = await voteOnTag(destinationId, tagId, isUpvote);
     if (success) {
       // Refresh tags
-      const data = await getDestinationTags(destinationId)
-      setTags(data?.map((dt: DestinationTag) => dt.tag) || [])
+      const data = await getDestinationTags(destinationId);
+      setTags(data?.map((dt: DestinationTag) => dt.tag) || []);
     }
-  }
+  };
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -120,11 +132,7 @@ export function TagList({ destinationId, className }: TagListProps) {
 
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
-          <Badge
-            key={tag.id}
-            variant="secondary"
-            className="flex items-center gap-2 py-1 px-3"
-          >
+          <Badge key={tag.id} variant="secondary" className="flex items-center gap-2 py-1 px-3">
             {tag.emoji && <span>{tag.emoji}</span>}
             <span>{tag.name}</span>
             <div className="flex items-center gap-1 ml-2 border-l pl-2">
@@ -155,5 +163,5 @@ export function TagList({ destinationId, className }: TagListProps) {
         )}
       </div>
     </div>
-  )
-} 
+  );
+}

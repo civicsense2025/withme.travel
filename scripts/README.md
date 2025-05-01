@@ -15,6 +15,7 @@ This script downloads images for all destinations in the database and updates th
 ### How to Run
 
 1. Make sure your environment variables are set up correctly:
+
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -100,3 +101,4 @@ Finally, let's update the package.json to add a script for running the image dow
     "zod": "^3.22.2"
   }
 }
+```

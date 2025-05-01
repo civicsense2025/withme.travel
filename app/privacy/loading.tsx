@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PrivacyLoading() {
   return (
@@ -26,5 +26,5 @@ export default function PrivacyLoading() {
         <Skeleton className="h-4 w-5/6" />
       </div>
     </div>
-  )
+  );
 }

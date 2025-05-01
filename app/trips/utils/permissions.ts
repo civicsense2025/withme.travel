@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { TRIP_ROLES } from '@/utils/constants';
+import { TripRole } from '@/utils/constants/database';
 import useSWR from 'swr';
 
 export interface PermissionCheck {
@@ -9,7 +9,7 @@ export interface PermissionCheck {
   canAddMembers: boolean;
   canDeleteTrip: boolean;
   isCreator: boolean;
-  role: string | null;
+  role: TripRole | null;
 }
 
 /**
@@ -17,8 +17,10 @@ export interface PermissionCheck {
  */
 export async function checkTripPermissions(tripId: string): Promise<PermissionCheck> {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
     return {
       canView: false,
@@ -27,10 +29,10 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
       canAddMembers: false,
       canDeleteTrip: false,
       isCreator: false,
-      role: null
+      role: null,
     };
   }
-  
+
   // Check if user is a member
   const { data: membership } = await supabase
     .from('trip_members')
@@ -38,26 +40,26 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
     .eq('trip_id', tripId)
     .eq('user_id', user.id)
     .single();
-  
+
   // Check if user is the creator
   const { data: trip } = await supabase
     .from('trips')
     .select('created_by, is_public')
     .eq('id', tripId)
     .single();
-  
+
   const role = membership?.role;
   const isCreator = trip?.created_by === user.id;
   const isPublic = trip?.is_public || false;
-  
+
   return {
     canView: !!role || isCreator || isPublic,
-    canEdit: !!role && [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR].includes(role as any) || isCreator,
-    canManage: !!role && [TRIP_ROLES.ADMIN].includes(role as any) || isCreator,
-    canAddMembers: !!role && [TRIP_ROLES.ADMIN].includes(role as any) || isCreator,
+    canEdit: (!!role && [TripRole.ADMIN, TripRole.EDITOR].includes(role as TripRole)) || isCreator,
+    canManage: (!!role && [TripRole.ADMIN].includes(role as TripRole)) || isCreator,
+    canAddMembers: (!!role && [TripRole.ADMIN].includes(role as TripRole)) || isCreator,
     canDeleteTrip: isCreator,
     isCreator,
-    role
+    role: role as TripRole | null,
   };
 }
 
@@ -78,7 +80,7 @@ export function useTripPermissions(tripId: string) {
     fetcher,
     { revalidateOnFocus: true }
   );
-  
+
   const defaultPermissions: PermissionCheck = {
     canView: false,
     canEdit: false,
@@ -86,14 +88,14 @@ export function useTripPermissions(tripId: string) {
     canAddMembers: false,
     canDeleteTrip: false,
     isCreator: false,
-    role: null
+    role: null,
   };
-  
+
   return {
     permissions: data?.permissions || defaultPermissions,
     isLoading: !data && !error,
     error,
-    refetch: mutate
+    refetch: mutate,
   };
 }
 
@@ -102,17 +104,17 @@ export function useTripPermissions(tripId: string) {
  * This handles special cases like user being the creator of an item vs. trip permissions
  */
 export function canModifyItem(
-  itemCreatorId: string | null, 
+  itemCreatorId: string | null,
   userPermissions: PermissionCheck,
   userId: string | null
 ): boolean {
   // If user is the creator of the trip, they can do anything
   if (userPermissions.isCreator) return true;
-  
+
   // If user is the creator of the item, they can modify it regardless of role
   // (as long as they have at least view access to the trip)
   if (userId && itemCreatorId === userId && userPermissions.canView) return true;
-  
+
   // Otherwise, check if user has edit permissions for the trip
   return userPermissions.canEdit;
 }
@@ -122,17 +124,17 @@ export function canModifyItem(
  */
 export function getRoleName(role: string | null): string {
   if (!role) return 'Viewer';
-  
+
   switch (role) {
-    case TRIP_ROLES.ADMIN:
+    case TripRole.ADMIN:
       return 'Admin';
-    case TRIP_ROLES.EDITOR:
+    case TripRole.EDITOR:
       return 'Editor';
-    case TRIP_ROLES.CONTRIBUTOR:
+    case TripRole.CONTRIBUTOR:
       return 'Contributor';
-    case TRIP_ROLES.VIEWER:
+    case TripRole.VIEWER:
       return 'Viewer';
     default:
       return 'Viewer';
   }
-} 
+}

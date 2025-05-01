@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ClientFocusMode } from './client-focus-mode';
 import { Coffee, Info } from 'lucide-react';
@@ -38,7 +45,7 @@ export function FocusModeDemo({ tripId }: FocusModeDemoProps) {
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button
-            variant={showFocusMode ? "secondary" : "outline"}
+            variant={showFocusMode ? 'secondary' : 'outline'}
             onClick={() => setShowFocusMode(!showFocusMode)}
           >
             {showFocusMode ? 'Hide Focus Mode' : 'Show Focus Mode'}
@@ -58,4 +65,4 @@ export function FocusModeDemo({ tripId }: FocusModeDemoProps) {
       )}
     </div>
   );
-} 
+}

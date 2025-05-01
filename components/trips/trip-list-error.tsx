@@ -1,11 +1,18 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw, Home, Search } from "lucide-react";
-import { useState } from "react";
-import Link from "next/link";
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, RefreshCw, Home, Search } from 'lucide-react';
+import { useState } from 'react';
+import Link from 'next/link';
 
 interface TripListErrorProps {
   error?: Error;
@@ -21,8 +28,8 @@ interface TripListErrorProps {
 export function TripListError({
   error,
   onRetry,
-  title = "Unable to load trips",
-  description = "We encountered a problem while trying to load your trips.",
+  title = 'Unable to load trips',
+  description = 'We encountered a problem while trying to load your trips.',
 }: TripListErrorProps) {
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -32,8 +39,8 @@ export function TripListError({
 
   const handleRetry = async () => {
     setIsRetrying(true);
-    setRetryCount(prev => prev + 1);
-    
+    setRetryCount((prev) => prev + 1);
+
     try {
       await onRetry();
       // If successful, the parent component will re-render with new data
@@ -105,7 +112,7 @@ export function TripListError({
             </Button>
           </Link>
         </div>
-        
+
         <Link href="/destinations" className="w-full sm:w-auto">
           <Button variant="secondary" className="w-full">
             <Search className="mr-2 h-4 w-4" />
@@ -116,4 +123,3 @@ export function TripListError({
     </Card>
   );
 }
-

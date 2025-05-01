@@ -13,9 +13,9 @@ export function ErrorBoundaryButton({ onReset }: ErrorBoundaryButtonProps) {
       <Button onClick={onReset} variant="default">
         Try Again
       </Button>
-      <Button onClick={() => window.location.href = '/'} variant="outline">
+      <Button onClick={() => (window.location.href = '/')} variant="outline">
         Go to Homepage
       </Button>
     </div>
   );
-} 
+}

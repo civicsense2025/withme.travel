@@ -23,45 +23,39 @@ export function formatErrorResponse(error: any, defaultStatus = 500) {
   // Handle ApiError instances
   if (error instanceof ApiError) {
     return NextResponse.json(
-      { 
-        error: error.message, 
-        details: error.details || undefined 
-      }, 
+      {
+        error: error.message,
+        details: error.details || undefined,
+      },
       { status: error.status }
     );
   }
 
   // Handle regular Error objects
   if (error instanceof Error) {
-    return NextResponse.json(
-      { error: error.message }, 
-      { status: defaultStatus }
-    );
+    return NextResponse.json({ error: error.message }, { status: defaultStatus });
   }
 
   // Handle string errors
   if (typeof error === 'string') {
-    return NextResponse.json(
-      { error }, 
-      { status: defaultStatus }
-    );
+    return NextResponse.json({ error }, { status: defaultStatus });
   }
 
   // Handle unknown error types
-  return NextResponse.json(
-    { error: 'An unexpected error occurred' }, 
-    { status: defaultStatus }
-  );
+  return NextResponse.json({ error: 'An unexpected error occurred' }, { status: defaultStatus });
 }
 
 /**
  * Send a standardized error response
  */
 export function errorResponse(message: string, status = 400, details?: any) {
-  return NextResponse.json({ 
-    error: message, 
-    details: details || undefined 
-  }, { status });
+  return NextResponse.json(
+    {
+      error: message,
+      details: details || undefined,
+    },
+    { status }
+  );
 }
 
 /**
@@ -78,7 +72,7 @@ export function successResponse(data: any, status = 200) {
  * @returns Validated data or throws ApiError
  */
 export async function validateInput<T extends object, U>(
-  input: T, 
+  input: T,
   schema: { parse: (data: T) => U }
 ): Promise<U> {
   try {
@@ -95,14 +89,11 @@ export async function validateInput<T extends object, U>(
  * @returns Parsed data if valid
  * @throws ApiError if validation fails
  */
-export function validateRequest<T>(
-  data: unknown,
-  schema: ZodSchema<T>
-): T {
+export function validateRequest<T>(data: unknown, schema: ZodSchema<T>): T {
   const result = schema.safeParse(data);
   if (!result.success) {
     throw new ApiError('Invalid request data', 400, {
-      issues: result.error.issues
+      issues: result.error.issues,
     });
   }
   return result.data;

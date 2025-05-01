@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server'
-import { createApiClient } from "@/utils/supabase/server";
-import { calculateTravelTimes } from '@/lib/mapbox'
-import { type TravelTimesResult } from "@/lib/mapbox"
+import { NextResponse, type NextRequest } from 'next/server';
+import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { calculateTravelTimes } from '@/lib/mapbox';
+import { type TravelTimesResult } from '@/lib/mapbox';
 
 // Define privacy setting type locally
 type TripPrivacySetting = 'private' | 'shared_with_link' | 'public';
 
-// --- Define expected structure for PublicTripData --- 
+// --- Define expected structure for PublicTripData ---
 interface FetchedItineraryItem {
   id: number | string; // Allow string ID as well, just in case
   title: string | null;
@@ -24,16 +24,18 @@ interface FetchedItineraryItem {
   item_type?: string | null;
 }
 
-// --- Add TripMember interface --- 
+// --- Add TripMember interface ---
 interface TripMember {
   id: string; // trip_member primary key
   user_id: string;
   role: string; // e.g., admin, editor, viewer
-  profiles: {
-    id: string; // profile primary key
-    name: string | null;
-    avatar_url: string | null;
-  } | null;
+  profiles:
+    | {
+        id: string;
+        name: string | null;
+        avatar_url: string | null;
+      }[]
+    | null;
 }
 
 interface FetchedTrip {
@@ -69,7 +71,7 @@ interface PublicTripData {
     id: string;
     name: string | null;
     avatarUrl: string | null;
-  } | null; 
+  } | null;
   members: {
     id: string;
     name: string | null;
@@ -99,64 +101,57 @@ interface PublicTripData {
 }
 
 export async function GET(
-  request: Request,
-  { params: { slug } }: { params: { slug: string } }
-) {
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<NextResponse> {
+  const { slug } = await params;
 
   if (!slug) {
-    return NextResponse.json(
-      { error: 'Missing slug parameter' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Missing slug parameter' }, { status: 400 });
   }
 
   try {
-    const supabase = createClient()
+    const supabase = await createSupabaseServerClient();
 
     // Fetch trip details with the given slug that is public or shared
     const { data: trip, error: tripError } = await supabase
       .from('trips')
-      .select(`
+      .select(
+        `
         id, name, description, start_date, end_date, 
         destination_name, cover_image_url, created_at,
         status, privacy_setting, playlist_url,
         trip_members(id, user_id, role, profiles(id, name, avatar_url))
-      `)
+      `
+      )
       .eq('public_slug', slug)
       // Allow both public and shared_with_link
       .in('privacy_setting', ['public', 'shared_with_link'])
-      .maybeSingle() // Use maybeSingle to allow 0 or 1 result without error
+      .maybeSingle(); // Use maybeSingle to allow 0 or 1 result without error
 
     if (tripError) {
       // Log the specific Supabase error
       console.error('Supabase error fetching public trip:', tripError);
-      return NextResponse.json(
-        { error: 'Database error fetching trip' },
-        { status: 500 } 
-      );
+      return NextResponse.json({ error: 'Database error fetching trip' }, { status: 500 });
     }
 
     if (!trip) {
       console.log(`Public trip not found for slug: ${slug}`);
-      return NextResponse.json(
-        { error: 'Trip not found or access denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Trip not found or access denied' }, { status: 404 });
     }
 
     // Fetch trip itinerary items - ensure lat/lng are selected
     const { data: items, error: itemsError } = await supabase
-      .from('itinerary_items') 
-      .select('id, title, date, start_time, end_time, location, latitude, longitude, day_number, estimated_cost, currency, notes, category, item_type') // Explicitly select needed fields including lat/lng
+      .from('itinerary_items')
+      .select(
+        'id, title, date, start_time, end_time, location, latitude, longitude, day_number, estimated_cost, currency, notes, category, item_type'
+      ) // Explicitly select needed fields including lat/lng
       .eq('trip_id', trip.id)
-      .order('start_time', { ascending: true })
+      .order('start_time', { ascending: true });
 
     if (itemsError) {
-      console.error('Error fetching itinerary items:', itemsError)
-      return NextResponse.json(
-        { error: 'Failed to fetch itinerary items' },
-        { status: 500 }
-      )
+      console.error('Error fetching itinerary items:', itemsError);
+      return NextResponse.json({ error: 'Failed to fetch itinerary items' }, { status: 500 });
     }
 
     // Calculate travel times if items exist
@@ -164,14 +159,14 @@ export async function GET(
     if (items && items.length > 1) {
       try {
         // Prepare items with the expected structure for the utility function
-        const itemsForTravelCalc = items.map(item => ({
+        const itemsForTravelCalc = items.map((item) => ({
           id: item.id,
           latitude: item.latitude,
-          longitude: item.longitude
-        })); 
+          longitude: item.longitude,
+        }));
         travelTimes = await calculateTravelTimes(itemsForTravelCalc);
       } catch (travelError) {
-        console.error("Error calculating travel times for public trip:", travelError);
+        console.error('Error calculating travel times for public trip:', travelError);
         // Proceed without travel times, don't block the response
         travelTimes = {}; // Ensure it's an empty object on error
       }
@@ -189,23 +184,25 @@ export async function GET(
         description: trip.description,
         privacy_setting: trip.privacy_setting,
         playlist_url: trip.playlist_url,
-        members: (trip.trip_members || []).map(m => {
+        members: (trip.trip_members || []).map((m) => {
+          // Check if profiles is an array and access the first element
           let profile: { id: string; name: string | null; avatar_url: string | null } | null = null;
           if (Array.isArray(m.profiles) && m.profiles.length > 0) {
-            profile = m.profiles[0]; 
+            profile = m.profiles[0];
           } else if (m.profiles && typeof m.profiles === 'object' && !Array.isArray(m.profiles)) {
-            profile = m.profiles as any;
+            // This case might occur if the relationship is one-to-one? Keep the logic but add a type assertion if needed
+            profile = m.profiles as any; // If this still causes issues, refine the TripMember type further
           }
-          
+
           return {
-             id: m.user_id,
-             name: profile ? profile.name : null,
-             avatarUrl: profile ? profile.avatar_url : null,
-             role: m.role
+            id: m.user_id,
+            name: profile ? profile.name : null,
+            avatarUrl: profile ? profile.avatar_url : null,
+            role: m.role,
           };
-        })
+        }),
       },
-      itinerary: (items || []).map(item => ({
+      itinerary: (items || []).map((item) => ({
         id: item.id,
         title: item.title,
         date: item.date,
@@ -215,19 +212,19 @@ export async function GET(
         latitude: item.latitude,
         longitude: item.longitude,
         day: item.day_number,
-        cost: typeof item.estimated_cost === 'string' ? parseFloat(item.estimated_cost) : item.estimated_cost,
+        cost:
+          typeof item.estimated_cost === 'string'
+            ? parseFloat(item.estimated_cost)
+            : item.estimated_cost,
         currency: item.currency,
         notes: item.notes,
         category: item.category,
-        type: item.item_type
+        type: item.item_type,
       })),
-      travelTimes: travelTimes
-    })
+      travelTimes: travelTimes,
+    });
   } catch (error) {
-    console.error('Unexpected error in public trip API:', error)
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
-    )
+    console.error('Unexpected error in public trip API:', error);
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

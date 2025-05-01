@@ -1,27 +1,32 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
-import { Heart, Sparkles, ChevronRight, ArrowRight } from "lucide-react"
+import React, { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, Sparkles, ChevronRight, ArrowRight } from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import TravelTracker from '@/components/TravelTracker'
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import TravelTracker from '@/components/TravelTracker';
 
 // SVG texture overlay for gradients
 const TextureOverlay = () => (
   <div className="absolute inset-0 opacity-20 mix-blend-soft-light pointer-events-none">
     <svg width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
       <filter id="noise">
-        <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.65"
+          numOctaves="3"
+          stitchTiles="stitch"
+        />
         <feColorMatrix type="saturate" values="0" />
       </filter>
       <rect width="100%" height="100%" filter="url(#noise)" />
     </svg>
   </div>
-)
+);
 
 // Abstract shape SVG component
 const AbstractShape = () => (
@@ -34,7 +39,7 @@ const AbstractShape = () => (
       />
     </svg>
   </div>
-)
+);
 
 // Sparkle animation component
 interface SparkleProps {
@@ -67,7 +72,7 @@ const Sparkle = ({ size, color, top, left, delay }: SparkleProps) => (
       repeatDelay: 3,
     }}
   />
-)
+);
 
 // SparkleEffect component
 const SparkleEffect = () => (
@@ -78,22 +83,22 @@ const SparkleEffect = () => (
     <Sparkle size={5} color="#fff" top={25} left={75} delay={0.3} />
     <Sparkle size={3} color="#fff" top={18} left={78} delay={0.4} />
   </>
-)
+);
 
 // Heart animation component
 export const HeartButton = () => {
-  const [liked, setLiked] = useState(false)
+  const [liked, setLiked] = useState(false);
 
   return (
     <div className="relative inline-block">
       <button
         className="relative z-10"
         onClick={() => setLiked(!liked)}
-        aria-label={liked ? "Unlike" : "Like"}
+        aria-label={liked ? 'Unlike' : 'Like'}
       >
         <Heart
           className={`h-8 w-8 transition-colors duration-300 ${
-            liked ? "fill-rose-500 text-rose-500" : "text-gray-400"
+            liked ? 'fill-rose-500 text-rose-500' : 'text-gray-400'
           }`}
         />
       </button>
@@ -104,15 +109,15 @@ export const HeartButton = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1.5 }}
             exit={{ scale: 0 }}
-            transition={{ duration: 0.35, type: "spring" }}
+            transition={{ duration: 0.35, type: 'spring' }}
           >
             <Heart className="h-8 w-8 text-rose-500 fill-rose-500 opacity-0" />
           </motion.div>
         )}
       </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
 // Our Page component
 export default function DesignSandbox() {
@@ -123,22 +128,26 @@ export default function DesignSandbox() {
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-violet-800 to-indigo-900"></div>
         <TextureOverlay />
         <AbstractShape />
-        
+
         <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h1 className="font-serif text-5xl leading-loose font-bold mb-4 tracking-tight">
               Discover new <span className="text-yellow-300">adventures</span>
             </h1>
             <p className="text-xl font-light leading-relaxed mb-8 text-white/90 max-w-2xl">
-              Travel experiences that transform how you see the world, curated by experts and fellow travelers.
+              Travel experiences that transform how you see the world, curated by experts and fellow
+              travelers.
             </p>
-            
+
             <div className="flex flex-wrap gap-4">
               <Button className="bg-white text-indigo-900 hover:bg-white/90 text-base font-medium rounded-full px-8 py-6">
                 Start planning
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 rounded-full px-8 py-6">
+              <Button
+                variant="outline"
+                className="border-white text-white hover:bg-white/10 rounded-full px-8 py-6"
+              >
                 Explore templates
               </Button>
             </div>
@@ -152,10 +161,12 @@ export default function DesignSandbox() {
           <div className="flex justify-between items-end mb-16">
             <div>
               <h2 className="font-serif text-4xl font-bold mb-4">Popular destinations</h2>
-              <p className="text-white/60 max-w-xl">Places that inspire wanderlust and create unforgettable memories</p>
+              <p className="text-white/60 max-w-xl">
+                Places that inspire wanderlust and create unforgettable memories
+              </p>
             </div>
-            <Link 
-              href="#" 
+            <Link
+              href="#"
               className="flex items-center text-violet-300 hover:text-violet-200 transition-colors"
             >
               View all
@@ -176,9 +187,9 @@ export default function DesignSandbox() {
                 <div className="absolute top-4 right-4 z-20">
                   <HeartButton />
                 </div>
-                <Image 
+                <Image
                   src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34"
-                  alt="Paris, France" 
+                  alt="Paris, France"
                   fill
                   className="object-cover transition-transform duration-700 hover:scale-105"
                 />
@@ -195,7 +206,7 @@ export default function DesignSandbox() {
                     <h3 className="font-serif text-2xl font-bold mb-1">Tokyo, Japan</h3>
                     <p className="text-white/80 text-sm">Ultramodern meets traditional</p>
                     <div className="absolute -top-8 right-0">
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="relative"
@@ -209,9 +220,9 @@ export default function DesignSandbox() {
                 <div className="absolute top-4 right-4 z-20">
                   <HeartButton />
                 </div>
-                <Image 
+                <Image
                   src="https://images.unsplash.com/photo-1536098561742-ca998e48cbcc"
-                  alt="Tokyo, Japan" 
+                  alt="Tokyo, Japan"
                   fill
                   className="object-cover transition-transform duration-700 hover:scale-105"
                 />
@@ -230,9 +241,9 @@ export default function DesignSandbox() {
                 <div className="absolute top-4 right-4 z-20">
                   <HeartButton />
                 </div>
-                <Image 
+                <Image
                   src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff"
-                  alt="Santorini, Greece" 
+                  alt="Santorini, Greece"
                   fill
                   className="object-cover transition-transform duration-700 hover:scale-105"
                 />
@@ -246,7 +257,7 @@ export default function DesignSandbox() {
       <section className="py-20 bg-gradient-to-b from-slate-800 to-slate-900">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="font-serif text-4xl font-bold mb-12 text-center">Typography Styles</h2>
-          
+
           <div className="space-y-10">
             <div>
               <h3 className="text-xl text-violet-300 mb-4">Headings (Serif)</h3>
@@ -261,20 +272,32 @@ export default function DesignSandbox() {
             <div>
               <h3 className="text-xl text-violet-300 mb-4">Body Text (Sans Serif)</h3>
               <div className="space-y-4">
-                <p className="text-xl font-light leading-relaxed">Large text for introductions and key statements that need emphasis.</p>
-                <p className="text-base leading-relaxed">Regular text for the main content of your pages. Clear and readable.</p>
-                <p className="text-sm leading-relaxed text-white/70">Smaller text for secondary information, captions and supporting details.</p>
+                <p className="text-xl font-light leading-relaxed">
+                  Large text for introductions and key statements that need emphasis.
+                </p>
+                <p className="text-base leading-relaxed">
+                  Regular text for the main content of your pages. Clear and readable.
+                </p>
+                <p className="text-sm leading-relaxed text-white/70">
+                  Smaller text for secondary information, captions and supporting details.
+                </p>
               </div>
             </div>
 
             <div>
               <h3 className="text-xl text-violet-300 mb-4">Buttons & Interactive Elements</h3>
               <div className="flex flex-wrap gap-4 mb-6">
-                <Button className="bg-violet-600 hover:bg-violet-500 rounded-full">Primary Action</Button>
-                <Button variant="outline" className="rounded-full">Secondary Action</Button>
-                <Button variant="ghost" className="rounded-full">Tertiary Action</Button>
+                <Button className="bg-violet-600 hover:bg-violet-500 rounded-full">
+                  Primary Action
+                </Button>
+                <Button variant="outline" className="rounded-full">
+                  Secondary Action
+                </Button>
+                <Button variant="ghost" className="rounded-full">
+                  Tertiary Action
+                </Button>
               </div>
-              
+
               <div className="flex flex-wrap gap-4">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -284,7 +307,7 @@ export default function DesignSandbox() {
                   Interactive Button
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </motion.div>
-                
+
                 <motion.div
                   whileHover={{ x: 5 }}
                   className="rounded-full px-6 py-3 font-medium inline-flex items-center text-violet-300 hover:text-violet-200 cursor-pointer"
@@ -303,5 +326,5 @@ export default function DesignSandbox() {
         <TravelTracker />
       </section>
     </div>
-  )
-} 
+  );
+}

@@ -1,15 +1,29 @@
-import { createServerClient } from "@/utils/supabase/server";
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database";
-import type { TripRole } from "@/utils/constants/database";
-import { errorResponse } from "./api-utils";
-import { NextResponse } from "next/server";
+import { createClient } from '@supabase/supabase-js';
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import type { TripRole } from '@/utils/constants/database';
+import { errorResponse } from './api-utils';
+import { NextResponse } from 'next/server';
+import type { Database } from '@/types/database.types';
+
+// Ensure environment variables are available
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !serviceKey) {
+  console.error(
+    '[lib/trip-access] Supabase URL or Service Role Key is missing from environment variables.'
+  );
+}
+
+// Create a single instance of the Supabase admin client for this module
+// This uses the service role key for privileged access - ONLY use this on the server!
+const supabaseAdmin =
+  supabaseUrl && serviceKey ? createClient<Database>(supabaseUrl, serviceKey) : null;
 
 export interface TripAccessResult {
   allowed: boolean;
-  role?: TripRole;
-  error?: string;
-  status?: number;
-  isPublic?: boolean;
+  role?: TripRole | null;
+  error?: { message: string; status: number };
 }
 
 /**
@@ -25,13 +39,16 @@ export async function checkTripAccess(
   allowedRoles: TripRole[] = [
     DB_ENUMS.TRIP_ROLES.ADMIN,
     DB_ENUMS.TRIP_ROLES.EDITOR,
-    DB_ENUMS.TRIP_ROLES.CONTRIBUTOR
+    DB_ENUMS.TRIP_ROLES.CONTRIBUTOR,
   ]
 ): Promise<TripAccessResult> {
-  const supabase = createClient();
-  
+  if (!supabaseAdmin) {
+    console.error('[checkTripAccess] Supabase client not initialized.');
+    return { allowed: false, error: { message: 'Server configuration error', status: 500 } };
+  }
+
   // First check member role
-  const { data: member, error: memberError } = await supabase
+  const { data: member, error: memberError } = await supabaseAdmin
     .from(DB_TABLES.TRIP_MEMBERS)
     .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
     .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
@@ -39,10 +56,9 @@ export async function checkTripAccess(
     .maybeSingle();
 
   if (memberError) {
-    return { 
-      allowed: false, 
-      error: `Error checking membership: ${memberError.message}`, 
-      status: 500 
+    return {
+      allowed: false,
+      error: { message: `Error checking membership: ${memberError.message}`, status: 500 },
     };
   }
 
@@ -53,7 +69,7 @@ export async function checkTripAccess(
   // If not a member or doesn't have required role, check if trip is public
   // (only relevant if viewer role is allowed)
   if (allowedRoles.includes(DB_ENUMS.TRIP_ROLES.VIEWER)) {
-    const { data: trip, error: tripError } = await supabase
+    const { data: trip, error: tripError } = await supabaseAdmin
       .from(DB_TABLES.TRIPS)
       .select('is_public, privacy_setting')
       .eq(DB_FIELDS.TRIPS.ID, tripId)
@@ -61,28 +77,27 @@ export async function checkTripAccess(
 
     if (tripError) {
       if (tripError.code === 'PGRST116') {
-        return { allowed: false, error: "Trip not found", status: 404 };
+        return { allowed: false, error: { message: 'Trip not found', status: 404 } };
       }
-      return { 
-        allowed: false, 
-        error: `Error checking trip privacy: ${tripError.message}`, 
-        status: 500 
+      return {
+        allowed: false,
+        error: { message: `Error checking trip privacy: ${tripError.message}`, status: 500 },
       };
     }
 
-    const isPublic = trip.is_public || 
-                     trip.privacy_setting === 'public' || 
-                     trip.privacy_setting === 'shared_with_link';
-    
+    const isPublic =
+      trip.is_public ||
+      trip.privacy_setting === 'public' ||
+      trip.privacy_setting === 'shared_with_link';
+
     if (isPublic) {
-      return { allowed: true, role: DB_ENUMS.TRIP_ROLES.VIEWER, isPublic };
+      return { allowed: true, role: DB_ENUMS.TRIP_ROLES.VIEWER };
     }
   }
 
-  return { 
-    allowed: false, 
-    error: "You don't have sufficient permissions for this action", 
-    status: 403 
+  return {
+    allowed: false,
+    error: { message: "You don't have sufficient permissions for this action", status: 403 },
   };
 }
 
@@ -93,10 +108,24 @@ export async function checkTripAccess(
  * @returns Detailed permission object
  */
 export async function getTripPermissions(userId: string, tripId: string) {
-  const supabase = createClient();
-  
+  if (!supabaseAdmin) {
+    console.error('[getTripPermissions] Supabase client not initialized.');
+    // Return a structure indicating failure due to missing client
+    return {
+      canView: false,
+      canEdit: false,
+      canManage: false,
+      canAddMembers: false,
+      canDeleteTrip: false,
+      isCreator: false,
+      role: null,
+      error: 'Server configuration error',
+      status: 500,
+    };
+  }
+
   // Check if trip exists and get basic info
-  const { data: trip, error: tripError } = await supabase
+  const { data: trip, error: tripError } = await supabaseAdmin
     .from(DB_TABLES.TRIPS)
     .select('id, created_by, is_public, privacy_setting')
     .eq(DB_FIELDS.TRIPS.ID, tripId)
@@ -104,19 +133,19 @@ export async function getTripPermissions(userId: string, tripId: string) {
 
   if (tripError) {
     if (tripError.code === 'PGRST116') {
-      return { 
-        canView: false, 
+      return {
+        canView: false,
         canEdit: false,
         canManage: false,
         canAddMembers: false,
         canDeleteTrip: false,
         isCreator: false,
         role: null,
-        error: "Trip not found",
-        status: 404
+        error: 'Trip not found',
+        status: 404,
       };
     }
-    return { 
+    return {
       canView: false,
       canEdit: false,
       canManage: false,
@@ -125,12 +154,12 @@ export async function getTripPermissions(userId: string, tripId: string) {
       isCreator: false,
       role: null,
       error: `Error checking trip: ${tripError.message}`,
-      status: 500
+      status: 500,
     };
   }
 
   // Check if user is a member of this trip
-  const { data: member, error: memberError } = await supabase
+  const { data: member, error: memberError } = await supabaseAdmin
     .from(DB_TABLES.TRIP_MEMBERS)
     .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
     .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
@@ -138,7 +167,7 @@ export async function getTripPermissions(userId: string, tripId: string) {
     .maybeSingle();
 
   if (memberError) {
-    return { 
+    return {
       canView: false,
       canEdit: false,
       canManage: false,
@@ -147,15 +176,16 @@ export async function getTripPermissions(userId: string, tripId: string) {
       isCreator: false,
       role: null,
       error: `Error checking membership: ${memberError.message}`,
-      status: 500
+      status: 500,
     };
   }
 
   const role = member?.role as TripRole | null;
   const isCreator = trip.created_by === userId;
-  const isPublic = trip.is_public || 
-                   trip.privacy_setting === 'public' || 
-                   trip.privacy_setting === 'shared_with_link';
+  const isPublic =
+    trip.is_public ||
+    trip.privacy_setting === 'public' ||
+    trip.privacy_setting === 'shared_with_link';
 
   // Default permissions
   const permissions = {
@@ -166,7 +196,7 @@ export async function getTripPermissions(userId: string, tripId: string) {
     canDeleteTrip: false,
     isCreator,
     role,
-    isPublic
+    isPublic,
   };
 
   // Set permissions based on role
@@ -176,29 +206,25 @@ export async function getTripPermissions(userId: string, tripId: string) {
     permissions.canManage = true;
     permissions.canAddMembers = true;
     permissions.canDeleteTrip = isCreator; // Only creator can delete
-  } 
-  else if (role === DB_ENUMS.TRIP_ROLES.EDITOR) {
+  } else if (role === DB_ENUMS.TRIP_ROLES.EDITOR) {
     permissions.canView = true;
     permissions.canEdit = true;
     permissions.canAddMembers = true;
     permissions.canManage = false;
     permissions.canDeleteTrip = false;
-  } 
-  else if (role === DB_ENUMS.TRIP_ROLES.CONTRIBUTOR) {
+  } else if (role === DB_ENUMS.TRIP_ROLES.CONTRIBUTOR) {
     permissions.canView = true;
     permissions.canEdit = true;
     permissions.canAddMembers = false;
     permissions.canManage = false;
     permissions.canDeleteTrip = false;
-  } 
-  else if (role === DB_ENUMS.TRIP_ROLES.VIEWER) {
+  } else if (role === DB_ENUMS.TRIP_ROLES.VIEWER) {
     permissions.canView = true;
     permissions.canEdit = false;
     permissions.canAddMembers = false;
     permissions.canManage = false;
     permissions.canDeleteTrip = false;
-  } 
-  else if (isPublic) {
+  } else if (isPublic) {
     // Public trip, non-member
     permissions.canView = true;
     permissions.canEdit = false;
@@ -213,7 +239,7 @@ export async function getTripPermissions(userId: string, tripId: string) {
 /**
  * Wrapper function to check trip access and return appropriate response
  * @param userId User ID to check
- * @param tripId Trip ID to check 
+ * @param tripId Trip ID to check
  * @param allowedRoles Roles allowed to perform the action
  * @returns NextResponse error or null if allowed
  */
@@ -223,13 +249,97 @@ export async function ensureTripAccess(
   allowedRoles: TripRole[] = [DB_ENUMS.TRIP_ROLES.ADMIN, DB_ENUMS.TRIP_ROLES.EDITOR]
 ): Promise<NextResponse | null> {
   const accessResult = await checkTripAccess(userId, tripId, allowedRoles);
-  
+
   if (!accessResult.allowed) {
     return errorResponse(
-      accessResult.error || "Access denied", 
-      accessResult.status || 403
+      accessResult.error?.message || 'Access denied',
+      accessResult.error?.status || 403
     );
   }
-  
+
   return null;
-} 
+}
+
+/**
+ * Checks if a user is a member of a specific trip.
+ * @param userId User ID to check
+ * @param tripId Trip ID to check
+ * @returns True if the user is a member of the trip, false otherwise
+ */
+export async function checkTripMembership(userId: string, tripId: string): Promise<boolean> {
+  if (!userId || !tripId) return false;
+  if (!supabaseAdmin) {
+    console.error('[checkTripMembership] Supabase client not initialized.');
+    return false; // Cannot check membership without client
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+      .maybeSingle();
+
+    return !!data?.role;
+  } catch (error) {
+    console.error('[checkTripMembership] Error checking trip membership:', error);
+    return false;
+  }
+}
+
+/**
+ * Get the role of a user in a specific trip.
+ * @param userId User ID to check
+ * @param tripId Trip ID to check
+ * @returns The role of the user in the trip, or null if the user is not a member
+ */
+export async function getUserTripRole(userId: string, tripId: string): Promise<string | null> {
+  if (!userId || !tripId) return null;
+  if (!supabaseAdmin) {
+    console.error('[getUserTripRole] Supabase client not initialized.');
+    return null; // Cannot get role without client
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+      .maybeSingle();
+
+    return data?.role || null;
+  } catch (error) {
+    console.error('[getUserTripRole] Error getting user trip role:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if a user can edit a specific trip.
+ * @param userId User ID to check
+ * @param tripId Trip ID to check
+ * @returns True if the user can edit the trip, false otherwise
+ */
+export async function canUserEditTrip(userId: string, tripId: string): Promise<boolean> {
+  if (!userId || !tripId) return false;
+  if (!supabaseAdmin) {
+    console.error('[canUserEditTrip] Supabase client not initialized.');
+    return false; // Cannot check permission without client
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+      .maybeSingle();
+
+    return !!data?.role && data.role === DB_ENUMS.TRIP_ROLES.EDITOR;
+  } catch (error) {
+    console.error('[canUserEditTrip] Error checking user edit permission:', error);
+    return false;
+  }
+}

@@ -1,13 +1,21 @@
-import { createApiClient } from "@/utils/supabase/server";
-import type { Database } from "@/types/database.types";
-import { NextResponse, NextRequest } from "next/server"
-import { API_ROUTES } from "@/utils/constants"
-import { DB_TABLES, DB_FIELDS, TRIP_ROLES } from "@/utils/constants"
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import type { Database } from '@/types/database.types';
+import { NextResponse, NextRequest } from 'next/server';
+import { API_ROUTES } from '@/utils/constants/routes';
 import { z } from 'zod';
 import { isBefore, parseISO, differenceInCalendarDays } from 'date-fns';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimit, type RateLimitResult } from '@/lib/rate-limit';
 import { ApiError, formatErrorResponse } from '@/lib/api-utils';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
+
+// Define trip roles based on ENUMS
+const TRIP_ROLES = ENUMS.TRIP_ROLES;
+
+// Determine if running in development mode
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 /**
  * Constants and configuration for API handlers
  */
@@ -31,7 +39,8 @@ const privacySettingEnum = z.enum(['private', 'shared_with_link', 'public']);
 type TripPrivacySetting = z.infer<typeof privacySettingEnum>;
 
 // Schema for date validation with proper formatting
-const dateSchema = z.string()
+const dateSchema = z
+  .string()
   .refine(
     (date) => {
       if (!date) return true;
@@ -41,14 +50,14 @@ const dateSchema = z.string()
       } catch {
         return false;
       }
-    }, 
-    { message: "Invalid date format. Use ISO 8601 format (YYYY-MM-DD)." }
+    },
+    { message: 'Invalid date format. Use ISO 8601 format (YYYY-MM-DD).' }
   )
   .nullable()
   .optional();
 
 // Schema for validating date ranges when both dates are present
-const dateRangeRefinement = (data: { start_date?: string | null, end_date?: string | null }) => {
+const dateRangeRefinement = (data: { start_date?: string | null; end_date?: string | null }) => {
   if (data.start_date && data.end_date) {
     try {
       const start = parseISO(data.start_date);
@@ -62,40 +71,75 @@ const dateRangeRefinement = (data: { start_date?: string | null, end_date?: stri
 };
 
 // Enhanced schema for trip updates with additional validations
-const updateTripSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(100).optional()
-    .refine(name => !name || name.trim().length > 0, "Name cannot be empty"),
-  start_date: dateSchema,
-  end_date: dateSchema,
-  destination_id: z.string().uuid("Invalid destination ID format").nullable().optional(),
-  cover_image_url: z.string().url("Must be a valid URL").nullable().optional()
-    .refine(url => !url || url.startsWith('https://'), "Cover image URL must use HTTPS"),
-  budget: z.number().nonnegative("Budget must be a positive number or zero").optional().nullable(),
-  cover_image_position_y: z.number().min(0, "Position must be between 0 and 100").max(100, "Position must be between 0 and 100").optional().nullable(),
-  description: z.string().max(1000, "Description must be less than 1000 characters").optional().nullable(),
-  privacy_setting: privacySettingEnum.optional(),
-  playlist_url: z.union([
-    z.string().url("Must be a valid playlist URL").refine(
-      url => {
-        // Restrict to known music streaming services
-        const validDomains = ['spotify.com', 'music.apple.com', 'youtube.com', 'youtu.be', 'soundcloud.com', 'tidal.com'];
-        try {
-          const urlObj = new URL(url);
-          return validDomains.some(domain => urlObj.hostname.includes(domain));
-        } catch {
-          return false;
-        }
-      },
-      { message: "Playlist URL must be from a supported music platform" }
-    ),
-    z.string().max(0), // Empty string is valid 
-    z.null()
-  ]).optional(),
-}).strict()
+const updateTripSchema = z
+  .object({
+    name: z
+      .string()
+      .min(3, 'Name must be at least 3 characters')
+      .max(100)
+      .optional()
+      .refine((name) => !name || name.trim().length > 0, 'Name cannot be empty'),
+    start_date: dateSchema,
+    end_date: dateSchema,
+    destination_id: z.string().uuid('Invalid destination ID format').nullable().optional(),
+    cover_image_url: z
+      .string()
+      .url('Must be a valid URL')
+      .nullable()
+      .optional()
+      .refine((url) => !url || url.startsWith('https://'), 'Cover image URL must use HTTPS'),
+    budget: z
+      .number()
+      .nonnegative('Budget must be a positive number or zero')
+      .optional()
+      .nullable(),
+    cover_image_position_y: z
+      .number()
+      .min(0, 'Position must be between 0 and 100')
+      .max(100, 'Position must be between 0 and 100')
+      .optional()
+      .nullable(),
+    description: z
+      .string()
+      .max(1000, 'Description must be less than 1000 characters')
+      .optional()
+      .nullable(),
+    privacy_setting: privacySettingEnum.optional(),
+    playlist_url: z
+      .union([
+        z
+          .string()
+          .url('Must be a valid playlist URL')
+          .refine(
+            (url) => {
+              // Restrict to known music streaming services
+              const validDomains = [
+                'spotify.com',
+                'music.apple.com',
+                'youtube.com',
+                'youtu.be',
+                'soundcloud.com',
+                'tidal.com',
+              ];
+              try {
+                const urlObj = new URL(url);
+                return validDomains.some((domain) => urlObj.hostname.includes(domain));
+              } catch {
+                return false;
+              }
+            },
+            { message: 'Playlist URL must be from a supported music platform' }
+          ),
+        z.string().max(0), // Empty string is valid
+        z.null(),
+      ])
+      .optional(),
+  })
+  .strict()
   // Add refinement for date range validation
   .refine(dateRangeRefinement, {
-    message: "End date must be after start date",
-    path: ["end_date"]
+    message: 'End date must be after start date',
+    path: ['end_date'],
   });
 
 // Type definitions mirroring TripPageClientProps structure needed
@@ -110,12 +154,13 @@ interface TripMemberFromSSR {
   id: string; // member id
   trip_id: string;
   user_id: string;
-  role: typeof TRIP_ROLES[keyof typeof TRIP_ROLES];
+  role: (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
   joined_at: string;
   profiles: MemberProfile | null;
 }
 
-interface DisplayItineraryItem { // Define based on expected fields
+interface DisplayItineraryItem {
+  // Define based on expected fields
   id: string;
   trip_id: string;
   section_id: string | null;
@@ -154,15 +199,16 @@ interface ItinerarySection {
   items: DisplayItineraryItem[]; // Add items here
 }
 
-interface ManualDbExpense { // Define based on expected fields
+interface ManualDbExpense {
+  // Define based on expected fields
   id: string;
   trip_id: string;
   title: string;
   amount: number;
   currency: string;
   category: string;
-  paid_by: string; 
-  date: string; 
+  paid_by: string;
+  date: string;
   created_at: string;
   updated_at?: string | null;
   source?: string | null;
@@ -173,436 +219,343 @@ interface Tag {
   name: string;
 }
 
+// Helper function to create Supabase client for Route Handlers
+async function createRouteHandlerClient() {
+  const cookieStore = await cookies();
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // Handle potential error if running in read-only context
+            console.warn(`Failed to set cookie ${name}:`, error);
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            console.warn(`Failed to remove cookie ${name}:`, error);
+          }
+        },
+      },
+    }
+  );
+}
+
+// --- Add checkTripAccess back --- //
 /**
  * Check if user has permission to access a trip
  * @param supabase Supabase client instance
  * @param userId User ID to check
  * @param tripId Trip ID to check
- * @param requiredRole Optional role requirement (if specific role is needed)
+ * @param requiredRoles Optional role requirement (if specific role is needed)
  * @returns Object with hasAccess flag and role if found
  */
 async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   userId: string,
   tripId: string,
-  requiredRole?: typeof TRIP_ROLES[keyof typeof TRIP_ROLES][]
-): Promise<{ hasAccess: boolean; role?: typeof TRIP_ROLES[keyof typeof TRIP_ROLES]; trip?: any; isPublic?: boolean }> {
-  // First check if user is a member of the trip
+  requiredRoles?: Array<(typeof TRIP_ROLES)[keyof typeof TRIP_ROLES]> 
+): Promise<{
+  hasAccess: boolean;
+  role?: (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
+}> {
+  // Check if user is a member of the trip
   const { data: member, error: memberError } = await supabase
-    .from(DB_TABLES.TRIP_MEMBERS)
-    .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .from(TABLES.TRIP_MEMBERS)
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (memberError) {
     throw new TripApiError(`Error checking trip membership: ${memberError.message}`, 500);
   }
 
-  const role = member?.role as typeof TRIP_ROLES[keyof typeof TRIP_ROLES] | undefined;
-
-  // If user is a member and no specific role is required, or user has required role
-  if (role && (!requiredRole || requiredRole.includes(role))) {
-    return { hasAccess: true, role };
+  if (!member) {
+    return { hasAccess: false }; // Not a member, deny access (public check handled separately if needed)
   }
 
-  // If user is not a member or doesn't have required role, check if trip is public
-  if (!requiredRole) {
-    const { data: trip, error: tripError } = await supabase
-      .from(DB_TABLES.TRIPS)
-      .select('is_public, privacy_setting')
-      .eq(DB_FIELDS.TRIPS.ID, tripId)
-      .single();
-
-    if (tripError) {
-      if (tripError.code === 'PGRST116') {
-        return { hasAccess: false }; // Trip not found
-      }
-      throw new TripApiError(`Error checking trip privacy: ${tripError.message}`, 500);
+  const userRole = member.role as (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
+  
+  // If specific roles are required, check if the user has one of them
+  if (requiredRoles && requiredRoles.length > 0) {
+    if (!requiredRoles.includes(userRole)) {
+      return { hasAccess: false, role: userRole }; // Has a role, but not the required one
     }
-
-    const isPublic = trip.is_public || trip.privacy_setting === 'public' || trip.privacy_setting === 'shared_with_link';
-    return { hasAccess: isPublic, isPublic, trip };
   }
 
-  return { hasAccess: false };
+  // If no specific roles required, or if user has a required role
+  return { hasAccess: true, role: userRole };
 }
+// --- End checkTripAccess --- //
 
 /**
  * GET trip details with enhanced validation, rate limiting, and error handling
  */
-export async function GET(request: NextRequest, { params }: { params: { tripId: string } }) {
-  // Apply rate limiting
-  // Get IP address from headers - request.ip is not reliable in all environments
-  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
-  const rateLimitResult = await rateLimit.limit(`trips_api_${ip}`);
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  const supabase = await createRouteHandlerClient();
+  const { tripId } = await params;
+  console.log(`[API /trips/${tripId}] GET handler started`); // Log start
 
-  if (!rateLimitResult.success) {
-    return NextResponse.json(
-      formatErrorResponse("Rate limit exceeded. Try again later."),
-      { 
+  try {
+    // Rate limit check (using correct rateLimit.limit)
+    const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
+    const limitKey = `API_TRIP_GET_${ip}_${tripId}`;
+    const limitResult: RateLimitResult = await rateLimit.limit(
+      limitKey,
+      MAX_REQUESTS_PER_WINDOW,
+      RATE_LIMIT_WINDOW_SEC
+    );
+
+    if (!limitResult.success) {
+      return new NextResponse('Too Many Requests', {
         status: 429,
         headers: {
-          'Retry-After': String(rateLimitResult.reset),
-          'X-RateLimit-Limit': String(MAX_REQUESTS_PER_WINDOW),
-          'X-RateLimit-Remaining': String(rateLimitResult.remaining),
-          'X-RateLimit-Reset': String(rateLimitResult.reset),
-        }
-      }
-    );
-  }
+          'Retry-After': limitResult.reset.toString(),
+          'X-RateLimit-Limit': limitResult.limit.toString(),
+          'X-RateLimit-Remaining': limitResult.remaining.toString(),
+        },
+      });
+    }
 
-  // Validate trip ID
-  const tripIdSchema = z.string().uuid("Invalid trip ID format");
-  const { tripId } = await params;
-  
-  try {
-    // Validate tripId parameter
-    const validatedTripId = tripIdSchema.parse(tripId);
-    
-    // Set security headers
-    const responseHeaders = new Headers({
-      'Content-Type': 'application/json',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
-      'X-XSS-Protection': '1; mode=block',
-      'Cache-Control': 'no-store, max-age=0',
+    // Get user session and trip data concurrently
+    const [
+      { data: userData, error: authError },
+      { data: trip, error: tripError }
+    ] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase
+        .from(TABLES.TRIPS)
+        .select('*, destination:destinations(*), tags:trip_tags(tags(*))')
+        .eq('id', tripId)
+        .single()
+    ]);
+
+    // --- Logging Auth --- //
+    console.log(`[API /trips/${tripId}] Auth Check Result:`, { 
+      userId: userData?.user?.id, 
+      authError: authError ? authError.message : null 
     });
-    
-    console.log(`API route called for trip ID: ${validatedTripId}`);
-    const supabase = await createApiClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // --- End Logging --- //
 
-    if (authError || !user) {
-      console.error("Authentication error:", authError);
-      return NextResponse.json(
-        formatErrorResponse(`Authentication error: ${authError?.message || 'Unknown auth error'}`),
-        { status: 401, headers: responseHeaders }
-      );
-    }
-    console.log(`User authenticated: ${user.id}`);
+    const user = userData?.user;
 
-    // Check access to the trip using the helper function
-    const accessCheck = await checkTripAccess(supabase, user.id, validatedTripId);
-
-    if (!accessCheck.hasAccess) {
-      // Check if trip exists but user lacks access vs trip not found
-      const { data: tripExists } = await supabase.from(DB_TABLES.TRIPS).select('id').eq('id', validatedTripId).maybeSingle();
-      const status = tripExists ? 403 : 404;
-      const message = tripExists ? "You don't have access to this trip" : `Trip not found: ${validatedTripId}`;
-      return NextResponse.json(
-        // @ts-ignore - Suppressing potentially incorrect TS error due to union type inference
-        formatErrorResponse(message, { tripId: validatedTripId, userId: user.id }),
-        { status, headers: responseHeaders }
-      );
-    }
-
-    // Fetch complete trip data with destination
-    const { data: tripData, error: tripFetchError } = await supabase
-      .from(DB_TABLES.TRIPS)
-      .select(`
-        *,
-        destination: ${DB_FIELDS.TRIPS.DESTINATION_ID} ( * )
-      `)
-      .eq(DB_FIELDS.TRIPS.ID, validatedTripId)
-      .single();
-
-    if (tripFetchError) {
-      console.error("Error fetching trip data:", tripFetchError);
-      return NextResponse.json({ error: `Error fetching trip data: ${tripFetchError.message}` }, { status: 500 });
-    }
-
-    if (!tripData) {
-      // Handle case where trip is not found after access check (should be rare)
-      return NextResponse.json(
-        formatErrorResponse(`Trip not found: ${validatedTripId}`),
-        { status: 404, headers: responseHeaders }
-      );
-    }
-
-    // Assign trip and destination
-    const trip = tripData;
-    const destination = trip.destination;
-
-    // 2. Fetch All Members with Profiles
-    const { data: membersData, error: membersError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(`
-        *,
-        profiles ( * )
-      `)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
-
-    if (membersError) {
-      console.error("Error fetching trip members:", membersError);
-      // Decide if this is critical - maybe return partial data?
-      return NextResponse.json({ error: `Members fetch error: ${membersError.message}` }, { status: 500 });
-    }
-    const initialMembers = membersData as TripMemberFromSSR[] || [];
-
-    // 3. Fetch Itinerary Sections and Items
-    const { data: sectionsData, error: sectionsError } = await supabase
-      .from(DB_TABLES.ITINERARY_SECTIONS)
-      .select(`
-        *,
-        ${DB_TABLES.ITINERARY_ITEMS} ( * )
-      `)
-      .eq(DB_FIELDS.ITINERARY_SECTIONS.TRIP_ID, validatedTripId)
-      .order(DB_FIELDS.ITINERARY_SECTIONS.POSITION, { ascending: true });
-      // Items within sections don't have a stable order here, needs client-side sort or item query order
-
-    if (sectionsError) {
-      console.error("Error fetching itinerary sections:", sectionsError);
-      return NextResponse.json({ error: `Sections fetch error: ${sectionsError.message}` }, { status: 500 });
-    }
-    const initialSections = (sectionsData || []).map(section => ({ 
-      ...section, 
-      items: section.itinerary_items as DisplayItineraryItem[] || [] 
-    })) as ItinerarySection[];
-
-    // 4. Fetch Unscheduled Items (items with null section_id)
-    const { data: unscheduledItemsData, error: unscheduledItemsError } = await supabase
-      .from(DB_TABLES.ITINERARY_ITEMS)
-      .select('*')
-      .eq(DB_FIELDS.ITINERARY_ITEMS.TRIP_ID, validatedTripId)
-      .is(DB_FIELDS.ITINERARY_ITEMS.SECTION_ID, null)
-      .order(DB_FIELDS.ITINERARY_ITEMS.CREATED_AT, { ascending: true }); // Or some other logical order
-
-    if (unscheduledItemsError) {
-      console.error("Error fetching unscheduled items:", unscheduledItemsError);
-      return NextResponse.json({ error: `Unscheduled items fetch error: ${unscheduledItemsError.message}` }, { status: 500 });
-    }
-    const initialUnscheduledItems = unscheduledItemsData as DisplayItineraryItem[] || [];
-    
-    // 5. Fetch Tags with explicit type assertion on result
-    const { data: tagsData, error: tagsError } = await supabase
-      .from(DB_TABLES.TRIP_TAGS)
-      .select(`
-        ${DB_TABLES.TAGS} ( id, name ) 
-      `)
-      .eq(DB_FIELDS.TRIP_TAGS.TRIP_ID, validatedTripId)
-      // Explicitly type the returned data structure
-      .returns<{ tags: { id: string; name: string } | null }[]>();
-
-    if (tagsError) {
-      console.error("Error fetching tags:", tagsError);
-      return NextResponse.json({ error: `Tags fetch error: ${tagsError.message}` }, { status: 500 });
-    }
-    // Now the mapping should be correctly typed
-    const initialTags = (tagsData || []).map(t => t.tags).filter((t): t is Tag => t !== null); 
-
-    // 6. Fetch Manual Expenses - Handle missing table gracefully
-    let initialManualExpenses: ManualDbExpense[] = [];
-    try {
-      // Try to fetch from the expenses table (correct table name from constants)
-      const { data: expensesData, error: expensesError } = await supabase
-        .from(DB_TABLES.EXPENSES)
-        .select('*')
-        .eq('trip_id', validatedTripId)
-        .order('date', { ascending: false });
-
-      if (!expensesError) {
-        initialManualExpenses = expensesData as ManualDbExpense[] || [];
-      } else {
-        console.error("Error fetching manual expenses:", expensesError);
-        // Fall back to empty array, this is a non-critical error
+    if (tripError) {
+      console.error('Error fetching trip:', tripError);
+      if (tripError.code === 'PGRST116') {
+        return formatErrorResponse(new TripApiError('Trip not found', 404));
       }
-    } catch (error) {
-      console.error("Exception when fetching expenses:", error);
-      // Fall back to empty array
+      return formatErrorResponse(new TripApiError('Failed to fetch trip data', 500));
     }
 
-    // 7. Calculate derived values
-    const userRole = accessCheck.role;
-    const canEdit = userRole === TRIP_ROLES.ADMIN || userRole === TRIP_ROLES.EDITOR;
-    const isTripOver = trip.end_date ? isBefore(parseISO(trip.end_date), new Date()) : false;
-    const tripDurationDays = trip.start_date && trip.end_date ? differenceInCalendarDays(parseISO(trip.end_date), parseISO(trip.start_date)) + 1 : null;
+    // --- Access Logic --- //
+    let hasAccess = false;
+    let userRole: (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES] | undefined = undefined;
 
-    console.log(`Trip ${validatedTripId} fully fetched successfully`);
+    if (user) {
+      // If user is logged in, check membership
+      const { data: member, error: memberError } = await supabase
+        .from(TABLES.TRIP_MEMBERS)
+        .select('role')
+        .eq('trip_id', tripId)
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    // Safely parse budget string to number
-    let budgetNumber: number | null = null;
-    if (trip.budget && typeof trip.budget === 'string') {
-      const parsed = parseFloat(trip.budget);
-      if (!isNaN(parsed)) {
-        budgetNumber = parsed;
+      if (memberError) {
+        console.error(`[API /trips/${tripId}] Error fetching membership:`, memberError);
+        // Decide if this should block access or just log
       }
+
+      if (member) {
+        console.log(`[API /trips/${tripId}] User ${user.id} is a member with role: ${member.role}`);
+        hasAccess = true;
+        userRole = member.role as (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
+      }
+    } else {
+      console.log(`[API /trips/${tripId}] No authenticated user found.`);
     }
 
-    // 8. Assemble response matching TripPageClientProps structure
-    const responsePayload = {
-      tripId: trip.id,
-      tripName: trip.name,
-      tripDescription: trip.description,
-      startDate: trip.start_date,
-      endDate: trip.end_date,
-      tripDurationDays: tripDurationDays,
-      coverImageUrl: trip.cover_image_url,
-      destinationId: trip.destination_id,
-      initialMembers: initialMembers,
-      initialSections: initialSections,
-      initialUnscheduledItems: initialUnscheduledItems,
-      initialManualExpenses: initialManualExpenses,
+    // If not logged in or not a member, check if trip is public
+    if (!hasAccess && trip.privacy_setting === ENUMS.TRIP_PRIVACY_SETTING.PUBLIC) {
+      console.log(`[API /trips/${tripId}] Granting access via public setting.`);
+      hasAccess = true;
+      // userRole remains undefined for anonymous public access
+    }
+    // --- End Access Logic --- //
+
+    if (!hasAccess) {
+      // --- Logging Access Denied --- //
+      console.log(`[API /trips/${tripId}] Access Denied. User: ${user?.id}, Role: ${userRole}, Public: ${trip.privacy_setting === ENUMS.TRIP_PRIVACY_SETTING.PUBLIC}`);
+      // --- End Logging --- //
+      return formatErrorResponse(new TripApiError('Access denied', 403));
+    }
+
+    console.log(`[API /trips/${tripId}] Access Granted. User: ${user?.id}, Role: ${userRole}`);
+    // Prepare response data
+    const responseData = {
+      ...trip,
+      tags: trip.tags?.map((t: any) => t.tags) || [],
       userRole: userRole,
-      canEdit: canEdit,
-      isTripOver: isTripOver,
-      destinationLat: destination?.latitude,
-      destinationLng: destination?.longitude,
-      initialTripBudget: budgetNumber,
-      initialTags: initialTags,
-      slug: trip.slug, // Assuming slug exists on trip
-      privacySetting: trip.privacy_setting as TripPrivacySetting | null, // Assuming privacy_setting exists
-      playlistUrl: trip.playlist_url,
-      // initialItineraryData seems redundant if we populate top-level props?
-      // If needed, assemble it here from the fetched data.
     };
 
-    return NextResponse.json(responsePayload);
-
+    return NextResponse.json(responseData);
   } catch (error: any) {
-    console.error(`Unexpected error fetching trip ${tripId}:`, error);
-    return NextResponse.json({
-      error: `Unexpected server error: ${error.message}`,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      tripId: tripId
-    }, { status: 500 });
+    console.error('GET /api/trips/[tripId] error:', error);
+    return formatErrorResponse(error);
   }
 }
 
 // --- PATCH Handler ---
-export async function PATCH(request: NextRequest, { params }: { params: { tripId: string } }) { 
-  const { tripId } = await params; 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  const supabase = await createRouteHandlerClient();
+  const { tripId } = await params;
+
   try {
-    const supabase = await createApiClient();
+    const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
+    const limitKey = `API_TRIP_PATCH_${ip}_${tripId}`;
+    const limitResult: RateLimitResult = await rateLimit.limit(
+      limitKey,
+      MAX_REQUESTS_PER_WINDOW,
+      RATE_LIMIT_WINDOW_SEC
+    );
+
+    if (!limitResult.success) {
+      return new NextResponse('Too Many Requests', {
+        status: 429,
+        headers: {
+          'Retry-After': limitResult.reset.toString(),
+          'X-RateLimit-Limit': limitResult.limit.toString(),
+          'X-RateLimit-Remaining': limitResult.remaining.toString(),
+        },
+      });
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
-      return NextResponse.json(
-        { error: authError?.message || "Unauthorized" },
-        { status: 401 }
-      );
+      return formatErrorResponse(new TripApiError('Unauthorized', 401));
     }
 
-    const { data: member, error: memberError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-      .in("role", [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]) 
-      .maybeSingle()
+    // Check access using the helper function
+    const access = await checkTripAccess(supabase, user.id, tripId, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+    ]);
 
-    if (memberError) {
-      console.error("Error checking trip edit permissions:", memberError);
-      return NextResponse.json({ error: "Error checking permissions" }, { status: 500 });
-    }
-    
-    if (!member) {
-      return NextResponse.json({ error: "You don't have permission to edit this trip" }, { status: 403 });
+    if (!access.hasAccess) {
+      return formatErrorResponse(new TripApiError('Permission denied to update trip', 403));
     }
 
     const body = await request.json();
-    const validationResult = updateTripSchema.safeParse(body);
+    const validation = updateTripSchema.safeParse(body);
 
-    if (!validationResult.success) {
-      console.error("Trip update validation failed:", validationResult.error.issues);
-      return NextResponse.json(
-        { error: "Invalid input data", issues: validationResult.error.issues },
-        { status: 400 }
+    if (!validation.success) {
+      console.warn('Update trip validation failed:', validation.error.flatten());
+      return formatErrorResponse(
+        new TripApiError('Invalid input', 400, validation.error.flatten())
       );
     }
 
-    const validatedData = validationResult.data;
+    const updateData = validation.data;
 
-    // Prepare update object - REMOVE updated_at
-    const finalDataToUpdate: Partial<Database['public']['Tables']['trips']['Update']> = {};
+    // Additional logic for tags if needed...
 
-    // Map validated data, converting budget to string if present
-    Object.keys(validatedData).forEach(key => {
-      const typedKey = key as keyof typeof validatedData;
-      if (validatedData[typedKey] !== undefined) {
-        if (typedKey === 'budget' && typeof validatedData.budget === 'number') {
-          (finalDataToUpdate as any)[typedKey] = String(validatedData.budget);
-        } else {
-          (finalDataToUpdate as any)[typedKey] = validatedData[typedKey];
-        }
-      }
-    });
-
-    // Remove undefined keys explicitly
-    Object.keys(finalDataToUpdate).forEach(key => 
-      (finalDataToUpdate as Record<string, any>)[key] === undefined && delete (finalDataToUpdate as Record<string, any>)[key]
-    );
-
-    // Assert the entire object as 'any' just before the update call (kept for safety)
-    const { data, error: updateError } = await supabase
-      .from(DB_TABLES.TRIPS)
-      .update(finalDataToUpdate as any) 
-      .eq(DB_FIELDS.TRIPS.ID, tripId)
-      .select() // Select updated data
+    const { data: updatedTrip, error: updateError } = await supabase
+      .from(TABLES.TRIPS)
+      .update(updateData)
+      .eq('id', tripId)
+      .select('*, destination:destinations(*), tags:trip_tags(tags(*))')
       .single();
 
     if (updateError) {
-      console.error("Error updating trip:", updateError);
-      return NextResponse.json({ error: `Failed to update trip: ${updateError.message}` }, { status: 500 });
+      console.error('Error updating trip:', updateError);
+      return formatErrorResponse(new TripApiError('Failed to update trip', 500));
     }
 
-    return NextResponse.json({ trip: data });
+    // Prepare response data
+    const responseData = {
+      ...updatedTrip,
+      tags: updatedTrip.tags?.map((t: any) => t.tags) || [], // Flatten tags
+    };
 
+    return NextResponse.json(responseData);
   } catch (error: any) {
-     if (error instanceof SyntaxError) {
-       return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
-     }
-     console.error("Unexpected error in PATCH trip:", error);
-     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
+    console.error('PATCH /api/trips/[tripId] error:', error);
+    return formatErrorResponse(error);
   }
 }
 
 // --- DELETE Handler ---
-export async function DELETE(request: Request, { params }: { params: { tripId: string } }) { 
-  const { tripId } = await params; 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  const supabase = await createRouteHandlerClient();
+  const { tripId } = await params;
+
   try {
-    const supabase = await createApiClient();
+    const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
+    const limitKey = `API_TRIP_DELETE_${ip}_${tripId}`;
+    const limitResult: RateLimitResult = await rateLimit.limit(
+      limitKey,
+      MAX_REQUESTS_PER_WINDOW,
+      RATE_LIMIT_WINDOW_SEC
+    );
+
+    if (!limitResult.success) {
+      return new NextResponse('Too Many Requests', {
+        status: 429,
+        headers: {
+          'Retry-After': limitResult.reset.toString(),
+          'X-RateLimit-Limit': limitResult.limit.toString(),
+          'X-RateLimit-Remaining': limitResult.remaining.toString(),
+        },
+      });
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
-      return NextResponse.json(
-        { error: authError?.message || "Unauthorized" },
-        { status: 401 }
-      );
+      return formatErrorResponse(new TripApiError('Unauthorized', 401));
     }
 
-    const { data: member, error: memberError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-      .eq(DB_FIELDS.TRIP_MEMBERS.ROLE, TRIP_ROLES.ADMIN) 
-      .maybeSingle()
+    // Check access using the helper function
+    const access = await checkTripAccess(supabase, user.id, tripId, [TRIP_ROLES.ADMIN]);
 
-    if (memberError) {
-      console.error("Error checking trip delete permissions:", memberError);
-      return NextResponse.json({ error: "Error checking permissions" }, { status: 500 });
+    if (!access.hasAccess) {
+      return formatErrorResponse(new TripApiError('Permission denied to delete trip', 403));
     }
 
-    if (!member) {
-      return NextResponse.json({ error: "Only trip admins can delete a trip" }, { status: 403 });
-    }
+    // Add logic to delete related data (members, items, etc.) first if needed
 
-    // Perform deletion
     const { error: deleteError } = await supabase
-      .from(DB_TABLES.TRIPS)
+      .from(TABLES.TRIPS)
       .delete()
-      .eq(DB_FIELDS.TRIPS.ID, tripId);
+      .eq('id', tripId);
 
     if (deleteError) {
-      console.error("Error deleting trip:", deleteError);
-      return NextResponse.json({ error: `Failed to delete trip: ${deleteError.message}` }, { status: 500 });
+      console.error('Error deleting trip:', deleteError);
+      return formatErrorResponse(new TripApiError('Failed to delete trip', 500));
     }
 
-    return NextResponse.json({ message: "Trip deleted successfully" });
-
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
-    console.error("Unexpected error in DELETE trip:", error);
-    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
+    console.error('DELETE /api/trips/[tripId] error:', error);
+    return formatErrorResponse(error);
   }
-} 
+}

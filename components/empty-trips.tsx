@@ -1,46 +1,51 @@
-"use client"
+'use client';
+import { PAGE_ROUTES } from '@/utils/constants/routes';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  PlusCircle,
+  Plane,
+  BeanIcon as Beach,
+  MountainIcon as Mountains,
+  Coffee,
+  Building,
+} from 'lucide-react';
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { PlusCircle, Plane, BeanIcon as Beach, MountainIcon as Mountains, Coffee, Building } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { PAGE_ROUTES } from "@/utils/constants"
-
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 export function EmptyTrips() {
-  const router = useRouter()
+  const router = useRouter();
 
   const quickStartDestinations = [
     {
-      name: "beach getaway",
+      name: 'beach getaway',
       icon: <Beach className="h-5 w-5" />,
-      destination: "Cancun, Mexico",
-      description: "relax on white sand beaches",
+      destination: 'Cancun, Mexico',
+      description: 'relax on white sand beaches',
     },
     {
-      name: "city adventure",
+      name: 'city adventure',
       icon: <Building className="h-5 w-5" />,
-      destination: "New York City, USA",
-      description: "explore the big apple",
+      destination: 'New York City, USA',
+      description: 'explore the big apple',
     },
     {
-      name: "mountain escape",
+      name: 'mountain escape',
       icon: <Mountains className="h-5 w-5" />,
-      destination: "Banff, Canada",
-      description: "breathtaking mountain views",
+      destination: 'Banff, Canada',
+      description: 'breathtaking mountain views',
     },
     {
-      name: "coffee & culture",
+      name: 'coffee & culture',
       icon: <Coffee className="h-5 w-5" />,
-      destination: "Paris, France",
-      description: "cafés, art, and history",
+      destination: 'Paris, France',
+      description: 'cafés, art, and history',
     },
-  ]
+  ];
 
   const handleQuickStart = (destination: string) => {
-    router.push(`${PAGE_ROUTES.CREATE_TRIP}?destination=${encodeURIComponent(destination)}`)
-  }
+    router.push(`${PAGE_ROUTES.CREATE_TRIP}?destination=${encodeURIComponent(destination)}`);
+  };
 
   return (
     <div className="mt-12">
@@ -88,5 +93,5 @@ export function EmptyTrips() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

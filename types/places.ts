@@ -1,12 +1,12 @@
 // Define the place category enum type directly, matching the SQL definition
-export type PlaceCategory = 
-  | 'attraction' 
-  | 'restaurant' 
-  | 'cafe' 
-  | 'hotel' 
-  | 'landmark' 
-  | 'shopping' 
-  | 'transport' 
+export type PlaceCategory =
+  | 'attraction'
+  | 'restaurant'
+  | 'cafe'
+  | 'hotel'
+  | 'landmark'
+  | 'shopping'
+  | 'transport'
   | 'other';
 
 // Structure to match the 'places' table in your database
@@ -42,4 +42,4 @@ export interface GooglePhotoReference {
   html_attributions: string[];
   photo_reference: string;
   width: number;
-} 
+}

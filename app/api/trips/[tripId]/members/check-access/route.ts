@@ -1,27 +1,30 @@
-import { createApiClient } from "@/utils/supabase/server";
-import { NextResponse } from "next/server"
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database"
+import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
 
 /**
  * Check if a user has access to a specific trip
- * 
+ *
  * @param request The incoming request
  * @param props The route parameters (tripId)
  * @returns A JSON response with access information and user role if available
  */
-export async function GET(request: Request, props: { params: { tripId: string } }) {
-  const { tripId } = props.params;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  const { tripId } = await params;
 
   try {
-    const supabase = createClient()
+    const supabase = await createSupabaseServerClient();
 
     // Check if user is authenticated
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user is a member of this trip
@@ -30,11 +33,11 @@ export async function GET(request: Request, props: { params: { tripId: string } 
       .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
       .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-      .maybeSingle()
+      .maybeSingle();
 
     if (membershipError) {
-      console.error("Error checking trip membership:", membershipError)
-      return NextResponse.json({ access: false, reason: "error", error: membershipError.message })
+      console.error('Error checking trip membership:', membershipError);
+      return NextResponse.json({ access: false, reason: 'error', error: membershipError.message });
     }
 
     if (membership) {
@@ -42,7 +45,7 @@ export async function GET(request: Request, props: { params: { tripId: string } 
         access: true,
         isMember: true,
         role: membership.role,
-      })
+      });
     }
 
     // Check if trip is public
@@ -50,11 +53,11 @@ export async function GET(request: Request, props: { params: { tripId: string } 
       .from(DB_TABLES.TRIPS)
       .select(DB_FIELDS.TRIPS.IS_PUBLIC)
       .eq(DB_FIELDS.TRIPS.ID, tripId)
-      .maybeSingle()
+      .maybeSingle();
 
     if (tripError) {
-      console.error("Error checking trip public status:", tripError)
-      return NextResponse.json({ access: false, reason: "error", error: tripError.message })
+      console.error('Error checking trip public status:', tripError);
+      return NextResponse.json({ access: false, reason: 'error', error: tripError.message });
     }
 
     // Return access status
@@ -62,9 +65,9 @@ export async function GET(request: Request, props: { params: { tripId: string } 
       access: trip?.is_public || false,
       isMember: false,
       isPublic: trip?.is_public || false,
-    })
+    });
   } catch (error: any) {
-    console.error("Error checking trip access:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Error checking trip access:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

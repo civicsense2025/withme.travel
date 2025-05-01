@@ -16,4 +16,4 @@ export function UpdateNotification() {
       to update.
     </div>
   );
-} 
+}

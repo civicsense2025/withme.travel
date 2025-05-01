@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ItineraryCategory } from '@/utils/constants';
+import { ItineraryCategory } from '@/utils/constants/status';
 import {
   Select,
   SelectContent,
@@ -31,7 +31,9 @@ export const ItineraryFilterControls: React.FC<ItineraryFilterControlsProps> = (
     <div className="flex gap-2 items-center mb-4">
       <Select
         value={currentFilter.day.toString()}
-        onValueChange={(value) => onFilterChange('day', value === 'all' ? 'all' : parseInt(value, 10))}
+        onValueChange={(value) =>
+          onFilterChange('day', value === 'all' ? 'all' : parseInt(value, 10))
+        }
       >
         <SelectTrigger className="w-auto min-w-[120px] h-8 px-2 py-1 text-xs">
           <SelectValue placeholder="Filter by day" />

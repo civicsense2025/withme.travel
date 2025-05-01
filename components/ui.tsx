@@ -7,9 +7,7 @@ export type BoxProps = {
 };
 
 export const Box: React.FC<BoxProps> = ({ children, margin }) => (
-  <div style={{ margin: margin || '0' }}>
-    {children}
-  </div>
+  <div style={{ margin: margin || '0' }}>{children}</div>
 );
 
 // Card component with basic styling and theming
@@ -26,7 +24,7 @@ export const Card: React.FC<CardProps> = ({ children, padding, marginBottom }) =
       marginBottom: marginBottom || '1rem',
       border: '1px solid var(--border-color, #ccc)',
       borderRadius: '4px',
-      backgroundColor: 'var(--card-bg, #fff)'
+      backgroundColor: 'var(--card-bg, #fff)',
     }}
   >
     {children}
@@ -54,15 +52,18 @@ export type TextProps = {
 };
 
 export const Text: React.FC<TextProps> = ({ children, variant = 'body', marginBottom }) => {
-  const style = variant === 'headline' ? {
-    fontSize: '2rem',
-    fontWeight: 'bold',
-    color: 'var(--text-primary, #000)',
-    marginBottom: marginBottom || '0'
-  } : {
-    fontSize: '1rem',
-    color: 'var(--text-secondary, #333)',
-    marginBottom: marginBottom || '0'
-  };
+  const style =
+    variant === 'headline'
+      ? {
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          color: 'var(--text-primary, #000)',
+          marginBottom: marginBottom || '0',
+        }
+      : {
+          fontSize: '1rem',
+          color: 'var(--text-secondary, #333)',
+          marginBottom: marginBottom || '0',
+        };
   return <div style={style}>{children}</div>;
-}; 
+};

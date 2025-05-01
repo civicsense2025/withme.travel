@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface SuccessScreenProps {
-  onCreateTrip: () => void
-  onExplore: () => void
+  onCreateTrip: () => void;
+  onExplore: () => void;
 }
 
 export function SuccessScreen({ onCreateTrip, onExplore }: SuccessScreenProps) {
@@ -29,5 +29,5 @@ export function SuccessScreen({ onCreateTrip, onExplore }: SuccessScreenProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -8,30 +8,42 @@ All documentation is organized in the `docs/` directory:
 
 - [**Main Documentation**](docs/DOCUMENTATION.md) - Complete overview of the application
 - [**Authentication System**](docs/authentication.md) - Details about our Supabase authentication implementation
+- [**API Routes & Server/Client Components Guide**](docs/api-routes-server-client.md) - How API Routes, RSC, and Client Components work together
+- [**Constants Guide**](docs/constants-guide.md) - Guidelines for managing codebase constants
 - [**Content Guide**](docs/CONTENT_GUIDE.md) - Guidelines for creating authentic city profiles
 - [**Codebase Structure**](docs/CODEBASE_STRUCTURE.md) - Overview of project organization
 - [**Database Structure**](docs/database_structure.md) - Database schema and relationships
 - [**Itinerary Template Structure**](docs/ITINERARY_TEMPLATE_STRUCTURE.md) - How trip templates are organized
 - [**Implementation Plan**](docs/implementation_plan.md) - Roadmap for new features
 - [**Adaptation Plan**](docs/adaptation-plan.md) - Plan for adjusting to new requirements
+- [**Next.js Best Practices**](docs/nextjs-best-practices.md) - Technical guidelines for Next.js
+- [**Next.js 15 Migration Guide**](docs/nextjs15-migration.md) - Critical changes when upgrading to Next.js 15
+- [**Changelog**](docs/CHANGELOG.md) - Comprehensive change history
+
+## ✨ Project Status
+
+The authentication system, leveraging Supabase and `@supabase/ssr`, is now stable and robust. Previous issues related to refresh tokens and client/server state mismatches have been resolved. The codebase constants have been refactored for better clarity and type safety, following the guidelines in `docs/constants-guide.md`.
 
 ## 🚀 Core Features
 
 ### Content Sharing & Personalization
+
 - **Content Layering**: Original content, shared content, generated content, customized versions
 - **Attribution Tracking**: Original source tracking, attribution metadata, content lineage
 - **Travel Preferences**: Styles (adventurous, relaxed, cultural, etc.), pace preferences, budget ranges
 - **Sharing Features**: Item copying, customization support, attribution preservation
 
 ### Trip Planning & Collaboration
+
 - **Trip Creation**: Multi-step form with essential details, dates, travelers, vibe, budget, and privacy settings
 - **Itinerary Building**: Add places, notes, and links with drag-and-drop reordering
 - **Member Management**: Role-based permissions (admin, editor, contributor, viewer)
 - **Real-time Collaboration**: See who's editing, add comments, vote on items
 
 ### Technical Highlights
+
 - **Modern Stack**: Next.js App Router, Supabase, Tailwind CSS, Shadcn/ui
-- **Authentication**: Secure login with email/password or Google Sign-In
+- **Authentication**: Secure and stable login with email/password or Google Sign-In using `@supabase/ssr`.
 - **Database**: Robust schema with Row Level Security (RLS) policies
 - **SEO Optimization**: Canonical URLs, meta tags, structured data
 
@@ -47,17 +59,29 @@ All documentation is organized in the `docs/` directory:
 
 ### Timeline Navigation
 
-| Date | Major Changes |
-|------|--------------|
-| [2025-04-30](#2025-04-30---current-development) | Trip Hooks Restructuring |
-| [2025-04-29](#2025-04-29---authentication--trip-management) | Authentication Overhaul, Trip Creation & Editing |
-| [2025-04-27](#2025-04-27---core-refactoring--component-development) | Core Refactoring & UI Components |
-| [2025-04-24](#2025-04-24---destination--search-features) | Destination Pages, Search Functionality, Trip Tags |
-| [Full Changelog](docs/CHANGELOG.md) | Comprehensive change history |
+| Date                                                                | Major Changes                                      |
+| ------------------------------------------------------------------- | -------------------------------------------------- |
+| [2025-05-01](#2025-05-01---constants-refactoring--docs-update)     | Constants Refactoring & Documentation Update     |
+| [2025-04-30](#2025-04-30---trip-hooks-restructuring)                | Trip Hooks Restructuring                           |
+| [2025-04-29](#2025-04-29---authentication--trip-management)         | Authentication Overhaul, Trip Creation & Editing   |
+| [2025-04-27](#2025-04-27---core-refactoring--component-development) | Core Refactoring & UI Components                   |
+| [2025-04-24](#2025-04-24---destination--search-features)            | Destination Pages, Search Functionality, Trip Tags |
+| [Full Changelog](docs/CHANGELOG.md)                                 | Comprehensive change history                       |
 
-### [2025-04-30] - Current Development
+### [2025-05-01] - Constants Refactoring & Docs Update
+
+- Refactored `utils/constants/database.ts` to remove aliases (`DB_TABLES` -> `TABLES`, etc.) and use direct exports for improved clarity and type safety.
+- Added backward-compatibility exports for `DB_*` constants.
+- Defined database-related types explicitly within `database.ts` to resolve import issues.
+- Created `docs/constants-guide.md` detailing the new structure and usage rules.
+- Created `docs/api-routes-server-client.md` explaining the usage of API Routes, Server Components, and Client Components with Supabase clients (`createApiRouteClient`, `createServerComponentClient`, `getBrowserClient`).
+- Updated `README.md`, `docs/authentication.md`, and `docs/nextjs-best-practices.md` to reference the new API/component guide and reflect current Supabase client usage patterns.
+- Updated `README.md`, `docs/authentication.md`, and other documentation files to reflect current project status and stable authentication.
+
+### [2025-04-30] - Trip Hooks Restructuring
 
 #### Trip Hooks Restructuring
+
 - Created and updated `app/trips/[tripId]/hooks/index.ts` to centralize hook exports
 - Ensured correct exports for `use-trip-budget`, `use-trip-itinerary`, `use-trip-mutations`, `use-trip-presence`, and `use-trip-sheets`
 - Fixed linter errors for missing import hooks
@@ -65,6 +89,7 @@ All documentation is organized in the `docs/` directory:
 ### [2025-04-29] - Authentication & Trip Management
 
 #### Authentication Overhaul
+
 - Implemented dedicated API routes (`/api/auth/...`) using Supabase server client
 - Refactored `AuthProvider` with improved state management and error handling
 - Added `AuthErrorBoundary` component for graceful error recovery
@@ -72,6 +97,7 @@ All documentation is organized in the `docs/` directory:
 - Improved session refresh reliability and resource cleanup
 
 #### Trip Creation & Editing
+
 - Backend: Validated inputs, enhanced error messages in `create_trip_with_owner` SQL function
 - Frontend: Built multi-step create form (`/trips/create`) with validation
 - Fixed "Edit Trip" button visibility and 404 on edit page
@@ -79,6 +105,7 @@ All documentation is organized in the `docs/` directory:
 ### [2025-04-27] - Core Refactoring & Component Development
 
 #### Core Refactoring & Stability
+
 - Types: Overhauled core types (`User`, `Trip`, etc.) and Supabase types
 - Constants: Updated `utils/constants.ts` extensively
 - Supabase Client: Modernized client using `@supabase/ssr`
@@ -86,6 +113,7 @@ All documentation is organized in the `docs/` directory:
 - Routing: Resolved dynamic route conflicts
 
 #### UI Components
+
 - Created reusable `LocationSearch` component
 - Simplified `CityBubbles` animation
 - Built `LikeButton` component for content interaction
@@ -94,15 +122,18 @@ All documentation is organized in the `docs/` directory:
 ### [2025-04-24] - Destination & Search Features
 
 #### Destination Pages
+
 - Backend: Created API endpoints for destination data
 - Frontend: Built destination detail page with loading/error states
 - Added components for destination images, descriptions, and badges
 
 #### Search Functionality
+
 - Backend: Started development of search logic
 - Frontend: Built initial search page structure
 
 #### Trip Tag Management
+
 - Added `tags` and `trip_tags` database tables
 - Created `TagInput` component with autocomplete
 - Implemented API routes for tag fetching and synchronization
@@ -110,6 +141,7 @@ All documentation is organized in the `docs/` directory:
 ## 🚦 Feature Status
 
 ### 🚀 Core Focus (Actively Developing/Refining):
+
 - ✅ **Authentication & Authorization**: Foundational system is robust
 - ✅ **Trip Creation & Editing**: Core backend/frontend flows implemented
 - 🚧 **Itinerary Building & Management**: Basic structure exists; improving UX/UI
@@ -119,6 +151,7 @@ All documentation is organized in the `docs/` directory:
 - ✅ **Foundational UI Components**: Key reusable components available
 
 ### ⏳ Lower Priority / Deferred Features:
+
 - 📉 **Expense Tracking**: Native expense tracking planned for future
 - 📉 **Standalone Destination Pages**: Functional but not current focus
 - 📉 **Global Search**: Basic implementation started, but deferred
@@ -138,17 +171,21 @@ All documentation is organized in the `docs/` directory:
 ## 🏁 Getting Started
 
 ### Prerequisites
+
 - Node.js 16+ (for local development)
 - Supabase account (for authentication and database)
 
 ### Installation
+
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/withme.travel.git
    cd withme.travel
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    # or
@@ -156,6 +193,7 @@ All documentation is organized in the `docs/` directory:
    ```
 
 3. Set up environment variables:
+
    ```bash
    # Create .env.local file with:
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -163,6 +201,7 @@ All documentation is organized in the `docs/` directory:
    ```
 
 4. Run the development server:
+
    ```bash
    npm run dev
    # or
@@ -179,3 +218,10 @@ Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our co
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Documentation
+
+- [Authentication System](docs/AUTHENTICATION.md) - Comprehensive documentation of our auth system
+- [Content Guidelines](docs/CONTENT-GUIDELINES.md) - Guidelines for creating destination content
+- [Next.js Best Practices](docs/BEST-PRACTICES.md) - Technical guidelines for working with Next.js
+- [Next.js 15 Migration Guide](docs/nextjs15-migration.md) - Guide for upgrading to Next.js 15
+- [API Documentation](docs/API.md) - API endpoints and usage examples

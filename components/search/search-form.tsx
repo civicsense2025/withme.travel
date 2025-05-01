@@ -1,36 +1,36 @@
-"use client"
+'use client';
 
-import { useState, type FormEvent } from "react"
-import { useRouter } from "next/navigation"
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useSearch } from "@/contexts/search-context"
+import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useSearch } from '@/contexts/search-context';
 
 interface SearchFormProps {
-  className?: string
-  placeholder?: string
-  buttonText?: string
-  showButton?: boolean
+  className?: string;
+  placeholder?: string;
+  buttonText?: string;
+  showButton?: boolean;
 }
 
 export function SearchForm({
-  className = "",
-  placeholder = "Search destinations, trips...",
-  buttonText = "Search",
+  className = '',
+  placeholder = 'Search destinations, trips...',
+  buttonText = 'Search',
   showButton = true,
 }: SearchFormProps) {
-  const router = useRouter()
-  const { addToSearchHistory } = useSearch()
-  const [query, setQuery] = useState("")
+  const router = useRouter();
+  const { addToSearchHistory } = useSearch();
+  const [query, setQuery] = useState('');
 
   const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    if (!query.trim()) return
+    e.preventDefault();
+    if (!query.trim()) return;
 
-    addToSearchHistory(query, "destination")
-    router.push(`/search?q=${encodeURIComponent(query)}`)
-  }
+    addToSearchHistory(query, 'destination');
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  };
 
   return (
     <form onSubmit={handleSubmit} className={`flex items-center gap-2 ${className}`}>
@@ -45,14 +45,14 @@ export function SearchForm({
         />
       </div>
       {showButton && (
-        <Button 
-          type="submit" 
-          disabled={!query.trim()} 
+        <Button
+          type="submit"
+          disabled={!query.trim()}
           className="lowercase px-8 py-3 rounded-full h-auto w-full md:w-auto"
         >
           {buttonText}
         </Button>
       )}
     </form>
-  )
+  );
 }

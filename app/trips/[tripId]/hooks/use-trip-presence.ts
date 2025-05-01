@@ -23,7 +23,7 @@ export interface ConnectionStatus {
  */
 export function useTripPresence(tripId: string, recoverPresence: () => Promise<void>) {
   const { toast } = useToast();
-  
+
   // Connection state
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     state: ConnectionState.Connecting,
@@ -36,7 +36,7 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
   const [reconnectTimeoutId, setReconnectTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [connectionQuality, setConnectionQuality] = useState<'good' | 'fair' | 'poor'>('good');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   // Cursor tracking state
   const [showCursors, setShowCursors] = useState(true);
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
@@ -55,7 +55,7 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
     } else {
       setConnectionQuality('poor');
     }
-    
+
     // Set error message based on state
     if (connectionStatus.state === ConnectionState.Connected) {
       setErrorMessage(null);
@@ -71,9 +71,9 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
    */
   const cleanupCursorElements = useCallback(() => {
     if (typeof document === 'undefined') return;
-    
-    ['.user-cursor', '[data-presence-tooltip]', '[data-presence-portal]'].forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => {
+
+    ['.user-cursor', '[data-presence-tooltip]', '[data-presence-portal]'].forEach((selector) => {
+      document.querySelectorAll(selector).forEach((el) => {
         try {
           if (el.parentNode) {
             el.parentNode.removeChild(el);
@@ -90,22 +90,22 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
    */
   const handleReconnect = useCallback(async () => {
     if (isReconnecting) return;
-    
+
     // Clear any existing timeout
     if (reconnectTimeoutId) {
       clearTimeout(reconnectTimeoutId);
       setReconnectTimeoutId(null);
     }
-    
+
     // Set current time
     setLastReconnectTime(new Date());
     setIsReconnecting(true);
-    setConnectionStatus(prev => ({ ...prev, state: ConnectionState.Connecting }));
-    
+    setConnectionStatus((prev) => ({ ...prev, state: ConnectionState.Connecting }));
+
     try {
-      setReconnectAttempts(prev => prev + 1);
+      setReconnectAttempts((prev) => prev + 1);
       setErrorMessage('Attempting to reconnect...');
-      
+
       // Add timeout for the reconnection attempt
       await Promise.race([
         recoverPresence(),
@@ -113,12 +113,12 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
           const timeoutId = setTimeout(() => {
             reject(new Error('Reconnection attempt timed out after 10 seconds'));
           }, 10000); // 10 second timeout
-          
+
           // Save timeout ID for cleanup
           setReconnectTimeoutId(timeoutId);
-        })
+        }),
       ]);
-      
+
       // If we reach here, reconnection was successful
       setReconnectAttempts(0);
       setErrorMessage(null);
@@ -126,23 +126,24 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
       setConnectionStatus({
         state: ConnectionState.Connected,
         lastConnected: new Date(),
-        retryCount: 0
+        retryCount: 0,
       });
-      
     } catch (err) {
-      console.error("Failed to reconnect:", err);
-      setConnectionStatus(prev => ({ ...prev, state: ConnectionState.Disconnected }));
-      
+      console.error('Failed to reconnect:', err);
+      setConnectionStatus((prev) => ({ ...prev, state: ConnectionState.Disconnected }));
+
       // Determine if we should try again automatically
       if (reconnectAttempts < 5) {
         const backoffDelay = Math.min(30000, 1000 * Math.pow(2, reconnectAttempts));
-        setErrorMessage(`Reconnection failed. Retrying in ${Math.ceil(backoffDelay/1000)} seconds...`);
-        
+        setErrorMessage(
+          `Reconnection failed. Retrying in ${Math.ceil(backoffDelay / 1000)} seconds...`
+        );
+
         // Schedule automatic retry with exponential backoff
         const timeoutId = setTimeout(() => {
           handleReconnect();
         }, backoffDelay);
-        
+
         setReconnectTimeoutId(timeoutId);
       } else {
         setErrorMessage('Multiple reconnection attempts failed. Please try again manually.');
@@ -159,7 +160,7 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
       console.log('Network came online, attempting to recover presence connection');
       handleReconnect();
     };
-    
+
     const handleOffline = () => {
       console.log('Network went offline, marking connection as disrupted');
       setConnectionQuality('poor');
@@ -169,14 +170,14 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
     // Add event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
+
     // Initial check
     updateConnectionQuality();
-    
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      
+
       // Clear any pending reconnection timeout
       if (reconnectTimeoutId) {
         clearTimeout(reconnectTimeoutId);
@@ -187,22 +188,24 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
   /**
    * Throttled cursor update function (Refactored with useMemo)
    */
-  const throttledCursorUpdate = useMemo(() => 
-    throttle((x: number, y: number) => {
-      // Check showCursors inside the throttled function
-      if (showCursors && typeof window !== 'undefined') { 
-        const cursorPos = { x, y };
-        window.dispatchEvent(new CustomEvent('cursor-moved', { detail: cursorPos }));
-      }
-    }, 50), // Throttle delay
-  [showCursors]); // Dependency: recreate throttle if showCursors changes
+  const throttledCursorUpdate = useMemo(
+    () =>
+      throttle((x: number, y: number) => {
+        // Check showCursors inside the throttled function
+        if (showCursors && typeof window !== 'undefined') {
+          const cursorPos = { x, y };
+          window.dispatchEvent(new CustomEvent('cursor-moved', { detail: cursorPos }));
+        }
+      }, 50), // Throttle delay
+    [showCursors]
+  ); // Dependency: recreate throttle if showCursors changes
 
   /**
    * Toggle cursor visibility
    */
   const toggleCursorVisibility = useCallback(() => {
-    setShowCursors(prev => !prev);
-    
+    setShowCursors((prev) => !prev);
+
     // If turning off cursors, clean up existing cursor elements
     if (showCursors) {
       cleanupCursorElements();
@@ -214,7 +217,7 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
     return () => {
       // Clean up cursor elements
       cleanupCursorElements();
-      
+
       // Clean up any timer
       if (reconnectTimeoutId) {
         clearTimeout(reconnectTimeoutId);
@@ -236,7 +239,7 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
     errorMessage,
     showCursors,
     lastUpdateTime,
-    
+
     // Actions
     handleReconnect,
     toggleCursorVisibility,
@@ -244,4 +247,4 @@ export function useTripPresence(tripId: string, recoverPresence: () => Promise<v
     cleanupCursorElements,
     setLastUpdateTime,
   };
-} 
+}

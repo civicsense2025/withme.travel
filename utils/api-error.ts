@@ -80,16 +80,11 @@ export class ApiError extends Error {
   toResponse(): NextResponse<ApiErrorResponse> {
     // Log all server errors automatically
     if (this.statusCode >= 500) {
-      logError(
-        this,
-        ErrorCategory.API,
-        'server',
-        {
-          code: this.code,
-          details: this.details,
-          requestId: this.requestId,
-        }
-      );
+      logError(this, ErrorCategory.API, 'server', {
+        code: this.code,
+        details: this.details,
+        requestId: this.requestId,
+      });
     }
 
     return NextResponse.json(
@@ -217,13 +212,17 @@ export function withErrorHandling(
 
       // For other types of errors, return a generic error
       const apiError = new ApiError({
-        message: process.env.NODE_ENV === 'production'
-          ? 'An unexpected error occurred'
-          : error.message || 'Unknown error',
-        details: process.env.NODE_ENV === 'production' ? undefined : {
-          name: error.name,
-          stack: error.stack,
-        },
+        message:
+          process.env.NODE_ENV === 'production'
+            ? 'An unexpected error occurred'
+            : error.message || 'Unknown error',
+        details:
+          process.env.NODE_ENV === 'production'
+            ? undefined
+            : {
+                name: error.name,
+                stack: error.stack,
+              },
       });
 
       return apiError.toResponse();
@@ -249,4 +248,4 @@ export function createApiRouter(handlers: Record<string, Function>) {
 
     return withErrorHandling(handler)(req, ...args);
   };
-} 
+}

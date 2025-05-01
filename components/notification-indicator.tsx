@@ -2,11 +2,7 @@
 
 import { useNotifications } from '@/contexts/notification-context';
 import { Bell } from 'lucide-react';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,48 +13,42 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 
 export function NotificationIndicator() {
-  const { 
-    notifications, 
-    unreadCount, 
-    loading, 
-    markAsRead, 
-    markAllAsRead,
-    refreshNotifications
-  } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, refreshNotifications } =
+    useNotifications();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  
+
   // When popover opens, refresh notifications
   useEffect(() => {
     if (open) {
       refreshNotifications();
     }
   }, [open, refreshNotifications]);
-  
+
   const handleNotificationClick = async (notificationId: string, url?: string) => {
     // Mark as read
     await markAsRead(notificationId);
-    
+
     // Navigate if there's a URL
     if (url) {
       router.push(url);
       setOpen(false);
     }
   };
-  
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="relative p-2 h-8 w-8"
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
@@ -70,12 +60,7 @@ export function NotificationIndicator() {
         <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/50">
           <h3 className="font-semibold">Notifications</h3>
           {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={markAllAsRead}
-              className="h-8 text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-8 text-xs">
               Mark all as read
             </Button>
           )}
@@ -99,9 +84,9 @@ export function NotificationIndicator() {
             </div>
           ) : (
             <div>
-              {notifications.map(notification => (
-                <div 
-                  key={notification.id} 
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
                   className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors
                     ${!notification.read ? 'bg-primary/5' : ''}`}
                   onClick={() => handleNotificationClick(notification.id, notification.action_url)}
@@ -117,16 +102,18 @@ export function NotificationIndicator() {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
-                        <p className={`text-sm font-medium ${!notification.read ? 'text-primary' : ''}`}>
+                        <p
+                          className={`text-sm font-medium ${!notification.read ? 'text-primary' : ''}`}
+                        >
                           {notification.title}
                         </p>
                         <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(notification.created_at), {
+                            addSuffix: true,
+                          })}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {notification.content}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">{notification.content}</p>
                     </div>
                   </div>
                 </div>
@@ -137,4 +124,4 @@ export function NotificationIndicator() {
       </PopoverContent>
     </Popover>
   );
-} 
+}

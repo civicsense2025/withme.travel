@@ -1,6 +1,6 @@
-import { createApiClient } from "@/utils/supabase/server";
-import { NextResponse } from "next/server";
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from "@/utils/constants/database";
+import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { NextResponse, NextRequest } from 'next/server';
+import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
 import { z } from 'zod';
 
 // Helper function to generate a simple slug
@@ -20,57 +20,68 @@ const tagSyncSchema = z.object({
 
 // Helper function - Assume is_trip_member_with_role exists
 // Or define locally/import if moved to shared utils
-async function checkTripMembershipAndRole(supabase: any, tripId: string, userId: string, roles: string[]) {
-    // Added validation for inputs
-    if (!supabase || !tripId || !userId || !Array.isArray(roles)) {
-        console.error("Invalid arguments passed to checkTripMembershipAndRole");
-        throw new Error("Internal server error checking permissions.");
-    }
-    const { data, error } = await supabase.rpc('is_trip_member_with_role', {
-        _trip_id: tripId,
-        _user_id: userId,
-        _roles: roles
-    });
-    if (error) {
-        console.error(`Error checking trip membership/role for user ${userId} on trip ${tripId}:`, error);
-        throw new Error("Error checking trip permission");
-    }
-    return data; // Returns boolean
+async function checkTripMembershipAndRole(
+  supabase: any,
+  tripId: string,
+  userId: string,
+  roles: string[]
+) {
+  // Added validation for inputs
+  if (!supabase || !tripId || !userId || !Array.isArray(roles)) {
+    console.error('Invalid arguments passed to checkTripMembershipAndRole');
+    throw new Error('Internal server error checking permissions.');
+  }
+  const { data, error } = await supabase.rpc('is_trip_member_with_role', {
+    _trip_id: tripId,
+    _user_id: userId,
+    _roles: roles,
+  });
+  if (error) {
+    console.error(
+      `Error checking trip membership/role for user ${userId} on trip ${tripId}:`,
+      error
+    );
+    throw new Error('Error checking trip permission');
+  }
+  return data; // Returns boolean
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { tripId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const { tripId } = params;
+  const { tripId } = await params;
   console.log(`--- PUT /api/trips/${tripId}/tags ---`); // Log route entry
 
   if (!tripId) {
-    console.log("Tag Sync Error: Missing tripId");
+    console.log('Tag Sync Error: Missing tripId');
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createSupabaseServerClient();
 
   // 1. Get authenticated user
-  console.log("Tag Sync: Attempting to get user...");
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  console.log('Tag Sync: Attempting to get user...');
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    console.error("Tag Sync Auth Error:", authError); // Log the specific auth error
-    console.log("Tag Sync User:", user); // Log the user object (likely null)
+    console.error('Tag Sync Auth Error:', authError); // Log the specific auth error
+    console.log('Tag Sync User:', user); // Log the user object (likely null)
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  console.log("Tag Sync: User found:", user.id); // Log successful user ID
+  console.log('Tag Sync: User found:', user.id); // Log successful user ID
 
   // 2. Validate request body
   let submittedTagNames: string[];
   try {
     const body = await request.json();
     const validatedBody = tagSyncSchema.parse(body);
-    submittedTagNames = validatedBody.tags.map(name => name.trim()).filter(Boolean); // Trim and remove empty strings
+    submittedTagNames = validatedBody.tags.map((name) => name.trim()).filter(Boolean); // Trim and remove empty strings
   } catch (error) {
-    console.error("Tag Sync Validation Error:", error);
+    console.error('Tag Sync Validation Error:', error);
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
@@ -85,7 +96,7 @@ export async function PUT(
     .maybeSingle();
 
   if (permissionError) {
-    console.error("Tag Sync Permission Check Error:", permissionError);
+    console.error('Tag Sync Permission Check Error:', permissionError);
     return NextResponse.json({ error: 'Failed to check permissions' }, { status: 500 });
   }
   if (!member) {
@@ -99,36 +110,36 @@ export async function PUT(
 
     // 4. Get IDs for submitted tag names (upserting new tags)
     // Generate slugs along with names
-    const upsertTags = submittedTagNames.map(name => ({
+    const upsertTags = submittedTagNames.map((name) => ({
       name: name.trim(), // Ensure name is trimmed
-      slug: generateSlug(name.trim()) // Generate slug from trimmed name
+      slug: generateSlug(name.trim()), // Generate slug from trimmed name
     }));
-    
+
     // Check if upsertTags is empty after mapping (if input was just empty strings)
     if (upsertTags.length === 0 && submittedTagNames.length > 0) {
-        // Handle case where only invalid tags were submitted, maybe return success or specific message
-        console.log("Tag Sync: No valid tags to upsert after trimming.");
+      // Handle case where only invalid tags were submitted, maybe return success or specific message
+      console.log('Tag Sync: No valid tags to upsert after trimming.');
     } else if (upsertTags.length === 0 && submittedTagNames.length === 0) {
-        // Handle case where the input array was empty - likely means remove all tags
-        console.log("Tag Sync: Empty tag array submitted.");
+      // Handle case where the input array was empty - likely means remove all tags
+      console.log('Tag Sync: Empty tag array submitted.');
     }
 
     // Proceed with upsert only if there are valid tags
     let upsertedTags: { id: string; name: string }[] | null = [];
     if (upsertTags.length > 0) {
-        const { data, error: upsertError } = await supabase
-          .from(DB_TABLES.TAGS)
-          .upsert(upsertTags, { onConflict: 'name', ignoreDuplicates: false })
-          .select('id, name');
+      const { data, error: upsertError } = await supabase
+        .from(DB_TABLES.TAGS)
+        .upsert(upsertTags, { onConflict: 'name', ignoreDuplicates: false })
+        .select('id, name');
 
-        if (upsertError) {
-          console.error("Tag Upsert Error:", upsertError);
-          throw new Error('Failed to upsert tags');
-        }
-        upsertedTags = data;
+      if (upsertError) {
+        console.error('Tag Upsert Error:', upsertError);
+        throw new Error('Failed to upsert tags');
+      }
+      upsertedTags = data;
     }
-    
-    const submittedTagIds = upsertedTags?.map(tag => tag.id) || [];
+
+    const submittedTagIds = upsertedTags?.map((tag) => tag.id) || [];
 
     // 5. Get current tag associations for the trip
     const { data: currentTripTags, error: fetchCurrentError } = await supabase
@@ -137,14 +148,14 @@ export async function PUT(
       .eq(DB_FIELDS.TRIP_TAGS.TRIP_ID, tripId);
 
     if (fetchCurrentError) {
-      console.error("Fetch Current Tags Error:", fetchCurrentError);
+      console.error('Fetch Current Tags Error:', fetchCurrentError);
       throw new Error('Failed to fetch current tags');
     }
-    const currentTagIds = currentTripTags?.map(tt => tt.tag_id) || [];
+    const currentTagIds = currentTripTags?.map((tt) => tt.tag_id) || [];
 
     // 6. Calculate tags to add and remove
-    const tagIdsToAdd = submittedTagIds.filter(id => !currentTagIds.includes(id));
-    const tagIdsToRemove = currentTagIds.filter(id => !submittedTagIds.includes(id));
+    const tagIdsToAdd = submittedTagIds.filter((id) => !currentTagIds.includes(id));
+    const tagIdsToRemove = currentTagIds.filter((id) => !submittedTagIds.includes(id));
 
     // 7. Remove old associations
     if (tagIdsToRemove.length > 0) {
@@ -155,49 +166,49 @@ export async function PUT(
         .in(DB_FIELDS.TRIP_TAGS.TAG_ID, tagIdsToRemove);
 
       if (deleteError) {
-        console.error("Tag Delete Error:", deleteError);
+        console.error('Tag Delete Error:', deleteError);
         throw new Error('Failed to remove old tags');
       }
     }
 
     // 8. Add new associations
     if (tagIdsToAdd.length > 0) {
-      const newLinks = tagIdsToAdd.map(tag_id => ({
+      const newLinks = tagIdsToAdd.map((tag_id) => ({
         trip_id: tripId,
         tag_id: tag_id,
       }));
-      const { error: insertError } = await supabase
-        .from(DB_TABLES.TRIP_TAGS)
-        .insert(newLinks);
+      const { error: insertError } = await supabase.from(DB_TABLES.TRIP_TAGS).insert(newLinks);
 
       if (insertError) {
-        console.error("Tag Insert Error:", insertError);
+        console.error('Tag Insert Error:', insertError);
         throw new Error('Failed to add new tags');
       }
     }
 
     return NextResponse.json({ message: 'Tags synced successfully' }, { status: 200 });
-
   } catch (error) {
     console.error('Tag Sync Error:', error);
-    const message = error instanceof Error ? error.message : 'An unexpected error occurred during tag synchronization';
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'An unexpected error occurred during tag synchronization';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 // GET: Fetch all tags associated with a trip (via notes or directly if applicable)
 export async function GET(
-  request: NextRequest, 
-  props: { params: { tripId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
 ) {
   // Extract tripId properly
-  const { tripId } = props.params;
+  const { tripId } = await params;
 
-  if (!tripId) return NextResponse.json({ error: "Trip ID is required" }, { status: 400 });
+  if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
   try {
     // ... existing code ...
   } catch (error) {
     // ... existing error handling ...
   }
-} 
+}

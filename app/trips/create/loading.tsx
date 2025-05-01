@@ -1,10 +1,14 @@
-import { Loader2 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Spinner } from '@/components/ui/spinner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Simple decorative shape for loading state
-const LoadingShape = ({ className = "" }: { className?: string }) => {
-  return <div className={`absolute ${className} rounded-full animate-pulse bg-gray-200 dark:bg-gray-700`} />
-}
+const LoadingShape = ({ className = '' }: { className?: string }) => {
+  return (
+    <div
+      className={`absolute ${className} rounded-full animate-pulse bg-gray-200 dark:bg-gray-700`}
+    />
+  );
+};
 
 export default function Loading() {
   return (
@@ -22,7 +26,10 @@ export default function Loading() {
       {/* Mobile stepper placeholder */}
       <div className="lg:hidden mb-6 flex space-x-2">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+          <div
+            key={i}
+            className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"
+          ></div>
         ))}
       </div>
 
@@ -31,12 +38,12 @@ export default function Loading() {
           <CardHeader>
             <CardTitle className="lowercase flex items-center gap-2 h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse"></CardTitle>
           </CardHeader>
-          
+
           <CardContent className="flex items-center justify-center p-12">
-            <Loader2 className="h-12 w-12 text-muted-foreground animate-spin" />
+            <Spinner size="xl" variant="muted" />
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

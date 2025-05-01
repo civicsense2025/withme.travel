@@ -1,96 +1,117 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { AlertCircle, Loader2 } from "lucide-react"
-import { createClient } from "@/utils/supabase/client"
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useToast } from "@/hooks/use-toast"
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
-export default function InvitePage({ params }: { params: { token: string } }) {
-  const supabase = createClient()
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(true)
-  const [invitation, setInvitation] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isAccepting, setIsAccepting] = useState(false)
+export default function InvitePage() {
+  const supabase = createClient();
+  const router = useRouter();
+  const params = useParams<{ token: string }>();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [invitation, setInvitation] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isAccepting, setIsAccepting] = useState(false);
+
+  const token = params?.token;
 
   useEffect(() => {
+    if (!token) {
+      setError('Invitation token is missing.');
+      setIsLoading(false);
+      return;
+    }
+
     async function checkInvitation() {
       try {
-        setIsLoading(true)
-        setError(null)
+        setIsLoading(true);
+        setError(null);
 
-        const response = await fetch(`/api/invitations/${params.token}`)
+        const response = await fetch(`/api/invitations/${token}`);
 
         if (!response.ok) {
           if (response.status === 404) {
-            setError("This invitation link is invalid or has expired")
-            return
+            setError('This invitation link is invalid or has expired');
+            return;
           }
-          throw new Error(`Failed to verify invitation: ${response.status}`)
+          throw new Error(`Failed to verify invitation: ${response.status}`);
         }
 
-        const data = await response.json()
-        setInvitation(data.invitation)
+        const data = await response.json();
+        setInvitation(data.invitation);
       } catch (err: any) {
-        console.error("Error checking invitation:", err)
-        setError(err.message || "Failed to verify invitation")
+        console.error('Error checking invitation:', err);
+        setError(err.message || 'Failed to verify invitation');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    checkInvitation()
-  }, [params.token])
+    checkInvitation();
+  }, [token]);
 
   const handleAcceptInvitation = async () => {
+    if (!token) {
+      toast({ title: 'Error', description: 'Invitation token missing.', variant: 'destructive' });
+      return;
+    }
+
     try {
-      setIsAccepting(true)
+      setIsAccepting(true);
 
       // Check if user is logged in
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (!user) {
         // If not logged in, redirect to signup with invitation token
-        router.push(`/signup?invitation=${params.token}`)
-        return
+        router.push(`/signup?invitation=${token}`);
+        return;
       }
 
       // User is logged in, accept the invitation
-      const response = await fetch(`/api/invitations/${params.token}/accept`, {
-        method: "POST",
-      })
+      const response = await fetch(`/api/invitations/${token}/accept`, {
+        method: 'POST',
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to accept invitation")
+        throw new Error('Failed to accept invitation');
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
       toast({
-        title: "Invitation accepted",
+        title: 'Invitation accepted',
         description: "You've been added to the trip",
-      })
+      });
 
       // Redirect to the trip
-      router.push(`/trips/${data.tripId}`)
+      router.push(`/trips/${data.tripId}`);
     } catch (err: any) {
-      console.error("Error accepting invitation:", err)
+      console.error('Error accepting invitation:', err);
       toast({
-        title: "Error",
-        description: err.message || "Failed to accept invitation",
-        variant: "destructive",
-      })
-      setIsAccepting(false)
+        title: 'Error',
+        description: err.message || 'Failed to accept invitation',
+        variant: 'destructive',
+      });
+      setIsAccepting(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -102,7 +123,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (error || !invitation) {
@@ -117,17 +138,17 @@ export default function InvitePage({ params }: { params: { token: string } }) {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error || "Invalid invitation link"}</AlertDescription>
+              <AlertDescription>{error || 'Invalid invitation link'}</AlertDescription>
             </Alert>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" onClick={() => router.push("/")}>
+            <Button className="w-full" onClick={() => router.push('/')}>
               Go to Homepage
             </Button>
           </CardFooter>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -143,9 +164,13 @@ export default function InvitePage({ params }: { params: { token: string } }) {
             {
               /* Show different message based on whether user exists */
               !invitation.existingUser ? (
-                <p className="text-sm text-center text-muted-foreground">You&apos;ve been invited to join this trip! Create an account to accept.</p>
+                <p className="text-sm text-center text-muted-foreground">
+                  You&apos;ve been invited to join this trip! Create an account to accept.
+                </p>
               ) : (
-                <p className="text-sm text-center text-muted-foreground">Accept the invitation to join the trip.</p>
+                <p className="text-sm text-center text-muted-foreground">
+                  Accept the invitation to join the trip.
+                </p>
               )
             }
           </div>
@@ -161,7 +186,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
             <div>
               <h3 className="text-sm font-medium">Trip Dates</h3>
               <p className="text-sm text-muted-foreground">
-                {new Date(invitation.trip.start_date).toLocaleDateString()} -{" "}
+                {new Date(invitation.trip.start_date).toLocaleDateString()} -{' '}
                 {new Date(invitation.trip.end_date).toLocaleDateString()}
               </p>
             </div>
@@ -175,14 +200,14 @@ export default function InvitePage({ params }: { params: { token: string } }) {
                 Accepting...
               </>
             ) : (
-              "Accept Invitation"
+              'Accept Invitation'
             )}
           </Button>
-          <Button variant="outline" className="w-full" onClick={() => router.push("/")}>
+          <Button variant="outline" className="w-full" onClick={() => router.push('/')}>
             Maybe Later
           </Button>
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

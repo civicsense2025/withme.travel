@@ -41,7 +41,11 @@ dotenv.config({ path: '.env.local' });
 
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 if (!PEXELS_API_KEY) {
-  console.error(chalk.red('Error: PEXELS_API_KEY not found in environment variables. Ensure it is set in .env.local'));
+  console.error(
+    chalk.red(
+      'Error: PEXELS_API_KEY not found in environment variables. Ensure it is set in .env.local'
+    )
+  );
   // throw new Error('PEXELS_API_KEY is not configured.');
 }
 
@@ -49,15 +53,25 @@ if (!PEXELS_API_KEY) {
 const PEXELS_REQUEST_DELAY = 200; // ms delay between Pexels API calls
 
 async function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // --- Keyword Sets for Queries (Can be the same or different from Unsplash) ---
 const pexelsPrimaryKeywords = [
-  'landmark', 'cityscape', 'skyline', 'architecture', 'travel spot', 'downtown'
+  'landmark',
+  'cityscape',
+  'skyline',
+  'architecture',
+  'travel spot',
+  'downtown',
 ];
 const pexelsSecondaryKeywords = [
-  'scenic', 'nature', 'travel', 'tourism', 'viewpoint', 'people travel' // Pexels often has good lifestyle/people shots
+  'scenic',
+  'nature',
+  'travel',
+  'tourism',
+  'viewpoint',
+  'people travel', // Pexels often has good lifestyle/people shots
 ];
 
 // Helper function to get random element from an array
@@ -77,7 +91,7 @@ export async function searchPexelsPhotos(
   perPage = 5 // Fetch a few results for random selection
 ): Promise<PexelsSearchResponse> {
   if (!PEXELS_API_KEY) {
-      throw new Error("PEXELS_API_KEY is not configured. Cannot search photos.");
+    throw new Error('PEXELS_API_KEY is not configured. Cannot search photos.');
   }
   await delay(PEXELS_REQUEST_DELAY); // Simple delay before each request
   const apiSpinner = createSpinner(`Searching Pexels API for "${query}"...`).start();
@@ -91,27 +105,27 @@ export async function searchPexelsPhotos(
   try {
     const response = await fetch(url.toString(), {
       headers: {
-        'Authorization': PEXELS_API_KEY
-      }
+        Authorization: PEXELS_API_KEY,
+      },
     });
 
     if (!response.ok) {
       let errorDetails = response.statusText;
       try {
-          // Try to parse error details from Pexels response body
-          const errorData: any = await response.json(); 
-          if (typeof errorData === 'object' && errorData !== null) {
-              errorDetails = errorData?.error || errorData?.code || errorDetails;
-          }
-      } catch (parseError) { 
-          // If parsing fails, just use the status text
-          console.warn(`Could not parse error response body for Pexels API error ${response.status}`);
+        // Try to parse error details from Pexels response body
+        const errorData: any = await response.json();
+        if (typeof errorData === 'object' && errorData !== null) {
+          errorDetails = errorData?.error || errorData?.code || errorDetails;
+        }
+      } catch (parseError) {
+        // If parsing fails, just use the status text
+        console.warn(`Could not parse error response body for Pexels API error ${response.status}`);
       }
       apiSpinner.error({ text: `Pexels API Error: ${response.status} ${errorDetails}` });
       throw new Error(`Pexels API Error (${response.status}): ${errorDetails}`);
     }
 
-    const data = await response.json() as PexelsSearchResponse;
+    const data = (await response.json()) as PexelsSearchResponse;
     apiSpinner.success({ text: `Found ${data.total_results} Pexels results for "${query}"` });
     return data;
   } catch (error) {
@@ -127,17 +141,25 @@ export async function searchPexelsPhotos(
 export async function getPexelsDestinationPhoto(
   city: string,
   country: string,
-  state: string | null,
-): Promise<{ photo: PexelsPhoto, attribution: string, sourceQuery: string, attributionHtml: string } | null> {
-   if (!PEXELS_API_KEY) {
-      console.warn(chalk.yellow("PEXELS_API_KEY is not configured. Skipping Pexels search."));
-      return null;
+  state: string | null
+): Promise<{
+  photo: PexelsPhoto;
+  attribution: string;
+  sourceQuery: string;
+  attributionHtml: string;
+} | null> {
+  if (!PEXELS_API_KEY) {
+    console.warn(chalk.yellow('PEXELS_API_KEY is not configured. Skipping Pexels search.'));
+    return null;
   }
 
   // --- Dynamic Query Generation ---
   const randomKeyword1 = getRandomElement(pexelsPrimaryKeywords);
   const randomKeyword2 = getRandomElement(pexelsSecondaryKeywords);
-  const uniqueKeyword2 = randomKeyword2 !== randomKeyword1 ? randomKeyword2 : getRandomElement(pexelsSecondaryKeywords.filter(k => k !== randomKeyword1));
+  const uniqueKeyword2 =
+    randomKeyword2 !== randomKeyword1
+      ? randomKeyword2
+      : getRandomElement(pexelsSecondaryKeywords.filter((k) => k !== randomKeyword1));
 
   const queries = [
     `${city} ${state ? state + ' ' : ''}${country} ${randomKeyword1}`,
@@ -163,7 +185,7 @@ export async function getPexelsDestinationPhoto(
 
         // Plain text attribution (keeping for backward compatibility)
         const textAttribution = `Photo by ${photo.photographer} on Pexels (${photo.photographer_url})`;
-        
+
         // HTML attribution with proper hyperlinks
         const attributionHtml = `Photo by <a href="${photo.photographer_url}" target="_blank" rel="noopener noreferrer">${photo.photographer}</a> on <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a>`;
 
@@ -176,11 +198,17 @@ export async function getPexelsDestinationPhoto(
       }
       spinner.warn({ text: `No Pexels results for query: "${query}"` });
     } catch (error) {
-       spinner.error({ text: `Error during Pexels search for "${query}": ${(error as Error).message}` });
-       // Allow loop to continue to next query
+      spinner.error({
+        text: `Error during Pexels search for "${query}": ${(error as Error).message}`,
+      });
+      // Allow loop to continue to next query
     }
   }
 
-  console.warn(chalk.yellow(`Could not find any suitable Pexels image for ${city}, ${country} after trying multiple random queries.`));
-  return null; 
-} 
+  console.warn(
+    chalk.yellow(
+      `Could not find any suitable Pexels image for ${city}, ${country} after trying multiple random queries.`
+    )
+  );
+  return null;
+}

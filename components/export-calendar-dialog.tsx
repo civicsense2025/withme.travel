@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,53 +10,53 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Calendar, Loader2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+} from '@/components/ui/dialog';
+import { Calendar, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ExportCalendarDialogProps {
-  tripId: string
-  tripName: string
+  tripId: string;
+  tripName: string;
 }
 
 export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogProps) {
-  const [isExporting, setIsExporting] = useState(false)
-  const [open, setOpen] = useState(false)
-  const { toast } = useToast()
+  const [isExporting, setIsExporting] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleExport = async () => {
-    setIsExporting(true)
+    setIsExporting(true);
     try {
       const response = await fetch(`/api/trips/${tripId}/export-calendar`, {
-        method: "POST",
-      })
+        method: 'POST',
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to export calendar")
+        throw new Error('Failed to export calendar');
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
       // Open the Google Calendar URL in a new tab
-      window.open(data.url, "_blank")
+      window.open(data.url, '_blank');
 
       toast({
-        title: "calendar exported!",
-        description: "your trip has been added to google calendar",
-      })
+        title: 'calendar exported!',
+        description: 'your trip has been added to google calendar',
+      });
 
-      setOpen(false)
+      setOpen(false);
     } catch (error) {
-      console.error("Error exporting calendar:", error)
+      console.error('Error exporting calendar:', error);
       toast({
-        title: "export failed",
-        description: "there was an error exporting to google calendar",
-        variant: "destructive",
-      })
+        title: 'export failed',
+        description: 'there was an error exporting to google calendar',
+        variant: 'destructive',
+      });
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -69,12 +69,14 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
       <DialogContent>
         <DialogHeader>
           <DialogTitle>export to google calendar</DialogTitle>
-          <DialogDescription>add your trip itinerary to google calendar so everyone can stay in sync</DialogDescription>
+          <DialogDescription>
+            add your trip itinerary to google calendar so everyone can stay in sync
+          </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <p>
-            this will create calendar events for all activities in your trip "{tripName}". you'll be redirected to
-            google to confirm.
+            this will create calendar events for all activities in your trip "{tripName}". you'll be
+            redirected to google to confirm.
           </p>
         </div>
         <DialogFooter>
@@ -88,11 +90,11 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
                 exporting...
               </>
             ) : (
-              "export to google calendar"
+              'export to google calendar'
             )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

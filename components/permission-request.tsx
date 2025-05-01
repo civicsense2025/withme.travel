@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -12,62 +12,62 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Shield, Loader2 } from "lucide-react"
+} from '@/components/ui/dialog';
+import { Shield, Loader2 } from 'lucide-react';
 
 interface PermissionRequestProps {
-  tripId: string
-  tripName: string
+  tripId: string;
+  tripName: string;
 }
 
 export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [message, setMessage] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isRequested, setIsRequested] = useState(false)
-  const { toast } = useToast()
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRequested, setIsRequested] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async () => {
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
 
       const response = await fetch(`/api/trips/${tripId}/permissions/request`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message,
-          requestedRole: "editor", // Default to editor role
+          requestedRole: 'editor', // Default to editor role
         }),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to submit request")
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to submit request');
       }
 
-      setIsRequested(true)
+      setIsRequested(true);
       toast({
-        title: "Request submitted",
-        description: "Trip organizers have been notified of your request",
-      })
+        title: 'Request submitted',
+        description: 'Trip organizers have been notified of your request',
+      });
 
       // Close dialog after a short delay
       setTimeout(() => {
-        setIsOpen(false)
-      }, 2000)
+        setIsOpen(false);
+      }, 2000);
     } catch (error: any) {
-      console.error("Error requesting permissions:", error)
+      console.error('Error requesting permissions:', error);
       toast({
-        title: "Request failed",
-        description: error.message || "Failed to submit permission request",
-        variant: "destructive",
-      })
+        title: 'Request failed',
+        description: error.message || 'Failed to submit permission request',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -80,7 +80,9 @@ export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) 
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Request Edit Access</DialogTitle>
-          <DialogDescription>Ask the trip organizers for permission to edit "{tripName}"</DialogDescription>
+          <DialogDescription>
+            Ask the trip organizers for permission to edit "{tripName}"
+          </DialogDescription>
         </DialogHeader>
 
         {isRequested ? (
@@ -95,7 +97,8 @@ export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) 
           <>
             <div className="py-4">
               <p className="mb-4">
-                Let the trip organizers know why you'd like to edit this trip. They'll be notified of your request.
+                Let the trip organizers know why you'd like to edit this trip. They'll be notified
+                of your request.
               </p>
               <Textarea
                 placeholder="I'd like to help plan this trip by adding some activities I found..."
@@ -115,7 +118,7 @@ export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) 
                     Submitting...
                   </>
                 ) : (
-                  "Submit Request"
+                  'Submit Request'
                 )}
               </Button>
             </DialogFooter>
@@ -123,5 +126,5 @@ export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) 
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

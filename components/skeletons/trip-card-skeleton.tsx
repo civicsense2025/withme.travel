@@ -1,8 +1,8 @@
 'use client';
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { motion } from "framer-motion";
-import { getRandomColorClass } from "@/lib/utils";
+import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
+import { getColorClassFromId } from '@/lib/utils';
 
 interface TripCardSkeletonProps {
   delayIndex?: number;
@@ -14,8 +14,8 @@ interface TripCardSkeletonProps {
  * Used when trip data is being fetched
  */
 export function TripCardSkeleton({ delayIndex = 0, pulse = true }: TripCardSkeletonProps) {
-  // Generate a random pastel color class for variety
-  const colorClass = getRandomColorClass();
+  // Generate a consistent color class based on delayIndex (or use a fixed ID)
+  const colorClass = getColorClassFromId(delayIndex.toString());
   const delay = delayIndex * 0.1;
 
   return (
@@ -75,4 +75,3 @@ export function TripCardGridSkeleton({ count = 6 }: { count?: number }) {
     </div>
   );
 }
-

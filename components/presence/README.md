@@ -18,6 +18,7 @@ The main context provider that manages presence state and makes it available to 
 ```
 
 **Props:**
+
 - `tripId` (required): The ID of the trip to track presence for
 - `trackCursor` (optional): Whether to track cursor positions (default: false)
 
@@ -29,15 +30,9 @@ A hook to access presence data and actions from any component within a `Presence
 
 ```tsx
 function ActiveUserDisplay() {
-  const { 
-    activeUsers, 
-    myPresence, 
-    status, 
-    isEditing, 
-    startEditing, 
-    stopEditing 
-  } = usePresenceContext();
-  
+  const { activeUsers, myPresence, status, isEditing, startEditing, stopEditing } =
+    usePresenceContext();
+
   return (
     <div>
       <p>My status: {status}</p>
@@ -61,6 +56,7 @@ A wrapper component that automatically marks an item as being edited when mounte
 ```
 
 **Props:**
+
 - `itemId` (required): The ID of the item being edited
 - `autoMarkAsEditing` (optional): Whether to automatically mark the item as being edited (default: true)
 
@@ -75,6 +71,7 @@ A component to display avatars of active users with their status indicators.
 ```
 
 **Props:**
+
 - `maxAvatars` (optional): Maximum number of avatars to display (default: 3)
 - `size` (optional): Size of avatars - "sm", "md", or "lg" (default: "md")
 
@@ -157,6 +154,7 @@ The presence system uses Supabase Realtime Presence features combined with a cus
 ### 1. Privacy Protection
 
 The presence system shares minimal user data to balance collaboration needs with privacy:
+
 - Basic profile information (name, avatar) is shared
 - Exact cursor positions are only tracked when explicitly enabled
 - User activity is anonymized in database logs
@@ -172,6 +170,7 @@ The presence system shares minimal user data to balance collaboration needs with
 ### 3. Secure Implementation Guidelines
 
 When implementing presence features:
+
 - Never log personal information to the console
 - Verify user permissions before showing detailed presence information
 - Use the `PresenceErrorBoundary` to prevent exposing technical error details
@@ -188,6 +187,7 @@ The presence system is designed with performance in mind:
 5. **Resource Cleanup**: Efficient cleanup of event listeners and subscriptions
 
 Guidelines for maintaining good performance:
+
 - Limit the scope of presence tracking to active views
 - Implement proper memoization for components using presence data
 - Avoid unnecessarily enabling cursor tracking in read-only views
@@ -198,16 +198,19 @@ Guidelines for maintaining good performance:
 The presence components follow these accessibility guidelines:
 
 1. **Screen Reader Support**:
+
    - Proper ARIA labels for presence indicators
    - Status information announced appropriately
    - Editing indicators with appropriate semantic markup
 
 2. **Keyboard Navigation**:
+
    - All interactive elements are keyboard accessible
    - Focus management respects tab order
    - No keyboard traps in presence UI components
 
 3. **Visual Accessibility**:
+
    - High contrast status indicators
    - Alternative text for presence information
    - Visual states that don't rely solely on color
@@ -230,4 +233,4 @@ The presence components follow these accessibility guidelines:
    - Check network connectivity
    - Ensure Supabase Realtime services are enabled for your project
 
-For more complex scenarios, refer to the implementation in `hooks/use-presence.ts`. 
+For more complex scenarios, refer to the implementation in `hooks/use-presence.ts`.

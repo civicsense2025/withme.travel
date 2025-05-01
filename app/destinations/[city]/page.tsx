@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter, useParams } from "next/navigation"
-import React from "react"
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter, useParams } from 'next/navigation';
+import React from 'react';
 import {
   ArrowLeft,
   Calendar,
@@ -27,140 +27,137 @@ import {
   Users,
   Info,
   PlusCircle,
-} from "lucide-react"
+} from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { useToast } from "@/hooks/use-toast"
-import { DestinationReviews } from "@/components/destinations/destination-reviews"
-import { useAuth } from '@/components/auth-provider'
-import { User as SupabaseUser } from "@supabase/supabase-js"
-import { AuthContextType } from "@/lib/hooks/use-auth"
-import { Rating } from "@/components/ui/rating"
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { DestinationReviews } from '@/components/destinations/destination-reviews';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+import { AuthContextType } from '@/lib/hooks/use-auth';
+import { Rating } from '@/components/ui/rating';
 
 interface Destination {
-  id: string
-  name: string
-  city: string
-  state_province: string | null
-  country: string
-  continent: string
-  description: string
-  best_season: string
-  avg_cost_per_day: number
-  local_language: string
-  time_zone: string
-  cuisine_rating: number
-  cultural_attractions: number
-  nightlife_rating: number
-  family_friendly: boolean
-  outdoor_activities: number
-  beach_quality: number | null
-  shopping_rating: number
-  safety_rating: number
-  wifi_connectivity: number
-  public_transportation: number
-  eco_friendly_options: number
-  walkability: number
-  instagram_worthy_spots: number
-  off_peak_appeal: number
-  digital_nomad_friendly: number
-  lgbtq_friendliness: number
-  accessibility: number
-  highlights: string
-  tourism_website: string
-  image_url: string
+  id: string;
+  name: string;
+  city: string;
+  state_province: string | null;
+  country: string;
+  continent: string;
+  description: string;
+  best_season: string;
+  avg_cost_per_day: number;
+  local_language: string;
+  time_zone: string;
+  cuisine_rating: number;
+  cultural_attractions: number;
+  nightlife_rating: number;
+  family_friendly: boolean;
+  outdoor_activities: number;
+  beach_quality: number | null;
+  shopping_rating: number;
+  safety_rating: number;
+  wifi_connectivity: number;
+  public_transportation: number;
+  eco_friendly_options: number;
+  walkability: number;
+  instagram_worthy_spots: number;
+  off_peak_appeal: number;
+  digital_nomad_friendly: number;
+  lgbtq_friendliness: number;
+  accessibility: number;
+  highlights: string;
+  tourism_website: string;
+  image_url: string;
   image_metadata?: {
-    alt_text?: string
-    attribution?: string
-    attributionHtml?: string 
-    photographer_name?: string
-    photographer_url?: string
-    source?: string
-    source_id?: string
-    url?: string
-  }
+    alt_text?: string;
+    attribution?: string;
+    attributionHtml?: string;
+    photographer_name?: string;
+    photographer_url?: string;
+    source?: string;
+    source_id?: string;
+    url?: string;
+  };
 }
 
 interface Profile {
-  id: string
-  first_name: string | null
-  last_name: string | null
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
   // Add other profile fields as needed
 }
 
 export default function CityPage() {
-  const router = useRouter()
-  const params = useParams<{ city: string }>()
-  const { toast } = useToast()
-  const { user, profile } = useAuth() as AuthContextType
-  const [destination, setDestination] = useState<Destination | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const { user: currentUser } = useAuth() as { user: SupabaseUser | null }
-  
-  const cityParam = params?.city
+  const router = useRouter();
+  const params = useParams<{ city: string }>();
+  const { toast } = useToast();
+  const { user, profile } = useAuth() as AuthContextType;
+  const [destination, setDestination] = useState<Destination | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user: currentUser } = useAuth() as { user: SupabaseUser | null };
+
+  const cityParam = params?.city;
 
   useEffect(() => {
     if (!cityParam) {
-      setError("No city specified");
+      setError('No city specified');
       setIsLoading(false);
       return;
     }
 
-    let decodedCityName = "";
+    let decodedCityName = '';
     try {
       if (typeof cityParam !== 'string') {
-        throw new Error("Invalid city parameter type");
+        throw new Error('Invalid city parameter type');
       }
-      decodedCityName = decodeURIComponent(cityParam.replace(/-/g, " "));
+      decodedCityName = decodeURIComponent(cityParam.replace(/-/g, ' '));
     } catch (e) {
-      console.error("Error decoding city name from params:", e);
-      setError("Invalid city name in URL");
+      console.error('Error decoding city name from params:', e);
+      setError('Invalid city name in URL');
       setIsLoading(false);
       return;
     }
 
     async function fetchDestination() {
       try {
-        setIsLoading(true)
-        setError(null)
-        
-        const response = await fetch(`/api/destinations/by-city/${encodeURIComponent(decodedCityName)}`);
+        setIsLoading(true);
+        setError(null);
+
+        const response = await fetch(
+          `/api/destinations/by-city/${encodeURIComponent(decodedCityName)}`
+        );
 
         if (!response.ok) {
           if (response.status === 404) {
-            setError(`Destination '${decodedCityName}' not found`); 
-            return
+            setError(`Destination '${decodedCityName}' not found`);
+            return;
           }
-          throw new Error(`Failed to fetch destination: ${response.status}`)
+          throw new Error(`Failed to fetch destination: ${response.status}`);
         }
 
-        const data = await response.json()
-        setDestination(data.destination)
+        const data = await response.json();
+        setDestination(data.destination);
       } catch (err: any) {
-        console.error("Error fetching destination:", err)
-        setError(err.message || "Failed to load destination details")
+        console.error('Error fetching destination:', err);
+        setError(err.message || 'Failed to load destination details');
         toast({
-          title: "Error loading destination",
-          description: "Please try again later",
-          variant: "destructive",
-        })
+          title: 'Error loading destination',
+          description: 'Please try again later',
+          variant: 'destructive',
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchDestination()
-  }, [cityParam, toast])
+    fetchDestination();
+  }, [cityParam, toast]);
 
   // Helper function to create the attribution string with links
   const createAttributionText = (metadata: Destination['image_metadata']) => {
@@ -178,13 +175,13 @@ export default function CityPage() {
         sourceLink = `https://www.pexels.com/photo/${source_id}`;
       } else if (source === 'unsplash' && source_id) {
         // Assuming Unsplash structure, adjust if needed
-        sourceLink = `https://unsplash.com/photos/${source_id}`; 
+        sourceLink = `https://unsplash.com/photos/${source_id}`;
       }
 
-      const photographerPart = photographer_url 
-        ? `<a href=\"${photographer_url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${photographer_name}</a>` 
+      const photographerPart = photographer_url
+        ? `<a href=\"${photographer_url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${photographer_name}</a>`
         : photographer_name;
-      
+
       const sourcePart = sourceLink
         ? `<a href=\"${sourceLink}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${sourceName}</a>`
         : sourceName;
@@ -200,25 +197,25 @@ export default function CityPage() {
   };
 
   const renderRating = (rating: number | null | undefined, max = 5) => {
-    if (rating === null || rating === undefined) return "N/A"
+    if (rating === null || rating === undefined) return 'N/A';
 
-    const stars = []
+    const stars = [];
     for (let i = 0; i < max; i++) {
       stars.push(
-        <span key={i} className={i < rating ? "text-yellow-500" : "text-gray-300"}>
+        <span key={i} className={i < rating ? 'text-yellow-500' : 'text-gray-300'}>
           ★
-        </span>,
-      )
+        </span>
+      );
     }
-    return <div className="flex">{stars}</div>
-  }
+    return <div className="flex">{stars}</div>;
+  };
 
   const getDestinationImageData = (destination: Destination | null) => {
     if (!destination) {
       return {
-        url: "/placeholder.svg",
-        alt: "Destination placeholder image",
-        attributionHtml: null
+        url: '/placeholder.svg',
+        alt: 'Destination placeholder image',
+        attributionHtml: null,
       };
     }
 
@@ -228,18 +225,20 @@ export default function CityPage() {
         imageUrl = `/destinations/${imageUrl}`;
       }
     } else {
-      imageUrl = `/destinations/${destination.city.toLowerCase().replace(/\s+/g, "-")}-${destination.country.toLowerCase().replace(/\s+/g, "-")}.jpg`;
+      imageUrl = `/destinations/${destination.city.toLowerCase().replace(/\s+/g, '-')}-${destination.country.toLowerCase().replace(/\s+/g, '-')}.jpg`;
     }
 
     return {
       url: imageUrl,
       alt: destination.image_metadata?.alt_text || `${destination.city}, ${destination.country}`,
-      attributionHtml: createAttributionText(destination.image_metadata)
+      attributionHtml: createAttributionText(destination.image_metadata),
     };
   };
 
   if (!cityParam) {
-    return <div className="mx-auto max-w-6xl px-4 py-6 text-center">Loading city information...</div>;
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-6 text-center">Loading city information...</div>
+    );
   }
 
   if (isLoading) {
@@ -258,11 +257,13 @@ export default function CityPage() {
         <div className="mt-4 h-4 w-2/3 bg-muted animate-pulse rounded"></div>
         <div className="mt-2 h-4 w-1/2 bg-muted animate-pulse rounded"></div>
       </div>
-    )
+    );
   }
 
   if (error || !destination) {
-    const decodedCityForError = cityParam ? decodeURIComponent(cityParam.replace(/-/g, " ")) : 'the requested city';
+    const decodedCityForError = cityParam
+      ? decodeURIComponent(cityParam.replace(/-/g, ' '))
+      : 'the requested city';
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">
@@ -275,19 +276,21 @@ export default function CityPage() {
         </div>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold">Destination Not Found</h2>
-          <p className="text-muted-foreground mt-2">We couldn't find information about {decodedCityForError}.</p>
-          <Button className="mt-4" onClick={() => router.push("/destinations")}>
+          <p className="text-muted-foreground mt-2">
+            We couldn't find information about {decodedCityForError}.
+          </p>
+          <Button className="mt-4" onClick={() => router.push('/destinations')}>
             Browse All Destinations
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   const imageData = getDestinationImageData(destination);
 
   // Use profile.name and fallback to 'My' if name is not available
-  const profileName = profile?.name?.split(' ')[0] || 'My'; 
+  const profileName = profile?.name?.split(' ')[0] || 'My';
   const defaultTripName = `${profileName}'s trip to ${destination.city}`;
 
   return (
@@ -312,32 +315,32 @@ export default function CityPage() {
         />
         {imageData.attributionHtml && (
           <div className="absolute bottom-4 right-4 z-10">
-             <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button 
-                      className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      aria-label="Image attribution information"
-                    >
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side="left"
-                    sideOffset={5}
-                    className="bg-black/90 text-white border-none shadow-lg max-w-xs"
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    aria-label="Image attribution information"
                   >
-                    <p 
-                      className="text-xs"
-                      dangerouslySetInnerHTML={{ __html: imageData.attributionHtml || '' }}
-                    ></p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="left"
+                  sideOffset={5}
+                  className="bg-black/90 text-white border-none shadow-lg max-w-xs"
+                >
+                  <p
+                    className="text-xs"
+                    dangerouslySetInnerHTML={{ __html: imageData.attributionHtml || '' }}
+                  ></p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
       </div>
@@ -350,27 +353,32 @@ export default function CityPage() {
                 <h2 className="text-2xl font-bold lowercase">{destination.city}</h2>
               </div>
               {destination.description && (
-                <div 
+                <div
                   className="text-muted-foreground prose prose-sm dark:prose-invert [&>p]:my-4"
-                  dangerouslySetInnerHTML={{ 
-                    __html: destination.description.includes('<') 
+                  dangerouslySetInnerHTML={{
+                    __html: destination.description.includes('<')
                       ? destination.description
-                      : destination.description.split('\n\n').map(block => {
-                          // Check if this block is a list
-                          if (block.includes('\n') && !block.trim().endsWith('.')) {
-                            const lines = block.split('\n').filter(line => line.trim());
-                            // If first line ends with a colon, it's likely a list header
-                            const [first, ...rest] = lines;
-                            if (first.trim().endsWith(':')) {
-                              return `<p>${first}</p><ul>${rest.map(item => 
-                                `<li>${item.trim()}</li>`).join('')}</ul>`;
+                      : destination.description
+                          .split('\n\n')
+                          .map((block) => {
+                            // Check if this block is a list
+                            if (block.includes('\n') && !block.trim().endsWith('.')) {
+                              const lines = block.split('\n').filter((line) => line.trim());
+                              // If first line ends with a colon, it's likely a list header
+                              const [first, ...rest] = lines;
+                              if (first.trim().endsWith(':')) {
+                                return `<p>${first}</p><ul>${rest
+                                  .map((item) => `<li>${item.trim()}</li>`)
+                                  .join('')}</ul>`;
+                              }
+                              // Otherwise treat all lines as list items
+                              return `<ul>${lines
+                                .map((item) => `<li>${item.trim()}</li>`)
+                                .join('')}</ul>`;
                             }
-                            // Otherwise treat all lines as list items
-                            return `<ul>${lines.map(item => 
-                              `<li>${item.trim()}</li>`).join('')}</ul>`;
-                          }
-                          return `<p>${block}</p>`;
-                        }).join('')
+                            return `<p>${block}</p>`;
+                          })
+                          .join(''),
                   }}
                 />
               )}
@@ -378,27 +386,32 @@ export default function CityPage() {
               {destination.highlights && (
                 <div className="mt-6">
                   <h3 className="text-lg font-semibold mb-2 lowercase">highlights</h3>
-                  <div 
+                  <div
                     className="prose prose-sm dark:prose-invert [&>p]:my-4"
-                    dangerouslySetInnerHTML={{ 
-                      __html: destination.highlights.includes('<') 
+                    dangerouslySetInnerHTML={{
+                      __html: destination.highlights.includes('<')
                         ? destination.highlights
-                        : destination.highlights.split('\n\n').map(block => {
-                            // Check if this block is a list
-                            if (block.includes('\n') && !block.trim().endsWith('.')) {
-                              const lines = block.split('\n').filter(line => line.trim());
-                              // If first line ends with a colon, it's likely a list header
-                              const [first, ...rest] = lines;
-                              if (first.trim().endsWith(':')) {
-                                return `<p>${first}</p><ul>${rest.map(item => 
-                                  `<li>${item.trim()}</li>`).join('')}</ul>`;
+                        : destination.highlights
+                            .split('\n\n')
+                            .map((block) => {
+                              // Check if this block is a list
+                              if (block.includes('\n') && !block.trim().endsWith('.')) {
+                                const lines = block.split('\n').filter((line) => line.trim());
+                                // If first line ends with a colon, it's likely a list header
+                                const [first, ...rest] = lines;
+                                if (first.trim().endsWith(':')) {
+                                  return `<p>${first}</p><ul>${rest
+                                    .map((item) => `<li>${item.trim()}</li>`)
+                                    .join('')}</ul>`;
+                                }
+                                // Otherwise treat all lines as list items
+                                return `<ul>${lines
+                                  .map((item) => `<li>${item.trim()}</li>`)
+                                  .join('')}</ul>`;
                               }
-                              // Otherwise treat all lines as list items
-                              return `<ul>${lines.map(item => 
-                                `<li>${item.trim()}</li>`).join('')}</ul>`;
-                            }
-                            return `<p>${block}</p>`;
-                          }).join('')
+                              return `<p>${block}</p>`;
+                            })
+                            .join(''),
                     }}
                   />
                 </div>
@@ -406,37 +419,50 @@ export default function CityPage() {
 
               <div className="mt-6 flex flex-wrap gap-2">
                 {destination.family_friendly && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Family Friendly</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    Family Friendly
+                  </Badge>
                 )}
                 {destination.digital_nomad_friendly >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Digital Nomad Friendly</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    Digital Nomad Friendly
+                  </Badge>
                 )}
                 {destination.beach_quality !== null && destination.beach_quality >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Great Beaches</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    Great Beaches
+                  </Badge>
                 )}
                 {destination.cultural_attractions >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Cultural Hotspot</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    Cultural Hotspot
+                  </Badge>
                 )}
                 {destination.nightlife_rating >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Vibrant Nightlife</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    Vibrant Nightlife
+                  </Badge>
                 )}
                 {destination.outdoor_activities >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Outdoor Activities</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    Outdoor Activities
+                  </Badge>
                 )}
                 {destination.lgbtq_friendliness >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">LGBTQ+ Friendly</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    LGBTQ+ Friendly
+                  </Badge>
                 )}
                 {destination.accessibility >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">Accessible</Badge>
+                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                    Accessible
+                  </Badge>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <DestinationReviews 
-            destinationId={destination.id}
-            destinationName={destination.city}
-          />
+          <DestinationReviews destinationId={destination.id} destinationName={destination.city} />
         </div>
 
         <div className="space-y-8">
@@ -444,7 +470,7 @@ export default function CityPage() {
             <CardContent className="pt-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold lowercase">at a glance</h2>
-                <Button 
+                <Button
                   className="
                     relative overflow-hidden
                     lowercase rounded-full 
@@ -459,7 +485,9 @@ export default function CityPage() {
                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple
                   "
                   onClick={() => {
-                    router.push(`/trips/create?destination_id=${destination.id}&trip_name=${encodeURIComponent(defaultTripName)}`);
+                    router.push(
+                      `/trips/create?destination_id=${destination.id}&trip_name=${encodeURIComponent(defaultTripName)}`
+                    );
                   }}
                 >
                   <span className="relative z-10 flex items-center">
@@ -479,7 +507,9 @@ export default function CityPage() {
                   <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
                     <DollarSign className="h-4 w-4" /> Average Daily Cost
                   </h3>
-                  <p className="text-sm text-muted-foreground">${destination.avg_cost_per_day} USD</p>
+                  <p className="text-sm text-muted-foreground">
+                    ${destination.avg_cost_per_day} USD
+                  </p>
                 </div>
                 <div className="transition-all duration-300 hover:scale-105">
                   <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
@@ -523,7 +553,10 @@ export default function CityPage() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Ratings are based on aggregated user reviews and WithMe.travel data analysis.</p>
+                      <p>
+                        Ratings are based on aggregated user reviews and WithMe.travel data
+                        analysis.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -531,21 +564,73 @@ export default function CityPage() {
 
               <div className="space-y-3">
                 {[
-                  { icon: <Utensils className="h-4 w-4" />, label: "Cuisine", value: destination.cuisine_rating },
-                  { icon: <Camera className="h-4 w-4" />, label: "Cultural Attractions", value: destination.cultural_attractions },
-                  { icon: <Moon className="h-4 w-4" />, label: "Nightlife", value: destination.nightlife_rating },
-                  { icon: <Sun className="h-4 w-4" />, label: "Outdoor Activities", value: destination.outdoor_activities },
-                  { icon: <Shield className="h-4 w-4" />, label: "Safety", value: destination.safety_rating },
-                  { icon: <Train className="h-4 w-4" />, label: "Public Transportation", value: destination.public_transportation },
-                  { icon: <Walking className="h-4 w-4" />, label: "Walkability", value: destination.walkability },
-                  { icon: <Wifi className="h-4 w-4" />, label: "Wi-Fi Connectivity", value: destination.wifi_connectivity },
-                  { icon: <Heart className="h-4 w-4" />, label: "LGBTQ+ Friendliness", value: destination.lgbtq_friendliness },
-                  { icon: <Accessibility className="h-4 w-4" />, label: "Accessibility", value: destination.accessibility },
-                  { icon: <Leaf className="h-4 w-4" />, label: "Eco-Friendly Options", value: destination.eco_friendly_options },
-                  { icon: <Instagram className="h-4 w-4" />, label: "Instagram-Worthy Spots", value: destination.instagram_worthy_spots },
-                  { icon: <Briefcase className="h-4 w-4" />, label: "Digital Nomad Friendly", value: destination.digital_nomad_friendly },
+                  {
+                    icon: <Utensils className="h-4 w-4" />,
+                    label: 'Cuisine',
+                    value: destination.cuisine_rating,
+                  },
+                  {
+                    icon: <Camera className="h-4 w-4" />,
+                    label: 'Cultural Attractions',
+                    value: destination.cultural_attractions,
+                  },
+                  {
+                    icon: <Moon className="h-4 w-4" />,
+                    label: 'Nightlife',
+                    value: destination.nightlife_rating,
+                  },
+                  {
+                    icon: <Sun className="h-4 w-4" />,
+                    label: 'Outdoor Activities',
+                    value: destination.outdoor_activities,
+                  },
+                  {
+                    icon: <Shield className="h-4 w-4" />,
+                    label: 'Safety',
+                    value: destination.safety_rating,
+                  },
+                  {
+                    icon: <Train className="h-4 w-4" />,
+                    label: 'Public Transportation',
+                    value: destination.public_transportation,
+                  },
+                  {
+                    icon: <Walking className="h-4 w-4" />,
+                    label: 'Walkability',
+                    value: destination.walkability,
+                  },
+                  {
+                    icon: <Wifi className="h-4 w-4" />,
+                    label: 'Wi-Fi Connectivity',
+                    value: destination.wifi_connectivity,
+                  },
+                  {
+                    icon: <Heart className="h-4 w-4" />,
+                    label: 'LGBTQ+ Friendliness',
+                    value: destination.lgbtq_friendliness,
+                  },
+                  {
+                    icon: <Accessibility className="h-4 w-4" />,
+                    label: 'Accessibility',
+                    value: destination.accessibility,
+                  },
+                  {
+                    icon: <Leaf className="h-4 w-4" />,
+                    label: 'Eco-Friendly Options',
+                    value: destination.eco_friendly_options,
+                  },
+                  {
+                    icon: <Instagram className="h-4 w-4" />,
+                    label: 'Instagram-Worthy Spots',
+                    value: destination.instagram_worthy_spots,
+                  },
+                  {
+                    icon: <Briefcase className="h-4 w-4" />,
+                    label: 'Digital Nomad Friendly',
+                    value: destination.digital_nomad_friendly,
+                  },
                 ].map((item, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="flex justify-between items-center p-2 rounded-lg transition-all duration-300 hover:bg-muted/50"
                   >
@@ -555,13 +640,15 @@ export default function CityPage() {
                     {renderRating(item.value)}
                   </div>
                 ))}
-                
+
                 <div className="flex justify-between items-center p-2 rounded-lg transition-all duration-300 hover:bg-muted/50">
                   <span className="text-sm flex items-center gap-1 text-muted-foreground">
                     <Users className="h-4 w-4" /> Family Friendly
                   </span>
-                  <span className={`text-sm ${destination.family_friendly ? 'text-green-600' : 'text-red-600'}`}>
-                    {destination.family_friendly ? "Yes" : "No"}
+                  <span
+                    className={`text-sm ${destination.family_friendly ? 'text-green-600' : 'text-red-600'}`}
+                  >
+                    {destination.family_friendly ? 'Yes' : 'No'}
                   </span>
                 </div>
               </div>
@@ -584,5 +671,5 @@ export default function CityPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

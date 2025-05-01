@@ -11,7 +11,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    
+
     /* Travel theme colors */
     --travel-blue: 213 100% 75%;
     --travel-blue-foreground: 213 100% 15%;
@@ -25,19 +25,19 @@
     --travel-mint-foreground: 160 100% 18%;
     --travel-peach: 30 100% 82%;
     --travel-peach-foreground: 30 100% 20%;
-    
+
     /* Primary color using travel-purple */
     --primary: 260 100% 82%;
     --primary-foreground: 260 100% 20%;
-    
+
     /* Secondary color */
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-    
+
     /* Accent color using travel-blue */
     --accent: 213 100% 75%;
     --accent-foreground: 213 100% 20%;
-    
+
     /* Other system colors */
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -53,15 +53,15 @@
     /* True black background with pure white foreground */
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
-    
+
     /* Slightly elevated card background (dark gray, not blue) */
     --card: 0 0% 10%;
     --card-foreground: 0 0% 98%;
-    
+
     /* Popover styling */
     --popover: 0 0% 5%;
     --popover-foreground: 0 0% 98%;
-    
+
     /* Update Travel theme foregrounds for dark mode */
     --travel-blue-foreground: 213 100% 85%;
     --travel-pink-foreground: 348 100% 90%;
@@ -69,27 +69,27 @@
     --travel-purple-foreground: 260 100% 90%;
     --travel-mint-foreground: 160 100% 90%;
     --travel-peach-foreground: 30 100% 90%;
-    
+
     /* Vibrant primary for dark mode */
     --primary: 260 70% 70%;
     --primary-foreground: 260 100% 20%;
-    
+
     /* Dark gray secondary (not navy blue) */
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;
-    
+
     /* Muted elements */
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 65%;
-    
+
     /* Accent */
     --accent: 213 70% 65%;
     --accent-foreground: 213 100% 20%;
-    
+
     /* Destructive */
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 98%;
-    
+
     /* Subtle borders with low contrast */
     --border: 0 0% 20%;
     --input: 0 0% 20%;
@@ -133,24 +133,24 @@
   .travel-button-accent {
     @apply bg-travel-yellow text-amber-900 hover:bg-amber-300;
   }
-  
+
   /* Tiptap-inspired components */
   .tiptap-card {
     @apply rounded-xl overflow-hidden border-0 bg-white dark:bg-slate-800 transition-all duration-300;
   }
-  
+
   .tiptap-gradient-text {
     @apply bg-gradient-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent;
   }
-  
+
   .tiptap-button {
     @apply rounded-full px-6 py-3 font-medium transition-all duration-300 inline-flex items-center;
   }
-  
+
   .tiptap-button-primary {
     @apply bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90;
   }
-  
+
   .tiptap-button-outline {
     @apply border border-white/20 text-white hover:bg-white/10;
   }
@@ -177,24 +177,24 @@
     animation: bubble-float 3s infinite ease-in-out;
     animation-delay: calc(var(--delay) * 1s);
   }
-  
+
   /* Hide scrollbar but keep scrolling functionality */
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
-  
+
   .no-scrollbar::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari and Opera */
+    display: none; /* Chrome, Safari and Opera */
   }
-  
+
   /* Tiptap-inspired utilities */
   .texture-overlay {
     position: relative;
   }
-  
+
   .texture-overlay::after {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
@@ -205,17 +205,17 @@
     mix-blend-mode: soft-light;
     pointer-events: none;
   }
-  
+
   .text-gradient {
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  
+
   .sparkle-effect {
     position: relative;
   }
-  
+
   .sparkle {
     position: absolute;
     background-color: white;
@@ -324,7 +324,7 @@
 
 .animate-gradient-xy {
   /* Remove the continuous animation */
-  /* animation: gradient-xy 15s ease infinite; */ 
+  /* animation: gradient-xy 15s ease infinite; */
   background-size: 200% 200%;
   background-position: 50% 50%; /* Center the gradient */
   transition: background-position 0.5s ease; /* Smooth transition for hover */

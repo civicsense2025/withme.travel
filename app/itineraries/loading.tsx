@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ItinerariesLoading() {
   return (
@@ -53,5 +53,5 @@ export default function ItinerariesLoading() {
         <Skeleton className="h-10 w-[200px] mx-auto mt-6" />
       </div>
     </div>
-  )
+  );
 }

@@ -94,14 +94,14 @@ export const rateLimit = {
     if (!result.success) {
       headers.set('Retry-After', result.reset.toString());
       return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { 
+        { error: 'Too many requests. Please try again later.' },
+        {
           status: 429, // Too Many Requests
-          headers
+          headers,
         }
       );
     }
 
     return null;
-  }
+  },
 };

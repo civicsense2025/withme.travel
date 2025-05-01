@@ -294,9 +294,9 @@ export class EmailService {
    * Generic method to send any type of email
    */
   static async sendEmail(
-    to: string, 
-    subject: string, 
-    body: string, 
+    to: string,
+    subject: string,
+    body: string,
     isHtml: boolean = true
   ): Promise<boolean> {
     try {
@@ -312,4 +312,4 @@ export class EmailService {
       return false;
     }
   }
-} 
+}

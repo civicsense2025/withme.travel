@@ -1,6 +1,6 @@
 /**
  * API-related constants
- * 
+ *
  * This file contains all API-related constants including routes,
  * endpoints, and external API configurations.
  */
@@ -17,7 +17,8 @@ export const API_ROUTES = {
   COLLABORATIVE_NOTES: (id: string) => `/api/trips/${id}/notes`,
   DESTINATIONS: '/api/destinations',
   DESTINATION_DETAILS: (id: string) => `/api/destinations/${id}`,
-  DESTINATION_SEARCH: (query: string) => `/api/destinations/search?query=${encodeURIComponent(query)}`,
+  DESTINATION_SEARCH: (query: string) =>
+    `/api/destinations/search?query=${encodeURIComponent(query)}`,
   PERMISSION_REQUESTS: (id: string) => `/api/trips/${id}/permissions`,
   LIBRARY: '/api/library',
   LIBRARY_TEMPLATE: (id: string) => `/api/library/${id}`,
@@ -28,7 +29,7 @@ export const API_ROUTES = {
   TEMPLATES: '/api/templates',
   TEMPLATE_DETAILS: (id: string) => `/api/templates/${id}`,
   TEMPLATE_SECTIONS: (id: string) => `/api/templates/${id}/sections`,
-  TEMPLATE_ITEMS: (templateId: string, sectionId: string) => 
+  TEMPLATE_ITEMS: (templateId: string, sectionId: string) =>
     `/api/templates/${templateId}/sections/${sectionId}/items`,
   PLACES: '/api/places',
   PLACE_DETAILS: (id: string) => `/api/places/${id}`,
@@ -39,7 +40,8 @@ export const API_ROUTES = {
   TRIP_MEMBER_INVITE: (id: string) => `/api/trips/${id}/members/invite`,
   TAGS: '/api/tags',
   TRIP_TAGS: (id: string) => `/api/trips/${id}/tags`,
-  ITINERARY_ITEM_VOTE: (tripId: string, itemId: string) => `/api/trips/${tripId}/itinerary/${itemId}/vote`,
+  ITINERARY_ITEM_VOTE: (tripId: string, itemId: string) =>
+    `/api/trips/${tripId}/itinerary/${itemId}/vote`,
   TRIP_ITINERARY_REORDER: (tripId: string) => `/api/trips/${tripId}/itinerary/reorder`,
   TRIP_VOTE: (tripId: string) => `/api/trips/${tripId}/vote`,
   ADMIN_STATS: '/api/admin/stats',
@@ -73,23 +75,21 @@ export const DB_QUERIES = {
     filters: [{ field: 'created_by', value: userId }],
     order: { field: 'created_at', ascending: false },
   }),
-  
+
   // Get trips a user is a member of
   GET_MEMBER_TRIPS: (userId: string) => ({
     table: 'trip_members',
     select: `*, trips(*)`,
-    filters: [
-      { field: 'user_id', value: userId },
-    ],
+    filters: [{ field: 'user_id', value: userId }],
   }),
-  
+
   // Get all members of a trip
   GET_TRIP_MEMBERS: (tripId: string) => ({
     table: 'trip_members',
     select: `*, profiles(id, name, avatar_url)`,
     filters: [{ field: 'trip_id', value: tripId }],
   }),
-  
+
   // Get trending destinations
   GET_TRENDING_DESTINATIONS: (limit: number = 6) => ({
     table: 'destinations',
@@ -114,7 +114,7 @@ export const FOREIGN_KEYS = {
 // Supabase query snippets for commonly used joins
 export const QUERY_SNIPPETS = {
   USER_BASIC: 'id, name, email, avatar_url',
-  
+
   TRIP_MEMBER_WITH_USER: `
     id,
     role,
@@ -133,7 +133,7 @@ export const QUERY_SNIPPETS = {
       avatar_url
     )
   `,
-  
+
   TRIP_NOTE_WITH_USER: `
     *,
     updated_by_user:users!${FOREIGN_KEYS.TRIP_NOTES_UPDATED_BY}(
@@ -143,7 +143,7 @@ export const QUERY_SNIPPETS = {
       avatar_url
     )
   `,
-  
+
   TRIP_WITH_CREATOR: `
     *,
     creator:users!${FOREIGN_KEYS.TRIPS_USER_ID}(
@@ -153,7 +153,7 @@ export const QUERY_SNIPPETS = {
       avatar_url
     )
   `,
-  
+
   ITINERARY_ITEM_WITH_CREATOR: `
     *,
     creator:users!${FOREIGN_KEYS.ITINERARY_ITEMS_CREATED_BY}(
@@ -164,4 +164,3 @@ export const QUERY_SNIPPETS = {
     )
   `,
 } as const;
-

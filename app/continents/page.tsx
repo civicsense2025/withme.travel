@@ -1,74 +1,80 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import Image from "next/image"
-import { motion } from "framer-motion"
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
 
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from '@/components/page-header';
 
 // Continent data - same as in the [continent] page
 const CONTINENTS = [
   {
-    slug: "africa",
-    name: "Africa",
-    description: "Explore the diverse landscapes and vibrant cultures across 54 countries, from the Sahara Desert to safari adventures in the savanna.",
-    coverImage: "/images/continents/africa.jpg",
-    accentColor: "travel-yellow"
+    slug: 'africa',
+    name: 'Africa',
+    description:
+      'Explore the diverse landscapes and vibrant cultures across 54 countries, from the Sahara Desert to safari adventures in the savanna.',
+    coverImage: '/images/continents/africa.jpg',
+    accentColor: 'travel-yellow',
   },
   {
-    slug: "asia",
-    name: "Asia",
-    description: "Discover the world's largest continent, home to ancient civilizations, bustling megacities, and breathtaking natural wonders.",
-    coverImage: "/images/continents/asia.jpg",
-    accentColor: "travel-red"
+    slug: 'asia',
+    name: 'Asia',
+    description:
+      "Discover the world's largest continent, home to ancient civilizations, bustling megacities, and breathtaking natural wonders.",
+    coverImage: '/images/continents/asia.jpg',
+    accentColor: 'travel-red',
   },
   {
-    slug: "europe",
-    name: "Europe",
-    description: "Experience rich history, diverse cultures, and stunning landscapes across this compact continent of 44 countries.",
-    coverImage: "/images/continents/europe.jpg",
-    accentColor: "travel-blue"
+    slug: 'europe',
+    name: 'Europe',
+    description:
+      'Experience rich history, diverse cultures, and stunning landscapes across this compact continent of 44 countries.',
+    coverImage: '/images/continents/europe.jpg',
+    accentColor: 'travel-blue',
   },
   {
-    slug: "north-america",
-    name: "North America",
-    description: "From arctic landscapes to tropical beaches, explore the diverse terrain and vibrant cities across 23 countries.",
-    coverImage: "/images/continents/north-america.jpg",
-    accentColor: "travel-purple"
+    slug: 'north-america',
+    name: 'North America',
+    description:
+      'From arctic landscapes to tropical beaches, explore the diverse terrain and vibrant cities across 23 countries.',
+    coverImage: '/images/continents/north-america.jpg',
+    accentColor: 'travel-purple',
   },
   {
-    slug: "south-america",
-    name: "South America",
-    description: "Venture through rainforests, mountain ranges, and historic ruins in this continent of extraordinary biodiversity.",
-    coverImage: "/images/continents/south-america.jpg",
-    accentColor: "travel-green"
+    slug: 'south-america',
+    name: 'South America',
+    description:
+      'Venture through rainforests, mountain ranges, and historic ruins in this continent of extraordinary biodiversity.',
+    coverImage: '/images/continents/south-america.jpg',
+    accentColor: 'travel-green',
   },
   {
-    slug: "oceania",
-    name: "Oceania",
-    description: "Discover island paradises, unique wildlife, and diverse indigenous cultures across Australia, New Zealand, and Pacific islands.",
-    coverImage: "/images/continents/oceania.jpg",
-    accentColor: "travel-mint"
-  }
-]
+    slug: 'oceania',
+    name: 'Oceania',
+    description:
+      'Discover island paradises, unique wildlife, and diverse indigenous cultures across Australia, New Zealand, and Pacific islands.',
+    coverImage: '/images/continents/oceania.jpg',
+    accentColor: 'travel-mint',
+  },
+];
 
 // Animation variants for containers
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { 
+    transition: {
       staggerChildren: 0.1,
-      delayChildren: 0.3
-    }
-  }
-}
+      delayChildren: 0.3,
+    },
+  },
+};
 
 // Animation variants for items
 const itemVariants = {
   hidden: { y: 50, opacity: 0 },
-  visible: { y: 0, opacity: 1 }
-}
+  visible: { y: 0, opacity: 1 },
+};
 
 export default function ContinentsPage() {
   return (
@@ -77,29 +83,28 @@ export default function ContinentsPage() {
         heading="Explore Continents"
         description="Discover destinations across the world organized by continent"
       />
-      
-      <motion.div 
+
+      <motion.div
         className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         {CONTINENTS.map((continent) => (
-          <motion.div 
+          <motion.div
             key={continent.slug}
             variants={itemVariants}
             transition={{ duration: 0.5 }}
-            whileHover={{ 
+            whileHover={{
               scale: 1.03,
-              transition: { duration: 0.2 }
+              transition: { duration: 0.2 },
             }}
           >
-            <Link 
-              href={`/continents/${continent.slug}`}
-              className="block h-full"
-            >
+            <Link href={`/continents/${continent.slug}`} className="block h-full">
               <div className="relative rounded-xl overflow-hidden h-64 group">
-                <div className={`absolute inset-0 bg-${continent.accentColor} mix-blend-multiply opacity-60 group-hover:opacity-70 transition-opacity z-10`} />
+                <div
+                  className={`absolute inset-0 bg-${continent.accentColor} mix-blend-multiply opacity-60 group-hover:opacity-70 transition-opacity z-10`}
+                />
                 <Image
                   src={continent.coverImage}
                   alt={continent.name}
@@ -118,12 +123,12 @@ export default function ContinentsPage() {
           </motion.div>
         ))}
       </motion.div>
-      
+
       <div className="mt-16 bg-muted/30 p-8 rounded-xl">
         <h2 className="text-2xl font-bold mb-4">Plan Your Continental Adventure</h2>
         <p className="mb-6 text-muted-foreground">
-          Each continent offers unique experiences, cultures, and landscapes. Explore our continent 
-          guides to discover insider tips, must-visit destinations, and practical travel information 
+          Each continent offers unique experiences, cultures, and landscapes. Explore our continent
+          guides to discover insider tips, must-visit destinations, and practical travel information
           to help you plan your perfect trip.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -148,5 +153,5 @@ export default function ContinentsPage() {
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}

@@ -1,138 +1,155 @@
-import { createApiClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
-import { DB_TABLES, DB_FIELDS } from "@/utils/constants"
+import { createApiClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
+import { NextResponse, type NextRequest } from 'next/server';
+import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
 
-export async function GET(request: Request, { params }: { params: { tripId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
   try {
-    const supabase = createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { tripId } = await params;
+    const supabase = await createApiClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     // Verify user membership
     const { data: tripMembership, error: tripError } = await supabase
       .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE) // Only need role
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, params.tripId)
+      .select('*')
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-      .single()
-      
+      .single();
+
     if (tripError || !tripMembership) {
-        console.error("Error fetching trip membership or not a member:", tripError)
-        return NextResponse.json({ error: "Access Denied" }, { status: 403 })
+      console.error('Error fetching trip membership or not a member:', tripError);
+      return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
     }
 
     // Fetch expenses from the 'expenses' table
     const { data: localExpenses, error: localError } = await supabase
       .from(DB_TABLES.EXPENSES)
-      .select(`
+      .select(
+        `
         *,
         paid_by_user:profiles!expenses_paid_by_fkey(id, name, email, avatar_url)
-      `)
-      .eq(DB_FIELDS.TRIPS.ID, params.tripId)
-      .order("date", { ascending: false })
+      `
+      )
+      .eq(DB_FIELDS.TRIPS.ID, tripId)
+      .order('date', { ascending: false });
 
     if (localError) {
-      console.error("Error fetching local expenses:", localError)
-      return NextResponse.json({ error: "Failed to fetch expenses" }, { status: 500 })
+      console.error('Error fetching local expenses:', localError);
+      return NextResponse.json({ error: 'Failed to fetch expenses' }, { status: 500 });
     }
-    
-    let allExpenses = localExpenses || [];
+
+    let allExpenses: any[] = localExpenses || [];
 
     // Group expenses by category
     const categoryMap = allExpenses.reduce(
-      (acc, expense) => {
-        const category = expense.category || "Other"
+      (acc: Record<string, number>, expense: any) => {
+        const category = expense.category || 'Other';
         if (!acc[category]) {
-          acc[category] = 0
+          acc[category] = 0;
         }
-        acc[category] += Number(expense.amount)
-        return acc
+        acc[category] += Number(expense.amount);
+        return acc;
       },
-      {} as Record<string, number>,
-    )
+      {} as Record<string, number>
+    );
 
-    const totalSpent = allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
+    const totalSpent = allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
     return NextResponse.json({
       expenses: allExpenses,
       categoryTotals: categoryMap,
       totalSpent,
-    })
-
+    });
   } catch (error: any) {
-    console.error("Error fetching expenses:", error)
-    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
+    console.error('Error fetching expenses:', error);
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
 
-export async function POST(request: Request, { params }: { params: { tripId: string } }) {
-    try {
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  try {
+    const { tripId } = await params;
+    const supabase = await createApiClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-        if (authError || !user) {
-          return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-        }
-        
-        // Verify user membership
-        const { count, error: permissionError } = await supabase
-            .from(DB_TABLES.TRIP_MEMBERS)
-            .select("*", { count: "exact", head: true })
-            .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, params.tripId)
-            .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id);
-
-        if (permissionError || count === 0) {
-           console.error("Permission error checking trip membership for expense POST:", permissionError);
-           return NextResponse.json({ error: "Forbidden: Not a member of this trip" }, { status: 403 });
-        }
-        
-        // --- Corrected logic using 'body' --- 
-        const body = await request.json();
-
-        // Basic validation
-        if (!body.title || !body.amount || !body.category || !body.date || !body.paid_by) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-        }
-        // --- End Corrected logic --- 
-
-        const expenseData = {
-            trip_id: params.tripId,
-            title: body.title,
-            amount: Number(body.amount),
-            currency: body.currency || "USD",
-            category: body.category,
-            date: body.date,
-            paid_by: body.paid_by,
-        };
-        
-        // Validate amount conversion
-        if (isNaN(expenseData.amount) || expenseData.amount <= 0) {
-           return NextResponse.json({ error: "Invalid amount provided" }, { status: 400 });
-        }
-
-        const { data: newExpense, error } = await supabase
-            .from(DB_TABLES.EXPENSES)
-            .insert(expenseData)
-            .select()
-            .single();
-        
-        if (error) {
-            console.error("Error creating expense:", error);
-            return NextResponse.json({ error: "Failed to create expense" }, { status: 500 });
-        }
-
-        return NextResponse.json({ expense: newExpense });
-
-    } catch (error: any) {
-        console.error("Error adding expense:", error);
-        // Handle JSON parsing errors
-        if (error instanceof SyntaxError) {
-           return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
-        }
-        return NextResponse.json({ error: "An unexpected error occurred while adding the expense." }, { status: 500 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+
+    // Verify user membership
+    const { count, error: permissionError } = await supabase
+      .from(DB_TABLES.TRIP_MEMBERS)
+      .select('*', { count: 'exact', head: true })
+      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id);
+
+    if (permissionError || count === 0) {
+      console.error('Permission error checking trip membership for expense POST:', permissionError);
+      return NextResponse.json({ error: 'Forbidden: Not a member of this trip' }, { status: 403 });
+    }
+
+    // --- Corrected logic using 'body' ---
+    const body = await request.json();
+
+    // Basic validation
+    if (!body.title || !body.amount || !body.category || !body.date || !body.paid_by) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    // --- End Corrected logic ---
+
+    const expenseData = {
+      trip_id: tripId,
+      title: body.title,
+      amount: Number(body.amount),
+      currency: body.currency || 'USD',
+      category: body.category,
+      date: body.date,
+      paid_by: body.paid_by,
+    };
+
+    // Validate amount conversion
+    if (isNaN(expenseData.amount) || expenseData.amount <= 0) {
+      return NextResponse.json({ error: 'Invalid amount provided' }, { status: 400 });
+    }
+
+    const { data: newExpense, error } = await supabase
+      .from(DB_TABLES.EXPENSES)
+      .insert(expenseData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating expense:', error);
+      return NextResponse.json({ error: 'Failed to create expense' }, { status: 500 });
+    }
+
+    return NextResponse.json({ expense: newExpense });
+  } catch (error: any) {
+    console.error('Error adding expense:', error);
+    // Handle JSON parsing errors
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: 'Invalid JSON format' }, { status: 400 });
+    }
+    return NextResponse.json(
+      { error: 'An unexpected error occurred while adding the expense.' },
+      { status: 500 }
+    );
+  }
 }

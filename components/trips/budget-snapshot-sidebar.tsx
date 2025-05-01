@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Loader2, Pencil, Info } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // Assuming tooltip is in ui
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'; // Assuming tooltip is in ui
 
 interface BudgetSnapshotSidebarProps {
   targetBudget: number | null;
@@ -19,21 +19,22 @@ interface BudgetSnapshotSidebarProps {
 
 // Helper to format currency (could be moved to utils)
 const formatCurrency = (value: number | null | undefined | string): string => {
-  if (value === null || value === undefined) return "N/A";
+  if (value === null || value === undefined) return 'N/A';
   let numericValue: number;
   if (typeof value === 'string') {
-    if (value.trim() === '' || isNaN(parseFloat(value))) return "N/A";
+    if (value.trim() === '' || isNaN(parseFloat(value))) return 'N/A';
     numericValue = parseFloat(value);
   } else if (typeof value === 'number') {
     numericValue = value;
   } else {
-    return "N/A";
+    return 'N/A';
   }
-  if (isNaN(numericValue)) return "N/A";
+  if (isNaN(numericValue)) return 'N/A';
   return `$${numericValue.toFixed(2)}`;
 };
 
-export function BudgetSnapshotSidebar({ // Export the component
+export function BudgetSnapshotSidebar({
+  // Export the component
   targetBudget,
   totalPlanned,
   totalSpent,
@@ -43,17 +44,17 @@ export function BudgetSnapshotSidebar({ // Export the component
   onSave,
   onLogExpenseClick,
 }: BudgetSnapshotSidebarProps) {
-  const [editedBudget, setEditedBudget] = useState<string>(targetBudget?.toString() ?? "");
+  const [editedBudget, setEditedBudget] = useState<string>(targetBudget?.toString() ?? '');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setEditedBudget(targetBudget?.toString() ?? "");
+    setEditedBudget(targetBudget?.toString() ?? '');
   }, [targetBudget, isEditing]);
 
   const handleSaveClick = async () => {
     const newBudgetValue = parseFloat(editedBudget);
     if (isNaN(newBudgetValue) || newBudgetValue < 0) {
-      console.error("Invalid budget value");
+      console.error('Invalid budget value');
       // Consider adding a toast notification here for user feedback
       return;
     }
@@ -62,7 +63,7 @@ export function BudgetSnapshotSidebar({ // Export the component
       await onSave(newBudgetValue);
       // Success: Parent component might call onEditToggle(false)
     } catch (error) {
-      console.error("Failed to save budget from sidebar:", error);
+      console.error('Failed to save budget from sidebar:', error);
       // Error handled by parent toast
     } finally {
       setIsSaving(false);
@@ -80,7 +81,12 @@ export function BudgetSnapshotSidebar({ // Export the component
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-semibold text-md flex items-center">Budget Snapshot</h3>
         {canEdit && !isEditing && (
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditToggle(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onEditToggle(true)}
+          >
             <Pencil className="h-4 w-4" />
             <span className="sr-only">Edit Budget</span>
           </Button>
@@ -124,10 +130,14 @@ export function BudgetSnapshotSidebar({ // Export the component
             </TooltipTrigger>
             <TooltipContent side="top">
               <p>Remaining = Target Budget - Total Planned</p>
-              <p className="text-xs text-muted-foreground">(Planned includes itinerary item costs)</p>
+              <p className="text-xs text-muted-foreground">
+                (Planned includes itinerary item costs)
+              </p>
             </TooltipContent>
           </Tooltip>
-          <span className={remaining !== null && remaining < 0 ? 'text-destructive' : ''}>{formatCurrency(remaining)}</span>
+          <span className={remaining !== null && remaining < 0 ? 'text-destructive' : ''}>
+            {formatCurrency(remaining)}
+          </span>
         </div>
       </div>
 
@@ -152,4 +162,4 @@ export function BudgetSnapshotSidebar({ // Export the component
 }
 
 // Default export
-export default BudgetSnapshotSidebar; 
+export default BudgetSnapshotSidebar;

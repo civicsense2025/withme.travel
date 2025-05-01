@@ -31,33 +31,33 @@ console.log(`Found ${files.length} files to update.`);
 let successCount = 0;
 let errorCount = 0;
 
-files.forEach(filePath => {
+files.forEach((filePath) => {
   try {
     console.log(`Processing: ${filePath}`);
     let content = fs.readFileSync(filePath, 'utf8');
-    
+
     // Replace the import from auth-helpers-nextjs
     content = content.replace(
       /import\s+\{\s*createRouteHandlerClient\s*\}\s+from\s+['"]@supabase\/auth-helpers-nextjs['"]/g,
       `import { createApiClient } from "@/utils/supabase/server"`
     );
-    
+
     content = content.replace(
       /import\s+\{\s*createServerComponentClient\s*\}\s+from\s+['"]@supabase\/auth-helpers-nextjs['"]/g,
       `import { createServerClientComponent } from "@/utils/supabase/server"`
     );
-    
+
     // Replace client creation patterns
     content = content.replace(
       /const\s+supabase\s*=\s*createRouteHandlerClient(?:.*?)?\(\s*\{\s*cookies(?:.*?)?\s*\}\s*\)/gs,
       `const supabase = await createApiClient()`
     );
-    
+
     content = content.replace(
       /const\s+supabase\s*=\s*createServerComponentClient(?:.*?)?\(\s*\{\s*cookies(?:.*?)?\s*\}\s*\)/gs,
       `const supabase = await createServerClientComponent()`
     );
-    
+
     // Write the updated content back to the file
     fs.writeFileSync(filePath, content);
     successCount++;
@@ -75,4 +75,4 @@ console.log(`Errors: ${errorCount}`);
 
 if (errorCount > 0) {
   console.log('\nWarning: Some files could not be updated automatically. Manual review is needed.');
-} 
+}

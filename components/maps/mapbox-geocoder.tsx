@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import React, { useRef, useEffect } from 'react';
 import MapboxGeocoder, { GeocoderOptions } from '@mapbox/mapbox-gl-geocoder';
@@ -25,7 +25,11 @@ interface MapboxGeocoderProps {
   options?: Omit<GeocoderOptions, 'accessToken' | 'mapboxgl'>; // Allow passing other options
 }
 
-const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, initialValue, options }) => {
+const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({
+  onResult,
+  initialValue,
+  options,
+}) => {
   const geocoderContainerRef = useRef<HTMLDivElement>(null);
   // Add ref for the geocoder instance
   const geocoderInstanceRef = useRef<MapboxGeocoder | null>(null);
@@ -39,7 +43,7 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, init
     if (geocoderContainerRef.current) {
       // Capture the reference value in a local variable
       const container = geocoderContainerRef.current;
-      
+
       const geocoder = new MapboxGeocoder({
         accessToken: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!,
         mapboxgl: mapboxgl as any, // Use type assertion as a temporary workaround for the mapboxgl instance type mismatch
@@ -58,7 +62,8 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, init
       }
 
       // Listen for results
-      geocoder.on('result', (e: any) => { // Use 'any' for the event type for now
+      geocoder.on('result', (e: any) => {
+        // Use 'any' for the event type for now
         // The actual result data is typically on e.result
         if (e.result) {
           onResult(e.result as GeocoderResult); // Assert type for the result object
@@ -80,7 +85,7 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, init
         if (container) {
           // Remove all child nodes
           while (container.firstChild) {
-              container.removeChild(container.firstChild);
+            container.removeChild(container.firstChild);
           }
         }
       };
@@ -90,4 +95,4 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({ onResult, init
   return <div ref={geocoderContainerRef} className="mapbox-geocoder" />;
 };
 
-export default MapboxGeocoderComponent; 
+export default MapboxGeocoderComponent;

@@ -5,7 +5,7 @@ import { createApi } from 'unsplash-js';
 const unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY;
 
 if (!unsplashAccessKey) {
-  console.error("UNSPLASH_ACCESS_KEY environment variable is not set.");
+  console.error('UNSPLASH_ACCESS_KEY environment variable is not set.');
   // Optionally throw an error during build/startup if needed
 }
 
@@ -36,19 +36,22 @@ export async function GET(request: Request) {
 
     if (result.errors) {
       console.error('Unsplash API Error:', result.errors);
-      return NextResponse.json({ error: 'Failed to fetch from Unsplash', details: result.errors }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to fetch from Unsplash', details: result.errors },
+        { status: 500 }
+      );
     }
 
     // Map results to a simpler format if desired, e.g., only URLs and descriptions
     // Add type for the photo object based on accessed properties
     type UnsplashPhoto = {
       id: string;
-      urls: { regular: string; thumb: string; };
+      urls: { regular: string; thumb: string };
       alt_description: string | null;
       description: string | null;
       user: {
         name: string;
-        links: { html: string; };
+        links: { html: string };
       };
     };
 
@@ -62,9 +65,11 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json({ photos: photos || [], totalPages: result.response?.total_pages });
-
   } catch (error: any) {
     console.error('Error fetching Unsplash photos:', error);
-    return NextResponse.json({ error: 'Internal server error fetching Unsplash photos', details: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error fetching Unsplash photos', details: error.message },
+      { status: 500 }
+    );
   }
-} 
+}

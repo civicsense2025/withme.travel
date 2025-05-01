@@ -20,11 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -33,12 +29,14 @@ const pollSchema = z.object({
     message: 'Title must be at least 3 characters.',
   }),
   description: z.string().optional(),
-  options: z.array(
-    z.object({
-      title: z.string().min(1, { message: 'Option title is required' }),
-      description: z.string().optional(),
-    })
-  ).min(2, { message: 'At least 2 options are required' }),
+  options: z
+    .array(
+      z.object({
+        title: z.string().min(1, { message: 'Option title is required' }),
+        description: z.string().optional(),
+      })
+    )
+    .min(2, { message: 'At least 2 options are required' }),
   expiresAt: z.date().optional(),
 });
 
@@ -50,14 +48,10 @@ interface CreatePollFormProps {
   onCancel?: () => void;
 }
 
-export function CreatePollForm({
-  tripId,
-  onSuccess,
-  onCancel,
-}: CreatePollFormProps) {
+export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
+
   const form = useForm<PollFormValues>({
     resolver: zodResolver(pollSchema),
     defaultValues: {
@@ -69,31 +63,31 @@ export function CreatePollForm({
       ],
     },
   });
-  
+
   const handleAddOption = () => {
     const currentOptions = form.getValues('options');
     form.setValue('options', [...currentOptions, { title: '', description: '' }]);
   };
-  
+
   const handleRemoveOption = (index: number) => {
     const currentOptions = form.getValues('options');
     if (currentOptions.length <= 2) {
       toast({
-        description: "At least 2 options are required",
-        variant: "destructive"
+        description: 'At least 2 options are required',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     form.setValue(
       'options',
       currentOptions.filter((_, i) => i !== index)
     );
   };
-  
+
   const onSubmit = async (values: PollFormValues) => {
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch(`/api/trips/${tripId}/vote/create`, {
         method: 'POST',
@@ -102,31 +96,32 @@ export function CreatePollForm({
         },
         body: JSON.stringify(values),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create poll');
       }
-      
+
       toast({
-        description: "Poll created successfully",
+        description: 'Poll created successfully',
       });
-      
+
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       console.error('Error creating poll:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create the poll. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to create the poll. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -139,14 +134,12 @@ export function CreatePollForm({
               <FormControl>
                 <Input placeholder="What should we do on Friday?" {...field} />
               </FormControl>
-              <FormDescription>
-                Create a clear question for your group to vote on
-              </FormDescription>
+              <FormDescription>Create a clear question for your group to vote on</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="description"
@@ -154,17 +147,13 @@ export function CreatePollForm({
             <FormItem>
               <FormLabel>Description (optional)</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Add more details about this poll" 
-                  rows={3}
-                  {...field} 
-                />
+                <Textarea placeholder="Add more details about this poll" rows={3} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <FormLabel>Options</FormLabel>
@@ -179,7 +168,7 @@ export function CreatePollForm({
               Add Option
             </Button>
           </div>
-          
+
           {form.getValues('options').map((_, index) => (
             <div key={index} className="flex gap-3 items-start">
               <div className="flex-1 space-y-2">
@@ -195,7 +184,7 @@ export function CreatePollForm({
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name={`options.${index}.description`}
@@ -212,7 +201,7 @@ export function CreatePollForm({
                   )}
                 />
               </div>
-              
+
               <Button
                 type="button"
                 variant="ghost"
@@ -225,7 +214,7 @@ export function CreatePollForm({
             </div>
           ))}
         </div>
-        
+
         <FormField
           control={form.control}
           name="expiresAt"
@@ -238,15 +227,11 @@ export function CreatePollForm({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
+                        'w-full pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
                       )}
                     >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
+                      {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
@@ -262,21 +247,17 @@ export function CreatePollForm({
                 </PopoverContent>
               </Popover>
               <FormDescription>
-                Set a deadline for the poll. If no date is set, the poll will remain active indefinitely.
+                Set a deadline for the poll. If no date is set, the poll will remain active
+                indefinitely.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <div className="flex justify-end gap-2">
           {onCancel && (
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </Button>
           )}
@@ -287,4 +268,4 @@ export function CreatePollForm({
       </form>
     </Form>
   );
-} 
+}

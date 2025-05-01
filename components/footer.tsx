@@ -1,43 +1,34 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { useAuth } from "@/lib/hooks/use-auth"
-import { Logo } from "@/components/logo"
+import Link from 'next/link';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { Logo } from '@/components/logo';
 
 export function Footer() {
-  const { user, profile } = useAuth()
-  const isAdmin = profile?.is_admin
+  const { user, profile } = useAuth();
+  const isAdmin = profile?.is_admin;
 
   // Major continents for the footer links
-  const continents = [
-    "Africa",
-    "Asia",
-    "Europe",
-    "North America",
-    "South America",
-    "Oceania"
-  ]
+  const continents = ['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania'];
 
   const exploreLinks = [
-    { href: "/destinations", label: "Destinations" },
-    { href: "/itineraries", label: "Itineraries" },
-    { href: "/trips/create", label: "Plan a Trip" },
-  ]
+    { href: '/destinations', label: 'Destinations' },
+    { href: '/itineraries', label: 'Itineraries' },
+    { href: '/trips/create', label: 'Plan a Trip' },
+  ];
   if (user) {
-    exploreLinks.push({ href: "/", label: "My Trips" })
+    exploreLinks.push({ href: '/', label: 'My Trips' });
   }
 
-  const companyLinks = [
-    { href: "/support", label: "Support Us" },
-  ]
+  const companyLinks = [{ href: '/support', label: 'Support Us' }];
   if (isAdmin) {
-    companyLinks.push({ href: "/admin", label: "Admin" })
+    companyLinks.push({ href: '/admin', label: 'Admin' });
   }
 
   const legalLinks = [
-    { href: "/terms", label: "Terms of Service" },
-    { href: "/privacy", label: "Privacy Policy" },
-  ]
+    { href: '/terms', label: 'Terms of Service' },
+    { href: '/privacy', label: 'Privacy Policy' },
+  ];
 
   return (
     <footer className="bg-muted/30 py-12 text-center">
@@ -56,7 +47,7 @@ export function Footer() {
               {continents.map((continent) => (
                 <li key={continent}>
                   <Link
-                    href={`/continents/${continent.toLowerCase().replace(/\s+/g, "-")}`}
+                    href={`/continents/${continent.toLowerCase().replace(/\s+/g, '-')}`}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
                   >
                     {continent.toLowerCase()}
@@ -153,5 +144,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
