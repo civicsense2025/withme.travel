@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
-// Remove the old helper import
-// import { createApiClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers'; // Keep this? Maybe not needed if createClient handles it
-import { createApiClient } from '@/utils/supabase/server'; // Import your SSR client creator
-import { DB_TABLES } from '@/utils/constants/database';
+import { getRouteHandlerClient } from '@/utils/supabase/unified';
+import { TABLES } from '@/utils/constants/database';
 
 // Fetch all existing tags
 export async function GET(request: Request) {
   try {
-    // Use your SSR-compatible createClient function and await it
-    const supabase = await createApiClient();
+    // Use the route handler client from unified.ts
+    const supabase = await getRouteHandlerClient(request);
 
-    // No need to pass cookies explicitly here
+    // Query tags
     const { data: tags, error } = await supabase
-      .from(DB_TABLES.TAGS)
+      .from('tags')
       .select('id, name')
       .order('name', { ascending: true });
 

@@ -1,19 +1,39 @@
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { DB_TABLES } from '@/utils/constants/database';
+// import { TABLES as LOCAL_TABLES, ENUMS as LOCAL_ENUMS } from '@/utils/constants/database'; // Removed direct imports
 import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+
+// --- Local Constant Definitions (Workaround) ---
+const LOCAL_TABLES = {
+  TRIP_MEMBERS: 'trip_members',
+  ITINERARY_ITEMS: 'itinerary_items', 
+};
+const LOCAL_ENUMS = {
+  TRIP_ROLES: {
+    ADMIN: 'admin',
+    EDITOR: 'editor',
+    CONTRIBUTOR: 'contributor',
+    VIEWER: 'viewer',
+  } as const,
+};
+type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
+// --- End Local Definitions ---
 
 // Helper function to check user membership and role
 async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  allowedRoles: string[] = [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR]
+  allowedRoles: TripRole[] = [
+    LOCAL_ENUMS.TRIP_ROLES.ADMIN,
+    LOCAL_ENUMS.TRIP_ROLES.EDITOR,
+    LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR
+  ]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(DB_TABLES.TRIP_MEMBERS)
+    .from(LOCAL_TABLES.TRIP_MEMBERS) // Use local constant
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)
@@ -32,7 +52,8 @@ async function checkTripAccess(
     };
   }
 
-  if (!allowedRoles.includes(member.role)) {
+  // Ensure member.role is treated as TripRole type for comparison
+  if (!allowedRoles.includes(member.role as TripRole)) { 
     return {
       allowed: false,
       error: 'Access Denied: You do not have sufficient permissions.',
@@ -50,13 +71,16 @@ export async function POST(
   try {
     const { tripId } = await params;
     const body = await request.json();
-    const { itemId, newDayNumber, newPosition } = body;
+    // Explicitly type the expected body structure
+    const { itemId, newDayNumber, newPosition }: { itemId: string; newDayNumber: number | null; newPosition: number } = body;
 
-    if (!tripId || !itemId || newDayNumber === undefined || newPosition === undefined) {
+    // Validate required parameters, including null for newDayNumber
+    if (!tripId || !itemId || newPosition === undefined || newDayNumber === undefined) { 
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
+    // Use the updated client creator function name
+    const supabase = createServerSupabaseClient(); 
     const {
       data: { user },
       error: authError,
@@ -66,30 +90,31 @@ export async function POST(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Check user's access to the trip
-    const awaitedSupabase = await supabase;
-    const accessCheck = await checkTripAccess(awaitedSupabase, tripId, user.id);
+    // Check user's access using local constants
+    const accessCheck = await checkTripAccess(supabase, tripId, user.id, [
+      LOCAL_ENUMS.TRIP_ROLES.ADMIN,
+      LOCAL_ENUMS.TRIP_ROLES.EDITOR,
+      LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR
+    ]); 
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status || 403 });
     }
 
     // LOGGING ADDED HERE
     console.log(`[API /reorder] Received request for trip ${tripId}:`, body);
-    console.log(`[API /reorder] Calling RPC with:`, {
+    console.log(`[API /reorder] Calling RPC update_itinerary_item_position with:`, {
       p_item_id: itemId,
       p_trip_id: tripId,
-      p_day_number: newDayNumber,
+      p_day_number: newDayNumber, // Can be null
       p_position: newPosition,
     });
 
-    // Call the updated RPC function
-    // It handles section_id lookup and reordering internally
-    const { error: rpcError } = await awaitedSupabase.rpc('update_itinerary_item_position', {
+    // Call the original RPC function again
+    const { error: rpcError } = await supabase.rpc('update_itinerary_item_position', {
       p_item_id: itemId,
       p_trip_id: tripId,
-      p_day_number: newDayNumber, // Can be null for unscheduled
+      p_day_number: newDayNumber, 
       p_position: newPosition,
-      // No need to pass p_section_id anymore
     });
 
     // Handle RPC error
@@ -103,8 +128,10 @@ export async function POST(
 
     // If RPC succeeded, return success
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) { // Catch any unexpected errors
     console.error('Error in reorder handler:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Provide a generic error message for unexpected issues
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { NavbarLogo } from './navbar-logo';
 import { NavbarSearch } from './navbar-search';
 import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
@@ -19,10 +18,10 @@ export function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
-          <NavbarLogo />
+          <Link href="/" className="font-bold text-xl">withme.travel</Link>
         </div>
         <div className="hidden md:flex flex-1 items-center space-x-4 lg:space-x-6">
           <nav className="flex items-center space-x-4 lg:space-x-6">
@@ -36,29 +35,29 @@ export function Navbar() {
               My Trips
             </Link>
             <Link
-              href="/saved"
+              href="/destinations"
               className={cn(
                 'text-sm font-medium transition-colors hover:text-primary',
-                !isActive('/saved') && 'text-muted-foreground'
+                !isActive('/destinations') && 'text-muted-foreground'
               )}
             >
-              Saved
+              Destinations
             </Link>
             <Link
-              href="/support"
+              href="/itineraries"
               className={cn(
                 'text-sm font-medium transition-colors hover:text-primary',
-                !isActive('/support') && 'text-muted-foreground'
+                !isActive('/itineraries') && 'text-muted-foreground'
               )}
             >
-              Support
+              Itineraries
             </Link>
           </nav>
         </div>
         
         <div className="flex md:hidden flex-1 items-center justify-between">
           <div className="flex">
-            <NavbarLogo />
+            <Link href="/" className="font-bold text-lg">withme.travel</Link>
           </div>
           <div className="flex items-center space-x-2">
             {!isLoading && (

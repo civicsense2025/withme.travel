@@ -47,6 +47,14 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Travel colors - muted pastels for light mode */
+    --travel-blue: 195 70% 90%;
+    --travel-pink: 335 70% 90%;
+    --travel-yellow: 45 80% 90%;
+    --travel-purple: 265 60% 90%;
+    --travel-mint: 150 60% 90%;
+    --travel-peach: 25 80% 90%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -81,6 +89,14 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Travel colors - deeper but still vibrant colors for dark mode */
+    --travel-blue: 195 70% 25%;
+    --travel-pink: 335 70% 25%;
+    --travel-yellow: 45 80% 25%;
+    --travel-purple: 265 60% 25%;
+    --travel-mint: 150 60% 25%;
+    --travel-peach: 25 80% 25%;
   }
 }
 
@@ -90,5 +106,10 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  .dark * {
+    /* Make borders more subtle in dark mode */
+    --border-opacity: 0.15 !important;
   }
 }

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createApiClient } from '@/utils/supabase/server';
 import { getRouteHandlerClient } from '@/utils/supabase/unified';
 // This endpoint clears all authentication cookies and local storage, to help resolve issues with corrupted auth data
 // Changed from GET to POST for better security (state-changing operations should use POST)
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
-    const supabase = await createApiClient();
+    const supabase = await getRouteHandlerClient(request);
 
     // Try to sign out from Supabase first (if there's an active session)
     try {
@@ -70,7 +69,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Authentication data cleared. You'll need to sign in again.",
+        message: "You're now logged out. Your session has been cleared.",
         details: {
           cookies_cleared: clearedCookies,
           cookies_failed: failedCookies,
@@ -98,7 +97,7 @@ export async function POST(request: NextRequest) {
  * This endpoint completely clears all auth cookies and actively signs out
  * the user from both client and server sessions
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log('[Auth] Clearing auth cookies...');
 
@@ -147,7 +146,7 @@ export async function GET() {
 
     // 2. Also try to sign out via API client to clear server-side session
     try {
-      const supabase = await createApiClient();
+      const supabase = await getRouteHandlerClient(request);
       await supabase.auth.signOut({ scope: 'global' });
       console.log('[Auth] Signed out via Supabase API');
     } catch (error) {

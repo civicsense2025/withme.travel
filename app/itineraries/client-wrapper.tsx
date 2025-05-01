@@ -18,10 +18,14 @@ interface ItineraryItem {
   image: string;
   location: string;
   duration: string;
-  groupSize: string;
   tags: string[];
-  category?: string;
-  slug?: string;
+  slug: string;
+  is_published: boolean;
+  author?: {
+    id: string;
+    name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 interface ClientWrapperProps {
@@ -32,10 +36,14 @@ interface ClientWrapperProps {
     image: string;
     location: string;
     duration: string;
-    groupSize: string;
     tags: string[];
-    category: string;
     slug: string;
+    is_published: boolean;
+    author?: {
+      id: string;
+      name: string | null;
+      avatar_url: string | null;
+    } | null;
   }>;
   destinations: any[]; // Replace with proper type when available
 }

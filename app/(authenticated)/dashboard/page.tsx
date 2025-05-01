@@ -11,7 +11,7 @@ import { TripsList } from './components/trips-list';
 import { getRecentTrips, getUserProfile } from './actions';
 import { DashboardClientWrapper } from './components/dashboard-client-wrapper';
 import TravelTracker from '@/components/TravelTracker';
-import { getServerSession } from '@/utils/supabase/server';
+import { getServerSession } from '@/utils/supabase/unified';
 
 // Force dynamic rendering because we use cookies()
 export const dynamic = 'force-dynamic';
@@ -46,11 +46,7 @@ interface Trip {
 // Main dashboard page - a server component
 export default async function DashboardPage() {
 // Check if the user is authenticated
-const {
-  data: { session },
-} = (await getServerSession()) as {
-  data: { session: import('@supabase/supabase-js').Session | null };
-};
+const session = await getServerSession();
 
 // Redirect if not authenticated
 if (!session) {

@@ -4,12 +4,16 @@ import { API_ROUTES } from '@/utils/constants/routes';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { PlusCircle, ChevronDown, ChevronUp, Send, X } from 'lucide-react';
+import { PlusCircle, ChevronDown, ChevronUp, Send, X, MapPin } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { cn } from '@/lib/utils';
 
-import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+// UI Components
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -21,10 +25,38 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { formatError } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card'; // Use Card for consistent styling
-import { cn } from '@/lib/utils';
-import { Alert, AlertDescription } from '@/components/ui/alert'; // Import Alert components
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
+
+// Define formatError helper function locally since importing from lib/utils causes issues
+const formatError = (
+  error: unknown,
+  fallback: string = 'An unexpected error occurred'
+): string => {
+  if (!error) return fallback;
+  
+  // If it's a string, return it directly
+  if (typeof error === 'string') return error;
+  
+  // If it's an Error object with a message
+  if (error instanceof Error) return error.message;
+  
+  // If it's an object with a message property
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const msg = (error as { message: unknown }).message;
+    if (typeof msg === 'string') return msg;
+  }
+  
+  // Default fallback
+  return fallback;
+};
 
 // Define GeocoderResult locally or import if exported
 interface GeocoderResult {
@@ -36,6 +68,20 @@ interface GeocoderResult {
   context?: any;
   [key: string]: any;
 }
+
+// Form schema validation for quick add item
+const quickAddSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  type: z.enum(['activity', 'accommodation', 'transportation', 'food'], {
+    errorMap: () => ({ message: 'Please select a valid type' }),
+  }),
+  date: z.date().optional(),
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type QuickAddFormValues = z.infer<typeof quickAddSchema>;
 
 interface QuickAddItemFormProps {
   tripId: string;
@@ -51,21 +97,39 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState('');
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [notes, setNotes] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<GeocoderResult | null>(null);
+
+  // Initialize react-hook-form with zod validation
+  const { 
+    register, 
+    handleSubmit: hookFormSubmit, 
+    setValue, 
+    watch,
+    reset,
+    formState: { errors } 
+  } = useForm<QuickAddFormValues>({
+    resolver: zodResolver(quickAddSchema),
+    defaultValues: {
+      title: '',
+      type: undefined,
+      notes: '',
+    }
+  });
+
+  // Watch form values
+  const title = watch('title');
+  const type = watch('type');
+  const date = watch('date');
+  const startTime = watch('start_time');
+  const endTime = watch('end_time');
+  const notes = watch('notes');
 
   // --- Handler when a location is selected ---
   const handleGeocoderResult = (result: GeocoderResult | null) => {
     setSelectedPlace(result);
     if (result) {
       // Pre-fill title, expand form
-      setTitle(result.text || result.place_name || ''); // Pre-fill title
+      setValue('title', result.text || result.place_name || ''); // Pre-fill title
       setIsExpanded(true); // Expand the form
       setError(null);
     } else {
@@ -77,12 +141,14 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
 
   // --- Reset Form State ---
   const resetFormState = () => {
-    setTitle('');
-    setType('');
-    setDate(undefined);
-    setStartTime('');
-    setEndTime('');
-    setNotes('');
+    reset({
+      title: '',
+      type: undefined,
+      date: undefined,
+      start_time: '',
+      end_time: '',
+      notes: '',
+    });
     setSelectedPlace(null); // Clear selected place too
     setIsLoading(false);
     setError(null);
@@ -90,27 +156,27 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
   };
 
   // --- Handle Form Submission ---
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedPlace || !type) {
-      setError('Location and Type are required.');
+  const onSubmit = hookFormSubmit(async (data) => {
+    if (!selectedPlace) {
+      setError('Location is required.');
       toast({
         title: 'Missing Info',
-        description: 'Please select a location and item type.',
+        description: 'Please select a location.',
         variant: 'destructive',
       });
       return;
     }
+    
     setIsLoading(true);
     setError(null);
 
     const newItemData = {
-      title: title || selectedPlace.text || 'Itinerary Item', // Fallback title
-      type: type,
-      date: date ? format(date, 'yyyy-MM-dd') : null,
-      start_time: startTime || null,
-      end_time: endTime || null,
-      notes: notes,
+      title: data.title || selectedPlace.text || 'Itinerary Item', // Fallback title
+      type: data.type, // This is now validated by zod schema
+      date: data.date ? format(data.date, 'yyyy-MM-dd') : null,
+      start_time: data.start_time || null,
+      end_time: data.end_time || null,
+      notes: data.notes || '',
       // Location details from selectedPlace state
       place_name: selectedPlace.text,
       address: selectedPlace.properties?.address || selectedPlace.place_name,
@@ -144,159 +210,162 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
     } finally {
       setIsLoading(false);
     }
-  };
+  });
 
   // --- Prepare Mapbox Options ---
   const geocoderOptions: any = {
-    placeholder: 'Add a place to your itinerary...',
+    placeholder: 'Search for a location...',
     marker: false, // Don't show a marker on the map (if map was present)
   };
   if (proximityLng != null && proximityLat != null) {
     // Check if coordinates are valid
     geocoderOptions.proximity = [proximityLng, proximityLat];
-    console.log('Using proximity:', geocoderOptions.proximity); // Log for debugging
-  } else {
-    console.log('No proximity used.'); // Log for debugging
+  }
+
+  if (!isExpanded) {
+    return (
+      <Button
+        variant="outline"
+        className="w-full h-auto py-6 border-dashed flex flex-col gap-2 mb-6"
+        onClick={() => setIsExpanded(true)}
+      >
+        <PlusCircle className="h-5 w-5" />
+        <span>Add location to your trip</span>
+      </Button>
+    );
   }
 
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
-        <form onSubmit={handleSubmit}>
-          {/* Always visible: Location Search */}
-          <div className="mb-4">
-            <Label htmlFor="quick-add-location" className="sr-only">
-              Location
-            </Label>
-            <MapboxGeocoderComponent
-              key={selectedPlace ? 'selected' : 'empty'} // Force re-render on selection/clear
-              onResult={handleGeocoderResult}
-              options={geocoderOptions}
-            />
-            {!isExpanded && (
+        <form onSubmit={onSubmit}>
+          <div className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="quick-add-location">Location</Label>
+              <MapboxGeocoderComponent
+                key={selectedPlace ? 'selected' : 'empty'} // Force re-render on selection/clear
+                onResult={handleGeocoderResult}
+                options={geocoderOptions}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="quick-add-title">Title</Label>
+              <Input
+                id="quick-add-title"
+                {...register('title')}
+                placeholder="e.g., Dinner at Paella Place"
+              />
+              {errors.title && (
+                <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="quick-add-type">Type</Label>
+              <Select
+                value={type}
+                onValueChange={(value) => setValue('type', value as any)}
+              >
+                <SelectTrigger id="quick-add-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activity">Activity</SelectItem>
+                  <SelectItem value="accommodation">Accommodation</SelectItem>
+                  <SelectItem value="transportation">Transportation</SelectItem>
+                  <SelectItem value="food">Food & Dining</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.type && (
+                <p className="text-sm text-red-500 mt-1">{errors.type.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !date && 'text-muted-foreground'
+                      )}
+                    >
+                      {date ? format(date, 'PPP') : 'Select date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar 
+                      mode="single" 
+                      selected={date} 
+                      onSelect={(date) => setValue('date', date)} 
+                      initialFocus 
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-add-startTime">Start Time</Label>
+                <Input
+                  id="quick-add-startTime"
+                  type="time"
+                  {...register('start_time')}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-add-endTime">End Time</Label>
+                <Input
+                  id="quick-add-endTime"
+                  type="time"
+                  {...register('end_time')}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="quick-add-notes">Notes</Label>
+              <Textarea
+                id="quick-add-notes"
+                {...register('notes')}
+                placeholder="Booking reference, details, etc."
+                rows={2}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsExpanded(true)} // Allow manual expansion without location? Maybe not.
-                className="mt-2 text-sm text-muted-foreground"
-                disabled={!selectedPlace} // Only allow manual expand if location chosen? Or remove?
+                onClick={() => {
+                  setIsExpanded(false);
+                  resetFormState();
+                }}
+                aria-label="Cancel"
               >
-                <ChevronDown className="h-4 w-4 mr-1" /> Add Details
+                <X className="h-4 w-4 mr-1" /> Cancel
               </Button>
-            )}
-          </div>
-
-          {/* Conditionally Rendered Fields */}
-          {isExpanded && (
-            <div className="space-y-4 border-t pt-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="quick-add-title">Title</Label>
-                <Input
-                  id="quick-add-title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Dinner at Paella Place"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="quick-add-type">Type *</Label>
-                <Select value={type} onValueChange={setType} required>
-                  <SelectTrigger id="quick-add-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="activity">Activity</SelectItem>
-                    <SelectItem value="accommodation">Accommodation</SelectItem>
-                    <SelectItem value="transportation">Transportation</SelectItem>
-                    <SelectItem value="food">Food & Dining</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !date && 'text-muted-foreground'
-                        )}
-                      >
-                        {date ? format(date, 'PPP') : 'Select date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="quick-add-startTime">Start Time</Label>
-                  <Input
-                    id="quick-add-startTime"
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="quick-add-endTime">End Time</Label>
-                  <Input
-                    id="quick-add-endTime"
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="quick-add-notes">Notes</Label>
-                <Textarea
-                  id="quick-add-notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Booking reference, details, etc."
-                  rows={2}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setIsExpanded(false);
-                    resetFormState(); /* Also clear Mapbox Input */
-                  }}
-                  aria-label="Cancel"
-                >
-                  <X className="h-4 w-4 mr-1" /> Cancel
-                </Button>
-                <Button type="submit" size="sm" disabled={isLoading || !type}>
-                  {isLoading ? (
-                    'Adding...'
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-1" /> Add Item
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button type="submit" size="sm" disabled={isLoading}>
+                {isLoading ? (
+                  'Adding...'
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-1" /> Add Item
+                  </>
+                )}
+              </Button>
             </div>
-          )}
+          </div>
         </form>
       </CardContent>
     </Card>

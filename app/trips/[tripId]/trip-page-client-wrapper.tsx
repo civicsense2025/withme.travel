@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { TripPageClient } from './trip-page-client';
 import { ClassErrorBoundary } from '@/components/error-boundary';
 import { TripPageError } from '@/components/trips/trip-page-error';
-import { PresenceProvider } from '@/components/presence/presence-context';
 import { TripDataProvider } from './context/trip-data-provider';
 import { useRouter } from 'next/navigation';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
@@ -69,9 +68,7 @@ export default function TripPageClientWrapper({
   return (
     <ClassErrorBoundary fallback={<TripPageError tripId={tripId} />} section="trip-page-client">
       <TripDataProvider tripId={tripId}>
-        <PresenceProvider tripId={tripId}>
-          <TripPageClient tripId={tripId} canEdit={canEdit} />
-        </PresenceProvider>
+        <TripPageClient tripId={tripId} canEdit={canEdit} />
       </TripDataProvider>
     </ClassErrorBoundary>
   );

@@ -5,8 +5,14 @@ RETURNS SETOF json
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+    row record;
 BEGIN
-  RETURN QUERY EXECUTE query;
+  -- Loop through results and convert each row to json
+  FOR row IN EXECUTE query LOOP
+    RETURN NEXT to_json(row);
+  END LOOP;
+  RETURN;
 EXCEPTION
   WHEN OTHERS THEN
     RAISE;

@@ -225,3 +225,45 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Next.js Best Practices](docs/BEST-PRACTICES.md) - Technical guidelines for working with Next.js
 - [Next.js 15 Migration Guide](docs/nextjs15-migration.md) - Guide for upgrading to Next.js 15
 - [API Documentation](docs/API.md) - API endpoints and usage examples
+
+## 📝 Content Quality & Style Guide Summary
+
+This section summarizes the key principles for content, primarily focusing on city profiles but applicable broadly where relevant. The full guide is available at [docs/CONTENT_GUIDE.md](docs/CONTENT_GUIDE.md).
+
+### Core Principles
+
+- **Authentic Insider Perspective**: Write as a well-traveled friend sharing genuine insights and local knowledge. Balance appreciation with honesty about challenges.
+- **Conversational Warmth**: Use casual, engaging, and natural language. Vary sentence structure and incorporate local flavor where appropriate.
+- **Distinctive Character**: Adapt writing style to match the unique personality of each city or topic.
+- **Organic Structure**: Let content flow naturally, avoiding rigid or formulaic paragraph structures.
+
+### Key Elements
+
+- **Specific Local References**: Include named places, streets, neighborhoods, and local details.
+- **Sensory Experience**: Use vivid sensory details (sights, sounds, smells) to bring locations to life.
+- **Authentic Local Experience**: Capture community dynamics, local rhythms, and use active, vibrant language.
+
+### Style & Tone
+
+- **Balance**: Mix practical info with atmosphere, history with trends, iconic spots with hidden gems.
+- **Tone**: Avoid overly promotional language. Aim for warmth, helpfulness, enthusiasm balanced with honesty, and humor where appropriate. Align with the "friendly organizer" brand voice.
+
+### Quality Standards
+
+- **Markers**: Specific local references, authentic terminology, balanced perspective (positive/challenges), conversational flow.
+- **Avoid**: Generic clichés, formal tone, rigid structure, exclusively positive portrayals, lack of specific detail.
+
+Refer to the full [Content Guide](docs/CONTENT_GUIDE.md) for detailed guidelines, HTML structure requirements, and brand alignment details.
+
+## Itinerary Templates
+
+### Fixing Missing Sections in Templates
+
+If you encounter templates without sections (like the "Traditional Kyoto: 4-Day Cultural Immersion" template), you can run the fix script to create the required sections and items:
+
+```bash
+# Connect to your database and run the SQL script
+psql $DATABASE_URL -f migrations/fix_kyoto_template.sql
+```
+
+This will create the necessary sections and sample itinerary items for the template to display properly. You can use this pattern to create/fix other templates as needed.

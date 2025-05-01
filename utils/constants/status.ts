@@ -30,12 +30,20 @@ export type PermissionStatus = (typeof PERMISSION_STATUSES)[keyof typeof PERMISS
 
 // Itinerary categories
 export const ITINERARY_CATEGORIES = {
-  ACTIVITY: 'activity',
-  FLIGHT: 'flight',
-  HOTEL: 'hotel',
-  RESTAURANT: 'restaurant',
-  TRANSPORTATION: 'transportation',
-  OTHER: 'other',
+  ICONIC_LANDMARKS: 'Iconic Landmarks',
+  LOCAL_SECRETS: 'Local Secrets',
+  CULTURAL_EXPERIENCES: 'Cultural Experiences',
+  OUTDOOR_ADVENTURES: 'Outdoor Adventures',
+  FOOD_DRINK: 'Food & Drink',
+  NIGHTLIFE: 'Nightlife',
+  RELAXATION: 'Relaxation',
+  SHOPPING: 'Shopping',
+  GROUP_ACTIVITIES: 'Group Activities',
+  DAY_EXCURSIONS: 'Day Excursions',
+  ACCOMMODATIONS: 'Accommodations',
+  TRANSPORTATION: 'Transportation',
+  FLEXIBLE_OPTIONS: 'Flexible Options',
+  SPECIAL_OCCASIONS: 'Special Occasions',
 } as const;
 
 export type ItineraryCategory = (typeof ITINERARY_CATEGORIES)[keyof typeof ITINERARY_CATEGORIES];

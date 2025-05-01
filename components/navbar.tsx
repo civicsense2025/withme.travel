@@ -307,6 +307,16 @@ export function Navbar() {
               </NavItem>
             )}
 
+            {/* Add Destinations link */}
+            <NavItem href="/destinations" isActive={isActive('/destinations')} isLoading={isLoadingState}>
+              Destinations
+            </NavItem>
+
+            {/* Add Itineraries link */}
+            <NavItem href="/itineraries" isActive={isActive('/itineraries')} isLoading={isLoadingState}>
+              Itineraries
+            </NavItem>
+
             {/* Support Us link should always be visible */}
             <NavItem href="/support" isActive={isActive('/support')} isLoading={isLoadingState}>
               support us
@@ -480,6 +490,29 @@ export function Navbar() {
                       </Link>
                     </>
                   )}
+                  
+                  {/* Add Destinations link to mobile menu */}
+                  <Link
+                    href="/destinations"
+                    className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
+                      isActive('/destinations') ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    Destinations
+                  </Link>
+                  
+                  {/* Add Itineraries link to mobile menu */}
+                  <Link
+                    href="/itineraries"
+                    className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
+                      isActive('/itineraries') ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    Itineraries
+                  </Link>
+                  
                   <Link
                     href="/support"
                     className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
@@ -489,6 +522,7 @@ export function Navbar() {
                   >
                     support us
                   </Link>
+                  
                   {!isLoadingState && isAdmin && (
                     <Link
                       href="/admin/dashboard"

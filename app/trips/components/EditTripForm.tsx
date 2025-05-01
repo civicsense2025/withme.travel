@@ -2,7 +2,7 @@
 
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler, Controller, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,15 +13,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Trip } from '@/types/trip';
-import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
 import { TagInput } from '@/components/ui/tag-input';
 import { Tag } from '@/types/tag';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { formatError } from '@/lib/utils';
+import { format, parseISO } from 'date-fns';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormDescription, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Database } from '@/types/supabase'; // Import Database type
 import { Loader2 } from 'lucide-react';
+import { cn, formatDate } from '@/lib/utils';
+import { Camera } from 'lucide-react';
+
+// Lazy load the MapboxGeocoderComponent
+const MapboxGeocoderComponent = lazy(() => import('@/components/maps/mapbox-geocoder'));
 
 // Define GeocoderResult locally as it's not exported
 interface GeocoderResult {
@@ -80,15 +84,36 @@ interface EditTripFormProps {
     tags?: string[];
   };
   initialDestinationName?: string | null;
-  onSave: (data: EditTripFormValues & { destination_id: string | null }) => Promise<void>; // Pass validated data + destination_id back
-  onClose: () => void; // Function to close the sheet
+  onSave: (data: EditTripFormValues & { destination_id?: string | null }) => void;
+  onClose: () => void;
+  onChangeCover?: () => void;
+}
+
+// Define formatError locally if not exported
+function formatError(error: unknown, fallback: string = 'An unexpected error occurred'): string {
+  if (!error) return fallback;
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
+// Define formatDateRange locally
+function formatDateRange(startDate?: string | Date | null, endDate?: string | Date | null): string {
+  if (!startDate && !endDate) return 'Dates not set';
+  const startStr = startDate ? formatDate(startDate) : null;
+  const endStr = endDate ? formatDate(endDate) : null;
+  if (startStr && !endStr) return `From ${startStr}`;
+  if (!startStr && endStr) return `Until ${endStr}`;
+  if (startStr && endStr) return `${startStr} - ${endStr}`;
+  return 'Invalid date range';
 }
 
 export function EditTripForm({
   trip,
   initialDestinationName,
-  onSave, // Add onSave
-  onClose, // Add onClose
+  onSave,
+  onClose,
+  onChangeCover,
 }: EditTripFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -261,7 +286,23 @@ export function EditTripForm({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cover_image_url">Cover Image URL</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="cover_image_url">Cover Image URL</Label>
+                {onChangeCover && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      onClose(); // Close the edit form first
+                      onChangeCover(); // Then open image selector dialog
+                    }}
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    Select Image
+                  </Button>
+                )}
+              </div>
               <Input
                 id="cover_image_url"
                 type="url"
@@ -275,11 +316,13 @@ export function EditTripForm({
 
             <div className="space-y-2">
               <Label htmlFor="destination-search">Primary Destination</Label>
-              <MapboxGeocoderComponent
-                onResult={handleGeocoderResultWrapper}
-                initialValue={destinationDisplay}
-                options={{ placeholder: 'Search city, address, or place...' }}
-              />
+              <Suspense fallback={<p>Loading MapboxGeocoderComponent...</p>}>
+                <MapboxGeocoderComponent
+                  onResult={handleGeocoderResultWrapper}
+                  initialValue={destinationDisplay}
+                  options={{ placeholder: 'Search city, address, or place...' }}
+                />
+              </Suspense>
               {isLookingUpDest && (
                 <p className="text-sm text-muted-foreground">Looking up destination...</p>
               )}

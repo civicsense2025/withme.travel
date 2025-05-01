@@ -12,9 +12,11 @@ import { Menu, LogOut, User, Map, Bookmark, MapPin, Search, Settings } from 'luc
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSearch } from '@/contexts/search-context';
 import { NavbarSearch } from './navbar-search';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const { user, profile, signOut, isLoading } = useAuth();
   const { openSearch } = useSearch();
@@ -33,6 +35,14 @@ export function MobileNav() {
         .substring(0, 2);
     }
     return user.email?.charAt(0).toUpperCase() || 'U';
+  };
+
+  // Handle logout with loading state
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await signOut();
+    setIsOpen(false);
+    // No need to reset isLoggingOut as the page will refresh
   };
 
   return (
@@ -99,6 +109,24 @@ export function MobileNav() {
                       Saved
                     </Button>
                   </Link>
+                  <Link href="/destinations" onClick={() => setIsOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className={cn('w-full justify-start', pathname === '/destinations' && 'bg-muted')}
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Destinations
+                    </Button>
+                  </Link>
+                  <Link href="/itineraries" onClick={() => setIsOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className={cn('w-full justify-start', pathname === '/itineraries' && 'bg-muted')}
+                    >
+                      <Map className="mr-2 h-4 w-4" />
+                      Itineraries
+                    </Button>
+                  </Link>
                   <Link href="/travel-map" onClick={() => setIsOpen(false)}>
                     <Button
                       variant="ghost"
@@ -109,6 +137,15 @@ export function MobileNav() {
                     >
                       <MapPin className="mr-2 h-4 w-4" />
                       Travel Map
+                    </Button>
+                  </Link>
+                  <Link href="/support" onClick={() => setIsOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className={cn('w-full justify-start', pathname === '/support' && 'bg-muted')}
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Contribute
                     </Button>
                   </Link>
                   <Link href="/settings" onClick={() => setIsOpen(false)}>
@@ -166,13 +203,20 @@ export function MobileNav() {
                 variant="ghost"
                 size="sm"
                 className="w-full justify-center text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
-                onClick={() => {
-                  signOut();
-                  setIsOpen(false);
-                }}
+                onClick={handleLogout}
+                disabled={isLoggingOut}
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log Out
+                {isLoggingOut ? (
+                  <span className="flex items-center">
+                    <Skeleton className="h-4 w-4 mr-2 rounded-full animate-pulse" />
+                    <span>Logging out...</span>
+                  </span>
+                ) : (
+                  <>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log Out
+                  </>
+                )}
               </Button>
             </div>
           )}

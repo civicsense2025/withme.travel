@@ -50,7 +50,7 @@ interface DestinationInfo {
   country: string | null;
   latitude: number | null;
   longitude: number | null;
-  google_place_id: string | null;
+  mapbox_id: string | null;
 }
 
 interface AddItineraryItemClientProps {
@@ -82,7 +82,7 @@ export function AddItineraryItemClient({
             initialDestination.city && initialDestination.country
               ? `${initialDestination.city}, ${initialDestination.country}`
               : initialDestination.city || initialDestination.country || 'Unknown Address',
-          id: initialDestination.google_place_id || undefined,
+          id: initialDestination.mapbox_id || undefined,
           geometry: {
             coordinates: [initialDestination.longitude ?? 0, initialDestination.latitude ?? 0],
             type: 'Point',

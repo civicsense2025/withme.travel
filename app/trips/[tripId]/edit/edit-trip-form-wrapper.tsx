@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { TripFocusContainer } from '@/components/trips/trip-focus-container';
+// import { TripFocusContainer } from '@/components/trips/trip-focus-container';
 
 // Dynamically import the client component with no SSR
 const EditTripForm = dynamic(
@@ -59,7 +59,8 @@ export default function EditTripFormWrapper({
   };
 
   return (
-    <TripFocusContainer tripId={tripId} canEdit={true}>
+    <div className="w-full">
+      {/* TripFocusContainer is temporarily disabled but kept in the codebase */}
       <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-6">Edit Trip</h1>
         <EditTripForm
@@ -69,6 +70,6 @@ export default function EditTripFormWrapper({
           onClose={handleClose}
         />
       </div>
-    </TripFocusContainer>
+    </div>
   );
 }

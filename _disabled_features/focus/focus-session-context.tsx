@@ -54,7 +54,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
 
   // Fetch active focus session
   const refreshSession = useCallback(async () => {
-    if (!tripId || !user) {
+    if (!tripId || !user || !supabase) {
       setActiveFocusSession(null);
       setLoading(false);
       return;
@@ -72,15 +72,10 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
           section_path,
           created_at,
           expires_at,
-          participants:focus_session_participants(
+          focus_session_participants!inner(
             id,
             user_id,
-            joined_at,
-            profiles(
-              id,
-              name,
-              avatar_url
-            )
+            joined_at
           )
         `
         )
@@ -88,14 +83,21 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
         .gt('expires_at', new Date().toISOString())
         .single();
 
-      if (error) throw error;
-
-      if (data) {
-        // Format participants
-        const participants = data.participants.map((p: any) => ({
-          id: p.user_id,
-          name: p.profiles.name,
-          avatar_url: p.profiles.avatar_url,
+      if (error) {
+        // Check if the error is "PGRST116" (No rows found), which is expected if no session exists
+        if (error.code === 'PGRST116') {
+          setActiveFocusSession(null); // No active session found
+          setError(null); // Not really an error in this context
+        } else {
+          throw error; // Rethrow actual database errors
+        }
+      } else if (data) {
+        // Adjust participant mapping - profile data is no longer directly joined
+        // We might need a separate query later if profile info is essential here
+        const participants = data.focus_session_participants.map((p: any) => ({
+          id: p.user_id, // Use user_id as the participant ID
+          name: 'Loading...', // Placeholder name
+          avatar_url: null, // Placeholder avatar
           joined_at: p.joined_at,
         }));
 
@@ -107,7 +109,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
           ...data,
           has_joined: hasJoined,
           current_user_id: user.id,
-          participants,
+          participants, // Use the mapped participants (without profile details for now)
         });
       } else {
         setActiveFocusSession(null);
@@ -123,8 +125,8 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
   // Start a new focus session
   const startFocusSession = useCallback(
     async (sectionPath: string) => {
-      if (!tripId || !user) {
-        throw new Error('User must be authenticated to start a focus session');
+      if (!tripId || !user || !supabase) {
+        throw new Error('User must be authenticated and Supabase client available to start a focus session');
       }
 
       try {
@@ -173,8 +175,8 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
   // Join an existing focus session
   const joinFocusSession = useCallback(
     async (session: FocusSession) => {
-      if (!user) {
-        throw new Error('User must be authenticated to join a focus session');
+      if (!user || !supabase) {
+        throw new Error('User must be authenticated and Supabase client available to join a focus session');
       }
 
       try {
@@ -204,7 +206,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
 
   // End a focus session (only creator can do this)
   const endFocusSession = useCallback(async () => {
-    if (!activeFocusSession || !user) {
+    if (!activeFocusSession || !user || !supabase) {
       return;
     }
 

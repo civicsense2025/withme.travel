@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 // Removed CSS import as it might not be exported or needed
 // import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SortableItemProps {
   id: string;
@@ -41,6 +42,11 @@ export const SortableItem: React.FC<SortableItemProps> = ({
     transition: transition || undefined,
   };
 
+  // Create conditional classes for hover/active states
+  const hoverClasses = !disabled ? 
+    'group-hover:bg-muted/10 hover:shadow-md hover:scale-[1.01] transition-all duration-150 ease-out active:bg-muted/20' : 
+    'cursor-default';
+
   return (
     // Root div for positioning and attributes
     <div
@@ -51,28 +57,30 @@ export const SortableItem: React.FC<SortableItemProps> = ({
         'relative touch-none select-none', // Base styles
         isDragging && 'opacity-50 z-50 shadow-lg', // Dragging styles
         isSorting && 'transition-transform', // Sorting transition
-        // Common hover/active styles (apply visually, not functionally interfering)
-        !disabled && [
-          'group-hover:bg-muted/10',
-          'hover:shadow-md',
-          'hover:scale-[1.01]',
-          'transition-all duration-150 ease-out',
-          'active:bg-muted/20',
-        ],
-        disabled && 'cursor-default'
+        hoverClasses // Apply conditional classes
       )}
     >
-      {/* Inner div for attaching drag listeners */}
-      <div
-        {...listeners} // Apply listeners HERE
-        className={cn(
-          // Apply cursor styles based on disabled state to this listener div
-          !disabled ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
-        )}
-      >
-        {/* Render children directly inside the listener div */}
-        {children}
-      </div>
+      {/* Inner div for attaching drag listeners with tooltip */}
+      {!disabled ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                {...listeners} // Apply listeners HERE
+                className="cursor-grab active:cursor-grabbing"
+              >
+                {/* Render children directly inside the listener div */}
+                {children}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>Drag to reorder</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <div className="cursor-default">{children}</div>
+      )}
     </div>
   );
 };

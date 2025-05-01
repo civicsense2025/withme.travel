@@ -84,6 +84,7 @@ declare module '@/components/ui/dialog' {
   export interface DialogProps {
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    children?: React.ReactNode;
   }
   
   export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {

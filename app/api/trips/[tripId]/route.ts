@@ -9,6 +9,7 @@ import { rateLimit, type RateLimitResult } from '@/lib/rate-limit';
 import { ApiError, formatErrorResponse } from '@/lib/api-utils';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 
 // Define trip roles based on ENUMS
 const TRIP_ROLES = ENUMS.TRIP_ROLES;
@@ -219,37 +220,6 @@ interface Tag {
   name: string;
 }
 
-// Helper function to create Supabase client for Route Handlers
-async function createRouteHandlerClient() {
-  const cookieStore = await cookies();
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // Handle potential error if running in read-only context
-            console.warn(`Failed to set cookie ${name}:`, error);
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
-            console.warn(`Failed to remove cookie ${name}:`, error);
-          }
-        },
-      },
-    }
-  );
-}
-
 // --- Add checkTripAccess back --- //
 /**
  * Check if user has permission to access a trip
@@ -305,7 +275,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
   console.log(`[API /trips/${tripId}] GET handler started`); // Log start
 
@@ -422,7 +392,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
 
   try {
@@ -505,7 +475,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
 
   try {

@@ -82,14 +82,11 @@ export default function AuthStatusDebugPage() {
       });
     }
 
-    // Check for client/server mismatch - with defensive checks for API structure
+    // Check for client/server mismatch 
     const clientHasAuth = !!user;
-
-    // The new API format uses 'authenticated' directly
-    const serverHasAuth = serverData.authenticated !== undefined 
-      ? serverData.authenticated
-      // But also support the old format for backward compatibility
-      : serverData.auth_status && serverData.auth_status.has_session;
+    
+    // Use the direct 'authenticated' field from the updated API response
+    const serverHasAuth = serverData.authenticated === true; // Check boolean directly
 
     if (clientHasAuth !== serverHasAuth) {
       issues.push({
@@ -114,16 +111,6 @@ export default function AuthStatusDebugPage() {
       issues.push({
         name: 'components/auth-provider.tsx',
         issue: 'Supabase client not properly initialized in auth provider',
-        severity: 'error',
-      });
-    }
-
-    // Check for middleware related issues - with defensive check
-    const sessionError = serverData.auth_status && serverData.auth_status.session_error;
-    if (sessionError && !clientHasAuth) {
-      issues.push({
-        name: 'middleware.ts or utils/supabase/unified.ts',
-        issue: `Server session error: ${sessionError}`,
         severity: 'error',
       });
     }

@@ -1,350 +1,181 @@
 'use client';
 
-import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
-
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { CalendarDays, Clock, MapPin, Tag, Heart, Share2, User } from 'lucide-react';
-
+import React from 'react';
+import { ItineraryTemplateDisplay } from '@/components/itinerary/itinerary-template-display';
+import { UseTemplateButton } from '@/components/use-template-button';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Heart, Share2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
+import { Separator } from '@/components/ui/separator';
 
-interface Activity {
+// Define types to match the server component and database schema
+interface ItineraryTemplateItem {
   id: string;
   title: string;
   description: string | null;
-  location: string | null;
   start_time: string | null;
-  position: number;
-  category: string | null;
+  end_time: string | null;
+  location: string | null;
+  item_order: number;
 }
 
-interface Section {
+interface ItineraryTemplateSection {
   id: string;
-  template_id: string;
-  day_number: number;
   title: string;
+  day_number: number;
   position: number;
-  activities: Activity[];
+  items: ItineraryTemplateItem[];
 }
 
-interface ItineraryDetailProps {
-  itinerary: {
+interface ItineraryTemplate {
+  id: string;
+  title: string;
+  description: string | null;
+  slug: string;
+  destination_id: string;
+  duration_days: number;
+  created_at: string;
+  updated_at: string;
+  is_published: boolean;
+  view_count: number;
+  like_count: number;
+  tags: string[];
+  created_by: string;
+  metadata: Record<string, any>;
+  destination?: {
     id: string;
-    title: string;
-    slug: string;
-    description: string | null;
-    destination_id: string;
-    destination: {
-      id: string;
-      city: string;
-      country: string;
-      image_url: string | null;
-    };
-    duration_days: number;
-    category: string;
-    created_by: string;
-    created_at: string;
-    is_published: boolean;
-    view_count: number;
-    copied_count: number;
-    creator: {
-      id: string;
-      name: string;
-      avatar_url: string | null;
-    };
-    sections: Section[];
+    city: string;
+    country: string;
+    image_url: string | null;
   };
 }
 
-export function ItineraryDetailClient({ itinerary }: ItineraryDetailProps) {
-  const router = useRouter();
-  const { user } = useAuth();
+interface ItineraryTemplatePageClientProps {
+  template: ItineraryTemplate;
+  sections: ItineraryTemplateSection[];
+}
+
+export default function ItineraryTemplatePageClient({ template, sections }: ItineraryTemplatePageClientProps) {
   const { toast } = useToast();
-  const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
-  const [selectedTripId, setSelectedTripId] = useState('');
-  const [userTrips, setUserTrips] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+  
+  console.log(`[DEBUG] ItineraryTemplatePageClient - template.id: ${template.id}, title: ${template.title}`);
+  console.log(`[DEBUG] ItineraryTemplatePageClient - Received ${sections.length} sections`);
+  
+  // Log sections info
+  if (sections.length === 0) {
+    console.log('[DEBUG] ItineraryTemplatePageClient - No sections found for this template');
+  } else {
+    sections.forEach(section => {
+      console.log(`[DEBUG] ItineraryTemplatePageClient - Section: ${section.id}, day: ${section.day_number}, items: ${section.items?.length || 0}`);
     });
-  };
-
-  const handleUseTemplate = async () => {
-    if (!user) {
-      toast({
-        title: 'Authentication required',
-        description: 'Please log in to use this template',
-        variant: 'destructive',
+  }
+  
+  const handleShareItinerary = () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({
+        title: template.title,
+        text: template.description || `Check out this ${template.duration_days}-day itinerary!`,
+        url,
+      }).catch(error => {
+        // Only log errors other than AbortError (which happens when user cancels share)
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Error sharing:', error);
+        }
       });
-      router.push(`/login?redirect=/itineraries/${itinerary.slug}`);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const response = await fetch(`${API_ROUTES.TRIPS}`);
-      const data = await response.json();
-      if (data && data.data) {
-        setUserTrips(data.data);
-        setIsApplyDialogOpen(true);
-      }
-    } catch (error) {
-      console.error('Error fetching trips:', error);
-      toast({
-        title: 'Error',
-        description: 'Could not load your trips. Please try again later.',
-        variant: 'destructive',
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        toast({
+          title: 'Link copied!',
+          description: 'The link to this itinerary has been copied to your clipboard.',
+        });
+      }).catch(error => {
+        console.error('Error copying link:', error);
+        toast({
+          title: 'Error copying link',
+          description: 'Please try again or copy the URL manually.',
+          variant: 'destructive',
+        });
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleApplyTemplate = async () => {
-    if (!selectedTripId) {
-      toast({
-        title: 'Trip required',
-        description: 'Please select a trip to apply this template to',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const response = await fetch(`${API_ROUTES.ITINERARY_DETAILS(itinerary.slug)}/use`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tripId: selectedTripId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to apply template');
-      }
-
-      toast({
-        title: 'Success!',
-        description: 'Template applied to your trip successfully',
-      });
-
-      setIsApplyDialogOpen(false);
-      router.push(`${PAGE_ROUTES.TRIP_DETAILS(selectedTripId)}?tab=itinerary`);
-    } catch (error) {
-      console.error('Error applying template:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Something went wrong. Please try again later.';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  const handleCreateTrip = () => {
-    router.push(`/trips/create?templateId=${itinerary.id}`);
-  };
-
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Main Content */}
         <div className="lg:col-span-2">
-          <div className="relative aspect-video overflow-hidden rounded-xl mb-6">
-            <Image
-              src={
-                itinerary.destination?.image_url || '/images/destinations/default-destination.jpg'
-              }
-              alt={itinerary.title}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{itinerary.title}</h1>
-              <div className="flex items-center gap-2 text-white">
-                <MapPin className="h-4 w-4" />
-                <span>
-                  {itinerary.destination?.city}, {itinerary.destination?.country}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm">
-                {itinerary.duration_days} {itinerary.duration_days === 1 ? 'day' : 'days'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm">Created {formatDate(itinerary.created_at)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Tag className="h-5 w-5 text-muted-foreground" />
-              <Badge variant="outline" className="capitalize">
-                {itinerary.category}
-              </Badge>
-            </div>
-          </div>
-
-          {itinerary.description && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-3">Overview</h2>
-              <p className="text-muted-foreground">{itinerary.description}</p>
-            </div>
-          )}
-
-          <div className="space-y-8 mb-8">
-            <h2 className="text-xl font-semibold mb-3">Itinerary</h2>
-
-            {itinerary.sections
-              .sort((a, b) => a.day_number - b.day_number)
-              .map((section) => (
-                <Card key={section.id} className="overflow-hidden">
-                  <div className="bg-muted p-4">
-                    <h3 className="font-medium">{section.title}</h3>
-                  </div>
-                  <CardContent className="p-0">
-                    {section.activities
-                      .sort((a, b) => a.position - b.position)
-                      .map((activity, idx) => (
-                        <div key={activity.id} className="p-4 border-b last:border-b-0">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium">{activity.title}</h4>
-                              {activity.location && (
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                                  <MapPin className="h-3 w-3" />
-                                  <span>{activity.location}</span>
-                                </div>
-                              )}
-                              {activity.description && (
-                                <p className="text-sm mt-2">{activity.description}</p>
-                              )}
-                            </div>
-                            {activity.start_time && (
-                              <div className="text-sm text-muted-foreground whitespace-nowrap">
-                                {activity.start_time}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
+          <ItineraryTemplateDisplay template={template} sections={sections} />
         </div>
-
+        
         {/* Right Column - Sidebar */}
         <div className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">Use This Itinerary</h3>
-                <div className="flex items-center gap-1 text-sm">
-                  <User className="h-4 w-4" />
-                  <span>{itinerary.copied_count || 0} uses</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Button onClick={handleUseTemplate} className="w-full" disabled={isLoading}>
-                  Apply to Trip
-                </Button>
-                <Button onClick={handleCreateTrip} variant="outline" className="w-full">
-                  Create New Trip
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-lg font-medium mb-4">Created By</h3>
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={itinerary.creator?.avatar_url || undefined} />
-                  <AvatarFallback>{itinerary.creator?.name?.substring(0, 2) || 'U'}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{itinerary.creator?.name || 'Anonymous'}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDate(itinerary.created_at)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-lg font-medium mb-4">Share</h3>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Save
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Apply Template Dialog */}
-      {isApplyDialogOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium mb-4">Apply to Trip</h3>
-            <p className="mb-4">Select which trip you want to apply this itinerary to:</p>
-
-            <select
-              className="w-full p-2 border rounded mb-4"
-              value={selectedTripId}
-              onChange={(e) => setSelectedTripId(e.target.value)}
-            >
-              <option value="">Select a trip</option>
-              {userTrips.map((trip: any) => (
-                <option key={trip.id} value={trip.id}>
-                  {trip.name}
-                </option>
-              ))}
-            </select>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsApplyDialogOpen(false)}>
-                Cancel
+          <div className="bg-card rounded-lg border shadow-sm p-6 space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Use This Itinerary</h3>
+              <p className="text-sm text-muted-foreground">
+                Create a trip based on this itinerary to customize it for your own adventure.
+              </p>
+              
+              <UseTemplateButton 
+                templateId={template.id} 
+                templateSlug={template.slug}
+                templateTitle={template.title}
+                className="w-full" 
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex flex-col gap-4">
+              <Button variant="outline" size="sm" onClick={handleShareItinerary} className="w-full">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
               </Button>
-              <Button onClick={handleApplyTemplate} disabled={isLoading || !selectedTripId}>
-                {isLoading ? 'Applying...' : 'Apply Template'}
+              
+              <Button variant="outline" size="sm" className="w-full">
+                <Heart className="h-4 w-4 mr-2" />
+                Like
               </Button>
             </div>
           </div>
+          
+          <div className="bg-card rounded-lg border shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-4">About This Itinerary</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Duration</p>
+                <p className="font-medium">{template.duration_days} days</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Views</p>
+                <p className="font-medium">{template.view_count || 0}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Created</p>
+                <p className="font-medium">{new Date(template.created_at).toLocaleDateString()}</p>
+              </div>
+              
+              {template.tags && template.tags.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Tags</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {template.tags.map(tag => (
+                      <span key={tag} className="text-xs bg-muted rounded-full px-2 py-1">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

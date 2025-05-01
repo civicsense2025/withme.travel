@@ -1,7 +1,46 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse, NextRequest } from 'next/server';
 import { z } from 'zod';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+// import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database'; // Removed old import
+
+// Local constants workaround to avoid import/linter issues
+const LOCAL_TABLES = {
+  TRIP_NOTES: 'trip_notes',
+  PROFILES: 'profiles',
+};
+
+const LOCAL_FIELDS = {
+  TRIP_NOTES: {
+    ID: 'id',
+    TRIP_ID: 'trip_id',
+    TITLE: 'title',
+    CONTENT: 'content',
+    TYPE: 'type',
+    ITEM_ID: 'item_id',
+    UPDATED_AT: 'updated_at',
+    UPDATED_BY: 'updated_by',
+  },
+  PROFILES: {
+    ID: 'id',
+    NAME: 'name',
+    AVATAR_URL: 'avatar_url',
+  },
+};
+
+const LOCAL_ENUMS = {
+  TRIP_ROLES: {
+    ADMIN: 'ADMIN',
+    EDITOR: 'EDITOR',
+    CONTRIBUTOR: 'CONTRIBUTOR',
+    VIEWER: 'VIEWER',
+  },
+  NOTE_TYPES: {
+    TEXT: 'text',
+    LIST: 'list',
+    CHECKLIST: 'checklist',
+    LOCATION: 'location',
+  },
+};
 
 // Get all notes for a trip
 export async function GET(
@@ -14,7 +53,7 @@ export async function GET(
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
   try {
-    const supabase = await createApiClient();
+    const supabase = createServerSupabaseClient();
 
     // Check if user is authenticated
     const {
@@ -33,7 +72,12 @@ export async function GET(
       {
         _trip_id: tripId,
         _user_id: user.id,
-        _roles: [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER],
+        _roles: [
+          LOCAL_ENUMS.TRIP_ROLES.ADMIN,
+          LOCAL_ENUMS.TRIP_ROLES.EDITOR,
+          LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR,
+          LOCAL_ENUMS.TRIP_ROLES.VIEWER,
+        ],
       }
     );
 
@@ -51,21 +95,21 @@ export async function GET(
 
     // Fetch list of notes (id, title, updated_at, updated_by profile)
     const { data: notes, error: notesError } = await supabase
-      .from(DB_TABLES.TRIP_NOTES) // Corrected: Use TRIP_NOTES
+      .from(LOCAL_TABLES.TRIP_NOTES) // Use local constant
       .select(
         `
-        id,
-        title,
-        updated_at,
-        profiles:updated_by (
-          id,
-          name,
-          avatar_url
+        ${LOCAL_FIELDS.TRIP_NOTES.ID},
+        ${LOCAL_FIELDS.TRIP_NOTES.TITLE},
+        ${LOCAL_FIELDS.TRIP_NOTES.UPDATED_AT},
+        ${LOCAL_TABLES.PROFILES}:${LOCAL_FIELDS.TRIP_NOTES.UPDATED_BY} (
+          ${LOCAL_FIELDS.PROFILES.ID},
+          ${LOCAL_FIELDS.PROFILES.NAME},
+          ${LOCAL_FIELDS.PROFILES.AVATAR_URL}
         )
       `
       )
-      .eq('trip_id', tripId)
-      .order('updated_at', { ascending: false }); // Order by most recently updated
+      .eq(LOCAL_FIELDS.TRIP_NOTES.TRIP_ID, tripId) // Use local constant
+      .order(LOCAL_FIELDS.TRIP_NOTES.UPDATED_AT, { ascending: false }); // Use local constant
 
     if (notesError) {
       console.error('[Notes API GET List] Error fetching notes:', notesError);
@@ -83,7 +127,12 @@ export async function GET(
 const createNoteSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   content: z.string().optional().nullable(),
-  type: z.enum(['text', 'list', 'checklist', 'location']).default('text'),
+  type: z.enum([
+      LOCAL_ENUMS.NOTE_TYPES.TEXT,
+      LOCAL_ENUMS.NOTE_TYPES.LIST,
+      LOCAL_ENUMS.NOTE_TYPES.CHECKLIST,
+      LOCAL_ENUMS.NOTE_TYPES.LOCATION,
+    ]).default(LOCAL_ENUMS.NOTE_TYPES.TEXT),
   item_id: z.string().uuid().optional().nullable(), // Allow associating with itinerary item
 });
 
@@ -98,7 +147,7 @@ export async function POST(
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
   try {
-    const supabase = await createApiClient();
+    const supabase = createServerSupabaseClient();
 
     // Check if user is authenticated
     const {
@@ -116,7 +165,7 @@ export async function POST(
       {
         _trip_id: tripId,
         _user_id: user.id,
-        _roles: [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR],
+        _roles: [LOCAL_ENUMS.TRIP_ROLES.ADMIN, LOCAL_ENUMS.TRIP_ROLES.EDITOR],
       }
     );
 
@@ -158,26 +207,26 @@ export async function POST(
 
     // Create new note
     const { data: newNote, error: insertError } = await supabase
-      .from(DB_TABLES.TRIP_NOTES) // Corrected: Use TRIP_NOTES
+      .from(LOCAL_TABLES.TRIP_NOTES) // Use local constant
       .insert({
-        trip_id: tripId,
-        title: title.trim(), // Trim title
-        content,
-        type,
-        item_id,
-        updated_by: user.id,
+        [LOCAL_FIELDS.TRIP_NOTES.TRIP_ID]: tripId,
+        [LOCAL_FIELDS.TRIP_NOTES.TITLE]: title.trim(), // Trim title
+        [LOCAL_FIELDS.TRIP_NOTES.CONTENT]: content,
+        [LOCAL_FIELDS.TRIP_NOTES.TYPE]: type,
+        [LOCAL_FIELDS.TRIP_NOTES.ITEM_ID]: item_id,
+        [LOCAL_FIELDS.TRIP_NOTES.UPDATED_BY]: user.id,
         // updated_at is handled by trigger
       })
       .select(
         `
-        id,
-        title,
-        content, 
-        updated_at,
-        profiles:updated_by (
-          id,
-          name,
-          avatar_url
+        ${LOCAL_FIELDS.TRIP_NOTES.ID},
+        ${LOCAL_FIELDS.TRIP_NOTES.TITLE},
+        ${LOCAL_FIELDS.TRIP_NOTES.CONTENT},
+        ${LOCAL_FIELDS.TRIP_NOTES.UPDATED_AT},
+        ${LOCAL_TABLES.PROFILES}:${LOCAL_FIELDS.TRIP_NOTES.UPDATED_BY} (
+          ${LOCAL_FIELDS.PROFILES.ID},
+          ${LOCAL_FIELDS.PROFILES.NAME},
+          ${LOCAL_FIELDS.PROFILES.AVATAR_URL}
         )
       `
       )

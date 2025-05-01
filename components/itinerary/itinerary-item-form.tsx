@@ -1,6 +1,7 @@
+'use client'
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import { API_ROUTES } from '@/utils/constants/routes';
-('use client');
+
 
 import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -458,7 +459,6 @@ export function ItineraryItemForm({
                       <FormControl>
                         <Input
                           type="number"
-                          placeholder="e.g., 50"
                           min="0"
                           step="1"
                           {...field}
@@ -479,7 +479,6 @@ export function ItineraryItemForm({
                       <FormLabel>Currency</FormLabel>{' '}
                       <FormControl>
                         <Input
-                          placeholder="e.g., USD"
                           maxLength={3}
                           {...field}
                           value={field.value ?? ''}

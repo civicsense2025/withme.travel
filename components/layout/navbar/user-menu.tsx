@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { LogOut, Settings, User, Map, PlusCircle, Bookmark, MapPin } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function UserMenu() {
   const { user, profile, signOut, isLoading } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Get user initials for avatar
   const getInitials = () => {
@@ -31,6 +33,13 @@ export function UserMenu() {
         .substring(0, 2);
     }
     return user.email?.charAt(0).toUpperCase() || 'U';
+  };
+
+  // Handle logout with loading state
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await signOut();
+    // No need to reset state as the page will refresh
   };
 
   // Show skeleton during loading
@@ -103,12 +112,28 @@ export function UserMenu() {
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/support" className="cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Contribute</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => signOut()}
+          onClick={handleLogout}
           className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+          disabled={isLoggingOut}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          {isLoggingOut ? (
+            <span className="flex items-center">
+              <Skeleton className="h-4 w-4 mr-2 rounded-full animate-pulse" />
+              <span>Logging out...</span>
+            </span>
+          ) : (
+            <>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </>
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

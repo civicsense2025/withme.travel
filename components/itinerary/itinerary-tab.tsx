@@ -1,6 +1,6 @@
 'use client'
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -21,21 +21,28 @@ import {
   DropAnimation,
   defaultDropAnimationSideEffects,
   UniqueIdentifier,
+  useDroppable,
 } from '@dnd-kit/core';
-import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { arrayMove, sortableKeyboardCoordinates, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { DisplayItineraryItem } from '@/types/itinerary';
 import { ItemStatus } from '@/types/common';
 import { Profile } from '@/types/profile';
 import { ItineraryItemCard } from '@/components/itinerary/ItineraryItemCard';
-import { ItineraryFilterControls } from './ItineraryFilterControls';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { ItineraryDaySection } from './ItineraryDaySection';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, PlusCircle, GripVertical, MapPin, HomeIcon, Car } from 'lucide-react';
 import { SortableItem } from './SortableItem';
-import { useDroppable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { QuickAddItemDialog } from './QuickAddItemDialog';
+import { UnscheduledItemsSection } from './UnscheduledItemsSection';
+import { TripDetailsSection } from './TripDetailsSection';
+
+// Dynamically import the MapboxGeocoderComponent to prevent it from being loaded unnecessarily
+const MapboxGeocoderComponent = lazy(() => import('@/components/maps/mapbox-geocoder'));
 
 // Define trip roles
 const TRIP_ROLES = {
@@ -44,6 +51,17 @@ const TRIP_ROLES = {
   VIEWER: 'viewer',
   CONTRIBUTOR: 'contributor',
 } as const;
+
+// Define GeocoderResult interface
+interface GeocoderResult {
+  geometry: { coordinates: [number, number]; type: string };
+  place_name: string;
+  text: string;
+  id?: string; // Mapbox ID
+  properties?: { address?: string };
+  context?: any;
+  [key: string]: any;
+}
 
 interface ItineraryTabProps {
   tripId: string;
@@ -64,6 +82,7 @@ interface ItineraryTabProps {
     newDayNumber: number | null;
     newPosition: number;
   }) => Promise<void>;
+  onSectionReorder: (orderedDayNumbers: (number | null)[]) => Promise<void>;
 }
 
 // Helper function to re-calculate and assign positions after an array modification
@@ -131,6 +150,48 @@ const renormalizeAllPositions = (items: DisplayItineraryItem[]): DisplayItinerar
 
 const CONCISE_VIEW_THRESHOLD = 4; // Max items before showing full timeline
 
+// --- Sortable Section Wrapper ---
+interface SortableSectionProps {
+  id: string; // e.g., "day-1", "day-unscheduled"
+  children: React.ReactNode;
+  disabled?: boolean;
+}
+
+const SortableSection: React.FC<SortableSectionProps> = ({ id, children, disabled }) => {
+  const { 
+    attributes, 
+    listeners, 
+    setNodeRef, 
+    transform, 
+    transition, 
+    isDragging 
+  } = useSortable({ id, data: { type: 'section' }, disabled });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined, // Ensure dragged section is on top
+    position: 'relative', // Cast to Position type or use assertion
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      {/* Add a drag handle, only visible/active when not disabled */}
+      {!disabled && (
+        <div 
+          {...attributes} 
+          {...listeners}
+          className="absolute -left-6 inset-y-0 w-6 flex items-center justify-center opacity-0 group-hover:opacity-70 hover:opacity-100 cursor-grab transition-opacity"
+        >
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
+        </div>
+      )}
+      {children}
+    </div>
+  );
+};
+
 export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   tripId,
   itineraryItems,
@@ -146,568 +207,600 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   onItemStatusChange,
   onAddItem,
   onReorder,
+  onSectionReorder,
 }) => {
   const { toast } = useToast();
   const [isBrowser, setIsBrowser] = useState(false);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [activeType, setActiveType] = useState<string | null>(null); // Store type of active element
   const [originalItemsOnDragStart, setOriginalItemsOnDragStart] = useState<DisplayItineraryItem[]>(
     []
   );
-  const [filter, setFilter] = useState<{ day: number | 'all'; category: string | 'all' }>({
-    day: 'all',
-    category: 'all',
-  });
   const canEdit = userRole === TRIP_ROLES.ADMIN || userRole === TRIP_ROLES.EDITOR;
 
-  // Define sensors with activation constraints
+  // Add state for quick add dialog
+  const [isQuickAddDialogOpen, setIsQuickAddDialogOpen] = useState(false);
+  const [quickAddDefaultCategory, setQuickAddDefaultCategory] = useState<string | null>(null);
+  const [quickAddDialogConfig, setQuickAddDialogConfig] = useState({
+    title: "Add Unscheduled Item",
+    description: "Add another item to your unscheduled items list."
+  });
+  
+  // Set isBrowser to true on mount (for client-side portal rendering)
+  useEffect(() => {
+    setIsBrowser(true);
+  }, []);
+
+  // Configure the sensors
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      // Require the pointer to move by 10 pixels before activating
+    useSensor(MouseSensor, {
+      // Require the mouse to move by 5 pixels before activating
       activationConstraint: {
-        distance: 10,
+        distance: 5,
       },
     }),
-    // Keep KeyboardSensor for accessibility
+    useSensor(TouchSensor, {
+      // Press delay of 250ms, with tolerance of 5px of movement
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  const handleFilterChange = useCallback(
-    (type: 'day' | 'category', value: number | string | 'all') => {
-      setFilter((prev) => ({ ...prev, [type]: value }));
-    },
-    []
-  );
-
-  const handleDeleteItem = useCallback(
-    async (id: string) => {
-      if (!canEdit) return;
-      try {
-        await onDeleteItem(id);
-        setItineraryItems((prev) => prev.filter((item) => item.id !== id));
-        toast({ title: 'Item deleted.' });
-      } catch (error) {
-        console.error('Failed to delete item:', error);
-        toast({ title: 'Error deleting item', variant: 'destructive' });
-      }
-    },
-    [canEdit, onDeleteItem, toast, setItineraryItems]
-  );
-
-  const handleVoteItem = useCallback(
-    async (itemId: string, day: number | null, voteType: 'up' | 'down') => {
-      try {
-        await onVote(itemId, day, voteType);
-      } catch (error) {
-        console.error('Failed to vote:', error);
-        toast({ title: 'Error submitting vote', variant: 'destructive' });
-      }
-    },
-    [onVote, toast]
-  );
-
-  const handleItemStatusChange = useCallback(
-    async (id: string, status: ItemStatus | null) => {
-      if (!canEdit) return;
-      try {
-        await onItemStatusChange(id, status);
-        setItineraryItems((prev) =>
-          prev.map((item) =>
-            item.id === id ? ({ ...item, status } as DisplayItineraryItem) : item
-          )
-        );
-        toast({ title: 'Item status updated.' });
-      } catch (error) {
-        console.error('Failed to update status:', error);
-        toast({ title: 'Error updating status', variant: 'destructive' });
-      }
-    },
-    [canEdit, onItemStatusChange, toast, setItineraryItems]
-  );
-
-  // Original handler only accepts number
-  const handleMoveItemToDayNumber = useCallback(
-    async (itemId: string, newDayNumber: number) => {
-      console.log(`[MoveItem] Request to move ${itemId} to Day ${newDayNumber}`);
-      if (newDayNumber === null) {
-        console.error('[MoveItem] Cannot move item to null day.');
-        toast({ title: 'Cannot move item here', variant: 'destructive' });
-        return;
-      }
-
-      // Use setItineraryItems to capture the current state without creating a dependency
-      let originalItems: DisplayItineraryItem[] = [];
-      let newPosition = 0;
-
-      // Step 1: Calculate new position and save original items (all in one function to avoid stale state)
-      setItineraryItems((currentItems) => {
-        originalItems = [...currentItems];
-        const itemsInTargetDay = currentItems.filter(
-          (item) => item.day_number === newDayNumber && item.id !== itemId
-        );
-        newPosition = itemsInTargetDay.length;
-        console.log(`[MoveItem] Calculated new position: ${newPosition} in target day.`);
-        return currentItems; // Return unchanged - this is just to read current state
-      });
-
-      // Step 2: Optimistic UI Update
-      setItineraryItems((currentItems) => {
-        const activeItemIndex = currentItems.findIndex((item) => item.id === itemId);
-        if (activeItemIndex === -1) return currentItems;
-        const updatedItem = {
-          ...currentItems[activeItemIndex],
-          day_number: newDayNumber,
-          position: newPosition,
-        };
-        const itemsWithoutActive = currentItems.filter((item) => item.id !== itemId);
-        let newOptimisticItems = [...itemsWithoutActive, updatedItem]; // Append simplified
-        return renormalizeAllPositions(newOptimisticItems); // Renormalize everything
-      });
-
-      // API Call
-      try {
-        // Step 3: Get position from latest state using function update
-        let finalPosition = newPosition;
-        setItineraryItems((currentItems) => {
-          const item = currentItems.find((item) => item.id === itemId);
-          finalPosition = item?.position ?? newPosition;
-          return currentItems; // Return unchanged - just reading state
+  // Helper to update items array
+  const updateItemDayNumberAndPosition = useCallback(
+    (itemId: string, dayNumber: number | null, position: number | null) => {
+      setItineraryItems((prev) => {
+        return prev.map((item) => {
+          if (item.id === itemId) {
+            const itemToUpdate = { ...item };
+            if (dayNumber !== undefined) itemToUpdate.day_number = dayNumber;
+            if (position !== null) itemToUpdate.position = position;
+            return itemToUpdate;
+          }
+          return item;
         });
-
-        console.log(
-          `[MoveItem] Calling API: itemId=${itemId}, newDayNumber=${newDayNumber}, newPosition=${finalPosition}`
-        );
-        await onReorder({ itemId, newDayNumber, newPosition: finalPosition });
-        toast({ title: 'Item moved successfully.' });
-      } catch (error) {
-        console.error('[MoveItem] API Error moving item:', error);
-        toast({
-          title: 'Error moving item',
-          description: 'Reverting changes.',
-          variant: 'destructive',
-        });
-        setItineraryItems(() => originalItems); // Revert using the saved original items
-      }
+      });
     },
-    [setItineraryItems, onReorder, toast]
-  );
-  // itineraryItems removed from dependency array
-
-  // Wrapper to handle the null case (though it shouldn't be called with null anymore)
-  const handleMoveItemWrapper = useCallback(
-    (itemId: string, targetDay: number | null) => {
-      if (targetDay !== null) {
-        handleMoveItemToDayNumber(itemId, targetDay);
-      } else {
-        console.warn('Attempted to move item to null day, operation skipped.');
-        toast({ title: 'Cannot move item to unscheduled', variant: 'default' });
-      }
-    },
-    [handleMoveItemToDayNumber, toast]
+    [setItineraryItems]
   );
 
+  // Handle drag start - capture the item and save original state
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      console.log('[DND Start]', event.active); // DEBUG
-      setActiveId(event.active.id);
-      // Save original state *before* any potential optimistic updates
-      setOriginalItemsOnDragStart([...itineraryItems]);
-      document.body.style.setProperty('cursor', 'grabbing');
+      const { active } = event;
+      const activeData = active.data.current;
+
+      if (!activeData) return;
+
+      const type = activeData.type;
+      setActiveType(type); // Store the type
+
+      if (type === 'item') {
+        const itemId = active.id as string;
+        const item = itineraryItems.find((i) => i.id === itemId);
+        if (item) {
+          setActiveId(itemId);
+          // Save original items for potential cancel
+          setOriginalItemsOnDragStart([...itineraryItems]);
+        }
+      }
+
+      if (type === 'section') {
+        setActiveId(active.id);
+        // Save original items for potential cancel
+        setOriginalItemsOnDragStart([...itineraryItems]);
+      }
     },
     [itineraryItems]
   );
 
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const activeContainer = active.data.current?.containerId;
-    const overContainer =
-      over.data.current?.type === 'container' ? over.id : over.data.current?.containerId;
-    // DEBUG: Log frequently during drag over
-    // console.log("[DND Over] Active:", active.id, "Over:", over.id, "OverContainer:", overContainer);
-    // Potential: Add logic here for immediate visual feedback if needed,
-    // but handleDragEnd does the final state update.
-  }, []);
+  // Helper to parse day number from container ID
+  const parseDayNumber = (containerId: string): number | null => {
+    if (containerId === 'unscheduled') return null;
+    if (containerId.startsWith('day-')) {
+      const dayNumberStr = containerId.replace('day-', '');
+      const dayNumber = parseInt(dayNumberStr, 10);
+      return isNaN(dayNumber) ? null : dayNumber;
+    }
+    return null; // Default to unscheduled if can't parse
+  };
 
+  // Handle drag over - check for valid drop target and update UI
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!active || !over) return;
+
+      const activeData = active.data.current as any;
+      const overData = over.data.current as any;
+
+      if (!activeData || !overData) return;
+
+      // Item over container
+      if (
+        activeData.type === 'item' &&
+        (overData.type === 'day-section' || overData.type === 'unscheduled-section')
+      ) {
+        const itemId = active.id as string;
+        const item = itineraryItems.find((i) => i.id === itemId);
+        if (!item) return;
+
+        // Get the container info from over
+        let overContainerId;
+        if (over.id === 'unscheduled') {
+          overContainerId = 'unscheduled';
+        } else if (typeof over.id === 'string' && over.id.startsWith('day-')) {
+          overContainerId = over.id;
+        } else {
+          return; // Invalid target
+        }
+
+        const newDay = parseDayNumber(overContainerId);
+        if (item.day_number === newDay) return; // No change needed
+
+        // Move the item to the new container (but don't update position yet)
+        setItineraryItems((items) => {
+          const updatedItems = items.map((i) => {
+            if (i.id === itemId) {
+              return { ...i, day_number: newDay };
+            }
+            return i;
+          });
+          return updatedItems;
+        });
+      }
+    },
+    [itineraryItems, setItineraryItems]
+  );
+
+  // Handle drag end - finalize positions and save to backend
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       const { active, over } = event;
-      console.log('[DND End] Event:', event); // DEBUG: Log the whole event
-
-      setActiveId(null);
-
-      if (!over) {
-        console.log('[DND End] No target (over is null), reverting.'); // DEBUG
-        setItineraryItems(originalItemsOnDragStart);
-        setOriginalItemsOnDragStart([]);
+      if (!active || !over) {
+        setActiveId(null);
         return;
       }
 
-      const activeIdStr = active.id as string;
-      const overIdStr = over.id as string;
-      const activeContainerId = String(active.data.current?.containerId ?? '');
-      const overData = over.data.current;
-      const overContainerId = String(
-        (overData?.type === 'container' ? over.id : overData?.containerId) ?? ''
-      );
+      const activeData = active.data.current as any;
+      const overData = over.data.current as any;
 
-      console.log('[DND End] Active:', { id: activeIdStr, container: activeContainerId }); // DEBUG
-      console.log('[DND End] Over:', {
-        id: overIdStr,
-        container: overContainerId,
-        type: overData?.type,
-      }); // DEBUG
-
-      // If dropped outside a valid day container, revert
-      if (!overContainerId || !overContainerId.startsWith('day-')) {
-        console.warn('[DND End] Invalid over container, reverting.', { overContainerId }); // DEBUG
-        setItineraryItems(originalItemsOnDragStart);
-        setOriginalItemsOnDragStart([]);
+      if (!activeData || !overData) {
+        setActiveId(null);
         return;
       }
 
-      // Now we know they are valid day strings like "day-1"
-      const activeDayNumberParsed = parseInt(activeContainerId.split('-')[1], 10);
-      const overDayNumberParsed = parseInt(overContainerId.split('-')[1], 10);
+      try {
+        // CASE 1: Item being dragged
+        if (activeData.type === 'item') {
+          const activeId = active.id as string;
+          const activeItem = itineraryItems.find((i) => i.id === activeId);
+          if (!activeItem) {
+            setActiveId(null);
+            return;
+          }
 
-      // Check if parsing resulted in a valid number
-      if (isNaN(activeDayNumberParsed) || isNaN(overDayNumberParsed)) {
-        console.error('Failed to parse valid day number from container ID', {
-          activeContainerId,
-          overContainerId,
-        });
-        setItineraryItems(originalItemsOnDragStart);
-        setOriginalItemsOnDragStart([]);
-        return;
-      }
-      // Assign to constants with confirmed number type
-      const activeDayNumber: number = activeDayNumberParsed;
-      const overDayNumber: number = overDayNumberParsed;
+          // Determine target container
+          let targetDayNumber: number | null = null;
+          let targetPosition: number = 0;
 
-      // --- Case 1: Reordering within the same day ---
-      if (activeDayNumber === overDayNumber) {
-        if (activeIdStr !== overIdStr) {
-          let finalPosition = 0;
-          setItineraryItems((items) => {
-            const oldIndex = items.findIndex((item) => item.id === activeIdStr);
-            const newIndex = items.findIndex((item) => item.id === overIdStr);
-            if (oldIndex === -1 || newIndex === -1) return items;
+          // If over another item, get its container and position
+          if (overData.type === 'item') {
+            const overId = over.id as string;
+            const overItem = itineraryItems.find((i) => i.id === overId);
+            if (overItem) {
+              targetDayNumber = overItem.day_number;
+              targetPosition = overItem.position || 0;
+            }
+          } else if (
+            overData.type === 'day-section' ||
+            overData.type === 'unscheduled-section'
+          ) {
+            // If over a container directly
+            if (over.id === 'unscheduled') {
+              targetDayNumber = null;
+            } else if (typeof over.id === 'string' && over.id.startsWith('day-')) {
+              const dayStr = over.id.replace('day-', '');
+              targetDayNumber = parseInt(dayStr, 10);
+              if (isNaN(targetDayNumber)) targetDayNumber = null;
+            }
 
-            const reorderedItems = arrayMove(items, oldIndex, newIndex);
-            // Pass the string container ID directly
-            const normalizedItems = renormalizePositions(reorderedItems, activeContainerId);
-            finalPosition = normalizedItems.find((i) => i.id === activeIdStr)?.position ?? 0;
-            return normalizedItems;
-          });
+            // Find position by counting items in this container
+            const itemsInTarget = itineraryItems.filter((i) => i.day_number === targetDayNumber);
+            targetPosition = itemsInTarget.length; // Put at the end
+          }
 
-          // API Call for same-day reorder
-          try {
-            // Assert type after isNaN check (which should have already caught issues)
-            await onReorder({
-              itemId: activeIdStr,
-              newDayNumber: activeDayNumber as number, // Type assertion
-              newPosition: finalPosition,
+          if (
+            targetDayNumber !== undefined &&
+            (activeItem.day_number !== targetDayNumber ||
+              activeItem.position !== targetPosition)
+          ) {
+            // Apply the update locally first
+            setItineraryItems((items) => {
+              const updatedItems = items.map((item) => {
+                if (item.id === activeId) {
+                  return { ...item, day_number: targetDayNumber, position: targetPosition };
+                }
+                return item;
+              });
+              // Re-normalize positions
+              return renormalizeAllPositions(updatedItems);
             });
-          } catch (error) {
-            console.error('Failed to reorder item within day:', error);
-            toast({ title: 'Error saving order', variant: 'destructive' });
-            setItineraryItems(originalItemsOnDragStart); // Revert on error
+
+            // Then save to the server
+            await onReorder({
+              itemId: activeId,
+              newDayNumber: targetDayNumber,
+              newPosition: targetPosition,
+            });
           }
         }
-      }
-      // --- Case 2: Moving between different days ---
-      else {
-        // Calculate new position based on drop target in the *overDayNumber*
-        let tempPosition = 0;
-        const itemsInNewDayPreMove = originalItemsOnDragStart.filter(
-          (item) => item.day_number === overDayNumber
-        );
-        const overIndexInNewDay = itemsInNewDayPreMove.findIndex((item) => item.id === overIdStr);
 
-        if (over.id === overContainerId) {
-          // Corrected typo: overContainer -> overContainerId
-          tempPosition = itemsInNewDayPreMove.length;
-        } else if (overIndexInNewDay !== -1) {
-          // Dropped onto an item in the target day
-          tempPosition = itemsInNewDayPreMove[overIndexInNewDay].position ?? overIndexInNewDay;
-        } else {
-          // Fallback: append to end of target day
-          tempPosition = itemsInNewDayPreMove.length;
-        }
+        // CASE 2: Section being reordered
+        if (activeData.type === 'section' && overData.type === 'section') {
+          const activeSectionId = active.id as string;
+          const overSectionId = over.id as string;
 
-        // Optimistic Update for cross-day move
-        let finalPosition = 0;
-        setItineraryItems((currentItems) => {
-          // Use originalItemsOnDragStart for calculation
-          const activeItemIndex = originalItemsOnDragStart.findIndex(
-            (item) => item.id === activeIdStr
-          );
-          if (activeItemIndex === -1) return currentItems;
+          if (activeSectionId !== overSectionId) {
+            // Extract day numbers from section IDs
+            const getDay = (id: string): number | null => {
+              if (id === 'unscheduled') return null;
+              const dayStr = id.replace('day-', '');
+              const day = parseInt(dayStr, 10);
+              return isNaN(day) ? null : day;
+            };
 
-          const itemToMove = {
-            ...originalItemsOnDragStart[activeItemIndex],
-            day_number: overDayNumber, // Target day number
-            position: tempPosition, // Use temporary position
-          };
+            const activeDay = getDay(activeSectionId as string);
+            const overDay = getDay(overSectionId as string);
 
-          let intermediateItems = originalItemsOnDragStart.filter(
-            (item) => item.id !== activeIdStr
-          );
+            // Calculate new section order
+            const allSectionIds = Array.from(
+              new Set(
+                itineraryItems.map((item) =>
+                  item.day_number === null ? 'unscheduled' : `day-${item.day_number}`
+                )
+              )
+            );
 
-          // Insert the item logically into the target day (used for normalization)
-          const targetItems = intermediateItems
-            .filter((i) => i.day_number === overDayNumber)
-            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-          targetItems.splice(tempPosition, 0, itemToMove);
+            const oldIndex = allSectionIds.indexOf(activeSectionId as string);
+            const newIndex = allSectionIds.indexOf(overSectionId as string);
 
-          // Rebuild the list preserving order in other days
-          const finalUnnormalizedItems: DisplayItineraryItem[] = [];
-          const processedDays = new Set<number>();
-
-          originalItemsOnDragStart.forEach((item) => {
-            if (item.id === activeIdStr) return; // Skip original moved item
-            const key = item.day_number;
-            // Check if key is a valid day number before using with Set
-            if (typeof key === 'number' && key === overDayNumber) return; // Add target day items separately
-            if (typeof key === 'number' && !processedDays.has(key)) {
-              // Check if key is a number and exists
-              finalUnnormalizedItems.push(
-                ...intermediateItems
-                  .filter((i) => i.day_number === key)
-                  .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-              );
-              processedDays.add(key); // Add the valid number key
+            if (oldIndex !== -1 && newIndex !== -1) {
+              const newOrder = arrayMove(allSectionIds, oldIndex, newIndex);
+              const orderedDays = newOrder.map((id) => getDay(id));
+              await onSectionReorder(orderedDays);
             }
-          });
-          finalUnnormalizedItems.push(...targetItems); // Add the modified target day items
-
-          const normalizedItems = renormalizeAllPositions(finalUnnormalizedItems);
-          finalPosition = normalizedItems.find((i) => i.id === activeIdStr)?.position ?? 0;
-          return normalizedItems;
-        });
-
-        // API Call for cross-day move
-        try {
-          // Assert type after isNaN check
-          await onReorder({
-            itemId: activeIdStr,
-            newDayNumber: overDayNumber as number, // Type assertion
-            newPosition: finalPosition,
-          });
-        } catch (error) {
-          console.error('Failed to move item between days:', error);
-          toast({ title: 'Error moving item', variant: 'destructive' });
-          setItineraryItems(originalItemsOnDragStart); // Revert on error
+          }
         }
+      } catch (err) {
+        console.error('Error during drag end:', err);
+        toast({
+          title: 'Failed to update item',
+          description: 'There was an error updating the itinerary. Please try again.',
+          variant: 'destructive',
+        });
+        // Restore original items state on error
+        setItineraryItems(originalItemsOnDragStart);
+      } finally {
+        setActiveId(null);
+        setActiveType(null);
       }
-      setOriginalItemsOnDragStart([]); // Clear original state backup
     },
-    [setItineraryItems, onReorder, toast, originalItemsOnDragStart]
+    [itineraryItems, onReorder, onSectionReorder, originalItemsOnDragStart, setItineraryItems, toast]
   );
 
-  // Add handleDragCancel
-  const handleDragCancel = useCallback(() => {
-    console.log('[DND Cancel] Drag cancelled.'); // DEBUG
-    if (originalItemsOnDragStart.length > 0) {
-      setItineraryItems(originalItemsOnDragStart); // Revert to original state
-    }
-    setActiveId(null);
-    setOriginalItemsOnDragStart([]);
-    document.body.style.removeProperty('cursor');
-  }, [originalItemsOnDragStart, setItineraryItems]);
+  // Handle opening the quick add dialog for different categories
+  const handleAddUnscheduledItem = () => {
+    setQuickAddDefaultCategory(null);
+    setQuickAddDialogConfig({
+      title: "Add Unscheduled Item",
+      description: "Add another item to your unscheduled items list."
+    });
+    setIsQuickAddDialogOpen(true);
+  };
 
-  const activeItem = activeId ? itineraryItems.find((item) => item.id === activeId) : null;
+  const handleAddAccommodation = () => {
+    setQuickAddDefaultCategory(ITINERARY_CATEGORIES.ACCOMMODATIONS);
+    setQuickAddDialogConfig({
+      title: "Add Accommodation",
+      description: "Add where you'll be staying during your trip."
+    });
+    setIsQuickAddDialogOpen(true);
+  };
 
-  // Use useEffect to set isBrowser safely on the client
-  useEffect(() => {
-    setIsBrowser(true);
-  }, []);
+  const handleAddTransportation = () => {
+    setQuickAddDefaultCategory(ITINERARY_CATEGORIES.TRANSPORTATION);
+    setQuickAddDialogConfig({
+      title: "Add Transportation",
+      description: "Add how you'll be getting around during your trip."
+    });
+    setIsQuickAddDialogOpen(true);
+  };
+  
+  // Callback for when an item is added
+  const handleItemAdded = () => {
+    // Refresh the itinerary
+    toast({
+      title: 'Item Added',
+      description: 'Your itinerary has been updated.',
+    });
+  };
 
-  const filteredItems = itineraryItems.filter(
-    (item) =>
-      (filter.day === 'all' ||
-        item.day_number === filter.day ||
-        (filter.day === 0 && item.day_number === null)) && // Adjust day filter for 0 = unscheduled
-      (filter.category === 'all' || item.category === filter.category)
-  );
-
-  // Group items
-  const unscheduledItems = filteredItems
-    .filter((item) => item.day_number === null)
-    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  const itemsByDay: Record<number, DisplayItineraryItem[]> = {};
-  for (let day = 1; day <= durationDays; day++) {
-    itemsByDay[day] = filteredItems
-      .filter((item) => item.day_number === day)
+  // Group all items by day/unscheduled for the sections
+  const itemsBySection = useMemo(() => {
+    const grouped = new Map<string | number | null, DisplayItineraryItem[]>();
+    // Start with unscheduled items
+    const unscheduledItems = itineraryItems
+      .filter((item) => item.day_number === null)
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  }
+    
+    grouped.set('unscheduled', unscheduledItems);
 
-  const { setNodeRef: setUnscheduledNodeRef, isOver: isOverUnscheduled } = useDroppable({
-    id: 'day-0',
-    data: { type: 'container', containerId: 'day-0' },
-  });
+    // Then add each day
+    for (let day = 1; day <= durationDays; day++) {
+      const dayItems = itineraryItems
+        .filter((item) => item.day_number === day)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      
+      grouped.set(day, dayItems);
+    }
+
+    return grouped;
+  }, [itineraryItems, durationDays]);
+
+  // Create an array of all container IDs in the desired order
+  const sectionIds = useMemo(() => {
+    const allIds = ['unscheduled'];
+    for (let day = 1; day <= durationDays; day++) {
+      allIds.push(`day-${day}`);
+    }
+    return allIds;
+  }, [durationDays]);
+
+  // Only get the active item when needed (for overlay)
+  const activeItem = useMemo(() => {
+    if (activeId && activeType === 'item') {
+      return itineraryItems.find((item) => item.id === activeId);
+    }
+    return null;
+  }, [activeId, activeType, itineraryItems]);
+
+  // Create drop animation config
+  const dropAnimation: DropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: {
+        active: {
+          opacity: '0.5',
+        },
+      },
+    }),
+  };
+
+  // Get accommodation and transportation items for the enhanced trip details section
+  const accommodationItems = useMemo(() => 
+    itineraryItems.filter(item => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS),
+    [itineraryItems]
+  );
+
+  const transportationItems = useMemo(() => 
+    itineraryItems.filter(item => item.category === ITINERARY_CATEGORIES.TRANSPORTATION),
+    [itineraryItems]
+  );
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-      measuring={{
-        droppable: {
-          strategy: MeasuringStrategy.Always,
-        },
-      }}
-    >
-      <ItineraryFilterControls
-        durationDays={durationDays}
-        currentFilter={filter}
-        onFilterChange={handleFilterChange}
-        categories={Object.values(ITINERARY_CATEGORIES)}
-      />
-
-      <div className="space-y-8 mt-6">
-        {/* Unscheduled Section (Rendered Vertically) */}
-        {unscheduledItems.length > 0 && (
-          <div
-            ref={setUnscheduledNodeRef}
-            className={`space-y-3 rounded-lg p-4 border ${isOverUnscheduled ? 'bg-secondary/50 border-primary/50' : 'bg-background'}`}
-          >
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold text-lg">Unscheduled Items</h3>
-              {canEdit && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onAddItem(null)}
-                  className="h-7 px-2"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
-              )}
-            </div>
-            {unscheduledItems.map((item) => {
-              // Create specific handlers for this item
-              const handleVoteForItem = (voteType: 'up' | 'down') =>
-                handleVoteItem(item.id, item.day_number ?? null, voteType);
-              const handleStatusChangeForItem = (status: ItemStatus | null) =>
-                handleItemStatusChange(item.id, status);
-              const handleDeleteItemForItem = () => handleDeleteItem(item.id);
-              const handleEditItemForItem = () => onEditItem(item);
-
-              return (
-                <SortableItem key={item.id} id={item.id} containerId="day-0">
-                  <ItineraryItemCard item={item} />
-                </SortableItem>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Daily Sections (Rendered Vertically) */}
-        {Array.from({ length: durationDays }, (_, i) => i + 1).map((day) => {
-          const dayItems = itemsByDay[day] || [];
-          const showConciseView = dayItems.length < CONCISE_VIEW_THRESHOLD;
-          // Only render day section if it has items OR if filtering by this specific day
-          if (dayItems.length === 0 && filter.day !== 'all' && filter.day !== day) {
-            return null;
-          }
-
-          return (
-            <div key={`day-container-${day}`}>
-              {showConciseView ? (
-                // Concise View: Simple list of cards
-                <div className="space-y-3 rounded-lg p-4 border bg-background">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-semibold text-lg">Day {day}</h3>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onAddItem(day)}
-                        className="h-7 px-2"
+    <div className="itinerary-container">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        measuring={{
+          droppable: {
+            strategy: MeasuringStrategy.Always,
+          },
+        }}
+      >
+        <div className="space-y-6">
+          {/* Enhanced Trip Details Section with Accommodations and Transportation */}
+          <Card className="shadow-sm">
+            <CardContent className="p-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Trip Details</h3>
+                  {canEdit && (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleAddAccommodation}
+                        className="flex items-center gap-1"
                       >
-                        <Plus className="h-4 w-4 mr-1" /> Add
+                        <HomeIcon className="h-4 w-4" />
+                        <span>Add Accommodation</span>
                       </Button>
-                    )}
-                  </div>
-                  {dayItems.map((item) => {
-                    // Create specific handlers for this item
-                    const handleVoteForItem = (voteType: 'up' | 'down') =>
-                      handleVoteItem(item.id, item.day_number ?? null, voteType);
-                    const handleStatusChangeForItem = (status: ItemStatus | null) =>
-                      handleItemStatusChange(item.id, status);
-                    const handleDeleteItemForItem = () => handleDeleteItem(item.id);
-                    const handleEditItemForItem = () => onEditItem(item);
-
-                    return (
-                      <SortableItem key={item.id} id={item.id} containerId={`day-${day}`}>
-                        <ItineraryItemCard item={item} />
-                      </SortableItem>
-                    );
-                  })}
-                  {dayItems.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic text-center py-4">
-                      No items scheduled for Day {day}.
-                    </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleAddTransportation}
+                        className="flex items-center gap-1"
+                      >
+                        <Car className="h-4 w-4" />
+                        <span>Add Transportation</span>
+                      </Button>
+                    </div>
                   )}
                 </div>
-              ) : (
-                // Full View: Use ItineraryDaySection
-                <ItineraryDaySection
-                  key={`section-${day}`}
-                  startDate={startDate}
-                  dayNumber={day}
-                  items={dayItems}
-                  onVote={handleVoteItem}
-                  onStatusChange={handleItemStatusChange}
-                  onDelete={handleDeleteItem}
-                  canEdit={canEdit}
-                  onEditItem={onEditItem}
-                  onAddItemToDay={() => onAddItem(day)}
-                  onMoveItem={handleMoveItemWrapper}
-                  durationDays={durationDays}
-                />
-              )}
-            </div>
-          );
-        })}
-
-        {/* Add Item Button for Unscheduled (if no unscheduled items initially) */}
-        {unscheduledItems.length === 0 && canEdit && (
-          <Card className="mt-4 border-dashed border-primary/50 hover:border-primary transition-colors bg-secondary/30">
-            <CardContent className="p-4 text-center">
-              <Button
-                variant="ghost"
-                onClick={() => onAddItem(null)}
-                className="w-full h-auto py-3"
-              >
-                <Plus className="h-4 w-4 mr-2" /> add item to unscheduled
-              </Button>
+                
+                {/* Accommodations Section */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm flex items-center gap-1">
+                    <HomeIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>Accommodations</span>
+                  </h4>
+                  <div className="space-y-2">
+                    {accommodationItems.length > 0 ? (
+                      accommodationItems.map(item => (
+                        <ItineraryItemCard
+                          key={item.id}
+                          item={item}
+                          onVote={(id: string, voteType: 'up' | 'down') => {}}
+                          onStatusChange={onItemStatusChange}
+                          onDelete={() => onDeleteItem(item.id)}
+                          canEdit={canEdit}
+                          onEdit={() => onEditItem(item)}
+                          showDayBadge={false}
+                          showDetailedView={false}
+                          className="border border-border/50"
+                        />
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic px-4 py-2 bg-muted/20 rounded-md">
+                        Add accommodations to help everyone know where you'll be staying
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Transportation Section */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm flex items-center gap-1">
+                    <Car className="h-4 w-4 text-muted-foreground" />
+                    <span>Transportation</span>
+                  </h4>
+                  <div className="space-y-2">
+                    {transportationItems.length > 0 ? (
+                      transportationItems.map(item => (
+                        <ItineraryItemCard
+                          key={item.id}
+                          item={item}
+                          onVote={(id: string, voteType: 'up' | 'down') => {}}
+                          onStatusChange={onItemStatusChange}
+                          onDelete={() => onDeleteItem(item.id)}
+                          canEdit={canEdit}
+                          onEdit={() => onEditItem(item)}
+                          showDayBadge={false}
+                          showDetailedView={false}
+                          className="border border-border/50"
+                        />
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic px-4 py-2 bg-muted/20 rounded-md">
+                        Add transportation details like flights, rentals, or transit tickets
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
-      </div>
 
-      {isBrowser &&
-        activeItem &&
-        createPortal(
-          <DragOverlay
-            dropAnimation={{
-              sideEffects: defaultDropAnimationSideEffects({
-                styles: { active: { opacity: '0.7' } },
-              }),
-            }}
-          >
-            <div className="transform-none pointer-events-none shadow-lg ring-2 ring-primary/30 rounded-lg">
-              <ItineraryItemCard item={activeItem} />
+          {/* Unscheduled Items Section with Drop Zone */}
+          <SortableSection id="unscheduled" disabled={!canEdit}>
+            <div className="relative">
+              <Card className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Unscheduled Items</h3>
+                      {canEdit && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleAddUnscheduledItem}
+                          className="flex items-center gap-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Add Item</span>
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div 
+                      className="space-y-2 min-h-[100px] relative rounded-md" 
+                      data-type="unscheduled-section"
+                    >
+                      {(itemsBySection.get('unscheduled') || []).length > 0 ? (
+                        (itemsBySection.get('unscheduled') || []).map(item => (
+                          <ItineraryItemCard
+                            key={item.id}
+                            item={item}
+                            onVote={(id: string, voteType: 'up' | 'down') => onVote(id, null, voteType)}
+                            onStatusChange={onItemStatusChange}
+                            onDelete={onDeleteItem}
+                            canEdit={canEdit}
+                            onEdit={() => onEditItem(item)}
+                            dragHandleData={{ id: item.id, type: 'item' }}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic px-4 py-8 flex items-center justify-center bg-muted/20 rounded-md border-2 border-dashed border-muted">
+                          Add items here or drag scheduled items to move them to unscheduled
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+          </SortableSection>
+          
+          {/* Day Sections */}
+          <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
+            {Array.from({ length: durationDays }, (_, i) => {
+              const dayNumber = i + 1;
+              const sectionId = `day-${dayNumber}`;
+              const itemsForSection = itemsBySection.get(dayNumber) || [];
+
+              return (
+                <SortableSection key={sectionId} id={sectionId} disabled={!canEdit}>
+                  <ItineraryDaySection
+                    startDate={startDate}
+                    dayNumber={dayNumber as number}
+                    items={itemsForSection}
+                    onVote={onVote}
+                    onStatusChange={onItemStatusChange}
+                    onDelete={onDeleteItem}
+                    canEdit={canEdit}
+                    onEditItem={onEditItem}
+                    onAddItemToDay={() => onAddItem(dayNumber)}
+                    onMoveItem={(itemId, targetDay) => {
+                      // Handle move item logic if needed
+                      console.log('Move item requested:', itemId, targetDay);
+                    }}
+                    durationDays={durationDays}
+                    containerId={sectionId}
+                  />
+                </SortableSection>
+              );
+            })}
+          </SortableContext>
+        </div>
+
+        {/* Drag Overlay - shows the item being dragged */}
+        {isBrowser && activeItem && createPortal(
+          <DragOverlay adjustScale={false} dropAnimation={dropAnimation}>
+            <ItineraryItemCard item={activeItem} isOverlay={true} />
           </DragOverlay>,
           document.body
         )}
-    </DndContext>
+      </DndContext>
+
+      {/* Quick Add Item Dialog */}
+      <QuickAddItemDialog
+        tripId={tripId}
+        isOpen={isQuickAddDialogOpen}
+        onOpenChange={setIsQuickAddDialogOpen}
+        onItemAdded={handleItemAdded}
+        defaultCategory={quickAddDefaultCategory}
+        dialogTitle={quickAddDialogConfig.title}
+        dialogDescription={quickAddDialogConfig.description}
+      />
+    </div>
   );
 };
