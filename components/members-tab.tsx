@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { TRIP_ROLES, PERMISSION_STATUSES } from '@/utils/constants/status';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { TripRole } from '@/utils/constants/database';

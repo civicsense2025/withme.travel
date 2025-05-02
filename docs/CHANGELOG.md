@@ -2,6 +2,25 @@
 
 ## [Unreleased] - YYYY-MM-DD
 
+### Added
+
+- Updated technical documentation across the project to reflect Next.js 15.3.1 and React 18.2.0
+- Improved error handling and debugging information
+- Added new authentication error types and recovery mechanisms
+- Enhanced TypeScript types for better code safety
+
+### Changed
+
+- Optimized image loading and rendering for mobile devices
+- Improved responsive layout for all trip screens
+- Updated dependencies to latest stable versions
+
+### Fixed
+
+- Resolved authentication refresh issues on concurrent requests
+- Fixed loading state display on slow connections
+- Improved error recovery for failed API requests
+
 ### Strategic Focus: The "Partiful" of Group Trip Planning
 
 Our primary goal is to become the go-to tool for casual group trip planning by focusing on **speed, ease of use, intuitiveness, and reliability**. We aim to differentiate by offering the best, most delightful user experience for the core tasks of planning and managing a group trip, rather than competing on the sheer number of features.
@@ -249,11 +268,68 @@ _(Reflecting focus on core Trip Building & Management)_
   - Learned techniques for preventing race conditions between authentication state updates.
   - Developed patterns for proper resource cleanup when components unmount during authentication flows.
 
+## [2025-05-05] - Next.js 15 Migration & Stability
+
+### Added
+
+- Full Next.js 15.3.1 support with proper type safety
+- Enhanced error boundary system with better recovery options
+- Comprehensive service worker for offline support
+- Web Vitals tracking and performance monitoring
+
+### Changed
+
+- Updated all dynamic route handlers to await params (required for Next.js 15)
+- Improved middleware implementation for better security
+- Optimized cookie handling with Next.js 15's enhanced cookie API
+- Enhanced authentication system to work seamlessly with Next.js 15
+
+### Fixed
+
+- Resolved all route parameter issues in Next.js 15
+- Fixed authentication issues with the new cookie handling system
+- Improved error recovery across the application
+- Enhanced TypeScript types for better code safety
+
+## [2025-05-02] - Collaboration & Focus Mode Update
+
+### Added
+
+- Real-time collaboration features with presence awareness
+- Cursor tracking for trip collaboration
+- Focus mode for collaborative decision making
+- Voting/polling system for group decisions
+- Activity timeline to track trip changes
+- Notifications for trip updates and activities
+- Comments on itinerary items
+- Service worker implementation for offline support
+- Sentry integration for error monitoring
+- Web vitals tracking for performance monitoring
+
+### Changed
+
+- Updated to Next.js 15.3.1 from Next.js 14
+- Improved trip creation and editing flows
+- Enhanced real-time data synchronization
+- Optimized database queries for collaboration features
+
+### Fixed
+
+- Resolved presence indicator race conditions
+- Fixed focus mode synchronization issues
+- Improved error boundaries throughout the application
+
+## [2025-05-02] - Documentation Update & Mobile Style Guide
+
+- Created `docs/mobile-style-guide.md` detailing the visual design system and component guidelines for the Expo/React Native mobile application.
+- Updated `README.md` and `docs/DOCUMENTATION.md` to include the new mobile style guide in the documentation list and reflect the current project status (stable auth, constants refactor, mobile app progress).
+- Performed a consistency check across key documentation files (`authentication.md`, `constants-guide.md`, etc.) to ensure alignment with the latest documented features and database schema (`database_structure.md`).
+
 ## [2025-05-01] - Constants Refactoring & Docs Update
 
 ### Changed
 
--   **Constants Refactoring:** Refactored `utils/constants/database.ts` to remove aliases (`DB_TABLES` -> `TABLES`, etc.) and use direct exports for improved clarity and type safety. Added backward-compatibility exports for `DB_*` constants. Defined database-related types explicitly within `database.ts` to resolve import issues.
--   **Documentation:** Created `docs/constants-guide.md` detailing the new structure and usage rules. Updated `README.md`, `docs/authentication.md`, `docs/nextjs-best-practices.md`, `docs/nextjs15-migration.md`, and `docs/DOCUMENTATION.md` to reflect current project status, stable authentication using `@supabase/ssr`, and the new constants guidelines.
+- **Constants Refactoring:** Refactored `utils/constants/database.ts` to remove aliases (`DB_TABLES` -> `TABLES`, etc.) and use direct exports for improved clarity and type safety. Added backward-compatibility exports for `DB_*` constants. Defined database-related types explicitly within `database.ts` to resolve import issues.
+- **Documentation:** Created `docs/constants-guide.md` detailing the new structure and usage rules. Updated `README.md`, `docs/authentication.md`, `docs/nextjs-best-practices.md`, `docs/nextjs15-migration.md`, and `docs/DOCUMENTATION.md` to reflect current project status, stable authentication using `@supabase/ssr`, and the new constants guidelines.
 
 ## [2025-04-30] - Trip Hooks Restructuring

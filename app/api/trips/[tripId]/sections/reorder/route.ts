@@ -23,10 +23,7 @@ async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  allowedRoles: ModifiableTripRole[] = [
-    LOCAL_ENUMS.TRIP_ROLES.ADMIN,
-    LOCAL_ENUMS.TRIP_ROLES.EDITOR,
-  ]
+  allowedRoles: ModifiableTripRole[] = [LOCAL_ENUMS.TRIP_ROLES.ADMIN, LOCAL_ENUMS.TRIP_ROLES.EDITOR]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
     .from(LOCAL_TABLES.TRIP_MEMBERS)
@@ -62,11 +59,17 @@ export async function POST(
 
     // Basic validation
     if (!tripId || !Array.isArray(orderedDayNumbers)) {
-      return NextResponse.json({ error: 'Missing required parameters (tripId, orderedDayNumbers array)' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required parameters (tripId, orderedDayNumbers array)' },
+        { status: 400 }
+      );
     }
 
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
@@ -95,10 +98,9 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true });
-
   } catch (error: any) {
     console.error('[API /sections/reorder] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-} 
+}

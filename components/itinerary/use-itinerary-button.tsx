@@ -37,14 +37,14 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [tripName, setTripName] = useState('');
-  
+
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
   };
-  
+
   const handleApplyTemplate = async () => {
     if (!tripName) {
       toast({
@@ -54,9 +54,9 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`/api/itineraries/${slug}/use`, {
         method: 'POST',
@@ -68,18 +68,18 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
           start_date: startDate ? format(startDate, 'yyyy-MM-dd') : null,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to use this itinerary');
       }
-      
+
       toast({
         title: 'Success!',
         description: 'Trip created from this itinerary template. Redirecting to your new trip...',
       });
-      
+
       // Redirect to the new trip
       router.push(`/trips/${data.trip_id}`);
     } catch (error: any) {
@@ -92,16 +92,13 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
       setIsLoading(false);
     }
   };
-  
+
   return (
     <>
-      <Button 
-        onClick={handleOpenDialog} 
-        className={className}
-      >
+      <Button onClick={handleOpenDialog} className={className}>
         Use This Itinerary
       </Button>
-      
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -110,7 +107,7 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
               This will create a new trip using this itinerary as a template.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="trip-name">Trip Name</Label>
@@ -121,7 +118,7 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
                 placeholder="Enter a name for your trip"
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="start-date">Start Date (Optional)</Label>
               <Popover>
@@ -146,7 +143,7 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
               </Popover>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
               Cancel
@@ -166,4 +163,4 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
       </Dialog>
     </>
   );
-} 
+}

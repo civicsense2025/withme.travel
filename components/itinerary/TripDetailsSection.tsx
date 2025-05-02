@@ -30,24 +30,22 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
   onEditItem,
   budget,
   description,
-  tripPrivacy
+  tripPrivacy,
 }) => {
   // Filter items by category
   const accommodations = items.filter(
-    item => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS
+    (item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS
   );
-  
+
   const transportation = items.filter(
-    item => item.category === ITINERARY_CATEGORIES.TRANSPORTATION
+    (item) => item.category === ITINERARY_CATEGORIES.TRANSPORTATION
   );
 
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-xl">Trip Details</CardTitle>
-        {description && (
-          <CardDescription>{description}</CardDescription>
-        )}
+        {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Budget information if available */}
@@ -68,12 +66,7 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
               <h3 className="font-medium">Accommodations</h3>
             </div>
             {canEdit && (
-              <Button 
-                onClick={onAddAccommodation} 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5"
-              >
+              <Button onClick={onAddAccommodation} variant="outline" size="sm" className="gap-1.5">
                 <PlusCircle className="h-4 w-4" />
                 <span>Add</span>
               </Button>
@@ -86,10 +79,10 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {accommodations.map(item => (
-                <ItineraryItemCard 
+              {accommodations.map((item) => (
+                <ItineraryItemCard
                   key={item.id}
-                  item={item} 
+                  item={item}
                   onEdit={() => onEditItem(item)}
                   isCoreItem
                 />
@@ -108,12 +101,7 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
               <h3 className="font-medium">Transportation</h3>
             </div>
             {canEdit && (
-              <Button 
-                onClick={onAddTransportation} 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5"
-              >
+              <Button onClick={onAddTransportation} variant="outline" size="sm" className="gap-1.5">
                 <PlusCircle className="h-4 w-4" />
                 <span>Add</span>
               </Button>
@@ -126,10 +114,10 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {transportation.map(item => (
-                <ItineraryItemCard 
+              {transportation.map((item) => (
+                <ItineraryItemCard
                   key={item.id}
-                  item={item} 
+                  item={item}
                   onEdit={() => onEditItem(item)}
                   isCoreItem
                 />
@@ -148,4 +136,4 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
       </CardContent>
     </Card>
   );
-}; 
+};

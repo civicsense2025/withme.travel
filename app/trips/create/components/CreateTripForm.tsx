@@ -42,39 +42,41 @@ import NextImage from 'next/image';
 import { PlaceSearch } from '@/components/place-search';
 
 // Define the form schema
-const formSchema = z.object({
-  // Step 1: Essential Information
-  title: z.string().min(1, 'Trip name is required'),
-  destination_id: z.string().uuid('Please select a valid destination').or(z.string().length(0)),
-  destination_name: z.string().optional(),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
-  
-  // Step 2: Trip Details
-  description: z.string().optional(),
-  cover_image_url: z.string().optional(),
-  tags: z.string().optional(),
-  trip_type: z.string().optional(),
-  
-  // Step 3: Preferences
-  privacy_setting: z.enum(['private', 'shared_with_link', 'public']).default('private'),
-  travelers_count: z.coerce.number().int().positive().default(1),
-  budget: z.string().optional(),
-  trip_emoji: z.string().optional(),
-  color_scheme: z.string().optional(),
-}).refine(
-  (data) => {
-    // Only validate dates if both are provided
-    if (data.start_date && data.end_date) {
-      return new Date(data.end_date) >= new Date(data.start_date);
+const formSchema = z
+  .object({
+    // Step 1: Essential Information
+    title: z.string().min(1, 'Trip name is required'),
+    destination_id: z.string().uuid('Please select a valid destination').or(z.string().length(0)),
+    destination_name: z.string().optional(),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
+
+    // Step 2: Trip Details
+    description: z.string().optional(),
+    cover_image_url: z.string().optional(),
+    tags: z.string().optional(),
+    trip_type: z.string().optional(),
+
+    // Step 3: Preferences
+    privacy_setting: z.enum(['private', 'shared_with_link', 'public']).default('private'),
+    travelers_count: z.coerce.number().int().positive().default(1),
+    budget: z.string().optional(),
+    trip_emoji: z.string().optional(),
+    color_scheme: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Only validate dates if both are provided
+      if (data.start_date && data.end_date) {
+        return new Date(data.end_date) >= new Date(data.start_date);
+      }
+      return true;
+    },
+    {
+      message: 'End date cannot be earlier than start date',
+      path: ['end_date'],
     }
-    return true;
-  },
-  {
-    message: 'End date cannot be earlier than start date',
-    path: ['end_date'],
-  }
-);
+  );
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -139,40 +141,76 @@ const TRIP_TYPES = [
 ];
 
 const PRIVACY_OPTIONS = [
-  { 
-    value: 'private', 
-    label: '🔒 Private', 
-    description: 'Just between us - only invited members can see this trip' 
+  {
+    value: 'private',
+    label: '🔒 Private',
+    description: 'Just between us - only invited members can see this trip',
   },
-  { 
-    value: 'shared_with_link', 
-    label: '🔗 Shared with Link', 
-    description: 'Anyone with the magic link can peek at a simplified version' 
+  {
+    value: 'shared_with_link',
+    label: '🔗 Shared with Link',
+    description: 'Anyone with the magic link can peek at a simplified version',
   },
-  { 
-    value: 'public', 
-    label: '🌎 Public', 
-    description: 'Share your adventures with the world - anyone can find and view it' 
+  {
+    value: 'public',
+    label: '🌎 Public',
+    description: 'Share your adventures with the world - anyone can find and view it',
   },
 ];
 
 // Component to display the summary
-const TripSummary = ({ values, currentStep }: { values: Partial<FormValues>; currentStep: number }) => {
-  const summaryItems = useMemo(() => [
-    { label: '✏️ Name', value: values.title, step: 1 },
-    { label: '📍 Destination', value: values.destination_name || (values.destination_id ? 'Selected' : ''), step: 1 },
-    { label: '🗓️ Dates', value: values.start_date || values.end_date ? `${values.start_date || '?'} - ${values.end_date || '?'}` : '', step: 1 },
-    { label: '🧳 Type', value: TRIP_TYPES.find(t => t.value === values.trip_type)?.label || '', step: 2 },
-    { label: '📝 Desc', value: values.description ? `${values.description.substring(0, 30)}...` : '', step: 2 },
-    { label: '🖼️ Image', value: values.cover_image_url ? 'Set' : '', step: 2 },
-    { label: '🏷️ Tags', value: values.tags, step: 2 },
-    { label: '🔐 Privacy', value: PRIVACY_OPTIONS.find(p => p.value === values.privacy_setting)?.label || '', step: 3 },
-    { label: '👥 Travelers', value: values.travelers_count?.toString(), step: 3 },
-    { label: '💰 Budget', value: values.budget ? values.budget.charAt(0).toUpperCase() + values.budget.slice(1) : '', step: 3 },
-    { label: '✨ Emoji', value: values.trip_emoji, step: 3 },
-  ], [values]);
+const TripSummary = ({
+  values,
+  currentStep,
+}: {
+  values: Partial<FormValues>;
+  currentStep: number;
+}) => {
+  const summaryItems = useMemo(
+    () => [
+      { label: '✏️ Name', value: values.title, step: 1 },
+      {
+        label: '📍 Destination',
+        value: values.destination_name || (values.destination_id ? 'Selected' : ''),
+        step: 1,
+      },
+      {
+        label: '🗓️ Dates',
+        value:
+          values.start_date || values.end_date
+            ? `${values.start_date || '?'} - ${values.end_date || '?'}`
+            : '',
+        step: 1,
+      },
+      {
+        label: '🧳 Type',
+        value: TRIP_TYPES.find((t) => t.value === values.trip_type)?.label || '',
+        step: 2,
+      },
+      {
+        label: '📝 Desc',
+        value: values.description ? `${values.description.substring(0, 30)}...` : '',
+        step: 2,
+      },
+      { label: '🖼️ Image', value: values.cover_image_url ? 'Set' : '', step: 2 },
+      { label: '🏷️ Tags', value: values.tags, step: 2 },
+      {
+        label: '🔐 Privacy',
+        value: PRIVACY_OPTIONS.find((p) => p.value === values.privacy_setting)?.label || '',
+        step: 3,
+      },
+      { label: '👥 Travelers', value: values.travelers_count?.toString(), step: 3 },
+      {
+        label: '💰 Budget',
+        value: values.budget ? values.budget.charAt(0).toUpperCase() + values.budget.slice(1) : '',
+        step: 3,
+      },
+      { label: '✨ Emoji', value: values.trip_emoji, step: 3 },
+    ],
+    [values]
+  );
 
-  const visibleSummaryItems = summaryItems.filter(item => item.value && item.step < currentStep);
+  const visibleSummaryItems = summaryItems.filter((item) => item.value && item.step < currentStep);
 
   if (visibleSummaryItems.length === 0 && currentStep === 1) {
     return (
@@ -181,15 +219,15 @@ const TripSummary = ({ values, currentStep }: { values: Partial<FormValues>; cur
       </div>
     );
   }
-  
+
   if (visibleSummaryItems.length === 0) {
-     return null; // Don't show empty summary on later steps if nothing entered before
+    return null; // Don't show empty summary on later steps if nothing entered before
   }
 
   return (
     <div className="space-y-2 p-4 border rounded-lg h-full bg-muted/30">
       <h3 className="font-semibold mb-2 text-base">Your Trip So Far:</h3>
-      {visibleSummaryItems.map(item => (
+      {visibleSummaryItems.map((item) => (
         <div key={item.label} className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground font-medium">{item.label}:</span>
           <span className="text-right truncate ml-2">{item.value}</span>
@@ -240,11 +278,14 @@ export function CreateTripForm() {
         const parsedForm = JSON.parse(savedForm);
         const baseSchema = formSchema._def.schema; // Access the base ZodObject
         const validatedData = baseSchema.partial().safeParse(parsedForm);
-        
+
         if (validatedData.success) {
           form.reset(validatedData.data);
         } else {
-          console.warn('Invalid data found in localStorage, resetting form.', validatedData.error.issues);
+          console.warn(
+            'Invalid data found in localStorage, resetting form.',
+            validatedData.error.issues
+          );
           localStorage.removeItem(FORM_STORAGE_KEY);
         }
       } catch (e) {
@@ -269,7 +310,7 @@ export function CreateTripForm() {
 
     // Get current form values
     const currentValues = form.getValues();
-    
+
     // Create new values with proper typing
     const newValues = {
       ...currentValues,
@@ -296,7 +337,10 @@ export function CreateTripForm() {
     try {
       // Process tags into array
       const tagsArray = values.tags
-        ? values.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '')
+        ? values.tags
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter((tag) => tag !== '')
         : [];
 
       // Submit to API
@@ -310,9 +354,11 @@ export function CreateTripForm() {
         }),
         credentials: 'include',
       });
-      
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Failed to parse error response' }));
         throw new Error(errorData.error || `Failed to create trip: ${response.statusText}`);
       }
 
@@ -345,10 +391,10 @@ export function CreateTripForm() {
     // Validate only essential fields
     const result = await form.trigger(['title', 'destination_id']);
     if (!result) {
-      toast({ 
-        title: 'Missing Info', 
-        description: 'Please provide a Trip Name and Destination.', 
-        variant: 'default'
+      toast({
+        title: 'Missing Info',
+        description: 'Please provide a Trip Name and Destination.',
+        variant: 'default',
       });
       return;
     }
@@ -373,7 +419,9 @@ export function CreateTripForm() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Failed to parse error response' }));
         throw new Error(errorData.error || `Failed to create trip: ${response.statusText}`);
       }
 
@@ -387,7 +435,6 @@ export function CreateTripForm() {
       localStorage.removeItem(FORM_STORAGE_KEY);
       toast({ title: 'Success!', description: 'Basic trip created quickly!' });
       router.push(redirectTo || PAGE_ROUTES.TRIP_DETAILS(newTripId));
-
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       toast({
@@ -403,7 +450,7 @@ export function CreateTripForm() {
   // Handle next step validation
   const handleNext = async () => {
     let fieldsToValidate: (keyof FormValues)[] = [];
-    
+
     // Determine which fields to validate based on current step
     switch (step) {
       case 1:
@@ -418,7 +465,7 @@ export function CreateTripForm() {
 
     // Validate only the fields for the current step
     const result = await form.trigger(fieldsToValidate as any);
-    
+
     if (result) {
       setStep(step + 1);
     }
@@ -435,41 +482,46 @@ export function CreateTripForm() {
         <div className="mb-6">
           <div className="flex justify-between items-center relative max-w-xl mx-auto">
             {[1, 2, 3].map((stepNumber) => (
-              <div 
-                key={stepNumber} 
+              <div
+                key={stepNumber}
                 className="flex flex-col items-center z-10"
                 onClick={() => stepNumber < step && setStep(stepNumber)}
               >
-                <div 
+                <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 transition-all duration-300 
-                    ${step >= stepNumber 
-                      ? 'bg-primary text-primary-foreground shadow-md scale-110' 
-                      : 'bg-muted text-muted-foreground'
+                    ${
+                      step >= stepNumber
+                        ? 'bg-primary text-primary-foreground shadow-md scale-110'
+                        : 'bg-muted text-muted-foreground'
                     } 
                     ${stepNumber < step ? 'cursor-pointer hover:scale-105' : ''}
                   `}
                 >
-                  {step > stepNumber ? 
-                    <Check className="h-5 w-5" /> : 
-                    <span className="font-medium">{
-                      stepNumber === 1 ? "✨" : 
-                      stepNumber === 2 ? "🎨" : 
-                      "🔍"
-                    }</span>
-                  }
+                  {step > stepNumber ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <span className="font-medium">
+                      {stepNumber === 1 ? '✨' : stepNumber === 2 ? '🎨' : '🔍'}
+                    </span>
+                  )}
                 </div>
-                <span className={`text-xs font-medium ${step === stepNumber ? 'text-primary' : 'text-muted-foreground'}`}>
+                <span
+                  className={`text-xs font-medium ${step === stepNumber ? 'text-primary' : 'text-muted-foreground'}`}
+                >
                   {stepNumber === 1 ? 'Basics' : stepNumber === 2 ? 'Details' : 'Final'}
                 </span>
               </div>
             ))}
-            
-            <div className="h-0.5 bg-muted absolute left-0 right-0 top-5 -z-0" style={{width: 'calc(100% - 80px)', margin: '0 40px'}}></div>
-            <div 
+
+            <div
+              className="h-0.5 bg-muted absolute left-0 right-0 top-5 -z-0"
+              style={{ width: 'calc(100% - 80px)', margin: '0 40px' }}
+            ></div>
+            <div
               className="h-1 bg-primary absolute left-0 top-5 -z-0 transition-all duration-500"
-              style={{ 
+              style={{
                 width: step === 1 ? '0%' : step === 2 ? 'calc(50% - 40px)' : 'calc(100% - 80px)',
-                left: '40px'
+                left: '40px',
               }}
             ></div>
           </div>
@@ -482,10 +534,20 @@ export function CreateTripForm() {
                 <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-0.5"></div>
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    {step === 1 ? <>✨ Let's Get Started</> : step === 2 ? <>🎨 Add Some Color</> : <>🔍 Final Details</>}
+                    {step === 1 ? (
+                      <>✨ Let's Get Started</>
+                    ) : step === 2 ? (
+                      <>🎨 Add Some Color</>
+                    ) : (
+                      <>🔍 Final Details</>
+                    )}
                   </CardTitle>
                   <CardDescription className="text-sm">
-                    {step === 1 ? "Essential details for your trip" : step === 2 ? "Add personality to your trip" : "Set preferences for your trip"}
+                    {step === 1
+                      ? 'Essential details for your trip'
+                      : step === 2
+                        ? 'Add personality to your trip'
+                        : 'Set preferences for your trip'}
                   </CardDescription>
                 </CardHeader>
 
@@ -499,7 +561,9 @@ export function CreateTripForm() {
                         <Select onValueChange={applyTemplate}>
                           <SelectTrigger id="template" className="h-9">
                             <SelectValue>
-                              <span className="text-muted-foreground text-sm">Choose a template</span>
+                              <span className="text-muted-foreground text-sm">
+                                Choose a template
+                              </span>
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
@@ -522,11 +586,7 @@ export function CreateTripForm() {
                               <span className="text-rose-500">*</span>
                             </FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Your trip name" 
-                                className="h-9" 
-                                {...field} 
-                              />
+                              <Input placeholder="Your trip name" className="h-9" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -571,11 +631,7 @@ export function CreateTripForm() {
                                 <span>🗓️ Start</span>
                               </FormLabel>
                               <FormControl>
-                                <Input
-                                  type="date"
-                                  className="h-9"
-                                  {...field}
-                                />
+                                <Input type="date" className="h-9" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -619,7 +675,9 @@ export function CreateTripForm() {
                               <FormControl>
                                 <SelectTrigger className="h-9">
                                   <SelectValue>
-                                    <span className="text-muted-foreground text-sm">Select type</span>
+                                    <span className="text-muted-foreground text-sm">
+                                      Select type
+                                    </span>
                                   </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
@@ -645,10 +703,10 @@ export function CreateTripForm() {
                               <span>📝 Description</span>
                             </FormLabel>
                             <FormControl>
-                              <Textarea 
+                              <Textarea
                                 placeholder="What's this trip about?"
                                 className="min-h-[80px]"
-                                {...field} 
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage />
@@ -685,7 +743,7 @@ export function CreateTripForm() {
                                   </div>
                                 </div>
                               ) : (
-                                <div 
+                                <div
                                   className="w-full h-36 border border-dashed border-primary/50 rounded-md flex flex-col items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
                                   onClick={() => setIsImageSelectorOpen(true)}
                                 >
@@ -695,7 +753,7 @@ export function CreateTripForm() {
                                   </div>
                                 </div>
                               )}
-                              
+
                               {!currentCoverImageUrl && (
                                 <Button
                                   type="button"
@@ -708,7 +766,7 @@ export function CreateTripForm() {
                                 </Button>
                               )}
                             </div>
-                            
+
                             <input type="hidden" {...field} />
                             <FormMessage />
                           </FormItem>
@@ -724,10 +782,10 @@ export function CreateTripForm() {
                               <span>🏷️ Tags</span>
                             </FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="beach, hiking, foodie..." 
+                              <Input
+                                placeholder="beach, hiking, foodie..."
                                 className="h-9"
-                                {...field} 
+                                {...field}
                               />
                             </FormControl>
                             <FormDescription className="text-xs">
@@ -757,15 +815,17 @@ export function CreateTripForm() {
                                 className="space-y-2"
                               >
                                 {PRIVACY_OPTIONS.map((option) => (
-                                  <FormItem 
-                                    key={option.value} 
+                                  <FormItem
+                                    key={option.value}
                                     className="flex items-start space-x-2 space-y-0 rounded-md border p-2 hover:bg-muted/50 transition-colors"
                                   >
                                     <FormControl>
                                       <RadioGroupItem value={option.value} />
                                     </FormControl>
                                     <div>
-                                      <FormLabel className="text-sm font-normal">{option.label}</FormLabel>
+                                      <FormLabel className="text-sm font-normal">
+                                        {option.label}
+                                      </FormLabel>
                                       <FormDescription className="text-xs">
                                         {option.description}
                                       </FormDescription>
@@ -809,11 +869,13 @@ export function CreateTripForm() {
                             <FormLabel className="text-sm flex items-center gap-1">
                               <span>💰 Budget</span>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger className="h-9">
                                   <SelectValue>
-                                    <span className="text-muted-foreground text-sm">Select budget</span>
+                                    <span className="text-muted-foreground text-sm">
+                                      Select budget
+                                    </span>
                                   </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
@@ -837,9 +899,9 @@ export function CreateTripForm() {
                               <span>✨ Trip Emoji</span>
                             </FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Choose an emoji" 
-                                {...field} 
+                              <Input
+                                placeholder="Choose an emoji"
+                                {...field}
                                 maxLength={4}
                                 className="h-9 text-xl text-center"
                               />
@@ -857,17 +919,23 @@ export function CreateTripForm() {
 
                 <CardFooter className="flex justify-between bg-muted/10 p-3">
                   {step === 1 ? (
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
-                      size="sm" 
-                      onClick={handleQuickSubmit} 
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleQuickSubmit}
                       disabled={loading}
                     >
                       ⚡ Quick Create
                     </Button>
                   ) : step > 1 ? (
-                    <Button type="button" variant="outline" size="sm" onClick={handleBack} disabled={loading}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBack}
+                      disabled={loading}
+                    >
                       <ChevronLeft className="h-4 w-4 mr-1" /> Back
                     </Button>
                   ) : (
@@ -879,7 +947,12 @@ export function CreateTripForm() {
                       Next <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={loading} size="sm" className="bg-gradient-to-r from-primary to-primary/90">
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      size="sm"
+                      className="bg-gradient-to-r from-primary to-primary/90"
+                    >
                       {loading ? 'Creating...' : '✨ Create Trip'}
                     </Button>
                   )}
@@ -888,7 +961,7 @@ export function CreateTripForm() {
             </form>
 
             <div className="hidden md:block md:col-span-1">
-               <TripSummary values={watchedValues} currentStep={step} />
+              <TripSummary values={watchedValues} currentStep={step} />
             </div>
           </div>
         </FormProvider>
@@ -900,7 +973,9 @@ export function CreateTripForm() {
             form.setValue('cover_image_url', selectedUrl, { shouldValidate: true });
             setIsImageSelectorOpen(false);
           }}
-          initialSearchTerm={form.getValues('title') || form.getValues('destination_name') || 'travel'}
+          initialSearchTerm={
+            form.getValues('title') || form.getValues('destination_name') || 'travel'
+          }
         />
       </div>
     </div>

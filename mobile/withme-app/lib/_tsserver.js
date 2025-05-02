@@ -13,8 +13,7 @@ See the Apache Version 2.0 License for specific language governing permissions
 and limitations under the License.
 ***************************************************************************** */
 
-
-"use strict";
+'use strict';
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -22,36 +21,46 @@ var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
+  if ((from && typeof from === 'object') || typeof from === 'function') {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+        __defProp(to, key, {
+          get: () => from[key],
+          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+        });
   }
   return to;
 };
-var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
+var __reExport = (target, mod, secondTarget) => (
+  __copyProps(target, mod, 'default'), secondTarget && __copyProps(secondTarget, mod, 'default')
+);
+var __toESM = (mod, isNodeMode, target) => (
+  (target = mod != null ? __create(__getProtoOf(mod)) : {}),
+  __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule
+      ? __defProp(target, 'default', { value: mod, enumerable: true })
+      : target,
+    mod
+  )
+);
 
 // src/tsserver/server.ts
-var import_os2 = __toESM(require("os"));
+var import_os2 = __toESM(require('os'));
 
 // src/typescript/typescript.ts
 var typescript_exports = {};
-__reExport(typescript_exports, require("./typescript.js"));
+__reExport(typescript_exports, require('./typescript.js'));
 
 // src/tsserver/nodeServer.ts
-var import_child_process = __toESM(require("child_process"));
-var import_fs = __toESM(require("fs"));
-var import_net = __toESM(require("net"));
-var import_os = __toESM(require("os"));
-var import_readline = __toESM(require("readline"));
+var import_child_process = __toESM(require('child_process'));
+var import_fs = __toESM(require('fs'));
+var import_net = __toESM(require('net'));
+var import_os = __toESM(require('os'));
+var import_readline = __toESM(require('readline'));
 
 // src/tsserver/common.ts
 function getLogLevel(level) {
@@ -72,7 +81,7 @@ function parseLoggingEnvironmentString(logEnvStr) {
     return {};
   }
   const logEnv = { logToFile: true };
-  const args = logEnvStr.split(" ");
+  const args = logEnvStr.split(' ');
   const len = args.length - 1;
   for (let i = 0; i < len; i += 2) {
     const option = args[i];
@@ -80,18 +89,18 @@ function parseLoggingEnvironmentString(logEnvStr) {
     i += extraPartCounter;
     if (option && value) {
       switch (option) {
-        case "-file":
+        case '-file':
           logEnv.file = value;
           break;
-        case "-level":
+        case '-level':
           const level = getLogLevel(value);
           logEnv.detailLevel = level !== void 0 ? level : typescript_exports.server.LogLevel.normal;
           break;
-        case "-traceToConsole":
-          logEnv.traceToConsole = value.toLowerCase() === "true";
+        case '-traceToConsole':
+          logEnv.traceToConsole = value.toLowerCase() === 'true';
           break;
-        case "-logToFile":
-          logEnv.logToFile = value.toLowerCase() === "true";
+        case '-logToFile':
+          logEnv.logToFile = value.toLowerCase() === 'true';
           break;
       }
     }
@@ -100,26 +109,33 @@ function parseLoggingEnvironmentString(logEnvStr) {
   function getEntireValue(initialIndex) {
     let pathStart = args[initialIndex];
     let extraPartCounter = 0;
-    if (pathStart.charCodeAt(0) === typescript_exports.CharacterCodes.doubleQuote && pathStart.charCodeAt(pathStart.length - 1) !== typescript_exports.CharacterCodes.doubleQuote) {
+    if (
+      pathStart.charCodeAt(0) === typescript_exports.CharacterCodes.doubleQuote &&
+      pathStart.charCodeAt(pathStart.length - 1) !== typescript_exports.CharacterCodes.doubleQuote
+    ) {
       for (let i = initialIndex + 1; i < args.length; i++) {
-        pathStart += " ";
+        pathStart += ' ';
         pathStart += args[i];
         extraPartCounter++;
-        if (pathStart.charCodeAt(pathStart.length - 1) === typescript_exports.CharacterCodes.doubleQuote) break;
+        if (
+          pathStart.charCodeAt(pathStart.length - 1) ===
+          typescript_exports.CharacterCodes.doubleQuote
+        )
+          break;
       }
     }
     return { value: (0, typescript_exports.stripQuotes)(pathStart), extraPartCounter };
   }
 }
 function parseServerMode() {
-  const mode = typescript_exports.server.findArgument("--serverMode");
+  const mode = typescript_exports.server.findArgument('--serverMode');
   if (!mode) return void 0;
   switch (mode.toLowerCase()) {
-    case "semantic":
+    case 'semantic':
       return typescript_exports.LanguageServiceMode.Semantic;
-    case "partialsemantic":
+    case 'partialsemantic':
       return typescript_exports.LanguageServiceMode.PartialSemantic;
-    case "syntactic":
+    case 'syntactic':
       return typescript_exports.LanguageServiceMode.Syntactic;
     default:
       return mode;
@@ -138,9 +154,8 @@ function initializeNodeSystem() {
       this.fd = -1;
       if (this.logFilename) {
         try {
-          this.fd = import_fs.default.openSync(this.logFilename, "w");
-        } catch {
-        }
+          this.fd = import_fs.default.openSync(this.logFilename, 'w');
+        } catch {}
       }
     }
     static padStringRight(str, padding) {
@@ -181,7 +196,7 @@ function initializeNodeSystem() {
       s = `[${typescript_exports.server.nowString()}] ${s}
 `;
       if (!this.inGroup || this.firstInGroup) {
-        const prefix = Logger.padStringRight(type + " " + this.seq.toString(), "          ");
+        const prefix = Logger.padStringRight(type + ' ' + this.seq.toString(), '          ');
         s = prefix + s;
       }
       this.write(s, type);
@@ -209,8 +224,10 @@ function initializeNodeSystem() {
       }
     }
   }
-  const libDirectory = (0, typescript_exports.getDirectoryPath)((0, typescript_exports.normalizePath)(sys4.getExecutingFilePath()));
-  const useWatchGuard = process.platform === "win32";
+  const libDirectory = (0, typescript_exports.getDirectoryPath)(
+    (0, typescript_exports.normalizePath)(sys4.getExecutingFilePath())
+  );
+  const useWatchGuard = process.platform === 'win32';
   const originalWatchDirectory = sys4.watchDirectory.bind(sys4);
   const logger = createLogger();
   typescript_exports.Debug.loggingHost = {
@@ -223,7 +240,7 @@ function initializeNodeSystem() {
         case typescript_exports.LogLevel.Verbose:
           return logger.msg(s, typescript_exports.server.Msg.Info);
       }
-    }
+    },
   };
   const pending = (0, typescript_exports.createQueue)();
   let canWrite = true;
@@ -242,11 +259,16 @@ function initializeNodeSystem() {
           logger.info(`${cacheKey} for path ${path} not found in cache...`);
         }
         try {
-          const args = [(0, typescript_exports.combinePaths)(libDirectory, "watchGuard.js"), path];
+          const args = [(0, typescript_exports.combinePaths)(libDirectory, 'watchGuard.js'), path];
           if (logger.hasLevel(typescript_exports.server.LogLevel.verbose)) {
-            logger.info(`Starting ${process.execPath} with args:${typescript_exports.server.stringifyIndented(args)}`);
+            logger.info(
+              `Starting ${process.execPath} with args:${typescript_exports.server.stringifyIndented(args)}`
+            );
           }
-          import_child_process.default.execFileSync(process.execPath, args, { stdio: "ignore", env: { ELECTRON_RUN_AS_NODE: "1" } });
+          import_child_process.default.execFileSync(process.execPath, args, {
+            stdio: 'ignore',
+            env: { ELECTRON_RUN_AS_NODE: '1' },
+          });
           status = true;
           if (logger.hasLevel(typescript_exports.server.LogLevel.verbose)) {
             logger.info(`WatchGuard for path ${path} returned: OK`);
@@ -272,19 +294,19 @@ function initializeNodeSystem() {
   } else {
     sys4.watchDirectory = watchDirectorySwallowingException;
   }
-  sys4.write = (s) => writeMessage(Buffer.from(s, "utf8"));
+  sys4.write = (s) => writeMessage(Buffer.from(s, 'utf8'));
   sys4.setTimeout = setTimeout;
   sys4.clearTimeout = clearTimeout;
   sys4.setImmediate = setImmediate;
   sys4.clearImmediate = clearImmediate;
-  if (typeof global !== "undefined" && global.gc) {
+  if (typeof global !== 'undefined' && global.gc) {
     sys4.gc = () => {
       var _a;
       return (_a = global.gc) == null ? void 0 : _a.call(global);
     };
   }
   const cancellationToken = createCancellationToken(sys4.args);
-  const localeStr = typescript_exports.server.findArgument("--locale");
+  const localeStr = typescript_exports.server.findArgument('--locale');
   if (localeStr) {
     (0, typescript_exports.validateLocaleAndSetLanguage)(localeStr, sys4);
   }
@@ -292,7 +314,7 @@ function initializeNodeSystem() {
   let serverMode;
   let unknownServerMode;
   if (modeOrUnknown !== void 0) {
-    if (typeof modeOrUnknown === "number") serverMode = modeOrUnknown;
+    if (typeof modeOrUnknown === 'number') serverMode = modeOrUnknown;
     else unknownServerMode = modeOrUnknown;
   }
   return {
@@ -301,14 +323,20 @@ function initializeNodeSystem() {
     cancellationToken,
     serverMode,
     unknownServerMode,
-    startSession: startNodeSession
+    startSession: startNodeSession,
   };
   function createLogger() {
-    const cmdLineLogFileName = typescript_exports.server.findArgument("--logFile");
-    const cmdLineVerbosity = getLogLevel(typescript_exports.server.findArgument("--logVerbosity"));
+    const cmdLineLogFileName = typescript_exports.server.findArgument('--logFile');
+    const cmdLineVerbosity = getLogLevel(typescript_exports.server.findArgument('--logVerbosity'));
     const envLogOptions = parseLoggingEnvironmentString(process.env.TSS_LOG);
-    const unsubstitutedLogFileName = cmdLineLogFileName ? (0, typescript_exports.stripQuotes)(cmdLineLogFileName) : envLogOptions.logToFile ? envLogOptions.file || libDirectory + "/.log" + process.pid.toString() : void 0;
-    const substitutedLogFileName = unsubstitutedLogFileName ? unsubstitutedLogFileName.replace("PID", process.pid.toString()) : void 0;
+    const unsubstitutedLogFileName = cmdLineLogFileName
+      ? (0, typescript_exports.stripQuotes)(cmdLineLogFileName)
+      : envLogOptions.logToFile
+        ? envLogOptions.file || libDirectory + '/.log' + process.pid.toString()
+        : void 0;
+    const substitutedLogFileName = unsubstitutedLogFileName
+      ? unsubstitutedLogFileName.replace('PID', process.pid.toString())
+      : void 0;
     const logVerbosity = cmdLineVerbosity || envLogOptions.detailLevel;
     return new Logger(substitutedLogFileName, envLogOptions.traceToConsole, logVerbosity);
   }
@@ -330,22 +358,34 @@ function initializeNodeSystem() {
     path = (0, typescript_exports.normalizeSlashes)(path);
     if (isUNCPath(path)) {
       const firstSlash = path.indexOf(typescript_exports.directorySeparator, 2);
-      return firstSlash !== -1 ? (0, typescript_exports.toFileNameLowerCase)(path.substring(0, firstSlash)) : path;
+      return firstSlash !== -1
+        ? (0, typescript_exports.toFileNameLowerCase)(path.substring(0, firstSlash))
+        : path;
     }
     const rootLength = (0, typescript_exports.getRootLength)(path);
     if (rootLength === 0) {
       return currentDriveKey;
     }
-    if (path.charCodeAt(1) === typescript_exports.CharacterCodes.colon && path.charCodeAt(2) === typescript_exports.CharacterCodes.slash) {
+    if (
+      path.charCodeAt(1) === typescript_exports.CharacterCodes.colon &&
+      path.charCodeAt(2) === typescript_exports.CharacterCodes.slash
+    ) {
       return (0, typescript_exports.toFileNameLowerCase)(path.charAt(0));
     }
-    if (path.charCodeAt(0) === typescript_exports.CharacterCodes.slash && path.charCodeAt(1) !== typescript_exports.CharacterCodes.slash) {
+    if (
+      path.charCodeAt(0) === typescript_exports.CharacterCodes.slash &&
+      path.charCodeAt(1) !== typescript_exports.CharacterCodes.slash
+    ) {
       return currentDriveKey;
     }
     return void 0;
   }
   function isUNCPath(s) {
-    return s.length > 2 && s.charCodeAt(0) === typescript_exports.CharacterCodes.slash && s.charCodeAt(1) === typescript_exports.CharacterCodes.slash;
+    return (
+      s.length > 2 &&
+      s.charCodeAt(0) === typescript_exports.CharacterCodes.slash &&
+      s.charCodeAt(1) === typescript_exports.CharacterCodes.slash
+    );
   }
   function watchDirectorySwallowingException(path, callback, recursive, options) {
     try {
@@ -364,10 +404,21 @@ function startNodeSession(options, logger, cancellationToken) {
   const rl = import_readline.default.createInterface({
     input: process.stdin,
     output: process.stdout,
-    terminal: false
+    terminal: false,
   });
-  const _NodeTypingsInstallerAdapter = class _NodeTypingsInstallerAdapter extends typescript_exports.server.TypingsInstallerAdapter {
-    constructor(telemetryEnabled2, logger2, host, globalTypingsCacheLocation, typingSafeListLocation2, typesMapLocation2, npmLocation2, validateDefaultNpmLocation2, event) {
+  const _NodeTypingsInstallerAdapter = class _NodeTypingsInstallerAdapter extends typescript_exports
+    .server.TypingsInstallerAdapter {
+    constructor(
+      telemetryEnabled2,
+      logger2,
+      host,
+      globalTypingsCacheLocation,
+      typingSafeListLocation2,
+      typesMapLocation2,
+      npmLocation2,
+      validateDefaultNpmLocation2,
+      event
+    ) {
       super(
         telemetryEnabled2,
         logger2,
@@ -383,17 +434,31 @@ function startNodeSession(options, logger, cancellationToken) {
     }
     createInstallerProcess() {
       if (this.logger.hasLevel(typescript_exports.server.LogLevel.requestTime)) {
-        this.logger.info("Binding...");
+        this.logger.info('Binding...');
       }
-      const args = [typescript_exports.server.Arguments.GlobalCacheLocation, this.globalTypingsCacheLocation];
+      const args = [
+        typescript_exports.server.Arguments.GlobalCacheLocation,
+        this.globalTypingsCacheLocation,
+      ];
       if (this.telemetryEnabled) {
         args.push(typescript_exports.server.Arguments.EnableTelemetry);
       }
       if (this.logger.loggingEnabled() && this.logger.getLogFileName()) {
-        args.push(typescript_exports.server.Arguments.LogFile, (0, typescript_exports.combinePaths)((0, typescript_exports.getDirectoryPath)((0, typescript_exports.normalizeSlashes)(this.logger.getLogFileName())), `ti-${process.pid}.log`));
+        args.push(
+          typescript_exports.server.Arguments.LogFile,
+          (0, typescript_exports.combinePaths)(
+            (0, typescript_exports.getDirectoryPath)(
+              (0, typescript_exports.normalizeSlashes)(this.logger.getLogFileName())
+            ),
+            `ti-${process.pid}.log`
+          )
+        );
       }
       if (this.typingSafeListLocation) {
-        args.push(typescript_exports.server.Arguments.TypingSafeListLocation, this.typingSafeListLocation);
+        args.push(
+          typescript_exports.server.Arguments.TypingSafeListLocation,
+          this.typingSafeListLocation
+        );
       }
       if (this.typesMapLocation) {
         args.push(typescript_exports.server.Arguments.TypesMapLocation, this.typesMapLocation);
@@ -408,16 +473,20 @@ function startNodeSession(options, logger, cancellationToken) {
       for (const arg of process.execArgv) {
         const match = /^--((?:debug|inspect)(?:-brk)?)(?:=(\d+))?$/.exec(arg);
         if (match) {
-          const currentPort = match[2] !== void 0 ? +match[2] : match[1].charAt(0) === "d" ? 5858 : 9229;
+          const currentPort =
+            match[2] !== void 0 ? +match[2] : match[1].charAt(0) === 'd' ? 5858 : 9229;
           execArgv.push(`--${match[1]}=${currentPort + 1}`);
           break;
         }
       }
-      const typingsInstaller = (0, typescript_exports.combinePaths)((0, typescript_exports.getDirectoryPath)(typescript_exports.sys.getExecutingFilePath()), "typingsInstaller.js");
+      const typingsInstaller = (0, typescript_exports.combinePaths)(
+        (0, typescript_exports.getDirectoryPath)(typescript_exports.sys.getExecutingFilePath()),
+        'typingsInstaller.js'
+      );
       this.installer = import_child_process.default.fork(typingsInstaller, args, { execArgv });
-      this.installer.on("message", (m) => this.handleMessage(m));
-      this.host.setImmediate(() => this.event({ pid: this.installer.pid }, "typingsInstallerPid"));
-      process.on("exit", () => {
+      this.installer.on('message', (m) => this.handleMessage(m));
+      this.host.setImmediate(() => this.event({ pid: this.installer.pid }, 'typingsInstallerPid'));
+      process.on('exit', () => {
         this.installer.kill();
       });
       return this.installer;
@@ -436,7 +505,19 @@ function startNodeSession(options, logger, cancellationToken) {
         this.event(body, eventName);
       };
       const host = typescript_exports.sys;
-      const typingsInstaller = disableAutomaticTypingAcquisition ? void 0 : new NodeTypingsInstallerAdapter(telemetryEnabled, logger, host, getGlobalTypingsCacheLocation(), typingSafeListLocation, typesMapLocation, npmLocation, validateDefaultNpmLocation, event);
+      const typingsInstaller = disableAutomaticTypingAcquisition
+        ? void 0
+        : new NodeTypingsInstallerAdapter(
+            telemetryEnabled,
+            logger,
+            host,
+            getGlobalTypingsCacheLocation(),
+            typingSafeListLocation,
+            typesMapLocation,
+            npmLocation,
+            validateDefaultNpmLocation,
+            event
+          );
       super({
         host,
         cancellationToken,
@@ -446,7 +527,7 @@ function startNodeSession(options, logger, cancellationToken) {
         hrtime: process.hrtime,
         logger,
         canUseEvents: true,
-        typesMapLocation
+        typesMapLocation,
       });
       this.eventPort = eventPort;
       if (this.canUseEvents && this.eventPort) {
@@ -463,11 +544,16 @@ function startNodeSession(options, logger, cancellationToken) {
       this.constructed = true;
     }
     event(body, eventName) {
-      typescript_exports.Debug.assert(!!this.constructed, "Should only call `IOSession.prototype.event` on an initialized IOSession");
+      typescript_exports.Debug.assert(
+        !!this.constructed,
+        'Should only call `IOSession.prototype.event` on an initialized IOSession'
+      );
       if (this.canUseEvents && this.eventPort) {
         if (!this.eventSocket) {
           if (this.logger.hasLevel(typescript_exports.server.LogLevel.verbose)) {
-            this.logger.info(`eventPort: event "${eventName}" queued, but socket not yet initialized`);
+            this.logger.info(
+              `eventPort: event "${eventName}" queued, but socket not yet initialized`
+            );
           }
           (this.socketEventQueue || (this.socketEventQueue = [])).push({ body, eventName });
           return;
@@ -480,21 +566,29 @@ function startNodeSession(options, logger, cancellationToken) {
       }
     }
     writeToEventSocket(body, eventName) {
-      this.eventSocket.write(typescript_exports.server.formatMessage(typescript_exports.server.toEvent(eventName, body), this.logger, this.byteLength, this.host.newLine), "utf8");
+      this.eventSocket.write(
+        typescript_exports.server.formatMessage(
+          typescript_exports.server.toEvent(eventName, body),
+          this.logger,
+          this.byteLength,
+          this.host.newLine
+        ),
+        'utf8'
+      );
     }
     exit() {
       var _a;
-      this.logger.info("Exiting...");
+      this.logger.info('Exiting...');
       this.projectService.closeLog();
       (_a = typescript_exports.tracing) == null ? void 0 : _a.stopTracing();
       process.exit(0);
     }
     listen() {
-      rl.on("line", (input) => {
+      rl.on('line', (input) => {
         const message = input.trim();
         this.onMessage(message);
       });
-      rl.on("close", () => {
+      rl.on('close', () => {
         this.exit();
       });
     }
@@ -515,47 +609,83 @@ function startNodeSession(options, logger, cancellationToken) {
       return JSON.stringify(message, void 0, 2);
     }
     listen() {
-      process.on("message", (e) => {
+      process.on('message', (e) => {
         this.onMessage(e);
       });
-      process.on("disconnect", () => {
+      process.on('disconnect', () => {
         this.exit();
       });
     }
   }
-  const eventPort = parseEventPort(typescript_exports.server.findArgument("--eventPort"));
-  const typingSafeListLocation = typescript_exports.server.findArgument(typescript_exports.server.Arguments.TypingSafeListLocation);
-  const typesMapLocation = typescript_exports.server.findArgument(typescript_exports.server.Arguments.TypesMapLocation) || (0, typescript_exports.combinePaths)((0, typescript_exports.getDirectoryPath)(typescript_exports.sys.getExecutingFilePath()), "typesMap.json");
-  const npmLocation = typescript_exports.server.findArgument(typescript_exports.server.Arguments.NpmLocation);
-  const validateDefaultNpmLocation = typescript_exports.server.hasArgument(typescript_exports.server.Arguments.ValidateDefaultNpmLocation);
-  const disableAutomaticTypingAcquisition = typescript_exports.server.hasArgument("--disableAutomaticTypingAcquisition");
-  const useNodeIpc = typescript_exports.server.hasArgument("--useNodeIpc");
-  const telemetryEnabled = typescript_exports.server.hasArgument(typescript_exports.server.Arguments.EnableTelemetry);
-  const commandLineTraceDir = typescript_exports.server.findArgument("--traceDirectory");
-  const traceDir = commandLineTraceDir ? (0, typescript_exports.stripQuotes)(commandLineTraceDir) : process.env.TSS_TRACE;
+  const eventPort = parseEventPort(typescript_exports.server.findArgument('--eventPort'));
+  const typingSafeListLocation = typescript_exports.server.findArgument(
+    typescript_exports.server.Arguments.TypingSafeListLocation
+  );
+  const typesMapLocation =
+    typescript_exports.server.findArgument(typescript_exports.server.Arguments.TypesMapLocation) ||
+    (0, typescript_exports.combinePaths)(
+      (0, typescript_exports.getDirectoryPath)(typescript_exports.sys.getExecutingFilePath()),
+      'typesMap.json'
+    );
+  const npmLocation = typescript_exports.server.findArgument(
+    typescript_exports.server.Arguments.NpmLocation
+  );
+  const validateDefaultNpmLocation = typescript_exports.server.hasArgument(
+    typescript_exports.server.Arguments.ValidateDefaultNpmLocation
+  );
+  const disableAutomaticTypingAcquisition = typescript_exports.server.hasArgument(
+    '--disableAutomaticTypingAcquisition'
+  );
+  const useNodeIpc = typescript_exports.server.hasArgument('--useNodeIpc');
+  const telemetryEnabled = typescript_exports.server.hasArgument(
+    typescript_exports.server.Arguments.EnableTelemetry
+  );
+  const commandLineTraceDir = typescript_exports.server.findArgument('--traceDirectory');
+  const traceDir = commandLineTraceDir
+    ? (0, typescript_exports.stripQuotes)(commandLineTraceDir)
+    : process.env.TSS_TRACE;
   if (traceDir) {
-    (0, typescript_exports.startTracing)("server", traceDir);
+    (0, typescript_exports.startTracing)('server', traceDir);
   }
   const ioSession = useNodeIpc ? new IpcIOSession() : new IOSession();
-  process.on("uncaughtException", (err) => {
-    ioSession.logError(err, "unknown");
+  process.on('uncaughtException', (err) => {
+    ioSession.logError(err, 'unknown');
   });
   process.noAsar = true;
   ioSession.listen();
   function getGlobalTypingsCacheLocation() {
     switch (process.platform) {
-      case "win32": {
-        const basePath = process.env.LOCALAPPDATA || process.env.APPDATA || import_os.default.homedir && import_os.default.homedir() || process.env.USERPROFILE || process.env.HOMEDRIVE && process.env.HOMEPATH && (0, typescript_exports.normalizeSlashes)(process.env.HOMEDRIVE + process.env.HOMEPATH) || import_os.default.tmpdir();
-        return (0, typescript_exports.combinePaths)((0, typescript_exports.combinePaths)((0, typescript_exports.normalizeSlashes)(basePath), "Microsoft/TypeScript"), typescript_exports.versionMajorMinor);
+      case 'win32': {
+        const basePath =
+          process.env.LOCALAPPDATA ||
+          process.env.APPDATA ||
+          (import_os.default.homedir && import_os.default.homedir()) ||
+          process.env.USERPROFILE ||
+          (process.env.HOMEDRIVE &&
+            process.env.HOMEPATH &&
+            (0, typescript_exports.normalizeSlashes)(
+              process.env.HOMEDRIVE + process.env.HOMEPATH
+            )) ||
+          import_os.default.tmpdir();
+        return (0, typescript_exports.combinePaths)(
+          (0, typescript_exports.combinePaths)(
+            (0, typescript_exports.normalizeSlashes)(basePath),
+            'Microsoft/TypeScript'
+          ),
+          typescript_exports.versionMajorMinor
+        );
       }
-      case "openbsd":
-      case "freebsd":
-      case "netbsd":
-      case "darwin":
-      case "linux":
-      case "android": {
-        const cacheLocation = getNonWindowsCacheLocation(process.platform === "darwin");
-        return (0, typescript_exports.combinePaths)((0, typescript_exports.combinePaths)(cacheLocation, "typescript"), typescript_exports.versionMajorMinor);
+      case 'openbsd':
+      case 'freebsd':
+      case 'netbsd':
+      case 'darwin':
+      case 'linux':
+      case 'android': {
+        const cacheLocation = getNonWindowsCacheLocation(process.platform === 'darwin');
+        return (0, typescript_exports.combinePaths)(
+          (0, typescript_exports.combinePaths)(cacheLocation, 'typescript'),
+          typescript_exports.versionMajorMinor
+        );
       }
       default:
         return typescript_exports.Debug.fail(`unsupported platform '${process.platform}'`);
@@ -565,10 +695,18 @@ function startNodeSession(options, logger, cancellationToken) {
     if (process.env.XDG_CACHE_HOME) {
       return process.env.XDG_CACHE_HOME;
     }
-    const usersDir = platformIsDarwin ? "Users" : "home";
-    const homePath = import_os.default.homedir && import_os.default.homedir() || process.env.HOME || (process.env.LOGNAME || process.env.USER) && `/${usersDir}/${process.env.LOGNAME || process.env.USER}` || import_os.default.tmpdir();
-    const cacheFolder = platformIsDarwin ? "Library/Caches" : ".cache";
-    return (0, typescript_exports.combinePaths)((0, typescript_exports.normalizeSlashes)(homePath), cacheFolder);
+    const usersDir = platformIsDarwin ? 'Users' : 'home';
+    const homePath =
+      (import_os.default.homedir && import_os.default.homedir()) ||
+      process.env.HOME ||
+      ((process.env.LOGNAME || process.env.USER) &&
+        `/${usersDir}/${process.env.LOGNAME || process.env.USER}`) ||
+      import_os.default.tmpdir();
+    const cacheFolder = platformIsDarwin ? 'Library/Caches' : '.cache';
+    return (0, typescript_exports.combinePaths)(
+      (0, typescript_exports.normalizeSlashes)(homePath),
+      cacheFolder
+    );
   }
 }
 function pipeExists(name) {
@@ -577,7 +715,7 @@ function pipeExists(name) {
 function createCancellationToken(args) {
   let cancellationPipeName;
   for (let i = 0; i < args.length - 1; i++) {
-    if (args[i] === "--cancellationPipeName") {
+    if (args[i] === '--cancellationPipeName') {
       cancellationPipeName = args[i + 1];
       break;
     }
@@ -585,31 +723,36 @@ function createCancellationToken(args) {
   if (!cancellationPipeName) {
     return typescript_exports.server.nullCancellationToken;
   }
-  if (cancellationPipeName.charAt(cancellationPipeName.length - 1) === "*") {
+  if (cancellationPipeName.charAt(cancellationPipeName.length - 1) === '*') {
     const namePrefix = cancellationPipeName.slice(0, -1);
-    if (namePrefix.length === 0 || namePrefix.includes("*")) {
-      throw new Error("Invalid name for template cancellation pipe: it should have length greater than 2 characters and contain only one '*'.");
+    if (namePrefix.length === 0 || namePrefix.includes('*')) {
+      throw new Error(
+        "Invalid name for template cancellation pipe: it should have length greater than 2 characters and contain only one '*'."
+      );
     }
     let perRequestPipeName;
     let currentRequestId;
     return {
-      isCancellationRequested: () => perRequestPipeName !== void 0 && pipeExists(perRequestPipeName),
+      isCancellationRequested: () =>
+        perRequestPipeName !== void 0 && pipeExists(perRequestPipeName),
       setRequest(requestId) {
         currentRequestId = requestId;
         perRequestPipeName = namePrefix + requestId;
       },
       resetRequest(requestId) {
         if (currentRequestId !== requestId) {
-          throw new Error(`Mismatched request id, expected ${currentRequestId}, actual ${requestId}`);
+          throw new Error(
+            `Mismatched request id, expected ${currentRequestId}, actual ${requestId}`
+          );
         }
         perRequestPipeName = void 0;
-      }
+      },
     };
   } else {
     return {
       isCancellationRequested: () => pipeExists(cancellationPipeName),
       setRequest: (_requestId) => void 0,
-      resetRequest: (_requestId) => void 0
+      resetRequest: (_requestId) => void 0,
     };
   }
 }
@@ -620,35 +763,53 @@ function findArgumentStringArray(argName) {
   if (arg === void 0) {
     return typescript_exports.emptyArray;
   }
-  return arg.split(",").filter((name) => name !== "");
+  return arg.split(',').filter((name) => name !== '');
 }
-function start({ args, logger, cancellationToken, serverMode, unknownServerMode, startSession: startServer }, platform) {
+function start(
+  { args, logger, cancellationToken, serverMode, unknownServerMode, startSession: startServer },
+  platform
+) {
   logger.info(`Starting TS Server`);
   logger.info(`Version: ${typescript_exports.version}`);
-  logger.info(`Arguments: ${args.join(" ")}`);
-  logger.info(`Platform: ${platform} NodeVersion: ${process.version} CaseSensitive: ${typescript_exports.sys.useCaseSensitiveFileNames}`);
+  logger.info(`Arguments: ${args.join(' ')}`);
+  logger.info(
+    `Platform: ${platform} NodeVersion: ${process.version} CaseSensitive: ${typescript_exports.sys.useCaseSensitiveFileNames}`
+  );
   logger.info(`ServerMode: ${serverMode} hasUnknownServerMode: ${unknownServerMode}`);
   typescript_exports.setStackTraceLimit();
   if (typescript_exports.Debug.isDebugging) {
     typescript_exports.Debug.enableDebugInfo();
   }
-  if (typescript_exports.sys.tryEnableSourceMapsForHost && /^development$/i.test(typescript_exports.sys.getEnvironmentVariable("NODE_ENV"))) {
+  if (
+    typescript_exports.sys.tryEnableSourceMapsForHost &&
+    /^development$/i.test(typescript_exports.sys.getEnvironmentVariable('NODE_ENV'))
+  ) {
     typescript_exports.sys.tryEnableSourceMapsForHost();
   }
-  console.log = (...args2) => logger.msg(args2.length === 1 ? args2[0] : args2.join(", "), typescript_exports.server.Msg.Info);
-  console.warn = (...args2) => logger.msg(args2.length === 1 ? args2[0] : args2.join(", "), typescript_exports.server.Msg.Err);
-  console.error = (...args2) => logger.msg(args2.length === 1 ? args2[0] : args2.join(", "), typescript_exports.server.Msg.Err);
+  console.log = (...args2) =>
+    logger.msg(
+      args2.length === 1 ? args2[0] : args2.join(', '),
+      typescript_exports.server.Msg.Info
+    );
+  console.warn = (...args2) =>
+    logger.msg(args2.length === 1 ? args2[0] : args2.join(', '), typescript_exports.server.Msg.Err);
+  console.error = (...args2) =>
+    logger.msg(args2.length === 1 ? args2[0] : args2.join(', '), typescript_exports.server.Msg.Err);
   startServer(
     {
-      globalPlugins: findArgumentStringArray("--globalPlugins"),
-      pluginProbeLocations: findArgumentStringArray("--pluginProbeLocations"),
-      allowLocalPluginLoads: typescript_exports.server.hasArgument("--allowLocalPluginLoads"),
-      useSingleInferredProject: typescript_exports.server.hasArgument("--useSingleInferredProject"),
-      useInferredProjectPerProjectRoot: typescript_exports.server.hasArgument("--useInferredProjectPerProjectRoot"),
-      suppressDiagnosticEvents: typescript_exports.server.hasArgument("--suppressDiagnosticEvents"),
-      noGetErrOnBackgroundUpdate: typescript_exports.server.hasArgument("--noGetErrOnBackgroundUpdate"),
-      canUseWatchEvents: typescript_exports.server.hasArgument("--canUseWatchEvents"),
-      serverMode
+      globalPlugins: findArgumentStringArray('--globalPlugins'),
+      pluginProbeLocations: findArgumentStringArray('--pluginProbeLocations'),
+      allowLocalPluginLoads: typescript_exports.server.hasArgument('--allowLocalPluginLoads'),
+      useSingleInferredProject: typescript_exports.server.hasArgument('--useSingleInferredProject'),
+      useInferredProjectPerProjectRoot: typescript_exports.server.hasArgument(
+        '--useInferredProjectPerProjectRoot'
+      ),
+      suppressDiagnosticEvents: typescript_exports.server.hasArgument('--suppressDiagnosticEvents'),
+      noGetErrOnBackgroundUpdate: typescript_exports.server.hasArgument(
+        '--noGetErrOnBackgroundUpdate'
+      ),
+      canUseWatchEvents: typescript_exports.server.hasArgument('--canUseWatchEvents'),
+      serverMode,
     },
     logger,
     cancellationToken

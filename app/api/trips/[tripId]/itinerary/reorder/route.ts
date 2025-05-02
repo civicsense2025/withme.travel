@@ -8,7 +8,7 @@ import type { Database } from '@/types/database.types';
 // --- Local Constant Definitions (Workaround) ---
 const LOCAL_TABLES = {
   TRIP_MEMBERS: 'trip_members',
-  ITINERARY_ITEMS: 'itinerary_items', 
+  ITINERARY_ITEMS: 'itinerary_items',
 };
 const LOCAL_ENUMS = {
   TRIP_ROLES: {
@@ -29,7 +29,7 @@ async function checkTripAccess(
   allowedRoles: TripRole[] = [
     LOCAL_ENUMS.TRIP_ROLES.ADMIN,
     LOCAL_ENUMS.TRIP_ROLES.EDITOR,
-    LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR
+    LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR,
   ]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
@@ -53,7 +53,7 @@ async function checkTripAccess(
   }
 
   // Ensure member.role is treated as TripRole type for comparison
-  if (!allowedRoles.includes(member.role as TripRole)) { 
+  if (!allowedRoles.includes(member.role as TripRole)) {
     return {
       allowed: false,
       error: 'Access Denied: You do not have sufficient permissions.',
@@ -72,15 +72,19 @@ export async function POST(
     const { tripId } = await params;
     const body = await request.json();
     // Explicitly type the expected body structure
-    const { itemId, newDayNumber, newPosition }: { itemId: string; newDayNumber: number | null; newPosition: number } = body;
+    const {
+      itemId,
+      newDayNumber,
+      newPosition,
+    }: { itemId: string; newDayNumber: number | null; newPosition: number } = body;
 
     // Validate required parameters, including null for newDayNumber
-    if (!tripId || !itemId || newPosition === undefined || newDayNumber === undefined) { 
+    if (!tripId || !itemId || newPosition === undefined || newDayNumber === undefined) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
     // Use the updated client creator function name
-    const supabase = createServerSupabaseClient(); 
+    const supabase = createServerSupabaseClient();
     const {
       data: { user },
       error: authError,
@@ -94,8 +98,8 @@ export async function POST(
     const accessCheck = await checkTripAccess(supabase, tripId, user.id, [
       LOCAL_ENUMS.TRIP_ROLES.ADMIN,
       LOCAL_ENUMS.TRIP_ROLES.EDITOR,
-      LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR
-    ]); 
+      LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR,
+    ]);
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status || 403 });
     }
@@ -113,7 +117,7 @@ export async function POST(
     const { error: rpcError } = await supabase.rpc('update_itinerary_item_position', {
       p_item_id: itemId,
       p_trip_id: tripId,
-      p_day_number: newDayNumber, 
+      p_day_number: newDayNumber,
       p_position: newPosition,
     });
 
@@ -128,7 +132,8 @@ export async function POST(
 
     // If RPC succeeded, return success
     return NextResponse.json({ success: true });
-  } catch (error: any) { // Catch any unexpected errors
+  } catch (error: any) {
+    // Catch any unexpected errors
     console.error('Error in reorder handler:', error);
     // Provide a generic error message for unexpected issues
     const message = error instanceof Error ? error.message : 'Internal server error';

@@ -1,7 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'; // Use ssr client
 import { cookies } from 'next/headers';
 import { NextResponse, NextRequest } from 'next/server';
-import { ItineraryItem as DBItineraryItem, ItinerarySection as DBItinerarySection } from '@/types/database.types';
+import {
+  ItineraryItem as DBItineraryItem,
+  ItinerarySection as DBItinerarySection,
+} from '@/types/database.types';
 import { DisplayItineraryItem, ItinerarySection } from '@/types/itinerary';
 import { ProcessedVotes } from '@/types/votes';
 import { Profile } from '@/types/profile';
@@ -22,7 +25,7 @@ async function checkTripAccess(
   tripId: string,
   userId: string,
   // Use the imported or defined TripRole type
-  allowedRoles: TripRole[] = ['admin', 'editor', 'viewer', 'contributor'] 
+  allowedRoles: TripRole[] = ['admin', 'editor', 'viewer', 'contributor']
 ) {
   const { data: membership, error } = await supabase
     .from(TABLES.TRIP_MEMBERS)
@@ -50,13 +53,14 @@ async function checkTripAccess(
 
     if (tripData?.privacy_setting === ENUMS.TRIP_PRIVACY_SETTING.PUBLIC) {
       // Use ENUMS for comparison
-      const isReadOnlyRequest = allowedRoles.length === 1 && allowedRoles[0] === ENUMS.TRIP_ROLES.VIEWER;
+      const isReadOnlyRequest =
+        allowedRoles.length === 1 && allowedRoles[0] === ENUMS.TRIP_ROLES.VIEWER;
       if (isReadOnlyRequest) {
         // Include hasAccess: true
-        return { 
+        return {
           hasAccess: true,
-          role: ENUMS.TRIP_ROLES.VIEWER as TripRole 
-        }; 
+          role: ENUMS.TRIP_ROLES.VIEWER as TripRole,
+        };
       }
     }
 
@@ -69,9 +73,9 @@ async function checkTripAccess(
   }
 
   // Include hasAccess: true
-  return { 
+  return {
     hasAccess: true,
-    role: userRole 
+    role: userRole,
   };
 }
 
@@ -140,9 +144,9 @@ export async function GET(
     const { data: userData, error: authError } = await supabase.auth.getUser();
 
     // --- Logging Auth --- //
-    console.log(`[API /trips/${tripId}/itinerary] Auth Check Result:`, { 
-      userId: userData?.user?.id, 
-      authError: authError ? authError.message : null 
+    console.log(`[API /trips/${tripId}/itinerary] Auth Check Result:`, {
+      userId: userData?.user?.id,
+      authError: authError ? authError.message : null,
     });
     // --- End Logging --- //
 
@@ -157,35 +161,40 @@ export async function GET(
     const access = await checkTripAccess(supabase, tripId, userId);
 
     // --- Logging Access --- //
-    console.log(`[API /trips/${tripId}/itinerary] Access Check Result:`, { 
+    console.log(`[API /trips/${tripId}/itinerary] Access Check Result:`, {
       userId,
       hasAccess: access.hasAccess,
-      role: access.role
+      role: access.role,
     });
     // --- End Logging --- //
 
     // Modified access check to ensure we have role AND hasAccess
     if (!access.hasAccess || !access.role) {
-      console.log(`[API /trips/${tripId}/itinerary] Access denied. hasAccess: ${access.hasAccess}, role: ${access.role}`);
+      console.log(
+        `[API /trips/${tripId}/itinerary] Access denied. hasAccess: ${access.hasAccess}, role: ${access.role}`
+      );
       return formatErrorResponse(new ApiError('Unauthorized', 403));
     }
 
     // Additional logging to confirm access was granted
-    console.log(`[API /trips/${tripId}/itinerary] Access granted to user ${userId} with role ${access.role}`);
+    console.log(
+      `[API /trips/${tripId}/itinerary] Access granted to user ${userId} with role ${access.role}`
+    );
 
     // Fetch sections and items (using correct TABLES constants)
-    const [{ data: sections, error: sectionsError }, { data: items, error: itemsError }] = await Promise.all([
-      supabase
-        .from(TABLES.ITINERARY_SECTIONS)
-        .select('*')
-        .eq('trip_id', tripId)
-        .order('position', { ascending: true }),
-      supabase
-        .from(TABLES.ITINERARY_ITEMS)
-        .select('*')
-        .eq('trip_id', tripId)
-        .order('position', { ascending: true })
-    ]);
+    const [{ data: sections, error: sectionsError }, { data: items, error: itemsError }] =
+      await Promise.all([
+        supabase
+          .from(TABLES.ITINERARY_SECTIONS)
+          .select('*')
+          .eq('trip_id', tripId)
+          .order('position', { ascending: true }),
+        supabase
+          .from(TABLES.ITINERARY_ITEMS)
+          .select('*')
+          .eq('trip_id', tripId)
+          .order('position', { ascending: true }),
+      ]);
 
     if (sectionsError || itemsError) {
       console.error('Error fetching itinerary data:', { sectionsError, itemsError });
@@ -213,7 +222,10 @@ export async function POST(
   const { tripId } = await params;
 
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return formatErrorResponse(new ApiError('User not authenticated', 401));
@@ -243,7 +255,9 @@ export async function POST(
 
       const { data: newItem, error: insertError } = await supabase
         .from(TABLES.ITINERARY_ITEMS)
-        .insert([{ ...validatedData, trip_id: tripId, created_by: user.id, position: nextPosition }])
+        .insert([
+          { ...validatedData, trip_id: tripId, created_by: user.id, position: nextPosition },
+        ])
         .select('*')
         .single();
 
@@ -252,10 +266,9 @@ export async function POST(
       }
       revalidatePath(`/trips/${tripId}`);
       return NextResponse.json({ data: newItem }, { status: 201 });
-
     } else if (type === 'section') {
-       // ... (Keep section logic similar, update constants)
-       const validatedData = createItinerarySectionSchema.parse(payload);
+      // ... (Keep section logic similar, update constants)
+      const validatedData = createItinerarySectionSchema.parse(payload);
 
       const { data: maxPositionData, error: positionError } = await supabase
         .from(TABLES.ITINERARY_SECTIONS)
@@ -276,7 +289,7 @@ export async function POST(
         .select('*')
         .single();
 
-       if (insertError) {
+      if (insertError) {
         throw new ApiError('Failed to create itinerary section', 500, insertError);
       }
       revalidatePath(`/trips/${tripId}`);

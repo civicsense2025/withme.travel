@@ -3,11 +3,13 @@
 ## Fixed Issues:
 
 1. Added proper type definitions for TripRole in tab-content files:
+
    - budget-tab-content.tsx
    - itinerary-tab-content.tsx
    - manage-tab-content.tsx
 
 2. Fixed component integration issues:
+
    - Created proper wrapper for setItineraryItems
    - Implemented async handlers for edit operations
    - Fixed Profile typing issues

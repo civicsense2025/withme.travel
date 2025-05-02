@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse, NextRequest } from 'next/server';
 // Removed problematic constant imports
-// import { DB_TABLES, DB_FIELDS, DB_ENUMS, type TripRole } from '@/utils/constants/database'; 
+// import { DB_TABLES, DB_FIELDS, DB_ENUMS, type TripRole } from '@/utils/constants/database';
 import { errorResponse, successResponse, validateInput, ApiError } from '@/lib/api-utils';
 import { requireAuth, withAuth } from '@/lib/auth-middleware';
 import { checkTripAccess, getTripPermissions, ensureTripAccess } from '@/lib/trip-access';
@@ -122,8 +122,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ tri
       }
     });
   } catch (error) {
-      console.error(`[Permissions GET Top-Level Error]:`, error);
-      return errorResponse('An unexpected error occurred', 500);
+    console.error(`[Permissions GET Top-Level Error]:`, error);
+    return errorResponse('An unexpected error occurred', 500);
   }
 }
 
@@ -202,8 +202,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
       }
     });
   } catch (error) {
-      console.error(`[Permissions POST Top-Level Error]:`, error);
-      return errorResponse('An unexpected error occurred', 500);
+    console.error(`[Permissions POST Top-Level Error]:`, error);
+    return errorResponse('An unexpected error occurred', 500);
   }
 }
 
@@ -240,7 +240,9 @@ export async function PATCH(
         const { status } = await validateInput(requestBody, updateStatusSchema);
 
         // Verify user is admin of the trip
-        const accessResponse = await ensureTripAccess(user.id, tripId, [LOCAL_ENUMS.TRIP_ROLE.ADMIN]);
+        const accessResponse = await ensureTripAccess(user.id, tripId, [
+          LOCAL_ENUMS.TRIP_ROLE.ADMIN,
+        ]);
 
         if (accessResponse) return accessResponse;
 
@@ -281,7 +283,9 @@ export async function PATCH(
             .single();
 
           if (fullRequestError || !fullRequest) {
-            console.error(`[Permissions PATCH] Failed to re-fetch request ${requestId} after status update.`);
+            console.error(
+              `[Permissions PATCH] Failed to re-fetch request ${requestId} after status update.`
+            );
             throw new ApiError('Failed to retrieve request details after update', 500);
           }
 
@@ -295,7 +299,9 @@ export async function PATCH(
 
           if (addError) {
             if (addError.code === '23505') {
-              console.warn(`[Permissions PATCH] User ${fullRequest.user_id} already a member of trip ${tripId}. Ignoring insert error.`);
+              console.warn(
+                `[Permissions PATCH] User ${fullRequest.user_id} already a member of trip ${tripId}. Ignoring insert error.`
+              );
             } else {
               throw new ApiError(`Failed to add member to trip: ${addError.message}`, 500);
             }
@@ -304,7 +310,10 @@ export async function PATCH(
 
         return successResponse({ success: true, status });
       } catch (error) {
-        console.error(`[Permissions PATCH Handler Error] Trip ${tripId}, Request ${requestId}:`, error);
+        console.error(
+          `[Permissions PATCH Handler Error] Trip ${tripId}, Request ${requestId}:`,
+          error
+        );
         return errorResponse(
           error instanceof ApiError ? error.message : 'Failed to update permission request',
           error instanceof ApiError ? error.status : 500
@@ -312,7 +321,7 @@ export async function PATCH(
       }
     });
   } catch (error) {
-      console.error(`[Permissions PATCH Top-Level Error]:`, error);
-      return errorResponse('An unexpected error occurred', 500);
+    console.error(`[Permissions PATCH Top-Level Error]:`, error);
+    return errorResponse('An unexpected error occurred', 500);
   }
 }

@@ -289,10 +289,10 @@ export function EditTripForm({
               <div className="flex justify-between items-center">
                 <Label htmlFor="cover_image_url">Cover Image URL</Label>
                 {onChangeCover && (
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       onClose(); // Close the edit form first
                       onChangeCover(); // Then open image selector dialog

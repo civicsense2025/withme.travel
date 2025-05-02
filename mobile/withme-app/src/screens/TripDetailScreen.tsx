@@ -1,57 +1,93 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Share,
   Alert,
-  Modal
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { createSupabaseClient } from '../utils/supabase';
 import { Trip } from '../types/supabase';
-import { ROUTES } from '../constants/config';
+import { useTheme } from '../hooks/useTheme';
+import { Text, Button, Card } from '../components/ui'; // Import themed components
 import Emoji from 'react-native-emoji';
+import { Feather } from '@expo/vector-icons';
 
 // Common travel emojis for picker
 const TRAVEL_EMOJIS = [
-  '✈️', '🚗', '🏨', '🏖️', '🏔️', '🏞️', '🚅', '🚢', '🚆', '🗺️', 
-  '🧳', '🏕️', '🚶', '🚴', '⛷️', '🚣', '🏝️', '🌋', '🌄', '🌆', 
-  '🏙️', '🌉', '🏰', '🏯', '🏛️', '🕌', '⛩️', '🕍', '⛪', '🏪',
-  '🍕', '🍷', '🍹', '🍦', '🎡', '🎭', '🎬', '🏟️', '🏛️', '🐪'
+  '✈️',
+  '🚗',
+  '🏨',
+  '🏖️',
+  '🏔️',
+  '🏞️',
+  '🚅',
+  '🚢',
+  '🚆',
+  '🗺️',
+  '🧳',
+  '🏕️',
+  '🚶',
+  '🚴',
+  '⛷️',
+  '🚣',
+  '🏝️',
+  '🌋',
+  '🌄',
+  '🌆',
+  '🏙️',
+  '🌉',
+  '🏰',
+  '🏯',
+  '🏛️',
+  '🕌',
+  '⛩️',
+  '🕍',
+  '⛪',
+  '🏪',
+  '🍕',
+  '🍷',
+  '🍹',
+  '🍦',
+  '🎡',
+  '🎭',
+  '🎬',
+  '🏟️',
+  '🏛️',
+  '🐪',
 ];
 
 export default function TripDetailScreen({ route, navigation }: any) {
   const { tripId } = route.params;
+  const theme = useTheme();
+  const styles = createStyles(theme);
   const { user } = useAuth();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  const loadTripDetails = async () => {
+  const loadTripDetails = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const supabase = createSupabaseClient();
-      
+
       // Load trip details
-      const { data, error } = await supabase
-        .from('trips')
-        .select('*')
-        .eq('id', tripId)
-        .single();
-      
+      const { data, error } = await supabase.from('trips').select('*').eq('id', tripId).single();
+
       if (error) {
         console.error('Error loading trip:', error);
         setError('Failed to load trip details');
         return;
       }
-      
+
       setTrip(data as unknown as Trip);
     } catch (err) {
       console.error('Error in loadTripDetails:', err);
@@ -59,172 +95,221 @@ export default function TripDetailScreen({ route, navigation }: any) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tripId]);
 
   useEffect(() => {
     loadTripDetails();
-  }, [tripId]);
+  }, [loadTripDetails]);
 
-  // Add navigation options
+  // Update navigation options when trip data loads
   useEffect(() => {
-    navigation.setOptions({
-      title: trip?.name || 'Trip Details',
-      headerRight: () => (
-        <TouchableOpacity 
-          style={styles.headerButton} 
-          onPress={() => {
-            // In a real app, navigate to trip edit screen
-            Alert.alert('Coming Soon', 'Trip editing will be available soon');
-          }}
-        >
-          <Text style={styles.headerButtonText}>Edit</Text>
-        </TouchableOpacity>
-      ),
-    });
+    if (trip) {
+      navigation.setOptions({
+        title: trip.name,
+        headerRight: () => (
+          <Button
+            label="Edit"
+            variant="ghost"
+            size="sm"
+            onPress={() => navigation.navigate('EditTrip', { trip })}
+          />
+        ),
+      });
+    }
   }, [navigation, trip]);
 
   const handleShare = async () => {
+    if (!trip) return;
     try {
       await Share.share({
-        message: `Check out my trip: ${trip?.name}`,
-        // In a real app, you would include a deep link here
+        message: `Check out my trip: ${trip.name}`,
+        // TODO: Add deep link URL
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sharing trip:', error);
+      Alert.alert('Share Error', error.message || 'Could not share trip');
     }
   };
 
-  const navigateToItinerary = () => {
+  const navigateToItinerary = useCallback(() => {
     if (trip) {
       navigation.navigate('Itinerary', { tripId: trip.id });
     } else {
       Alert.alert('Error', 'Cannot navigate to itinerary. Trip data is missing.');
     }
-  };
+  }, [navigation, trip]);
 
   const handleEmojiSelect = async (emoji: string) => {
     if (!trip) return;
-    
+
     setShowEmojiPicker(false);
-    
+    const originalEmoji = trip.trip_emoji;
+
+    // Optimistically update UI
+    setTrip({ ...trip, trip_emoji: emoji });
+
     try {
       const supabase = createSupabaseClient();
-      
       const { error } = await supabase
         .from('trips')
         .update({ trip_emoji: emoji })
         .eq('id', trip.id);
-      
+
       if (error) {
         console.error('Error updating emoji:', error);
         Alert.alert('Error', 'Failed to update trip emoji');
-        return;
+        // Revert UI on failure
+        setTrip({ ...trip, trip_emoji: originalEmoji });
       }
-      
-      // Update local state
-      setTrip({
-        ...trip,
-        trip_emoji: emoji
-      });
-      
     } catch (err) {
       console.error('Error in handleEmojiSelect:', err);
       Alert.alert('Error', 'An unexpected error occurred');
+      setTrip({ ...trip, trip_emoji: originalEmoji });
     }
   };
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0066ff" />
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   if (error || !trip) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error || 'Trip not found'}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton} 
-          onPress={loadTripDetails}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
+      <View style={styles.centeredContainer}>
+        <Text variant="body1" color="destructive" style={styles.errorText}>
+          {error || 'Trip not found'}
+        </Text>
+        <Button label="Retry" onPress={loadTripDetails} />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => setShowEmojiPicker(true)}
-          style={styles.emojiContainer}
-        >
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => setShowEmojiPicker(true)} style={styles.emojiContainer}>
           <Text style={styles.emoji}>{trip.trip_emoji || '✈️'}</Text>
           <View style={styles.editEmojiLabel}>
-            <Text style={styles.editEmojiText}>Change</Text>
+            <Text variant="caption" color="muted">
+              Change
+            </Text>
           </View>
         </TouchableOpacity>
-        <Text style={styles.title}>{trip.name}</Text>
-        <View style={styles.statusBadge}>
-          <Text style={styles.status}>{trip.status}</Text>
+        <Text variant="h1" weight="bold" style={styles.title}>
+          {trip.name}
+        </Text>
+
+        <View style={styles.metaRow}>
+          {/* Status Badge */}
+          <View style={[styles.statusBadge, getStatusBadgeStyle(trip.status, theme)]}>
+            <Text
+              variant="caption"
+              weight="medium"
+              color="custom"
+              customColor={getStatusBadgeTextStyle(trip.status, theme)}
+            >
+              {trip.status || 'Unknown'}
+            </Text>
+          </View>
+
+          {/* Dates */}
+          {trip.start_date && (
+            <Text variant="body2" color="muted" style={styles.metaText}>
+              🗓️{' '}
+              {new Date(trip.start_date).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+              })}
+              {trip.end_date &&
+                ` - ${new Date(trip.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+            </Text>
+          )}
+
+          {/* Duration */}
+          {trip.duration_days && (
+            <Text variant="body2" color="muted" style={styles.metaText}>
+              ⏱️ {trip.duration_days} {trip.duration_days === 1 ? 'day' : 'days'}
+            </Text>
+          )}
         </View>
-        
-        {trip.start_date && (
-          <Text style={styles.dates}>
-            {new Date(trip.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} 
-            {trip.end_date && ` - ${new Date(trip.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`}
-          </Text>
-        )}
-        
-        {trip.duration_days && (
-          <Text style={styles.duration}>
-            {trip.duration_days} {trip.duration_days === 1 ? 'day' : 'days'}
-          </Text>
-        )}
       </View>
 
+      {/* Description Section */}
       {trip.description && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{trip.description}</Text>
-        </View>
+        <Card style={styles.sectionCard}>
+          <Text variant="h4" weight="semibold" style={styles.sectionTitle}>
+            Description
+          </Text>
+          <Text variant="body1" color="secondary">
+            {trip.description}
+          </Text>
+        </Card>
       )}
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity 
-          style={styles.actionButton}
+      {/* Actions Section */}
+      <View style={styles.actionsRow}>
+        <Button
+          label="View Itinerary"
+          variant="primary"
+          icon={<Feather name="list" size={18} color={theme.colors.travelPurpleForeground} />}
+          iconPosition="left"
           onPress={navigateToItinerary}
-        >
-          <Text style={styles.actionButtonText}>View Itinerary</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.secondaryButton]}
+          style={styles.actionButton}
+        />
+
+        <Button
+          label="Share"
+          variant="secondary"
+          icon={<Feather name="share-2" size={18} color={theme.colors.travelBlueForeground} />}
+          iconPosition="left"
           onPress={handleShare}
-        >
-          <Text style={styles.secondaryButtonText}>Share Trip</Text>
-        </TouchableOpacity>
+          style={styles.actionButton}
+        />
       </View>
 
-      {/* Additional sections for a full trip detail page */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <TouchableOpacity 
-          style={styles.quickAction} 
+      {/* Quick Actions Section */}
+      <Card style={styles.sectionCard}>
+        <Text variant="h4" weight="semibold" style={styles.sectionTitle}>
+          Quick Actions
+        </Text>
+        <TouchableOpacity
+          style={styles.quickActionItem}
           onPress={() => navigation.navigate('EditItineraryItem', { tripId })}
         >
-          <Text style={styles.quickActionText}>🗓️ Add Itinerary Item</Text>
+          <Feather
+            name="plus"
+            size={20}
+            color={theme.colors.primary}
+            style={styles.quickActionIcon}
+          />
+          <Text variant="body1">Add Itinerary Item</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickAction}>
-          <Text style={styles.quickActionText}>👥 Invite Travel Companions</Text>
+        <TouchableOpacity style={styles.quickActionItem}>
+          <Feather
+            name="users"
+            size={20}
+            color={theme.colors.primary}
+            style={styles.quickActionIcon}
+          />
+          <Text variant="body1">Invite Travel Companions</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickAction}>
-          <Text style={styles.quickActionText}>🗺️ Explore Destination</Text>
+        <TouchableOpacity style={styles.quickActionItem}>
+          <Feather
+            name="map-pin"
+            size={20}
+            color={theme.colors.primary}
+            style={styles.quickActionIcon}
+          />
+          <Text variant="body1">Explore Destination</Text>
         </TouchableOpacity>
-      </View>
+      </Card>
+
+      {/* Placeholder for other sections like members, budget, etc. */}
+      <View style={{ height: 50 }} />
 
       {/* Emoji Picker Modal */}
       <Modal
@@ -236,25 +321,30 @@ export default function TripDetailScreen({ route, navigation }: any) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Choose a Trip Emoji</Text>
-              <TouchableOpacity 
+              <Text variant="h3" weight="semibold">
+                Choose Trip Emoji
+              </Text>
+              <TouchableOpacity
                 onPress={() => setShowEmojiPicker(false)}
                 style={styles.closeButton}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Feather name="x" size={24} color={theme.colors.foreground} />
               </TouchableOpacity>
             </View>
-            <View style={styles.emojiGrid}>
-              {TRAVEL_EMOJIS.map((emoji, index) => (
-                <TouchableOpacity 
-                  key={`emoji-${index}`}
-                  style={styles.emojiButton}
-                  onPress={() => handleEmojiSelect(emoji)}
+            <FlatList
+              data={TRAVEL_EMOJIS}
+              keyExtractor={(item, index) => `${item}-${index}`}
+              numColumns={6}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.emojiGridItem}
+                  onPress={() => handleEmojiSelect(item)}
                 >
-                  <Text style={styles.emojiButtonText}>{emoji}</Text>
+                  <Text style={styles.modalEmoji}>{item}</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+              )}
+              contentContainerStyle={styles.emojiGrid}
+            />
           </View>
         </View>
       </Modal>
@@ -262,217 +352,169 @@ export default function TripDetailScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#ff3b30',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  retryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#0066ff',
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  header: {
-    padding: 20,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  emojiContainer: {
-    position: 'relative',
-    marginBottom: 10,
-  },
-  editEmojiLabel: {
-    position: 'absolute',
-    bottom: -5,
-    right: -5,
-    backgroundColor: '#0066ff',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 10,
-  },
-  editEmojiText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  statusBadge: {
-    backgroundColor: '#E5F2FF',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    marginBottom: 8,
-  },
-  status: {
-    fontSize: 14,
-    color: '#0066ff',
-    textTransform: 'capitalize',
-    fontWeight: '600',
-  },
-  dates: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 4,
-  },
-  duration: {
-    fontSize: 16,
-    color: '#666',
-  },
-  section: {
-    margin: 16,
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
-  },
-  description: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 24,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginVertical: 8,
-  },
-  actionButton: {
-    flex: 1,
-    backgroundColor: '#0066ff',
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginHorizontal: 8,
-    alignItems: 'center',
-    shadowColor: '#0066ff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  secondaryButton: {
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-  },
-  secondaryButtonText: {
-    color: '#333',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  quickAction: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  quickActionText: {
-    fontSize: 16,
-    color: '#0066ff',
-  },
-  headerButton: {
-    padding: 8,
-  },
-  headerButtonText: {
-    fontSize: 16,
-    color: '#0066ff',
-    fontWeight: 'bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '70%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    padding: 5,
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: '#999',
-  },
-  emojiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  emojiButton: {
-    width: '20%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emojiButtonText: {
-    fontSize: 32,
-  },
-}); 
+// Helper functions for dynamic styles
+const getStatusBadgeStyle = (status: string | undefined, theme: ReturnType<typeof useTheme>) => {
+  const defaultStyle = { backgroundColor: theme.colors.muted, borderColor: theme.colors.border };
+  switch (status?.toLowerCase()) {
+    case 'planning':
+      return {
+        backgroundColor: theme.colors.travelBlue,
+        borderColor: theme.colors.travelBlueForeground,
+      };
+    case 'upcoming':
+      return {
+        backgroundColor: theme.colors.travelMint,
+        borderColor: theme.colors.travelMintForeground,
+      };
+    case 'completed':
+      return {
+        backgroundColor: theme.colors.secondary,
+        borderColor: theme.colors.secondaryForeground,
+      };
+    default:
+      return defaultStyle;
+  }
+};
+
+const getStatusBadgeTextStyle = (
+  status: string | undefined,
+  theme: ReturnType<typeof useTheme>
+) => {
+  const defaultColor = theme.colors.mutedForeground;
+  switch (status?.toLowerCase()) {
+    case 'planning':
+      return theme.colors.travelBlueForeground;
+    case 'upcoming':
+      return theme.colors.travelMintForeground;
+    case 'completed':
+      return theme.colors.secondaryForeground;
+    default:
+      return defaultColor;
+  }
+};
+
+const createStyles = (theme: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+      padding: theme.spacing['4'],
+      paddingBottom: theme.spacing['8'],
+    },
+    centeredContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing['5'],
+      backgroundColor: theme.colors.background,
+    },
+    errorText: {
+      textAlign: 'center',
+      marginBottom: theme.spacing['4'],
+    },
+    headerSection: {
+      alignItems: 'center',
+      marginBottom: theme.spacing['6'],
+    },
+    emojiContainer: {
+      marginBottom: theme.spacing['3'],
+      alignItems: 'center',
+    },
+    emoji: {
+      fontSize: 72,
+    },
+    editEmojiLabel: {
+      position: 'absolute',
+      bottom: 0,
+      right: -theme.spacing['3'],
+      backgroundColor: theme.colors.card,
+      paddingHorizontal: theme.spacing['1.5'],
+      paddingVertical: theme.spacing['0.5'],
+      borderRadius: theme.borderRadius.sm,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    title: {
+      textAlign: 'center',
+      marginBottom: theme.spacing['2'],
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      marginTop: theme.spacing['2'],
+    },
+    statusBadge: {
+      paddingHorizontal: theme.spacing['2'],
+      paddingVertical: theme.spacing['1'],
+      borderRadius: theme.borderRadius.sm,
+      borderWidth: 1,
+      marginRight: theme.spacing['2'],
+      marginBottom: theme.spacing['1'], // Allow wrapping
+    },
+    metaText: {
+      marginRight: theme.spacing['3'],
+      marginBottom: theme.spacing['1'], // Allow wrapping
+    },
+    sectionCard: {
+      marginBottom: theme.spacing['4'],
+      padding: theme.spacing['4'],
+    },
+    sectionTitle: {
+      marginBottom: theme.spacing['3'],
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: theme.spacing['4'],
+    },
+    actionButton: {
+      flex: 1, // Make buttons share space
+      marginHorizontal: theme.spacing['1'],
+    },
+    quickActionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: theme.spacing['3'],
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    quickActionIcon: {
+      marginRight: theme.spacing['3'],
+    },
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: theme.colors.card,
+      borderTopLeftRadius: theme.borderRadius.xl,
+      borderTopRightRadius: theme.borderRadius.xl,
+      padding: theme.spacing['4'],
+      maxHeight: '60%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing['4'],
+    },
+    closeButton: {
+      padding: theme.spacing['2'],
+    },
+    emojiGrid: {
+      alignItems: 'center',
+    },
+    emojiGridItem: {
+      padding: theme.spacing['2'],
+      margin: theme.spacing['1'],
+    },
+    modalEmoji: {
+      fontSize: 32,
+    },
+  });

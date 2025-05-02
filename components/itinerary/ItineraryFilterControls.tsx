@@ -37,10 +37,10 @@ export const ItineraryFilterControls: React.FC<ItineraryFilterControlsProps> = (
       >
         <SelectTrigger className="w-auto min-w-[110px] h-7 px-2 py-0.5 text-xs">
           <SelectValue>
-            {currentFilter.day === 'all' 
-              ? 'All Days' 
-              : currentFilter.day === 0 
-                ? 'Unscheduled' 
+            {currentFilter.day === 'all'
+              ? 'All Days'
+              : currentFilter.day === 0
+                ? 'Unscheduled'
                 : `Day ${currentFilter.day}`}
           </SelectValue>
         </SelectTrigger>
@@ -61,9 +61,9 @@ export const ItineraryFilterControls: React.FC<ItineraryFilterControlsProps> = (
       >
         <SelectTrigger className="w-auto min-w-[130px] h-7 px-2 py-0.5 text-xs">
           <SelectValue>
-            {currentFilter.category === 'all' 
-              ? 'All Categories' 
-              : currentFilter.category.charAt(0).toUpperCase() + 
+            {currentFilter.category === 'all'
+              ? 'All Categories'
+              : currentFilter.category.charAt(0).toUpperCase() +
                 currentFilter.category.slice(1).replace('_', ' ')}
           </SelectValue>
         </SelectTrigger>

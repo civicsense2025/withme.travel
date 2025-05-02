@@ -9,7 +9,7 @@ const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 };
 
 // Re-use or import checkTripAccess function
@@ -81,16 +81,16 @@ export async function POST(
     }
 
     // Calculate the day offset - if trip has items, start after the last day, otherwise start at day 1
-    const dayOffset = existingItems && existingItems.length > 0 
-      ? (existingItems[0].day_number || 0) + 1 
-      : 1;
-    
+    const dayOffset =
+      existingItems && existingItems.length > 0 ? (existingItems[0].day_number || 0) + 1 : 1;
+
     console.log(`[DEBUG] Using day offset: ${dayOffset} for template application`);
 
     // 2. Fetch the template details (sections and activities)
     const { data: templateData, error: templateError } = await supabase
       .from('itinerary_templates')
-      .select(`
+      .select(
+        `
         id,
         title,
         duration_days,
@@ -99,7 +99,8 @@ export async function POST(
           *,
           itinerary_template_items (*)
         )
-      `)
+      `
+      )
       .eq('id', templateId)
       .maybeSingle();
 
@@ -144,7 +145,7 @@ export async function POST(
           id: `synthetic-section-day-${day}`,
           day_number: parseInt(day, 10),
           title: `Day ${day}`,
-          itinerary_template_items: itemsByDay[day]
+          itinerary_template_items: itemsByDay[day],
         }));
       }
     }
@@ -152,14 +153,14 @@ export async function POST(
     // 3. Prepare new itinerary items based on template items with adjusted days
     const itemsToInsert: any[] = [];
     const sectionsToCreate = new Set<number>(); // Track unique day numbers to create sections for
-    
+
     templateSections.forEach((section: any) => {
       const originalDayNumber = section.day_number || 1;
       const newDayNumber = dayOffset + originalDayNumber - 1; // Adjust day number with offset
-      
+
       // Add this day number to our sections to create
       sectionsToCreate.add(newDayNumber);
-      
+
       const items = section.itinerary_template_items || [];
       items.forEach((item: any) => {
         itemsToInsert.push({
@@ -180,28 +181,29 @@ export async function POST(
     });
 
     if (itemsToInsert.length === 0) {
-      return NextResponse.json(
-        { message: 'Template has no items to apply.' },
-        { status: 200 }
-      );
+      return NextResponse.json({ message: 'Template has no items to apply.' }, { status: 200 });
     }
 
     // Add detailed logging for the user ID
-    console.log(`[DEBUG] Preparing to insert ${itemsToInsert.length} items for trip ${tripId}. Using user ID: ${user?.id}`);
+    console.log(
+      `[DEBUG] Preparing to insert ${itemsToInsert.length} items for trip ${tripId}. Using user ID: ${user?.id}`
+    );
 
     // Ensure user ID is valid before proceeding
     if (!user?.id) {
       console.error('[ERROR] User ID is missing or invalid before inserting items.');
       return NextResponse.json({ error: 'Invalid user session state.' }, { status: 500 });
     }
-    
+
     // Previous profile lookup code was here - instead, we're just using null for created_by
     // Set created_by to null for all items to avoid foreign key constraint issues
-    itemsToInsert.forEach(item => {
+    itemsToInsert.forEach((item) => {
       item.created_by = null;
     });
-    
-    console.log(`[DEBUG] Inserting ${itemsToInsert.length} template items with day offset ${dayOffset} (using null for created_by)`);
+
+    console.log(
+      `[DEBUG] Inserting ${itemsToInsert.length} template items with day offset ${dayOffset} (using null for created_by)`
+    );
 
     // 4. Insert new items
     const { data: newItems, error: insertError } = await supabase
@@ -216,7 +218,7 @@ export async function POST(
 
     // 4.5 Create sections for each day if they don't exist
     console.log(`[DEBUG] Creating ${sectionsToCreate.size} sections for applied template`);
-    
+
     // First get the max position of existing sections to ensure we append new ones
     const { data: maxPosData } = await supabase
       .from('itinerary_sections')
@@ -224,12 +226,12 @@ export async function POST(
       .eq('trip_id', tripId)
       .order('position', { ascending: false })
       .limit(1);
-    
+
     const maxPosition = maxPosData && maxPosData.length > 0 ? maxPosData[0].position : 0;
     let nextPosition = maxPosition + 1;
-    
+
     // Create array of section objects
-    const sectionsToInsert = Array.from(sectionsToCreate).map(dayNumber => ({
+    const sectionsToInsert = Array.from(sectionsToCreate).map((dayNumber) => ({
       trip_id: tripId,
       day_number: dayNumber,
       title: `Day ${dayNumber}`,
@@ -237,16 +239,16 @@ export async function POST(
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }));
-    
+
     // Insert sections if there are any
     if (sectionsToInsert.length > 0) {
       const { error: sectionError } = await supabase
         .from('itinerary_sections')
-        .upsert(sectionsToInsert, { 
+        .upsert(sectionsToInsert, {
           onConflict: 'trip_id,day_number',
-          ignoreDuplicates: true 
+          ignoreDuplicates: true,
         });
-      
+
       if (sectionError) {
         console.error('[WARNING] Error creating itinerary sections:', sectionError);
         // Don't fail the entire operation if section creation fails, just log it
@@ -264,11 +266,8 @@ export async function POST(
       .single();
 
     if (tripData && (!tripData.duration_days || tripData.duration_days < newTotalDays)) {
-      await supabase
-        .from('trips')
-        .update({ duration_days: newTotalDays })
-        .eq('id', tripId);
-      
+      await supabase.from('trips').update({ duration_days: newTotalDays }).eq('id', tripId);
+
       console.log(`[DEBUG] Updated trip duration to ${newTotalDays} days`);
     }
 
@@ -282,11 +281,11 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { 
-        message: 'Template applied successfully.', 
+      {
+        message: 'Template applied successfully.',
         count: newItems?.length ?? 0,
         dayOffset: dayOffset,
-        newTotalDays: newTotalDays
+        newTotalDays: newTotalDays,
       },
       { status: 200 }
     );

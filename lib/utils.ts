@@ -302,11 +302,11 @@ export function getCardClass(): string {
  */
 export function getInitials(name?: string | null): string {
   if (!name) return '';
-  
+
   return name
     .split(' ')
-    .map(part => part.charAt(0))
-    .filter(char => char.match(/[A-Za-z]/)) // Only include letters
+    .map((part) => part.charAt(0))
+    .filter((char) => char.match(/[A-Za-z]/)) // Only include letters
     .slice(0, 2) // Max 2 initials
     .join('')
     .toUpperCase();
@@ -323,19 +323,19 @@ export function formatError(
   fallback: string = 'An unexpected error occurred'
 ): string {
   if (!error) return fallback;
-  
+
   // If it's a string, return it directly
   if (typeof error === 'string') return error;
-  
+
   // If it's an Error object with a message
   if (error instanceof Error) return error.message;
-  
+
   // If it's an object with a message property
   if (typeof error === 'object' && error !== null && 'message' in error) {
     const msg = (error as { message: unknown }).message;
     if (typeof msg === 'string') return msg;
   }
-  
+
   // If it's an object with an error property containing a message
   if (
     typeof error === 'object' &&
@@ -348,7 +348,7 @@ export function formatError(
     const msg = (error as { error: { message?: unknown } }).error.message;
     if (typeof msg === 'string') return msg;
   }
-  
+
   // If it can be stringified, stringify it
   try {
     if (typeof error === 'object' && error !== null) {
@@ -357,7 +357,7 @@ export function formatError(
   } catch (e) {
     // Ignore stringification errors
   }
-  
+
   // Default fallback
   return fallback;
 }
@@ -373,11 +373,11 @@ export function formatCurrency(
   currency: string = 'USD'
 ): string {
   if (amount === undefined || amount === null) return '';
-  
+
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
+
   if (isNaN(numericAmount)) return '';
-  
+
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -408,7 +408,7 @@ export function limitItems<T>(
   if (!items || !Array.isArray(items)) {
     return { items: [], hiddenCount: 0, hasMore: false };
   }
-  
+
   // If items are less than or equal to the limit, return them all
   if (items.length <= limit) {
     return {
@@ -417,7 +417,7 @@ export function limitItems<T>(
       hasMore: false,
     };
   }
-  
+
   // Otherwise, return the limited items and info about hidden items
   return {
     items: items.slice(0, limit),

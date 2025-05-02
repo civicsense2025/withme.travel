@@ -11,10 +11,13 @@ export const SUPABASE_ANON_KEY = extra.supabaseAnonKey as string;
 // Log the values being used
 console.log('SUPABASE_URL:', SUPABASE_URL);
 console.log('SUPABASE_ANON_KEY length:', SUPABASE_ANON_KEY?.length || 0);
-console.log('SUPABASE_ANON_KEY first 10 chars:', SUPABASE_ANON_KEY?.substring(0, 10) || 'undefined');
+console.log(
+  'SUPABASE_ANON_KEY first 10 chars:',
+  SUPABASE_ANON_KEY?.substring(0, 10) || 'undefined'
+);
 
 // API configuration
-export const API_URL = extra.apiUrl as string || 'https://api.withme.travel';
+export const API_URL = (extra.apiUrl as string) || 'https://api.withme.travel';
 console.log('API_URL:', API_URL);
 
 // App configuration
@@ -37,4 +40,5 @@ export const ROUTES = {
   EDIT_ITINERARY_ITEM: 'EditItineraryItem',
   PROFILE: 'Profile',
   SETTINGS: 'Settings',
+  DESTINATION_DETAIL: 'DestinationDetail',
 };

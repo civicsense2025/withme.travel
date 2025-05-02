@@ -139,7 +139,12 @@ interface SchemaCheckResult {
 }
 
 interface SchemaWarning {
-  type: 'missing_column' | 'type_mismatch' | 'missing_index' | 'missing_foreign_key' | 'enum_value_mismatch';
+  type:
+    | 'missing_column'
+    | 'type_mismatch'
+    | 'missing_index'
+    | 'missing_foreign_key'
+    | 'enum_value_mismatch';
   table?: string;
   column?: string;
   message: string;
@@ -153,52 +158,52 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const detail = url.searchParams.get('detail') === 'true';
     const validateEnums = url.searchParams.get('validateEnums') === 'true';
-    
+
     // List of core tables and enums from our constants
     const coreTablesFromConstants = Object.values(TABLES);
     const coreEnumsFromConstants = validateEnums ? [] : []; // We'll implement enum validation in a future update
 
     // Fetch detected tables and their columns
-    const { data: tableData, error: tableError } = await supabase.rpc(
-      'execute_sql', 
-      { query: TABLE_INFO_SQL }
-    );
+    const { data: tableData, error: tableError } = await supabase.rpc('execute_sql', {
+      query: TABLE_INFO_SQL,
+    });
 
     // Get enum types and values
-    const { data: enumData, error: enumError } = await supabase.rpc(
-      'execute_sql', 
-      { query: ENUM_INFO_SQL }
-    );
-    
+    const { data: enumData, error: enumError } = await supabase.rpc('execute_sql', {
+      query: ENUM_INFO_SQL,
+    });
+
     // Get foreign key relationships
-    const { data: foreignKeyData, error: foreignKeyError } = await supabase.rpc(
-      'execute_sql', 
-      { query: FOREIGN_KEY_SQL }
-    );
-    
+    const { data: foreignKeyData, error: foreignKeyError } = await supabase.rpc('execute_sql', {
+      query: FOREIGN_KEY_SQL,
+    });
+
     // Get index information
-    const { data: indexData, error: indexError } = await supabase.rpc(
-      'execute_sql', 
-      { query: INDEX_INFO_SQL }
-    );
+    const { data: indexData, error: indexError } = await supabase.rpc('execute_sql', {
+      query: INDEX_INFO_SQL,
+    });
 
     if (tableError || enumError || foreignKeyError || indexError) {
       // Log the specific error
-      console.error('Database schema query error:', 
-        tableError || enumError || foreignKeyError || indexError);
-      throw new Error(`Database schema query failed: ${
-        tableError?.message || 
-        enumError?.message || 
-        foreignKeyError?.message ||
-        indexError?.message
-      }`);
+      console.error(
+        'Database schema query error:',
+        tableError || enumError || foreignKeyError || indexError
+      );
+      throw new Error(
+        `Database schema query failed: ${
+          tableError?.message ||
+          enumError?.message ||
+          foreignKeyError?.message ||
+          indexError?.message
+        }`
+      );
     }
 
     // Process table data into structured format
     const tables: Record<string, TableInfo> = {};
     const detectedTableNames: string[] = [];
     const warnings: SchemaWarning[] = [];
-    
+
     if (tableData && Array.isArray(tableData)) {
       // First pass: collect all tables and their columns
       tableData.forEach((row: any) => {
@@ -206,15 +211,15 @@ export async function GET(request: Request) {
         if (!detectedTableNames.includes(tableName)) {
           detectedTableNames.push(tableName);
         }
-        
+
         if (!tables[tableName]) {
           tables[tableName] = {
             columns: [],
             hasPrimaryKey: false,
-            primaryKeyColumns: []
+            primaryKeyColumns: [],
           };
         }
-        
+
         tables[tableName].columns.push({
           name: row.column_name as string,
           type: row.data_type as string,
@@ -223,106 +228,109 @@ export async function GET(request: Request) {
           maxLength: row.character_maximum_length as number | null,
           precision: row.numeric_precision as number | null,
           scale: row.numeric_scale as number | null,
-          udtName: row.udt_name as string | null
+          udtName: row.udt_name as string | null,
         });
       });
     }
-    
+
     // Process enum data
     const enums: Record<string, string[]> = {};
     const detectedEnumNames: string[] = [];
-    
+
     if (enumData && Array.isArray(enumData)) {
       enumData.forEach((row: any) => {
         const enumName = row.enum_name as string;
         const enumValue = row.enum_value as string;
-        
+
         if (!detectedEnumNames.includes(enumName)) {
           detectedEnumNames.push(enumName);
         }
-        
+
         if (!enums[enumName]) {
           enums[enumName] = [];
         }
-        
+
         enums[enumName].push(enumValue);
       });
     }
-    
+
     // Process foreign key data
     const foreignKeys: Record<string, ForeignKeyRelation[]> = {};
-    
+
     if (foreignKeyData && Array.isArray(foreignKeyData)) {
       foreignKeyData.forEach((row: any) => {
         const tableName = row.table_name as string;
-        
+
         if (!foreignKeys[tableName]) {
           foreignKeys[tableName] = [];
         }
-        
+
         foreignKeys[tableName].push({
           column: row.column_name as string,
           referencesTable: row.foreign_table_name as string,
           referencesColumn: row.foreign_column_name as string,
           onUpdate: row.update_rule as string,
-          onDelete: row.delete_rule as string
+          onDelete: row.delete_rule as string,
         });
       });
     }
-    
+
     // Process index data
     const indexes: Record<string, IndexInfo[]> = {};
-    
+
     if (indexData && Array.isArray(indexData)) {
       // Group by index name to collect all columns
-      const indexMap = new Map<string, {
-        tableName: string;
-        columns: string[];
-        isUnique: boolean;
-        isPrimary: boolean;
-      }>();
-      
+      const indexMap = new Map<
+        string,
+        {
+          tableName: string;
+          columns: string[];
+          isUnique: boolean;
+          isPrimary: boolean;
+        }
+      >();
+
       indexData.forEach((row: any) => {
         const indexName = row.index_name as string;
         const tableName = row.table_name as string;
         const columnName = row.column_name as string;
         const isUnique = row.is_unique as boolean;
         const isPrimary = row.is_primary as boolean;
-        
+
         const key = `${tableName}:${indexName}`;
-        
+
         if (!indexMap.has(key)) {
           indexMap.set(key, {
             tableName,
             columns: [],
             isUnique,
-            isPrimary
+            isPrimary,
           });
         }
-        
+
         const index = indexMap.get(key)!;
         index.columns.push(columnName);
-        
+
         // Update table with primary key info
         if (isPrimary && tables[tableName]) {
           tables[tableName].hasPrimaryKey = true;
           tables[tableName].primaryKeyColumns.push(columnName);
         }
       });
-      
+
       // Convert map to record
       for (const [key, value] of indexMap.entries()) {
         const tableName = value.tableName;
-        
+
         if (!indexes[tableName]) {
           indexes[tableName] = [];
         }
-        
+
         indexes[tableName].push({
           name: key.split(':')[1],
           columns: value.columns,
           isUnique: value.isUnique,
-          isPrimary: value.isPrimary
+          isPrimary: value.isPrimary,
         });
       }
     }
@@ -331,13 +339,12 @@ export async function GET(request: Request) {
     const missingTables = coreTablesFromConstants.filter(
       (table) => !detectedTableNames.includes(table as string)
     );
-    
+
     // Find missing enums if validation is requested
-    const missingEnums = validateEnums ? 
-      coreEnumsFromConstants.filter(
-        (enumName) => !detectedEnumNames.includes(enumName)
-      ) : [];
-      
+    const missingEnums = validateEnums
+      ? coreEnumsFromConstants.filter((enumName) => !detectedEnumNames.includes(enumName))
+      : [];
+
     // Check for tables without primary keys
     for (const tableName of detectedTableNames) {
       const tableInfo = tables[tableName];
@@ -345,7 +352,7 @@ export async function GET(request: Request) {
         warnings.push({
           type: 'missing_index',
           table: tableName,
-          message: `Table ${tableName} does not have a primary key`
+          message: `Table ${tableName} does not have a primary key`,
         });
       }
     }
@@ -362,24 +369,26 @@ export async function GET(request: Request) {
       checkedTables: coreTablesFromConstants as string[],
       success: missingTables.length === 0 && (!validateEnums || missingEnums.length === 0),
       ...(validateEnums && { missingEnums }),
-      detail: detail ? {
-        tables,
-        enums,
-        foreignKeys,
-        indexes,
-        warnings,
-        generatedConstants
-      } : undefined
+      detail: detail
+        ? {
+            tables,
+            enums,
+            foreignKeys,
+            indexes,
+            warnings,
+            generatedConstants,
+          }
+        : undefined,
     };
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error('Error checking schema:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to check database schema',
         errorDetails: error instanceof Error ? error.message : String(error),
-        success: false
+        success: false,
       },
       { status: 500 }
     );
@@ -395,14 +404,14 @@ function generateConstantsFile(
 ) {
   const tableNames = Object.keys(tables);
   const enumNames = Object.keys(enums);
-  
+
   // Start building the file content
   let content = `// This file was automatically generated from the database schema
 // Generated at: ${new Date().toISOString()}
 
 // Database Tables - Constant names for all database tables
 export const TABLES = {
-${tableNames.map(table => `  ${table.toUpperCase()}: '${table}'`).join(',\n')}
+${tableNames.map((table) => `  ${table.toUpperCase()}: '${table}'`).join(',\n')}
 } as const;
 
 // Legacy export (avoid using in new code)
@@ -415,12 +424,14 @@ export const FIELDS = {
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
   },
-${tableNames.map(table => {
+${tableNames
+  .map((table) => {
     const columns = tables[table].columns;
     return `  ${table.toUpperCase()}: {
 ${columns.map((col: TableColumn) => `    ${col.name.toUpperCase()}: '${col.name}'`).join(',\n')}
   }`;
-  }).join(',\n')}
+  })
+  .join(',\n')}
 } as const;
 
 // Legacy export (avoid using in new code)
@@ -428,12 +439,14 @@ export const DB_FIELDS = FIELDS;
 
 // Database Enums - Enum values from database
 export const ENUMS = {
-${enumNames.map(enumName => {
+${enumNames
+  .map((enumName) => {
     const values = enums[enumName];
     return `  ${enumName.toUpperCase()}: {
-${values.map(value => `    ${value.toUpperCase()}: '${value}'`).join(',\n')}
+${values.map((value) => `    ${value.toUpperCase()}: '${value}'`).join(',\n')}
   }`;
-  }).join(',\n')}
+  })
+  .join(',\n')}
 } as const;
 
 // Legacy export (avoid using in new code)
@@ -456,11 +469,15 @@ export const POLICIES = {
 export const DB_POLICIES = POLICIES;
 
 // TypeScript Types
-${enumNames.map(enumName => {
+${enumNames
+  .map((enumName) => {
     const values = enums[enumName];
-    const typeName = enumName.charAt(0).toUpperCase() + enumName.slice(1).replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-    return `export type ${typeName} = ${values.map(value => `'${value}'`).join(' | ')};`;
-  }).join('\n')}
+    const typeName =
+      enumName.charAt(0).toUpperCase() +
+      enumName.slice(1).replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    return `export type ${typeName} = ${values.map((value) => `'${value}'`).join(' | ')};`;
+  })
+  .join('\n')}
 
 // Type for table names
 export type TableName = keyof typeof TABLES;
@@ -474,4 +491,4 @@ export type TableFields<T extends keyof typeof FIELDS> = (typeof FIELDS)[T][keyo
 `;
 
   return content;
-} 
+}

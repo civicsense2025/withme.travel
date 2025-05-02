@@ -127,12 +127,14 @@ export async function GET(
 const createNoteSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   content: z.string().optional().nullable(),
-  type: z.enum([
+  type: z
+    .enum([
       LOCAL_ENUMS.NOTE_TYPES.TEXT,
       LOCAL_ENUMS.NOTE_TYPES.LIST,
       LOCAL_ENUMS.NOTE_TYPES.CHECKLIST,
       LOCAL_ENUMS.NOTE_TYPES.LOCATION,
-    ]).default(LOCAL_ENUMS.NOTE_TYPES.TEXT),
+    ])
+    .default(LOCAL_ENUMS.NOTE_TYPES.TEXT),
   item_id: z.string().uuid().optional().nullable(), // Allow associating with itinerary item
 });
 

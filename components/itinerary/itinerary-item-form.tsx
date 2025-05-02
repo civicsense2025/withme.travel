@@ -1,7 +1,6 @@
-'use client'
+'use client';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import { API_ROUTES } from '@/utils/constants/routes';
-
 
 import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';

@@ -5,4 +5,4 @@ console.log('NODE_ENV =', process.env.NODE_ENV);
 
 // Check if we're reading from .env files
 console.log('\nAll environment variables:');
-console.log(process.env); 
+console.log(process.env);

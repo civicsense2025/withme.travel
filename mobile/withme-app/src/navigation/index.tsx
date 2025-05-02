@@ -1,18 +1,44 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../hooks/useAuth';
-import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
+import {
+  ActivityIndicator,
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Alert,
+  useColorScheme,
+} from 'react-native';
 import { ParamListBase } from '@react-navigation/native';
+import { Trip } from '../types/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import HeaderAvatar from '../components/HeaderAvatar';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
+import SignupScreen from '../screens/SignupScreen';
 import HomeScreen from '../screens/HomeScreen';
 import TripDetailScreen from '../screens/TripDetailScreen';
 import ItineraryScreen from '../screens/ItineraryScreen';
 import DestinationsScreen from '../screens/DestinationsScreen';
+import DestinationDetailScreen from '../screens/DestinationDetailScreen';
 import EditItineraryItemScreen from '../screens/EditItineraryItemScreen';
+import DebugScreen from '../screens/DebugScreen';
+import CreateTripStep1Screen from '../screens/CreateTripStep1Screen';
+import CreateTripStep2Screen from '../screens/CreateTripStep2Screen';
+import CreateTripStep3Screen from '../screens/CreateTripStep3Screen';
+import ItinerariesScreen from '../screens/ItinerariesScreen';
+import EditTripScreen from '../screens/EditTripScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+
+// Import theme
+import { lightTheme, darkTheme } from '../constants/theme'; // Correct import for themes
 
 // Debug flag
 const DEBUG_MODE = __DEV__;
@@ -20,26 +46,52 @@ const DEBUG_MODE = __DEV__;
 // Define navigation types
 type RootStackParamList = {
   Auth: undefined;
-  Main: undefined;
+  Main: undefined; // Main stack is nested
 };
 
-// Define screen specific param lists
-type MainStackParamList = {
-  Main: undefined;
+// Define screen specific param lists for Main stack
+// Export this type for use in screens
+export type MainStackParamList = {
+  HomeTabs: undefined;
+  Home: undefined;
+  Login: undefined;
+  Signup: undefined;
+  CreateTripStep1: undefined;
+  CreateTripStep2: { tripData: Partial<Trip> };
+  CreateTripStep3: { tripData: Partial<Trip> };
   TripDetail: { tripId: string };
+  EditTrip: { trip: Trip };
   Itinerary: { tripId: string };
-  EditItineraryItem: { 
-    tripId: string;
-    itemId?: string; 
-    dayNumber?: number;
-  };
+  EditItineraryItem: { tripId: string; itemId?: string };
+  Destinations: undefined;
+  DestinationDetail: { destinationId: string };
+  Debug: undefined;
+  Diagnostic: undefined;
+  Settings: undefined;
 };
+
+// Define Auth stack params
+type AuthStackParamList = {
+  Login: undefined;
+  Signup: undefined;
+};
+
+// Define Bottom Tab Param List
+type BottomTabParamList = {
+  Home: undefined;
+  Destinations: undefined;
+  Create: undefined;
+  Itineraries: undefined;
+};
+
+// Define navigation prop types for hooks
+type MainStackNavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 // Create navigators
 const RootStack = createNativeStackNavigator<RootStackParamList>();
-const AuthStack = createNativeStackNavigator();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainStack = createNativeStackNavigator<MainStackParamList>();
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 // Debug utility function
 const debugLog = (message: string, data?: any) => {
@@ -58,47 +110,88 @@ function AuthNavigator() {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
       <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Signup" component={SignupScreen} />
     </AuthStack.Navigator>
   );
 }
 
+// Custom Tab Bar Button for the center "Create" button
+const CustomTabBarButton = ({
+  children,
+  onPress,
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity style={styles.centerButtonContainer} onPress={onPress}>
+    <View style={styles.centerButton}>{children}</View>
+  </TouchableOpacity>
+);
+
 // Tab navigator
 function BottomTabNavigator() {
   debugLog('Rendering BottomTabNavigator');
+  const navigation = useNavigation<MainStackNavigationProp>();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName = '';
-          
+          let iconName: keyof typeof Ionicons.glyphMap;
+
           if (route.name === 'Home') {
-            iconName = '🏠';
+            iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Destinations') {
-            iconName = '🌎';
+            iconName = focused ? 'map' : 'map-outline';
+          } else if (route.name === 'Itineraries') {
+            iconName = focused ? 'list' : 'list-outline';
+          } else {
+            iconName = 'ellipse';
           }
-          
-          return (
-            <View style={[styles.tabIconContainer, focused && styles.tabIconFocused]}>
-              <Text style={styles.tabIcon}>{iconName}</Text>
-            </View>
-          );
+
+          return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarLabel: ({ focused, color }) => {
-          return (
-            <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>
-              {route.name}
-            </Text>
-          );
+          if (route.name === 'Create') return null;
+          return <Text style={[styles.tabLabel, { color }]}>{route.name}</Text>;
         },
-        headerShown: false,
+        headerShown: true,
+        headerTitle: '',
+        headerLeft: () => <HeaderAvatar />,
         tabBarActiveTintColor: '#0066ff',
         tabBarInactiveTintColor: 'gray',
+        tabBarStyle: styles.tabBarStyle,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Destinations" component={DestinationsScreen} />
+      <Tab.Screen
+        name="Create"
+        component={PlaceholderScreen}
+        options={{
+          tabBarIcon: ({ color }) => <Ionicons name="add" size={30} color="#fff" />,
+          tabBarLabel: () => null,
+          tabBarButton: (props) => (
+            <CustomTabBarButton
+              {...props}
+              onPress={() => {
+                debugLog('Create tab pressed, navigating to CreateTripStep1');
+                navigation.navigate('CreateTripStep1');
+              }}
+            >
+              <Ionicons name="add" size={30} color="#fff" />
+            </CustomTabBarButton>
+          ),
+        }}
+      />
+      <Tab.Screen name="Itineraries" component={ItinerariesScreen} />
     </Tab.Navigator>
   );
+}
+
+// Dummy component for the placeholder screen
+function PlaceholderScreen() {
+  return <View />;
 }
 
 // Main app navigator (post-login)
@@ -106,33 +199,81 @@ function MainNavigator() {
   debugLog('Rendering MainNavigator');
   return (
     <MainStack.Navigator>
-      <MainStack.Screen 
-        name="Main" 
-        component={BottomTabNavigator} 
+      <MainStack.Screen
+        name="HomeTabs"
+        component={BottomTabNavigator}
         options={{ headerShown: false }}
       />
-      <MainStack.Screen 
-        name="TripDetail" 
+      <MainStack.Screen
+        name="TripDetail"
         component={TripDetailScreen}
-        options={{ 
+        options={{
           title: 'Trip Details',
           headerBackTitle: 'Back',
         }}
       />
-      <MainStack.Screen 
-        name="Itinerary" 
+      <MainStack.Screen
+        name="EditTrip"
+        component={EditTripScreen}
+        options={{
+          title: 'Edit Trip',
+          headerBackTitle: 'Back',
+        }}
+      />
+      <MainStack.Screen
+        name="Itinerary"
         component={ItineraryScreen}
-        options={{ 
+        options={{
           title: 'Itinerary',
           headerBackTitle: 'Back',
         }}
       />
-      <MainStack.Screen 
-        name="EditItineraryItem" 
+      <MainStack.Screen
+        name="DestinationDetail"
+        component={DestinationDetailScreen}
+        options={{
+          title: 'Destination',
+          headerBackTitle: 'Back',
+        }}
+      />
+      <MainStack.Screen
+        name="EditItineraryItem"
         component={EditItineraryItemScreen}
-        options={{ 
+        options={{
           title: 'Edit Activity',
           headerBackTitle: 'Back',
+        }}
+      />
+      <MainStack.Screen
+        name="CreateTripStep1"
+        component={CreateTripStep1Screen}
+        options={{ title: 'Create Trip (1/3)', headerBackTitle: 'Back' }}
+      />
+      <MainStack.Screen
+        name="CreateTripStep2"
+        component={CreateTripStep2Screen}
+        options={{ title: 'Create Trip (2/3)', headerBackTitle: 'Back' }}
+      />
+      <MainStack.Screen
+        name="CreateTripStep3"
+        component={CreateTripStep3Screen}
+        options={{ title: 'Create Trip (3/3)', headerBackTitle: 'Back' }}
+      />
+      <MainStack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          headerBackTitle: 'Back',
+        }}
+      />
+      <MainStack.Screen
+        name="Debug"
+        component={DebugScreen}
+        options={{
+          title: 'Debug Info',
+          headerBackTitle: 'Back',
+          presentation: 'modal',
         }}
       />
     </MainStack.Navigator>
@@ -140,26 +281,26 @@ function MainNavigator() {
 }
 
 // Loading component with debugging
-function LoadingScreen({ isLoading, authError }: { isLoading: boolean, authError: string | null }) {
+function LoadingScreen({ isLoading, authError }: { isLoading: boolean; authError: string | null }) {
   const [loadingTime, setLoadingTime] = React.useState(0);
 
   // Timer to track loading time
   useEffect(() => {
     if (isLoading) {
       const interval = setInterval(() => {
-        setLoadingTime(prev => prev + 1);
+        setLoadingTime((prev) => prev + 1);
       }, 1000);
-      
+
       return () => clearInterval(interval);
     } else {
       setLoadingTime(0);
     }
   }, [isLoading]);
-  
+
   // Show debug info only in dev mode
   const renderDebugInfo = () => {
     if (!DEBUG_MODE) return null;
-    
+
     return (
       <TouchableOpacity
         style={styles.debugButton}
@@ -174,15 +315,13 @@ function LoadingScreen({ isLoading, authError }: { isLoading: boolean, authError
       </TouchableOpacity>
     );
   };
-  
+
   return (
     <View style={styles.loadingContainer}>
       <ActivityIndicator size="large" color="#0066ff" />
       <Text style={styles.loadingText}>Loading...</Text>
       {loadingTime > 5 && (
-        <Text style={styles.loadingSubtext}>
-          Still loading after {loadingTime}s...
-        </Text>
+        <Text style={styles.loadingSubtext}>Still loading after {loadingTime}s...</Text>
       )}
       {renderDebugInfo()}
       {authError && (
@@ -196,23 +335,26 @@ function LoadingScreen({ isLoading, authError }: { isLoading: boolean, authError
 
 // Root navigator that handles authentication state
 export default function Navigation() {
+  // Theme selection
+  const scheme = useColorScheme();
+  const theme = scheme === 'dark' ? darkTheme : lightTheme; // Use imported themes
   const { isAuthenticated, isLoading } = useAuth();
   const [authError, setAuthError] = React.useState<string | null>(null);
-  
+
   // Add debug logging for auth state
   useEffect(() => {
     debugLog('Auth state changed', { isAuthenticated, isLoading });
-    
+
     // If loading takes too long, record an error
     let timeoutId: ReturnType<typeof setTimeout>;
-    
+
     if (isLoading) {
       timeoutId = setTimeout(() => {
         setAuthError('Auth loading timeout - took more than 15 seconds');
         debugLog('Auth loading timeout detected');
       }, 15000);
     }
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
@@ -224,7 +366,19 @@ export default function Navigation() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      theme={{
+        dark: scheme === 'dark',
+        colors: {
+          primary: theme.colors.primary,
+          background: theme.colors.background,
+          card: theme.colors.card,
+          text: theme.colors.foreground,
+          border: theme.colors.border,
+          notification: theme.colors.primary,
+        },
+      }}
+    >
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <RootStack.Screen name="Main" component={MainNavigator} />
@@ -253,24 +407,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  tabIconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabIcon: {
-    fontSize: 22,
-    marginBottom: 2,
-  },
-  tabIconFocused: {
-    transform: [{ scale: 1.2 }],
+  tabBarStyle: {
+    position: 'absolute',
+    bottom: 15,
+    left: 15,
+    right: 15,
+    backgroundColor: '#ffffff',
+    borderRadius: 15,
+    height: 60,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.5,
+    elevation: 5,
+    borderTopWidth: 0,
   },
   tabLabel: {
     fontSize: 11,
-    color: '#999',
+    marginBottom: 5,
   },
-  tabLabelFocused: {
-    color: '#0066ff',
-    fontWeight: '600',
+  centerButtonContainer: {
+    top: -25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#0066ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   debugButton: {
     marginTop: 20,

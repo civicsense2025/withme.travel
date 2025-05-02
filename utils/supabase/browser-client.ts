@@ -1,6 +1,6 @@
 /**
  * Browser-only Supabase client utilities
- * 
+ *
  * This file is safe to import in client components as it doesn't use server-only
  * features like next/headers.
  */
@@ -22,7 +22,7 @@ export function getBrowserClient(): TypedSupabaseClient {
   if (typeof window === 'undefined') {
     throw new Error('getBrowserClient should only be called in browser environments.');
   }
-  
+
   if (browserSingletonClient) {
     return browserSingletonClient;
   }
@@ -45,4 +45,4 @@ export function getBrowserClient(): TypedSupabaseClient {
 export function resetBrowserClient(): void {
   console.log('[supabase] Resetting browser client singleton');
   browserSingletonClient = null;
-} 
+}

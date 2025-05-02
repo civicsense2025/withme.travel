@@ -20,7 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { usePresenceContext } from '@/components/presence/presence-context';
+// NOTE: Presence context is disabled to prevent build errors
+// import { usePresenceContext } from '@/components/presence/presence-context';
 
 export interface Comment {
   id: string;
@@ -63,7 +64,13 @@ export function ItemComments({
 
   const { toast } = useToast();
   const { user } = useAuth();
-  const { activeUsers } = usePresenceContext();
+  // Mock empty active users array (presence feature disabled)
+  const activeUsers: {
+    user_id: string;
+    editing_item_id?: string;
+    name?: string;
+    avatar_url?: string;
+  }[] = [];
   const supabase = createClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 

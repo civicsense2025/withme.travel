@@ -1,0 +1,321 @@
+# WithMe.Travel Mobile App: Visual Style Guide (Expo/React Native)
+
+This guide outlines the visual language for the WithMe.Travel mobile app, built with Expo/React Native. It aims to translate the design system, brand identity, and user experience principles from the web platform (`withme.travel`) into a native mobile context, ensuring consistency and capturing the unique "magic" of the brand.
+
+**References:**
+
+- Web Styles: `app/globals.css`, `styles/globals.css`
+- Brand & Content: `docs/CONTENT_GUIDE.md`, `docs/README.md`
+
+## 1. Core Principles: The Vibe ✨
+
+More than just aesthetics, the app's feel should embody the core principles outlined in our documentation:
+
+- **Authentic & Friendly:** Like advice from a seasoned traveler pal. The UI must be welcoming, intuitive, and never overwhelming. It should feel like the "friendly organizer" mentioned in the brand voice.
+- **Vibrant & Playful:** Leverage our travel color palette boldly. Use gradients and subtle, delightful animations (inspired by web effects like `bubble-float`) to add personality without hindering usability.
+- **Conversational & Warm:** Typography needs to be crisp and readable, adopting a casual, approachable tone consistent with our content guide.
+- **Reliable & Intuitive:** Planning trips requires trust. While playful, the interface must be dependable, stable, and easy to navigate, especially in core planning areas like itineraries.
+- **Themed & Consistent:** Fully support light and dark modes. All components must adapt seamlessly using the defined design tokens below.
+
+## 2. Design Tokens: The Building Blocks 🧱
+
+These are the foundational values for our styles, implemented likely via a Theme Context in Expo.
+
+**(Reference: Primarily `app/globals.css`)**
+
+### Colors
+
+Defined as constants in theme files (e.g., `styles/theme.ts`).
+
+```typescript
+// Example Theme Structure (e.g., styles/theme.ts)
+
+export const lightColors = {
+  background: 'hsl(0 0% 100%)', // --background
+  foreground: 'hsl(222.2 84% 4.9%)', // --foreground
+  card: 'hsl(0 0% 100%)', // --card
+  cardForeground: 'hsl(222.2 84% 4.9%)', // --card-foreground
+  popover: 'hsl(0 0% 100%)', // --popover
+  popoverForeground: 'hsl(222.2 84% 4.9%)', // --popover-foreground
+
+  primary: 'hsl(260 100% 82%)', // --primary (Travel Purple based)
+  primaryForeground: 'hsl(260 100% 20%)', // --primary-foreground
+
+  secondary: 'hsl(210 40% 96.1%)', // --secondary
+  secondaryForeground: 'hsl(222.2 47.4% 11.2%)', // --secondary-foreground
+
+  accent: 'hsl(213 100% 75%)', // --accent (Travel Blue based)
+  accentForeground: 'hsl(213 100% 20%)', // --accent-foreground
+
+  muted: 'hsl(210 40% 96.1%)', // --muted
+  mutedForeground: 'hsl(215.4 16.3% 46.9%)', // --muted-foreground
+
+  destructive: 'hsl(0 84.2% 60.2%)', // --destructive
+  destructiveForeground: 'hsl(210 40% 98%)', // --destructive-foreground
+
+  border: 'hsl(214.3 31.8% 91.4%)', // --border
+  input: 'hsl(214.3 31.8% 91.4%)', // --input (Background for input)
+  inputForeground: 'hsl(222.2 84% 4.9%)', // Text color for input
+  ring: 'hsl(260 100% 82%)', // --ring (Focus indicator color)
+
+  // Travel Theme Colors
+  travelBlue: 'hsl(213 100% 75%)',
+  travelBlueForeground: 'hsl(213 100% 15%)',
+  travelPink: 'hsl(348 100% 86%)',
+  travelPinkForeground: 'hsl(348 100% 20%)',
+  travelYellow: 'hsl(48 100% 75%)',
+  travelYellowForeground: 'hsl(48 100% 18%)',
+  travelPurple: 'hsl(260 100% 82%)',
+  travelPurpleForeground: 'hsl(260 100% 20%)',
+  travelMint: 'hsl(160 100% 82%)',
+  travelMintForeground: 'hsl(160 100% 18%)',
+  travelPeach: 'hsl(30 100% 82%)',
+  travelPeachForeground: 'hsl(30 100% 20%)',
+};
+
+export const darkColors = {
+  background: 'hsl(0 0% 0%)', // --background
+  foreground: 'hsl(0 0% 98%)', // --foreground
+  card: 'hsl(0 0% 10%)', // --card
+  cardForeground: 'hsl(0 0% 98%)', // --card-foreground
+  popover: 'hsl(0 0% 5%)', // --popover
+  popoverForeground: 'hsl(0 0% 98%)', // --popover-foreground
+
+  primary: 'hsl(260 70% 70%)', // --primary
+  primaryForeground: 'hsl(260 100% 20%)', // --primary-foreground (Kept dark for contrast on vibrant bg)
+
+  secondary: 'hsl(0 0% 15%)', // --secondary
+  secondaryForeground: 'hsl(0 0% 98%)', // --secondary-foreground
+
+  accent: 'hsl(213 70% 65%)', // --accent
+  accentForeground: 'hsl(213 100% 20%)', // --accent-foreground (Kept dark)
+
+  muted: 'hsl(0 0% 15%)', // --muted
+  mutedForeground: 'hsl(0 0% 65%)', // --muted-foreground
+
+  destructive: 'hsl(0 62.8% 50%)', // --destructive
+  destructiveForeground: 'hsl(0 0% 98%)', // --destructive-foreground
+
+  border: 'hsl(0 0% 20%)', // --border
+  input: 'hsl(0 0% 20%)', // --input (Background for input)
+  inputForeground: 'hsl(0 0% 98%)', // Text color for input
+  ring: 'hsl(260 70% 70%)', // --ring
+
+  // Travel Theme Colors (Foregrounds adjusted for dark mode)
+  travelBlue: 'hsl(213 100% 75%)', // Base color remains same
+  travelBlueForeground: 'hsl(213 100% 85%)', // Adjusted foreground
+  travelPink: 'hsl(348 100% 86%)',
+  travelPinkForeground: 'hsl(348 100% 90%)',
+  travelYellow: 'hsl(48 100% 75%)',
+  travelYellowForeground: 'hsl(48 100% 85%)',
+  travelPurple: 'hsl(260 100% 82%)',
+  travelPurpleForeground: 'hsl(260 100% 90%)',
+  travelMint: 'hsl(160 100% 82%)',
+  travelMintForeground: 'hsl(160 100% 90%)',
+  travelPeach: 'hsl(30 100% 82%)',
+  travelPeachForeground: 'hsl(30 100% 90%)',
+};
+
+export type ColorTheme = typeof lightColors;
+```
+
+### Typography
+
+Use system defaults or custom fonts loaded via Expo Fonts. Define scales and styles.
+
+```typescript
+// Example Theme Structure (e.g., styles/theme.ts)
+
+export const typography = {
+  fontSizes: {
+    xs: 12,
+    sm: 14,
+    base: 16,
+    lg: 18,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 30,
+    '4xl': 36,
+  },
+  fontWeights: {
+    normal: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
+  },
+  lineHeights: {
+    tight: 1.25,
+    normal: 1.5,
+    loose: 1.75,
+  },
+  // Example: Define specific styles for reuse
+  // heading1: { fontSize: fontSizes['3xl'], fontWeight: fontWeights.bold, lineHeight: lineHeights.tight },
+  // body: { fontSize: fontSizes.base, fontWeight: fontWeights.normal, lineHeight: lineHeights.normal },
+};
+
+export type TypographyTheme = typeof typography;
+```
+
+### Spacing
+
+Consistent scale based on 4px grid (similar to Tailwind).
+
+```typescript
+// Example Theme Structure (e.g., styles/theme.ts)
+
+export const spacing = {
+  px: 1,
+  '0.5': 2,
+  '1': 4,
+  '1.5': 6,
+  '2': 8,
+  '2.5': 10,
+  '3': 12,
+  '4': 16,
+  '5': 20,
+  '6': 24,
+  '8': 32,
+  '10': 40,
+  '12': 48,
+  '16': 64,
+};
+
+export type SpacingTheme = typeof spacing;
+```
+
+### Borders & Radius
+
+```typescript
+// Example Theme Structure (e.g., styles/theme.ts)
+
+export const borders = {
+  widths: { sm: 1, md: 2 },
+  radius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16, // Matches web's --radius: 1rem
+    full: 9999, // For pills/circular elements
+  },
+};
+
+export type BorderTheme = typeof borders;
+```
+
+### Shadows
+
+Define levels for depth. Use `react-native-shadow-2` for cross-platform consistency if needed.
+
+```typescript
+// Example Theme Structure (e.g., styles/theme.ts)
+
+export const shadows = {
+  sm: {
+    /* Subtle card shadow */ shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  md: {
+    /* More pronounced */ shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+};
+
+export type ShadowTheme = typeof shadows;
+```
+
+## 3. Atoms: The Smallest Pieces ⚛️
+
+Basic elements styled using the tokens.
+
+- **Text (`<Text>`):** Apply `color`, `fontSize`, `fontWeight`, `lineHeight` from theme. Use semantic components like `<Heading1>`, `<Body>`, `<Caption>` wrapping `<Text>` for clarity.
+- **View (`<View>`):** Base container for layout. Apply `backgroundColor`, `padding`, `margin`, `borderRadius`, `borderWidth`, `borderColor`.
+- **Icon:** Use `@expo/vector-icons` or similar. Style `size` and `color` using theme tokens (e.g., `color: colors.primary` or `color: colors.foreground`).
+
+## 4. Molecules: Putting Pieces Together 🧬
+
+Combine atoms into functional units.
+
+- **Button (`<Pressable>`/`<TouchableOpacity>`):**
+  - Implement variants (`primary`, `secondary`, `accent`, `outline`, `destructive`) mapping to web styles (`.travel-button-*`, `.tiptap-button-*`).
+  - Use `borderRadius.full` for pill shape.
+  - Apply appropriate `backgroundColor` and `textColor` from travel color pairs (e.g., `travelPurple` / `travelPurpleForeground`).
+  - Use `react-native-linear-gradient` for gradient buttons.
+  - Implement `pressed` states (opacity change, slight scale).
+  - Example `primary` button uses `travelPurple` bg, `travelPurpleForeground` text.
+- **Card (`<View>`):**
+  - Base style using `colors.card`, `borders.radius.xl`, `shadows.sm`.
+  - Ensure `overflow: 'hidden'` if content might bleed.
+  - Add padding using `spacing` tokens.
+- **Input (`<TextInput>`):**
+  - Style with `colors.input` background, `colors.inputForeground` text.
+  - Use `colors.border` normally, changing `borderColor` to `colors.ring` on focus.
+  - Apply `borders.radius` and `spacing` for padding.
+- **Gradient Text:**
+  - Use `react-native-linear-gradient` masked by `<Text>` via `@react-native-masked-view/masked-view`.
+  - Default gradient from `colors.travelPurple` to `colors.travelBlue`.
+
+_See previous response for example code snippets for Button, Card, Input, GradientText._
+
+## 5. Application to Features: Bringing the App to Life 🌍✈️
+
+This is where the design system meets the user journey.
+
+### Trip Dashboard & Trip Pages
+
+- **Vibe:** Organized, collaborative, exciting. Should feel like the central hub for the group's plan.
+- **Cards:** Use `Card` components for individual trips on the dashboard, perhaps with a subtle hover/press effect (`shadows.md` on press). Trip cover images should be prominent.
+- **Buttons:** `Primary` buttons (using `travelPurple`) for major actions like "View Itinerary" or "Add Item". `Secondary` (`travelBlue`) or `Accent` (`travelYellow`) for less critical actions like "Invite Members" or "Settings".
+- **Member Avatars:** Use circular Views (`borderRadius.full`) with user images or initials. Indicate online status with small colored dots (e.g., green). Use subtle animations for presence updates.
+- **Typography:** Clear headings (`<Heading1>`, `<Heading2>`) for trip names and sections. Use `<Body>` text for descriptions and details. `MutedForeground` for secondary info like dates or member counts.
+
+### Destination Exploration
+
+- **Vibe:** Inspiring, informative, visually rich, authentic (as per `CONTENT_GUIDE.md`).
+- **Images:** High-quality imagery is key. Use full-width banners or well-placed images within `Card` components. Consider parallax scroll effects using `react-native-reanimated` for visual appeal.
+- **City Profiles:** Structure content based on `CONTENT_GUIDE.md`. Use clear typography with good line height (`lineHeights.normal` or `loose`) for readability. Incorporate `GradientText` for headings to add flair.
+- **Interactive Elements:** Buttons for "Add to Trip" or "Save Idea" should use `Primary` or `Accent` colors. Map views should integrate smoothly, potentially within `Card` elements.
+- **Badges/Tags:** Use small pill-shaped Views (`borderRadius.full`) with distinct travel colors (`travelMint`, `travelPeach`, etc.) and corresponding foreground colors for text (e.g., `travelMintForeground`) to represent categories (Food, Outdoors, Culture).
+
+### Itinerary Builder & Viewer
+
+- **Vibe:** Practical, collaborative, easy-to-scan, flexible. The core planning tool.
+- **Item Cards:** Use simplified `Card` components for each itinerary item (flight, hotel, activity). Display key info clearly (time, location, notes). Use icons (`<Icon>`) to denote item type.
+- **Drag & Drop (If implemented):** Use subtle visual cues like background color changes (`colors.secondary`) or shadows (`shadows.md`) on the dragged item. Requires `react-native-reanimated` and gesture handlers.
+- **Timeline View:** Use lines (`borderWidth.sm`, `colors.border`) connecting items vertically. Timestamps should use `mutedForeground`.
+- **Adding Items:** Forms should use styled `Input` components. Buttons for "Save" (`Primary`) or "Cancel" (`Secondary` or `Outline`).
+- **Collaboration:** Comments or voting sections should be clearly delineated, possibly using slightly different background tints (`colors.secondary`) or borders.
+
+### User Profiles & Settings
+
+- **Vibe:** Personal, clear, straightforward.
+- **Layout:** Use standard list patterns with clear dividers (`colors.border`).
+- **Inputs:** Use styled `Input` for editable fields.
+- **Buttons:** `Primary` for "Save Changes", `Destructive` for actions like "Delete Account".
+- **Avatars:** Prominent circular user avatar.
+
+### Authentication Screens (Login/Signup)
+
+- **Vibe:** Welcoming, secure, simple.
+- **Layout:** Centered content, clear calls to action.
+- **Logo/Branding:** Feature the app logo prominently. Use `GradientText` for the app name if desired.
+- **Inputs:** Clearly styled `Input` components for email/password.
+- **Buttons:** `Primary` button for main action (Login/Sign Up). Use `Secondary` or `Outline` for alternative actions like "Forgot Password" or social logins.
+
+## 6. Layout & Utilities
+
+- **Layout:** Primarily Flexbox. Use `spacing` tokens for consistent padding/margin.
+- **Scrolling:** Use `ScrollView` / `FlatList`. Hide scrollbars (`showsVerticalScrollIndicator={false}`) for a cleaner look where appropriate (e.g., horizontal carousels).
+- **Animations:** Use `react-native-reanimated` for smooth, performant animations (fade-ins, subtle movements on interaction, loading indicators). Keep animations purposeful and aligned with the playful but reliable vibe.
+
+## 7. Implementation Notes
+
+- **Theming:** Use a `ThemeContext` and `useTheme` hook. Leverage `useColorScheme` for light/dark mode switching.
+- **Libraries:** Utilize `react-native-linear-gradient`, `@react-native-masked-view/masked-view`, `react-native-reanimated`, `@expo/vector-icons` as needed.
+
+By applying these tokens and component styles consistently across different features, the WithMe.Travel mobile app will feel cohesive, intuitive, and visually aligned with the established web brand identity.

@@ -1,263 +1,430 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
-  TextInput,
-  Alert
+  SectionList,
+  ScrollView,
+  RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { createSupabaseClient } from '../utils/supabase';
-import { Destination } from '../types/supabase';
-import Emoji from 'react-native-emoji';
+import { Destination, Trip } from '../types/supabase';
+import { fetchWithCache, clearCacheEntry } from '../utils/cache';
+import { useTheme } from '../hooks/useTheme';
+import { Text } from '../components/ui/Text';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { TripCard } from '../components/TripCard';
+import { Feather } from '@expo/vector-icons';
 
-// Map continents to emojis
-const CONTINENT_EMOJIS: Record<string, string> = {
-  'africa': '🌍',
-  'antarctica': '🧊',
-  'asia': '🌏',
-  'australia': '🦘',
-  'europe': '🏰',
-  'north america': '🗽',
-  'south america': '🌴',
-  'oceania': '🏝️'
-};
+const MemoizedTripCard = memo(TripCard);
+
+interface DestinationCardProps {
+  destination: Destination;
+  onPress: (destination: Destination) => void;
+}
+
+const DestinationCard = memo(({ destination, onPress }: DestinationCardProps) => {
+  const theme = useTheme();
+
+  const handlePress = () => {
+    onPress(destination);
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={handlePress}
+      style={styles.destinationCardContainer}
+    >
+      <Card variant="elevated" style={styles.destinationCard}>
+        {destination.image_url ? (
+          <View style={styles.destinationImageContainer}>
+            <Card variant="elevated" padding="none" style={styles.destinationImageCard}>
+              {/* Use Image or fastImage component for production */}
+              <img
+                src={destination.image_url}
+                style={styles.destinationImage}
+                alt={destination.city}
+              />
+            </Card>
+          </View>
+        ) : (
+          <View
+            style={[styles.destinationPlaceholder, { backgroundColor: theme.colors.travelPeach }]}
+          />
+        )}
+
+        <View style={styles.destinationContent}>
+          <Text variant="h4" weight="semibold" numberOfLines={1}>
+            {destination.city}
+          </Text>
+          <Text variant="body2" color="muted">
+            {destination.country}
+            {destination.continent ? ` • ${destination.continent}` : ''}
+          </Text>
+        </View>
+      </Card>
+    </TouchableOpacity>
+  );
+});
+
+// Section for trips grouped by month
+interface TripSection {
+  month: string;
+  title: string;
+  data: Trip[];
+}
 
 export default function DestinationsScreen({ navigation }: any) {
+  const theme = useTheme();
+  const { width } = useWindowDimensions();
+
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [filteredDestinations, setFilteredDestinations] = useState<Destination[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [upcomingTrips, setUpcomingTrips] = useState<TripSection[]>([]);
+  const [isLoadingDestinations, setIsLoadingDestinations] = useState(true);
+  const [isLoadingTrips, setIsLoadingTrips] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadDestinations = async () => {
+  // Load destinations
+  const loadDestinations = async (forceRefresh = false) => {
     try {
-      setIsLoading(true);
+      setIsLoadingDestinations(true);
       setError(null);
-      
-      const supabase = createSupabaseClient();
-      
-      // Load all destinations
-      const { data, error } = await supabase
-        .from('destinations')
-        .select('*')
-        .order('city', { ascending: true });
-      
-      if (error) {
-        console.error('Error loading destinations:', error);
-        setError('Failed to load destinations');
-        return;
+
+      const cacheKey = 'all_destinations';
+
+      if (forceRefresh) {
+        await clearCacheEntry(cacheKey);
       }
-      
-      const typedData = data as unknown as Destination[];
+
+      // Define the fetcher
+      const fetcher = async () => {
+        const supabase = createSupabaseClient();
+        const { data, error } = await supabase
+          .from('destinations')
+          .select('*')
+          .order('city', { ascending: true });
+
+        if (error) {
+          throw new Error('Failed to load destinations');
+        }
+        return (data as unknown as Destination[]) || [];
+      };
+
+      // Fetch using cache utility
+      const typedData = await fetchWithCache(cacheKey, fetcher);
+
       setDestinations(typedData);
       setFilteredDestinations(typedData);
     } catch (err) {
       console.error('Error in loadDestinations:', err);
-      setError('An unexpected error occurred');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false);
+      setIsLoadingDestinations(false);
     }
   };
 
+  // Load trips and organize by month
+  const loadTrips = async (forceRefresh = false) => {
+    try {
+      setIsLoadingTrips(true);
+
+      const cacheKey = 'upcoming_trips';
+
+      if (forceRefresh) {
+        await clearCacheEntry(cacheKey);
+      }
+
+      // Define the fetcher
+      const fetcher = async () => {
+        const supabase = createSupabaseClient();
+        const { data, error } = await supabase
+          .from('trips')
+          .select('*')
+          .order('start_date', { ascending: true });
+
+        if (error) {
+          throw new Error('Failed to load trips');
+        }
+        return (data as unknown as Trip[]) || [];
+      };
+
+      // Fetch using cache utility
+      const trips = await fetchWithCache(cacheKey, fetcher);
+
+      // Group trips by month
+      const now = new Date();
+      const tripsByMonth: Record<string, Trip[]> = {};
+      const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+
+      // Add trips with no start date to "Unscheduled" category
+      tripsByMonth['Unscheduled'] = [];
+
+      trips.forEach((trip) => {
+        if (!trip.start_date) {
+          tripsByMonth['Unscheduled'].push(trip);
+          return;
+        }
+
+        const startDate = new Date(trip.start_date);
+        const monthYear = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+
+        if (!tripsByMonth[monthYear]) {
+          tripsByMonth[monthYear] = [];
+        }
+
+        tripsByMonth[monthYear].push(trip);
+      });
+
+      // Convert to array format for SectionList
+      const sections: TripSection[] = Object.keys(tripsByMonth)
+        .filter((month) => tripsByMonth[month].length > 0) // Only include months with trips
+        .map((month) => ({
+          month,
+          title: month === 'Unscheduled' ? 'Unscheduled Trips' : `Trips in ${month}`,
+          data: tripsByMonth[month],
+        }));
+
+      setUpcomingTrips(sections);
+    } catch (err) {
+      console.error('Error in loadTrips:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setIsLoadingTrips(false);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
     loadDestinations();
+    loadTrips();
   }, []);
 
+  // Handle search filtering
   useEffect(() => {
-    // Filter destinations when search query changes
     if (!searchQuery.trim()) {
       setFilteredDestinations(destinations);
       return;
     }
-    
+
     const query = searchQuery.toLowerCase().trim();
     const filtered = destinations.filter(
-      dest => 
-        dest.city.toLowerCase().includes(query) || 
+      (dest) =>
+        dest.city.toLowerCase().includes(query) ||
         dest.country.toLowerCase().includes(query) ||
         (dest.continent && dest.continent.toLowerCase().includes(query))
     );
-    
+
     setFilteredDestinations(filtered);
   }, [searchQuery, destinations]);
 
-  const getContinentEmoji = (continent: string | null) => {
-    if (!continent) return '🌎';
-    
-    const normalized = continent.toLowerCase();
-    return CONTINENT_EMOJIS[normalized] || '🌎';
-  };
+  // Navigation handlers
+  const handleDestinationPress = useCallback(
+    (destination: Destination) => {
+      navigation.navigate('DestinationDetail', { destinationId: destination.id });
+    },
+    [navigation]
+  );
 
-  const handleDestinationPress = (destination: Destination) => {
-    // For now, just show an alert. Later you could navigate to a destination detail screen
-    Alert.alert(
-      `${destination.city}, ${destination.country}`,
-      destination.description || 'No description available',
-      [
-        { text: 'Close', style: 'cancel' },
-        { 
-          text: 'Explore Trips', 
-          onPress: () => {
-            Alert.alert('Coming Soon', 'Trip discovery by destination will be available soon');
-          }
-        }
-      ]
-    );
-  };
+  const handleTripPress = useCallback(
+    (tripId: string) => {
+      navigation.navigate('TripDetail', { tripId });
+    },
+    [navigation]
+  );
 
-  const renderDestinationItem = ({ item }: { item: Destination }) => {
-    const continentEmoji = getContinentEmoji(item.continent);
-    
-    return (
-      <TouchableOpacity 
-        style={styles.destinationCard}
-        onPress={() => handleDestinationPress(item)}
-      >
-        <View style={styles.imageContainer}>
-          {item.image_url ? (
-            <Image 
-              source={{ uri: item.image_url }} 
-              style={styles.destinationImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderEmoji}>{continentEmoji}</Text>
-            </View>
-          )}
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([loadDestinations(true), loadTrips(true)]);
+    setRefreshing(false);
+  }, []);
+
+  // Render a trip section with horizontal carousel
+  const renderTripSection = useCallback(
+    ({ section }: { section: TripSection }) => {
+      if (section.data.length === 0) return null;
+
+      return (
+        <View style={styles.tripSection}>
+          <Text variant="h3" weight="bold" style={styles.sectionTitle}>
+            {section.title}
+          </Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tripCarousel}
+          >
+            {section.data.map((trip) => (
+              <View key={trip.id} style={styles.tripCardContainer}>
+                <MemoizedTripCard
+                  id={trip.id}
+                  name={trip.name}
+                  description={trip.description}
+                  imageUrl={trip.image_url || null}
+                  dates={{
+                    start: trip.start_date,
+                    end: trip.end_date,
+                  }}
+                  location={trip.destination_city || undefined}
+                  onPress={handleTripPress}
+                  style={styles.tripCard}
+                />
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={styles.createTripCard}
+              onPress={() => navigation.navigate('CreateTripStep1')}
+            >
+              <Card variant="bordered" style={styles.createTripCardInner}>
+                <Feather name="plus-circle" size={36} color={theme.colors.primary} />
+                <Text
+                  variant="body1"
+                  weight="medium"
+                  color="primary"
+                  style={{ marginTop: theme.spacing['2'] }}
+                >
+                  Create New Trip
+                </Text>
+              </Card>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
-        
-        <View style={styles.destinationInfo}>
-          <Text style={styles.destinationCity}>{item.city}</Text>
-          <View style={styles.countryRow}>
-            <Text style={styles.countryFlag}>{getCountryFlag(item.country)}</Text>
-            <Text style={styles.destinationCountry}>{item.country}</Text>
-          </View>
-          
-          {item.description ? (
-            <Text style={styles.destinationDescription} numberOfLines={2}>
-              {item.description}
-            </Text>
-          ) : null}
+      );
+    },
+    [handleTripPress, navigation, theme]
+  );
 
-          {item.latitude && item.longitude ? (
-            <View style={styles.coordinatesTag}>
-              <Text style={styles.coordinatesText}>📍 Map Available</Text>
-            </View>
-          ) : null}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  // Simple function to get a flag emoji for a country
-  const getCountryFlag = (country: string): string => {
-    // This is a very simplified version - in a real app, you would use a more comprehensive mapping
-    const countryToFlag: Record<string, string> = {
-      'United States': '🇺🇸',
-      'Japan': '🇯🇵',
-      'France': '🇫🇷',
-      'Italy': '🇮🇹',
-      'Spain': '🇪🇸',
-      'United Kingdom': '🇬🇧',
-      'Germany': '🇩🇪',
-      'Australia': '🇦🇺',
-      'Canada': '🇨🇦',
-      'China': '🇨🇳',
-      'India': '🇮🇳',
-      'Brazil': '🇧🇷',
-      'Mexico': '🇲🇽',
-      'South Korea': '🇰🇷',
-      'Thailand': '🇹🇭',
-      'Greece': '🇬🇷',
-      'Egypt': '🇪🇬',
-      'Singapore': '🇸🇬',
-      'Indonesia': '🇮🇩',
-      'New Zealand': '🇳🇿',
-      'Portugal': '🇵🇹',
-      'Netherlands': '🇳🇱',
-      'Switzerland': '🇨🇭',
-      'Sweden': '🇸🇪',
-      'Norway': '🇳🇴',
-      'Denmark': '🇩🇰',
-      'Finland': '🇫🇮',
-      'Ireland': '🇮🇪',
-      'Austria': '🇦🇹',
-      'Turkey': '🇹🇷',
-      'Russia': '🇷🇺',
-      'South Africa': '🇿🇦',
-      'Argentina': '🇦🇷',
-      'Chile': '🇨🇱',
-      'Peru': '🇵🇪',
-      'Colombia': '🇨🇴',
-      'Morocco': '🇲🇦',
-      'Kenya': '🇰🇪',
-      'Israel': '🇮🇱',
-      'UAE': '🇦🇪',
-      'Vietnam': '🇻🇳',
-      'Malaysia': '🇲🇾',
-      'Philippines': '🇵🇭',
-      'Croatia': '🇭🇷',
-      'Czech Republic': '🇨🇿',
-    };
-    
-    return countryToFlag[country] || '🏳️';
-  };
-
+  // Main render
   return (
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="🔍 Search destinations..."
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Search header */}
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.card }]}>
+        <Input
+          placeholder="Search destinations..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          clearButtonMode="while-editing"
+          leftIcon={<Feather name="search" size={18} color={theme.colors.mutedForeground} />}
+          containerStyle={styles.searchInputContainer}
         />
       </View>
-      
-      {isLoading ? (
+
+      {/* Loading state */}
+      {isLoadingDestinations && isLoadingTrips && !refreshing ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0066ff" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={loadDestinations}
+          <Text
+            variant="body1"
+            color="custom"
+            customColor={theme.colors.destructive}
+            style={{ marginBottom: theme.spacing['4'] }}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+            {error}
+          </Text>
+          <Button label="Retry" onPress={handleRefresh} />
         </View>
       ) : (
-        <FlatList
-          data={filteredDestinations}
-          keyExtractor={(item) => item.id}
-          renderItem={renderDestinationItem}
-          contentContainerStyle={styles.destinationsList}
-          numColumns={1}
-          ListHeaderComponent={
-            <View style={styles.listHeader}>
-              <Text style={styles.headerTitle}>Explore Destinations</Text>
-              <Text style={styles.headerSubtitle}>Find your next adventure</Text>
-            </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
           }
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateEmoji}>🌍</Text>
-              <Text style={styles.emptyStateText}>
-                {searchQuery 
-                  ? `No destinations found matching "${searchQuery}"`
-                  : 'No destinations available yet'}
+        >
+          {/* Upcoming trips sections */}
+          {upcomingTrips.length > 0 ? (
+            <>
+              <Text variant="h2" weight="bold" style={styles.mainTitle}>
+                Your Trips
               </Text>
+
+              {upcomingTrips.map((section) => (
+                <View key={section.month}>{renderTripSection({ section })}</View>
+              ))}
+
+              <View style={styles.sectionDivider} />
+            </>
+          ) : (
+            !isLoadingTrips && (
+              <View style={styles.noTripsContainer}>
+                <Card variant="subtle" style={styles.noTripsCard}>
+                  <Text variant="h4" weight="semibold" style={{ marginBottom: theme.spacing['2'] }}>
+                    No trips planned yet
+                  </Text>
+                  <Text variant="body2" color="muted" style={{ marginBottom: theme.spacing['4'] }}>
+                    Start planning your next adventure!
+                  </Text>
+                  <Button
+                    label="Create Your First Trip"
+                    variant="primary"
+                    onPress={() => navigation.navigate('CreateTripStep1')}
+                  />
+                </Card>
+                <View style={styles.sectionDivider} />
+              </View>
+            )
+          )}
+
+          {/* Destinations section */}
+          <View style={styles.destinationsSection}>
+            <Text variant="h2" weight="bold" style={styles.mainTitle}>
+              Explore Destinations
+            </Text>
+            <Text variant="body1" color="muted" style={styles.mainSubtitle}>
+              Discover new places to add to your bucket list
+            </Text>
+
+            <View style={styles.destinationsGrid}>
+              {filteredDestinations.map((destination) => (
+                <DestinationCard
+                  key={destination.id}
+                  destination={destination}
+                  onPress={handleDestinationPress}
+                />
+              ))}
             </View>
-          }
-        />
+
+            {filteredDestinations.length === 0 && !isLoadingDestinations && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateEmoji}>🌍</Text>
+                <Text variant="body1" weight="medium" style={styles.emptyStateText}>
+                  {searchQuery
+                    ? `No destinations found matching "${searchQuery}"`
+                    : 'No destinations available yet'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
       )}
     </View>
   );
@@ -266,25 +433,17 @@ export default function DestinationsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
-  searchInput: {
-    height: 44,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    fontSize: 16,
+  searchInputContainer: {
+    marginBottom: 0,
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   loadingContainer: {
     flex: 1,
@@ -297,111 +456,93 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  errorText: {
-    fontSize: 16,
-    color: '#ff3b30',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  retryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#0066ff',
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  listHeader: {
-    padding: 16,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+  mainTitle: {
+    paddingHorizontal: 16,
+    marginTop: 16,
     marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#666',
+  mainSubtitle: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
-  destinationsList: {
-    padding: 8,
+  tripSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  tripCarousel: {
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+  tripCardContainer: {
+    width: 280,
+    marginRight: 8,
+  },
+  tripCard: {
+    height: 180,
+  },
+  createTripCard: {
+    width: 150,
+    height: 180,
+    marginRight: 16,
+  },
+  createTripCardInner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionDivider: {
+    height: 16,
+  },
+  noTripsContainer: {
+    paddingHorizontal: 16,
+    marginVertical: 16,
+  },
+  noTripsCard: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  destinationsSection: {
+    flex: 1,
+  },
+  destinationsGrid: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  destinationCardContainer: {
+    width: '48%',
+    marginBottom: 16,
   },
   destinationCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginVertical: 8,
-    marginHorizontal: 8,
     overflow: 'hidden',
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  imageContainer: {
-    width: 100,
-    height: 100,
+  destinationImageContainer: {
+    marginBottom: 8,
+  },
+  destinationImageCard: {
+    aspectRatio: 1.5,
+    overflow: 'hidden',
   },
   destinationImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 8,
   },
-  placeholderImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#e1f5fe',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderEmoji: {
-    fontSize: 36,
-  },
-  destinationInfo: {
-    flex: 1,
-    padding: 12,
-  },
-  destinationCity: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  countryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  destinationPlaceholder: {
+    aspectRatio: 1.5,
+    borderRadius: 8,
     marginBottom: 8,
   },
-  countryFlag: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  destinationCountry: {
-    fontSize: 14,
-    color: '#666',
-  },
-  destinationDescription: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  coordinatesTag: {
-    backgroundColor: '#f0f8ff',
-    paddingVertical: 4,
+  destinationContent: {
     paddingHorizontal: 8,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  coordinatesText: {
-    fontSize: 12,
-    color: '#0066ff',
+    paddingBottom: 12,
   },
   emptyState: {
-    padding: 32,
+    padding: 24,
     alignItems: 'center',
   },
   emptyStateEmoji: {
@@ -409,8 +550,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyStateText: {
-    fontSize: 16,
-    color: '#666',
     textAlign: 'center',
   },
-}); 
+});

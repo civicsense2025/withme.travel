@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Heart, Pencil } from 'lucide-react';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { DisplayItineraryItem } from '@/types/itinerary';
-import { CATEGORY_DISPLAY, DEFAULT_CATEGORY_DISPLAY, ITEM_TYPE_DISPLAY, DEFAULT_TYPE_DISPLAY } from '@/utils/constants/ui';
+import {
+  CATEGORY_DISPLAY,
+  DEFAULT_CATEGORY_DISPLAY,
+  ITEM_TYPE_DISPLAY,
+  DEFAULT_TYPE_DISPLAY,
+} from '@/utils/constants/ui';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 
 export interface ItineraryItemCardProps {
@@ -37,14 +37,14 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
     e.stopPropagation();
     setIsLiked(!isLiked);
   };
-  
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onEdit) onEdit();
   };
 
   const address = item.address || item.location;
-  
+
   // Format time for display and tooltip - converts 24h to 12h time
   const formatTime = (timeString: string | null): string => {
     if (!timeString) return '';
@@ -73,22 +73,24 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
 
   // Get the appropriate category or type display
   let displayInfo = DEFAULT_CATEGORY_DISPLAY;
-  
+
   if (item.category) {
     // Check if the category exists in our mapping
     // Using type assertion with 'as' since we know the structure
-    const categoryKey = Object.values(ITINERARY_CATEGORIES).find(
-      cat => cat === item.category
-    );
-    
+    const categoryKey = Object.values(ITINERARY_CATEGORIES).find((cat) => cat === item.category);
+
     if (categoryKey && categoryKey in CATEGORY_DISPLAY) {
       displayInfo = CATEGORY_DISPLAY[categoryKey as keyof typeof CATEGORY_DISPLAY];
     }
   } else if (item.type) {
     // Only look up the type if it's one of our known types
     const type = item.type.toLowerCase();
-    if (type === 'accommodation' || type === 'transportation' || 
-        type === 'activity' || type === 'food') {
+    if (
+      type === 'accommodation' ||
+      type === 'transportation' ||
+      type === 'activity' ||
+      type === 'food'
+    ) {
       displayInfo = ITEM_TYPE_DISPLAY[type as keyof typeof ITEM_TYPE_DISPLAY];
     }
   }
@@ -98,8 +100,8 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
     { label: 'Type', value: item.type || 'Unspecified' },
     { label: 'Category', value: item.category || 'Unspecified' },
     { label: 'Status', value: item.status || 'Unspecified' },
-    { label: 'Notes', value: item.notes }
-  ].filter(detail => detail.value);
+    { label: 'Notes', value: item.notes },
+  ].filter((detail) => detail.value);
 
   return (
     <TooltipProvider>
@@ -122,31 +124,39 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
         <div className="p-4 relative z-10">
           <div className="flex items-start gap-3">
             {/* Item type/category emoji icon */}
-            <div className={cn(
-              'w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center',
-              displayInfo.color
-            )}>
-              <span className="text-lg" aria-hidden="true">{displayInfo.emoji}</span>
+            <div
+              className={cn(
+                'w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center',
+                displayInfo.color
+              )}
+            >
+              <span className="text-lg" aria-hidden="true">
+                {displayInfo.emoji}
+              </span>
             </div>
 
             {/* Main content */}
             <div className="flex-grow min-w-0">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <h3 className="font-semibold text-sm truncate cursor-help" title={item.title ?? 'Untitled'}>
+                  <h3
+                    className="font-semibold text-sm truncate cursor-help"
+                    title={item.title ?? 'Untitled'}
+                  >
                     {item.title || 'Untitled Item'}
                   </h3>
                 </TooltipTrigger>
                 <TooltipContent className="w-64">
                   <div className="space-y-2 p-1">
                     <p className="font-semibold">{item.title || 'Untitled Item'}</p>
-                    {details.map((detail, i) => (
-                      detail.value && (
-                        <div key={i} className="text-xs">
-                          <span className="font-medium">{detail.label}:</span> {detail.value}
-                        </div>
-                      )
-                    ))}
+                    {details.map(
+                      (detail, i) =>
+                        detail.value && (
+                          <div key={i} className="text-xs">
+                            <span className="font-medium">{detail.label}:</span> {detail.value}
+                          </div>
+                        )
+                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -178,7 +188,7 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
                   <span className="sr-only">Edit item</span>
                 </Button>
               )}
-              
+
               <Button
                 variant="ghost"
                 size="icon"
@@ -198,10 +208,7 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
         </div>
 
         {/* Color accent based on category/type */}
-        <div className={cn(
-          "absolute top-0 bottom-0 left-0 w-[3px]",
-          displayInfo.color
-        )}></div>
+        <div className={cn('absolute top-0 bottom-0 left-0 w-[3px]', displayInfo.color)}></div>
       </div>
     </TooltipProvider>
   );

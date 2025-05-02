@@ -48,27 +48,27 @@ app/trips/
 
 ## Key Features & Components
 
-*   **Trip Listing (`page.tsx`, `trips-client.tsx`):** Displays the user's trips.
-*   **Trip Creation (`create/`):** Multi-step form or process to create a new trip.
-*   **Trip Detail View (`[tripId]/page.tsx`):** The main hub for viewing a trip, typically using a tabbed interface (`[tripId]/components/tab-contents/`) to display Itinerary, Members, Budget, Notes, etc.
-*   **Data Fetching (`[tripId]/context/trip-data-provider.tsx`):** Uses SWR to fetch and manage trip data, itinerary, members, etc., providing data to the rest of the trip detail page. Includes optimistic update capabilities.
-*   **Itinerary Management (`[tripId]/components/TripItinerary/`, `hooks/useItineraryItems.ts`):** Handles displaying, adding, editing, and organizing itinerary items.
-*   **Member Management (`[tripId]/manage/`, `[tripId]/components/TripManage/`):** Allows inviting users and managing roles.
-*   **Real-time Collaboration (`hooks/use-presence.ts`, `[tripId]/hooks/use-trip-presence.ts`, `components/presence/`, `[tripId]/components/TripPresence/`):** Integrates with the global presence system to show active users, cursors, and editing status within the context of a trip. Includes connection state management and recovery logic.
-*   **Error Handling (`[tripId]/context/trip-error-boundary.tsx`, `components/error-fallbacks/`):** Provides specific error boundaries and fallback UIs for issues encountered while loading or interacting with trip data.
+- **Trip Listing (`page.tsx`, `trips-client.tsx`):** Displays the user's trips.
+- **Trip Creation (`create/`):** Multi-step form or process to create a new trip.
+- **Trip Detail View (`[tripId]/page.tsx`):** The main hub for viewing a trip, typically using a tabbed interface (`[tripId]/components/tab-contents/`) to display Itinerary, Members, Budget, Notes, etc.
+- **Data Fetching (`[tripId]/context/trip-data-provider.tsx`):** Uses SWR to fetch and manage trip data, itinerary, members, etc., providing data to the rest of the trip detail page. Includes optimistic update capabilities.
+- **Itinerary Management (`[tripId]/components/TripItinerary/`, `hooks/useItineraryItems.ts`):** Handles displaying, adding, editing, and organizing itinerary items.
+- **Member Management (`[tripId]/manage/`, `[tripId]/components/TripManage/`):** Allows inviting users and managing roles.
+- **Real-time Collaboration (`hooks/use-presence.ts`, `[tripId]/hooks/use-trip-presence.ts`, `components/presence/`, `[tripId]/components/TripPresence/`):** Integrates with the global presence system to show active users, cursors, and editing status within the context of a trip. Includes connection state management and recovery logic.
+- **Error Handling (`[tripId]/context/trip-error-boundary.tsx`, `components/error-fallbacks/`):** Provides specific error boundaries and fallback UIs for issues encountered while loading or interacting with trip data.
 
 ## Related Code
 
-*   **API Routes:** `app/api/trips/`
-*   **Global Components:** `components/trips/`
-*   **Global Hooks:** `hooks/use-trips.ts`, `hooks/useItineraryItems.ts`, `hooks/use-presence.ts`
-*   **Types:** `types/database.types.ts`, `types/presence.ts`
-*   **Constants:** `utils/constants/database.ts`, `utils/constants/routes.ts`, `utils/constants/status.ts`
+- **API Routes:** `app/api/trips/`
+- **Global Components:** `components/trips/`
+- **Global Hooks:** `hooks/use-trips.ts`, `hooks/useItineraryItems.ts`, `hooks/use-presence.ts`
+- **Types:** `types/database.types.ts`, `types/presence.ts`
+- **Constants:** `utils/constants/database.ts`, `utils/constants/routes.ts`, `utils/constants/status.ts`
 
 ## Status & Future Work
 
-*   The core functionality for trip creation, viewing, itinerary management, member management, and real-time presence is largely implemented.
-*   Features like Budgeting and Voting/Polls have backend support but may require further frontend implementation or refinement.
-*   Public trip pages exist but their exact functionality should be verified.
-*   Ongoing work may involve refining the real-time collaboration experience, improving error handling edge cases, and potentially enhancing features like budgeting or notes.
-*   Review API routes under `app/api/trips/[tripId]/` like `role-fix` or `fix-membership` to ensure underlying logic is stable. 
+- The core functionality for trip creation, viewing, itinerary management, member management, and real-time presence is largely implemented.
+- Features like Budgeting and Voting/Polls have backend support but may require further frontend implementation or refinement.
+- Public trip pages exist but their exact functionality should be verified.
+- Ongoing work may involve refining the real-time collaboration experience, improving error handling edge cases, and potentially enhancing features like budgeting or notes.
+- Review API routes under `app/api/trips/[tripId]/` like `role-fix` or `fix-membership` to ensure underlying logic is stable.

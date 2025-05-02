@@ -96,11 +96,11 @@ export class ClassErrorBoundary extends Component<ClassErrorBoundaryProps, Error
     // Report to Sentry with context information
     try {
       Sentry.captureException(error, {
-        tags: { 
+        tags: {
           tripId: this.props.tripId,
-          section: this.props.section || 'unknown'
+          section: this.props.section || 'unknown',
         },
-        extra: { errorInfo }
+        extra: { errorInfo },
       });
     } catch (sentryError) {
       console.error('Failed to report error to Sentry:', sentryError);

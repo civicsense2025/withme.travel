@@ -11,7 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-  FlatList
+  FlatList,
 } from 'react-native';
 import { createSupabaseClient } from '../utils/supabase';
 import { ItineraryItem } from '../types/supabase';
@@ -30,15 +30,18 @@ type EditItineraryItemScreenProps = {
   navigation: any;
 };
 
-export default function EditItineraryItemScreen({ route, navigation }: EditItineraryItemScreenProps) {
+export default function EditItineraryItemScreen({
+  route,
+  navigation,
+}: EditItineraryItemScreenProps) {
   const { tripId, itemId, dayNumber: initialDayNumber } = route.params;
   const { user } = useAuth();
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteConfirmVisible, setIsDeleteConfirmVisible] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  
+
   // Item form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -48,7 +51,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
   const [endTime, setEndTime] = useState<string | null>(null);
   const [locationName, setLocationName] = useState('');
   const [locationAddress, setLocationAddress] = useState('');
-  
+
   useEffect(() => {
     if (itemId) {
       // We're editing an existing item - load it
@@ -57,48 +60,42 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
       // We're creating a new item
       setIsLoading(false);
     }
-    
+
     // Set up navigation options
     navigation.setOptions({
       title: itemId ? 'Edit Itinerary Item' : 'New Itinerary Item',
       headerRight: () => (
-        <TouchableOpacity 
-          style={styles.headerButton} 
-          onPress={handleSave}
-          disabled={isSaving}
-        >
-          <Text style={styles.headerButtonText}>
-            {isSaving ? 'Saving...' : 'Save'}
-          </Text>
+        <TouchableOpacity style={styles.headerButton} onPress={handleSave} disabled={isSaving}>
+          <Text style={styles.headerButtonText}>{isSaving ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       ),
     });
   }, [itemId, isSaving, title]);
-  
+
   const loadItineraryItem = async () => {
     try {
       setIsLoading(true);
       const supabase = createSupabaseClient();
-      
+
       const { data, error } = await supabase
         .from(TABLES.ITINERARY_ITEMS)
         .select('*')
         .eq(COLUMNS.ID, itemId)
         .single();
-      
+
       if (error) {
         console.error('Error loading itinerary item:', error);
         Alert.alert('Error', 'Failed to load itinerary item');
         navigation.goBack();
         return;
       }
-      
+
       if (!data) {
         Alert.alert('Error', 'Itinerary item not found');
         navigation.goBack();
         return;
       }
-      
+
       // Set form data from the item
       const item = data as unknown as ItineraryItem;
       setTitle(item.title);
@@ -116,18 +113,18 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
       setIsLoading(false);
     }
   };
-  
+
   const handleSave = async () => {
     // Validate form
     if (!title.trim()) {
       Alert.alert('Error', 'Title is required');
       return;
     }
-    
+
     try {
       setIsSaving(true);
       const supabase = createSupabaseClient();
-      
+
       const itemData: Partial<ItineraryItem> = {
         title: title.trim(),
         description: description.trim() || null,
@@ -138,20 +135,20 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
         location_name: locationName.trim() || null,
         location_address: locationAddress.trim() || null,
       };
-      
+
       if (itemId) {
         // Update existing item
         const { error } = await supabase
           .from(TABLES.ITINERARY_ITEMS)
           .update(itemData)
           .eq(COLUMNS.ID, itemId);
-        
+
         if (error) {
           console.error('Error updating itinerary item:', error);
           Alert.alert('Error', 'Failed to update itinerary item');
           return;
         }
-        
+
         Alert.alert('Success', 'Itinerary item updated successfully');
       } else {
         // Create new item
@@ -159,27 +156,25 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
           Alert.alert('Error', 'You must be logged in to create an itinerary item');
           return;
         }
-        
+
         const newItemData = {
           ...itemData,
           trip_id: tripId,
           created_by: user.id,
           status: ENUM_VALUES.ITINERARY_ITEM_STATUS.SUGGESTED,
         };
-        
-        const { error } = await supabase
-          .from(TABLES.ITINERARY_ITEMS)
-          .insert([newItemData]);
-        
+
+        const { error } = await supabase.from(TABLES.ITINERARY_ITEMS).insert([newItemData]);
+
         if (error) {
           console.error('Error creating itinerary item:', error);
           Alert.alert('Error', 'Failed to create itinerary item');
           return;
         }
-        
+
         Alert.alert('Success', 'Itinerary item created successfully');
       }
-      
+
       // Navigate back to itinerary screen
       navigation.goBack();
     } catch (err) {
@@ -189,25 +184,22 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
       setIsSaving(false);
     }
   };
-  
+
   const handleDelete = async () => {
     if (!itemId) return;
-    
+
     try {
       setIsSaving(true);
       const supabase = createSupabaseClient();
-      
-      const { error } = await supabase
-        .from(TABLES.ITINERARY_ITEMS)
-        .delete()
-        .eq(COLUMNS.ID, itemId);
-      
+
+      const { error } = await supabase.from(TABLES.ITINERARY_ITEMS).delete().eq(COLUMNS.ID, itemId);
+
       if (error) {
         console.error('Error deleting itinerary item:', error);
         Alert.alert('Error', 'Failed to delete itinerary item');
         return;
       }
-      
+
       Alert.alert('Success', 'Itinerary item deleted successfully');
       navigation.goBack();
     } catch (err) {
@@ -218,7 +210,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
       setIsDeleteConfirmVisible(false);
     }
   };
-  
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -226,9 +218,9 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
       </View>
     );
   }
-  
+
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -243,10 +235,10 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
             placeholderTextColor="#999"
           />
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Category</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.categorySelector}
             onPress={() => setShowCategoryPicker(true)}
           >
@@ -260,7 +252,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
             )}
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Description</Text>
           <TextInput
@@ -274,7 +266,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
             textAlignVertical="top"
           />
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Day Number</Text>
           <TextInput
@@ -289,7 +281,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
             keyboardType="number-pad"
           />
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Location Name</Text>
           <TextInput
@@ -300,7 +292,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
             placeholderTextColor="#999"
           />
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Location Address</Text>
           <TextInput
@@ -311,11 +303,11 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
             placeholderTextColor="#999"
           />
         </View>
-        
+
         {/* TODO: Add time pickers for start and end time */}
-        
+
         {itemId && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => setIsDeleteConfirmVisible(true)}
           >
@@ -323,7 +315,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
           </TouchableOpacity>
         )}
       </ScrollView>
-      
+
       {/* Category Picker Modal */}
       <Modal
         visible={showCategoryPicker}
@@ -335,19 +327,19 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Category</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowCategoryPicker(false)}
                 style={styles.closeButton}
               >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
-            
+
             <FlatList
               data={ITINERARY_CATEGORIES}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.categoryItem}
                   onPress={() => {
                     setCategory(item);
@@ -362,7 +354,7 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
           </View>
         </View>
       </Modal>
-      
+
       {/* Delete Confirmation Modal */}
       <Modal
         visible={isDeleteConfirmVisible}
@@ -376,16 +368,16 @@ export default function EditItineraryItemScreen({ route, navigation }: EditItine
             <Text style={styles.confirmText}>
               This action cannot be undone. The item will be permanently deleted.
             </Text>
-            
+
             <View style={styles.confirmButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.confirmButton, styles.cancelButton]}
                 onPress={() => setIsDeleteConfirmVisible(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={[styles.confirmButton, styles.deleteConfirmButton]}
                 onPress={handleDelete}
               >
@@ -578,4 +570,4 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-}); 
+});

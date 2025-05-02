@@ -1,19 +1,13 @@
-<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
-=======
-import React from 'react';
->>>>>>> a07d631d04d45af415c90c18b62199d289862037
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './src/hooks/useAuth';
 import Navigation from './src/navigation';
-<<<<<<< HEAD
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { checkSupabaseHealth } from './src/utils/supabase';
 import NetInfo from '@react-native-community/netinfo';
-=======
->>>>>>> a07d631d04d45af415c90c18b62199d289862037
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -25,13 +19,15 @@ const queryClient = new QueryClient({
   },
 });
 
-<<<<<<< HEAD
 // Debug mode flag
 const DEBUG_MODE = __DEV__;
 
 // Global error boundary component
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: {children: React.ReactNode}) {
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -50,14 +46,14 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Something went wrong</Text>
           <Text style={styles.errorMessage}>{this.state.error?.message}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.restartButton}
             onPress={() => this.setState({ hasError: false, error: null })}
           >
             <Text style={styles.restartButtonText}>Try Again</Text>
           </TouchableOpacity>
           {DEBUG_MODE && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.debugButton}
               onPress={() => {
                 Alert.alert(
@@ -85,12 +81,12 @@ function DebugOverlay() {
 
   useEffect(() => {
     // Check network state
-    NetInfo.fetch().then(state => {
+    NetInfo.fetch().then((state) => {
       setNetworkInfo(state);
     });
 
     // Monitor connection changes
-    const unsubscribe = NetInfo.addEventListener(state => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
       setNetworkInfo(state);
     });
 
@@ -103,10 +99,10 @@ function DebugOverlay() {
         console.error('Health check error:', error);
       }
     };
-    
+
     checkHealth();
     const intervalId = setInterval(checkHealth, 10000); // Check every 10 seconds
-    
+
     return () => {
       unsubscribe();
       clearInterval(intervalId);
@@ -117,10 +113,7 @@ function DebugOverlay() {
 
   if (!isVisible) {
     return (
-      <TouchableOpacity
-        style={styles.debugToggle}
-        onPress={() => setIsVisible(true)}
-      >
+      <TouchableOpacity style={styles.debugToggle} onPress={() => setIsVisible(true)}>
         <Text style={styles.debugToggleText}>🔍</Text>
       </TouchableOpacity>
     );
@@ -134,30 +127,22 @@ function DebugOverlay() {
           <Text style={styles.closeButton}>✕</Text>
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.debugSection}>
         <Text style={styles.debugSectionTitle}>Network</Text>
-        <Text style={styles.debugText}>
-          Connected: {String(networkInfo?.isConnected)}
-        </Text>
-        <Text style={styles.debugText}>
-          Type: {networkInfo?.type}
-        </Text>
+        <Text style={styles.debugText}>Connected: {String(networkInfo?.isConnected)}</Text>
+        <Text style={styles.debugText}>Type: {networkInfo?.type}</Text>
       </View>
-      
+
       <View style={styles.debugSection}>
         <Text style={styles.debugSectionTitle}>Database</Text>
         <Text style={styles.debugText}>
           Client Initialized: {String(dbHealth?.isClientInitialized)}
         </Text>
-        <Text style={styles.debugText}>
-          Status: {dbHealth?.dbConnectionStatus || 'Unknown'}
-        </Text>
-        <Text style={styles.debugText}>
-          Creation Count: {dbHealth?.creationCount || 0}
-        </Text>
+        <Text style={styles.debugText}>Status: {dbHealth?.dbConnectionStatus || 'Unknown'}</Text>
+        <Text style={styles.debugText}>Creation Count: {dbHealth?.creationCount || 0}</Text>
       </View>
-      
+
       {dbHealth?.errors.length > 0 && (
         <View style={styles.debugSection}>
           <Text style={styles.debugSectionTitle}>Errors ({dbHealth.errors.length})</Text>
@@ -168,8 +153,8 @@ function DebugOverlay() {
           ))}
         </View>
       )}
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={styles.checkButton}
         onPress={async () => {
           try {
@@ -191,13 +176,15 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <StatusBar style="auto" />
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <Navigation />
-            {DEBUG_MODE && <DebugOverlay />}
-          </AuthProvider>
-        </QueryClientProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <StatusBar style="auto" />
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <Navigation />
+              {DEBUG_MODE && <DebugOverlay />}
+            </AuthProvider>
+          </QueryClientProvider>
+        </GestureHandlerRootView>
       </SafeAreaProvider>
     </ErrorBoundary>
   );
@@ -313,17 +300,3 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
-=======
-export default function App() {
-  return (
-    <SafeAreaProvider>
-      <StatusBar style="auto" />
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Navigation />
-        </AuthProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
-  );
-}
->>>>>>> a07d631d04d45af415c90c18b62199d289862037

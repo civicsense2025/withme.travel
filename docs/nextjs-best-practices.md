@@ -23,6 +23,7 @@
   - Create an `.eslintrc.js` rule to enforce these naming conventions
 
 - **Clean Separation of Concerns**:
+
   - Keep UI components separate from business logic and data fetching
   - Use custom hooks for reusable logic
   - Create service layers for API interactions
@@ -77,6 +78,7 @@
   - Implement proper error states for all data fetching scenarios
 
 - **Loading & Error States**:
+
   - Create comprehensive error boundaries for each page section
   - Implement typed error responses from API endpoints
   - Use Suspense with fallback components for all async operations
@@ -174,12 +176,12 @@
     // utils/constants/routes.ts
     export const API_ROUTES = Object.freeze({
       TAGS: '/api/tags',
-      TRIPS: '/api/trips'
+      TRIPS: '/api/trips',
     });
-    
+
     // Component.tsx
     import { API_ROUTES } from '@/utils/constants/routes'; // Direct import
-    
+
     useEffect(() => {
       fetch(API_ROUTES.TAGS);
     }, []); // No dependency needed for static constants
@@ -637,14 +639,14 @@
     useEffect(() => {
       fetch(API_ROUTES.TAGS);
     }, [API_ROUTES.TAGS]); // Outer scope constant shouldn't be a dependency
-    
+
     // CORRECT - Define API_ROUTES as a frozen object outside component
     // utils/constants/routes.ts
     export const API_ROUTES = Object.freeze({
       TAGS: '/api/tags',
       // other routes...
     });
-    
+
     // In component
     import { API_ROUTES } from '@/utils/constants/routes'; // Direct import
     useEffect(() => {

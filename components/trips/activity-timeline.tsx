@@ -30,12 +30,13 @@ import {
 } from 'lucide-react';
 
 // Extend ActionType to include trip history action types
-type ExtendedActionType = ActionType | 
-  'TRIP_VISITED' | 
-  'TRIP_PLANNED' | 
-  'TRAVEL_HISTORY_ADDED' | 
-  'DESTINATION_VISITED' | 
-  'DESTINATION_RATED';
+type ExtendedActionType =
+  | ActionType
+  | 'TRIP_VISITED'
+  | 'TRIP_PLANNED'
+  | 'TRAVEL_HISTORY_ADDED'
+  | 'DESTINATION_VISITED'
+  | 'DESTINATION_RATED';
 
 interface ActivityTimelineProps {
   tripId: string;
@@ -61,6 +62,23 @@ interface TripHistoryItem {
   } | null;
 }
 
+// Simplified mock implementation for now - we'll use the regular activity timeline
+// until the trip_history data is fully integrated
+const useTripHistoryData = (tripId: string, options: { limit: number }) => {
+  const { activities, loading, error, refreshTimeline, loadMore, pagination } = useActivityTimeline(
+    tripId,
+    options
+  );
+
+  return {
+    historyItems: activities as unknown as TripHistoryItem[],
+    loading,
+    error,
+    refreshHistory: refreshTimeline,
+    loadMore,
+  };
+};
+
 export function ActivityTimeline({
   tripId,
   limit = 5,
@@ -69,30 +87,25 @@ export function ActivityTimeline({
   className = '',
   useTripHistory = false,
 }: ActivityTimelineProps) {
+  // Always call the hooks, but conditionally use their results
+  const { activities, loading, error, refreshTimeline, loadMore, pagination } = useActivityTimeline(
+    tripId,
+    { limit }
+  );
+
   const {
-    activities,
-    loading,
-    error,
-    refreshTimeline,
-    loadMore,
-    pagination,
-  } = useActivityTimeline(tripId, { limit });
+    historyItems,
+    loading: historyLoading,
+    error: historyError,
+    refreshHistory,
+    loadMore: loadMoreHistory,
+  } = useTripHistoryData(tripId, { limit });
 
-  // Simplified mock implementation for now - we'll use the regular activity timeline
-  // until the trip_history data is fully integrated
-  const useTripHistoryData = (tripId: string, options: { limit: number }) => {
-    return {
-      historyItems: activities as unknown as TripHistoryItem[],
-      loading,
-      error,
-      refreshHistory: refreshTimeline,
-      loadMore,
-    };
-  };
-
-  const tripHistoryData = useTripHistory 
-    ? useTripHistoryData(tripId, { limit }) 
-    : { historyItems: [] as TripHistoryItem[], loading: false, error: null };
+  const displayActivities = useTripHistory ? historyItems : activities;
+  const isLoading = useTripHistory ? historyLoading : loading;
+  const hasError = useTripHistory ? historyError : error;
+  const refresh = useTripHistory ? refreshHistory : refreshTimeline;
+  const loadMoreItems = useTripHistory ? loadMoreHistory : loadMore;
 
   const getActivityIcon = (actionType: ExtendedActionType) => {
     switch (actionType) {
@@ -119,7 +132,7 @@ export function ActivityTimeline({
       case 'ACCESS_REQUEST_UPDATED':
         return <Check className="h-4 w-4 text-green-500" />;
       case 'IMAGE_UPLOADED':
-        return <Image className="h-4 w-4 text-blue-500" aria-label="Image uploaded" />;
+        return <Image className="h-4 w-4 text-blue-500" aria-hidden="true" />;
       case 'TAG_ADDED':
       case 'TAG_REMOVED':
         return <Tag className="h-4 w-4 text-yellow-500" />;
@@ -148,12 +161,12 @@ export function ActivityTimeline({
     if (!name || name === 'Unknown' || name === 'System') {
       return 'U';
     }
-    
+
     const nameParts = name.split(' ');
     if (nameParts.length === 1) {
       return nameParts[0].charAt(0).toUpperCase();
     }
-    
+
     return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
   };
 
@@ -168,25 +181,47 @@ export function ActivityTimeline({
       'bg-teal-500',
       'bg-orange-500',
     ];
-    
+
     // Generate a color based on the name
     const hashCode = name.split('').reduce((acc, char) => {
       return acc + char.charCodeAt(0);
     }, 0);
-    
+
     return colors[hashCode % colors.length];
   };
 
-  const getActivityMessage = (activity: ActivityTimelineItem | TripHistoryItem): string => {
-    // Handle different object structures for ActivityTimelineItem vs TripHistoryItem
-    const actorName = 'actor_name' in activity 
-      ? activity.actor_name && !activity.actor_name.toLowerCase().includes('unknown') 
-        ? activity.actor_name 
-        : 'You'
-      : activity.profiles?.name && !activity.profiles.name.toLowerCase().includes('unknown') 
-        ? activity.profiles.name 
+  // Helper function to check if an object is a TripHistoryItem
+  const isTripHistoryItem = (
+    item: ActivityTimelineItem | TripHistoryItem
+  ): item is TripHistoryItem => {
+    return 'profiles' in item;
+  };
+
+  // Helper function to get the actor name from any activity item
+  const getActorName = (item: ActivityTimelineItem | TripHistoryItem): string => {
+    if (isTripHistoryItem(item)) {
+      return item.profiles?.name && !item.profiles.name.toLowerCase().includes('unknown')
+        ? item.profiles.name
         : 'You';
-      
+    } else {
+      return item.actor_name && !item.actor_name.toLowerCase().includes('unknown')
+        ? item.actor_name
+        : 'You';
+    }
+  };
+
+  // Helper function to get the actor avatar from any activity item
+  const getActorAvatar = (item: ActivityTimelineItem | TripHistoryItem): string | null => {
+    if (isTripHistoryItem(item)) {
+      return item.profiles?.avatar_url || null;
+    } else {
+      return item.actor_avatar || null;
+    }
+  };
+
+  const getActivityMessage = (activity: ActivityTimelineItem | TripHistoryItem): string => {
+    // Get actor name using the helper function
+    const actorName = getActorName(activity);
     const actionType = activity.action_type;
     const details = activity.details || {};
 
@@ -246,7 +281,7 @@ export function ActivityTimeline({
     if (actionType === 'FOCUS_INITIATED') {
       return `${actorName} started a focus session on ${details.section_name || 'a section'}`;
     }
-    
+
     // Trip history action types
     if (actionType === 'TRIP_VISITED') {
       return `${actorName} visited ${details.destination || 'a destination'}`;
@@ -264,7 +299,7 @@ export function ActivityTimeline({
       const rating = details.rating ? `${details.rating}/5` : '';
       return `${actorName} rated ${details.destination || 'a destination'} ${rating}`;
     }
-    
+
     // Default case
     return `${actorName} updated the trip`;
   };
@@ -282,14 +317,9 @@ export function ActivityTimeline({
         <div className="flex items-start gap-3">
           <Avatar className="h-8 w-8 flex-shrink-0">
             {historyItem.profiles?.avatar_url ? (
-              <AvatarImage
-                src={historyItem.profiles.avatar_url}
-                alt={`${userName}'s avatar`}
-              />
+              <AvatarImage src={historyItem.profiles.avatar_url} alt={`${userName}'s avatar`} />
             ) : null}
-            <AvatarFallback>
-              {userName.substring(0, 2).toUpperCase() || '?'}
-            </AvatarFallback>
+            <AvatarFallback>{userName.substring(0, 2).toUpperCase() || '?'}</AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
@@ -308,40 +338,39 @@ export function ActivityTimeline({
     );
   };
 
-  if (error || tripHistoryData.error) {
+  if (hasError) {
     return (
       <div className="p-4 text-center text-red-500">
         <p>Error loading activity timeline</p>
-        <Button variant="outline" size="sm" onClick={refreshTimeline} className="mt-2">
+        <Button variant="outline" size="sm" onClick={refresh} className="mt-2">
           Try Again
         </Button>
       </div>
     );
   }
 
-  const isLoading = loading || (useTripHistory && tripHistoryData.loading);
-  const hasContent = activities.length > 0 || (useTripHistory && tripHistoryData.historyItems.length > 0);
+  const hasContent = displayActivities.length > 0;
 
   return (
     <div className={`border rounded-md relative overflow-hidden ${className}`}>
       <div className="px-4 py-3 border-b bg-muted/30 flex justify-between items-center">
         <h3 className="font-medium">Activity Timeline</h3>
         {showRefreshButton && (
-          <Button variant="ghost" size="sm" onClick={refreshTimeline} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="ghost" size="sm" onClick={refresh} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         )}
       </div>
 
       <ScrollArea className="relative" style={{ maxHeight }}>
-        {error && (
+        {hasError && (
           <div className="p-4 text-center text-red-500">
             Failed to load activity. Please try again.
           </div>
         )}
 
-        {loading && activities.length === 0 ? (
+        {isLoading && displayActivities.length === 0 ? (
           // Show loading skeletons only on initial load
           <div className="space-y-4 p-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -357,21 +386,17 @@ export function ActivityTimeline({
         ) : useTripHistory ? (
           // Trip history content (placeholder)
           <div className="p-4 space-y-1">
-            {tripHistoryData.historyItems.length === 0 ? (
-              <div className="text-center text-muted-foreground py-6">
-                No activity history yet
-              </div>
+            {historyItems.length === 0 ? (
+              <div className="text-center text-muted-foreground py-6">No activity history yet</div>
             ) : (
-              tripHistoryData.historyItems.map((historyItem) => renderTripHistoryItem(historyItem))
+              historyItems.map((historyItem) => renderTripHistoryItem(historyItem))
             )}
           </div>
-        ) : activities.length === 0 ? (
-          <div className="text-center text-muted-foreground py-6">
-            No activity yet
-          </div>
+        ) : displayActivities.length === 0 ? (
+          <div className="text-center text-muted-foreground py-6">No activity yet</div>
         ) : (
           <div className="p-4 space-y-1">
-            {activities.map((activity) => (
+            {displayActivities.map((activity) => (
               <div
                 key={activity.id}
                 className="relative pl-10 pr-4 py-3 hover:bg-muted/30 border-b border-muted/50 last:border-0"
@@ -384,26 +409,28 @@ export function ActivityTimeline({
 
                 <div className="flex items-start gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage 
-                      src={activity.actor_avatar || ''} 
-                      alt={`${activity.actor_name || 'User'}'s avatar`} 
+                    <AvatarImage
+                      src={getActorAvatar(activity) || ''}
+                      alt={`${getActorName(activity) || 'User'}'s avatar`}
                     />
-                    <AvatarFallback 
+                    <AvatarFallback
                       className={`text-white ${
-                        activity.actor_name 
-                          ? (activity.actor_name.toLowerCase().includes('admin') 
-                              ? 'bg-red-500' 
-                              : activity.actor_name.toLowerCase().includes('system') 
-                                ? 'bg-gray-500' 
-                                : getBgColorFromName(activity.actor_name))
+                        getActorName(activity)
+                          ? getActorName(activity).toLowerCase().includes('admin')
+                            ? 'bg-red-500'
+                            : getActorName(activity).toLowerCase().includes('system')
+                              ? 'bg-gray-500'
+                              : getBgColorFromName(getActorName(activity))
                           : 'bg-blue-500'
                       }`}
                     >
-                      {getAvatarInitials(activity.actor_name || '')}
+                      {getAvatarInitials(getActorName(activity) || '')}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{getActivityMessage(activity)}</p>
+                    <p className="text-sm font-medium leading-none">
+                      {getActivityMessage(activity)}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                     </p>
@@ -413,32 +440,27 @@ export function ActivityTimeline({
             ))}
           </div>
         )}
-        
+
         {/* Pagination loading indicator */}
-        {loading && activities.length > 0 && (
+        {isLoading && displayActivities.length > 0 && (
           <div className="py-3 text-center">
             <Skeleton className="h-6 w-32 mx-auto" />
           </div>
         )}
-        
+
         {/* Load more button */}
-        {!loading && pagination.hasMore && (
+        {!isLoading && pagination.hasMore && (
           <div className="p-4 text-center border-t">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={loadMore}
-              className="w-full"
-            >
-              Load More ({pagination.total - activities.length} remaining)
+            <Button variant="outline" size="sm" onClick={loadMoreItems} className="w-full">
+              Load More ({pagination.total - displayActivities.length} remaining)
             </Button>
           </div>
         )}
-        
+
         {/* Pagination summary */}
-        {!loading && !pagination.hasMore && activities.length > 0 && (
+        {!isLoading && !pagination.hasMore && displayActivities.length > 0 && (
           <div className="p-3 text-center text-xs text-muted-foreground border-t">
-            Showing all {activities.length} of {pagination.total} activities
+            Showing all {displayActivities.length} of {pagination.total} activities
           </div>
         )}
       </ScrollArea>

@@ -7,16 +7,16 @@ This guide explains how API Routes, Server Components, and Client Components wor
 Next.js 15 (with the App Router) offers different ways to build your application:
 
 1.  **API Routes:** Server-side endpoints typically used by Client Components to fetch or mutate data securely after the initial page load. They handle requests and responses like traditional API endpoints.
-2.  **Server Components (RSC):** Rendered entirely on the server. They can directly access server-side resources (like databases or file systems) and perform data fetching *before* sending the result to the client. They cannot use hooks like `useState` or `useEffect`.
-3.  **Client Components:** Rendered initially on the server and then "hydrated" on the client, allowing them to use hooks, state, effects, and browser APIs. They often fetch data *after* initial load, either via `useEffect` or by calling API Routes. Marked with the `'use client'` directive.
+2.  **Server Components (RSC):** Rendered entirely on the server. They can directly access server-side resources (like databases or file systems) and perform data fetching _before_ sending the result to the client. They cannot use hooks like `useState` or `useEffect`.
+3.  **Client Components:** Rendered initially on the server and then "hydrated" on the client, allowing them to use hooks, state, effects, and browser APIs. They often fetch data _after_ initial load, either via `useEffect` or by calling API Routes. Marked with the `'use client'` directive.
 
 ## Supabase Client Usage
 
 We use `@supabase/ssr` which provides different functions to create Supabase clients tailored for each context:
 
-*   **`createApiRouteClient()` (from `@/utils/supabase/ssr-client.ts`):** **Use this in API Routes.** It handles cookies correctly for request/response cycles in API endpoints. *Crucially, this function returns a Promise, so you must `await` its result.*
-*   **`createServerComponentClient()` (from `@/utils/supabase/ssr-client.ts`):** **Use this in Server Components.** It handles read-only cookie access suitable for server-side rendering. *Crucially, this function returns a Promise, so you must `await` its result.*
-*   **`getBrowserClient()` (from `@/utils/supabase/browser-client.ts`):** **Use this in Client Components.** It provides a singleton client instance suitable for browser environments, without importing server-only dependencies like `next/headers`.
+- **`createApiRouteClient()` (from `@/utils/supabase/ssr-client.ts`):** **Use this in API Routes.** It handles cookies correctly for request/response cycles in API endpoints. _Crucially, this function returns a Promise, so you must `await` its result._
+- **`createServerComponentClient()` (from `@/utils/supabase/ssr-client.ts`):** **Use this in Server Components.** It handles read-only cookie access suitable for server-side rendering. _Crucially, this function returns a Promise, so you must `await` its result._
+- **`getBrowserClient()` (from `@/utils/supabase/browser-client.ts`):** **Use this in Client Components.** It provides a singleton client instance suitable for browser environments, without importing server-only dependencies like `next/headers`.
 
 **See:** [Authentication System Documentation](docs/authentication.md) for more details on the auth setup.
 
@@ -26,10 +26,10 @@ API Routes are essential for actions triggered by the client after the page has 
 
 **Key Characteristics:**
 
-*   Run only on the server.
-*   Can securely access environment variables and interact with the database.
-*   Use `NextRequest` and `NextResponse` for handling requests and responses.
-*   **Must use `await createApiRouteClient()`** to get a Supabase client instance.
+- Run only on the server.
+- Can securely access environment variables and interact with the database.
+- Use `NextRequest` and `NextResponse` for handling requests and responses.
+- **Must use `await createApiRouteClient()`** to get a Supabase client instance.
 
 **Example: Authenticated API Route (`app/api/likes/route.ts`)**
 
@@ -44,7 +44,10 @@ export async function POST(request: NextRequest) {
     const supabase = await createApiRouteClient();
 
     // 2. Check user session
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -71,13 +74,11 @@ export async function POST(request: NextRequest) {
 
     // 5. Return successful response
     return NextResponse.json({ success: true, like: data }, { status: 201 });
-
   } catch (error: any) {
     console.error('API Likes Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
 ```
 
 ## Server Components (`app/.../page.tsx`, `app/.../layout.tsx`, etc.)
@@ -86,11 +87,11 @@ Server Components are the default in the App Router. They are ideal for fetching
 
 **Key Characteristics:**
 
-*   Run only on the server.
-*   Can directly fetch data using `await`.
-*   Cannot use Client Component hooks (`useState`, `useEffect`, etc.).
-*   Pass fetched data down to Client Components as props.
-*   **Must use `await createServerComponentClient()`** for Supabase interactions.
+- Run only on the server.
+- Can directly fetch data using `await`.
+- Cannot use Client Component hooks (`useState`, `useEffect`, etc.).
+- Pass fetched data down to Client Components as props.
+- **Must use `await createServerComponentClient()`** for Supabase interactions.
 
 **Example: Fetching initial data (`app/trips/page.tsx`)**
 
@@ -137,11 +138,11 @@ Client Components handle interactivity, state, and browser APIs.
 
 **Key Characteristics:**
 
-*   Marked with `'use client'` directive at the top.
-*   Can use hooks (`useState`, `useEffect`, `useContext`, etc.).
-*   Cannot directly `await` server-side data fetching functions within the component body (must use `useEffect` or fetch from API routes).
-*   Receive initial data as props from Server Components.
-*   For Supabase interactions after initial load (e.g., in response to user actions), **use `getBrowserClient()`** (typically within hooks or event handlers).
+- Marked with `'use client'` directive at the top.
+- Can use hooks (`useState`, `useEffect`, `useContext`, etc.).
+- Cannot directly `await` server-side data fetching functions within the component body (must use `useEffect` or fetch from API routes).
+- Receive initial data as props from Server Components.
+- For Supabase interactions after initial load (e.g., in response to user actions), **use `getBrowserClient()`** (typically within hooks or event handlers).
 
 **Example: Client Component using data and interacting (`./trips-client.tsx`)**
 
@@ -208,10 +209,10 @@ export default function TripsClientPage({ initialTrips, userId }: TripsClientPag
 
 ## Summary & Best Practices
 
-*   **Initial Load:** Use Server Components to fetch data needed for the initial page render via `createServerComponentClient`. Pass this data as props to Client Components.
-*   **Client-Side Actions:** Use API Routes (with `createApiRouteClient`) for mutations (POST, PUT, DELETE) or data fetching triggered by user interaction within Client Components.
-*   **Client-Side State/Effects:** Use Client Components (`'use client'`) for interactivity, state management, and browser APIs. Use `getBrowserClient` if direct Supabase interaction is needed *after* the initial load.
-*   **Authentication:** Check authentication in Server Components (`createServerComponentClient`) and API Routes (`createApiRouteClient`) using `getSession` or `getUser`. Redirect or return 401 errors as needed. Client components rely on the `AuthProvider` or session checks within API routes they call.
-*   **Consistency:** Always use the specific Supabase client creation function designed for the context (`createApiRouteClient`, `createServerComponentClient`, `getBrowserClient`). Remember to `await` the promise for the server-side clients.
+- **Initial Load:** Use Server Components to fetch data needed for the initial page render via `createServerComponentClient`. Pass this data as props to Client Components.
+- **Client-Side Actions:** Use API Routes (with `createApiRouteClient`) for mutations (POST, PUT, DELETE) or data fetching triggered by user interaction within Client Components.
+- **Client-Side State/Effects:** Use Client Components (`'use client'`) for interactivity, state management, and browser APIs. Use `getBrowserClient` if direct Supabase interaction is needed _after_ the initial load.
+- **Authentication:** Check authentication in Server Components (`createServerComponentClient`) and API Routes (`createApiRouteClient`) using `getSession` or `getUser`. Redirect or return 401 errors as needed. Client components rely on the `AuthProvider` or session checks within API routes they call.
+- **Consistency:** Always use the specific Supabase client creation function designed for the context (`createApiRouteClient`, `createServerComponentClient`, `getBrowserClient`). Remember to `await` the promise for the server-side clients.
 
-By understanding these patterns, you can build efficient, secure, and interactive features in the Next.js App Router. 
+By understanding these patterns, you can build efficient, secure, and interactive features in the Next.js App Router.

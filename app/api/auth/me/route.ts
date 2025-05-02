@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 // Remove createServerClient import if not needed elsewhere in this file
-// import { createServerClient } from '@supabase/ssr'; 
+// import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers'; // Keep cookies import
 import type { Database } from '@/types/database.types';
 import { createApiRouteClient } from '@/utils/supabase/ssr-client'; // Import the correct client creator
@@ -8,7 +8,7 @@ import { createApiRouteClient } from '@/utils/supabase/ssr-client'; // Import th
 export async function GET(request: Request) {
   try {
     // Use the async client creator for API routes
-    const supabase = await createApiRouteClient(); 
+    const supabase = await createApiRouteClient();
 
     // First, check if there's a valid session using the new supabase client
     const {

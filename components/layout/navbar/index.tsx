@@ -21,7 +21,9 @@ export function Navbar() {
     <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
-          <Link href="/" className="font-bold text-xl">withme.travel</Link>
+          <Link href="/" className="font-bold text-xl">
+            withme.travel
+          </Link>
         </div>
         <div className="hidden md:flex flex-1 items-center space-x-4 lg:space-x-6">
           <nav className="flex items-center space-x-4 lg:space-x-6">
@@ -54,10 +56,12 @@ export function Navbar() {
             </Link>
           </nav>
         </div>
-        
+
         <div className="flex md:hidden flex-1 items-center justify-between">
           <div className="flex">
-            <Link href="/" className="font-bold text-lg">withme.travel</Link>
+            <Link href="/" className="font-bold text-lg">
+              withme.travel
+            </Link>
           </div>
           <div className="flex items-center space-x-2">
             {!isLoading && (

@@ -14,6 +14,10 @@ All documentation is organized in the `docs/` directory:
 - [**Codebase Structure**](docs/CODEBASE_STRUCTURE.md) - Overview of project organization
 - [**Database Structure**](docs/database_structure.md) - Database schema and relationships
 - [**Itinerary Template Structure**](docs/ITINERARY_TEMPLATE_STRUCTURE.md) - How trip templates are organized
+- [**Mobile Style Guide**](docs/mobile-style-guide.md) - Visual guidelines for the Expo mobile app
+- [**Collaboration Features**](docs/collaboration-features.md) - Guide to real-time collaboration features
+- [**Focus Mode**](docs/focus-mode.md) - Documentation for the trip focus mode
+- [**Offline Support**](docs/offline-support.md) - Details about service worker and offline capabilities
 - [**Implementation Plan**](docs/implementation_plan.md) - Roadmap for new features
 - [**Adaptation Plan**](docs/adaptation-plan.md) - Plan for adjusting to new requirements
 - [**Next.js Best Practices**](docs/nextjs-best-practices.md) - Technical guidelines for Next.js
@@ -22,7 +26,9 @@ All documentation is organized in the `docs/` directory:
 
 ## ✨ Project Status
 
-The authentication system, leveraging Supabase and `@supabase/ssr`, is now stable and robust. Previous issues related to refresh tokens and client/server state mismatches have been resolved. The codebase constants have been refactored for better clarity and type safety, following the guidelines in `docs/constants-guide.md`.
+The authentication system, leveraging Supabase and `@supabase/ssr`, is now stable and robust after a recent overhaul. Previous issues related to refresh tokens and client/server state mismatches have been resolved. The codebase constants have also been refactored for better clarity and type safety, following the guidelines in `docs/constants-guide.md`. Trip hooks have been restructured, and the trip creation/editing flows have been improved. A visual style guide for the upcoming mobile app is available.
+
+The project now includes extensive real-time collaboration features including presence awareness, cursor tracking, focus mode, and voting/polling systems. We've also added client-side activity timelines and notifications to enhance the collaborative experience.
 
 ## 🚀 Core Features
 
@@ -35,25 +41,34 @@ The authentication system, leveraging Supabase and `@supabase/ssr`, is now stabl
 
 ### Trip Planning & Collaboration
 
-- **Trip Creation**: Multi-step form with essential details, dates, travelers, vibe, budget, and privacy settings
-- **Itinerary Building**: Add places, notes, and links with drag-and-drop reordering
-- **Member Management**: Role-based permissions (admin, editor, contributor, viewer)
-- **Real-time Collaboration**: See who's editing, add comments, vote on items
+- **Trip Creation**: Multi-step form with essential details, dates, travelers, vibe, budget, and privacy settings (recently improved flow).
+- **Itinerary Building**: Add places, notes, and links with drag-and-drop reordering (basic structure).
+- **Member Management**: Role-based permissions (admin, editor, contributor, viewer), invite system.
+- **Real-time Collaboration**: See who's editing, cursor tracking, focus mode, comments, vote on items.
+- **Focus Mode**: Collaborative session mode for group decision making.
+- **Voting System**: Create polls and vote on trip decisions.
+- **Activity Timeline**: Track changes and updates to trip plans.
+- **Offline Support**: Service worker implementation for basic offline functionality.
 
 ### Technical Highlights
 
-- **Modern Stack**: Next.js App Router, Supabase, Tailwind CSS, Shadcn/ui
+- **Modern Stack**: Next.js 15, React 18, TypeScript, Tailwind CSS, Shadcn/ui
 - **Authentication**: Secure and stable login with email/password or Google Sign-In using `@supabase/ssr`.
-- **Database**: Robust schema with Row Level Security (RLS) policies
+- **Database**: Robust schema with Row Level Security (RLS) policies (documented in `docs/database_structure.md`).
 - **SEO Optimization**: Canonical URLs, meta tags, structured data
+- **Constants Management**: Centralized and typed constants following `docs/constants-guide.md`.
+- **Mobile Ready**: Design system defined in `docs/mobile-style-guide.md`.
+- **Error Handling**: Comprehensive error tracking with Sentry integration.
+- **Performance Monitoring**: Web Vitals tracking and custom metrics.
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS, Framer Motion
+- **Frontend**: Next.js 15, React 18, TypeScript, Tailwind CSS, Framer Motion
 - **UI Components**: Shadcn/ui (customized Radix UI components)
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
-- **State Management**: React Context, custom hooks
+- **State Management**: React Context, custom hooks (considering Zustand/Redux Toolkit for future complex needs)
 - **Deployment**: Vercel
+- **Monitoring**: Sentry for error tracking and performance monitoring
 
 ## 📅 Changelog
 
@@ -61,7 +76,7 @@ The authentication system, leveraging Supabase and `@supabase/ssr`, is now stabl
 
 | Date                                                                | Major Changes                                      |
 | ------------------------------------------------------------------- | -------------------------------------------------- |
-| [2025-05-01](#2025-05-01---constants-refactoring--docs-update)     | Constants Refactoring & Documentation Update     |
+| [2025-05-01](#2025-05-01---constants-refactoring--docs-update)      | Constants Refactoring & Documentation Update       |
 | [2025-04-30](#2025-04-30---trip-hooks-restructuring)                | Trip Hooks Restructuring                           |
 | [2025-04-29](#2025-04-29---authentication--trip-management)         | Authentication Overhaul, Trip Creation & Editing   |
 | [2025-04-27](#2025-04-27---core-refactoring--component-development) | Core Refactoring & UI Components                   |
@@ -142,22 +157,27 @@ The authentication system, leveraging Supabase and `@supabase/ssr`, is now stabl
 
 ### 🚀 Core Focus (Actively Developing/Refining):
 
-- ✅ **Authentication & Authorization**: Foundational system is robust
-- ✅ **Trip Creation & Editing**: Core backend/frontend flows implemented
-- 🚧 **Itinerary Building & Management**: Basic structure exists; improving UX/UI
-- 🚧 **Member Management**: Basic invite/access checks functional; needs UI refinement
-- 🚧 **Focused Collaboration**: Voting API started; needs UI integration
-- ✅ **Core Refactoring & Stability**: Ongoing improvements
-- ✅ **Foundational UI Components**: Key reusable components available
+- ✅ **Authentication & Authorization**: Foundational system is robust (post-overhaul).
+- ✅ **Trip Creation & Editing**: Core backend/frontend flows implemented and refined.
+- ✅ **Constants & Core Structure**: Refactored for clarity and type safety.
+- ✅ **Real-time Collaboration**: Implemented presence awareness, cursor tracking, section awareness.
+- ✅ **Focus Mode**: Added collaborative session mode for group decision making.
+- ✅ **Voting & Polling**: Implemented system for group decision making in trips.
+- ✅ **Activity Timeline & Notifications**: Added tracking and alerting for trip activities.
+- 🚧 **Itinerary Building & Management**: Basic structure exists; improving UX/UI.
+- 🚧 **Member Management**: Basic invite/access checks functional; needs UI refinement.
+- 📝 **Mobile App Development**: Style guide created; implementation ongoing.
+- ✅ **Error Monitoring**: Implemented Sentry for error tracking and performance monitoring.
+- ✅ **Offline Support**: Added service worker and offline capabilities.
 
 ### ⏳ Lower Priority / Deferred Features:
 
-- 📉 **Expense Tracking**: Native expense tracking planned for future
-- 📉 **Standalone Destination Pages**: Functional but not current focus
-- 📉 **Global Search**: Basic implementation started, but deferred
-- 📉 **Like/Save Functionality**: Components exist, but backend integration deferred
-- 📉 **Destination Reviews**: Frontend components built; backend planned
-- 📉 **Public Itinerary Templates**: Frontend page exists; data management deferred
+- **📉 Expense Tracking / Splitwise:** Splitwise integration removed. Native expense tracking/payment deeplinks tabled for now.
+- **📉 Standalone Destination Pages:** Functional but not a current focus (`/destinations/[city]`).
+- **📉 Global Search Functionality:** Basic backend/frontend started, but deferred.
+- **📉 Like/Save Functionality:** Components exist, but backend/integration deferred.
+- **📉 Destination Reviews:** Components exist, but backend/integration deferred.
+- **📉 Public Itinerary Templates:** Frontend page exists, but data source/management deferred.
 
 ## 🔮 Future Enhancements
 

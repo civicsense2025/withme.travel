@@ -47,13 +47,11 @@ export async function POST() {
     } = await supabase.auth.getSession();
 
     if (session) {
-      console.warn(
-        `[/api/auth/logout] Session still exists after logout for user ${userId}.`
-      );
-      
+      console.warn(`[/api/auth/logout] Session still exists after logout for user ${userId}.`);
+
       // Try signing out once more
       await supabase.auth.signOut();
-      
+
       return NextResponse.json(
         {
           success: true,

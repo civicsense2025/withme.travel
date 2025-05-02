@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useMemo } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { BudgetTab } from '@/components/budget-tab';

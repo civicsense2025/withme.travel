@@ -1,8 +1,8 @@
 // This file was automatically generated from the database schema
-// Generated at: 2025-05-01T07:53:06.661Z
+// Generated at: 2025-06-20T09:15:30.661Z
 
 // Database Tables - Constant names for all database tables
-export const DB_TABLES = {
+export const TABLES = {
   ACCESS_REQUESTS: 'access_requests',
   ALBUMS: 'albums',
   BUDGET_ITEMS: 'budget_items',
@@ -16,6 +16,9 @@ export const DB_TABLES = {
   DESTINATIONS: 'destinations',
   EXPENSES: 'expenses',
   FOCUS_SESSIONS: 'focus_sessions',
+  FORM_COLLABORATORS: 'form_collaborators',
+  FORM_TEMPLATES: 'form_templates',
+  FORMS: 'forms',
   IMAGE_METADATA: 'image_metadata',
   INVITATIONS: 'invitations',
   ITEM_POPULARITY_METRICS: 'item_popularity_metrics',
@@ -34,15 +37,26 @@ export const DB_TABLES = {
   PLACES: 'places',
   PREFERENCE_WEIGHTS: 'preference_weights',
   PROFILES: 'profiles',
+  QUESTION_BRANCHING: 'question_branching',
+  QUESTIONS: 'questions',
   REFERRALS: 'referrals',
+  RESPONSE_SESSIONS: 'response_sessions',
+  RESPONSES: 'responses',
+  SURVEY_RESPONSES: 'survey_responses',
   TAGS: 'tags',
   TEMPLATE_APPLICATIONS: 'template_applications',
+  TEMPLATE_TAGS: 'template_tags',
+  TEAM_INVITATIONS: 'team_invitations',
+  TEAM_MEMBERS: 'team_members',
+  TEAMS: 'teams',
   TRIP_COMMENT_LIKES: 'trip_comment_likes',
   TRIP_HISTORY: 'trip_history',
   TRIP_IMAGES: 'trip_images',
   TRIP_ITEM_COMMENTS: 'trip_item_comments',
+  TRIP_ITEM_VOTES: 'trip_item_votes',
   TRIP_MEMBERS: 'trip_members',
   TRIP_NOTES: 'trip_notes',
+  TRIP_SETTINGS: 'trip_settings',
   TRIP_TAGS: 'trip_tags',
   TRIP_TEMPLATE_USES: 'trip_template_uses',
   TRIP_VOTE_OPTIONS: 'trip_vote_options',
@@ -59,11 +73,10 @@ export const DB_TABLES = {
   USER_TRAVEL: 'user_travel',
   USERS: 'users',
   VALIDATION_LOGS: 'validation_logs',
-  VOTES: 'votes'
+  VOTES: 'votes',
 } as const;
 
-// Database Fields - Field names by table
-export const DB_FIELDS = {
+export const FIELDS = {
   COMMON: {
     ID: 'id',
     CREATED_AT: 'created_at',
@@ -79,7 +92,7 @@ export const DB_FIELDS = {
     APPROVED_AT: 'approved_at',
     MESSAGE: 'message',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   ALBUMS: {
     ID: 'id',
@@ -87,7 +100,7 @@ export const DB_FIELDS = {
     TITLE: 'title',
     DESCRIPTION: 'description',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   BUDGET_ITEMS: {
     ID: 'id',
@@ -100,7 +113,7 @@ export const DB_FIELDS = {
     DATE: 'date',
     SOURCE: 'source',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   COLLABORATIVE_NOTES: {
     ID: 'id',
@@ -112,7 +125,7 @@ export const DB_FIELDS = {
     LAST_EDITED_BY: 'last_edited_by',
     LAST_EDITED_AT: 'last_edited_at',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   COLLABORATIVE_SESSIONS: {
     ID: 'id',
@@ -121,7 +134,7 @@ export const DB_FIELDS = {
     DOCUMENT_ID: 'document_id',
     CONTENT: 'content',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   CONTENT_CUSTOMIZATIONS: {
     ID: 'id',
@@ -133,7 +146,7 @@ export const DB_FIELDS = {
     IS_PRIVATE: 'is_private',
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
-    METADATA: 'metadata'
+    METADATA: 'metadata',
   },
   CONTENT_QUALITY_METRICS: {
     ID: 'id',
@@ -146,7 +159,7 @@ export const DB_FIELDS = {
     LAST_USED_AT: 'last_used_at',
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
-    METADATA: 'metadata'
+    METADATA: 'metadata',
   },
   CONTENT_SHARING_HISTORY: {
     ID: 'id',
@@ -156,7 +169,7 @@ export const DB_FIELDS = {
     SHARED_BY: 'shared_by',
     SHARED_AT: 'shared_at',
     CUSTOMIZATIONS: 'customizations',
-    METADATA: 'metadata'
+    METADATA: 'metadata',
   },
   CONTENT_SLUGS: {
     ID: 'id',
@@ -165,7 +178,7 @@ export const DB_FIELDS = {
     SLUG: 'slug',
     IS_CANONICAL: 'is_canonical',
     CREATED_AT: 'created_at',
-    CREATED_BY: 'created_by'
+    CREATED_BY: 'created_by',
   },
   DESTINATION_TAGS: {
     ID: 'id',
@@ -176,7 +189,7 @@ export const DB_FIELDS = {
     CONFIDENCE_SCORE: 'confidence_score',
     VOTES_UP: 'votes_up',
     VOTES_DOWN: 'votes_down',
-    IS_VERIFIED: 'is_verified'
+    IS_VERIFIED: 'is_verified',
   },
   DESTINATIONS: {
     ID: 'id',
@@ -222,7 +235,7 @@ export const DB_FIELDS = {
     LONGITUDE: 'longitude',
     AVG_DAYS: 'avg_days',
     ADDRESS: 'address',
-    MAPBOX_ID: 'mapbox_id'
+    MAPBOX_ID: 'mapbox_id',
   },
   EXPENSES: {
     ID: 'id',
@@ -235,7 +248,7 @@ export const DB_FIELDS = {
     CREATED_AT: 'created_at',
     CURRENCY: 'currency',
     SOURCE: 'source',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   FOCUS_SESSIONS: {
     ID: 'id',
@@ -247,7 +260,7 @@ export const DB_FIELDS = {
     ACTIVE: 'active',
     MESSAGE: 'message',
     CREATED_AT: 'created_at',
-    EXPIRES_AT: 'expires_at'
+    EXPIRES_AT: 'expires_at',
   },
   IMAGE_METADATA: {
     ID: 'id',
@@ -267,7 +280,7 @@ export const DB_FIELDS = {
     FOCAL_POINT_Y: 'focal_point_y',
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
-    ATTRIBUTION_HTML: 'attribution_html'
+    ATTRIBUTION_HTML: 'attribution_html',
   },
   INVITATIONS: {
     ID: 'id',
@@ -277,7 +290,7 @@ export const DB_FIELDS = {
     INVITATION_STATUS: 'invitation_status',
     EMAIL: 'email',
     TOKEN: 'token',
-    EXPIRES_AT: 'expires_at'
+    EXPIRES_AT: 'expires_at',
   },
   ITEM_POPULARITY_METRICS: {
     ID: 'id',
@@ -292,7 +305,7 @@ export const DB_FIELDS = {
     LIKES_LAST_7D: 'likes_last_7d',
     LIKES_LAST_30D: 'likes_last_30d',
     TRENDING_SCORE: 'trending_score',
-    LAST_UPDATED: 'last_updated'
+    LAST_UPDATED: 'last_updated',
   },
   ITINERARY_ITEM_VOTES: {
     ID: 'id',
@@ -300,7 +313,7 @@ export const DB_FIELDS = {
     USER_ID: 'user_id',
     VOTE: 'vote',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   ITINERARY_ITEMS: {
     ID: 'id',
@@ -349,7 +362,7 @@ export const DB_FIELDS = {
     VOTES: 'votes',
     LAST_MODIFIED_BY: 'last_modified_by',
     IS_FAVORITE: 'is_favorite',
-    DAY: 'day'
+    DAY: 'day',
   },
   ITINERARY_SECTIONS: {
     ID: 'id',
@@ -359,7 +372,7 @@ export const DB_FIELDS = {
     TITLE: 'title',
     POSITION: 'position',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   ITINERARY_TEMPLATE_ITEMS: {
     ID: 'id',
@@ -373,11 +386,11 @@ export const DB_FIELDS = {
     LOCATION: 'location',
     PLACE_ID: 'place_id',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   ITINERARY_TEMPLATE_SECTIONS: {
     ID: 'id',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   ITINERARY_TEMPLATES: {
     ID: 'id',
@@ -403,7 +416,7 @@ export const DB_FIELDS = {
     VERSION: 'version',
     COPIED_COUNT: 'copied_count',
     LAST_COPIED_AT: 'last_copied_at',
-    METADATA: 'metadata'
+    METADATA: 'metadata',
   },
   LIKES: {
     ID: 'id',
@@ -411,19 +424,19 @@ export const DB_FIELDS = {
     ITEM_ID: 'item_id',
     ITEM_TYPE: 'item_type',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   LOCATIONS: {
     ID: 'id',
     NAME: 'name',
     PARENT_ID: 'parent_id',
     TYPE: 'type',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   NOTE_TAGS: {
     NOTE_ID: 'note_id',
     TAG_ID: 'tag_id',
-    ASSIGNED_AT: 'assigned_at'
+    ASSIGNED_AT: 'assigned_at',
   },
   NOTIFICATION_PREFERENCES: {
     ID: 'id',
@@ -438,7 +451,7 @@ export const DB_FIELDS = {
     VOTES: 'votes',
     FOCUS_EVENTS: 'focus_events',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   NOTIFICATIONS: {
     ID: 'id',
@@ -454,7 +467,7 @@ export const DB_FIELDS = {
     REFERENCE_ID: 'reference_id',
     REFERENCE_TYPE: 'reference_type',
     CREATED_AT: 'created_at',
-    EXPIRES_AT: 'expires_at'
+    EXPIRES_AT: 'expires_at',
   },
   PERMISSION_REQUESTS: {
     ID: 'id',
@@ -463,7 +476,7 @@ export const DB_FIELDS = {
     STATUS: 'status',
     MESSAGE: 'message',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   PLACES: {
     ID: 'id',
@@ -485,7 +498,7 @@ export const DB_FIELDS = {
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
     SOURCE: 'source',
-    SOURCE_ID: 'source_id'
+    SOURCE_ID: 'source_id',
   },
   PREFERENCE_WEIGHTS: {
     ID: 'id',
@@ -493,7 +506,7 @@ export const DB_FIELDS = {
     SUBCATEGORY: 'subcategory',
     WEIGHT: 'weight',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   PROFILES: {
     ID: 'id',
@@ -514,7 +527,40 @@ export const DB_FIELDS = {
     TRAVEL_SQUAD: 'travel_squad',
     ONBOARDING_COMPLETED: 'onboarding_completed',
     ONBOARDING_COMPLETED_AT: 'onboarding_completed_at',
-    ONBOARDING_STEP: 'onboarding_step'
+    ONBOARDING_STEP: 'onboarding_step',
+  },
+  QUESTIONS: {
+    ID: 'id',
+    FORM_ID: 'form_id',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    PLACEHOLDER: 'placeholder',
+    IS_REQUIRED: 'is_required',
+    QUESTION_TYPE: 'question_type',
+    POSITION: 'position',
+    OPTIONS: 'options',
+    VALIDATION_RULES: 'validation_rules',
+    CONDITIONAL_LOGIC: 'conditional_logic',
+    DEFAULT_VALUE: 'default_value',
+    MAX_CHARACTER_COUNT: 'max_character_count',
+    SHOW_CHARACTER_COUNT: 'show_character_count',
+    RATING_SCALE: 'rating_scale',
+    RATING_TYPE: 'rating_type',
+    ALLOWED_FILE_TYPES: 'allowed_file_types',
+    MAX_FILE_SIZE: 'max_file_size',
+    MAX_FILES: 'max_files',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+  QUESTION_BRANCHING: {
+    ID: 'id',
+    FORM_ID: 'form_id',
+    SOURCE_QUESTION_ID: 'source_question_id',
+    TARGET_QUESTION_ID: 'target_question_id',
+    CONDITION_TYPE: 'condition_type',
+    CONDITION_VALUE: 'condition_value',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
   },
   REFERRALS: {
     ID: 'id',
@@ -524,7 +570,7 @@ export const DB_FIELDS = {
     TRIP_ID: 'trip_id',
     CONVERTED: 'converted',
     CREATED_AT: 'created_at',
-    CONVERTED_AT: 'converted_at'
+    CONVERTED_AT: 'converted_at',
   },
   TAGS: {
     ID: 'id',
@@ -538,7 +584,7 @@ export const DB_FIELDS = {
     CREATED_BY: 'created_by',
     IS_VERIFIED: 'is_verified',
     USE_COUNT: 'use_count',
-    METADATA: 'metadata'
+    METADATA: 'metadata',
   },
   TEMPLATE_APPLICATIONS: {
     ID: 'id',
@@ -550,14 +596,14 @@ export const DB_FIELDS = {
     SUCCESS_RATE: 'success_rate',
     OPTIMIZATION_LEVEL: 'optimization_level',
     FALLBACKS_USED: 'fallbacks_used',
-    APPLICATION_METADATA: 'application_metadata'
+    APPLICATION_METADATA: 'application_metadata',
   },
   TRIP_COMMENT_LIKES: {
     ID: 'id',
     TRIP_ID: 'trip_id',
     COMMENT_ID: 'comment_id',
     USER_ID: 'user_id',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   TRIP_HISTORY: {
     ID: 'id',
@@ -565,7 +611,7 @@ export const DB_FIELDS = {
     CREATED_AT: 'created_at',
     USER_ID: 'user_id',
     ACTION_TYPE: 'action_type',
-    DETAILS: 'details'
+    DETAILS: 'details',
   },
   TRIP_IMAGES: {
     ID: 'id',
@@ -579,7 +625,7 @@ export const DB_FIELDS = {
     WIDTH: 'width',
     HEIGHT: 'height',
     DESCRIPTION: 'description',
-    ALBUM_ID: 'album_id'
+    ALBUM_ID: 'album_id',
   },
   TRIP_ITEM_COMMENTS: {
     ID: 'id',
@@ -588,7 +634,7 @@ export const DB_FIELDS = {
     USER_ID: 'user_id',
     CONTENT: 'content',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   TRIP_MEMBERS: {
     ID: 'id',
@@ -600,7 +646,7 @@ export const DB_FIELDS = {
     JOINED_AT: 'joined_at',
     EXTERNAL_EMAIL: 'external_email',
     NOTIFICATION_PREFERENCES: 'notification_preferences',
-    LAST_VIEWED_AT: 'last_viewed_at'
+    LAST_VIEWED_AT: 'last_viewed_at',
   },
   TRIP_NOTES: {
     TRIP_ID: 'trip_id',
@@ -610,12 +656,12 @@ export const DB_FIELDS = {
     USER_ID: 'user_id',
     ALBUM_ID: 'album_id',
     ID: 'id',
-    TITLE: 'title'
+    TITLE: 'title',
   },
   TRIP_TAGS: {
     TRIP_ID: 'trip_id',
     TAG_ID: 'tag_id',
-    ASSIGNED_AT: 'assigned_at'
+    ASSIGNED_AT: 'assigned_at',
   },
   TRIP_TEMPLATE_USES: {
     ID: 'id',
@@ -624,7 +670,7 @@ export const DB_FIELDS = {
     APPLIED_AT: 'applied_at',
     APPLIED_BY: 'applied_by',
     VERSION_USED: 'version_used',
-    MODIFICATIONS: 'modifications'
+    MODIFICATIONS: 'modifications',
   },
   TRIP_VOTE_OPTIONS: {
     ID: 'id',
@@ -632,7 +678,7 @@ export const DB_FIELDS = {
     TITLE: 'title',
     DESCRIPTION: 'description',
     IMAGE_URL: 'image_url',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   TRIP_VOTE_POLLS: {
     ID: 'id',
@@ -643,7 +689,7 @@ export const DB_FIELDS = {
     CREATED_BY: 'created_by',
     EXPIRES_AT: 'expires_at',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   TRIP_VOTES: {
     ID: 'id',
@@ -651,7 +697,7 @@ export const DB_FIELDS = {
     POLL_ID: 'poll_id',
     OPTION_ID: 'option_id',
     USER_ID: 'user_id',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   TRIPS: {
     ID: 'id',
@@ -688,7 +734,7 @@ export const DB_FIELDS = {
     PLAYLIST_URL: 'playlist_url',
     IS_ARCHIVED: 'is_archived',
     LAST_ACCESSED_AT: 'last_accessed_at',
-    COLOR_SCHEME: 'color_scheme'
+    COLOR_SCHEME: 'color_scheme',
   },
   USER_ACTIVITY_HISTORY: {
     ID: 'id',
@@ -697,14 +743,14 @@ export const DB_FIELDS = {
     INTERACTION_TYPE: 'interaction_type',
     INTERACTION_DATA: 'interaction_data',
     CREATED_AT: 'created_at',
-    METADATA: 'metadata'
+    METADATA: 'metadata',
   },
   USER_INTERACTIONS: {
     ID: 'id',
     USER_ID: 'user_id',
     DESTINATION_ID: 'destination_id',
     INTERACTION_TYPE: 'interaction_type',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   USER_INTERESTS: {
     ID: 'id',
@@ -712,7 +758,7 @@ export const DB_FIELDS = {
     TAG_ID: 'tag_id',
     STRENGTH: 'strength',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   USER_LOGIN_HISTORY: {
     ID: 'id',
@@ -722,7 +768,7 @@ export const DB_FIELDS = {
     USER_AGENT: 'user_agent',
     SUCCESS: 'success',
     METHOD: 'method',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   USER_PREFERENCES: {
     ID: 'id',
@@ -736,7 +782,7 @@ export const DB_FIELDS = {
     DIETARY_RESTRICTIONS: 'dietary_restrictions',
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
-    METADATA: 'metadata'
+    METADATA: 'metadata',
   },
   USER_PRESENCE: {
     ID: 'id',
@@ -744,7 +790,7 @@ export const DB_FIELDS = {
     TRIP_ID: 'trip_id',
     DOCUMENT_ID: 'document_id',
     STATUS: 'status',
-    LAST_ACTIVE: 'last_active'
+    LAST_ACTIVE: 'last_active',
   },
   USER_SUGGESTED_TAGS: {
     ID: 'id',
@@ -756,12 +802,12 @@ export const DB_FIELDS = {
     STATUS: 'status',
     ADMIN_NOTES: 'admin_notes',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   USER_TRAVEL: {
     USER_ID: 'user_id',
     DESTINATION_ID: 'destination_id',
-    VISITED_AT: 'visited_at'
+    VISITED_AT: 'visited_at',
   },
   USERS: {
     ID: 'id',
@@ -776,7 +822,7 @@ export const DB_FIELDS = {
     UPDATED_AT: 'updated_at',
     USERNAME: 'username',
     FULL_NAME: 'full_name',
-    LAST_SIGN_IN_AT: 'last_sign_in_at'
+    LAST_SIGN_IN_AT: 'last_sign_in_at',
   },
   VALIDATION_LOGS: {
     ID: 'id',
@@ -785,30 +831,70 @@ export const DB_FIELDS = {
     IS_VALID: 'is_valid',
     VALIDATION_ERRORS: 'validation_errors',
     VALIDATED_AT: 'validated_at',
-    VALIDATED_BY: 'validated_by'
+    VALIDATED_BY: 'validated_by',
   },
   VOTES: {
     ID: 'id',
     ITINERARY_ITEM_ID: 'itinerary_item_id',
     USER_ID: 'user_id',
     VOTE_TYPE: 'vote_type',
-    CREATED_AT: 'created_at'
-  }
+    CREATED_AT: 'created_at',
+  },
+  TEMPLATE_TAGS: {
+    ID: 'id',
+    TEMPLATE_ID: 'template_id',
+    TAG_ID: 'tag_id',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+  TRIP_SETTINGS: {
+    ID: 'id',
+    TRIP_ID: 'trip_id',
+    SETTING_TYPE: 'setting_type',
+    VALUE: 'value',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+  TEAM_INVITATIONS: {
+    ID: 'id',
+    TEAM_ID: 'team_id',
+    INVITED_BY: 'invited_by',
+    INVITATION_STATUS: 'invitation_status',
+    EMAIL: 'email',
+    TOKEN: 'token',
+    EXPIRES_AT: 'expires_at',
+  },
+  TEAM_MEMBERS: {
+    ID: 'id',
+    TEAM_ID: 'team_id',
+    USER_ID: 'user_id',
+    ROLE: 'role',
+    CREATED_AT: 'created_at',
+    INVITED_BY: 'invited_by',
+    JOINED_AT: 'joined_at',
+  },
+  TEAMS: {
+    ID: 'id',
+    NAME: 'name',
+    DESCRIPTION: 'description',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
 } as const;
 
 // Database Enums - Enum values used in the database
-export const DB_ENUMS = {
+export const ENUMS = {
   TRIP_ROLES: {
     ADMIN: 'admin',
     EDITOR: 'editor',
     VIEWER: 'viewer',
-    CONTRIBUTOR: 'contributor'
+    CONTRIBUTOR: 'contributor',
   },
   ITEM_STATUS: {
     SUGGESTED: 'suggested',
     CONFIRMED: 'confirmed',
     CANCELED: 'canceled',
-    FLEXIBLE: 'flexible'
+    FLEXIBLE: 'flexible',
   },
   BUDGET_CATEGORY: {
     ACCOMMODATION: 'accommodation',
@@ -816,32 +902,62 @@ export const DB_ENUMS = {
     FOOD: 'food',
     ACTIVITIES: 'activities',
     SHOPPING: 'shopping',
-    OTHER: 'other'
+    OTHER: 'other',
   },
   CONTENT_TYPE: {
     TRIP: 'trip',
     ITINERARY_ITEM: 'itinerary_item',
     DESTINATION: 'destination',
     COLLECTION: 'collection',
-    TEMPLATE: 'template'
+    TEMPLATE: 'template',
+    FORM: 'form',
   },
-  IMAGE_TYPE: {
+  QUESTION_TYPE: {
+    SHORT_TEXT: 'short_text',
+    LONG_TEXT: 'long_text',
+    SINGLE_CHOICE: 'single_choice',
+    MULTIPLE_CHOICE: 'multiple_choice',
+    YES_NO: 'yes_no',
+    RATING: 'rating',
+    DATE: 'date',
+    FILE_UPLOAD: 'file_upload',
+    LOCATION: 'location',
+    NUMBER: 'number',
+    EMAIL: 'email',
+    PHONE: 'phone',
+    WEBSITE: 'website',
+    STATEMENT: 'statement',
+    WELCOME: 'welcome',
+    THANK_YOU: 'thank_you',
+  },
+  FORM_STATUS: {
+    DRAFT: 'draft',
+    PUBLISHED: 'published',
+    CLOSED: 'closed',
+    ARCHIVED: 'archived',
+  },
+  FORM_VISIBILITY: {
+    PRIVATE: 'private',
+    SHARED_WITH_LINK: 'shared_with_link',
+    PUBLIC: 'public',
+  },
+  ENTITY_TYPE: {
     DESTINATION: 'destination',
     TRIP_COVER: 'trip_cover',
     USER_AVATAR: 'user_avatar',
-    TEMPLATE_COVER: 'template_cover'
+    TEMPLATE_COVER: 'template_cover',
   },
   INTERACTION_TYPE: {
     LIKE: 'like',
     VISIT: 'visit',
     BOOKMARK: 'bookmark',
-    TAG: 'tag'
+    TAG: 'tag',
   },
   INVITATION_STATUS: {
     PENDING: 'pending',
     ACCEPTED: 'accepted',
     DECLINED: 'declined',
-    EXPIRED: 'expired'
+    EXPIRED: 'expired',
   },
   ITINERARY_CATEGORY: {
     FLIGHT: 'flight',
@@ -852,12 +968,12 @@ export const DB_ENUMS = {
     TRANSPORTATION: 'transportation',
     ACTIVITY: 'activity',
     CUSTOM: 'custom',
-    OTHER: 'other'
+    OTHER: 'other',
   },
   ITINERARY_ITEM_STATUS: {
     PENDING: 'pending',
     APPROVED: 'approved',
-    REJECTED: 'rejected'
+    REJECTED: 'rejected',
   },
   PLACE_CATEGORY: {
     ATTRACTION: 'attraction',
@@ -867,24 +983,24 @@ export const DB_ENUMS = {
     LANDMARK: 'landmark',
     SHOPPING: 'shopping',
     TRANSPORT: 'transport',
-    OTHER: 'other'
+    OTHER: 'other',
   },
   PRIVACY_SETTING: {
     PRIVATE: 'private',
     SHARED_WITH_LINK: 'shared_with_link',
-    PUBLIC: 'public'
+    PUBLIC: 'public',
   },
   TAG_STATUS: {
     PENDING: 'pending',
     APPROVED: 'approved',
-    REJECTED: 'rejected'
+    REJECTED: 'rejected',
   },
   TRAVEL_PACE: {
     VERY_SLOW: 'very_slow',
     SLOW: 'slow',
     MODERATE: 'moderate',
     FAST: 'fast',
-    VERY_FAST: 'very_fast'
+    VERY_FAST: 'very_fast',
   },
   TRAVEL_PERSONALITY_TYPE: {
     PLANNER: 'planner',
@@ -892,7 +1008,7 @@ export const DB_ENUMS = {
     FOODIE: 'foodie',
     SIGHTSEER: 'sightseer',
     RELAXER: 'relaxer',
-    CULTURE: 'culture'
+    CULTURE: 'culture',
   },
   TRAVEL_SQUAD_TYPE: {
     FRIENDS: 'friends',
@@ -900,7 +1016,7 @@ export const DB_ENUMS = {
     PARTNER: 'partner',
     SOLO: 'solo',
     COWORKERS: 'coworkers',
-    MIXED: 'mixed'
+    MIXED: 'mixed',
   },
   TRAVEL_STYLE: {
     ADVENTUROUS: 'adventurous',
@@ -912,7 +1028,7 @@ export const DB_ENUMS = {
     SOLO: 'solo',
     NIGHTLIFE: 'nightlife',
     NATURE: 'nature',
-    FOOD_FOCUSED: 'food_focused'
+    FOOD_FOCUSED: 'food_focused',
   },
   TRIP_ACTION_TYPE: {
     TRIP_CREATED: 'TRIP_CREATED',
@@ -939,19 +1055,19 @@ export const DB_ENUMS = {
     COMMENT_UPDATED: 'COMMENT_UPDATED',
     COMMENT_DELETED: 'COMMENT_DELETED',
     VOTE_CAST: 'VOTE_CAST',
-    FOCUS_INITIATED: 'FOCUS_INITIATED'
+    FOCUS_INITIATED: 'FOCUS_INITIATED',
   },
   TRIP_PRIVACY_SETTING: {
     PRIVATE: 'private',
     SHARED_WITH_LINK: 'shared_with_link',
-    PUBLIC: 'public'
+    PUBLIC: 'public',
   },
   TRIP_STATUS: {
     PLANNING: 'planning',
     UPCOMING: 'upcoming',
     IN_PROGRESS: 'in_progress',
     COMPLETED: 'completed',
-    CANCELLED: 'cancelled'
+    CANCELLED: 'cancelled',
   },
   TRIP_TYPE: {
     LEISURE: 'leisure',
@@ -959,204 +1075,256 @@ export const DB_ENUMS = {
     FAMILY: 'family',
     SOLO: 'solo',
     GROUP: 'group',
-    OTHER: 'other'
+    OTHER: 'other',
   },
   URL_FORMAT: {
     CANONICAL: 'canonical',
     SHORT: 'short',
     SOCIAL: 'social',
-    TRACKING: 'tracking'
+    TRACKING: 'tracking',
   },
   VOTE_TYPE: {
     UP: 'up',
-    DOWN: 'down'
-  }
+    DOWN: 'down',
+  },
 } as const;
 
-// Export DB_ENUMS as ENUMS for newer code
-export { DB_ENUMS as ENUMS };
-
-// Type exports
-export type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
-export type ItemStatus = 'suggested' | 'confirmed' | 'canceled' | 'flexible';
-
 // Foreign Key Relationships
-export const DB_RELATIONSHIPS = {
-  COLLABORATIVE_NOTES: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  INVITATIONS: [
-    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  DESTINATION_TAGS: [
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' }
-  ],
+export const RELATIONSHIPS = {
   ACCESS_REQUESTS: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+    { column: 'approved_by', referencesTable: 'users', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  ALBUMS: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
+  COLLABORATIVE_NOTES: [
+    { column: 'created_by', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'last_edited_by', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  COLLABORATIVE_SESSIONS: [{ column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }],
+  FORM_COLLABORATORS: [
+    { column: 'form_id', referencesTable: 'forms', referencesColumn: 'id' },
+    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'users', referencesColumn: 'id' },
+  ],
+  FORMS: [{ column: 'created_by', referencesTable: 'users', referencesColumn: 'id' }],
+  INTERACTIONS: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
+  ITINERARY_ITEM_VOTES: [
+    { column: 'itinerary_item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
   ],
   ITINERARY_ITEMS: [
-    { column: 'created_by', referencesTable: 'profiles', referencesColumn: 'id' },
     { column: 'place_id', referencesTable: 'places', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'created_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'original_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
     { column: 'section_id', referencesTable: 'itinerary_sections', referencesColumn: 'id' },
-    { column: 'source_trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  NOTE_TAGS: [
-    { column: 'note_id', referencesTable: 'trip_notes', referencesColumn: 'id' },
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' }
-  ],
-  REFERRALS: [
-    { column: 'referred_id', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'referrer_id', referencesTable: 'users', referencesColumn: 'id' }
-  ],
-  TRIP_HISTORY: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  TRIP_IMAGES: [
-    { column: 'album_id', referencesTable: 'albums', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  PERMISSION_REQUESTS: [
-    { column: 'user_id', referencesTable: 'users', referencesColumn: 'id' }
-  ],
-  USER_SUGGESTED_TAGS: [
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' }
-  ],
-  USER_INTERESTS: [
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' }
-  ],
-  VOTES: [
-    { column: 'itinerary_item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'users', referencesColumn: 'id' }
-  ],
-  USER_PRESENCE: [
-    { column: 'user_id', referencesTable: 'users', referencesColumn: 'id' }
-  ],
-  USER_INTERACTIONS: [
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' }
-  ],
-  TRIP_TEMPLATE_USES: [
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  TRIP_NOTES: [
-    { column: 'album_id', referencesTable: 'albums', referencesColumn: 'id' },
+    { column: 'suggested_by', referencesTable: 'profiles', referencesColumn: 'id' },
     { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'updated_by', referencesTable: 'profiles', referencesColumn: 'id' }
   ],
-  ITINERARY_SECTIONS: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
+  ITINERARY_SECTIONS: [{ column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }],
   ITINERARY_TEMPLATE_ITEMS: [
     { column: 'place_id', referencesTable: 'places', referencesColumn: 'id' },
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' }
-  ],
-  VALIDATION_LOGS: [
     { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
   ],
-  TEMPLATE_APPLICATIONS: [
+  ITINERARY_TEMPLATE_SECTIONS: [
     { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  CONTENT_QUALITY_METRICS: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  CONTENT_CUSTOMIZATIONS: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' }
-  ],
-  CONTENT_SHARING_HISTORY: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-    { column: 'source_trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'target_trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  ITEM_POPULARITY_METRICS: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' }
-  ],
-  TRIP_VOTE_POLLS: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  TRIP_VOTE_OPTIONS: [
-    { column: 'poll_id', referencesTable: 'trip_vote_polls', referencesColumn: 'id' }
-  ],
-  TRIP_VOTES: [
-    { column: 'option_id', referencesTable: 'trip_vote_options', referencesColumn: 'id' },
-    { column: 'poll_id', referencesTable: 'trip_vote_polls', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
-  ],
-  TRIP_MEMBERS: [
-    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }
-  ],
-  BUDGET_ITEMS: [
-    { column: 'paid_by', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
   ],
   ITINERARY_TEMPLATES: [
     { column: 'created_by', referencesTable: 'users', referencesColumn: 'id' },
     { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'source_trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+    { column: 'source_trip_id', referencesTable: 'trips', referencesColumn: 'id' },
   ],
-  EXPENSES: [
-    { column: 'paid_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+  ITEM_POPULARITY_METRICS: [
+    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
   ],
-  ITINERARY_ITEM_VOTES: [
-    { column: 'itinerary_item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' }
+  LIKES: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
+  LOCATIONS: [{ column: 'parent_id', referencesTable: 'locations', referencesColumn: 'id' }],
+  NOTE_TAGS: [
+    { column: 'note_id', referencesTable: 'trip_notes', referencesColumn: 'id' },
+    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
   ],
-  LOCATIONS: [
-    { column: 'parent_id', referencesTable: 'locations', referencesColumn: 'id' }
+  NOTIFICATION_PREFERENCES: [
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  NOTIFICATIONS: [
+    { column: 'recipient_id', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'sender_id', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  PERMISSION_REQUESTS: [
+    { column: 'requestor_id', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
   ],
   PLACES: [
     { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'suggested_by', referencesTable: 'profiles', referencesColumn: 'id' }
+    { column: 'suggested_by', referencesTable: 'profiles', referencesColumn: 'id' },
   ],
-  TRIP_TAGS: [
+  PREFERENCE_WEIGHTS: [
+    { column: 'preference_id', referencesTable: 'user_preferences', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  PROFILES: [{ column: 'id', referencesTable: 'auth.users', referencesColumn: 'id' }],
+  QUESTION_BRANCHING: [
+    { column: 'question_id', referencesTable: 'questions', referencesColumn: 'id' },
+    { column: 'target_question_id', referencesTable: 'questions', referencesColumn: 'id' },
+  ],
+  QUESTIONS: [{ column: 'form_id', referencesTable: 'forms', referencesColumn: 'id' }],
+  REFERRALS: [
+    { column: 'referrer_id', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'referred_id', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  RESPONSES: [
+    { column: 'question_id', referencesTable: 'questions', referencesColumn: 'id' },
+    { column: 'session_id', referencesTable: 'response_sessions', referencesColumn: 'id' },
+  ],
+  RESPONSE_SESSIONS: [
+    { column: 'form_id', referencesTable: 'forms', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  SURVEY_RESPONSES: [
+    { column: 'question_id', referencesTable: 'questions', referencesColumn: 'id' },
+    { column: 'session_id', referencesTable: 'response_sessions', referencesColumn: 'id' },
+  ],
+  TEMPLATE_APPLICATIONS: [
+    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  TEMPLATE_TAGS: [
     { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
   ],
-  USER_TRAVEL: [
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }
+  TEAM_INVITATIONS: [
+    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
+    { column: 'team_id', referencesTable: 'teams', referencesColumn: 'id' },
   ],
-  USER_ACTIVITY_HISTORY: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' }
-  ],
-  TRIP_ITEM_COMMENTS: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+  TEAM_MEMBERS: [
+    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
+    { column: 'team_id', referencesTable: 'teams', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'users', referencesColumn: 'id' },
   ],
   TRIP_COMMENT_LIKES: [
     { column: 'comment_id', referencesTable: 'trip_item_comments', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
   ],
-  NOTIFICATIONS: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+  TRIP_ITEM_COMMENTS: [
+    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
   ],
-  FOCUS_SESSIONS: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }
+  TRIP_ITEM_VOTES: [
+    { column: 'itinerary_item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  TRIP_MEMBERS: [
+    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  TRIP_NOTES: [
+    { column: 'album_id', referencesTable: 'albums', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'updated_by', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  TRIP_SETTINGS: [{ column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }],
+  TRIP_TAGS: [
+    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  TRIP_TEMPLATE_USES: [
+    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  TRIP_VOTE_OPTIONS: [
+    { column: 'poll_id', referencesTable: 'trip_vote_polls', referencesColumn: 'id' },
+  ],
+  TRIP_VOTE_POLLS: [
+    { column: 'created_by', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  TRIP_VOTES: [
+    { column: 'option_id', referencesTable: 'trip_vote_options', referencesColumn: 'id' },
+    { column: 'poll_id', referencesTable: 'trip_vote_polls', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
   ],
   TRIPS: [
-    { column: 'cover_image_url', referencesTable: 'trips', referencesColumn: 'cover_image_url' },
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' }
+    { column: 'created_by', referencesTable: 'profiles', referencesColumn: 'id' },
+    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
+    { column: 'updated_by', referencesTable: 'profiles', referencesColumn: 'id' },
   ],
-  PROFILES: [
-    { column: 'home_location_id', referencesTable: 'locations', referencesColumn: 'id' }
-  ]
+  USER_ACTIVITY_HISTORY: [
+    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  USER_INTERACTIONS: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
+  USER_INTERESTS: [
+    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  USER_LOGIN_HISTORY: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
+  USER_PREFERENCES: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
+  USER_PRESENCE: [
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  USER_SUGGESTED_TAGS: [
+    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  USER_TRAVEL: [
+    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
+    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
+  ],
+  VALIDATION_LOGS: [
+    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
+    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
+  ],
+  VOTES: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
 } as const;
 
+// Type exports
+export type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
+export type ItemStatus = 'suggested' | 'confirmed' | 'canceled' | 'flexible';
+export type QuestionType =
+  | 'short_text'
+  | 'long_text'
+  | 'single_choice'
+  | 'multiple_choice'
+  | 'yes_no'
+  | 'rating'
+  | 'date'
+  | 'file_upload'
+  | 'location'
+  | 'number'
+  | 'email'
+  | 'phone'
+  | 'website'
+  | 'statement'
+  | 'welcome'
+  | 'thank_you';
+export type FormStatus = 'draft' | 'published' | 'closed' | 'archived';
+export type FormVisibility = 'private' | 'shared_with_link' | 'public';
+
 // Type helpers
-export type TableNames = (typeof DB_TABLES)[keyof typeof DB_TABLES];
-export type TableFields<T extends keyof typeof DB_FIELDS> = (typeof DB_FIELDS)[T][keyof (typeof DB_FIELDS)[T]];
+export type TableNames = (typeof TABLES)[keyof typeof TABLES];
+export type TableFields<T extends keyof typeof FIELDS> =
+  (typeof FIELDS)[T][keyof (typeof FIELDS)[T]];
 
-// Re-export with common aliases
-export const TABLES = DB_TABLES;
-export const FIELDS = DB_FIELDS;
+// ******************************************************************
+// DEPRECATED: DO NOT USE DB_* prefixed constants in new code. Use direct exports (TABLES, FIELDS, ENUMS, RELATIONSHIPS) instead.
+// These are kept for backward compatibility only.
+// ******************************************************************
 
-export const RELATIONSHIPS = DB_RELATIONSHIPS;
+/** @deprecated Use TABLES instead */
+export const DB_TABLES = TABLES;
+
+/** @deprecated Use FIELDS instead */
+export const DB_FIELDS = FIELDS;
+
+/** @deprecated Use ENUMS instead */
+export const DB_ENUMS = ENUMS;
+
+/** @deprecated Use RELATIONSHIPS instead */
+export const DB_RELATIONSHIPS = RELATIONSHIPS;

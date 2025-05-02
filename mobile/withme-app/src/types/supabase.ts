@@ -1,90 +1,89 @@
+/* eslint-disable prettier/prettier */
+// Type definitions for common Supabase tables used in the app
 // Basic types for Supabase database tables aligned with the web application
 // For table and column names, see: src/constants/database.ts
 
 export interface Profile {
-  id: string;
+  id: string; // Corresponds to auth.users.id
+  created_at: string;
+  updated_at: string | null;
   name: string | null;
   email: string | null;
   avatar_url: string | null;
   bio: string | null;
-  is_admin: boolean;
+  is_admin: boolean | null;
   location: string | null;
   website: string | null;
-  created_at: string;
-  updated_at: string;
+  // Add other profile fields as needed
 }
 
 export interface Trip {
   id: string;
-  created_by: string;
+  created_at: string;
+  updated_at: string | null;
+  created_by: string; // foreign key to profiles.id
   name: string;
   description: string | null;
   trip_emoji: string | null;
   start_date: string | null;
   end_date: string | null;
   duration_days: number | null;
-  destination_id: string | null;
-  status: 'planning' | 'upcoming' | 'in_progress' | 'completed' | 'cancelled'; // See ENUM_VALUES.TRIP_STATUS
+  destination_id: string | null; // foreign key to destinations.id
+  status: string; // e.g., 'planning', 'upcoming', 'completed'
   is_public: boolean;
   slug: string | null;
   public_slug: string | null;
-  privacy_setting: 'private' | 'shared_with_link' | 'public' | null; // See ENUM_VALUES.PRIVACY_SETTING
+  privacy_setting: string; // e.g., 'private', 'shared_with_link', 'public'
   likes_count: number;
   view_count: number;
-  created_at: string;
-  updated_at: string;
+  // Adding these fields to support the UI
+  image_url: string | null;
+  destination_city: string | null;
+  // Add other trip fields as needed
 }
 
-export interface TripMember {
+export interface ItineraryItem {
+  id: string;
   trip_id: string;
-  user_id: string;
-  role: 'admin' | 'editor' | 'viewer' | 'contributor'; // See ENUM_VALUES.TRIP_MEMBER_ROLE
-  invited_by: string | null;
-  joined_at: string | null;
+  title: string;
+  description?: string;
+  day_number?: number;
+  start_time?: string;
+  end_time?: string;
+  category?: string;
+  location_name?: string;
+  latitude?: number;
+  longitude?: number;
+  status?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  created_by?: string;
+  order_in_day?: number;
+}
+
+// New Type Definition for Itinerary Templates
+export interface ItineraryTemplate {
+  id: string;
+  created_at?: string; // Optional timestamp
+  updated_at?: string; // Optional timestamp
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  duration_days: number | null;
+  destination_city: string | null;
+  tags?: string[] | null; // Assuming tags might be an array of strings
+  // Add any other fields from your 'itinerary_templates' table
 }
 
 export interface Destination {
   id: string;
   city: string;
   country: string;
-  continent: string | null;
-  description: string | null;
-  image_url: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  continent?: string;
+  description?: string;
+  image_url?: string;
+  latitude?: number;
+  longitude?: number;
   created_at: string;
-  updated_at: string;
-}
-
-export interface ItineraryItem {
-  id: string;
-  trip_id: string;
-  created_by: string;
-  title: string;
-  description: string | null;
-  date: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  day_number: number | null;
-  place_id: string | null;
-  category: string | null;
-  location_name: string | null;
-  location_address: string | null;
-  location_latitude: number | null;
-  location_longitude: number | null;
-  status: 'suggested' | 'confirmed' | 'rejected' | null; // See ENUM_VALUES.ITINERARY_ITEM_STATUS
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserPresence {
-  user_id: string;
-  trip_id: string;
-  status: 'online' | 'offline' | 'away'; // See ENUM_VALUES.USER_PRESENCE_STATUS
-  last_active: string;
-  name?: string;
-  email?: string;
-  avatar_url?: string | null;
+  updated_at?: string;
 }

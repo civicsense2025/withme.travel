@@ -8,7 +8,7 @@ import { TripDataProvider } from './context/trip-data-provider';
 import { useRouter } from 'next/navigation';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
 
-// Define the type for TripData 
+// Define the type for TripData
 interface TripData {
   trip: {
     id: string;

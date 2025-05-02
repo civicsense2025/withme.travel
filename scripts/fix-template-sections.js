@@ -29,8 +29,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 });
 
 /**
@@ -38,11 +38,11 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
  */
 async function executeSql(query) {
   const { data, error } = await supabase.rpc('pg_execute', { query });
-  
+
   if (error) {
     throw new Error(`Error executing SQL: ${error.message}`);
   }
-  
+
   return data;
 }
 
@@ -56,10 +56,13 @@ async function checkFunctionExists(functionName) {
       .select('proname')
       .eq('proname', functionName)
       .maybeSingle();
-    
+
     return !error && data !== null;
   } catch (err) {
-    console.warn('Could not check for function existence, assuming it does not exist:', err.message);
+    console.warn(
+      'Could not check for function existence, assuming it does not exist:',
+      err.message
+    );
     return false;
   }
 }
@@ -72,14 +75,14 @@ async function runMigration(filePath) {
     // Check if migration file exists
     await fs.promises.access(filePath);
     console.log('Found migration file:', filePath);
-    
+
     // Read the SQL file
     const sql = await fs.promises.readFile(filePath, 'utf8');
-    
+
     // Execute the SQL directly
     await executeSql(sql);
     console.log(`Successfully executed migration: ${path.basename(filePath)}`);
-    
+
     return true;
   } catch (err) {
     console.error(`Error running migration ${filePath}:`, err.message);
@@ -95,35 +98,35 @@ async function runMigrationInBlocks(filePath) {
     // Check if migration file exists
     await fs.promises.access(filePath);
     console.log('Found migration file:', filePath);
-    
+
     // Read the SQL file
     const sql = await fs.promises.readFile(filePath, 'utf8');
-    
+
     // Split into separate DO statements and execute them
     console.log(`Running migration in blocks: ${path.basename(filePath)}...`);
-    const doBlocks = sql.split('DO $$').filter(block => block.trim());
-    
+    const doBlocks = sql.split('DO $$').filter((block) => block.trim());
+
     for (let i = 0; i < doBlocks.length; i++) {
       let block = doBlocks[i];
-      
+
       // Skip empty blocks
       if (!block.trim()) continue;
-      
+
       // Add back the DO $$ at the beginning if it's not there
       if (!block.trim().startsWith('DO')) {
         block = 'DO $$' + block;
       }
-      
+
       try {
         // Execute each block
-        console.log(`Executing block ${i+1} of ${doBlocks.length}...`);
+        console.log(`Executing block ${i + 1} of ${doBlocks.length}...`);
         await executeSql(block);
-        console.log(`Successfully executed block ${i+1}`);
+        console.log(`Successfully executed block ${i + 1}`);
       } catch (err) {
-        console.error(`Exception executing block ${i+1}:`, err.message);
+        console.error(`Exception executing block ${i + 1}:`, err.message);
       }
     }
-    
+
     return true;
   } catch (err) {
     console.error(`Error running migration in blocks ${filePath}:`, err.message);
@@ -135,18 +138,24 @@ async function runMigrationInBlocks(filePath) {
 async function main() {
   try {
     // First, check if pg_execute function exists
-    const pgExecuteFunctionPath = path.join(__dirname, '../migrations/create_pg_execute_function.sql');
-    
+    const pgExecuteFunctionPath = path.join(
+      __dirname,
+      '../migrations/create_pg_execute_function.sql'
+    );
+
     console.log('Running migrations for itinerary_template_sections table...');
-    
+
     // First, try to create the pg_execute function using direct SQL - this may or may not work
     // depending on permissions, but we'll try it anyway
     await runMigration(pgExecuteFunctionPath);
-    
+
     // Now run the main migration to fix the itinerary_template_sections table
-    const migrationFilePath = path.join(__dirname, '../migrations/fix_itinerary_template_sections.sql');
+    const migrationFilePath = path.join(
+      __dirname,
+      '../migrations/fix_itinerary_template_sections.sql'
+    );
     await runMigrationInBlocks(migrationFilePath);
-    
+
     console.log('Migration completed successfully!');
   } catch (err) {
     console.error('ERROR:', err.message);
@@ -155,4 +164,4 @@ async function main() {
 }
 
 // Run the main function
-main(); 
+main();

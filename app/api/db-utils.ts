@@ -95,7 +95,7 @@ interface VoteResponse {
 // Trip-related functions
 export async function getTrips(): Promise<TripWithMembers[]> {
   const supabase = await createSupabaseServerClient();
-  
+
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trips_with_member_count');
 
@@ -109,7 +109,7 @@ export async function getTrips(): Promise<TripWithMembers[]> {
 
 export async function getTripById(id: string): Promise<TripWithMembers | null> {
   const supabase = await createSupabaseServerClient();
-  
+
   try {
     // Use SQL query to avoid TypeScript issues
     const { data, error } = await supabase.rpc('get_trip_by_id', { trip_id: id });
@@ -123,7 +123,7 @@ export async function getTripById(id: string): Promise<TripWithMembers | null> {
     if (!data) {
       return null;
     }
-    
+
     // Check if the result is an array and has elements
     const dataArray = Array.isArray(data) ? data : [data];
     if (dataArray.length === 0) {
@@ -139,7 +139,7 @@ export async function getTripById(id: string): Promise<TripWithMembers | null> {
 
 export async function getTripMembers(tripId: string): Promise<TripMemberWithUser[]> {
   const supabase = await createSupabaseServerClient();
-  
+
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trip_members', { trip_id: tripId });
 
@@ -159,9 +159,9 @@ export async function getItineraryItems(
   const supabase = await createSupabaseServerClient();
 
   // Use SQL query to avoid TypeScript issues
-  const { data, error } = await supabase.rpc('get_itinerary_items_with_votes', { 
+  const { data, error } = await supabase.rpc('get_itinerary_items_with_votes', {
     trip_id: tripId,
-    user_id: userId || null 
+    user_id: userId || null,
   });
 
   if (error) {
@@ -189,12 +189,12 @@ async function getItemTripId(itemId: string): Promise<string> {
   if (typeof data === 'string') {
     return data;
   }
-  
+
   // If data is an object with a trip_id property, return that
   if (data && typeof data === 'object' && 'trip_id' in data) {
     return String(data.trip_id);
   }
-  
+
   throw new Error('Failed to get trip ID: unexpected data format');
 }
 
@@ -215,12 +215,12 @@ async function getItemVoteCount(itemId: string): Promise<number> {
   if (typeof data === 'number') {
     return data;
   }
-  
+
   // If data is an object with a count property, return that
   if (data && typeof data === 'object' && 'count' in data) {
     return Number(data.count);
   }
-  
+
   return 0; // Default to 0 if no valid count is found
 }
 
@@ -241,7 +241,7 @@ export async function castVote(
   const { data, error } = await supabase.rpc('cast_vote', {
     item_id: itemId,
     user_id: userId,
-    vote_type: voteType
+    vote_type: voteType,
   });
 
   if (error) {

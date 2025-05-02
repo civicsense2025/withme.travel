@@ -4,10 +4,7 @@ import { TABLES, FIELDS } from '@/utils/constants/database';
 
 // POST /api/trips/[tripId]/members/import
 // Imports members from a linked Splitwise group to the trip
-export async function POST(
-  request: NextRequest, 
-  context: { params: Promise<{ tripId: string }> }
-) {
+export async function POST(request: NextRequest, context: { params: Promise<{ tripId: string }> }) {
   const supabase = await createRouteHandlerClient();
   const { data, error: authError } = await supabase.auth.getUser();
 

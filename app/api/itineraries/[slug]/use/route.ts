@@ -20,7 +20,7 @@ export async function POST(
 
   try {
     const body = await request.json();
-    
+
     if (!body.title) {
       return NextResponse.json({ error: 'Trip title is required' }, { status: 400 });
     }
@@ -38,9 +38,9 @@ export async function POST(
       console.error('[DEBUG] Error fetching template:', templateError);
       return NextResponse.json({ error: 'Template not found' }, { status: 404 });
     }
-    
+
     console.log(`[DEBUG] Found template: ${template.id}, title: ${template.title}`);
-    
+
     // Calculate end date if start date is provided
     let endDate = null;
     if (body.start_date) {
@@ -69,7 +69,9 @@ export async function POST(
 
     if (tripError) {
       console.error('[DEBUG] Error creating trip:', tripError);
-      const message = tripError.message.includes('duplicate key value violates unique constraint "trips_slug_key"')
+      const message = tripError.message.includes(
+        'duplicate key value violates unique constraint "trips_slug_key"'
+      )
         ? 'A trip with this name might already exist. Try a different name.'
         : tripError.message;
       return NextResponse.json({ error: message }, { status: 500 });
@@ -77,7 +79,10 @@ export async function POST(
 
     if (!trip) {
       console.error('[DEBUG] Trip data is null after insert without error.');
-      return NextResponse.json({ error: 'Failed to retrieve trip data after creation.' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to retrieve trip data after creation.' },
+        { status: 500 }
+      );
     }
 
     console.log(`[DEBUG] Created new trip: ${trip.id}`);
@@ -91,13 +96,19 @@ export async function POST(
 
     if (memberError) {
       console.error('[CRITICAL] Error adding creator as trip member:', memberError);
-      return NextResponse.json({ error: `Trip created, but failed to add you as a member: ${memberError.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `Trip created, but failed to add you as a member: ${memberError.message}` },
+        { status: 500 }
+      );
     }
 
     // Fetch template sections (or items directly if sections fail)
     let templateSections = template.itinerary_template_sections || [];
     if (templateSections.length === 0) {
-      console.log('[DEBUG] No sections found via join, fetching items directly for template:', template.id);
+      console.log(
+        '[DEBUG] No sections found via join, fetching items directly for template:',
+        template.id
+      );
       const { data: templateItemsFlat, error: itemsFlatError } = await supabase
         .from('itinerary_template_items')
         .select('*')
@@ -117,14 +128,14 @@ export async function POST(
           acc[day].push(item);
           return acc;
         }, {});
-        templateSections = Object.keys(itemsByDay).map(day => ({
+        templateSections = Object.keys(itemsByDay).map((day) => ({
           id: `synth-sec-day-${day}`,
           day_number: parseInt(day, 10),
           itinerary_template_items: itemsByDay[day],
         }));
       }
     }
-    
+
     if (templateSections.length === 0) {
       console.log('[DEBUG] No sections or items found for template. Proceeding without itinerary.');
     } else {
@@ -134,7 +145,7 @@ export async function POST(
       for (const section of templateSections) {
         const items = section.itinerary_template_items || [];
         console.log(`[DEBUG] Processing section day ${section.day_number}, items: ${items.length}`);
-        
+
         // Calculate the actual date for this day if we have a start date
         let itemDateStr = null;
         if (body.start_date && section.day_number) {
@@ -153,8 +164,10 @@ export async function POST(
           address: item.address,
           latitude: item.latitude,
           longitude: item.longitude,
-          start_time: item.start_time && itemDateStr ? `${itemDateStr}T${item.start_time}` : item.start_time,
-          end_time: item.end_time && itemDateStr ? `${itemDateStr}T${item.end_time}` : item.end_time,
+          start_time:
+            item.start_time && itemDateStr ? `${itemDateStr}T${item.start_time}` : item.start_time,
+          end_time:
+            item.end_time && itemDateStr ? `${itemDateStr}T${item.end_time}` : item.end_time,
           day_number: section.day_number || 1,
           position: item.item_order || 0,
           created_by: user.id,
@@ -164,23 +177,28 @@ export async function POST(
           duration_minutes: item.duration_minutes,
           status: 'suggested',
         }));
-        
+
         allItemsToInsert.push(...itemsToInsertForSection);
       }
 
       if (allItemsToInsert.length > 0) {
-        console.log(`[DEBUG] Inserting ${allItemsToInsert.length} total items for new trip ${trip.id}`);
+        console.log(
+          `[DEBUG] Inserting ${allItemsToInsert.length} total items for new trip ${trip.id}`
+        );
         const { error: insertItemsError } = await supabase
           .from('itinerary_items')
           .insert(allItemsToInsert);
 
         if (insertItemsError) {
           console.error('[WARN] Error inserting itinerary items:', insertItemsError);
-          return NextResponse.json({
-            success: true,
-            trip_id: trip.id,
-            warning: `Trip created, but failed to add itinerary items: ${insertItemsError.message}`,
-          }, { status: 500 });
+          return NextResponse.json(
+            {
+              success: true,
+              trip_id: trip.id,
+              warning: `Trip created, but failed to add itinerary items: ${insertItemsError.message}`,
+            },
+            { status: 500 }
+          );
         } else {
           console.log('[DEBUG] Successfully inserted items.');
         }

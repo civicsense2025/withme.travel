@@ -3,4 +3,4 @@ export const VOTE_TYPES = {
   DOWN: 'down',
 } as const;
 
-export type VoteType = (typeof VOTE_TYPES)[keyof typeof VOTE_TYPES]; 
+export type VoteType = (typeof VOTE_TYPES)[keyof typeof VOTE_TYPES];

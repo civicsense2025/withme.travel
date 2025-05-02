@@ -1,28 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert
+  Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
+import { CommonActions } from '@react-navigation/native';
+import { useTheme } from '../hooks/useTheme';
+import { Text, Button, Input } from '../components/ui';
 
 // Dev flag for debugging (set to false in production)
 const DEBUG_MODE = __DEV__;
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { signIn, isAuthenticated, isLoading: authLoading, googleSignIn } = useAuth();
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lastLoginError, setLastLoginError] = useState<string | null>(null);
+  const theme = useTheme();
+  const styles = createStyles(theme); // Create styles using theme
 
   // Debug function
   const debugLog = (message: string, data?: any) => {
@@ -48,42 +50,24 @@ export default function LoginScreen() {
     };
   }, []);
 
-  const handleAuth = async () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
-    debugLog(`Attempting to ${isRegistering ? 'register' : 'sign in'} with email: ${email}`);
-    setLoginAttempts(prev => prev + 1);
+    debugLog(`Attempting to sign in with email: ${email}`);
+    setLoginAttempts((prev) => prev + 1);
 
     try {
-      if (isRegistering) {
-        debugLog('Starting registration');
-        const { error } = await signUp(email, password);
-        if (error) {
-          debugLog('Registration error', error);
-          setLastLoginError(error.message);
-          Alert.alert('Registration Error', error.message);
-        } else {
-          debugLog('Registration successful');
-          Alert.alert(
-            'Verification Email Sent', 
-            'Please check your email to verify your account before logging in.',
-            [{ text: 'OK', onPress: () => setIsRegistering(false) }]
-          );
-        }
+      const { error } = await signIn(email, password);
+      if (error) {
+        debugLog('Sign in error', error);
+        setLastLoginError(error.message);
+        Alert.alert('Login Error', error.message);
       } else {
-        debugLog('Starting sign in');
-        const { error } = await signIn(email, password);
-        if (error) {
-          debugLog('Sign in error', error);
-          setLastLoginError(error.message);
-          Alert.alert('Login Error', error.message);
-        } else {
-          debugLog('Sign in successful');
-        }
+        debugLog('Sign in successful');
       }
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred';
@@ -98,10 +82,10 @@ export default function LoginScreen() {
   // Show debug overlay in development mode
   const renderDebugInfo = () => {
     if (!DEBUG_MODE) return null;
-    
+
     return (
-      <TouchableOpacity 
-        style={styles.debugBox}
+      <TouchableOpacity
+        style={[styles.debugBox, theme.isDark && styles.debugBoxDark]}
         onPress={() => {
           Alert.alert(
             'Auth Debug Info',
@@ -109,7 +93,9 @@ export default function LoginScreen() {
           );
         }}
       >
-        <Text style={styles.debugText}>🔍 Debug</Text>
+        <Text variant="caption" color="custom" customColor="#fff">
+          🔍 Debug
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -121,134 +107,139 @@ export default function LoginScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 0}
     >
       {renderDebugInfo()}
-      
+
       <View style={styles.logoContainer}>
-        <Text style={styles.logo}>✈️</Text>
-        <Text style={styles.appName}>WithMe Travel</Text>
-      </View>
-      
-      <View style={styles.formContainer}>
-        <Text style={styles.headerText}>
-          {isRegistering ? 'Create Account' : 'Welcome Back'}
+        <RNText style={styles.logo}>✈️</RNText> {/* Use RNText for emoji */}
+        <Text
+          variant="h2"
+          color="custom"
+          customColor={theme.colors.foreground} // Use foreground for main text
+          weight="bold"
+        >
+          WithMe Travel
         </Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email Address"
+      </View>
+
+      <View style={styles.formContainer}>
+        <Text
+          variant="h3"
+          color="custom"
+          customColor={theme.colors.foreground}
+          style={styles.headerText}
+        >
+          Welcome Back
+        </Text>
+
+        {/* Google Sign In Button - Needs custom styling or variant */}
+        <Button
+          label="Continue with Google"
+          variant="primary" // Use primary for now, could create a 'social' variant
+          style={{ backgroundColor: '#4285F4', borderColor: '#4285F4' }} // Override color for Google
+          textStyle={{ color: theme.colors.white }} // Ensure text is white
+          onPress={async () => {
+            debugLog('Starting Google sign in');
+            const { error } = await googleSignIn();
+            if (error) {
+              Alert.alert('Google Sign-In Error', error.message);
+            }
+          }}
+        />
+
+        <Text variant="body2" color="secondary" style={styles.orText}>
+          or
+        </Text>
+
+        <Input
+          label="Email Address"
           value={email}
           onChangeText={setEmail}
-          autoCapitalize="none"
+          placeholder="Enter your email"
+          variant="filled" // Use filled variant
+          size="md"
           keyboardType="email-address"
+          autoCapitalize="none"
         />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
+
+        <Input
+          label="Password"
           value={password}
           onChangeText={setPassword}
+          placeholder="Enter your password"
+          variant="filled" // Use filled variant
+          size="md"
           secureTextEntry
         />
-        
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleAuth}
+
+        <Button
+          label="Sign In"
+          variant="primary" // Use travelPurple by default
+          size="lg"
+          isLoading={isLoading}
           disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.buttonText}>
-              {isRegistering ? 'Sign Up' : 'Sign In'}
-            </Text>
-          )}
-        </TouchableOpacity>
-        
-        <TouchableOpacity
+          onPress={handleLogin}
+          style={styles.signInButton}
+        />
+
+        <Button
+          label="Need an account? Sign Up"
+          variant="ghost" // Use ghost for less emphasis
+          size="md"
+          onPress={() => navigation.navigate('Signup')}
+          disabled={isLoading}
           style={styles.switchButton}
-          onPress={() => setIsRegistering(!isRegistering)}
-          disabled={isLoading}
-        >
-          <Text style={styles.switchButtonText}>
-            {isRegistering 
-              ? 'Already have an account? Sign In' 
-              : 'Need an account? Sign Up'}
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: 80,
-    marginBottom: 40,
-  },
-  logo: {
-    fontSize: 72,
-    marginBottom: 10,
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  formContainer: {
-    padding: 20,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#0066ff',
-    height: 50,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  switchButton: {
-    marginTop: 20,
-    padding: 10,
-    alignItems: 'center',
-  },
-  switchButtonText: {
-    color: '#0066ff',
-    fontSize: 16,
-  },
-  debugBox: {
-    position: 'absolute',
-    top: 40,
-    right: 10,
-    zIndex: 999,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-  },
-  debugText: {
-    color: '#fff',
-    fontSize: 12,
-  },
-});
+// Create styles function to access theme
+const createStyles = (theme: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background, // Use theme color
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginTop: theme.spacing['10'], // Adjust spacing
+      marginBottom: theme.spacing['8'], // Adjust spacing
+    },
+    logo: {
+      fontSize: 72, // Keep large emoji size
+      marginBottom: theme.spacing['3'],
+    },
+    formContainer: {
+      paddingHorizontal: theme.spacing['5'], // Adjust padding
+    },
+    headerText: {
+      textAlign: 'center',
+      marginBottom: theme.spacing['6'], // Adjust spacing
+    },
+    orText: {
+      textAlign: 'center',
+      marginVertical: theme.spacing['3'], // Adjust spacing
+    },
+    signInButton: {
+      marginTop: theme.spacing['4'], // Adjust spacing
+    },
+    switchButton: {
+      marginTop: theme.spacing['4'], // Adjust spacing
+    },
+    debugBox: {
+      position: 'absolute',
+      top: 40, // Keep positioning relative to screen edges
+      right: 10,
+      zIndex: 999,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      paddingVertical: theme.spacing['1'],
+      paddingHorizontal: theme.spacing['2'],
+      borderRadius: theme.borderRadius.md,
+    },
+    debugBoxDark: {
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    },
+  });
+
+// Import RNText specifically for the emoji if needed
+import { Text as RNText } from 'react-native';

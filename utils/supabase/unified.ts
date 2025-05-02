@@ -152,17 +152,17 @@ export async function getRouteHandlerClient(req?: Request): Promise<TypedSupabas
   try {
     // Get cookies asynchronously
     const cookieStore = await cookies();
-    
+
     // Debug logging
     console.log('[supabase] Route handler cookie store available:', !!cookieStore);
-    
+
     // If a request is provided, we can also extract cookies from it as a fallback
     let cookieHeader = '';
     if (req) {
       cookieHeader = req.headers.get('cookie') || '';
       console.log('[supabase] Request cookie header present:', !!cookieHeader);
     }
-    
+
     return _createServerClient<Database>(supabaseUrl!, supabaseAnonKey!, {
       cookies: {
         get(name: string) {
@@ -172,7 +172,7 @@ export async function getRouteHandlerClient(req?: Request): Promise<TypedSupabas
             if (cookie) {
               return cookie.value;
             }
-            
+
             // Fallback to parsing from request header if available
             if (req && cookieHeader) {
               const cookies = cookieHeader.split(';');
@@ -183,7 +183,7 @@ export async function getRouteHandlerClient(req?: Request): Promise<TypedSupabas
                 }
               }
             }
-            
+
             return undefined;
           } catch (error) {
             console.warn(`[supabase] Error accessing cookie ${name} in Route Handler:`, error);

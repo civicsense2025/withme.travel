@@ -4,7 +4,7 @@
 
 Ever felt like herding cats trying to plan a group trip? We get it. Emails get lost, opinions clash, and suddenly, planning feels like a chore. That's where `withme.travel` comes in! Think of us as that super-organized friend who _actually enjoys_ figuring out the details, so you and your crew can focus on the fun part – the adventure itself!
 
-Our mission is simple: **No-BS group trip planning.** We provide clear, easy-to-use tools to bring your group's travel dreams to life, without the usual headaches. Built with modern tech (Next.js, Supabase, Tailwind CSS), we're designed to be reliable, helpful, and maybe even a little fun to use.
+Our mission is simple: **No-BS group trip planning.** We provide clear, easy-to-use tools to bring your group's travel dreams to life, without the usual headaches. Built with modern tech (Next.js 15, React 18, Supabase, Tailwind CSS), we're designed to be reliable, helpful, and maybe even a little fun to use.
 
 ### II. How Your Group Adventure Unfolds
 
@@ -79,6 +79,7 @@ Let's walk through how you and your friends might use `withme.travel`:
 Want a peek under the hood? Here's a quick look at the building blocks:
 
 1.  **Blueprint (Project Structure):**
+
     - We use the modern Next.js App Router (`app/`). API routes live in `app/api/`, pages in folders like `app/trips/`, `app/destinations/`.
     - Reusable bits like buttons and cards (`components/`) keep things consistent. `components/ui/` are our trusty Shadcn/ui building blocks.
     - Helpful functions hang out in `utils/`. `utils/supabase/` handles the connection to our database brain using `@supabase/ssr` helpers.
@@ -87,6 +88,7 @@ Want a peek under the hood? Here's a quick look at the building blocks:
     - `contexts/` helps share info across the app.
 
 2.  **Your Secure Login (Authentication):**
+
     - We use Supabase's reliable auth system, integrated securely with Next.js using the `@supabase/ssr` library.
     - The `AuthProvider` component (`components/auth-provider.tsx`) manages client-side state, listens to auth events, and provides state/methods via the `useAuth` hook.
     - Server-side authentication (in Server Components, API Routes, Server Actions) uses helpers from `utils/supabase/server.ts`.
@@ -95,6 +97,7 @@ Want a peek under the hood? Here's a quick look at the building blocks:
     - Authentication is stable and robust. Refer to `docs/authentication.md` for full details.
 
 3.  **Data Management & Integration:**
+
     - We've implemented a robust database interface layer.
     - Constants defining table names, fields, and enums are centralized in `utils/constants/database.ts`.
     - The user preferences system allows for personalized experiences.
@@ -126,7 +129,46 @@ Want a peek under the hood? Here's a quick look at the building blocks:
     - `app/globals.css` defines our friendly color palette and sets up light/dark modes. It also holds custom styles and animations.
     - Our design system ensures that every component can be themed with light/dark/other themes.
 
-### IV. Want to Peek Under the Hood? (Setup & Running Locally)
+### IV. The Documentation Library
+
+Following documents provide more detailed information about specific aspects of the project:
+
+1. **Core Documentation**:
+
+   - [CODEBASE_STRUCTURE.md](CODEBASE_STRUCTURE.md): Overview of how our project files are organized.
+   - [database_structure.md](database_structure.md): Documentation of our database schema.
+   - [README.md](../README.md): Overview of the application, quick start, and essential information.
+
+2. **Feature Documentation**:
+
+   - [ITINERARY_TEMPLATE_STRUCTURE.md](ITINERARY_TEMPLATE_STRUCTURE.md): Guide to trip templates structure.
+   - [authentication.md](authentication.md): In-depth explanation of our auth architecture.
+   - [collaboration-features.md](collaboration-features.md): Documentation of real-time collaboration tools.
+   - [focus-mode.md](focus-mode.md): Guide to the focus mode feature for collaborative decision making.
+   - [offline-support.md](offline-support.md): Details about service worker and offline capabilities.
+
+3. **Development Process**:
+
+   - [adaptation-plan.md](adaptation-plan.md): How we adapt to changing requirements.
+   - [implementation_plan.md](implementation_plan.md): Roadmap for upcoming features.
+   - [CHANGELOG.md](CHANGELOG.md): Detailed history of project changes.
+   - [testing.md](testing.md): Our approach to test coverage and methodology.
+
+4. **Technical Guides**:
+
+   - [api-routes-server-client.md](api-routes-server-client.md): Guide to API routes and client/server patterns.
+   - [constants-guide.md](constants-guide.md): How constants are organized.
+   - [nextjs-best-practices.md](nextjs-best-practices.md): Best practices for Next.js development.
+   - [nextjs15-migration.md](nextjs15-migration.md): Guide to Next.js 15 migration considerations.
+   - [system-status-audit.md](system-status-audit.md): System-wide status analysis.
+
+5. **Design & Content**:
+   - [CONTENT_GUIDE.md](CONTENT_GUIDE.md): Guidelines for creating authentic city profiles.
+   - [mobile-style-guide.md](mobile-style-guide.md): Visual design system for our mobile application.
+
+These documents are living resources – they grow and evolve with the project. If you find something that's missing or unclear, we encourage you to update the appropriate document.
+
+### V. Want to Peek Under the Hood? (Setup & Running Locally)
 
 If you're technically inclined or want to contribute:
 
@@ -143,39 +185,59 @@ If you're technically inclined or want to contribute:
 5.  **Start It Up:** `npm run dev` or `pnpm dev`.
 6.  **Explore:** Visit `http://localhost:3000`.
 
-### V. Recent Improvements & Current Development
+### VI. Recent Improvements & Current Development
 
 We've recently made several key improvements to the application:
 
 1. **Stable Authentication System:**
+
    - Fully migrated to `@supabase/ssr` for secure and reliable session management across client, server, and middleware.
    - Resolved previous issues related to refresh tokens and client/server state mismatches.
    - Simplified client/server Supabase client creation with dedicated utilities.
 
 2. **Constants Refactoring:**
+
    - Standardized constants management in `utils/constants/`, removing aliases and promoting direct imports.
    - Updated `utils/constants/database.ts` with direct exports (`TABLES`, `FIELDS`, `ENUMS`) and explicit type definitions.
    - Created `docs/constants-guide.md` for documentation.
 
 3. **Database & Performance Optimizations:**
+
    - Implemented smart data fetching with optimized queries.
    - Enhanced database interface layer.
    - Improved content sharing capabilities.
 
 4. **UI Enhancements & Collaboration Features:**
+
    - Updated trip creation flow.
    - Added role-based permissions and access requests.
    - Implemented collaborative notes system.
+   - Added real-time presence awareness with cursor tracking.
+   - Implemented focus mode for collaborative decision making.
+   - Created voting/polling system for group decisions.
+   - Added activity timeline and notifications.
 
-### VI. What's Next on the Horizon?
+5. **Mobile Style Guide:**
+
+   - Created `docs/mobile-style-guide.md` outlining the visual design system for the Expo/React Native mobile application.
+
+6. **Error Monitoring & Reliability:**
+   - Integrated Sentry for error tracking and performance monitoring.
+   - Implemented service worker for offline support.
+   - Enhanced error boundaries and error logging.
+   - Added web vitals tracking for performance monitoring.
+
+### VII. What's Next on the Horizon?
 
 We're always dreaming up ways to make group planning even easier! Here's a glimpse of what we're thinking about:
 
 - **Preference-Based Recommendations:** Leveraging our new user preferences system to suggest activities tailored to your group's interests.
 - **Template Gallery:** Expanding our template system to include more pre-built trip plans for different destinations and travel styles.
-- **Enhanced Collaboration:** Adding more real-time features like presence indicators and simultaneous editing.
-- **Mobile Experience:** Further optimizing the mobile interface for on-the-go planning.
-- **Notifications System:** Implementing alerts for trip updates, invitations, and other important events.
-- **Advanced Itinerary Planning:** Adding drag-and-drop organization, time-slot management, and voting features.
+- **Enhanced Collaboration:** Adding more real-time features and improving the polling/voting system.
+- **Mobile Experience:** Further optimizing the mobile interface for on-the-go planning based on the new style guide.
+- **Notifications System:** Enhancing the notifications for trip updates, invitations, and other important events.
+- **Advanced Itinerary Planning:** Adding drag-and-drop organization, time-slot management, and improving voting features.
+- **Mobile App Build-out:** Continuing development of the Expo app using the defined style guide.
+- **Offline Capabilities:** Expanding the service worker functionality for better offline experiences.
 
 Thanks for joining the `withme.travel` adventure! We're excited to help you plan less and travel more, together.

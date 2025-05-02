@@ -48,12 +48,12 @@ interface TripWithMemberInfo {
   memberSince?: string;
 }
 
-export default function TripsClientPage({ 
-  initialTrips, 
-  userId 
-}: { 
-  initialTrips: any[],
-  userId: string
+export default function TripsClientPage({
+  initialTrips,
+  userId,
+}: {
+  initialTrips: any[];
+  userId: string;
 }) {
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -61,7 +61,7 @@ export default function TripsClientPage({
   const trips = useMemo(() => {
     // Filter out missing trips
     const valid = initialTrips.filter(
-      (r): r is typeof r & { trip: NonNullable<typeof r['trip']> } =>
+      (r): r is typeof r & { trip: NonNullable<(typeof r)['trip']> } =>
         r.trip !== null && typeof r.trip === 'object'
     );
 
@@ -132,12 +132,10 @@ export default function TripsClientPage({
           {trips.length === 0 ? (
             <EmptyTrips />
           ) : (
-            trips.map((trip) => (
-              <TripCard key={trip.id} trip={trip} />
-            ))
+            trips.map((trip) => <TripCard key={trip.id} trip={trip} />)
           )}
         </div>
       </ClassErrorBoundary>
     </div>
   );
-} 
+}

@@ -14,18 +14,14 @@ if (!serviceRoleKey) {
 
 // Create a singleton instance of the service role client
 // NOTE: Use createSupabaseClient to avoid naming conflict if this file is also named createClient
-const serviceRoleClient = createSupabaseClient(
-  supabaseUrl,
-  serviceRoleKey,
-  {
-    auth: {
-      // Service role client specifics
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false
-    }
-  }
-);
+const serviceRoleClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+  auth: {
+    // Service role client specifics
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false,
+  },
+});
 
 /**
  * Returns the singleton instance of the Supabase service role client.
@@ -36,4 +32,4 @@ export function createClient() {
 }
 
 // Optional: Export the instance directly if preferred
-// export const supabaseServiceRole = serviceRoleClient; 
+// export const supabaseServiceRole = serviceRoleClient;

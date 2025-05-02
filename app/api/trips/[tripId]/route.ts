@@ -233,7 +233,7 @@ async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   userId: string,
   tripId: string,
-  requiredRoles?: Array<(typeof TRIP_ROLES)[keyof typeof TRIP_ROLES]> 
+  requiredRoles?: Array<(typeof TRIP_ROLES)[keyof typeof TRIP_ROLES]>
 ): Promise<{
   hasAccess: boolean;
   role?: (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
@@ -255,7 +255,7 @@ async function checkTripAccess(
   }
 
   const userRole = member.role as (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
-  
+
   // If specific roles are required, check if the user has one of them
   if (requiredRoles && requiredRoles.length > 0) {
     if (!requiredRoles.includes(userRole)) {
@@ -301,22 +301,20 @@ export async function GET(
     }
 
     // Get user session and trip data concurrently
-    const [
-      { data: userData, error: authError },
-      { data: trip, error: tripError }
-    ] = await Promise.all([
-      supabase.auth.getUser(),
-      supabase
-        .from(TABLES.TRIPS)
-        .select('*, destination:destinations(*), tags:trip_tags(tags(*))')
-        .eq('id', tripId)
-        .single()
-    ]);
+    const [{ data: userData, error: authError }, { data: trip, error: tripError }] =
+      await Promise.all([
+        supabase.auth.getUser(),
+        supabase
+          .from(TABLES.TRIPS)
+          .select('*, destination:destinations(*), tags:trip_tags(tags(*))')
+          .eq('id', tripId)
+          .single(),
+      ]);
 
     // --- Logging Auth --- //
-    console.log(`[API /trips/${tripId}] Auth Check Result:`, { 
-      userId: userData?.user?.id, 
-      authError: authError ? authError.message : null 
+    console.log(`[API /trips/${tripId}] Auth Check Result:`, {
+      userId: userData?.user?.id,
+      authError: authError ? authError.message : null,
     });
     // --- End Logging --- //
 
@@ -367,7 +365,9 @@ export async function GET(
 
     if (!hasAccess) {
       // --- Logging Access Denied --- //
-      console.log(`[API /trips/${tripId}] Access Denied. User: ${user?.id}, Role: ${userRole}, Public: ${trip.privacy_setting === ENUMS.TRIP_PRIVACY_SETTING.PUBLIC}`);
+      console.log(
+        `[API /trips/${tripId}] Access Denied. User: ${user?.id}, Role: ${userRole}, Public: ${trip.privacy_setting === ENUMS.TRIP_PRIVACY_SETTING.PUBLIC}`
+      );
       // --- End Logging --- //
       return formatErrorResponse(new TripApiError('Access denied', 403));
     }
@@ -415,7 +415,10 @@ export async function PATCH(
       });
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return formatErrorResponse(new TripApiError('Unauthorized', 401));
@@ -498,7 +501,10 @@ export async function DELETE(
       });
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return formatErrorResponse(new TripApiError('Unauthorized', 401));
@@ -513,10 +519,7 @@ export async function DELETE(
 
     // Add logic to delete related data (members, items, etc.) first if needed
 
-    const { error: deleteError } = await supabase
-      .from(TABLES.TRIPS)
-      .delete()
-      .eq('id', tripId);
+    const { error: deleteError } = await supabase.from(TABLES.TRIPS).delete().eq('id', tripId);
 
     if (deleteError) {
       console.error('Error deleting trip:', deleteError);

@@ -127,7 +127,7 @@ export function usePresence(
 
   // Get the supabase client directly
   const supabaseRef = useRef(typeof window !== 'undefined' ? getBrowserClient() : null);
-  
+
   // Update the ref when window is available
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -168,7 +168,8 @@ export function usePresence(
     // Set a new away timer
     awayTimeoutRef.current = setTimeout(() => {
       // Don't set if component unmounted
-      if (subscriptionRef.current) { // Check if still subscribed/mounted effectively
+      if (subscriptionRef.current) {
+        // Check if still subscribed/mounted effectively
         setStatus(ENUMS.PRESENCE_STATUS.AWAY);
         //debouncedPresenceUpdate(); // Assuming this exists/is called elsewhere
       }
@@ -275,12 +276,18 @@ export function usePresence(
         .from(TABLES.USER_PRESENCE)
         .select('*')
         .eq('trip_id', tripId)
-        .in('status', [ENUMS.PRESENCE_STATUS.ONLINE, ENUMS.PRESENCE_STATUS.EDITING, ENUMS.PRESENCE_STATUS.AWAY])
+        .in('status', [
+          ENUMS.PRESENCE_STATUS.ONLINE,
+          ENUMS.PRESENCE_STATUS.EDITING,
+          ENUMS.PRESENCE_STATUS.AWAY,
+        ])
         .limit(50); // Reasonable limit to prevent large result sets
 
       if (fetchError) {
         console.error('[usePresence] Fetch error:', fetchError);
-        setError(fetchError instanceof Error ? fetchError : new Error('Failed to fetch active users'));
+        setError(
+          fetchError instanceof Error ? fetchError : new Error('Failed to fetch active users')
+        );
         return;
       }
 
@@ -349,7 +356,7 @@ export function usePresence(
 
       // Re-setup all the event handlers
       // (similar code to setup function, but with recovery context)
-      
+
       // Set up a presence sync handler
       channel
         .on('presence', { event: 'sync' }, () => {
@@ -378,9 +385,7 @@ export function usePresence(
             reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful connection
           } catch (err) {
             console.error('[usePresence] Error processing presence sync:', err);
-            setError(
-              err instanceof Error ? err : new Error('Failed to process presence update')
-            );
+            setError(err instanceof Error ? err : new Error('Failed to process presence update'));
           }
         })
         .on('presence', { event: 'join' }, ({ key, newPresences }) => {
@@ -543,9 +548,7 @@ export function usePresence(
               reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful connection
             } catch (err) {
               console.error('[usePresence] Error processing presence sync:', err);
-              setError(
-                err instanceof Error ? err : new Error('Failed to process presence update')
-              );
+              setError(err instanceof Error ? err : new Error('Failed to process presence update'));
             }
           })
           .on('presence', { event: 'join' }, ({ key, newPresences }) => {
@@ -613,11 +616,11 @@ export function usePresence(
             MAX_RECONNECT_DELAY
           );
           console.log(`[usePresence] Scheduling reconnect in ${backoffDelay}ms`);
-          
+
           if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
           }
-          
+
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             setup();
@@ -860,8 +863,13 @@ export function usePresence(
     ) {
       // Assuming debouncedPresenceUpdate is called elsewhere in the code
     }
-  }, [status, editingItemId, // Assuming debouncedPresenceUpdate is called elsewhere in the code
-    isAuthLoading, user, connectionState]);
+  }, [
+    status,
+    editingItemId, // Assuming debouncedPresenceUpdate is called elsewhere in the code
+    isAuthLoading,
+    user,
+    connectionState,
+  ]);
 
   // Return the hook's state and methods
   return {

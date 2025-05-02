@@ -70,16 +70,17 @@ export function createServerSupabaseClient() {
 export async function getServerSession() {
   try {
     // Use the single, correct helper
-    const supabase = createServerSupabaseClient(); 
-    
+    const supabase = createServerSupabaseClient();
+
     // Add a timeout to prevent hanging requests
-    const timeoutPromise = new Promise<never>((_, reject) => { // Specify type for reject
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      // Specify type for reject
       setTimeout(() => reject(new Error('Authentication timeout')), 5000);
     });
-    
+
     // Race the session fetch against a timeout
     const sessionPromise = supabase.auth.getSession();
-    
+
     // Type the result of Promise.race explicitly
     const result = await Promise.race([sessionPromise, timeoutPromise]);
 
@@ -87,27 +88,26 @@ export async function getServerSession() {
     // We already handle the Error case via the catch block if timeoutPromise rejects
     // So, if we reach here, result must be the session response type.
     // However, Promise.race typing can be tricky, let's check for the error property explicitly.
-    
+
     // Check if the result is the error from getSession()
     if ('error' in result && result.error) {
       console.error('Get session error:', result.error.message);
       return { data: { session: null } }; // Return null session on error
     }
-    
+
     // Check if the result has the expected data structure
     if ('data' in result && 'session' in result.data) {
-       return { data: { session: result.data.session } }; // Return correct structure
+      return { data: { session: result.data.session } }; // Return correct structure
     }
 
     // If the result structure is unexpected, treat as error
     console.error('Unexpected result structure from getSession', result);
     return { data: { session: null } };
-
   } catch (error) {
     // This will catch the timeoutPromise rejection or other errors
     console.error('Error getting server session:', error);
     // Return a clean empty session object on error
-    return { data: { session: null } }; 
+    return { data: { session: null } };
   }
 }
 
@@ -115,18 +115,18 @@ export async function getServerSession() {
  * Get the current authenticated user from the server.
  * This is more secure than getServerSession() as it validates the user's session
  * by contacting the Supabase Auth server rather than just reading from cookies.
- * 
+ *
  * @returns Authenticated user object or null if not authenticated
  */
 export async function getServerUser() {
   const supabase = createServerSupabaseClient();
   try {
     const { data, error } = await supabase.auth.getUser();
-    
+
     if (error || !data?.user) {
       return null;
     }
-    
+
     return data.user;
   } catch (error) {
     console.error('Error getting authenticated user:', error);

@@ -47,8 +47,10 @@ export async function GET(
   }
 
   try {
-    console.log(`[API DEBUG /activity] Fetching history for trip: ${tripId}, limit: ${limit}, offset: ${offset}`);
-    
+    console.log(
+      `[API DEBUG /activity] Fetching history for trip: ${tripId}, limit: ${limit}, offset: ${offset}`
+    );
+
     // Get all members of the trip to check if the current user is the only member
     const { data: tripMembers, error: tripMembersError } = await supabase
       .from('trip_members')
@@ -56,23 +58,30 @@ export async function GET(
       .eq('trip_id', tripId);
 
     if (tripMembersError) {
-      console.error('[API DEBUG /activity] Error fetching trip members:', JSON.stringify(tripMembersError, null, 2));
+      console.error(
+        '[API DEBUG /activity] Error fetching trip members:',
+        JSON.stringify(tripMembersError, null, 2)
+      );
     }
-    
+
     // Check if current user is the only member of the trip
-    const isOnlyMember = tripMembers && tripMembers.length === 1 && tripMembers[0].user_id === session.user.id;
-    
+    const isOnlyMember =
+      tripMembers && tripMembers.length === 1 && tripMembers[0].user_id === session.user.id;
+
     // Get current user's profile info for activity attribution
     const { data: currentUserProfile, error: currentUserProfileError } = await supabase
       .from('profiles')
       .select('id, name, avatar_url')
       .eq('id', session.user.id)
       .single();
-      
+
     if (currentUserProfileError) {
-      console.log(`[API DEBUG /activity] Error fetching current user profile:`, currentUserProfileError);
+      console.log(
+        `[API DEBUG /activity] Error fetching current user profile:`,
+        currentUserProfileError
+      );
     }
-    
+
     // Step 1: Fetch trip history records without trying to use a join
     const { data: historyData, error: historyError } = await supabase
       .from('trip_history')
@@ -82,58 +91,79 @@ export async function GET(
       .range(offset, offset + limit - 1);
 
     if (historyError) {
-      console.error('[API DEBUG /activity] Error fetching trip history:', JSON.stringify(historyError, null, 2));
-      throw new Error(`Supabase query failed: ${historyError.message} (Code: ${historyError.code})`); 
+      console.error(
+        '[API DEBUG /activity] Error fetching trip history:',
+        JSON.stringify(historyError, null, 2)
+      );
+      throw new Error(
+        `Supabase query failed: ${historyError.message} (Code: ${historyError.code})`
+      );
     }
 
     console.log(`[API DEBUG /activity] Fetched ${historyData?.length || 0} history records.`);
-    
+
     // Step 2: For each history record, get the profile info if user_id is available
-    const enrichedData = await Promise.all((historyData || []).map(async (historyItem) => {
-      // If no user_id, return the item as is
-      if (!historyItem.user_id) {
-        console.log(`[API DEBUG /activity] History item has no user_id: ${historyItem.id}`);
+    const enrichedData = await Promise.all(
+      (historyData || []).map(async (historyItem) => {
+        // If no user_id, return the item as is
+        if (!historyItem.user_id) {
+          console.log(`[API DEBUG /activity] History item has no user_id: ${historyItem.id}`);
+          return {
+            ...historyItem,
+            profile: null,
+          };
+        }
+
+        console.log(`[API DEBUG /activity] Looking up profile for user_id: ${historyItem.user_id}`);
+
+        // Fetch the profile for this user_id
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles') // Assumes there's a table named 'profiles' linked to auth.users
+          .select('id, name, avatar_url')
+          .eq('id', historyItem.user_id)
+          .single();
+
+        if (profileError) {
+          console.log(
+            `[API DEBUG /activity] Error finding profile for user_id: ${historyItem.user_id}`,
+            profileError
+          );
+          return {
+            ...historyItem,
+            profile: null,
+          };
+        }
+
+        console.log(
+          `[API DEBUG /activity] Found profile for user_id: ${historyItem.user_id}`,
+          profileData ? { id: profileData.id, name: profileData.name } : 'null'
+        );
+
         return {
           ...historyItem,
-          profile: null
+          profile: profileData,
         };
-      }
-      
-      console.log(`[API DEBUG /activity] Looking up profile for user_id: ${historyItem.user_id}`);
-      
-      // Fetch the profile for this user_id
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles') // Assumes there's a table named 'profiles' linked to auth.users
-        .select('id, name, avatar_url')
-        .eq('id', historyItem.user_id)
-        .single();
-        
-      if (profileError) {
-        console.log(`[API DEBUG /activity] Error finding profile for user_id: ${historyItem.user_id}`, profileError);
-        return {
-          ...historyItem,
-          profile: null
-        };
-      }
-      
-      console.log(`[API DEBUG /activity] Found profile for user_id: ${historyItem.user_id}`, 
-        profileData ? { id: profileData.id, name: profileData.name } : 'null');
-      
-      return {
-        ...historyItem,
-        profile: profileData
-      };
-    }));
-    
+      })
+    );
+
     if (enrichedData && enrichedData.length > 0) {
-      console.log('[API DEBUG /activity] First record with profile:', JSON.stringify({
-        id: enrichedData[0].id,
-        user_id: enrichedData[0].user_id,
-        profile: enrichedData[0].profile ? {
-          id: enrichedData[0].profile.id,
-          name: enrichedData[0].profile.name
-        } : null
-      }, null, 2));
+      console.log(
+        '[API DEBUG /activity] First record with profile:',
+        JSON.stringify(
+          {
+            id: enrichedData[0].id,
+            user_id: enrichedData[0].user_id,
+            profile: enrichedData[0].profile
+              ? {
+                  id: enrichedData[0].profile.id,
+                  name: enrichedData[0].profile.name,
+                }
+              : null,
+          },
+          null,
+          2
+        )
+      );
     }
 
     // Get total count for pagination
@@ -151,7 +181,7 @@ export async function GET(
     const transformedData = enrichedData.map((item) => {
       // Handle null user_id with current user when they're the only member
       let userName, userAvatar;
-      
+
       if (item.user_id) {
         // Regular user activity
         userName = item.profile?.name || 'User';
@@ -165,7 +195,7 @@ export async function GET(
         userName = 'System';
         userAvatar = null;
       }
-      
+
       return {
         id: item.id.toString(),
         trip_id: item.trip_id,
@@ -184,7 +214,7 @@ export async function GET(
         total: count || 0,
         offset,
         limit,
-        hasMore: offset + limit < (count || 0)
+        hasMore: offset + limit < (count || 0),
       },
     });
   } catch (error) {

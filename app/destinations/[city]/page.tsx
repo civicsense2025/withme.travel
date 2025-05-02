@@ -40,6 +40,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { AuthContextType } from '@/lib/hooks/use-auth';
 import { Rating } from '@/components/ui/rating';
+import { RelatedItinerariesWidget } from '@/components/destinations/related-itineraries-widget';
 
 interface Destination {
   id: string;
@@ -466,6 +467,8 @@ export default function CityPage() {
         </div>
 
         <div className="space-y-8">
+          <RelatedItinerariesWidget destinationId={destination.id} />
+
           <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardContent className="pt-6">
               <div className="flex justify-between items-center mb-6">

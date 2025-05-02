@@ -29,10 +29,10 @@ describe('EventUrlInput Component', () => {
 
   test('renders URL input field correctly', () => {
     render(<EventUrlInput {...defaultProps} />);
-    
+
     const inputElement = screen.getByPlaceholderText(/paste event url/i);
     expect(inputElement).toBeInTheDocument();
-    
+
     const submitButton = screen.getByRole('button', { name: /get event/i });
     expect(submitButton).toBeInTheDocument();
     expect(submitButton).toBeDisabled(); // Button should be disabled initially
@@ -40,17 +40,17 @@ describe('EventUrlInput Component', () => {
 
   test('enables button when valid URL is entered', async () => {
     render(<EventUrlInput {...defaultProps} />);
-    
+
     const inputElement = screen.getByPlaceholderText(/paste event url/i);
     const submitButton = screen.getByRole('button', { name: /get event/i });
-    
+
     // Empty input - button should be disabled
     expect(submitButton).toBeDisabled();
-    
+
     // Enter invalid URL - button should remain disabled
     await userEvent.type(inputElement, 'not-a-url');
     expect(submitButton).toBeDisabled();
-    
+
     // Clear and enter valid URL - button should be enabled
     await userEvent.clear(inputElement);
     await userEvent.type(inputElement, 'https://www.eventbrite.com/e/sample-event');
@@ -59,13 +59,13 @@ describe('EventUrlInput Component', () => {
 
   test('displays error for invalid URL', async () => {
     render(<EventUrlInput {...defaultProps} />);
-    
+
     const inputElement = screen.getByPlaceholderText(/paste event url/i);
     fireEvent.change(inputElement, { target: { value: 'invalid-url' } });
-    
+
     const submitButton = screen.getByRole('button', { name: /get event/i });
     fireEvent.click(submitButton);
-    
+
     await waitFor(() => {
       expect(screen.getByText(/please enter a valid url/i)).toBeInTheDocument();
     });
@@ -73,35 +73,37 @@ describe('EventUrlInput Component', () => {
 
   test('shows loading state while fetching event data', async () => {
     // Mock a delayed response
-    (global.fetch as jest.Mock).mockImplementation(() => 
-      new Promise(resolve => 
-        setTimeout(() => 
-          resolve({
-            ok: true,
-            json: async () => ({
-              title: 'Sample Eventbrite Event',
-              description: 'This is a sample event description from Eventbrite.',
-              imageUrl: 'https://example.com/event-image.jpg',
-              scrapedUrl: 'https://www.eventbrite.com/e/sample-event'
-            }),
-          }),
-          100 // Small delay
+    (global.fetch as jest.Mock).mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => ({
+                  title: 'Sample Eventbrite Event',
+                  description: 'This is a sample event description from Eventbrite.',
+                  imageUrl: 'https://example.com/event-image.jpg',
+                  scrapedUrl: 'https://www.eventbrite.com/e/sample-event',
+                }),
+              }),
+            100 // Small delay
+          )
         )
-      )
     );
 
     render(<EventUrlInput {...defaultProps} />);
-    
+
     const inputElement = screen.getByPlaceholderText(/paste event url/i);
     const submitButton = screen.getByRole('button', { name: /get event/i });
-    
+
     // Empty input - button should be disabled
     expect(submitButton).toBeDisabled();
-    
+
     // Enter invalid URL - button should remain disabled
     await userEvent.type(inputElement, 'not-a-url');
     expect(submitButton).toBeDisabled();
-    
+
     // Clear and enter valid URL - button should be enabled
     await userEvent.clear(inputElement);
     await userEvent.type(inputElement, 'https://www.eventbrite.com/e/sample-event');

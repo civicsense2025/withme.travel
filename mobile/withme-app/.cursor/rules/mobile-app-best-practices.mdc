@@ -1,0 +1,2582 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Comprehensive Guide to Building Blazing Fast React Native & Next.js Mobile Apps with Supabase (2025)
+
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Architecture Setup](#architecture-setup)
+3. [Performance Optimization](#performance-optimization)
+4. [UI/UX Design Principles](#uiux-design-principles)
+5. [Supabase Integration](#supabase-integration)
+6. [Authentication & Security](#authentication--security)
+7. [State Management & Data Flow](#state-management--data-flow)
+8. [Animations & Interactions](#animations--interactions)
+9. [Cross-Platform Compatibility](#cross-platform-compatibility)
+10. [Testing & Quality Assurance](#testing--quality-assurance)
+11. [Deployment & Maintenance](#deployment--maintenance)
+12. [Advanced Techniques](#advanced-techniques)
+13. [Resources & Further Learning](#resources--further-learning)
+
+---
+
+## Introduction
+
+In today's mobile-first digital landscape, creating fast, engaging, and visually appealing applications is crucial for user retention and business success. As of 2025, React Native has firmly established itself as the framework of choice for cross-platform mobile development, with approximately 38% of mobile app developers preferring it for their projects.
+
+This comprehensive guide combines the power of React Native for mobile, Next.js for web, and Supabase for backend services to create a unified development workflow that maximizes code reuse and efficiency while delivering native-quality experiences.
+
+### Why This Tech Stack?
+
+- **React Native**: Enables code sharing across platforms while maintaining native performance
+- **Next.js**: Provides server-side rendering, API routes, and efficient web delivery
+- **Supabase**: Offers a complete backend solution including database, authentication, storage, and real-time features
+
+Together, these technologies form a powerful ecosystem for building applications that work seamlessly across different platforms while maintaining high performance and engaging user experiences.
+
+---
+
+## Architecture Setup
+
+### Setting Up a Monorepo Structure
+
+A monorepo structure allows you to share code between your React Native mobile app and Next.js web app while maintaining platform-specific implementations when necessary.
+
+#### Recommended Project Structure
+
+```
+my-universal-app/
+├── apps/
+│   ├── mobile/            # React Native app
+│   └── web/               # Next.js app
+├── packages/
+│   ├── api/               # Shared API calls and Supabase client
+│   ├── components/        # Shared UI components
+│   ├── hooks/             # Shared React hooks
+│   ├── navigation/        # Navigation logic
+│   ├── state/             # State management
+│   └── theme/             # Shared design tokens and themes
+├── package.json           # Root package.json with workspaces
+└── turbo.json             # Turborepo configuration
+```
+
+### Environment Configuration
+
+Proper environment configuration is essential for managing different development stages:
+
+```javascript
+// packages/api/src/supabase.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+```
+
+Create a `.env.local` file in your project root to store environment variables:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+### Setting Up React Native with Expo
+
+Expo provides a managed workflow that simplifies React Native development:
+
+```bash
+# Navigate to your mobile app directory
+cd apps/mobile
+
+# Initialize a new Expo project
+npx create-expo-app . --template blank
+
+# Install necessary dependencies
+npx expo install react-native-reanimated react-native-gesture-handler
+```
+
+### Setting Up Next.js
+
+For the web portion of your application:
+
+```bash
+# Navigate to your web app directory
+cd apps/web
+
+# Initialize a new Next.js project
+npx create-next-app . --typescript
+
+# Install necessary dependencies
+npm install @supabase/ssr @supabase/supabase-js
+```
+
+### Configuring Shared Packages
+
+Create a TypeScript configuration for shared packages:
+
+```json
+// packages/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+---
+
+## Performance Optimization
+
+### JavaScript Thread Optimization
+
+The JavaScript thread in React Native handles your business logic and component rendering. Keeping this thread responsive is crucial for app performance.
+
+#### Best Practices:
+
+1. **Use memoization techniques**:
+   ```javascript
+   // Use React.memo for functional components
+   const MemoizedComponent = React.memo(MyComponent);
+   
+   // Use useMemo for expensive calculations
+   const expensiveValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+   
+   // Use useCallback for function references
+   const handleClick = useCallback(() => {
+     doSomething(value);
+   }, [value]);
+   ```
+
+2. **Optimize list rendering with virtualization**:
+   ```javascript
+   import { FlatList } from 'react-native';
+   
+   function OptimizedList({ data }) {
+     const renderItem = useCallback(({ item }) => (
+       <ItemComponent item={item} />
+     ), []);
+     
+     return (
+       <FlatList
+         data={data}
+         renderItem={renderItem}
+         keyExtractor={(item) => item.id}
+         removeClippedSubviews={true}
+         maxToRenderPerBatch={10}
+         windowSize={5}
+         initialNumToRender={7}
+       />
+     );
+   }
+   ```
+
+3. **Implement efficient state updates**:
+   ```javascript
+   // Batch state updates
+   function updateMultipleStates() {
+     setState((prevState) => {
+       return {
+         ...prevState,
+         value1: newValue1,
+         value2: newValue2
+       };
+     });
+   }
+   ```
+
+### Enabling Hermes JavaScript Engine
+
+Hermes is an open-source JavaScript engine optimized for React Native. It significantly improves startup time, reduces memory usage, and decreases app size.
+
+#### For Android (in app.json or app.config.js):
+
+```json
+{
+  "name": "YourApp",
+  "android": {
+    "jsEngine": "hermes"
+  }
+}
+```
+
+#### For iOS (in app.json or app.config.js):
+
+```json
+{
+  "name": "YourApp",
+  "ios": {
+    "jsEngine": "hermes"
+  }
+}
+```
+
+### Image Optimization
+
+Optimizing images is crucial for performance and user experience:
+
+1. **Use appropriate image formats**:
+   - Use WebP for better compression and quality
+   - Convert JPG/PNG images to WebP during the build process
+
+2. **Implement progressive loading**:
+   ```javascript
+   import FastImage from 'react-native-fast-image';
+   
+   function OptimizedImage() {
+     return (
+       <FastImage
+         source={{ uri: imageUrl, priority: FastImage.priority.normal }}
+         style={styles.image}
+         resizeMode={FastImage.resizeMode.cover}
+       />
+     );
+   }
+   ```
+
+3. **Implement lazy loading for off-screen images**
+
+### Network Optimization
+
+Efficient network requests are essential for mobile apps:
+
+1. **Implement request caching**:
+   ```javascript
+   import AsyncStorage from '@react-native-async-storage/async-storage';
+   
+   async function fetchWithCache(url, options = {}) {
+     const cacheKey = `cache_${url}`;
+     const cachedData = await AsyncStorage.getItem(cacheKey);
+     
+     if (cachedData) {
+       return JSON.parse(cachedData);
+     }
+     
+     const response = await fetch(url, options);
+     const data = await response.json();
+     
+     await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
+     return data;
+   }
+   ```
+
+2. **Use Supabase for efficient real-time updates** (more details in the Supabase section)
+
+3. **Implement request batching and throttling**:
+   ```javascript
+   import { debounce } from 'lodash';
+   
+   const debouncedFetch = debounce(fetchData, 300);
+   ```
+
+---
+
+## UI/UX Design Principles
+
+### Responsive Design
+
+Implementing a truly responsive design that works across different screen sizes:
+
+1. **Use relative units instead of fixed dimensions**:
+   ```javascript
+   import { Dimensions } from 'react-native';
+   
+   const { width, height } = Dimensions.get('window');
+   
+   const styles = StyleSheet.create({
+     container: {
+       width: width * 0.9,
+       padding: width * 0.05,
+     },
+   });
+   ```
+
+2. **Implement a flexible grid system**:
+   ```javascript
+   function FlexibleGrid({ children }) {
+     return (
+       <View style={styles.grid}>
+         {children}
+       </View>
+     );
+   }
+   
+   const styles = StyleSheet.create({
+     grid: {
+       flexDirection: 'row',
+       flexWrap: 'wrap',
+       justifyContent: 'space-between',
+     },
+   });
+   ```
+
+3. **Adapt layouts based on orientation**:
+   ```javascript
+   import { useWindowDimensions } from 'react-native';
+   
+   function AdaptiveLayout() {
+     const { width, height } = useWindowDimensions();
+     const isLandscape = width > height;
+     
+     return (
+       <View style={isLandscape ? styles.landscape : styles.portrait}>
+         {/* Content */}
+       </View>
+     );
+   }
+   ```
+
+### Design System Implementation
+
+Create a consistent design system:
+
+1. **Define design tokens**:
+   ```javascript
+   // packages/theme/src/tokens.js
+   export const colors = {
+     primary: '#0070f3',
+     secondary: '#7928ca',
+     background: '#ffffff',
+     text: '#000000',
+     error: '#ff0000',
+     success: '#00ff00',
+     warning: '#ffff00',
+     // Add more colors as needed
+   };
+   
+   export const spacing = {
+     xs: 4,
+     sm: 8,
+     md: 16,
+     lg: 24,
+     xl: 32,
+     xxl: 48,
+   };
+   
+   export const typography = {
+     fontFamily: {
+       regular: 'System',
+       medium: 'System-Medium',
+       bold: 'System-Bold',
+     },
+     fontSize: {
+       xs: 12,
+       sm: 14,
+       md: 16,
+       lg: 18,
+       xl: 20,
+       xxl: 24,
+       xxxl: 32,
+     },
+   };
+   ```
+
+2. **Create reusable components**:
+   ```javascript
+   // packages/components/src/Button.js
+   import React from 'react';
+   import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+   import { colors, spacing, typography } from '@app/theme';
+   
+   export function Button({ 
+     title, 
+     onPress, 
+     variant = 'primary', 
+     size = 'medium',
+     disabled = false,
+     ...props 
+   }) {
+     return (
+       <TouchableOpacity
+         style={[
+           styles.button,
+           styles[variant],
+           styles[size],
+           disabled && styles.disabled,
+         ]}
+         onPress={onPress}
+         disabled={disabled}
+         {...props}
+       >
+         <Text style={[styles.text, styles[`${variant}Text`]]}>
+           {title}
+         </Text>
+       </TouchableOpacity>
+     );
+   }
+   
+   const styles = StyleSheet.create({
+     button: {
+       borderRadius: 8,
+       justifyContent: 'center',
+       alignItems: 'center',
+     },
+     primary: {
+       backgroundColor: colors.primary,
+     },
+     secondary: {
+       backgroundColor: 'transparent',
+       borderWidth: 1,
+       borderColor: colors.primary,
+     },
+     small: {
+       paddingVertical: spacing.xs,
+       paddingHorizontal: spacing.sm,
+     },
+     medium: {
+       paddingVertical: spacing.sm,
+       paddingHorizontal: spacing.md,
+     },
+     large: {
+       paddingVertical: spacing.md,
+       paddingHorizontal: spacing.lg,
+     },
+     text: {
+       fontFamily: typography.fontFamily.medium,
+       fontSize: typography.fontSize.md,
+     },
+     primaryText: {
+       color: '#ffffff',
+     },
+     secondaryText: {
+       color: colors.primary,
+     },
+     disabled: {
+       opacity: 0.5,
+     },
+   });
+   ```
+
+3. **Create theming support**:
+   ```javascript
+   // packages/components/src/ThemeProvider.js
+   import React, { createContext, useContext, useState } from 'react';
+   import { lightTheme, darkTheme } from '@app/theme';
+   
+   const ThemeContext = createContext(null);
+   
+   export function ThemeProvider({ children, initialTheme = 'light' }) {
+     const [theme, setTheme] = useState(initialTheme === 'light' ? lightTheme : darkTheme);
+     
+     const toggleTheme = () => {
+       setTheme(prevTheme => prevTheme === lightTheme ? darkTheme : lightTheme);
+     };
+     
+     return (
+       <ThemeContext.Provider value={{ theme, toggleTheme }}>
+         {children}
+       </ThemeContext.Provider>
+     );
+   }
+   
+   export function useTheme() {
+     const context = useContext(ThemeContext);
+     if (!context) {
+       throw new Error('useTheme must be used within a ThemeProvider');
+     }
+     return context;
+   }
+   ```
+
+### Accessibility Implementation
+
+Make your app accessible to all users:
+
+1. **Add proper accessibility attributes**:
+   ```javascript
+   function AccessibleComponent() {
+     return (
+       <TouchableOpacity
+         accessible={true}
+         accessibilityLabel="Tap to perform action"
+         accessibilityHint="Opens the settings screen"
+         accessibilityRole="button"
+       >
+         <Text>Settings</Text>
+       </TouchableOpacity>
+     );
+   }
+   ```
+
+2. **Support dynamic text sizing**:
+   ```javascript
+   import { useWindowDimensions } from 'react-native';
+   
+   function DynamicText({ style, ...props }) {
+     const { fontScale } = useWindowDimensions();
+     
+     return (
+       <Text
+         style={[
+           style,
+           { fontSize: (style?.fontSize || 16) * fontScale },
+         ]}
+         {...props}
+       />
+     );
+   }
+   ```
+
+3. **Implement proper focus management**:
+   ```javascript
+   import { useRef } from 'react';
+   
+   function FocusableForm() {
+     const inputRef = useRef(null);
+     
+     return (
+       <View>
+         <TextInput ref={inputRef} />
+         <Button 
+           title="Focus Input"
+           onPress={() => inputRef.current.focus()}
+         />
+       </View>
+     );
+   }
+   ```
+
+---
+
+## Supabase Integration
+
+### Setting Up Supabase
+
+1. **Create a Supabase project** at [supabase.com](https://supabase.com)
+
+2. **Install necessary packages**:
+   ```bash
+   npm install @supabase/supabase-js
+   
+   # For React Native
+   npm install @react-native-async-storage/async-storage
+   
+   # For Next.js
+   npm install @supabase/ssr
+   ```
+
+3. **Create Supabase client for React Native**:
+   ```javascript
+   // packages/api/src/supabase.js
+   import AsyncStorage from '@react-native-async-storage/async-storage';
+   import { createClient } from '@supabase/supabase-js';
+   
+   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+   const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+   
+   export const supabase = createClient(
+     supabaseUrl,
+     supabaseAnonKey,
+     {
+       auth: {
+         storage: AsyncStorage,
+         autoRefreshToken: true,
+         persistSession: true,
+         detectSessionInUrl: false,
+       },
+     }
+   );
+   ```
+
+4. **Create Supabase client for Next.js**:
+   ```javascript
+   // apps/web/utils/supabase/server.js
+   import { createServerClient } from '@supabase/ssr';
+   import { cookies } from 'next/headers';
+   
+   export function createClient() {
+     const cookieStore = cookies();
+     
+     return createServerClient(
+       process.env.NEXT_PUBLIC_SUPABASE_URL,
+       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+       {
+         cookies: {
+           get(name) {
+             return cookieStore.get(name)?.value;
+           },
+           set(name, value, options) {
+             cookieStore.set({ name, value, ...options });
+           },
+           remove(name, options) {
+             cookieStore.set({ name, value: '', ...options });
+           },
+         },
+       }
+     );
+   }
+   ```
+
+### Database Design and Query Optimization
+
+1. **Design efficient database schema**:
+   ```sql
+   -- Example schema for a task management app
+   CREATE TABLE users (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     email TEXT UNIQUE NOT NULL,
+     full_name TEXT,
+     avatar_url TEXT,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
+   
+   CREATE TABLE projects (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     title TEXT NOT NULL,
+     description TEXT,
+     owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
+   
+   CREATE TABLE tasks (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     title TEXT NOT NULL,
+     description TEXT,
+     status TEXT NOT NULL DEFAULT 'pending',
+     priority INTEGER NOT NULL DEFAULT 1,
+     due_date TIMESTAMP WITH TIME ZONE,
+     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+     assignee_id UUID REFERENCES users(id) ON DELETE SET NULL,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
+   ```
+
+2. **Implement Row Level Security (RLS) policies**:
+   ```sql
+   -- Enable RLS on tables
+   ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+   
+   -- Create policies
+   CREATE POLICY "Users can view their own projects"
+     ON projects
+     FOR SELECT
+     USING (owner_id = auth.uid());
+   
+   CREATE POLICY "Users can insert their own projects"
+     ON projects
+     FOR INSERT
+     WITH CHECK (owner_id = auth.uid());
+   
+   CREATE POLICY "Users can update their own projects"
+     ON projects
+     FOR UPDATE
+     USING (owner_id = auth.uid());
+   
+   CREATE POLICY "Users can delete their own projects"
+     ON projects
+     FOR DELETE
+     USING (owner_id = auth.uid());
+   ```
+
+3. **Optimize queries with indexes**:
+   ```sql
+   -- Add indexes for frequently queried columns
+   CREATE INDEX tasks_project_id_idx ON tasks(project_id);
+   CREATE INDEX tasks_assignee_id_idx ON tasks(assignee_id);
+   CREATE INDEX tasks_status_idx ON tasks(status);
+   ```
+
+4. **Create efficient data access patterns**:
+   ```javascript
+   // packages/api/src/project.js
+   export async function getProjects() {
+     const { data, error } = await supabase
+       .from('projects')
+       .select('*, tasks(count)')
+       .order('created_at', { ascending: false });
+       
+     if (error) throw error;
+     return data;
+   }
+   
+   export async function getProjectDetails(projectId) {
+     const { data, error } = await supabase
+       .from('projects')
+       .select(`
+         *,
+         tasks (
+           *,
+           assignee:users(id, full_name, avatar_url)
+         )
+       `)
+       .eq('id', projectId)
+       .single();
+       
+     if (error) throw error;
+     return data;
+   }
+   ```
+
+### Implementing Real-time Updates
+
+Supabase provides real-time capabilities to keep your app data synchronized:
+
+```javascript
+// packages/api/src/useRealtime.js
+import { useEffect, useState } from 'react';
+import { supabase } from './supabase';
+
+export function useRealtimeSubscription(table, column, value) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    let subscription;
+    
+    async function fetchInitialData() {
+      try {
+        setLoading(true);
+        
+        let query = supabase.from(table).select('*');
+        
+        if (column && value) {
+          query = query.eq(column, value);
+        }
+        
+        const { data, error: fetchError } = await query;
+        
+        if (fetchError) {
+          throw fetchError;
+        }
+        
+        setData(data);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    async function setupSubscription() {
+      await fetchInitialData();
+      
+      subscription = supabase
+        .channel(`public:${table}${column ? `:${column}:${value}` : ''}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table,
+          ...(column && value ? { filter: `${column}=eq.${value}` } : {}),
+        }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setData((prevData) => [...prevData, payload.new]);
+          } else if (payload.eventType === 'UPDATE') {
+            setData((prevData) =>
+              prevData.map((item) =>
+                item.id === payload.new.id ? payload.new : item
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setData((prevData) =>
+              prevData.filter((item) => item.id !== payload.old.id)
+            );
+          }
+        })
+        .subscribe();
+    }
+    
+    setupSubscription();
+    
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, [table, column, value]);
+  
+  return { data, loading, error };
+}
+```
+
+Usage:
+
+```javascript
+function TaskList({ projectId }) {
+  const { data: tasks, loading, error } = useRealtimeSubscription('tasks', 'project_id', projectId);
+  
+  if (loading) return <LoadingIndicator />;
+  if (error) return <ErrorDisplay error={error} />;
+  
+  return (
+    <FlatList
+      data={tasks}
+      renderItem={({ item }) => <TaskItem task={item} />}
+      keyExtractor={(item) => item.id}
+    />
+  );
+}
+```
+
+### Storage and File Handling
+
+Supabase provides a storage solution for file uploads:
+
+```javascript
+// packages/api/src/storage.js
+import { supabase } from './supabase';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
+
+export async function uploadImage(uri, bucket, path) {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, decode(base64), {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+      
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+}
+
+export function getPublicUrl(bucket, path) {
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+```
+
+Usage:
+
+```javascript
+async function handleProfilePictureUpload() {
+  try {
+    setUploading(true);
+    
+    // Get permission and launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      const fileExt = uri.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `profile-pictures/${fileName}`;
+      
+      // Upload image
+      await uploadImage(uri, 'avatars', filePath);
+      
+      // Get public URL
+      const publicUrl = getPublicUrl('avatars', filePath);
+      
+      // Update user profile
+      await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+        
+      Alert.alert('Success', 'Profile picture updated!');
+    }
+  } catch (error) {
+    Alert.alert('Error', error.message);
+  } finally {
+    setUploading(false);
+  }
+}
+```
+
+---
+
+## Authentication & Security
+
+### Setting Up Authentication
+
+1. **Configure Supabase Auth**:
+   ```javascript
+   // packages/api/src/auth.js
+   import { supabase } from './supabase';
+   
+   export async function signUp(email, password) {
+     const { data, error } = await supabase.auth.signUp({
+       email,
+       password,
+     });
+     
+     if (error) throw error;
+     return data;
+   }
+   
+   export async function signIn(email, password) {
+     const { data, error } = await supabase.auth.signInWithPassword({
+       email,
+       password,
+     });
+     
+     if (error) throw error;
+     return data;
+   }
+   
+   export async function signOut() {
+     const { error } = await supabase.auth.signOut();
+     if (error) throw error;
+   }
+   
+   export async function resetPassword(email) {
+     const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+     if (error) throw error;
+     return data;
+   }
+   ```
+
+2. **Implement Auth Context**:
+   ```javascript
+   // packages/state/src/AuthContext.js
+   import React, { createContext, useContext, useEffect, useState } from 'react';
+   import { supabase } from '@app/api';
+   
+   const AuthContext = createContext(null);
+   
+   export function AuthProvider({ children }) {
+     const [user, setUser] = useState(null);
+     const [session, setSession] = useState(null);
+     const [loading, setLoading] = useState(true);
+     
+     useEffect(() => {
+       // Get initial session
+       supabase.auth.getSession().then(({ data: { session } }) => {
+         setSession(session);
+         setUser(session?.user ?? null);
+         setLoading(false);
+       });
+       
+       // Listen for auth changes
+       const { data: { subscription } } = supabase.auth.onAuthStateChange(
+         (_event, session) => {
+           setSession(session);
+           setUser(session?.user ?? null);
+           setLoading(false);
+         }
+       );
+       
+       return () => {
+         subscription.unsubscribe();
+       };
+     }, []);
+     
+     const value = {
+       user,
+       session,
+       loading,
+       signUp: (email, password) => supabase.auth.signUp({ email, password }),
+       signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+       signOut: () => supabase.auth.signOut(),
+       updateUser: (data) => supabase.auth.updateUser(data),
+     };
+     
+     return (
+       <AuthContext.Provider value={value}>
+         {children}
+       </AuthContext.Provider>
+     );
+   }
+   
+   export function useAuth() {
+     const context = useContext(AuthContext);
+     if (!context) {
+       throw new Error('useAuth must be used within an AuthProvider');
+     }
+     return context;
+   }
+   ```
+
+3. **Create auth screens**:
+   ```javascript
+   // apps/mobile/src/screens/SignInScreen.js
+   import React, { useState } from 'react';
+   import { View, TextInput, StyleSheet, Alert } from 'react-native';
+   import { Button, Text } from '@app/components';
+   import { useAuth } from '@app/state';
+   
+   export function SignInScreen({ navigation }) {
+     const [email, setEmail] = useState('');
+     const [password, setPassword] = useState('');
+     const [loading, setLoading] = useState(false);
+     const { signIn } = useAuth();
+     
+     async function handleSignIn() {
+       if (!email || !password) {
+         return Alert.alert('Error', 'Please enter email and password');
+       }
+       
+       try {
+         setLoading(true);
+         const { error } = await signIn(email, password);
+         
+         if (error) throw error;
+       } catch (error) {
+         Alert.alert('Error', error.message);
+       } finally {
+         setLoading(false);
+       }
+     }
+     
+     return (
+       <View style={styles.container}>
+         <Text style={styles.title}>Sign In</Text>
+         
+         <TextInput
+           style={styles.input}
+           placeholder="Email"
+           value={email}
+           onChangeText={setEmail}
+           autoCapitalize="none"
+           keyboardType="email-address"
+         />
+         
+         <TextInput
+           style={styles.input}
+           placeholder="Password"
+           value={password}
+           onChangeText={setPassword}
+           secureTextEntry
+         />
+         
+         <Button
+           title={loading ? 'Signing in...' : 'Sign In'}
+           onPress={handleSignIn}
+           disabled={loading}
+         />
+         
+         <Button
+           title="Don't have an account? Sign Up"
+           variant="secondary"
+           onPress={() => navigation.navigate('SignUp')}
+         />
+       </View>
+     );
+   }
+   
+   const styles = StyleSheet.create({
+     container: {
+       flex: 1,
+       padding: 16,
+       justifyContent: 'center',
+     },
+     title: {
+       fontSize: 24,
+       fontWeight: 'bold',
+       marginBottom: 24,
+       textAlign: 'center',
+     },
+     input: {
+       borderWidth: 1,
+       borderColor: '#ddd',
+       borderRadius: 8,
+       padding: 12,
+       marginBottom: 16,
+     },
+   });
+   ```
+
+### Security Best Practices
+
+1. **Implement proper data validation**:
+   ```javascript
+   import * as z from 'zod';
+   
+   // Define validation schema
+   const userSchema = z.object({
+     email: z.string().email(),
+     password: z.string().min(8),
+     fullName: z.string().min(2).optional(),
+   });
+   
+   export function validateUser(userData) {
+     try {
+       return userSchema.parse(userData);
+     } catch (error) {
+       throw new Error(`Validation error: ${error.message}`);
+     }
+   }
+   ```
+
+2. **Secure storage for sensitive data**:
+   ```javascript
+   import * as SecureStore from 'expo-secure-store';
+   
+   export async function saveSecureValue(key, value) {
+     await SecureStore.setItemAsync(key, value);
+   }
+   
+   export async function getSecureValue(key) {
+     return await SecureStore.getItemAsync(key);
+   }
+   
+   export async function deleteSecureValue(key) {
+     await SecureStore.deleteItemAsync(key);
+   }
+   ```
+
+3. **Implement certificate pinning** (for production apps):
+   ```javascript
+   // Example using react-native-ssl-pinning
+   import { fetch } from 'react-native-ssl-pinning';
+   
+   async function secureApiCall(url, options = {}) {
+     try {
+       const response = await fetch(url, {
+         ...options,
+         sslPinning: {
+           certs: ['certificate-hash'],
+         },
+       });
+       
+       return await response.json();
+     } catch (error) {
+       console.error('Secure API call failed:', error);
+       throw error;
+     }
+   }
+   ```
+
+---
+
+## State Management & Data Flow
+
+### Implementing Clean Architecture
+
+Follow a clean architecture pattern to separate concerns:
+
+```
+src/
+├── domain/        # Business logic and entities
+├── data/          # Data sources and repositories
+├── presentation/  # UI components and screens
+└── application/   # Use cases and application logic
+```
+
+### Efficient State Management
+
+1. **Implement context-based state management**:
+   ```javascript
+   // packages/state/src/TaskContext.js
+   import React, { createContext, useContext, useReducer } from 'react';
+   
+   const TaskContext = createContext(null);
+   
+   // Action types
+   const ADD_TASK = 'ADD_TASK';
+   const UPDATE_TASK = 'UPDATE_TASK';
+   const DELETE_TASK = 'DELETE_TASK';
+   
+   // Reducer
+   function taskReducer(state, action) {
+     switch (action.type) {
+       case ADD_TASK:
+         return [...state, action.payload];
+       case UPDATE_TASK:
+         return state.map(task =>
+           task.id === action.payload.id ? action.payload : task
+         );
+       case DELETE_TASK:
+         return state.filter(task => task.id !== action.payload);
+       default:
+         return state;
+     }
+   }
+   
+   export function TaskProvider({ children, initialTasks = [] }) {
+     const [tasks, dispatch] = useReducer(taskReducer, initialTasks);
+     
+     // Actions
+     const addTask = (task) => dispatch({ type: ADD_TASK, payload: task });
+     const updateTask = (task) => dispatch({ type: UPDATE_TASK, payload: task });
+     const deleteTask = (id) => dispatch({ type: DELETE_TASK, payload: id });
+     
+     return (
+       <TaskContext.Provider value={{ tasks, addTask, updateTask, deleteTask }}>
+         {children}
+       </TaskContext.Provider>
+     );
+   }
+   
+   export function useTasks() {
+     const context = useContext(TaskContext);
+     if (!context) {
+       throw new Error('useTasks must be used within a TaskProvider');
+     }
+     return context;
+   }
+   ```
+
+2. **Implement custom hooks for data fetching**:
+   ```javascript
+   // packages/hooks/src/useTasks.js
+   import { useState, useEffect } from 'react';
+   import { getTasks, createTask, updateTask, deleteTask } from '@app/api';
+   
+   export function useTasks(projectId) {
+     const [tasks, setTasks] = useState([]);
+     const [loading, setLoading] = useState(true);
+     const [error, setError] = useState(null);
+     
+     // Fetch tasks
+     useEffect(() => {
+       let isMounted = true;
+       
+       async function fetchTasks() {
+         try {
+           setLoading(true);
+           const data = await getTasks(projectId);
+           
+           if (isMounted) {
+             setTasks(data);
+             setError(null);
+           }
+         } catch (err) {
+           if (isMounted) {
+             setError(err.message);
+           }
+         } finally {
+           if (isMounted) {
+             setLoading(false);
+           }
+         }
+       }
+       
+       fetchTasks();
+       
+       return () => {
+         isMounted = false;
+       };
+     }, [projectId]);
+     
+     // Add task
+     const addTask = async (taskData) => {
+       try {
+         const newTask = await createTask({ ...taskData, projectId });
+         setTasks((prevTasks) => [...prevTasks, newTask]);
+         return newTask;
+       } catch (err) {
+         setError(err.message);
+         throw err;
+       }
+     };
+     
+     // Update task
+     const editTask = async (id, taskData) => {
+       try {
+         const updatedTask = await updateTask(id, taskData);
+         setTasks((prevTasks) =>
+           prevTasks.map((task) => (task.id === id ? updatedTask : task))
+         );
+         return updatedTask;
+       } catch (err) {
+         setError(err.message);
+         throw err;
+       }
+     };
+     
+     // Delete task
+     const removeTask = async (id) => {
+       try {
+         await deleteTask(id);
+         setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+       } catch (err) {
+         setError(err.message);
+         throw err;
+       }
+     };
+     
+     return {
+       tasks,
+       loading,
+       error,
+       addTask,
+       editTask,
+       removeTask,
+     };
+   }
+   ```
+
+3. **Synchronize local and remote state**:
+   ```javascript
+   // packages/hooks/src/useSyncedState.js
+   import { useState, useEffect } from 'react';
+   import NetInfo from '@react-native-community/netinfo';
+   import AsyncStorage from '@react-native-async-storage/async-storage';
+   
+   export function useSyncedState(key, initialValue, syncFunction) {
+     const [state, setState] = useState(initialValue);
+     const [lastSynced, setLastSynced] = useState(null);
+     const [isOnline, setIsOnline] = useState(true);
+     const [isSyncing, setIsSyncing] = useState(false);
+     
+     // Load from local storage on mount
+     useEffect(() => {
+       async function loadFromStorage() {
+         try {
+           const storedData = await AsyncStorage.getItem(key);
+           
+           if (storedData) {
+             const { value, timestamp } = JSON.parse(storedData);
+             setState(value);
+             setLastSynced(timestamp);
+           }
+         } catch (error) {
+           console.error('Error loading from storage:', error);
+         }
+       }
+       
+       loadFromStorage();
+     }, [key]);
+     
+     // Monitor network status
+     useEffect(() => {
+       const unsubscribe = NetInfo.addEventListener(state => {
+         setIsOnline(state.isConnected && state.isInternetReachable);
+       });
+       
+       return () => unsubscribe();
+     }, []);
+     
+     // Save to local storage when state changes
+     useEffect(() => {
+       async function saveToStorage() {
+         try {
+           const data = {
+             value: state,
+             timestamp: Date.now(),
+           };
+           
+           await AsyncStorage.setItem(key, JSON.stringify(data));
+         } catch (error) {
+           console.error('Error saving to storage:', error);
+         }
+       }
+       
+       saveToStorage();
+     }, [key, state]);
+     
+     // Sync with remote when online
+     const sync = async () => {
+       if (!isOnline || isSyncing) return;
+       
+       try {
+         setIsSyncing(true);
+         
+         const result = await syncFunction(state);
+         
+         // Update state with remote data if needed
+         setState(result);
+         
+         // Update last synced timestamp
+         const timestamp = Date.now();
+         setLastSynced(timestamp);
+         
+         // Update storage with synced data
+         const data = {
+           value: result,
+           timestamp,
+         };
+         
+         await AsyncStorage.setItem(key, JSON.stringify(data));
+       } catch (error) {
+         console.error('Error syncing with remote:', error);
+       } finally {
+         setIsSyncing(false);
+       }
+     };
+     
+     // Auto-sync when online
+     useEffect(() => {
+       if (isOnline && !isSyncing) {
+         sync();
+       }
+     }, [isOnline]);
+     
+     return {
+       state,
+       setState,
+       lastSynced,
+       isOnline,
+       isSyncing,
+       sync,
+     };
+   }
+   ```
+
+---
+
+## Animations & Interactions
+
+### Fluid Animations with React Native Reanimated
+
+React Native Reanimated provides high-performance animations that run on the UI thread:
+
+1. **Install dependencies**:
+   ```bash
+   npx expo install react-native-reanimated
+   ```
+
+2. **Implement basic animations**:
+   ```javascript
+   import Animated, {
+     useSharedValue,
+     useAnimatedStyle,
+     withSpring,
+     withTiming,
+   } from 'react-native-reanimated';
+   import { Pressable } from 'react-native';
+   
+   function AnimatedButton() {
+     const scale = useSharedValue(1);
+     
+     const animatedStyle = useAnimatedStyle(() => {
+       return {
+         transform: [{ scale: scale.value }],
+       };
+     });
+     
+     const handlePressIn = () => {
+       scale.value = withSpring(0.95);
+     };
+     
+     const handlePressOut = () => {
+       scale.value = withSpring(1);
+     };
+     
+     return (
+       <Pressable
+         onPressIn={handlePressIn}
+         onPressOut={handlePressOut}
+       >
+         <Animated.View style={[styles.button, animatedStyle]}>
+           <Text style={styles.buttonText}>Press Me</Text>
+         </Animated.View>
+       </Pressable>
+     );
+   }
+   ```
+
+3. **Create complex gesture-based animations**:
+   ```javascript
+   import Animated, {
+     useSharedValue,
+     useAnimatedStyle,
+     useAnimatedGestureHandler,
+     withSpring,
+   } from 'react-native-reanimated';
+   import { PanGestureHandler } from 'react-native-gesture-handler';
+   
+   function DraggableCard() {
+     const translateX = useSharedValue(0);
+     const translateY = useSharedValue(0);
+     
+     const gestureHandler = useAnimatedGestureHandler({
+       onStart: (_, ctx) => {
+         ctx.startX = translateX.value;
+         ctx.startY = translateY.value;
+       },
+       onActive: (event, ctx) => {
+         translateX.value = ctx.startX + event.translationX;
+         translateY.value = ctx.startY + event.translationY;
+       },
+       onEnd: () => {
+         translateX.value = withSpring(0);
+         translateY.value = withSpring(0);
+       },
+     });
+     
+     const animatedStyle = useAnimatedStyle(() => {
+       return {
+         transform: [
+           { translateX: translateX.value },
+           { translateY: translateY.value },
+         ],
+       };
+     });
+     
+     return (
+       <PanGestureHandler onGestureEvent={gestureHandler}>
+         <Animated.View style={[styles.card, animatedStyle]}>
+           <Text>Drag me!</Text>
+         </Animated.View>
+       </PanGestureHandler>
+     );
+   }
+   ```
+
+### Interactive UI Components
+
+Create interactive UI components with gestures and animations:
+
+1. **Swipeable list items**:
+   ```javascript
+   import Animated, {
+     useSharedValue,
+     useAnimatedStyle,
+     useAnimatedGestureHandler,
+     withTiming,
+     runOnJS,
+   } from 'react-native-reanimated';
+   import { PanGestureHandler } from 'react-native-gesture-handler';
+   
+   function SwipeableListItem({ item, onDelete }) {
+     const translateX = useSharedValue(0);
+     
+     const gestureHandler = useAnimatedGestureHandler({
+       onStart: (_, ctx) => {
+         ctx.startX = translateX.value;
+       },
+       onActive: (event, ctx) => {
+         translateX.value = ctx.startX + event.translationX;
+       },
+       onEnd: (event) => {
+         const shouldDelete = translateX.value < -100;
+         
+         if (shouldDelete) {
+           translateX.value = withTiming(-1000, { duration: 500 }, () => {
+             runOnJS(onDelete)(item.id);
+           });
+         } else {
+           translateX.value = withTiming(0);
+         }
+       },
+     });
+     
+     const animatedStyle = useAnimatedStyle(() => {
+       return {
+         transform: [{ translateX: translateX.value }],
+       };
+     });
+     
+     return (
+       <View style={styles.container}>
+         <Animated.View style={[styles.deleteBackground]}>
+           <Text style={styles.deleteText}>Delete</Text>
+         </Animated.View>
+         
+         <PanGestureHandler onGestureEvent={gestureHandler}>
+           <Animated.View style={[styles.listItem, animatedStyle]}>
+             <Text>{item.title}</Text>
+           </Animated.View>
+         </PanGestureHandler>
+       </View>
+     );
+   }
+   ```
+
+2. **Interactive cards with shared element transitions**:
+   ```javascript
+   import Animated, {
+     useSharedValue,
+     useAnimatedStyle,
+     withTiming,
+     runOnJS,
+   } from 'react-native-reanimated';
+   
+   function Card({ item, onPress, index }) {
+     const scale = useSharedValue(1);
+     const opacity = useSharedValue(1);
+     
+     const handlePress = () => {
+       scale.value = withTiming(1.05, { duration: 200 }, () => {
+         scale.value = withTiming(1, { duration: 200 });
+         runOnJS(onPress)(item);
+       });
+     };
+     
+     const cardStyle = useAnimatedStyle(() => {
+       return {
+         transform: [{ scale: scale.value }],
+         opacity: opacity.value,
+       };
+     });
+     
+     return (
+       <Pressable onPress={handlePress}>
+         <Animated.View 
+           style={[styles.card, cardStyle]}
+           entering={FadeInUp.delay(index * 100)}
+         >
+           <Text style={styles.title}>{item.title}</Text>
+           <Text style={styles.description}>{item.description}</Text>
+         </Animated.View>
+       </Pressable>
+     );
+   }
+   ```
+
+3. **Pull-to-refresh implementation**:
+   ```javascript
+   import Animated, {
+     useSharedValue,
+     useAnimatedStyle,
+     useAnimatedScrollHandler,
+     withSpring,
+     runOnJS,
+   } from 'react-native-reanimated';
+   
+   function PullToRefreshList({ data, onRefresh, renderItem }) {
+     const [refreshing, setRefreshing] = useState(false);
+     const translateY = useSharedValue(0);
+     const isRefreshing = useSharedValue(false);
+     
+     const handleRefresh = async () => {
+       setRefreshing(true);
+       await onRefresh();
+       setRefreshing(false);
+       isRefreshing.value = false;
+     };
+     
+     const scrollHandler = useAnimatedScrollHandler({
+       onScroll: (event) => {
+         if (event.contentOffset.y < -100 && !isRefreshing.value) {
+           isRefreshing.value = true;
+           runOnJS(handleRefresh)();
+         }
+       },
+     });
+     
+     const indicatorStyle = useAnimatedStyle(() => {
+       return {
+         transform: [{ translateY: Math.min(0, translateY.value) }],
+         opacity: translateY.value < -20 ? 1 : 0,
+       };
+     });
+     
+     return (
+       <View style={styles.container}>
+         <Animated.View style={[styles.refreshIndicator, indicatorStyle]}>
+           {refreshing ? (
+             <ActivityIndicator color="#000" />
+           ) : (
+             <Text>Pull to refresh</Text>
+           )}
+         </Animated.View>
+         
+         <Animated.FlatList
+           data={data}
+           renderItem={renderItem}
+           keyExtractor={(item) => item.id}
+           onScroll={scrollHandler}
+           scrollEventThrottle={16}
+           contentContainerStyle={styles.listContent}
+         />
+       </View>
+     );
+   }
+   ```
+
+---
+
+## Cross-Platform Compatibility
+
+### Sharing Code Between React Native and Next.js
+
+Maximize code sharing while respecting platform differences:
+
+1. **Platform-specific code organization**:
+   ```javascript
+   // packages/components/src/Button/index.js
+   import { Platform } from 'react-native';
+   
+   export * from './Button';
+   
+   // Platform-specific imports
+   if (Platform.OS === 'web') {
+     export * from './Button.web';
+   } else {
+     export * from './Button.native';
+   }
+   ```
+
+2. **Use platform extensions**:
+   ```javascript
+   // packages/components/src/Button/Button.js (shared code)
+   // packages/components/src/Button/Button.native.js (React Native specific)
+   // packages/components/src/Button/Button.web.js (Web specific)
+   ```
+
+3. **Conditional platform rendering**:
+   ```javascript
+   import { Platform } from 'react-native';
+   
+   function MyComponent() {
+     return (
+       <View>
+         {Platform.OS === 'web' ? (
+           <WebSpecificComponent />
+         ) : (
+           <NativeSpecificComponent />
+         )}
+       </View>
+     );
+   }
+   ```
+
+### Platform-Specific Navigation
+
+Implement different navigation patterns for web and mobile:
+
+1. **Mobile navigation with React Navigation**:
+   ```javascript
+   // apps/mobile/src/navigation/index.js
+   import { NavigationContainer } from '@react-navigation/native';
+   import { createNativeStackNavigator } from '@react-navigation/native-stack';
+   
+   const Stack = createNativeStackNavigator();
+   
+   export function Navigation() {
+     return (
+       <NavigationContainer>
+         <Stack.Navigator>
+           <Stack.Screen name="Home" component={HomeScreen} />
+           <Stack.Screen name="Details" component={DetailsScreen} />
+           <Stack.Screen name="Profile" component={ProfileScreen} />
+         </Stack.Navigator>
+       </NavigationContainer>
+     );
+   }
+   ```
+
+2. **Web navigation with Next.js App Router**:
+   ```javascript
+   // apps/web/src/app/layout.js
+   import { Inter } from 'next/font/google';
+   import { Navbar } from '@/components/Navbar';
+   
+   const inter = Inter({ subsets: ['latin'] });
+   
+   export default function RootLayout({ children }) {
+     return (
+       <html lang="en">
+         <body className={inter.className}>
+           <Navbar />
+           {children}
+         </body>
+       </html>
+     );
+   }
+   ```
+
+3. **Navigation abstraction layer**:
+   ```javascript
+   // packages/navigation/src/useNavigation.js
+   import { useCallback } from 'react';
+   import { Platform } from 'react-native';
+   
+   let navigate;
+   
+   if (Platform.OS === 'web') {
+     // Import Next.js navigation
+     const { useRouter } = require('next/navigation');
+     
+     export function useNavigation() {
+       const router = useRouter();
+       
+       navigate = useCallback((routeName, params = {}) => {
+         // Convert route name to path
+         const path = routeNameToPath(routeName, params);
+         router.push(path);
+       }, [router]);
+       
+       return { navigate };
+     }
+     
+     function routeNameToPath(routeName, params) {
+       // Map route names to paths
+       const routes = {
+         Home: '/',
+         Details: `/details/${params.id}`,
+         Profile: '/profile',
+       };
+       
+       return routes[routeName] || '/';
+     }
+   } else {
+     // Import React Navigation
+     const { useNavigation: useReactNavigation } = require('@react-navigation/native');
+     
+     export function useNavigation() {
+       const navigation = useReactNavigation();
+       
+       navigate = useCallback((routeName, params = {}) => {
+         navigation.navigate(routeName, params);
+       }, [navigation]);
+       
+       return { navigate };
+     }
+   }
+   ```
+
+### Adaptive Layout Design
+
+Create layouts that adapt to different screen sizes and orientations:
+
+```javascript
+import { useWindowDimensions } from 'react-native';
+
+function AdaptiveLayout({ children }) {
+  const { width } = useWindowDimensions();
+  
+  // Define breakpoints
+  const isSmall = width < 640;
+  const isMedium = width >= 640 && width < 1024;
+  const isLarge = width >= 1024;
+  
+  // Layout config based on screen size
+  const columns = isSmall ? 1 : isMedium ? 2 : 3;
+  
+  return (
+    <View style={styles.container}>
+      <View style={[
+        styles.content,
+        { flexDirection: isSmall ? 'column' : 'row' }
+      ]}>
+        {isSmall ? null : <Sidebar />}
+        <View style={[
+          styles.main,
+          { flex: isSmall ? 1 : 3 }
+        ]}>
+          <Grid columns={columns}>
+            {children}
+          </Grid>
+        </View>
+      </View>
+    </View>
+  );
+}
+```
+
+---
+
+## Testing & Quality Assurance
+
+### Unit Testing
+
+Implement unit tests with Jest:
+
+```javascript
+// packages/hooks/__tests__/useTasks.test.js
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useTasks } from '../src/useTasks';
+import * as api from '@app/api';
+
+// Mock the API
+jest.mock('@app/api', () => ({
+  getTasks: jest.fn(),
+  createTask: jest.fn(),
+  updateTask: jest.fn(),
+  deleteTask: jest.fn(),
+}));
+
+describe('useTasks hook', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+  
+  test('should fetch tasks on mount', async () => {
+    const mockTasks = [
+      { id: '1', title: 'Task 1' },
+      { id: '2', title: 'Task 2' },
+    ];
+    
+    api.getTasks.mockResolvedValue(mockTasks);
+    
+    const { result, waitForNextUpdate } = renderHook(() => useTasks('project-1'));
+    
+    expect(result.current.loading).toBe(true);
+    expect(result.current.tasks).toEqual([]);
+    
+    await waitForNextUpdate();
+    
+    expect(api.getTasks).toHaveBeenCalledWith('project-1');
+    expect(result.current.loading).toBe(false);
+    expect(result.current.tasks).toEqual(mockTasks);
+    expect(result.current.error).toBeNull();
+  });
+  
+  test('should add a task', async () => {
+    const mockTasks = [
+      { id: '1', title: 'Task 1' },
+    ];
+    
+    const newTask = { id: '2', title: 'Task 2' };
+    
+    api.getTasks.mockResolvedValue(mockTasks);
+    api.createTask.mockResolvedValue(newTask);
+    
+    const { result, waitForNextUpdate } = renderHook(() => useTasks('project-1'));
+    
+    await waitForNextUpdate();
+    
+    act(() => {
+      result.current.addTask({ title: 'Task 2' });
+    });
+    
+    await waitForNextUpdate();
+    
+    expect(api.createTask).toHaveBeenCalledWith({
+      title: 'Task 2',
+      projectId: 'project-1',
+    });
+    
+    expect(result.current.tasks).toEqual([...mockTasks, newTask]);
+  });
+});
+```
+
+### Integration Testing
+
+Implement integration tests with React Native Testing Library:
+
+```javascript
+// apps/mobile/__tests__/SignInScreen.test.js
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { SignInScreen } from '../src/screens/SignInScreen';
+import { AuthProvider } from '@app/state';
+
+// Mock navigation
+const mockNavigation = {
+  navigate: jest.fn(),
+};
+
+// Mock auth context
+jest.mock('@app/state', () => {
+  const originalModule = jest.requireActual('@app/state');
+  
+  return {
+    ...originalModule,
+    useAuth: () => ({
+      signIn: jest.fn(() => Promise.resolve({ user: { id: '1' } })),
+    }),
+  };
+});
+
+describe('SignInScreen', () => {
+  test('renders correctly', () => {
+    const { getByText, getByPlaceholderText } = render(
+      <AuthProvider>
+        <SignInScreen navigation={mockNavigation} />
+      </AuthProvider>
+    );
+    
+    expect(getByText('Sign In')).toBeTruthy();
+    expect(getByPlaceholderText('Email')).toBeTruthy();
+    expect(getByPlaceholderText('Password')).toBeTruthy();
+    expect(getByText('Sign In')).toBeTruthy();
+    expect(getByText("Don't have an account? Sign Up")).toBeTruthy();
+  });
+  
+  test('navigates to sign up screen', () => {
+    const { getByText } = render(
+      <AuthProvider>
+        <SignInScreen navigation={mockNavigation} />
+      </AuthProvider>
+    );
+    
+    fireEvent.press(getByText("Don't have an account? Sign Up"));
+    
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('SignUp');
+  });
+  
+  test('handles sign in', async () => {
+    const { getByText, getByPlaceholderText } = render(
+      <AuthProvider>
+        <SignInScreen navigation={mockNavigation} />
+      </AuthProvider>
+    );
+    
+    fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
+    
+    fireEvent.press(getByText('Sign In'));
+    
+    await waitFor(() => {
+      expect(useAuth().signIn).toHaveBeenCalledWith('test@example.com', 'password123');
+    });
+  });
+});
+```
+
+### End-to-End Testing
+
+Implement E2E tests with Detox:
+
+```javascript
+// apps/mobile/e2e/authentication.test.js
+describe('Authentication Flow', () => {
+  beforeAll(async () => {
+    await device.launchApp();
+  });
+  
+  beforeEach(async () => {
+    await device.reloadReactNative();
+  });
+  
+  it('should login successfully', async () => {
+    await expect(element(by.text('Sign In'))).toBeVisible();
+    
+    await element(by.placeholder('Email')).typeText('test@example.com');
+    await element(by.placeholder('Password')).typeText('password123');
+    
+    await element(by.text('Sign In')).tap();
+    
+    // Wait for home screen to appear
+    await waitFor(element(by.text('Welcome'))).toBeVisible().withTimeout(5000);
+    
+    // Verify we're on the home screen
+    await expect(element(by.text('Welcome'))).toBeVisible();
+  });
+  
+  it('should show error with invalid credentials', async () => {
+    await expect(element(by.text('Sign In'))).toBeVisible();
+    
+    await element(by.placeholder('Email')).typeText('test@example.com');
+    await element(by.placeholder('Password')).typeText('wrongpassword');
+    
+    await element(by.text('Sign In')).tap();
+    
+    // Wait for error alert
+    await waitFor(element(by.text('Invalid credentials'))).toBeVisible().withTimeout(5000);
+    
+    // Verify error message
+    await expect(element(by.text('Invalid credentials'))).toBeVisible();
+  });
+});
+```
+
+### Performance Monitoring
+
+Implement performance monitoring:
+
+```javascript
+import { PerformanceObserver } from 'perf_hooks';
+
+// Create a performance observer
+const perfObserver = new PerformanceObserver((items) => {
+  items.getEntries().forEach((entry) => {
+    console.log(`${entry.name}: ${entry.duration}ms`);
+    
+    // Send to analytics
+    Analytics.logEvent('performance_metric', {
+      name: entry.name,
+      duration: entry.duration,
+      timestamp: Date.now(),
+    });
+  });
+});
+
+// Start observing performance metrics
+perfObserver.observe({ entryTypes: ['measure'] });
+
+// Measure function execution time
+export function measurePerformance(name, fn, ...args) {
+  performance.mark(`${name}_start`);
+  
+  const result = fn(...args);
+  
+  performance.mark(`${name}_end`);
+  performance.measure(name, `${name}_start`, `${name}_end`);
+  
+  return result;
+}
+
+// Measure async function execution time
+export async function measureAsyncPerformance(name, fn, ...args) {
+  performance.mark(`${name}_start`);
+  
+  const result = await fn(...args);
+  
+  performance.mark(`${name}_end`);
+  performance.measure(name, `${name}_start`, `${name}_end`);
+  
+  return result;
+}
+```
+
+---
+
+## Deployment & Maintenance
+
+### CI/CD Pipeline
+
+Set up a CI/CD pipeline with GitHub Actions:
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+  
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+  
+  build-web:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build web
+        run: npm run build:web
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./apps/web
+  
+  build-mobile:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Setup EAS
+        uses: expo/expo-github-action@v7
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build app
+        run: cd apps/mobile && eas build --platform all --non-interactive
+```
+
+### Version Management
+
+Implement a versioning strategy:
+
+```javascript
+// apps/mobile/app.json
+{
+  "expo": {
+    "name": "MyApp",
+    "version": "1.0.0",
+    "android": {
+      "versionCode": 1
+    },
+    "ios": {
+      "buildNumber": "1"
+    },
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    }
+  }
+}
+```
+
+### Analytics Integration
+
+Implement analytics to track user behavior:
+
+```javascript
+import Analytics from '@react-native-firebase/analytics';
+
+// Track screen views
+export function trackScreenView(screenName) {
+  Analytics().logScreenView({
+    screen_name: screenName,
+    screen_class: screenName,
+  });
+}
+
+// Track events
+export function trackEvent(eventName, params = {}) {
+  Analytics().logEvent(eventName, params);
+}
+
+// Track user properties
+export function setUserProperties(properties) {
+  Object.entries(properties).forEach(([key, value]) => {
+    Analytics().setUserProperty(key, value);
+  });
+}
+```
+
+---
+
+## Advanced Techniques
+
+### Implementing Complex Gestures
+
+Create complex gesture interactions:
+
+```javascript
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+
+function PinchToZoomImage({ uri }) {
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+  const rotationOffset = useSharedValue(0);
+  const savedRotation = useSharedValue(0);
+  
+  const pinchGesture = Gesture.Pinch()
+    .onStart(() => {
+      savedScale.value = scale.value;
+    })
+    .onUpdate((event) => {
+      scale.value = savedScale.value * event.scale;
+    });
+    
+  const rotationGesture = Gesture.Rotation()
+    .onStart(() => {
+      savedRotation.value = rotationOffset.value;
+    })
+    .onUpdate((event) => {
+      rotationOffset.value = savedRotation.value + event.rotation;
+    });
+    
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onStart(() => {
+      scale.value = scale.value === 1 ? 2 : 1;
+    });
+    
+  const composed = Gesture.Simultaneous(
+    pinchGesture,
+    rotationGesture,
+    doubleTapGesture
+  );
+  
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: withSpring(scale.value) },
+        { rotateZ: `${(rotationOffset.value / Math.PI) * 180}deg` },
+      ],
+    };
+  });
+  
+  return (
+    <GestureDetector gesture={composed}>
+      <Animated.View style={animatedStyle}>
+        <Image source={{ uri }} style={styles.image} />
+      </Animated.View>
+    </GestureDetector>
+  );
+}
+```
+
+### Offline-First Approach
+
+Implement an offline-first architecture:
+
+```javascript
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import { supabase } from './supabase';
+
+// Create a queue for pending operations
+export class OfflineQueue {
+  constructor() {
+    this.queue = [];
+    this.isProcessing = false;
+    this.isOnline = true;
+    
+    // Initialize queue from storage
+    this.initQueue();
+    
+    // Listen for network changes
+    NetInfo.addEventListener(state => {
+      const wasOffline = !this.isOnline;
+      this.isOnline = state.isConnected && state.isInternetReachable;
+      
+      // If we're back online and we were offline, process the queue
+      if (this.isOnline && wasOffline) {
+        this.processQueue();
+      }
+    });
+  }
+  
+  async initQueue() {
+    try {
+      const storedQueue = await AsyncStorage.getItem('offline_queue');
+      if (storedQueue) {
+        this.queue = JSON.parse(storedQueue);
+      }
+    } catch (error) {
+      console.error('Error initializing offline queue:', error);
+    }
+  }
+  
+  async saveQueue() {
+    try {
+      await AsyncStorage.setItem('offline_queue', JSON.stringify(this.queue));
+    } catch (error) {
+      console.error('Error saving offline queue:', error);
+    }
+  }
+  
+  addToQueue(operation) {
+    this.queue.push({ ...operation, timestamp: Date.now() });
+    this.saveQueue();
+    
+    if (this.isOnline && !this.isProcessing) {
+      this.processQueue();
+    }
+  }
+  
+  async processQueue() {
+    if (this.isProcessing || this.queue.length === 0 || !this.isOnline) {
+      return;
+    }
+    
+    this.isProcessing = true;
+    
+    try {
+      // Process each operation in order
+      while (this.queue.length > 0) {
+        const operation = this.queue[0];
+        
+        try {
+          await this.executeOperation(operation);
+          
+          // Operation successful, remove from queue
+          this.queue.shift();
+          this.saveQueue();
+        } catch (error) {
+          console.error('Error processing operation:', error);
+          
+          // If it's a network error, stop processing
+          if (!this.isOnline) {
+            break;
+          }
+          
+          // If it's another error, remove the operation to avoid infinite loop
+          this.queue.shift();
+          this.saveQueue();
+        }
+      }
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+  
+  async executeOperation(operation) {
+    const { type, table, data, id } = operation;
+    
+    switch (type) {
+      case 'INSERT':
+        await supabase.from(table).insert(data);
+        break;
+      case 'UPDATE':
+        await supabase.from(table).update(data).eq('id', id);
+        break;
+      case 'DELETE':
+        await supabase.from(table).delete().eq('id', id);
+        break;
+      default:
+        throw new Error(`Unknown operation type: ${type}`);
+    }
+  }
+}
+
+// Create a singleton instance
+export const offlineQueue = new OfflineQueue();
+
+// Usage examples
+export async function createTask(taskData) {
+  try {
+    // Generate a local ID
+    const localId = `local_${Date.now()}`;
+    
+    // Store locally first
+    const task = { ...taskData, id: localId, isSynced: false };
+    await AsyncStorage.setItem(`task_${localId}`, JSON.stringify(task));
+    
+    // Add to sync queue
+    offlineQueue.addToQueue({
+      type: 'INSERT',
+      table: 'tasks',
+      data: taskData,
+    });
+    
+    return task;
+  } catch (error) {
+    console.error('Error creating task:', error);
+    throw error;
+  }
+}
+```
+
+### Implementing Machine Learning Features
+
+Integrate machine learning capabilities:
+
+```javascript
+import * as tf from '@tensorflow/tfjs';
+import { bundleResourceIO } from '@tensorflow/tfjs-react-native';
+
+export class ImageClassifier {
+  constructor() {
+    this.model = null;
+    this.isReady = false;
+  }
+  
+  async loadModel() {
+    try {
+      // Load TensorFlow.js
+      await tf.ready();
+      
+      // Load model
+      const modelJson = require('../assets/model/model.json');
+      const modelWeights = require('../assets/model/weights.bin');
+      
+      this.model = await tf.loadLayersModel(bundleResourceIO(modelJson, modelWeights));
+      this.isReady = true;
+      
+      console.log('Model loaded successfully');
+    } catch (error) {
+      console.error('Error loading model:', error);
+      throw error;
+    }
+  }
+  
+  async classifyImage(imageUri) {
+    if (!this.isReady) {
+      await this.loadModel();
+    }
+    
+    try {
+      // Prepare image
+      const imgBuffer = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      const imgTensor = await tf.browser.fromPixelsAsync({
+        base64: imgBuffer,
+        width: 224,
+        height: 224,
+      });
+      
+      // Preprocess image
+      const normalized = imgTensor.div(255.0).expandDims(0);
+      
+      // Make prediction
+      const predictions = await this.model.predict(normalized);
+      const data = await predictions.data();
+      
+      // Process results
+      const results = Array.from(data)
+        .map((score, i) => ({ class: i, score }))
+        .sort((a, b) => b.score - a.score);
+      
+      return results;
+    } catch (error) {
+      console.error('Error classifying image:', error);
+      throw error;
+    }
+  }
+}
+
+// Usage
+const classifier = new ImageClassifier();
+
+export async function classifyImage(uri) {
+  return await classifier.classifyImage(uri);
+}
+```
+
+---
+
+## Resources & Further Learning
+
+### Documentation and Libraries
+
+- [React Native Documentation](https://reactnative.dev/docs/getting-started)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.io/docs)
+- [React Navigation](https://reactnavigation.org/docs/getting-started)
+- [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/)
+- [React Native Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/)
+
+### Community and Support
+
+- [React Native Community](https://github.com/react-native-community)
+- [Supabase Discord](https://discord.supabase.com/)
+- [Next.js Discord](https://discord.gg/nextjs)
+- [Expo Forums](https://forums.expo.dev/)
+
+### Tutorials and Courses
+
+- [Full Stack React Native with Supabase](https://fullstackreactnative.com)
+- [React Native Master Class](https://reactnative.dev/courses)
+- [Next.js Foundations](https://nextjs.org/learn)
+- [Supabase Crash Course](https://www.youtube.com/watch?v=dU7GwCOgvNY)
+
+---
+
+By following this comprehensive guide, you'll be able to build blazing fast, engaging, and visually striking mobile apps using React Native, Next.js, and Supabase. Remember that performance optimization should be an ongoing process, and continuous testing and refinement will lead to the best user experience.
+
+Happy coding!

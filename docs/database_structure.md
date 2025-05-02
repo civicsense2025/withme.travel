@@ -137,6 +137,41 @@
 
 - **permission_requests** - Requests to join trips
 - **invitations** - Formal invitations to trips
+- **trip_comments** - Comments on trip items
+
+  - `trip_id`, `item_id`, `user_id`
+  - `comment`, `created_at`, `updated_at`
+  - Parent/child relationship for threaded comments
+
+- **focus_sessions**
+  - Tracks active focus mode sessions
+  - `trip_id`, `created_by`, `status`
+  - `focus_area`, `started_at`, `ended_at`
+
+### Voting & Decision Making:
+
+- **trip_polls**
+
+  - `trip_id`, `title`, `description`
+  - `created_by`, `status`
+  - `created_at`, `closes_at`
+  - Type of poll (single choice, multiple choice)
+
+- **poll_options**
+
+  - `poll_id`, `option_text`, `description`
+  - `position`, `image_url`
+
+- **poll_votes**
+
+  - `poll_id`, `user_id`, `option_id`
+  - `created_at`
+
+- **activity_timeline**
+  - `trip_id`, `user_id`, `action_type`
+  - `entity_id`, `entity_type`
+  - `created_at`, `metadata`
+  - Tracks all activities within a trip
 
 ## 7. Media & Content Management
 
@@ -228,3 +263,6 @@
 - **itinerary_category**: flight, accommodation, attraction, restaurant, etc.
 - **place_category**: attraction, restaurant, cafe, hotel, etc.
 - **invitation_status**: pending, accepted, declined, expired
+- **focus_session_status**: active, paused, completed
+- **poll_status**: open, closed, archived
+- **action_type**: created, updated, deleted, commented, voted, etc.

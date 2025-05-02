@@ -40,14 +40,14 @@ function getInitials(name?: string | null): string {
 
 function formatDateRange(startDate?: string | Date | null, endDate?: string | Date | null): string {
   if (!startDate && !endDate) return 'Dates not set';
-  
+
   const startStr = startDate ? formatDate(startDate) : null;
   const endStr = endDate ? formatDate(endDate) : null;
-  
+
   if (startStr && !endStr) return `From ${startStr}`;
   if (!startStr && endStr) return `Until ${endStr}`;
   if (startStr && endStr) return `${startStr} - ${endStr}`;
-  
+
   return 'Invalid date range';
 }
 // End local helpers
@@ -112,55 +112,52 @@ function MemberAvatars({ members }: { members?: MemberWithProfile[] | null }) {
       {visibleMembers.map((member, idx) => {
         // Handle case where member might be null
         if (!member) return null;
-        
+
         // Check both profile structures (profiles vs profile) for backward compatibility
         const profile = member.profiles || member.profile;
-        
+
         // Use fallback if profile is missing
         const name = profile?.name || profile?.username || (profile as any)?.email || 'Member';
         // Clean up the name if it contains "unknown"
         const displayName = name.toLowerCase().includes('unknown') ? 'Member' : name;
         const avatarUrl = profile?.avatar_url || null;
-        
+
         // Generate a consistent background color based on the user ID for anonymous users
-        const colorIndex = member.user_id ? 
-          member.user_id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10 : 
-          idx % 10;
-          
+        const colorIndex = member.user_id
+          ? member.user_id
+              .split('')
+              .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10
+          : idx % 10;
+
         const bgColors = [
-          'bg-rose-500',    // Red
-          'bg-orange-500',  // Orange
-          'bg-amber-500',   // Amber
-          'bg-lime-500',    // Lime
+          'bg-rose-500', // Red
+          'bg-orange-500', // Orange
+          'bg-amber-500', // Amber
+          'bg-lime-500', // Lime
           'bg-emerald-500', // Emerald
-          'bg-teal-500',    // Teal
-          'bg-cyan-500',    // Cyan
-          'bg-blue-500',    // Blue
-          'bg-indigo-500',  // Indigo
-          'bg-purple-500',  // Purple
+          'bg-teal-500', // Teal
+          'bg-cyan-500', // Cyan
+          'bg-blue-500', // Blue
+          'bg-indigo-500', // Indigo
+          'bg-purple-500', // Purple
         ];
-        
+
         // Get initials for avatar fallback
         const getInitials = (name: string) => {
           const parts = name.split(' ');
           if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
           return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
         };
-        
+
         const initials = getInitials(displayName);
         const bgColorClass = bgColors[colorIndex];
 
         return (
-          <Tooltip
-            key={member.id || idx}
-            delayDuration={300}
-          >
+          <Tooltip key={member.id || idx} delayDuration={300}>
             <TooltipTrigger asChild>
               <Avatar className="border-2 border-background">
                 <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className={`text-white ${bgColorClass}`}>
-                  {initials}
-                </AvatarFallback>
+                <AvatarFallback className={`text-white ${bgColorClass}`}>{initials}</AvatarFallback>
               </Avatar>
             </TooltipTrigger>
             <TooltipContent>
@@ -327,9 +324,7 @@ export function TripHeader({
                     disabled={!canEdit || !onDatesChange}
                   >
                     <CalendarIcon className="mr-1.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
-                    <span className="whitespace-nowrap">
-                      {formatDateRange(startDate, endDate)}
-                    </span>
+                    <span className="whitespace-nowrap">{formatDateRange(startDate, endDate)}</span>
                   </Button>
                 </PopoverTrigger>
                 {canEdit && onDatesChange && (
@@ -385,7 +380,10 @@ export function TripHeader({
             {/* Tags display */}
             {tags && tags.length > 0 && (
               <span className="flex items-center gap-1.5">
-                <Tag className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" aria-hidden="true" />
+                <Tag
+                  className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <div className="flex flex-wrap gap-1.5">
                   {tags.map((tag) => (
                     <Badge key={tag.id} variant="outline" className="bg-muted/50 font-normal">

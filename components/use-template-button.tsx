@@ -15,8 +15,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, type SelectItemProps } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  type SelectItemProps,
+} from '@/components/ui/select';
 import { CreateTripFromTemplateDialog } from './CreateTripFromTemplateDialog';
 import { Loader2 } from 'lucide-react';
 
@@ -27,11 +34,11 @@ interface UseTemplateButtonProps {
   className?: string;
 }
 
-export function UseTemplateButton({ 
-  templateId, 
+export function UseTemplateButton({
+  templateId,
   templateSlug,
   templateTitle,
-  className 
+  className,
 }: UseTemplateButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -57,8 +64,12 @@ export function UseTemplateButton({
       const result = await response.json();
 
       if (response.status === 403) {
-         toast({ title: 'Permission Denied', description: result.error || 'You don\'t have permission to apply templates to this trip.', variant: 'destructive' });
-         return;
+        toast({
+          title: 'Permission Denied',
+          description: result.error || "You don't have permission to apply templates to this trip.",
+          variant: 'destructive',
+        });
+        return;
       }
 
       if (!response.ok) {
@@ -74,7 +85,11 @@ export function UseTemplateButton({
       router.push(`/trips/${selectedTripId}?tab=itinerary`);
     } catch (error: any) {
       console.error('Error applying template:', error);
-      toast({ title: 'Error', description: error.message || 'Could not apply template.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: error.message || 'Could not apply template.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoadingApply(false);
     }
@@ -108,7 +123,8 @@ export function UseTemplateButton({
             <TabsContent value="apply-existing" className="pt-4">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Select a trip to add the template items to. Items will be added after the existing days.
+                  Select a trip to add the template items to. Items will be added after the existing
+                  days.
                 </p>
                 <Select onValueChange={setSelectedTripId} value={selectedTripId || undefined}>
                   <SelectTrigger>
@@ -118,7 +134,8 @@ export function UseTemplateButton({
                     {trips && trips.length > 0 ? (
                       trips.map((trip) => (
                         <SelectItem key={trip.id} value={trip.id}>
-                          {trip.title} ({trip.duration_days || '?'} day{trip.duration_days === 1 ? '' : 's'})
+                          {trip.title} ({trip.duration_days || '?'} day
+                          {trip.duration_days === 1 ? '' : 's'})
                         </SelectItem>
                       ))
                     ) : (
@@ -128,12 +145,18 @@ export function UseTemplateButton({
                     )}
                   </SelectContent>
                 </Select>
-                <Button 
-                  onClick={handleApplyToExisting} 
+                <Button
+                  onClick={handleApplyToExisting}
                   disabled={!selectedTripId || isLoadingApply}
                   className="w-full"
                 >
-                  {isLoadingApply ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Applying...</> : 'Apply to Selected Trip'}
+                  {isLoadingApply ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Applying...
+                    </>
+                  ) : (
+                    'Apply to Selected Trip'
+                  )}
                 </Button>
               </div>
             </TabsContent>
@@ -142,10 +165,7 @@ export function UseTemplateButton({
                 <p className="text-sm text-muted-foreground">
                   Create a completely new trip based on this template.
                 </p>
-                <Button 
-                  onClick={handleOpenCreateDialog}
-                  className="w-full"
-                >
+                <Button onClick={handleOpenCreateDialog} className="w-full">
                   Create New Trip from Template
                 </Button>
               </div>
@@ -154,7 +174,7 @@ export function UseTemplateButton({
         </DialogContent>
       </Dialog>
 
-      <CreateTripFromTemplateDialog 
+      <CreateTripFromTemplateDialog
         templateSlug={templateSlug}
         templateTitle={templateTitle}
         isOpen={showCreateDialog}

@@ -1,7 +1,6 @@
-'use client'
+'use client';
 import { BUDGET_CATEGORIES, SPLIT_TYPES } from '@/utils/constants/status';
 import { API_ROUTES } from '@/utils/constants/routes';
-
 
 import { useState, useEffect, useMemo } from 'react';
 import {

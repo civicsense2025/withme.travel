@@ -65,7 +65,7 @@ export async function GET(
     type TripCreatorCheck = {
       created_by: string | null;
       is_public: boolean | null;
-    }
+    };
     const { data: trip, error: tripError } = await supabase
       .from(TABLES.TRIPS)
       .select(`${FIELDS.TRIPS.CREATED_BY}, ${FIELDS.TRIPS.IS_PUBLIC}`)
@@ -80,7 +80,7 @@ export async function GET(
       console.error('Error fetching trip details:', tripError);
       return NextResponse.json({ error: 'Failed to fetch trip details' }, { status: 500 });
     }
-    
+
     // Add a null check for trip data, although .single() should guarantee it or throw
     if (!trip) {
       return NextResponse.json({ error: 'Trip data not found after query' }, { status: 404 });
@@ -100,7 +100,7 @@ export async function GET(
       canAddMembers: (!!role && [TRIP_ROLES.ADMIN].includes(role as any)) || isCreator,
       canDeleteTrip: isCreator,
       isCreator,
-      role: role, 
+      role: role,
     };
 
     return NextResponse.json({ permissions });

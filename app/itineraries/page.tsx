@@ -86,10 +86,9 @@ export default async function ItinerariesPage() {
       itinerary.cover_image_url ||
       (itinerary.destinations ? itinerary.destinations.image_url : null) ||
       '/images/placeholder-itinerary.jpg',
-    location:
-      (itinerary.destinations
-        ? `${itinerary.destinations.city || ''}, ${itinerary.destinations.country || ''}`
-        : 'Unknown Location'),
+    location: itinerary.destinations
+      ? `${itinerary.destinations.city || ''}, ${itinerary.destinations.country || ''}`
+      : 'Unknown Location',
     duration: `${itinerary.duration_days || 'N/A'} days`,
     tags: itinerary.tags || [],
     slug: itinerary.slug || itinerary.id,

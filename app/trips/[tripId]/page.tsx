@@ -7,11 +7,7 @@ import { TABLES, ENUMS } from '@/utils/constants/index';
 import type { TripRole } from '@/types/trip';
 import TripPageClientWrapper from './trip-page-client-wrapper';
 
-export default async function TripPage({
-  params,
-}: {
-  params: Promise<{ tripId: string }>;
-}) {
+export default async function TripPage({ params }: { params: Promise<{ tripId: string }> }) {
   // In Next.js 15, we must await the params
   const { tripId } = await params;
 
@@ -19,7 +15,10 @@ export default async function TripPage({
   const supabase = createServerComponentClient();
 
   // Check authentication status using getUser() for security
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
   // Handle potential auth errors (e.g., invalid token)
   if (authError) {
@@ -35,11 +34,7 @@ export default async function TripPage({
 
   // Fetch trip and user's membership in parallel using TABLES
   const [tripResult, memberResult] = await Promise.all([
-    supabase
-      .from(TABLES.TRIPS)
-      .select('id, name')
-      .eq('id', tripId)
-      .single(),
+    supabase.from(TABLES.TRIPS).select('id, name').eq('id', tripId).single(),
     supabase
       .from(TABLES.TRIP_MEMBERS)
       .select('role')

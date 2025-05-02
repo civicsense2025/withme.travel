@@ -76,7 +76,8 @@ import {
 } from '@/components/ui/dialog';
 
 // Import custom components
-import TripPresenceIndicator from '@/components/trips/trip-presence-indicator';
+// NOTE: These imports are intentionally disabled to prevent build errors
+// import TripPresenceIndicator from '@/components/trips/trip-presence-indicator';
 import { ShareTripButton } from '@/components/trips/ShareTripButton';
 import { DestinationCard } from '@/components/destination-card';
 import { CityBubbles } from '@/components/city-bubbles';
@@ -875,8 +876,8 @@ export default function DesignSandboxClient() {
                       <div className="bg-muted/50 p-4 rounded-md border border-dashed">
                         <h3 className="font-medium mb-2">Focus Sessions Disabled</h3>
                         <p className="text-sm text-muted-foreground">
-                          Focus session features are currently disabled in this sandbox.
-                          These features are kept in the codebase but not actively imported.
+                          Focus session features are currently disabled in this sandbox. These
+                          features are kept in the codebase but not actively imported.
                         </p>
                       </div>
                     </CardContent>
@@ -1095,8 +1096,12 @@ export default function DesignSandboxClient() {
                       <CardDescription>Shows active users in a trip</CardDescription>
                     </CardHeader>
                     <CardContent className="flex justify-center">
-                      <div className="p-4 bg-muted rounded-md inline-flex">
-                        <TripPresenceIndicator />
+                      <div className="p-4 bg-muted/50 rounded-md border border-dashed w-full">
+                        <h3 className="font-medium mb-2">Presence Features Disabled</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Trip presence features are currently disabled in this sandbox. These
+                          features are kept in the codebase but not actively imported.
+                        </p>
                       </div>
                     </CardContent>
                   </Card>

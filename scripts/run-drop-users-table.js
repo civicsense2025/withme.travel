@@ -17,18 +17,18 @@ const supabase = createClient(
 async function main() {
   try {
     console.log('Running database cleanup for the public.users table...');
-    
+
     // 1. First identify all foreign key constraints pointing to public.users
-    const { data: fkConstraints, error: fkError } = await supabase
-      .rpc('identify_users_fk_constraints');
+    const { data: fkConstraints, error: fkError } = await supabase.rpc(
+      'identify_users_fk_constraints'
+    );
 
     if (fkError) {
       console.error('Error identifying FK constraints:', fkError);
-      console.log('\nAlternative approach: Use the Supabase SQL Editor to run the SQL script directly:');
-      const sqlScript = fs.readFileSync(
-        path.join(__dirname, 'drop-users-table.sql'),
-        'utf8'
+      console.log(
+        '\nAlternative approach: Use the Supabase SQL Editor to run the SQL script directly:'
       );
+      const sqlScript = fs.readFileSync(path.join(__dirname, 'drop-users-table.sql'), 'utf8');
       console.log(sqlScript);
       process.exit(1);
     }
@@ -36,17 +36,16 @@ async function main() {
     console.log(`Found ${fkConstraints?.length || 0} foreign key constraints to remove.`);
 
     // 2. Drop each constraint
-    for (const constraint of (fkConstraints || [])) {
+    for (const constraint of fkConstraints || []) {
       const { table_schema, table_name, constraint_name } = constraint;
       console.log(`Dropping constraint ${constraint_name} from ${table_schema}.${table_name}...`);
-      
-      const { error: dropError } = await supabase
-        .rpc('drop_constraint', {
-          p_schema: table_schema,
-          p_table: table_name, 
-          p_constraint: constraint_name
-        });
-      
+
+      const { error: dropError } = await supabase.rpc('drop_constraint', {
+        p_schema: table_schema,
+        p_table: table_name,
+        p_constraint: constraint_name,
+      });
+
       if (dropError) {
         console.error(`Error dropping constraint ${constraint_name}:`, dropError);
         process.exit(1);
@@ -65,8 +64,7 @@ async function main() {
     }
 
     // 4. Drop the users table
-    const { error: dropTableError } = await supabase
-      .rpc('drop_users_table');
+    const { error: dropTableError } = await supabase.rpc('drop_users_table');
 
     if (dropTableError) {
       console.error('Error dropping users table:', dropTableError);
@@ -79,11 +77,10 @@ async function main() {
     console.log('\nNext steps:');
     console.log('1. Try your template application again');
     console.log('2. Update any code that might be referring to the removed table');
-
   } catch (error) {
     console.error('Unexpected error:', error);
     process.exit(1);
   }
 }
 
-main(); 
+main();

@@ -32,10 +32,10 @@ export const UnscheduledItemsSection: React.FC<UnscheduledItemsSectionProps> = (
   });
 
   // Get all item IDs for sortable context
-  const itemIds = items.map(item => item.id);
+  const itemIds = items.map((item) => item.id);
 
   return (
-    <div 
+    <div
       ref={setNodeRef}
       className={`rounded-xl p-1 transition-colors duration-200 ${isOver ? 'bg-primary/10' : ''}`}
     >
@@ -43,12 +43,7 @@ export const UnscheduledItemsSection: React.FC<UnscheduledItemsSectionProps> = (
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-xl">Unscheduled Items</CardTitle>
           {canEdit && (
-            <Button 
-              onClick={onAddItem} 
-              variant="secondary" 
-              size="sm" 
-              className="gap-1.5"
-            >
+            <Button onClick={onAddItem} variant="secondary" size="sm" className="gap-1.5">
               <PlusCircle className="h-4 w-4" />
               <span>Add Item</span>
             </Button>
@@ -63,17 +58,14 @@ export const UnscheduledItemsSection: React.FC<UnscheduledItemsSectionProps> = (
           ) : (
             <div className="space-y-3">
               <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                {items.map(item => (
-                  <SortableItem 
-                    key={item.id} 
-                    id={item.id} 
+                {items.map((item) => (
+                  <SortableItem
+                    key={item.id}
+                    id={item.id}
                     containerId="unscheduled"
                     disabled={!canEdit}
                   >
-                    <ItineraryItemCard 
-                      item={item} 
-                      onEdit={() => onEditItem(item)}
-                    />
+                    <ItineraryItemCard item={item} onEdit={() => onEditItem(item)} />
                   </SortableItem>
                 ))}
               </SortableContext>

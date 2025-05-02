@@ -1,4 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import 'react-native-url-polyfill/auto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
 import NetInfo from '@react-native-community/netinfo';
@@ -19,7 +21,10 @@ const debugLog = (message: string, data?: any) => {
 
 // Initialize with debug information
 debugLog('Initializing Supabase utility');
-debugLog('Supabase URL (masked):', SUPABASE_URL ? `${SUPABASE_URL.substring(0, 8)}...` : 'undefined');
+debugLog(
+  'Supabase URL (masked):',
+  SUPABASE_URL ? `${SUPABASE_URL.substring(0, 8)}...` : 'undefined'
+);
 debugLog('Supabase Anon Key defined:', !!SUPABASE_ANON_KEY);
 
 // Track client creation time for debugging
@@ -60,70 +65,28 @@ const secureStorage = {
   },
 };
 
-// Singleton Supabase client to reuse across the app
-let supabaseClient: ReturnType<typeof createClient> | null = null;
+// Keep a single instance of the client to avoid multiple initializations
+let supabaseInstance: SupabaseClient | null = null;
 
 /**
  * Create a Supabase client for mobile use with secure storage for auth tokens
  */
-export const createSupabaseClient = () => {
-  // Track when client was requested
-  const requestTime = new Date();
-  
-  if (supabaseClient) {
-    debugLog('Returning existing Supabase client', {
-      createdAt: clientCreatedAt,
-      ageMs: clientCreatedAt ? requestTime.getTime() - clientCreatedAt.getTime() : 'unknown',
-    });
-    return supabaseClient;
+export const createSupabaseClient = (): SupabaseClient => {
+  if (supabaseInstance) {
+    return supabaseInstance;
   }
 
-  clientCreationCount++;
-  debugLog(`Creating new Supabase client (attempt #${clientCreationCount})`);
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    const error = 'Missing Supabase configuration. Check your environment variables.';
-    debugLog('Configuration error:', error);
-    clientErrors.push(error);
-    throw new Error(error);
-  }
-
-  // Check network connectivity first
-  NetInfo.fetch().then(state => {
-    debugLog('Network state', {
-      isConnected: state.isConnected,
-      type: state.type,
-      details: state,
-    });
-    
-    if (!state.isConnected) {
-      clientErrors.push(`No network connection: ${state.type}`);
-    }
+  // Initialize Supabase client with React Native optimizations
+  supabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      storage: AsyncStorage,
+      detectSessionInUrl: false, // Disable for React Native
+      persistSession: true,
+      autoRefreshToken: true,
+    },
   });
 
-  // Try to initialize the client
-  try {
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        storage: secureStorage,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-    });
-    
-    clientCreatedAt = new Date();
-    debugLog('Supabase client created successfully', {
-      timestamp: clientCreatedAt.toISOString(),
-      creationTimeMs: clientCreatedAt.getTime() - requestTime.getTime(),
-    });
-    
-    return supabaseClient;
-  } catch (error) {
-    debugLog('Error creating Supabase client:', error);
-    clientErrors.push(`Client creation error: ${error}`);
-    throw error;
-  }
+  return supabaseInstance;
 };
 
 /**
@@ -131,7 +94,7 @@ export const createSupabaseClient = () => {
  */
 export const resetSupabaseClient = () => {
   debugLog('Resetting Supabase client');
-  supabaseClient = null;
+  supabaseInstance = null;
   clientCreatedAt = null;
 };
 
@@ -140,10 +103,10 @@ export const resetSupabaseClient = () => {
  */
 export const getSupabaseDebugInfo = () => {
   return {
-    isClientInitialized: !!supabaseClient,
+    isClientInitialized: !!supabaseInstance,
     clientCreatedAt: clientCreatedAt?.toISOString() || null,
-    clientAge: clientCreatedAt 
-      ? Math.round((new Date().getTime() - clientCreatedAt.getTime()) / 1000) 
+    clientAge: clientCreatedAt
+      ? Math.round((new Date().getTime() - clientCreatedAt.getTime()) / 1000)
       : null,
     creationCount: clientCreationCount,
     hasNetworkConnection: undefined as boolean | null | undefined, // Will be filled by the caller with current state
@@ -161,29 +124,45 @@ export const getSupabaseDebugInfo = () => {
  */
 export const checkSupabaseHealth = async () => {
   const netInfo = await NetInfo.fetch();
-  
+
   const debugInfo = getSupabaseDebugInfo();
   debugInfo.hasNetworkConnection = netInfo.isConnected;
-  
+
   let dbConnectionStatus = 'unknown';
-  
+
   try {
-    if (supabaseClient) {
+    if (supabaseInstance) {
       // Simple test query to check DB connectivity
       const startTime = Date.now();
-      const { data, error } = await supabaseClient
-        .from('health_check')
-        .select('*')
+
+      // Try to query profiles table instead of health_check
+      const { data, error } = await supabaseInstance
+        .from('profiles')
+        .select('count')
         .limit(1)
         .maybeSingle();
-      
+
       const endTime = Date.now();
       const responseTime = endTime - startTime;
-      
+
       if (error) {
         debugLog('Health check query failed:', error);
         dbConnectionStatus = 'error';
         clientErrors.push(`Health check error: ${error.message}`);
+
+        // Try a fallback query if the profiles table query fails
+        try {
+          const { error: fallbackError } = await supabaseInstance
+            .rpc('get_service_status')
+            .maybeSingle();
+
+          if (!fallbackError) {
+            debugLog('Fallback health check succeeded');
+            dbConnectionStatus = 'connected';
+          }
+        } catch (fallbackException) {
+          // Ignore fallback errors, we already have an error state
+        }
       } else {
         debugLog('Health check query succeeded', { responseTime });
         dbConnectionStatus = 'connected';
@@ -194,10 +173,15 @@ export const checkSupabaseHealth = async () => {
     dbConnectionStatus = 'exception';
     clientErrors.push(`Health check exception: ${error}`);
   }
-  
+
   return {
     ...debugInfo,
     dbConnectionStatus,
     timestamp: new Date().toISOString(),
   };
+};
+
+// Function to clear the client instance (useful for logging out)
+export const clearSupabaseInstance = (): void => {
+  supabaseInstance = null;
 };

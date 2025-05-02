@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 import {
@@ -23,7 +23,12 @@ import {
   UniqueIdentifier,
   useDroppable,
 } from '@dnd-kit/core';
-import { arrayMove, sortableKeyboardCoordinates, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  arrayMove,
+  sortableKeyboardCoordinates,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { DisplayItineraryItem } from '@/types/itinerary';
 import { ItemStatus } from '@/types/common';
 import { Profile } from '@/types/profile';
@@ -158,14 +163,11 @@ interface SortableSectionProps {
 }
 
 const SortableSection: React.FC<SortableSectionProps> = ({ id, children, disabled }) => {
-  const { 
-    attributes, 
-    listeners, 
-    setNodeRef, 
-    transform, 
-    transition, 
-    isDragging 
-  } = useSortable({ id, data: { type: 'section' }, disabled });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    data: { type: 'section' },
+    disabled,
+  });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -179,8 +181,8 @@ const SortableSection: React.FC<SortableSectionProps> = ({ id, children, disable
     <div ref={setNodeRef} style={style} className="relative group">
       {/* Add a drag handle, only visible/active when not disabled */}
       {!disabled && (
-        <div 
-          {...attributes} 
+        <div
+          {...attributes}
           {...listeners}
           className="absolute -left-6 inset-y-0 w-6 flex items-center justify-center opacity-0 group-hover:opacity-70 hover:opacity-100 cursor-grab transition-opacity"
         >
@@ -222,10 +224,10 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   const [isQuickAddDialogOpen, setIsQuickAddDialogOpen] = useState(false);
   const [quickAddDefaultCategory, setQuickAddDefaultCategory] = useState<string | null>(null);
   const [quickAddDialogConfig, setQuickAddDialogConfig] = useState({
-    title: "Add Unscheduled Item",
-    description: "Add another item to your unscheduled items list."
+    title: 'Add Unscheduled Item',
+    description: 'Add another item to your unscheduled items list.',
   });
-  
+
   // Set isBrowser to true on mount (for client-side portal rendering)
   useEffect(() => {
     setIsBrowser(true);
@@ -397,10 +399,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
               targetDayNumber = overItem.day_number;
               targetPosition = overItem.position || 0;
             }
-          } else if (
-            overData.type === 'day-section' ||
-            overData.type === 'unscheduled-section'
-          ) {
+          } else if (overData.type === 'day-section' || overData.type === 'unscheduled-section') {
             // If over a container directly
             if (over.id === 'unscheduled') {
               targetDayNumber = null;
@@ -417,8 +416,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
 
           if (
             targetDayNumber !== undefined &&
-            (activeItem.day_number !== targetDayNumber ||
-              activeItem.position !== targetPosition)
+            (activeItem.day_number !== targetDayNumber || activeItem.position !== targetPosition)
           ) {
             // Apply the update locally first
             setItineraryItems((items) => {
@@ -491,15 +489,22 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
         setActiveType(null);
       }
     },
-    [itineraryItems, onReorder, onSectionReorder, originalItemsOnDragStart, setItineraryItems, toast]
+    [
+      itineraryItems,
+      onReorder,
+      onSectionReorder,
+      originalItemsOnDragStart,
+      setItineraryItems,
+      toast,
+    ]
   );
 
   // Handle opening the quick add dialog for different categories
   const handleAddUnscheduledItem = () => {
     setQuickAddDefaultCategory(null);
     setQuickAddDialogConfig({
-      title: "Add Unscheduled Item",
-      description: "Add another item to your unscheduled items list."
+      title: 'Add Unscheduled Item',
+      description: 'Add another item to your unscheduled items list.',
     });
     setIsQuickAddDialogOpen(true);
   };
@@ -507,8 +512,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   const handleAddAccommodation = () => {
     setQuickAddDefaultCategory(ITINERARY_CATEGORIES.ACCOMMODATIONS);
     setQuickAddDialogConfig({
-      title: "Add Accommodation",
-      description: "Add where you'll be staying during your trip."
+      title: 'Add Accommodation',
+      description: "Add where you'll be staying during your trip.",
     });
     setIsQuickAddDialogOpen(true);
   };
@@ -516,12 +521,12 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   const handleAddTransportation = () => {
     setQuickAddDefaultCategory(ITINERARY_CATEGORIES.TRANSPORTATION);
     setQuickAddDialogConfig({
-      title: "Add Transportation",
-      description: "Add how you'll be getting around during your trip."
+      title: 'Add Transportation',
+      description: "Add how you'll be getting around during your trip.",
     });
     setIsQuickAddDialogOpen(true);
   };
-  
+
   // Callback for when an item is added
   const handleItemAdded = () => {
     // Refresh the itinerary
@@ -538,7 +543,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
     const unscheduledItems = itineraryItems
       .filter((item) => item.day_number === null)
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-    
+
     grouped.set('unscheduled', unscheduledItems);
 
     // Then add each day
@@ -546,7 +551,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
       const dayItems = itineraryItems
         .filter((item) => item.day_number === day)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-      
+
       grouped.set(day, dayItems);
     }
 
@@ -582,13 +587,13 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   };
 
   // Get accommodation and transportation items for the enhanced trip details section
-  const accommodationItems = useMemo(() => 
-    itineraryItems.filter(item => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS),
+  const accommodationItems = useMemo(
+    () => itineraryItems.filter((item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS),
     [itineraryItems]
   );
 
-  const transportationItems = useMemo(() => 
-    itineraryItems.filter(item => item.category === ITINERARY_CATEGORIES.TRANSPORTATION),
+  const transportationItems = useMemo(
+    () => itineraryItems.filter((item) => item.category === ITINERARY_CATEGORIES.TRANSPORTATION),
     [itineraryItems]
   );
 
@@ -615,18 +620,18 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                   <h3 className="text-lg font-semibold">Trip Details</h3>
                   {canEdit && (
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={handleAddAccommodation}
                         className="flex items-center gap-1"
                       >
                         <HomeIcon className="h-4 w-4" />
                         <span>Add Accommodation</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={handleAddTransportation}
                         className="flex items-center gap-1"
                       >
@@ -636,7 +641,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                     </div>
                   )}
                 </div>
-                
+
                 {/* Accommodations Section */}
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm flex items-center gap-1">
@@ -645,7 +650,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                   </h4>
                   <div className="space-y-2">
                     {accommodationItems.length > 0 ? (
-                      accommodationItems.map(item => (
+                      accommodationItems.map((item) => (
                         <ItineraryItemCard
                           key={item.id}
                           item={item}
@@ -666,7 +671,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                     )}
                   </div>
                 </div>
-                
+
                 {/* Transportation Section */}
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm flex items-center gap-1">
@@ -675,7 +680,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                   </h4>
                   <div className="space-y-2">
                     {transportationItems.length > 0 ? (
-                      transportationItems.map(item => (
+                      transportationItems.map((item) => (
                         <ItineraryItemCard
                           key={item.id}
                           item={item}
@@ -709,9 +714,9 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">Unscheduled Items</h3>
                       {canEdit && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={handleAddUnscheduledItem}
                           className="flex items-center gap-1"
                         >
@@ -720,17 +725,19 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                         </Button>
                       )}
                     </div>
-                    
-                    <div 
-                      className="space-y-2 min-h-[100px] relative rounded-md" 
+
+                    <div
+                      className="space-y-2 min-h-[100px] relative rounded-md"
                       data-type="unscheduled-section"
                     >
                       {(itemsBySection.get('unscheduled') || []).length > 0 ? (
-                        (itemsBySection.get('unscheduled') || []).map(item => (
+                        (itemsBySection.get('unscheduled') || []).map((item) => (
                           <ItineraryItemCard
                             key={item.id}
                             item={item}
-                            onVote={(id: string, voteType: 'up' | 'down') => onVote(id, null, voteType)}
+                            onVote={(id: string, voteType: 'up' | 'down') =>
+                              onVote(id, null, voteType)
+                            }
                             onStatusChange={onItemStatusChange}
                             onDelete={onDeleteItem}
                             canEdit={canEdit}
@@ -749,7 +756,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
               </Card>
             </div>
           </SortableSection>
-          
+
           {/* Day Sections */}
           <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
             {Array.from({ length: durationDays }, (_, i) => {
@@ -783,12 +790,14 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
         </div>
 
         {/* Drag Overlay - shows the item being dragged */}
-        {isBrowser && activeItem && createPortal(
-          <DragOverlay adjustScale={false} dropAnimation={dropAnimation}>
-            <ItineraryItemCard item={activeItem} isOverlay={true} />
-          </DragOverlay>,
-          document.body
-        )}
+        {isBrowser &&
+          activeItem &&
+          createPortal(
+            <DragOverlay adjustScale={false} dropAnimation={dropAnimation}>
+              <ItineraryItemCard item={activeItem} isOverlay={true} />
+            </DragOverlay>,
+            document.body
+          )}
       </DndContext>
 
       {/* Quick Add Item Dialog */}

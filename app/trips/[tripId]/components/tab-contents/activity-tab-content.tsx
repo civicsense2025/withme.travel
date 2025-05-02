@@ -9,11 +9,7 @@ interface ActivityTabContentProps {
 export function ActivityTabContent({ tripId }: ActivityTabContentProps) {
   return (
     <div className="w-full">
-      <ActivityTimeline 
-        tripId={tripId} 
-        showRefreshButton={true}
-        maxHeight="80vh" 
-      />
+      <ActivityTimeline tripId={tripId} showRefreshButton={true} maxHeight="80vh" />
     </div>
   );
-} 
+}

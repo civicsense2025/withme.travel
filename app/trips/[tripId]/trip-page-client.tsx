@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { PAGE_ROUTES, API_ROUTES } from '@/utils/constants/routes';
 import { ITINERARY_CATEGORIES, ITEM_STATUSES } from '@/utils/constants/status';
 
@@ -128,7 +128,16 @@ import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
 import { EditTripForm, type EditTripFormValues } from '@/app/trips/components/EditTripForm';
 import { useToast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapIcon, Share, Calendar, FileEdit, UserPlus2, LogOut, Settings, Heart } from 'lucide-react';
+import {
+  MapIcon,
+  Share,
+  Calendar,
+  FileEdit,
+  UserPlus2,
+  LogOut,
+  Settings,
+  Heart,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -169,14 +178,14 @@ function formatError(error: unknown, fallback: string = 'An unexpected error occ
 // Format a date range consistently
 function formatDateRange(startDate?: string | Date | null, endDate?: string | Date | null): string {
   if (!startDate && !endDate) return 'Dates not set';
-  
+
   const startStr = startDate ? formatDate(startDate) : null;
   const endStr = endDate ? formatDate(endDate) : null;
-  
+
   if (startStr && !endStr) return `From ${startStr}`;
   if (!startStr && endStr) return `Until ${endStr}`;
   if (startStr && endStr) return `${startStr} - ${endStr}`;
-  
+
   return 'Invalid date range';
 }
 
@@ -380,9 +389,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
     if (!user || !tripData?.members) {
       return null;
     }
-    const currentUserMember = tripData.members.find(
-      (member) => member.user_id === user.id
-    );
+    const currentUserMember = tripData.members.find((member) => member.user_id === user.id);
     return (currentUserMember?.role as TripRole) || null;
   }, [user, tripData?.members]);
   // --- End Calculate userRole --- //
@@ -401,13 +408,13 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
 
   // Re-add editedPlaylistUrl state, initialized from context
   const [editedPlaylistUrl, setEditedPlaylistUrl] = useState(tripData?.trip?.playlist_url ?? null);
-  
+
   // Keep local state for items and expenses
   const [allItineraryItems, setAllItineraryItems] = useState<DisplayItineraryItem[]>([]);
   const [manualExpenses, setManualExpenses] = useState<ManualDbExpense[]>(
     tripData?.manual_expenses || []
   ); // Assuming expenses aren't in context yet
-  
+
   // Add state for access requests
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
 
@@ -422,10 +429,13 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
 
   // --- Derived State --- //
   const durationDays = tripData?.trip?.duration_days ?? 0;
-  const isTripOver = tripData?.trip?.end_date ? new Date(tripData.trip.end_date) < new Date() : false;
+  const isTripOver = tripData?.trip?.end_date
+    ? new Date(tripData.trip.end_date) < new Date()
+    : false;
   const tripName = tripData?.trip?.name || 'Trip';
   const tripDescription = tripData?.trip?.description ?? null;
-  const privacySetting = (tripData?.trip?.privacy_setting as TripPrivacySetting | null) ?? 'private';
+  const privacySetting =
+    (tripData?.trip?.privacy_setting as TripPrivacySetting | null) ?? 'private';
   const coverImageUrl = tripData?.trip?.cover_image_url ?? null;
   const tripTags = tripData?.tags || [];
   const playlistUrl = tripData?.trip?.playlist_url ?? null;
@@ -502,10 +512,10 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   useEffect(() => {
     const incomingItems = tripData?.items || [];
     const incomingSections = tripData?.sections || [];
-    
+
     // Create IDs sets for comparison to avoid infinite loops from object references
-    const incomingItemIds = new Set(incomingItems.map(item => item.id));
-    const currentItemIds = new Set(allItineraryItems.map(item => item.id));
+    const incomingItemIds = new Set(incomingItems.map((item) => item.id));
+    const currentItemIds = new Set(allItineraryItems.map((item) => item.id));
 
     // Check if sets are different (more robust than length check)
     let areDifferent = incomingItemIds.size !== currentItemIds.size;
@@ -520,14 +530,15 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
 
     // Only update if the item sets are actually different
     if (areDifferent) {
-      console.log("[TripPageClient] Syncing itinerary items from context because item sets differ.");
+      console.log(
+        '[TripPageClient] Syncing itinerary items from context because item sets differ.'
+      );
       const mappedSections = mapApiSections(incomingSections); // Use helper
       const sectionItems = mappedSections.flatMap((s) => s.items || []);
       const unscheduledItems = incomingItems.map(mapApiItemToDisplay); // Map unscheduled items
       const combinedItems = [...sectionItems, ...unscheduledItems];
       setAllItineraryItems(combinedItems);
     }
-
   }, [tripData?.items, tripData?.sections]); // Depend only on context data, not local state
 
   /**
@@ -583,42 +594,44 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   // --- API Callbacks --- //
 
   // Add callback for managing access requests
-  const handleManageAccessRequest = useCallback(async (requestId: string, approve: boolean) => {
-    try {
-      const response = await fetch(`${API_ROUTES.PERMISSION_REQUESTS(tripId)}/${requestId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: approve ? 'approved' : 'rejected' }),
-      });
+  const handleManageAccessRequest = useCallback(
+    async (requestId: string, approve: boolean) => {
+      try {
+        const response = await fetch(`${API_ROUTES.PERMISSION_REQUESTS(tripId)}/${requestId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: approve ? 'approved' : 'rejected' }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update access request');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update access request');
+        }
+
+        // Remove the processed request from the local state
+        setAccessRequests((prev) => prev.filter((req) => req.id !== requestId));
+        toast({ title: `Request ${approve ? 'approved' : 'rejected'}` });
+
+        // Optionally refetch members if approved, to ensure the new member appears
+        if (approve) {
+          refetchMembers();
+        }
+      } catch (error) {
+        console.error('Failed to manage access request:', error);
+        toast({
+          title: 'Error',
+          description: formatError(error, 'Could not update access request'),
+          variant: 'destructive',
+        });
       }
-
-      // Remove the processed request from the local state
-      setAccessRequests((prev) => prev.filter((req) => req.id !== requestId));
-      toast({ title: `Request ${approve ? 'approved' : 'rejected'}` });
-      
-      // Optionally refetch members if approved, to ensure the new member appears
-      if (approve) {
-        refetchMembers(); 
-      }
-
-    } catch (error) {
-      console.error('Failed to manage access request:', error);
-      toast({
-        title: 'Error',
-        description: formatError(error, 'Could not update access request'),
-        variant: 'destructive',
-      });
-    }
-  }, [tripId, toast, refetchMembers]);
+    },
+    [tripId, toast, refetchMembers]
+  );
 
   const handleSaveTripDetails = useCallback(
     async (data: EditTripFormValues & { destination_id?: string | null }) => {
       setIsEditTripSheetOpen(false);
-      
+
       // Optimistic update (use context tripData)
       try {
         await optimisticUpdate('trip', (currentTrip) => {
@@ -634,7 +647,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       } catch (error) {
         console.error('Failed optimistic update for trip:', error);
       }
-      
+
       try {
         const { tags: tagNames, ...tripUpdatePayload } = data;
 
@@ -704,7 +717,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
           description: formatError(error),
           variant: 'destructive',
         });
-        throw error; 
+        throw error;
       }
     },
     [tripId, toast, refetchTrip, optimisticUpdate]
@@ -851,25 +864,30 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       console.log('[handleSectionReorder Client] Triggered with:', orderedDayNumbers);
       // Note: Optimistic update of section order already happened in ItineraryTab
       // We just need to call the API here.
-      
+
       try {
-        const response = await fetch(`/api/trips/${tripId}/sections/reorder`, { // Use the new endpoint
+        const response = await fetch(`/api/trips/${tripId}/sections/reorder`, {
+          // Use the new endpoint
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orderedDayNumbers }),
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Failed to reorder sections. API response not readable.' }));
-          console.error(`[handleSectionReorder Client] API Error (${response.status}):`, errorData.error);
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Failed to reorder sections. API response not readable.' }));
+          console.error(
+            `[handleSectionReorder Client] API Error (${response.status}):`,
+            errorData.error
+          );
           throw new Error(errorData.error || 'Failed to save section order');
         }
 
         console.log('[handleSectionReorder Client] API Success');
         // Optionally refetch trip data if section order affects other parts, but maybe not needed
-        // await refetchTrip(); 
-        toast({ title: 'Day order saved.'}); // Confirmation toast
-
+        // await refetchTrip();
+        toast({ title: 'Day order saved.' }); // Confirmation toast
       } catch (error) {
         console.error('[handleSectionReorder Client] Error calling reorder API:', error);
         toast({
@@ -880,9 +898,11 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         // TODO: Implement revert logic if needed. This might involve:
         // 1. Storing original section order on drag start in ItineraryTab
         // 2. Passing a revert callback down to ItineraryTab or triggering refetch
-        console.warn("[handleSectionReorder Client] Reorder failed. UI state might be inconsistent until next fetch.");
+        console.warn(
+          '[handleSectionReorder Client] Reorder failed. UI state might be inconsistent until next fetch.'
+        );
         // For now, a full refetch might be the simplest revert, although less smooth
-        // await refetchTrip(); // Or maybe just refetch itinerary/sections? 
+        // await refetchTrip(); // Or maybe just refetch itinerary/sections?
       }
     },
     [tripId, toast, refetchTrip] // Add dependencies (refetchTrip might be needed for revert)
@@ -899,13 +919,16 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       newDayNumber: number | null; // Can be null for unscheduled
       newPosition: number;
     }) => {
-      console.log(`[handleReorder Client] Triggered for item ${info.itemId} to day ${info.newDayNumber} pos ${info.newPosition}`);
+      console.log(
+        `[handleReorder Client] Triggered for item ${info.itemId} to day ${info.newDayNumber} pos ${info.newPosition}`
+      );
       try {
         // Optimistic update is now handled in ItineraryTab's handleDragEnd
         // Just call the API endpoint here
-        
+
         // Use the correct endpoint and method
-        const response = await fetch(`/api/trips/${tripId}/itinerary/reorder`, { // Correct endpoint
+        const response = await fetch(`/api/trips/${tripId}/itinerary/reorder`, {
+          // Correct endpoint
           method: 'POST', // Correct method
           headers: { 'Content-Type': 'application/json' },
           // Send the payload expected by the API route
@@ -918,7 +941,9 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
 
         if (!response.ok) {
           // Log specific error from API if possible
-          const errorData = await response.json().catch(() => ({ error: 'Failed to reorder item. API response not readable.' }));
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Failed to reorder item. API response not readable.' }));
           console.error(`[handleReorder Client] API Error (${response.status}):`, errorData.error);
           throw new Error(errorData.error || 'Failed to reorder item');
         }
@@ -928,7 +953,6 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         // if optimistic update was accurate.
         console.log(`[handleReorder Client] API Success for item ${info.itemId}`);
         // await refetchItinerary(); // Consider if this is needed
-
       } catch (error) {
         console.error('[handleReorder Client] Error calling reorder API:', error);
         toast({
@@ -936,16 +960,16 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
           description: formatError(error as Error, 'Could not save the new item order.'),
           variant: 'destructive',
         });
-        
-        // IMPORTANT: Trigger a state revert in ItineraryTab 
+
+        // IMPORTANT: Trigger a state revert in ItineraryTab
         // Since optimistic update happened there, the revert must also happen there.
         // We might need to pass the originalItems state back up or add a dedicated revert callback.
         // For now, refetching is the simplest way to force UI sync after failure.
-        console.warn("[handleReorder Client] Reorder failed. Refetching itinerary to revert UI.");
-        await refetchItinerary(); 
+        console.warn('[handleReorder Client] Reorder failed. Refetching itinerary to revert UI.');
+        await refetchItinerary();
       }
     },
-    // Dependencies: tripId, toast, refetchItinerary. 
+    // Dependencies: tripId, toast, refetchItinerary.
     // ItineraryItems state is managed within ItineraryTab now.
     [tripId, toast, refetchItinerary]
   );
@@ -964,9 +988,11 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         // Use optimistic update for context - ADD CHECK
         await optimisticUpdate('items', (currentItems) => {
           // Ensure currentItems is an array before filtering
-          return Array.isArray(currentItems) ? currentItems.filter((item) => item.id !== itemId) : [];
+          return Array.isArray(currentItems)
+            ? currentItems.filter((item) => item.id !== itemId)
+            : [];
         });
-        
+
         // API Call
         const response = await fetch(`/api/trips/${tripId}/itinerary/items/${itemId}`, {
           method: 'DELETE',
@@ -977,7 +1003,6 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         }
 
         toast({ title: 'Item deleted successfully' });
-
       } catch (error) {
         console.error('Failed to delete item:', error);
         toast({
@@ -1010,7 +1035,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
             // The actual type might be reconciled after the server response.
             return {
               ...item,
-              votes: newVotes as unknown as ProcessedVotes
+              votes: newVotes as unknown as ProcessedVotes,
             };
           }
           return item;
@@ -1071,8 +1096,8 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
 
         // Use optimistic update for context - ADD CHECK
         await optimisticUpdate('items', (currentItems) => {
-           // Ensure currentItems is an array before mapping
-          if (!Array.isArray(currentItems)) return []; 
+          // Ensure currentItems is an array before mapping
+          if (!Array.isArray(currentItems)) return [];
           return currentItems.map((item) => {
             if (item.id === itemId) {
               return { ...item, status };
@@ -1080,7 +1105,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
             return item;
           });
         });
-        
+
         // API Call
         const response = await fetch(`/api/trips/${tripId}/itinerary/items/${itemId}`, {
           method: 'PATCH',
@@ -1362,9 +1387,9 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       },
       */
     ];
-    
+
     // Remove manage tab entirely
-    
+
     return baseTabs;
   }, [
     canEdit,
@@ -1393,7 +1418,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   ]);
 
   // --- Rendering --- //
-  
+
   // Combine loading states correctly
   const combinedIsLoading = isLoading || isItemsLoading || isMembersLoading;
 
@@ -1431,19 +1456,24 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       </div>
     );
   }
-  
+
   // Add a final check to ensure tripData.trip is definitely available before rendering main content
   // This prevents errors if loading finished but data somehow didn't arrive
   if (!tripData?.trip) {
-      console.error("[TripPageClient] Reached render stage but tripData.trip is still null/undefined.", { isLoading, isItemsLoading, isMembersLoading, error });
-      return (
-          <div className="container mx-auto p-8 text-center">
-              <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" /> <AlertTitle>Unexpected State</AlertTitle>
-                  <AlertDescription>Failed to render trip information. Please refresh the page.</AlertDescription>
-              </Alert>
-          </div>
-      );
+    console.error(
+      '[TripPageClient] Reached render stage but tripData.trip is still null/undefined.',
+      { isLoading, isItemsLoading, isMembersLoading, error }
+    );
+    return (
+      <div className="container mx-auto p-8 text-center">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" /> <AlertTitle>Unexpected State</AlertTitle>
+          <AlertDescription>
+            Failed to render trip information. Please refresh the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   // --- Main JSX --- //
@@ -1473,7 +1503,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         />
 
         {/* Main Content Area - Remove container styles from here */}
-        <div className="flex-grow py-6"> 
+        <div className="flex-grow py-6">
           {/* Change from grid to 2-column flex layout below header */}
           <div className="flex flex-col md:flex-row gap-6 relative">
             {/* Sidebar - Make it sticky */}
@@ -1641,7 +1671,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
                   end_date: tripData.trip.end_date || null,
                   tags: tripTags.map((tag) => tag.name) || [],
                   destination_id: tripData.trip.destination_id || null,
-                  cover_image_url: coverImageUrl
+                  cover_image_url: coverImageUrl,
                 }}
                 initialDestinationName={tripData.trip.destination_name || null}
                 onSave={handleSaveTripDetails}
@@ -1666,7 +1696,9 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
               <p>Expense form not yet implemented</p>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddExpenseOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsAddExpenseOpen(false)}>
+                Cancel
+              </Button>
               <Button type="button">Add Expense</Button>
             </DialogFooter>
           </DialogContent>

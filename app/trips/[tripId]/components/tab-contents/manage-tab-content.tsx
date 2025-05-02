@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useEffect, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { MembersTab } from '@/components/members-tab';

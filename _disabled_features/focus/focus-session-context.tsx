@@ -126,7 +126,9 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
   const startFocusSession = useCallback(
     async (sectionPath: string) => {
       if (!tripId || !user || !supabase) {
-        throw new Error('User must be authenticated and Supabase client available to start a focus session');
+        throw new Error(
+          'User must be authenticated and Supabase client available to start a focus session'
+        );
       }
 
       try {
@@ -176,7 +178,9 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
   const joinFocusSession = useCallback(
     async (session: FocusSession) => {
       if (!user || !supabase) {
-        throw new Error('User must be authenticated and Supabase client available to join a focus session');
+        throw new Error(
+          'User must be authenticated and Supabase client available to join a focus session'
+        );
       }
 
       try {

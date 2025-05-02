@@ -1,6 +1,5 @@
-'use client'
+'use client';
 import { API_ROUTES } from '@/utils/constants/routes';
-
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';

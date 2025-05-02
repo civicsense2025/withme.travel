@@ -45,11 +45,11 @@ interface Trip {
 
 // Main dashboard page - a server component
 export default async function DashboardPage() {
-// Check if the user is authenticated
-const session = await getServerSession();
+  // Check if the user is authenticated
+  const session = await getServerSession();
 
-// Redirect if not authenticated
-if (!session) {
+  // Redirect if not authenticated
+  if (!session) {
     redirect('/login');
   }
 

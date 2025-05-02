@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -39,11 +39,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Dynamically import the MapboxGeocoderComponent to prevent it from being loaded unnecessarily
 const MapboxGeocoderComponent = lazy(() => import('@/components/maps/mapbox-geocoder'));
@@ -80,14 +76,14 @@ interface QuickAddItemDialogProps {
   dialogDescription?: string;
 }
 
-export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({ 
-  tripId, 
-  isOpen, 
-  onOpenChange, 
+export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
+  tripId,
+  isOpen,
+  onOpenChange,
   onItemAdded,
   defaultCategory = null,
-  dialogTitle = "Add Unscheduled Item",
-  dialogDescription = "Add another item to your unscheduled items list."
+  dialogTitle = 'Add Unscheduled Item',
+  dialogDescription = 'Add another item to your unscheduled items list.',
 }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -140,7 +136,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent, keepOpen = false) => {
     e.preventDefault();
-    
+
     if (!category) {
       setError('Type is required.');
       toast({
@@ -150,23 +146,25 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
       });
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
 
     const newItemData = {
-      title: title || 'Untitled Itinerary Item', 
+      title: title || 'Untitled Itinerary Item',
       type: category,
       description: description,
       location: location,
       // Location details - only include if a place was selected
-      ...(geocoderResult ? {
-        place_name: geocoderResult.text || geocoderResult.place_name || '',
-        address: geocoderResult.properties?.address || geocoderResult.place_name,
-        mapbox_id: geocoderResult.id,
-        latitude: geocoderResult.geometry?.coordinates[1],
-        longitude: geocoderResult.geometry?.coordinates[0],
-      } : {}),
+      ...(geocoderResult
+        ? {
+            place_name: geocoderResult.text || geocoderResult.place_name || '',
+            address: geocoderResult.properties?.address || geocoderResult.place_name,
+            mapbox_id: geocoderResult.id,
+            latitude: geocoderResult.geometry?.coordinates[1],
+            longitude: geocoderResult.geometry?.coordinates[0],
+          }
+        : {}),
       day_number: null, // Unscheduled item
     };
 
@@ -185,13 +183,13 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
 
       // Item was successfully added
       const itemName = newItemData.title;
-      toast({ 
-        title: 'Item Added!', 
-        description: `${itemName} added to unscheduled items.${!geocoderResult ? ' Remember to set a location later.' : ''}` 
+      toast({
+        title: 'Item Added!',
+        description: `${itemName} added to unscheduled items.${!geocoderResult ? ' Remember to set a location later.' : ''}`,
       });
-      
+
       onItemAdded(); // Refresh the itinerary items
-      
+
       if (keepOpen) {
         // Reset form but keep dialog open for another item
         form.reset();
@@ -206,10 +204,10 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
     } catch (error: any) {
       console.error('Failed to add quick itinerary item:', error);
       setError(typeof error === 'string' ? error : error.message || 'An error occurred');
-      toast({ 
-        title: 'Failed to Add', 
-        description: typeof error === 'string' ? error : error.message || 'An error occurred', 
-        variant: 'destructive' 
+      toast({
+        title: 'Failed to Add',
+        description: typeof error === 'string' ? error : error.message || 'An error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -219,9 +217,9 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
   // Get appropriate title and description based on the selected category
   const getCategorySpecificTitle = () => {
     if (category === ITINERARY_CATEGORIES.ACCOMMODATIONS) {
-      return "Add Accommodation";
+      return 'Add Accommodation';
     } else if (category === ITINERARY_CATEGORIES.TRANSPORTATION) {
-      return "Add Transportation";
+      return 'Add Transportation';
     }
     return dialogTitle;
   };
@@ -240,77 +238,92 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{getCategorySpecificTitle()}</DialogTitle>
-          <DialogDescription>
-            {getCategorySpecificDescription()}
-          </DialogDescription>
+          <DialogDescription>{getCategorySpecificDescription()}</DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={(e) => handleSubmit(e)} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title*</Label>
-            <Input 
-              id="title" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Visit Museum"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="type">
                 <SelectValue>
-                  {category ? 
-                    CATEGORY_DISPLAY[category as keyof typeof CATEGORY_DISPLAY]?.label || "Select type" : 
-                    "Select type"
-                  }
+                  {category
+                    ? CATEGORY_DISPLAY[category as keyof typeof CATEGORY_DISPLAY]?.label ||
+                      'Select type'
+                    : 'Select type'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ITINERARY_CATEGORIES.ACCOMMODATIONS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.TRANSPORTATION}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.FOOD_DRINK}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_DRINK].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_DRINK].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_DRINK].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_DRINK].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.ICONIC_LANDMARKS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.LOCAL_SECRETS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.NIGHTLIFE}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.RELAXATION}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.SHOPPING}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.DAY_EXCURSIONS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.DAY_EXCURSIONS].emoji} {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.DAY_EXCURSIONS].label}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.DAY_EXCURSIONS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.DAY_EXCURSIONS].label}
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex justify-between">
               <Label htmlFor="location">Location</Label>
               <span className="text-xs text-muted-foreground">(Optional)</span>
             </div>
-            <Suspense fallback={<div className="p-2 border rounded text-sm text-muted-foreground">Loading location search...</div>}>
+            <Suspense
+              fallback={
+                <div className="p-2 border rounded text-sm text-muted-foreground">
+                  Loading location search...
+                </div>
+              }
+            >
               <MapboxGeocoderComponent
                 key={geocoderResult ? 'selected' : 'empty'}
                 onResult={handleGeocoderResult}
@@ -321,33 +334,31 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
               />
             </Suspense>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description" 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)} 
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Any additional details..."
             />
           </div>
-          
-          {error && (
-            <div className="text-destructive text-sm">{error}</div>
-          )}
-          
+
+          {error && <div className="text-destructive text-sm">{error}</div>}
+
           <DialogFooter className="flex sm:justify-between">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={(e) => handleSubmit(e, false)}
               disabled={isLoading}
             >
               Cancel
             </Button>
             <div className="flex gap-2">
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 onClick={(e) => handleSubmit(e, true)}
                 disabled={isLoading}
                 variant="secondary"
@@ -363,4 +374,4 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-}; 
+};

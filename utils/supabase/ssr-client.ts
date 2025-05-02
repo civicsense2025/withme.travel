@@ -8,7 +8,9 @@ import { createServerSupabaseClient as createUnifiedServerClient } from './serve
  * Creates a Supabase client for Server Components using the unified server helper.
  */
 export function createServerComponentClient() {
-  console.warn("createServerComponentClient from ssr-client.ts is deprecated. Use createServerSupabaseClient from server.ts instead.");
+  console.warn(
+    'createServerComponentClient from ssr-client.ts is deprecated. Use createServerSupabaseClient from server.ts instead.'
+  );
   return createUnifiedServerClient();
 }
 
@@ -17,6 +19,8 @@ export function createServerComponentClient() {
  * Creates a Supabase client for API Route Handlers using the unified server helper.
  */
 export function createApiRouteClient() {
-  console.warn("createApiRouteClient from ssr-client.ts is deprecated. Use createServerSupabaseClient from server.ts instead.");
+  console.warn(
+    'createApiRouteClient from ssr-client.ts is deprecated. Use createServerSupabaseClient from server.ts instead.'
+  );
   return createUnifiedServerClient();
-} 
+}

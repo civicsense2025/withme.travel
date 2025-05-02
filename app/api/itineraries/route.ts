@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (
-      !itineraryData.title || 
-      !itineraryData.destination_id || 
+      !itineraryData.title ||
+      !itineraryData.destination_id ||
       !itineraryData.duration_days ||
       !Array.isArray(itineraryData.sections)
     ) {
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         title: itineraryData.title,
         slug: slug,
         description: itineraryData.description,
-        destination_id: itineraryData.destination_id, 
+        destination_id: itineraryData.destination_id,
         duration_days: itineraryData.duration_days,
         created_by: user.id,
         is_published: itineraryData.is_published || false,
@@ -80,61 +80,63 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Insert sections
-    const sectionPromises = itineraryData.sections.map(async (section: any, sectionIndex: number) => {
-      // Validate section data
-      if (!section.title || typeof section.day_number !== 'number') {
-        throw new Error(`Invalid section data at index ${sectionIndex}`);
-      }
+    const sectionPromises = itineraryData.sections.map(
+      async (section: any, sectionIndex: number) => {
+        // Validate section data
+        if (!section.title || typeof section.day_number !== 'number') {
+          throw new Error(`Invalid section data at index ${sectionIndex}`);
+        }
 
-      const { data: sectionData, error: sectionError } = await supabase
-        .from(DB_TABLES.ITINERARY_TEMPLATE_SECTIONS)
-        .insert({
-          template_id: template.id,
-          day_number: section.day_number,
-          title: section.title,
-          position: sectionIndex,
-        })
-        .select()
-        .single();
+        const { data: sectionData, error: sectionError } = await supabase
+          .from(DB_TABLES.ITINERARY_TEMPLATE_SECTIONS)
+          .insert({
+            template_id: template.id,
+            day_number: section.day_number,
+            title: section.title,
+            position: sectionIndex,
+          })
+          .select()
+          .single();
 
-      if (sectionError) {
-        throw sectionError;
-      }
+        if (sectionError) {
+          throw sectionError;
+        }
 
-      // 3. Insert items for this section
-      if (Array.isArray(section.items) && section.items.length > 0) {
-        const items = section.items.map((item: any, itemIndex: number) => ({
-          template_id: template.id,
-          section_id: sectionData.id,
-          day: section.day_number,
-          item_order: itemIndex,
-          title: item.title,
-          description: item.description || null,
-          start_time: item.start_time || null,
-          end_time: item.end_time || null,
-          location: item.location || null,
-        }));
+        // 3. Insert items for this section
+        if (Array.isArray(section.items) && section.items.length > 0) {
+          const items = section.items.map((item: any, itemIndex: number) => ({
+            template_id: template.id,
+            section_id: sectionData.id,
+            day: section.day_number,
+            item_order: itemIndex,
+            title: item.title,
+            description: item.description || null,
+            start_time: item.start_time || null,
+            end_time: item.end_time || null,
+            location: item.location || null,
+          }));
 
-        const { data: itemsData, error: itemsError } = await supabase
-          .from(DB_TABLES.ITINERARY_TEMPLATE_ITEMS)
-          .insert(items)
-          .select();
+          const { data: itemsData, error: itemsError } = await supabase
+            .from(DB_TABLES.ITINERARY_TEMPLATE_ITEMS)
+            .insert(items)
+            .select();
 
-        if (itemsError) {
-          throw itemsError;
+          if (itemsError) {
+            throw itemsError;
+          }
+
+          return {
+            ...sectionData,
+            items: itemsData,
+          };
         }
 
         return {
           ...sectionData,
-          items: itemsData,
+          items: [],
         };
       }
-
-      return {
-        ...sectionData,
-        items: [],
-      };
-    });
+    );
 
     // Wait for all section and item insertions to complete
     const sections = await Promise.all(sectionPromises);
@@ -147,7 +149,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error processing itinerary creation:', error);
-    return NextResponse.json({ error: error.message || 'Failed to create itinerary' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to create itinerary' },
+      { status: 500 }
+    );
   }
 }
 

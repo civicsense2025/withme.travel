@@ -21,12 +21,7 @@ import { TRIP_ROLES } from '@/utils/constants/status';
  */
 
 // Re-export database constants
-export {
-  TABLES,
-  FIELDS,
-  ENUMS,
-  RELATIONSHIPS,
-} from './database';
+export { TABLES, FIELDS, ENUMS, RELATIONSHIPS } from './database';
 
 // Re-export route constants
 export { API_ROUTES, PAGE_ROUTES } from './routes';

@@ -16,50 +16,43 @@ export async function GET(
     // UUID validation to prevent database errors
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!tripId || !UUID_REGEX.test(tripId)) {
-      return NextResponse.json(
-        { error: 'Invalid trip ID format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid trip ID format' }, { status: 400 });
     }
 
     // Create the client using the correct helper
     const supabase = createServerSupabaseClient();
 
     // Use getUser() for a more secure auth check
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       console.error('Auth error in members route:', authError);
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Fetch trip members using the correct TABLES constant
     const { data, error } = await supabase
       .from(TABLES.TRIP_MEMBERS)
-      .select(`
+      .select(
+        `
         *,
         profiles:${TABLES.PROFILES}(*)
-      `)
+      `
+      )
       .eq('trip_id', tripId);
 
     if (error) {
       console.error('Error fetching members:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // Return only the data array as per original logic, assuming the consumer expects { data: [...] }
     return NextResponse.json({ data });
   } catch (error) {
     console.error('API route error:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

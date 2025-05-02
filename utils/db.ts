@@ -271,14 +271,16 @@ class DatabaseClient {
           if (sql.includes('ORDER BY') && sql.includes('LIMIT')) {
             const userId = params[0];
             const limit = params[1] || 10;
-            
+
             const { data, error } = await supabase
               .from('trips')
-              .select(`
+              .select(
+                `
                 *,
                 trip_members!inner(role, user_id),
                 trip_members(user_id)
-              `)
+              `
+              )
               .eq('trip_members.user_id', userId)
               .limit(limit)
               .order('created_at', { ascending: false });
@@ -290,7 +292,7 @@ class DatabaseClient {
 
             // Process the data to match the expected format
             if (data) {
-              return data.map(trip => {
+              return data.map((trip) => {
                 // Count unique members
                 const memberIds = new Set();
                 if (trip.trip_members) {
@@ -298,23 +300,24 @@ class DatabaseClient {
                     if (member.user_id) memberIds.add(member.user_id);
                   });
                 }
-                
+
                 return {
                   ...trip,
-                  role: trip.trip_members && trip.trip_members[0] ? trip.trip_members[0].role : null,
+                  role:
+                    trip.trip_members && trip.trip_members[0] ? trip.trip_members[0].role : null,
                   members: memberIds.size,
                   // Remove nested members to match original format
-                  trip_members: undefined
+                  trip_members: undefined,
                 };
               });
             }
-            
+
             return [];
           }
           // This is the getTripCount query
           else if (sql.includes('COUNT')) {
             const userId = params[0];
-            
+
             const { count, error } = await supabase
               .from('trips')
               .select('*', { count: 'exact', head: true })
@@ -325,14 +328,16 @@ class DatabaseClient {
               console.error('Database query error:', error);
               throw error;
             }
-            
+
             return [{ trip_count: count || 0 }];
           }
         }
 
         // Default case - log error but continue
         console.error('Unhandled SQL query:', sql);
-        console.error('The execute_sql function is not available. Please convert this query to use Supabase client directly.');
+        console.error(
+          'The execute_sql function is not available. Please convert this query to use Supabase client directly.'
+        );
         return [];
       });
 

@@ -6,11 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +41,11 @@ export function CreateTripFromTemplateDialog({
 
   const handleCreateTrip = async () => {
     if (!tripName.trim()) {
-      toast({ title: 'Trip Name Required', description: 'Please enter a name for your trip.', variant: 'destructive' });
+      toast({
+        title: 'Trip Name Required',
+        description: 'Please enter a name for your trip.',
+        variant: 'destructive',
+      });
       return;
     }
     setIsLoading(true);
@@ -70,7 +70,11 @@ export function CreateTripFromTemplateDialog({
       router.push(`/trips/${result.trip_id}`); // Navigate to the new trip
     } catch (error: any) {
       console.error('Error creating trip from template:', error);
-      toast({ title: 'Error', description: error.message || 'Could not create trip.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: error.message || 'Could not create trip.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -113,23 +117,26 @@ export function CreateTripFromTemplateDialog({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                />
+                <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
               </PopoverContent>
             </Popover>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            Cancel
+          </Button>
           <Button onClick={handleCreateTrip} disabled={isLoading}>
-            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Create Trip'}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+              </>
+            ) : (
+              'Create Trip'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-} 
+}

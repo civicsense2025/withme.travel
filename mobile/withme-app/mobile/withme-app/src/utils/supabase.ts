@@ -61,4 +61,3 @@ export const createSupabaseClient = () => {
 export const resetSupabaseClient = () => {
   supabaseClient = null;
 };
-

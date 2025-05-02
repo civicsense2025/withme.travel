@@ -11,29 +11,29 @@ export default function AuthCheck() {
   const [error, setError] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [cookieInfo, setCookieInfo] = useState<string | null>(null);
-  
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setAuthStatus('checking');
         const supabase = createClient();
-        
+
         if (!supabase) {
           setAuthStatus('error');
           setError('Failed to create Supabase client');
           return;
         }
-        
+
         // Get current session
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           setAuthStatus('error');
           setError(`Auth error: ${error.message}`);
           return;
         }
-        
+
         if (data.session) {
           setAuthStatus('authenticated');
           setUser(data.session.user);
@@ -48,7 +48,7 @@ export default function AuthCheck() {
         setError(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
       }
     };
-    
+
     // Check cookies
     const getCookies = () => {
       try {
@@ -62,27 +62,27 @@ export default function AuthCheck() {
         setCookieInfo(`Error getting cookies: ${err instanceof Error ? err.message : String(err)}`);
       }
     };
-    
+
     checkAuth();
     getCookies();
   }, []);
-  
+
   const handleRefreshSession = async () => {
     try {
       const supabase = createClient();
-      
+
       if (!supabase) {
         setError('Failed to create Supabase client');
         return;
       }
-      
+
       const { data, error } = await supabase.auth.refreshSession();
-      
+
       if (error) {
         setError(`Session refresh error: ${error.message}`);
         return;
       }
-      
+
       if (data.session) {
         setAuthStatus('authenticated');
         setUser(data.session.user);
@@ -95,25 +95,25 @@ export default function AuthCheck() {
       setError(`Refresh error: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
-  
+
   const handleRepairCookies = async () => {
     try {
       // Call your custom API endpoint to clear and repair cookies
       const response = await fetch('/api/auth/clear-cookies', { method: 'POST' });
-      
+
       if (!response.ok) {
         const data = await response.json();
         setError(`Cookie repair failed: ${data.error || response.statusText}`);
         return;
       }
-      
+
       setCookieInfo('Cookies cleared. Try to log in again.');
       setAuthStatus('cookies_cleared');
     } catch (err) {
       setError(`Cookie repair error: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
-  
+
   return (
     <div className="container mx-auto py-8">
       <Card className="mb-8">
@@ -127,28 +127,38 @@ export default function AuthCheck() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
               <span className="font-semibold">Auth Status:</span>
-              <span className={
-                authStatus === 'authenticated' ? 'text-green-500' : 
-                authStatus === 'error' ? 'text-red-500' : 
-                authStatus === 'checking' ? 'text-yellow-500' : 'text-gray-500'
-              }>
+              <span
+                className={
+                  authStatus === 'authenticated'
+                    ? 'text-green-500'
+                    : authStatus === 'error'
+                      ? 'text-red-500'
+                      : authStatus === 'checking'
+                        ? 'text-yellow-500'
+                        : 'text-gray-500'
+                }
+              >
                 {authStatus}
               </span>
             </div>
-            
+
             {user && (
               <div className="flex flex-col gap-2">
                 <div className="font-semibold">User Info:</div>
                 <div className="p-4 border rounded-md bg-gray-50 text-sm font-mono whitespace-pre-wrap">
-                  {JSON.stringify({
-                    id: user.id,
-                    email: user.email,
-                    role: user.role
-                  }, null, 2)}
+                  {JSON.stringify(
+                    {
+                      id: user.id,
+                      email: user.email,
+                      role: user.role,
+                    },
+                    null,
+                    2
+                  )}
                 </div>
               </div>
             )}
-            
+
             {sessionToken && (
               <div className="flex flex-col gap-2">
                 <div className="font-semibold">Session Token:</div>
@@ -157,7 +167,7 @@ export default function AuthCheck() {
                 </div>
               </div>
             )}
-            
+
             {cookieInfo && (
               <div className="flex flex-col gap-2">
                 <div className="font-semibold">Cookies:</div>
@@ -166,25 +176,20 @@ export default function AuthCheck() {
                 </div>
               </div>
             )}
-            
+
             {error && (
               <div className="flex flex-col gap-2">
                 <div className="font-semibold">Error:</div>
-                <div className="p-4 border rounded-md bg-red-50 text-red-600 text-sm">
-                  {error}
-                </div>
+                <div className="p-4 border rounded-md bg-red-50 text-red-600 text-sm">{error}</div>
               </div>
             )}
-            
+
             <div className="flex gap-4 mt-4">
-              <Button 
-                onClick={handleRefreshSession}
-                disabled={authStatus === 'checking'}
-              >
+              <Button onClick={handleRefreshSession} disabled={authStatus === 'checking'}>
                 Refresh Session
               </Button>
-              
-              <Button 
+
+              <Button
                 onClick={handleRepairCookies}
                 variant="outline"
                 disabled={authStatus === 'checking'}
@@ -197,4 +202,4 @@ export default function AuthCheck() {
       </Card>
     </div>
   );
-} 
+}

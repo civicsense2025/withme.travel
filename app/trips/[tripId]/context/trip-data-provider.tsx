@@ -96,7 +96,6 @@ const fetcher = async (url: string) => {
     const data = await response.json();
     // console.log(`[Fetcher] Parsed Data for ${url}:`, data); // Removed log
     return data;
-
   } catch (err) {
     // console.error(`[Fetcher] CATCH block error for ${url}:`, err); // Keep this one maybe?
     console.error(`Fetch error for ${url}:`, err); // Revert to original simpler log
@@ -115,10 +114,10 @@ interface TripDataProviderProps {
 export function TripDataProvider({ children, initialData, tripId }: TripDataProviderProps) {
   const id = initialData?.tripId || tripId;
 
-  // --- Manage tripData with useState --- 
+  // --- Manage tripData with useState ---
   const [tripDataState, setTripDataState] = useState<TripData | null>(null);
   const [errorState, setErrorState] = useState<Error | null>(null);
-  // --- End useState --- 
+  // --- End useState ---
 
   if (!id) {
     console.error('[TripDataProvider] Requires either initialData with tripId or tripId prop');
@@ -126,9 +125,14 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
   }
 
   // Fetch trip data using SWR
-  const { data: tripResponse, error: tripError, mutate: refetchTrip, isValidating: isTripValidating } = useSWR(
+  const {
+    data: tripResponse,
+    error: tripError,
+    mutate: refetchTrip,
+    isValidating: isTripValidating,
+  } = useSWR(
     id ? `/api/trips/${id}` : null, // Only fetch if id is present
-    fetcher, 
+    fetcher,
     {
       revalidateOnFocus: true,
       suspense: false,
@@ -163,9 +167,14 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
   );
 
   // Fetch itinerary data using SWR
-  const { data: itineraryResponse, error: itineraryError, mutate: refetchItinerary, isValidating: isItineraryValidating } = useSWR(
+  const {
+    data: itineraryResponse,
+    error: itineraryError,
+    mutate: refetchItinerary,
+    isValidating: isItineraryValidating,
+  } = useSWR(
     id ? `/api/trips/${id}/itinerary` : null, // Only fetch if id is present
-    fetcher, 
+    fetcher,
     {
       revalidateOnFocus: true,
       suspense: false,
@@ -182,9 +191,14 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
   );
 
   // Fetch members using SWR
-  const { data: membersResponse, error: membersError, mutate: refetchMembers, isValidating: isMembersValidating } = useSWR(
+  const {
+    data: membersResponse,
+    error: membersError,
+    mutate: refetchMembers,
+    isValidating: isMembersValidating,
+  } = useSWR(
     id ? `/api/trips/${id}/members` : null, // Only fetch if id is present
-    fetcher, 
+    fetcher,
     {
       revalidateOnFocus: true,
       suspense: false,
@@ -196,7 +210,7 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
         : undefined,
     }
   );
-  
+
   // Effect to consolidate fetched data into the final state
   useEffect(() => {
     const allFetchesDone = !isTripValidating && !isItineraryValidating && !isMembersValidating;
@@ -223,11 +237,18 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
       const actualMembersData = membersResponse?.data; // Members API wraps in 'data'
 
       // Validate the core trip data object
-      const isValidTripObject = actualTripData && typeof actualTripData === 'object' && !Array.isArray(actualTripData) && actualTripData.id;
+      const isValidTripObject =
+        actualTripData &&
+        typeof actualTripData === 'object' &&
+        !Array.isArray(actualTripData) &&
+        actualTripData.id;
 
       if (!isValidTripObject) {
         // If trip fetch succeeded (no error) but data is invalid/missing AFTER fetch completes
-        console.error('[TripDataProvider] Invalid or missing core trip object after fetch completed.', actualTripData);
+        console.error(
+          '[TripDataProvider] Invalid or missing core trip object after fetch completed.',
+          actualTripData
+        );
         setErrorState(new Error('Failed to load essential trip details.'));
         setTripDataState(null);
         return; // Stop processing
@@ -250,10 +271,8 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
         setTripDataState(newTripData);
         setErrorState(null); // Clear error state on successful update
       }
-
     }
     // If fetches are not done, do nothing yet, wait for the next effect run
-
   }, [
     tripResponse,
     itineraryResponse,
@@ -264,7 +283,7 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
     tripError,
     itineraryError,
     membersError,
-    tripDataState // Include tripDataState for deepEqual comparison
+    tripDataState, // Include tripDataState for deepEqual comparison
   ]);
 
   // Loading states
@@ -279,50 +298,76 @@ export function TripDataProvider({ children, initialData, tripId }: TripDataProv
     membersError ||
     // Check state *after* useEffect might have set it
     (tripDataState && !tripDataState.trip ? new Error('Invalid trip data processed') : null);
-    
+
   // Optimistic update helper - needs adjustment to work with state
-  const optimisticUpdate = useCallback(async <T extends keyof TripData>(
-    key: T,
-    updater: (currentData: TripData[T] | undefined) => TripData[T]
-  ) => {
+  const optimisticUpdate = useCallback(
+    async <T extends keyof TripData>(
+      key: T,
+      updater: (currentData: TripData[T] | undefined) => TripData[T]
+    ) => {
       // Use setTripDataState with a function to get the latest state
-      setTripDataState(currentState => {
-          if (!currentState) {
-              console.error("Cannot perform optimistic update on null state");
-              return null; 
-          }
-          const currentValue = currentState[key];
-          const updatedValue = updater(currentValue);
-          
-          // Return new state object
-          return { ...currentState, [key]: updatedValue };
+      setTripDataState((currentState) => {
+        if (!currentState) {
+          console.error('Cannot perform optimistic update on null state');
+          return null;
+        }
+        const currentValue = currentState[key];
+        const updatedValue = updater(currentValue);
+
+        // Return new state object
+        return { ...currentState, [key]: updatedValue };
       });
 
       // SWR mutation part remains similar but needs careful handling
       // Determine which refetch method to use based on the key
       let swrMutate, swrKey;
       switch (key) {
-          case 'trip': swrMutate = refetchTrip; swrKey = `/api/trips/${id}`; break;
-          case 'sections': case 'items': swrMutate = refetchItinerary; swrKey = `/api/trips/${id}/itinerary`; break;
-          case 'members': swrMutate = refetchMembers; swrKey = `/api/trips/${id}/members`; break;
-          case 'tags': swrMutate = refetchTrip; swrKey = `/api/trips/${id}`; break;
-          default: swrMutate = refetchTrip; swrKey = `/api/trips/${id}`; break;
+        case 'trip':
+          swrMutate = refetchTrip;
+          swrKey = `/api/trips/${id}`;
+          break;
+        case 'sections':
+        case 'items':
+          swrMutate = refetchItinerary;
+          swrKey = `/api/trips/${id}/itinerary`;
+          break;
+        case 'members':
+          swrMutate = refetchMembers;
+          swrKey = `/api/trips/${id}/members`;
+          break;
+        case 'tags':
+          swrMutate = refetchTrip;
+          swrKey = `/api/trips/${id}`;
+          break;
+        default:
+          swrMutate = refetchTrip;
+          swrKey = `/api/trips/${id}`;
+          break;
       }
 
       // Re-fetch immediately after optimistic update (or use SWR's optimisticData feature)
       // For simplicity, just trigger revalidation here.
-      // A more robust implementation might use SWR's mutate(..., { optimisticData: ... }) 
+      // A more robust implementation might use SWR's mutate(..., { optimisticData: ... })
       if (swrMutate) {
-           await swrMutate(); // Revalidate to get fresh data
+        await swrMutate(); // Revalidate to get fresh data
       } else {
-          console.warn("No SWR mutation function found for key:", key);
+        console.warn('No SWR mutation function found for key:', key);
       }
-  }, [id, refetchTrip, refetchItinerary, refetchMembers]); // Add dependencies
+    },
+    [id, refetchTrip, refetchItinerary, refetchMembers]
+  ); // Add dependencies
 
   // Add combined loading state for easier checks
   const isFetching = isLoading || isItemsLoading || isMembersLoading;
 
-  console.log('[TripDataProvider] Context Values:', { isLoading, isItemsLoading, isMembersLoading, isFetching, error: error?.message, hasValidTrip: !!tripDataState?.trip });
+  console.log('[TripDataProvider] Context Values:', {
+    isLoading,
+    isItemsLoading,
+    isMembersLoading,
+    isFetching,
+    error: error?.message,
+    hasValidTrip: !!tripDataState?.trip,
+  });
 
   const value = {
     tripData: tripDataState, // Use state variable

@@ -82,9 +82,9 @@ export default function AuthStatusDebugPage() {
       });
     }
 
-    // Check for client/server mismatch 
+    // Check for client/server mismatch
     const clientHasAuth = !!user;
-    
+
     // Use the direct 'authenticated' field from the updated API response
     const serverHasAuth = serverData.authenticated === true; // Check boolean directly
 

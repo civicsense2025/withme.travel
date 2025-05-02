@@ -17,7 +17,7 @@ const formatCurrency = (value: number | null | undefined | string): string => {
   if (typeof value === 'string') {
     // Attempt to parse, return 'N/A' if invalid or empty after trimming
     const trimmedValue = value.trim();
-    if (trimmedValue === '' || isNaN(Number.parseFloat(trimmedValue))) return 'N/A'; 
+    if (trimmedValue === '' || isNaN(Number.parseFloat(trimmedValue))) return 'N/A';
     numericValue = Number.parseFloat(trimmedValue);
   } else if (typeof value === 'number') {
     numericValue = value;
@@ -54,9 +54,10 @@ export default function BudgetSnapshotSidebar({
 
   // Calculate progress percentages
   const spentProgress = targetBudget && targetBudget > 0 ? (totalSpent / targetBudget) * 100 : 0;
-  const plannedProgress = targetBudget && targetBudget > 0 ? (totalPlanned / targetBudget) * 100 : 0; 
+  const plannedProgress =
+    targetBudget && targetBudget > 0 ? (totalPlanned / targetBudget) * 100 : 0;
   const combinedProgress = spentProgress + plannedProgress;
-  const overBudget = targetBudget !== null && (totalSpent + totalPlanned) > targetBudget;
+  const overBudget = targetBudget !== null && totalSpent + totalPlanned > targetBudget;
 
   useEffect(() => {
     setEditedBudget(targetBudget?.toString() ?? '');
@@ -93,7 +94,12 @@ export default function BudgetSnapshotSidebar({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Budget Snapshot</CardTitle>
         {canEdit && !isEditing && (
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditToggle(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => onEditToggle(true)}
+          >
             <Pencil className="h-4 w-4" />
           </Button>
         )}
@@ -134,7 +140,10 @@ export default function BudgetSnapshotSidebar({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Badge variant="outline" className="bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 cursor-help">
+                        <Badge
+                          variant="outline"
+                          className="bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 cursor-help"
+                        >
                           Planned: {formatCurrency(totalPlanned)}
                         </Badge>
                       </TooltipTrigger>
@@ -146,18 +155,18 @@ export default function BudgetSnapshotSidebar({
                 </div>
                 <div className="relative pt-1">
                   <div className="overflow-hidden h-2 text-xs flex rounded bg-muted">
-                    <div 
-                      style={{ width: `${Math.min(spentProgress, 100)}%` }} 
+                    <div
+                      style={{ width: `${Math.min(spentProgress, 100)}%` }}
                       className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
                       title={`Spent: ${formatCurrency(totalSpent)}`}
-                    >
-                    </div>
-                    <div 
-                      style={{ width: `${Math.min(plannedProgress, Math.max(0, 100 - spentProgress))}%` }} 
+                    ></div>
+                    <div
+                      style={{
+                        width: `${Math.min(plannedProgress, Math.max(0, 100 - spentProgress))}%`,
+                      }}
                       className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-orange-400"
                       title={`Planned: ${formatCurrency(totalPlanned)}`}
-                    >
-                    </div>
+                    ></div>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground text-right">
@@ -165,7 +174,7 @@ export default function BudgetSnapshotSidebar({
                 </p>
                 {overBudget && (
                   <p className="text-xs text-destructive">
-                    Over budget by {formatCurrency((totalSpent + totalPlanned) - targetBudget)}
+                    Over budget by {formatCurrency(totalSpent + totalPlanned - targetBudget)}
                   </p>
                 )}
               </>

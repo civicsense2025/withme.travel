@@ -8,7 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function WebSocketTest() {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [message, setMessage] = useState<string>('');
-  const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated'>(
+    'checking'
+  );
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,15 +22,15 @@ export default function WebSocketTest() {
           setAuthStatus('unauthenticated');
           return;
         }
-        
+
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           console.error('Auth error:', error);
           setAuthStatus('unauthenticated');
           return;
         }
-        
+
         if (data.session) {
           setAuthStatus('authenticated');
           setUserId(data.session.user.id);
@@ -40,7 +42,7 @@ export default function WebSocketTest() {
         setAuthStatus('unauthenticated');
       }
     };
-    
+
     checkAuth();
   }, []);
 
@@ -48,21 +50,21 @@ export default function WebSocketTest() {
     try {
       setStatus('connecting');
       setMessage('Initializing WebSocket connection...');
-      
+
       const supabase = createClient();
       if (!supabase) {
         setStatus('error');
         setMessage('Failed to create Supabase client');
         return;
       }
-      
+
       // Create a test channel
       const channel = supabase.channel('test-channel', {
         config: {
-          broadcast: { self: true }
-        }
+          broadcast: { self: true },
+        },
       });
-      
+
       // Set up channel event handlers
       channel
         .on('broadcast', { event: 'test' }, (payload) => {
@@ -72,13 +74,13 @@ export default function WebSocketTest() {
           if (status === 'SUBSCRIBED') {
             setStatus('connected');
             setMessage('Successfully connected! Sending test message...');
-            
+
             // Send a test message
             setTimeout(() => {
               channel.send({
                 type: 'broadcast',
                 event: 'test',
-                payload: { message: 'Hello from WebSocket test!' }
+                payload: { message: 'Hello from WebSocket test!' },
               });
             }, 1000);
           } else if (status === 'CHANNEL_ERROR') {
@@ -86,7 +88,7 @@ export default function WebSocketTest() {
             setMessage(`Channel error: ${status}`);
           }
         });
-      
+
       // Cleanup function
       return () => {
         channel.unsubscribe();
@@ -101,23 +103,23 @@ export default function WebSocketTest() {
     try {
       setStatus('connecting');
       setMessage('Initializing presence...');
-      
+
       const supabase = createClient();
       if (!supabase) {
         setStatus('error');
         setMessage('Failed to create Supabase client');
         return;
       }
-      
+
       // Create a channel with presence enabled
       const channel = supabase.channel('presence-test', {
         config: {
           presence: {
-            key: userId || 'anonymous-user'
-          }
-        }
+            key: userId || 'anonymous-user',
+          },
+        },
       });
-      
+
       // Set up presence handlers
       channel
         .on('presence', { event: 'sync' }, () => {
@@ -134,18 +136,18 @@ export default function WebSocketTest() {
           if (status === 'SUBSCRIBED') {
             setStatus('connected');
             setMessage('Successfully connected to presence channel! Tracking presence...');
-            
+
             // Track presence
             await channel.track({
               user_id: userId || 'anonymous-user',
-              online_at: new Date().toISOString()
+              online_at: new Date().toISOString(),
             });
           } else if (status === 'CHANNEL_ERROR') {
             setStatus('error');
             setMessage(`Channel error: ${status}`);
           }
         });
-      
+
       // Cleanup function
       return () => {
         channel.unsubscribe();
@@ -161,9 +163,7 @@ export default function WebSocketTest() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>WebSocket & Presence Test</CardTitle>
-          <CardDescription>
-            Test WebSocket connection and Presence feature
-          </CardDescription>
+          <CardDescription>Test WebSocket connection and Presence feature</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
@@ -173,43 +173,53 @@ export default function WebSocketTest() {
                 {authStatus}
               </span>
             </div>
-            
+
             {userId && (
               <div className="flex items-center gap-2">
                 <span className="font-semibold">User ID:</span>
                 <span className="text-sm font-mono">{userId}</span>
               </div>
             )}
-            
+
             <div className="flex items-center gap-2">
               <span className="font-semibold">Connection Status:</span>
-              <span className={
-                status === 'connected' ? 'text-green-500' : 
-                status === 'error' ? 'text-red-500' : 
-                status === 'connecting' ? 'text-yellow-500' : 'text-gray-500'
-              }>
+              <span
+                className={
+                  status === 'connected'
+                    ? 'text-green-500'
+                    : status === 'error'
+                      ? 'text-red-500'
+                      : status === 'connecting'
+                        ? 'text-yellow-500'
+                        : 'text-gray-500'
+                }
+              >
                 {status}
               </span>
             </div>
-            
+
             <div className="flex flex-col gap-2">
               <span className="font-semibold">Message:</span>
               <div className="p-4 border rounded-md bg-gray-50 text-sm">
                 {message || 'No messages yet'}
               </div>
             </div>
-            
+
             <div className="flex gap-4 mt-4">
-              <Button 
+              <Button
                 onClick={testWebSocket}
                 disabled={status === 'connecting' || authStatus === 'checking'}
               >
                 Test WebSocket
               </Button>
-              
-              <Button 
+
+              <Button
                 onClick={testPresence}
-                disabled={status === 'connecting' || authStatus === 'checking' || authStatus === 'unauthenticated'}
+                disabled={
+                  status === 'connecting' ||
+                  authStatus === 'checking' ||
+                  authStatus === 'unauthenticated'
+                }
                 variant="outline"
               >
                 Test Presence
@@ -220,4 +230,4 @@ export default function WebSocketTest() {
       </Card>
     </div>
   );
-} 
+}

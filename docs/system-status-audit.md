@@ -7,18 +7,22 @@ This document outlines the issues identified in the System Status Dashboard and 
 ## Issues Identified
 
 ### 1. Hydration Errors
+
 - **React Hydration Mismatch**: Server and client rendering different timestamps
 - **Root Cause**: Using `new Date().toLocaleTimeString()` directly in the render method
 
 ### 2. Missing Asset Files
+
 - **Logo Files**: `logo-light.svg`, `logo-dark.svg` - 404 Not Found
 - **Image Assets**: `images/destinations/default.jpg` - 404 Not Found
 
 ### 3. API Authentication Issues
+
 - **Auth Endpoint**: `/api/auth/me` - 401 Unauthorized
 - **Trips API**: `/api/trips` - 401 Unauthorized
 
 ### 4. Content Security Policy (CSP) Violations
+
 - **WebSocket Connection**: CSP blocking connection to Supabase realtime endpoint
 - **Domain Mismatch**: Policy allows `wss://*.supabase.io` but attempting to connect to `wss://*.supabase.co`
 
@@ -31,8 +35,8 @@ Hydration errors occur when the server-rendered HTML doesn't match what the clie
 ```tsx
 // system-status.tsx - Replace time rendering code
 
-// PROBLEM: 
-<p>Last updated: {new Date().toLocaleTimeString()}</p>
+// PROBLEM:
+<p>Last updated: {new Date().toLocaleTimeString()}</p>;
 
 // SOLUTION - Option 1: Client-only rendering
 import { useEffect, useState } from 'react';
@@ -41,23 +45,23 @@ const [lastUpdated, setLastUpdated] = useState<string>('');
 
 useEffect(() => {
   setLastUpdated(new Date().toLocaleTimeString());
-}, [statuses]); 
+}, [statuses]);
 
 // Then in the render:
-<p>Last updated: {lastUpdated}</p>
+<p>Last updated: {lastUpdated}</p>;
 
 // SOLUTION - Option 2: Using a client component wrapper
 // Create a new component: components/client-time.tsx
-'use client';
+('use client');
 import { useState, useEffect } from 'react';
 
 export function ClientTime() {
   const [time, setTime] = useState('');
-  
+
   useEffect(() => {
     setTime(new Date().toLocaleTimeString());
   }, []);
-  
+
   return <>{time}</>;
 }
 
@@ -65,7 +69,9 @@ export function ClientTime() {
 import { ClientTime } from '@/components/client-time';
 
 // In the render:
-<p>Last updated: <ClientTime /></p>
+<p>
+  Last updated: <ClientTime />
+</p>;
 ```
 
 ### Step 2: Fix Missing Assets
@@ -85,15 +91,15 @@ ls -la public/
 ```tsx
 // system-status.tsx - For asset checking
 // CHANGE:
-const assetResponse = await fetch('/images/destinations/default.jpg', { 
+const assetResponse = await fetch('/images/destinations/default.jpg', {
   method: 'HEAD',
-  cache: 'no-store'
+  cache: 'no-store',
 });
 
 // TO:
-const assetResponse = await fetch('/public/images/logo.svg', { 
+const assetResponse = await fetch('/public/images/logo.svg', {
   method: 'HEAD',
-  cache: 'no-store'
+  cache: 'no-store',
 });
 ```
 
@@ -130,47 +136,51 @@ export async function GET() {
   try {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
-    
+
     // Check authentication status
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
     // Don't attempt database checks if not authenticated
     let dbConnected = false;
     let dbError = null;
-    
+
     if (session) {
       // Only check database if authenticated
-      const dbResponse = await supabase
-        .from('profiles')
-        .select('count(*)')
-        .limit(1)
-        .single();
-      
+      const dbResponse = await supabase.from('profiles').select('count(*)').limit(1).single();
+
       dbError = dbResponse.error;
       dbConnected = !dbError || (dbError && !dbError.message.includes('connect'));
     }
-    
+
     // Return status that won't trigger errors in the dashboard
     return NextResponse.json({
       status: 'ok',
       authenticated: !!session,
       authRequired: false, // Add this flag to indicate auth is optional
-      user: session ? {
-        id: session.user.id,
-        email: session.user.email,
-        hasProfile: true,
-      } : null,
+      user: session
+        ? {
+            id: session.user.id,
+            email: session.user.email,
+            hasProfile: true,
+          }
+        : null,
       databaseConnected: dbConnected,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     // Return a 200 for the status dashboard with error info
-    return NextResponse.json({
-      status: 'error',
-      error: 'Failed to check authentication status',
-      authenticated: false,
-      timestamp: new Date().toISOString(),
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        status: 'error',
+        error: 'Failed to check authentication status',
+        authenticated: false,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 200 }
+    );
   }
 }
 ```
@@ -182,20 +192,20 @@ export async function GET() {
 
 // Update auth check
 try {
-  const authResponse = await fetch('/api/auth/me', { 
+  const authResponse = await fetch('/api/auth/me', {
     method: 'GET',
-    cache: 'no-store'
+    cache: 'no-store',
   });
-  
+
   // Check if auth is required by status code
   if (authResponse.status === 401) {
-    newStatuses.clientAuth = { 
+    newStatuses.clientAuth = {
       status: 'warning',
-      message: 'Authentication required (not logged in)' 
+      message: 'Authentication required (not logged in)',
     };
-    newStatuses.authTokens = { 
-      status: 'warning', 
-      message: 'Auth tokens not present (login required)' 
+    newStatuses.authTokens = {
+      status: 'warning',
+      message: 'Auth tokens not present (login required)',
     };
   } else {
     const authData = await authResponse.json();
@@ -207,24 +217,24 @@ try {
 
 // Similarly for trip API:
 try {
-  const tripsResponse = await fetch('/api/trips', { 
+  const tripsResponse = await fetch('/api/trips', {
     method: 'GET',
-    cache: 'no-store'
+    cache: 'no-store',
   });
-  
+
   if (tripsResponse.status === 401) {
-    newStatuses.tripApi = { 
-      status: 'warning', 
-      message: 'Trip API requires authentication' 
+    newStatuses.tripApi = {
+      status: 'warning',
+      message: 'Trip API requires authentication',
     };
     // Don't check other APIs if base trip API requires auth
-    newStatuses.itineraryApi = { 
-      status: 'warning', 
-      message: 'Itinerary API requires authentication' 
+    newStatuses.itineraryApi = {
+      status: 'warning',
+      message: 'Itinerary API requires authentication',
     };
-    newStatuses.membersApi = { 
-      status: 'warning', 
-      message: 'Members API requires authentication' 
+    newStatuses.membersApi = {
+      status: 'warning',
+      message: 'Members API requires authentication',
     };
   } else {
     // Existing code for successful response...
@@ -244,13 +254,14 @@ The CSP is blocking WebSocket connections to Supabase because of a domain mismat
 // system-status.tsx - Fix WebSocket URL
 
 // CHANGE:
-const wsUrl = supabaseUrl.replace('https://', 'wss://').replace('http://', 'ws://') + '/realtime/v1';
+const wsUrl =
+  supabaseUrl.replace('https://', 'wss://').replace('http://', 'ws://') + '/realtime/v1';
 
 // TO:
 // Extract the domain and use the correct WebSocket protocol
 const supabaseDomain = supabaseUrl.match(/https?:\/\/([^/]+)/)?.[1] || '';
 // Check if it's using supabase.co or supabase.io domain
-const wsUrl = supabaseDomain.includes('supabase.co') 
+const wsUrl = supabaseDomain.includes('supabase.co')
   ? `wss://${supabaseDomain.replace('.supabase.co', '.supabase.io')}/realtime/v1`
   : `wss://${supabaseDomain}/realtime/v1`;
 ```
@@ -262,7 +273,7 @@ const wsUrl = supabaseDomain.includes('supabase.co')
 
 const nextConfig = {
   // Existing configuration...
-  
+
   // Add or modify headers configuration
   async headers() {
     return [
@@ -310,34 +321,34 @@ const tripId = getFromLocalStorage('last-viewed-trip-id');
 // 4. Safe asset check with fallbacks
 try {
   // Try primary asset first
-  let assetResponse = await fetch('/logo-light.svg', { 
+  let assetResponse = await fetch('/logo-light.svg', {
     method: 'HEAD',
-    cache: 'no-store'
+    cache: 'no-store',
   });
-  
+
   // If that fails, try alternatives in sequence
   if (!assetResponse.ok) {
-    assetResponse = await fetch('/public/logo.svg', { 
+    assetResponse = await fetch('/public/logo.svg', {
       method: 'HEAD',
-      cache: 'no-store'
+      cache: 'no-store',
     });
   }
-  
+
   if (!assetResponse.ok) {
-    assetResponse = await fetch('/favicon.ico', { 
+    assetResponse = await fetch('/favicon.ico', {
       method: 'HEAD',
-      cache: 'no-store'
+      cache: 'no-store',
     });
   }
-  
-  newStatuses.staticAssets = { 
-    status: assetResponse.ok ? 'success' : 'error', 
-    message: assetResponse.ok ? 'Static assets loading' : 'Static assets missing' 
+
+  newStatuses.staticAssets = {
+    status: assetResponse.ok ? 'success' : 'error',
+    message: assetResponse.ok ? 'Static assets loading' : 'Static assets missing',
   };
 } catch (e) {
-  newStatuses.staticAssets = { 
-    status: 'error', 
-    message: 'Static assets not loading' 
+  newStatuses.staticAssets = {
+    status: 'error',
+    message: 'Static assets not loading',
   };
 }
 ```
@@ -345,26 +356,31 @@ try {
 ## Comprehensive Implementation Checklist
 
 ### 1. Fix Hydration Issues
+
 - [ ] Implement client-side only time rendering
 - [ ] Move time display logic to useEffect
 
 ### 2. Fix Asset Issues
+
 - [ ] Verify asset paths in the public directory
 - [ ] Create missing logo files
 - [ ] Add default destination image
 - [ ] Update asset check URLs in the dashboard
 
 ### 3. Fix API Authentication
+
 - [ ] Update auth-status endpoint to handle unauthenticated state
 - [ ] Update system-status to handle 401 responses gracefully
 - [ ] Implement conditional API checks based on auth status
 
 ### 4. Fix CSP Issues
+
 - [ ] Update WebSocket connection checking logic
 - [ ] Update next.config.mjs with comprehensive CSP rules
 - [ ] Add proper fallbacks for WebSocket connectivity checks
 
 ### 5. General Improvements
+
 - [ ] Add better error handling throughout
 - [ ] Implement proper browser environment detection
 - [ ] Add safe localStorage access
@@ -382,4 +398,4 @@ After implementing the fixes, verify the system status dashboard works correctly
 
 ---
 
-By following this implementation guide, the system status dashboard should reach 100% operational status and provide accurate health metrics for the WithMe.Travel platform. 
+By following this implementation guide, the system status dashboard should reach 100% operational status and provide accurate health metrics for the WithMe.Travel platform.

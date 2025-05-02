@@ -22,12 +22,12 @@ const TravelTracker: React.FC<TravelTrackerProps> = ({ userId }) => {
   useEffect(() => {
     const fetchData = async () => {
       if (!supabase) {
-        console.error("Supabase client not initialized");
+        console.error('Supabase client not initialized');
         return;
       }
-      
+
       let userIdToUse = userId;
-      
+
       // If userId prop isn't provided, try to get the current user
       if (!userIdToUse) {
         const {

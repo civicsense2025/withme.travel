@@ -153,35 +153,39 @@ The most critical aspect for stable authentication is ensuring the session is re
 
 ```typescript
 // In middleware.ts
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request: { headers: request.headers } })
+  let response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: { /* ... cookie handlers ... */ },
+      cookies: {
+        /* ... cookie handlers ... */
+      },
     }
-  )
+  );
 
   // IMPORTANT: Refresh session if expired *before* auth checks
   // This line handles token refreshes automatically.
-  await supabase.auth.getSession()
+  await supabase.auth.getSession();
 
   // Now perform auth checks
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  return response
+  return response;
 }
 ```
 
-**Why this is crucial:** Calling `supabase.auth.getSession()` *before* `supabase.auth.getUser()` allows the `@supabase/ssr` library to handle the token refresh mechanism seamlessly if the access token has expired but a valid refresh token exists. This prevents many common authentication failures.
+**Why this is crucial:** Calling `supabase.auth.getSession()` _before_ `supabase.auth.getUser()` allows the `@supabase/ssr` library to handle the token refresh mechanism seamlessly if the access token has expired but a valid refresh token exists. This prevents many common authentication failures.
 
 ### Previous Authentication Issues (Resolved)
 

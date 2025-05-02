@@ -27,33 +27,25 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
 
 // Define formatError helper function locally since importing from lib/utils causes issues
-const formatError = (
-  error: unknown,
-  fallback: string = 'An unexpected error occurred'
-): string => {
+const formatError = (error: unknown, fallback: string = 'An unexpected error occurred'): string => {
   if (!error) return fallback;
-  
+
   // If it's a string, return it directly
   if (typeof error === 'string') return error;
-  
+
   // If it's an Error object with a message
   if (error instanceof Error) return error.message;
-  
+
   // If it's an object with a message property
   if (typeof error === 'object' && error !== null && 'message' in error) {
     const msg = (error as { message: unknown }).message;
     if (typeof msg === 'string') return msg;
   }
-  
+
   // Default fallback
   return fallback;
 };
@@ -100,20 +92,20 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
   const [selectedPlace, setSelectedPlace] = useState<GeocoderResult | null>(null);
 
   // Initialize react-hook-form with zod validation
-  const { 
-    register, 
-    handleSubmit: hookFormSubmit, 
-    setValue, 
+  const {
+    register,
+    handleSubmit: hookFormSubmit,
+    setValue,
     watch,
     reset,
-    formState: { errors } 
+    formState: { errors },
   } = useForm<QuickAddFormValues>({
     resolver: zodResolver(quickAddSchema),
     defaultValues: {
       title: '',
       type: undefined,
       notes: '',
-    }
+    },
   });
 
   // Watch form values
@@ -166,7 +158,7 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
       });
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -262,17 +254,12 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
                 {...register('title')}
                 placeholder="e.g., Dinner at Paella Place"
               />
-              {errors.title && (
-                <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>
-              )}
+              {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>}
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="quick-add-type">Type</Label>
-              <Select
-                value={type}
-                onValueChange={(value) => setValue('type', value as any)}
-              >
+              <Select value={type} onValueChange={(value) => setValue('type', value as any)}>
                 <SelectTrigger id="quick-add-type">
                   <SelectValue />
                 </SelectTrigger>
@@ -283,9 +270,7 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
                   <SelectItem value="food">Food & Dining</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.type && (
-                <p className="text-sm text-red-500 mt-1">{errors.type.message}</p>
-              )}
+              {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type.message}</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -305,30 +290,22 @@ export function QuickAddItemForm({ tripId, proximityLat, proximityLng }: QuickAd
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar 
-                      mode="single" 
-                      selected={date} 
-                      onSelect={(date) => setValue('date', date)} 
-                      initialFocus 
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(date) => setValue('date', date)}
+                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="quick-add-startTime">Start Time</Label>
-                <Input
-                  id="quick-add-startTime"
-                  type="time"
-                  {...register('start_time')}
-                />
+                <Input id="quick-add-startTime" type="time" {...register('start_time')} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="quick-add-endTime">End Time</Label>
-                <Input
-                  id="quick-add-endTime"
-                  type="time"
-                  {...register('end_time')}
-                />
+                <Input id="quick-add-endTime" type="time" {...register('end_time')} />
               </div>
             </div>
 

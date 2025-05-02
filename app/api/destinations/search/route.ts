@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
     console.log(`[API Destinations Search] Found ${data?.length || 0} results for "${query}"`);
 
     return NextResponse.json({ destinations: data || [] });
-
   } catch (error: any) {
     console.error('[API Destinations Search] Error:', error);
     return NextResponse.json(
@@ -61,4 +60,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

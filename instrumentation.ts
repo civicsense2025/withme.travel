@@ -28,4 +28,4 @@ export async function register() {
 export const onRequestError: Instrumentation.onRequestError = (...args) => {
   // Forward all arguments to Sentry.captureRequestError
   return Sentry.captureRequestError(...args);
-} 
+};

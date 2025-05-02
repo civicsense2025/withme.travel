@@ -101,7 +101,12 @@ const nextConfig = {
       '@heroicons/react',
     ],
   },
-  serverExternalPackages: ['require-in-the-middle', '@opentelemetry/instrumentation', 'pino-pretty', '@aws-sdk'],
+  serverExternalPackages: [
+    'require-in-the-middle',
+    '@opentelemetry/instrumentation',
+    'pino-pretty',
+    '@aws-sdk',
+  ],
 };
 
 // Temporarily remove wrappers

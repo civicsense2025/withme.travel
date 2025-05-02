@@ -34,12 +34,12 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
     if (!name) return '?';
     return name
       .split(' ')
-      .map(part => part[0])
+      .map((part) => part[0])
       .join('')
       .toUpperCase()
       .substring(0, 2);
   };
-  
+
   const authorInitials = itinerary.author ? getInitials(itinerary.author.name) : '?';
 
   return (
@@ -68,7 +68,9 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
           <div className="flex items-start justify-between">
             <div>
               <h3 className="font-bold text-lg mb-2 lowercase">{itinerary.title}</h3>
-              <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{itinerary.description}</p>
+              <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                {itinerary.description}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">

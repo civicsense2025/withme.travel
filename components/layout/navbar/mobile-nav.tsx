@@ -112,7 +112,10 @@ export function MobileNav() {
                   <Link href="/destinations" onClick={() => setIsOpen(false)}>
                     <Button
                       variant="ghost"
-                      className={cn('w-full justify-start', pathname === '/destinations' && 'bg-muted')}
+                      className={cn(
+                        'w-full justify-start',
+                        pathname === '/destinations' && 'bg-muted'
+                      )}
                     >
                       <MapPin className="mr-2 h-4 w-4" />
                       Destinations
@@ -121,7 +124,10 @@ export function MobileNav() {
                   <Link href="/itineraries" onClick={() => setIsOpen(false)}>
                     <Button
                       variant="ghost"
-                      className={cn('w-full justify-start', pathname === '/itineraries' && 'bg-muted')}
+                      className={cn(
+                        'w-full justify-start',
+                        pathname === '/itineraries' && 'bg-muted'
+                      )}
                     >
                       <Map className="mr-2 h-4 w-4" />
                       Itineraries
@@ -192,7 +198,9 @@ export function MobileNav() {
                   <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col overflow-hidden">
-                  <span className="text-sm font-medium truncate">{profile?.name || user.email}</span>
+                  <span className="text-sm font-medium truncate">
+                    {profile?.name || user.email}
+                  </span>
                   {profile?.name && (
                     <span className="text-xs text-muted-foreground truncate">{user.email}</span>
                   )}

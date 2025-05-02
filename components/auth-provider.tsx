@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('[AuthProvider] Creating browser client with @supabase/ssr');
-      
+
       // Use createBrowserClient from @supabase/ssr with minimal options
       // to avoid type conflicts
       return createBrowserClient<Database>(url, key, {
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           autoRefreshToken: true,
           persistSession: true,
           detectSessionInUrl: true,
-        }
+        },
       });
     } catch (error) {
       console.error('[AuthProvider] Failed to create Supabase client:', error);
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         console.log('[AuthProvider] Attempting sign in for:', email);
-        
+
         // First verify supabase client is properly initialized
         if (!supabase.auth || typeof supabase.auth.signInWithPassword !== 'function') {
           throw new Error('Supabase auth client is not properly initialized');
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Attempt sign in with better error handling
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
-          password: password
+          password: password,
         });
 
         if (error) {
@@ -239,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         console.log('[AuthProvider] Sign in successful, updating session state');
         await updateSessionState(data.session);
-        
+
         // Trigger a browser refresh of the Supabase client after successful login
         // This helps ensure client and server are in sync
         if (typeof window !== 'undefined') {
@@ -248,10 +248,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('[AuthProvider] Sign in error:', error);
-        
+
         // Format the error message to be more user-friendly
         let errorMessage = 'Sign in failed';
-        
+
         if (error instanceof Error) {
           if (error.message.includes('Invalid login credentials')) {
             errorMessage = 'Invalid email or password';
@@ -261,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             errorMessage = error.message;
           }
         }
-        
+
         setError(error instanceof Error ? new Error(errorMessage) : new Error('Sign in failed'));
         setState((prev) => ({
           ...prev,
@@ -339,12 +339,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const redirectToHome = () => {
         window.location.href = '/';
       };
-      
-      toast.success('You\'re now logged out. Redirecting to homepage in 3 seconds...', {
+
+      toast.success("You're now logged out. Redirecting to homepage in 3 seconds...", {
         duration: 3000,
-        onAutoClose: redirectToHome
+        onAutoClose: redirectToHome,
       });
-      
+
       // Force a page refresh to ensure all state is cleared
       setTimeout(() => {
         redirectToHome();
@@ -388,18 +388,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize the client and auth state
   useEffect(() => {
     mounted.current = true;
-    
+
     // Check if supabase client is available
     if (!supabase) {
       console.error('[AuthProvider] No Supabase client available. Authentication will not work.');
-      setState(prev => ({ ...prev, isLoading: false, error: new Error('Authentication service unavailable') }));
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: new Error('Authentication service unavailable'),
+      }));
       return;
     }
 
     const initialize = async () => {
       try {
         console.log('[AuthProvider] Initializing auth state');
-        
+
         // Only attempt to get session if client is available
         if (!supabase) {
           throw new Error('Supabase client not initialized');
@@ -414,7 +418,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         initialized.current = true;
-        
+
         // Update state based on session
         if (data.session) {
           console.log('[AuthProvider] Session found, fetching profile data');
@@ -437,7 +441,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user: createAppUser(data.session.user, null),
                 profile: null,
                 isLoading: false,
-                error: profileError instanceof Error ? profileError : new Error('Failed to fetch profile'),
+                error:
+                  profileError instanceof Error
+                    ? profileError
+                    : new Error('Failed to fetch profile'),
               });
             }
           }

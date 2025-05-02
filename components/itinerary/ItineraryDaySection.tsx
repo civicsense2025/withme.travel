@@ -67,7 +67,7 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
           ? 'day three'
           : `day ${dayNumber}`
   );
-  
+
   const handleTitleSave = async () => {
     if (sectionTitle.trim() === '') {
       // Reset to default if empty
@@ -81,12 +81,12 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
               : `day ${dayNumber}`
       );
     }
-    
+
     // Here you would typically save the title to the database
     // For this implementation we'll just update the local state and show a toast
     setIsEditingTitle(false);
     toast({
-      title: "Section title updated",
+      title: 'Section title updated',
       description: `Day ${dayNumber} section title has been updated.`,
     });
   };
@@ -107,12 +107,12 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
     data: {
       type: 'container',
       dayNumber: dayNumber,
-    }
+    },
   });
 
   return (
-    <div 
-      ref={setNodeRef} 
+    <div
+      ref={setNodeRef}
       className={`space-y-4 pt-4 ${isOver ? 'bg-muted/50 ring-2 ring-primary rounded-md p-2' : ''}`}
     >
       {/* Section header with title on left and date on right */}
@@ -134,17 +134,12 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
                 }}
                 onBlur={handleTitleSave}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleTitleSave}
-                className="h-8 w-8"
-              >
+              <Button variant="ghost" size="icon" onClick={handleTitleSave} className="h-8 w-8">
                 <Check className="h-4 w-4" />
               </Button>
             </div>
           ) : (
-            <h2 
+            <h2
               className={`text-2xl font-semibold tracking-tight capitalize ${canEdit ? 'cursor-pointer border-b border-dashed border-muted-foreground/50 hover:border-primary/70' : ''}`}
               onClick={() => {
                 if (canEdit) {
@@ -156,21 +151,18 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
             </h2>
           )}
         </div>
-        
+
         {/* Date badge aligned to the right */}
         {formattedDate && (
-          <Badge 
-            variant="outline" 
-            className={cn(
-              "font-medium text-sm py-1 px-2.5",
-              getDayColor(dayNumber)
-            )}
+          <Badge
+            variant="outline"
+            className={cn('font-medium text-sm py-1 px-2.5', getDayColor(dayNumber))}
           >
             {formattedDate}
           </Badge>
         )}
       </div>
-      
+
       {/* Items with additional left padding for nesting */}
       <div className="space-y-4 pl-4">
         <SortableContext

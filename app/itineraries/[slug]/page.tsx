@@ -144,9 +144,9 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
     .select(`*, destinations(*)`)
     .eq('slug', slug)
     .single();
-  
+
   console.log('[DEBUG] template fetch →', { tmpl: tmpl?.id, tmplErr });
-  
+
   if (tmplErr || !tmpl) {
     console.error('Error fetching template:', tmplErr);
     notFound();
@@ -163,7 +163,10 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
     .order('day', { ascending: true }) // Order by day first
     .order('item_order', { ascending: true }); // Then by item_order
 
-  console.log('[DEBUG] All items fetch by template_id →', { itemCount: allItems?.length, itemsErr });
+  console.log('[DEBUG] All items fetch by template_id →', {
+    itemCount: allItems?.length,
+    itemsErr,
+  });
 
   if (itemsErr) {
     console.error('Failed to load items for template:', itemsErr);
@@ -186,12 +189,14 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
     created_by: tmpl.created_by,
     tags: tmpl.tags || [],
     metadata: tmpl.metadata || {},
-    destination: tmpl.destinations ? {
-      id: tmpl.destinations.id,
-      city: tmpl.destinations.city,
-      country: tmpl.destinations.country,
-      image_url: tmpl.destinations.image_url
-    } : undefined
+    destination: tmpl.destinations
+      ? {
+          id: tmpl.destinations.id,
+          city: tmpl.destinations.city,
+          country: tmpl.destinations.country,
+          image_url: tmpl.destinations.image_url,
+        }
+      : undefined,
   };
 
   // We need to reconstruct sections from the flat list of items
@@ -220,14 +225,18 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
       start_time: item.start_time,
       end_time: item.end_time,
       location: item.location,
-      item_order: item.item_order
+      item_order: item.item_order,
     });
   });
 
-  const sections_client: ClientItineraryTemplateSection[] = Array.from(sectionsMap.values())
-    .sort((a, b) => a.position - b.position); // Sort sections by day/position
+  const sections_client: ClientItineraryTemplateSection[] = Array.from(sectionsMap.values()).sort(
+    (a, b) => a.position - b.position
+  ); // Sort sections by day/position
 
-  console.log('[DEBUG] Reconstructed client sections →', sections_client.map(s => ({ id: s.id, count: s.items.length })));
+  console.log(
+    '[DEBUG] Reconstructed client sections →',
+    sections_client.map((s) => ({ id: s.id, count: s.items.length }))
+  );
 
   // ----- Step 5: Increment view count (don't await this) -----
   const incrementViewCount = async () => {

@@ -73,17 +73,17 @@ export function LoginForm() {
   // Add a retry handler
   const handleRetry = async () => {
     setLocalError(null);
-    
+
     try {
       // First, try to refresh auth state
       await refreshAuth();
-      
+
       // Then try to sign in again
       await signIn(email, password);
     } catch (error) {
       console.error('Retry login error:', error);
       setLocalError('Login retry failed. Please check your network connection and try again.');
-      
+
       // Show a toast with more info
       toast({
         title: 'Authentication Error',
@@ -105,7 +105,7 @@ export function LoginForm() {
 
     try {
       console.log('Attempting sign in...');
-      
+
       // Clear any previous errors
       if (authError) {
         console.log('Clearing previous auth error before sign in');
@@ -115,14 +115,16 @@ export function LoginForm() {
       // Auth provider will handle the session, and router will redirect in parent component
     } catch (error) {
       console.error('Login error:', error);
-      setRetryCount(prev => prev + 1);
-      
+      setRetryCount((prev) => prev + 1);
+
       // Format user-friendly error message
       let errorMessage = 'An error occurred during login. Please try again.';
-      
+
       if (error instanceof Error) {
-        if (error.message.includes('Invalid login credentials') || 
-            error.message.includes('Invalid email or password')) {
+        if (
+          error.message.includes('Invalid login credentials') ||
+          error.message.includes('Invalid email or password')
+        ) {
           errorMessage = 'Invalid email or password. Please try again.';
         } else if (error.message.includes('rate limit')) {
           errorMessage = 'Too many login attempts. Please try again later.';
@@ -130,9 +132,9 @@ export function LoginForm() {
           errorMessage = error.message;
         }
       }
-      
+
       setLocalError(errorMessage);
-      
+
       // Show toast for persistent errors
       if (errorMessage.includes('rate limit') || errorMessage.includes('service')) {
         toast({
@@ -286,9 +288,9 @@ export function LoginForm() {
           >
             <div>{localError}</div>
             {retryCount > 0 && !localError.includes('Invalid email or password') && (
-              <Button 
-                variant="link" 
-                size="sm" 
+              <Button
+                variant="link"
+                size="sm"
                 className="px-0 text-primary hover:underline"
                 onClick={handleRetry}
                 disabled={isLoading}

@@ -51,10 +51,10 @@ The itinerary template system is tightly integrated with the `app/trips` feature
 
 The application uses constants for table names, field names, and relationships, which serve as the **single source of truth** for the database structure. These are found in `utils/constants/database.ts`:
 
--   **Table Names**: Use `TABLES.ITINERARY_TEMPLATES`, `TABLES.ITINERARY_TEMPLATE_SECTIONS`, `TABLES.ITINERARY_TEMPLATE_ITEMS`, etc.
--   **Field Names**: Access field names like `FIELDS.ITINERARY_TEMPLATES.TITLE`, `FIELDS.ITINERARY_TEMPLATE_SECTIONS.TEMPLATE_ID`, `FIELDS.ITINERARY_TEMPLATE_ITEMS.SECTION_ID`, etc.
--   **Enums**: Database enum values are available via `ENUMS.*`, such as `ENUMS.TEMPLATE_TYPE`.
--   **Relationships**: Foreign key relationships are outlined in the `RELATIONSHIPS` object within the constants file.
+- **Table Names**: Use `TABLES.ITINERARY_TEMPLATES`, `TABLES.ITINERARY_TEMPLATE_SECTIONS`, `TABLES.ITINERARY_TEMPLATE_ITEMS`, etc.
+- **Field Names**: Access field names like `FIELDS.ITINERARY_TEMPLATES.TITLE`, `FIELDS.ITINERARY_TEMPLATE_SECTIONS.TEMPLATE_ID`, `FIELDS.ITINERARY_TEMPLATE_ITEMS.SECTION_ID`, etc.
+- **Enums**: Database enum values are available via `ENUMS.*`, such as `ENUMS.TEMPLATE_TYPE`.
+- **Relationships**: Foreign key relationships are outlined in the `RELATIONSHIPS` object within the constants file.
 
 **Always refer to `utils/constants/database.ts` for the most accurate and up-to-date schema details.** Avoid relying on potentially outdated schema definitions elsewhere.
 
@@ -65,58 +65,63 @@ Instead of embedding static `CREATE TABLE` statements, this section provides a h
 ### Core Structure Tables
 
 1.  **`TABLES.TRIPS`**:
-    *   **Description**: Represents an actual trip created by a user. This is the primary record for a user's planned journey. It can be created from scratch or by applying an `itinerary_template`.
-    *   **Required Fields**:
-        *   `created_by`: uuid (links to the user who created the trip)
-        *   `name`: text (the name of the trip)
-        *   `destination_id`: uuid (the destination for the trip)
-        *   `duration_days`: integer (the total number of days for the trip)
+
+    - **Description**: Represents an actual trip created by a user. This is the primary record for a user's planned journey. It can be created from scratch or by applying an `itinerary_template`.
+    - **Required Fields**:
+      - `created_by`: uuid (links to the user who created the trip)
+      - `name`: text (the name of the trip)
+      - `destination_id`: uuid (the destination for the trip)
+      - `duration_days`: integer (the total number of days for the trip)
 
 2.  **`TABLES.ITINERARY_SECTIONS`**:
-    *   **Description**: Represents sections within a specific user trip (`trip_id`), organizing the itinerary into manageable parts (e.g., Day 1, Day 2). These are often created by copying the structure from `itinerary_template_sections` when a template is applied.
-    *   **Required Fields**:
-        *   `trip_id`: uuid (foreign key linking to the `trips` table, indicating which trip this section belongs to)
-        *   `day_number`: integer (indicates which day this section corresponds to within the trip)
+
+    - **Description**: Represents sections within a specific user trip (`trip_id`), organizing the itinerary into manageable parts (e.g., Day 1, Day 2). These are often created by copying the structure from `itinerary_template_sections` when a template is applied.
+    - **Required Fields**:
+      - `trip_id`: uuid (foreign key linking to the `trips` table, indicating which trip this section belongs to)
+      - `day_number`: integer (indicates which day this section corresponds to within the trip)
 
 3.  **`TABLES.ITINERARY_ITEMS`**:
-    *   **Description**: Represents individual activities or events planned for a specific day within a user's trip (`trip_id`). When created from a template, these items are copies of `itinerary_template_items`, linked via fields like `source_template_item_id` (or similar attribution mechanism) to track their origin.
-    *   **Required Fields**:
-        *   `trip_id`: uuid (foreign key linking to the `trips` table, indicating which trip this item belongs to)
-        *   `day`: integer (indicates which day this item is scheduled for)
-        *   `title`: text (the title or name of the itinerary item)
+
+    - **Description**: Represents individual activities or events planned for a specific day within a user's trip (`trip_id`). When created from a template, these items are copies of `itinerary_template_items`, linked via fields like `source_template_item_id` (or similar attribution mechanism) to track their origin.
+    - **Required Fields**:
+      - `trip_id`: uuid (foreign key linking to the `trips` table, indicating which trip this item belongs to)
+      - `day`: integer (indicates which day this item is scheduled for)
+      - `title`: text (the title or name of the itinerary item)
 
 4.  **`TABLES.ITINERARY_TEMPLATES`**:
-    *   **Description**: Represents a reusable template for a trip itinerary. Serves as the blueprint for creating new trips or populating existing ones.
-    *   **Required Fields**:
-        *   `title`: character varying(255) (the title of the template)
-        *   `destination_id`: uuid (the destination for the template)
-        *   `duration_days`: integer (the total number of days for the template)
+
+    - **Description**: Represents a reusable template for a trip itinerary. Serves as the blueprint for creating new trips or populating existing ones.
+    - **Required Fields**:
+      - `title`: character varying(255) (the title of the template)
+      - `destination_id`: uuid (the destination for the template)
+      - `duration_days`: integer (the total number of days for the template)
 
 5.  **`TABLES.ITINERARY_TEMPLATE_SECTIONS`**:
-    *   **Description**: Represents sections within an itinerary template (`trip_id` here refers to the template ID), organizing the template structure.
-    *   **Required Fields**:
-        *   `trip_id`: uuid (foreign key linking to the `itinerary_templates` table, indicating which template this section belongs to)
-        *   `day_number`: integer (indicates which day this section corresponds to within the template)
+
+    - **Description**: Represents sections within an itinerary template (`trip_id` here refers to the template ID), organizing the template structure.
+    - **Required Fields**:
+      - `trip_id`: uuid (foreign key linking to the `itinerary_templates` table, indicating which template this section belongs to)
+      - `day_number`: integer (indicates which day this section corresponds to within the template)
 
 6.  **`TABLES.ITINERARY_TEMPLATE_ITEMS`**:
-    *   **Description**: Represents individual activities or events planned within an itinerary template (`template_id`). These serve as the source items when a template is applied to a trip.
-    *   **Required Fields**:
-        *   `template_id`: uuid (foreign key linking to the `itinerary_templates` table, indicating which template this item belongs to)
-        *   `day`: integer (indicates which day this item is scheduled for within the template)
-        *   `title`: text (the title or name of the itinerary item)
+    - **Description**: Represents individual activities or events planned within an itinerary template (`template_id`). These serve as the source items when a template is applied to a trip.
+    - **Required Fields**:
+      - `template_id`: uuid (foreign key linking to the `itinerary_templates` table, indicating which template this item belongs to)
+      - `day`: integer (indicates which day this item is scheduled for within the template)
+      - `title`: text (the title or name of the itinerary item)
 
 ### Relationships Overview
 
-*   **Static Relationships (Foreign Keys):**
-    *   `trips` <-> `itinerary_sections` (via `itinerary_sections.trip_id`)
-    *   `trips` <-> `itinerary_items` (via `itinerary_items.trip_id`)
-    *   `itinerary_templates` <-> `itinerary_template_sections` (via `itinerary_template_sections.trip_id`)
-    *   `itinerary_templates` <-> `itinerary_template_items` (via `itinerary_template_items.template_id`)
-*   **Dynamic Relationship (Template Application):**
-    *   When an `itinerary_template` is applied to a `trip`:
-        *   `itinerary_template_sections` are used to create corresponding `itinerary_sections` for the `trip`.
-        *   `itinerary_template_items` are copied to create corresponding `itinerary_items` for the `trip`, linked to the newly created `itinerary_sections`.
-        *   Attribution is maintained by storing a reference to the source template item within the created `itinerary_items` record (e.g., using a `source_template_item_id` field).
+- **Static Relationships (Foreign Keys):**
+  - `trips` <-> `itinerary_sections` (via `itinerary_sections.trip_id`)
+  - `trips` <-> `itinerary_items` (via `itinerary_items.trip_id`)
+  - `itinerary_templates` <-> `itinerary_template_sections` (via `itinerary_template_sections.trip_id`)
+  - `itinerary_templates` <-> `itinerary_template_items` (via `itinerary_template_items.template_id`)
+- **Dynamic Relationship (Template Application):**
+  - When an `itinerary_template` is applied to a `trip`:
+    - `itinerary_template_sections` are used to create corresponding `itinerary_sections` for the `trip`.
+    - `itinerary_template_items` are copied to create corresponding `itinerary_items` for the `trip`, linked to the newly created `itinerary_sections`.
+    - Attribution is maintained by storing a reference to the source template item within the created `itinerary_items` record (e.g., using a `source_template_item_id` field).
 
 ### Tracking & Validation Tables
 

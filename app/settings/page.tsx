@@ -283,7 +283,8 @@ export default function SettingsPage() {
                 <div className="bg-muted/50 p-4 rounded-md border border-dashed">
                   <h3 className="font-medium mb-2">Cursor Settings Temporarily Unavailable</h3>
                   <p className="text-sm text-muted-foreground">
-                    Cursor customization settings are currently disabled but kept in the codebase for future use.
+                    Cursor customization settings are currently disabled but kept in the codebase
+                    for future use.
                   </p>
                 </div>
               </CardContent>

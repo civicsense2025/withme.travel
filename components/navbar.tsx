@@ -308,12 +308,20 @@ export function Navbar() {
             )}
 
             {/* Add Destinations link */}
-            <NavItem href="/destinations" isActive={isActive('/destinations')} isLoading={isLoadingState}>
+            <NavItem
+              href="/destinations"
+              isActive={isActive('/destinations')}
+              isLoading={isLoadingState}
+            >
               Destinations
             </NavItem>
 
             {/* Add Itineraries link */}
-            <NavItem href="/itineraries" isActive={isActive('/itineraries')} isLoading={isLoadingState}>
+            <NavItem
+              href="/itineraries"
+              isActive={isActive('/itineraries')}
+              isLoading={isLoadingState}
+            >
               Itineraries
             </NavItem>
 
@@ -490,7 +498,7 @@ export function Navbar() {
                       </Link>
                     </>
                   )}
-                  
+
                   {/* Add Destinations link to mobile menu */}
                   <Link
                     href="/destinations"
@@ -501,7 +509,7 @@ export function Navbar() {
                   >
                     Destinations
                   </Link>
-                  
+
                   {/* Add Itineraries link to mobile menu */}
                   <Link
                     href="/itineraries"
@@ -512,7 +520,7 @@ export function Navbar() {
                   >
                     Itineraries
                   </Link>
-                  
+
                   <Link
                     href="/support"
                     className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
@@ -522,7 +530,7 @@ export function Navbar() {
                   >
                     support us
                   </Link>
-                  
+
                   {!isLoadingState && isAdmin && (
                     <Link
                       href="/admin/dashboard"

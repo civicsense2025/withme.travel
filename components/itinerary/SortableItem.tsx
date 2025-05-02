@@ -43,9 +43,9 @@ export const SortableItem: React.FC<SortableItemProps> = ({
   };
 
   // Create conditional classes for hover/active states
-  const hoverClasses = !disabled ? 
-    'group-hover:bg-muted/10 hover:shadow-md hover:scale-[1.01] transition-all duration-150 ease-out active:bg-muted/20' : 
-    'cursor-default';
+  const hoverClasses = !disabled
+    ? 'group-hover:bg-muted/10 hover:shadow-md hover:scale-[1.01] transition-all duration-150 ease-out active:bg-muted/20'
+    : 'cursor-default';
 
   return (
     // Root div for positioning and attributes

@@ -3,35 +3,38 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import chalk from 'chalk';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
-import {
-  TABLES,
-  FIELDS,
-  TRIP_ROLES,
-} from '@/utils/constants/database';
+import { TABLES, FIELDS, TRIP_ROLES } from '@/utils/constants/database';
 
 const LOG_PREFIX = '[Trip Create API]';
 
 export async function POST(request: NextRequest) {
   console.log(chalk.blue(`${LOG_PREFIX} Processing request...`));
-  
+
   const supabase = await getRouteHandlerClient(request);
   console.log(chalk.dim(`${LOG_PREFIX} Created route handler client`));
-  
+
   // Admin client using service role key (ensure env vars are set)
   // Check if the environment variables are present
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error(chalk.red(`${LOG_PREFIX} Supabase URL or Service Role Key missing from environment variables.`));
+    console.error(
+      chalk.red(
+        `${LOG_PREFIX} Supabase URL or Service Role Key missing from environment variables.`
+      )
+    );
     return NextResponse.json({ error: 'Server configuration error.' }, { status: 500 });
   }
-  
+
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
   console.log(chalk.dim(`${LOG_PREFIX} Created admin client`));
 
   try {
     // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       console.error(chalk.yellow(`${LOG_PREFIX} Auth error or no user found:`), authError?.message);
@@ -40,17 +43,17 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const requestData = await request.json();
-    const { 
-      title, 
-      description = '', 
-      start_date, 
-      end_date, 
-      destination_id, 
+    const {
+      title,
+      description = '',
+      start_date,
+      end_date,
+      destination_id,
       destination_name,
       cover_image_url = null,
       travelers_count = 1,
       privacy_setting = 'private',
-      tags = []
+      tags = [],
     } = requestData;
 
     // Validate required fields
@@ -121,7 +124,7 @@ export async function POST(request: NextRequest) {
     // 3. Create itinerary sections for each day
     console.log(chalk.dim(`${LOG_PREFIX} Creating itinerary sections...`));
     const sections = [];
-    
+
     for (let i = 1; i <= durationDays; i++) {
       sections.push({
         trip_id: newTripId,
@@ -136,32 +139,37 @@ export async function POST(request: NextRequest) {
         .insert(sections);
 
       if (sectionsError) {
-        console.error(chalk.yellow(`${LOG_PREFIX} Error creating itinerary sections:`), sectionsError);
+        console.error(
+          chalk.yellow(`${LOG_PREFIX} Error creating itinerary sections:`),
+          sectionsError
+        );
         // Continue anyway - this is not fatal
       }
     }
 
     // 4. Create default accommodation and transportation items
-    console.log(chalk.dim(`${LOG_PREFIX} Creating default accommodation and transportation items...`));
+    console.log(
+      chalk.dim(`${LOG_PREFIX} Creating default accommodation and transportation items...`)
+    );
     const defaultItems = [
       {
         trip_id: newTripId,
-        title: "Add your accommodation",
+        title: 'Add your accommodation',
         day_number: null, // Unscheduled
         position: 0,
         category: ITINERARY_CATEGORIES.ACCOMMODATIONS,
-        description: "Where will you be staying?",
+        description: 'Where will you be staying?',
         status: null,
       },
       {
         trip_id: newTripId,
-        title: "Add your transportation",
+        title: 'Add your transportation',
         day_number: null, // Unscheduled
         position: 1,
         category: ITINERARY_CATEGORIES.TRANSPORTATION,
-        description: "How will you get there?",
+        description: 'How will you get there?',
         status: null,
-      }
+      },
     ];
 
     const { error: itemsError } = await supabaseAdmin
@@ -172,7 +180,9 @@ export async function POST(request: NextRequest) {
       console.error(chalk.yellow(`${LOG_PREFIX} Error creating default items:`), itemsError);
       // Continue anyway - this is not fatal
     } else {
-      console.log(chalk.green(`${LOG_PREFIX} Created default accommodation and transportation items`));
+      console.log(
+        chalk.green(`${LOG_PREFIX} Created default accommodation and transportation items`)
+      );
     }
 
     // Return success response
@@ -191,4 +201,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

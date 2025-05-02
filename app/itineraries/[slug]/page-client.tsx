@@ -56,51 +56,63 @@ interface ItineraryTemplatePageClientProps {
   sections: ItineraryTemplateSection[];
 }
 
-export default function ItineraryTemplatePageClient({ template, sections }: ItineraryTemplatePageClientProps) {
+export default function ItineraryTemplatePageClient({
+  template,
+  sections,
+}: ItineraryTemplatePageClientProps) {
   const { toast } = useToast();
-  
-  console.log(`[DEBUG] ItineraryTemplatePageClient - template.id: ${template.id}, title: ${template.title}`);
+
+  console.log(
+    `[DEBUG] ItineraryTemplatePageClient - template.id: ${template.id}, title: ${template.title}`
+  );
   console.log(`[DEBUG] ItineraryTemplatePageClient - Received ${sections.length} sections`);
-  
+
   // Log sections info
   if (sections.length === 0) {
     console.log('[DEBUG] ItineraryTemplatePageClient - No sections found for this template');
   } else {
-    sections.forEach(section => {
-      console.log(`[DEBUG] ItineraryTemplatePageClient - Section: ${section.id}, day: ${section.day_number}, items: ${section.items?.length || 0}`);
+    sections.forEach((section) => {
+      console.log(
+        `[DEBUG] ItineraryTemplatePageClient - Section: ${section.id}, day: ${section.day_number}, items: ${section.items?.length || 0}`
+      );
     });
   }
-  
+
   const handleShareItinerary = () => {
     const url = window.location.href;
     if (navigator.share) {
-      navigator.share({
-        title: template.title,
-        text: template.description || `Check out this ${template.duration_days}-day itinerary!`,
-        url,
-      }).catch(error => {
-        // Only log errors other than AbortError (which happens when user cancels share)
-        if (!(error instanceof DOMException && error.name === 'AbortError')) {
-          console.error('Error sharing:', error);
-        }
-      });
+      navigator
+        .share({
+          title: template.title,
+          text: template.description || `Check out this ${template.duration_days}-day itinerary!`,
+          url,
+        })
+        .catch((error) => {
+          // Only log errors other than AbortError (which happens when user cancels share)
+          if (!(error instanceof DOMException && error.name === 'AbortError')) {
+            console.error('Error sharing:', error);
+          }
+        });
     } else {
-      navigator.clipboard.writeText(url).then(() => {
-        toast({
-          title: 'Link copied!',
-          description: 'The link to this itinerary has been copied to your clipboard.',
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          toast({
+            title: 'Link copied!',
+            description: 'The link to this itinerary has been copied to your clipboard.',
+          });
+        })
+        .catch((error) => {
+          console.error('Error copying link:', error);
+          toast({
+            title: 'Error copying link',
+            description: 'Please try again or copy the URL manually.',
+            variant: 'destructive',
+          });
         });
-      }).catch(error => {
-        console.error('Error copying link:', error);
-        toast({
-          title: 'Error copying link',
-          description: 'Please try again or copy the URL manually.',
-          variant: 'destructive',
-        });
-      });
     }
   };
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -108,7 +120,7 @@ export default function ItineraryTemplatePageClient({ template, sections }: Itin
         <div className="lg:col-span-2">
           <ItineraryTemplateDisplay template={template} sections={sections} />
         </div>
-        
+
         {/* Right Column - Sidebar */}
         <div className="space-y-6">
           <div className="bg-card rounded-lg border shadow-sm p-6 space-y-6">
@@ -117,54 +129,54 @@ export default function ItineraryTemplatePageClient({ template, sections }: Itin
               <p className="text-sm text-muted-foreground">
                 Create a trip based on this itinerary to customize it for your own adventure.
               </p>
-              
-              <UseTemplateButton 
-                templateId={template.id} 
+
+              <UseTemplateButton
+                templateId={template.id}
                 templateSlug={template.slug}
                 templateTitle={template.title}
-                className="w-full" 
+                className="w-full"
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex flex-col gap-4">
               <Button variant="outline" size="sm" onClick={handleShareItinerary} className="w-full">
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </Button>
-              
+
               <Button variant="outline" size="sm" className="w-full">
                 <Heart className="h-4 w-4 mr-2" />
                 Like
               </Button>
             </div>
           </div>
-          
+
           <div className="bg-card rounded-lg border shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">About This Itinerary</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Duration</p>
                 <p className="font-medium">{template.duration_days} days</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Views</p>
                 <p className="font-medium">{template.view_count || 0}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Created</p>
                 <p className="font-medium">{new Date(template.created_at).toLocaleDateString()}</p>
               </div>
-              
+
               {template.tags && template.tags.length > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground">Tags</p>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {template.tags.map(tag => (
+                    {template.tags.map((tag) => (
                       <span key={tag} className="text-xs bg-muted rounded-full px-2 py-1">
                         {tag}
                       </span>

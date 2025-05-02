@@ -25,24 +25,18 @@ async function signupHandler(request: Request) {
   try {
     // Get cookies for session handling
     const cookieStore = cookies();
-    
+
     // Parse and validate request body
     const body = await request.json();
     const { email, password, username } = sanitizeAuthCredentials(body);
 
     // Input validation
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
     }
 
     if (!isValidEmail(email)) {
-      return NextResponse.json(
-        { error: 'Please provide a valid email address.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Please provide a valid email address.' }, { status: 400 });
     }
 
     if (!isStrongPassword(password)) {

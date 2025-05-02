@@ -38,9 +38,10 @@ export async function GET(request: NextRequest) {
     // Get cookie information (without exposing sensitive data)
     // In Next.js 15, cookies() returns a Promise, so we'll skip the detailed cookie listing
     const cookieInfo = {
-      has_auth_cookies: request.cookies.has('sb-access-token') || 
-                        request.cookies.has('sb-refresh-token') ||
-                        request.cookies.has('supabase-auth-token')
+      has_auth_cookies:
+        request.cookies.has('sb-access-token') ||
+        request.cookies.has('sb-refresh-token') ||
+        request.cookies.has('supabase-auth-token'),
     };
 
     // Prepare diagnostic response
