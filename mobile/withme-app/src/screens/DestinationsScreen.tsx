@@ -93,20 +93,7 @@ export default function DestinationsScreen({ navigation }: any) {
   };
 
   const handleDestinationPress = (destination: Destination) => {
-    // For now, just show an alert. Later you could navigate to a destination detail screen
-    Alert.alert(
-      `${destination.city}, ${destination.country}`,
-      destination.description || 'No description available',
-      [
-        { text: 'Close', style: 'cancel' },
-        { 
-          text: 'Explore Trips', 
-          onPress: () => {
-            Alert.alert('Coming Soon', 'Trip discovery by destination will be available soon');
-          }
-        }
-      ]
-    );
+    navigation.navigate('DestinationDetail', { destinationId: destination.id });
   };
 
   const renderDestinationItem = ({ item }: { item: Destination }) => {

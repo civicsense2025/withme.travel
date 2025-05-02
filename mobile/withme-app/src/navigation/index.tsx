@@ -12,6 +12,7 @@ import HomeScreen from '../screens/HomeScreen';
 import TripDetailScreen from '../screens/TripDetailScreen';
 import ItineraryScreen from '../screens/ItineraryScreen';
 import DestinationsScreen from '../screens/DestinationsScreen';
+import DestinationDetailScreen from '../screens/DestinationDetailScreen';
 import EditItineraryItemScreen from '../screens/EditItineraryItemScreen';
 
 // Debug flag
@@ -28,6 +29,7 @@ type MainStackParamList = {
   Main: undefined;
   TripDetail: { tripId: string };
   Itinerary: { tripId: string };
+  DestinationDetail: { destinationId: string };
   EditItineraryItem: { 
     tripId: string;
     itemId?: string; 
@@ -124,6 +126,14 @@ function MainNavigator() {
         component={ItineraryScreen}
         options={{ 
           title: 'Itinerary',
+          headerBackTitle: 'Back',
+        }}
+      />
+      <MainStack.Screen 
+        name="DestinationDetail" 
+        component={DestinationDetailScreen}
+        options={{ 
+          title: 'Destination',
           headerBackTitle: 'Back',
         }}
       />

@@ -37,4 +37,5 @@ export const ROUTES = {
   EDIT_ITINERARY_ITEM: 'EditItineraryItem',
   PROFILE: 'Profile',
   SETTINGS: 'Settings',
+  DESTINATION_DETAIL: 'DestinationDetail',
 };
