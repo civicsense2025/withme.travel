@@ -876,8 +876,8 @@ export default function DesignSandboxClient() {
                       <div className="bg-muted/50 p-4 rounded-md border border-dashed">
                         <h3 className="font-medium mb-2">Focus Sessions Disabled</h3>
                         <p className="text-sm text-muted-foreground">
-                          Focus session features are currently disabled in this sandbox. These
-                          features are kept in the codebase but not actively imported.
+                          Focus session features are currently disabled in this sandbox.
+                          These features are kept in the codebase but not actively imported.
                         </p>
                       </div>
                     </CardContent>
@@ -1099,8 +1099,8 @@ export default function DesignSandboxClient() {
                       <div className="p-4 bg-muted/50 rounded-md border border-dashed w-full">
                         <h3 className="font-medium mb-2">Presence Features Disabled</h3>
                         <p className="text-sm text-muted-foreground">
-                          Trip presence features are currently disabled in this sandbox. These
-                          features are kept in the codebase but not actively imported.
+                          Trip presence features are currently disabled in this sandbox.
+                          These features are kept in the codebase but not actively imported.
                         </p>
                       </div>
                     </CardContent>
