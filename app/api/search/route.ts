@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
-    const type = searchParams.get('type') || 'all'; // all, destinations, trips
+    const query = searchParams?.get('q');
+    const type = searchParams?.get('type') || 'all'; // all, destinations, trips
 
     if (!query) {
       return NextResponse.json({ results: [] });
     }
 
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     let destinations = [];
     let trips = [];

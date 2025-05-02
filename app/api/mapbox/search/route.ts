@@ -40,7 +40,7 @@ interface MapboxGeocodingResponse {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('query');
+  const query = searchParams?.get('query');
   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
   if (!accessToken) {

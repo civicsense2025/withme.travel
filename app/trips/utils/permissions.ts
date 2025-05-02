@@ -1,5 +1,19 @@
 import { createClient } from '@/utils/supabase/client';
-import { TripRole } from '@/utils/constants/database';
+import { TripRole, TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import useSWR from 'swr';
 
 export interface PermissionCheck {
@@ -35,7 +49,7 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
 
   // Check if user is a member
   const { data: membership } = await supabase
-    .from('trip_members')
+    .from(Tables.TRIP_MEMBERS)
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', user.id)
@@ -43,7 +57,7 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
 
   // Check if user is the creator
   const { data: trip } = await supabase
-    .from('trips')
+    .from(Tables.TRIPS)
     .select('created_by, is_public')
     .eq('id', tripId)
     .single();

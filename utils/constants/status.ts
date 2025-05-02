@@ -50,14 +50,13 @@ export type ItineraryCategory = (typeof ITINERARY_CATEGORIES)[keyof typeof ITINE
 
 // Item statuses
 export const ITEM_STATUSES = {
+  SUGGESTED: 'suggested',
   CONFIRMED: 'confirmed',
-  BOOKED: 'booked',
-  PENDING: 'pending',
-  CANCELLED: 'cancelled',
-  COMPLETED: 'completed',
+  CANCELED: 'canceled',
+  FLEXIBLE: 'flexible',
 } as const;
 
-export type ItemStatus = (typeof ITEM_STATUSES)[keyof typeof ITEM_STATUSES];
+export type ItemStatus = 'suggested' | 'confirmed' | 'canceled' | 'flexible';
 
 // Trip statuses
 export const TRIP_STATUSES = {
@@ -125,3 +124,35 @@ export const TEMPLATE_TYPES = {
 } as const;
 
 export type TemplateType = (typeof TEMPLATE_TYPES)[keyof typeof TEMPLATE_TYPES];
+
+// User statuses
+export const USER_STATUSES = {
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+  AWAY: 'away',
+  EDITING: 'editing',
+} as const;
+
+export type UserStatus = 'online' | 'offline' | 'away' | 'editing';
+
+// Presence statuses
+export const PRESENCE_STATUSES = {
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+  AWAY: 'away',
+  EDITING: 'editing',
+} as const;
+
+export type PresenceStatus = 'online' | 'offline' | 'away' | 'editing';
+
+// Notification types
+export const NOTIFICATION_TYPES = {
+  TRIP_INVITATION: 'trip_invitation',
+  TRIP_UPDATE: 'trip_update',
+  COMMENT: 'comment',
+  MENTION: 'mention',
+  SYSTEM: 'system',
+  REMINDER: 'reminder',
+} as const;
+
+export type NotificationType = 'trip_invitation' | 'trip_update' | 'comment' | 'mention' | 'system' | 'reminder';

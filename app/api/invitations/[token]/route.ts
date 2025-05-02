@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
-  const supabase = await createApiClient();
+  const supabase = await createServerSupabaseClient();
 
   try {
     const { token } = await params;

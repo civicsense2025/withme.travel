@@ -26,7 +26,7 @@ All documentation is organized in the `docs/` directory:
 
 ## ✨ Project Status
 
-The authentication system, leveraging Supabase and `@supabase/ssr`, is now stable and robust after a recent overhaul. Previous issues related to refresh tokens and client/server state mismatches have been resolved. The codebase constants have also been refactored for better clarity and type safety, following the guidelines in `docs/constants-guide.md`. Trip hooks have been restructured, and the trip creation/editing flows have been improved. A visual style guide for the upcoming mobile app is available.
+The authentication system, leveraging Supabase and `@supabase/ssr`, is now stable and robust after a recent overhaul. Previous issues related to refresh tokens and client/server state mismatches have been resolved. Database interactions consistently use constants from `utils/constants/database.ts` for better type safety and maintainability. Trip hooks have been restructured, and the trip creation/editing flows have been improved. A visual style guide for the upcoming mobile app is available.
 
 The project now includes extensive real-time collaboration features including presence awareness, cursor tracking, focus mode, and voting/polling systems. We've also added client-side activity timelines and notifications to enhance the collaborative experience.
 
@@ -54,7 +54,7 @@ The project now includes extensive real-time collaboration features including pr
 
 - **Modern Stack**: Next.js 15, React 18, TypeScript, Tailwind CSS, Shadcn/ui
 - **Authentication**: Secure and stable login with email/password or Google Sign-In using `@supabase/ssr`.
-- **Database**: Robust schema with Row Level Security (RLS) policies (documented in `docs/database_structure.md`).
+- **Database**: Robust schema with Row Level Security (RLS) policies and standardized constants.
 - **SEO Optimization**: Canonical URLs, meta tags, structured data
 - **Constants Management**: Centralized and typed constants following `docs/constants-guide.md`.
 - **Mobile Ready**: Design system defined in `docs/mobile-style-guide.md`.

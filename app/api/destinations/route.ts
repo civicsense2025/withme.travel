@@ -2,6 +2,20 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createApiRouteClient } from '@/utils/supabase/ssr-client';
 import { cookies } from 'next/headers';
 import { TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { API_ROUTES } from '@/utils/constants/routes';
 // Realistic fallback data based on schema and available images
 const mockDestinations = [
@@ -529,19 +543,19 @@ interface ProcessedDestination extends Destination {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const sort = searchParams.get('sort');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const page = parseInt(searchParams.get('page') || '1');
-    const continent = searchParams.get('continent');
-    const country = searchParams.get('country');
-    const minCost = searchParams.get('minCost');
-    const maxCost = searchParams.get('maxCost');
-    const vibe = searchParams.get('vibe'); // Can be comma-separated
-    const tags = searchParams.get('tags'); // Can be comma-separated
-    const season = searchParams.get('season'); // E.g., 'Summer'
-    const ratingType = searchParams.get('ratingType'); // e.g., 'nightlife'
-    const minRating = parseInt(searchParams.get('minRating') || '0');
-    const includeCover = searchParams.get('includeCover') === 'true'; // Check if cover image is needed
+    const sort = searchParams?.get('sort');
+    const limit = parseInt(searchParams?.get('limit') || '10');
+    const page = parseInt(searchParams?.get('page') || '1');
+    const continent = searchParams?.get('continent');
+    const country = searchParams?.get('country');
+    const minCost = searchParams?.get('minCost');
+    const maxCost = searchParams?.get('maxCost');
+    const vibe = searchParams?.get('vibe'); // Can be comma-separated
+    const tags = searchParams?.get('tags'); // Can be comma-separated
+    const season = searchParams?.get('season'); // E.g., 'Summer'
+    const ratingType = searchParams?.get('ratingType'); // e.g., 'nightlife'
+    const minRating = parseInt(searchParams?.get('minRating') || '0');
+    const includeCover = searchParams?.get('includeCover') === 'true'; // Check if cover image is needed
 
     // Use the dedicated client for API routes - await the Promise
     const supabase = await createApiRouteClient();
@@ -551,7 +565,7 @@ export async function GET(request: NextRequest) {
     const to = from + limit - 1;
 
     let query = supabase
-      .from(TABLES.DESTINATIONS)
+      .from(Tables.DESTINATIONS)
       .select(
         `
         id, city, country, continent, description, byline, highlights, 

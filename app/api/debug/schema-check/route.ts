@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/service-role';
-import { TABLES, ENUMS } from '@/utils/constants/database';
+import { TABLES, DB_ENUMS } from '@/utils/constants/database';
+
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
 
 export const dynamic = 'force-dynamic';
 
@@ -156,8 +170,8 @@ export async function GET(request: Request) {
   try {
     const supabase = createClient();
     const url = new URL(request.url);
-    const detail = url.searchParams.get('detail') === 'true';
-    const validateEnums = url.searchParams.get('validateEnums') === 'true';
+    const detail = url.searchParams?.get('detail') === 'true';
+    const validateEnums = url.searchParams?.get('validateEnums') === 'true';
 
     // List of core tables and enums from our constants
     const coreTablesFromConstants = Object.values(TABLES);
@@ -415,7 +429,7 @@ ${tableNames.map((table) => `  ${table.toUpperCase()}: '${table}'`).join(',\n')}
 } as const;
 
 // Legacy export (avoid using in new code)
-export const DB_TABLES = TABLES;
+export const TABLES = TABLES;
 
 // Database Fields - Field names by table
 export const FIELDS = {
@@ -435,7 +449,7 @@ ${columns.map((col: TableColumn) => `    ${col.name.toUpperCase()}: '${col.name}
 } as const;
 
 // Legacy export (avoid using in new code)
-export const DB_FIELDS = FIELDS;
+export const FIELDS = FIELDS;
 
 // Database Enums - Enum values from database
 export const ENUMS = {
@@ -450,7 +464,7 @@ ${values.map((value) => `    ${value.toUpperCase()}: '${value}'`).join(',\n')}
 } as const;
 
 // Legacy export (avoid using in new code)
-export const DB_ENUMS = ENUMS;
+export const ENUMS = ENUMS;
 
 // Database Functions - Names of database functions
 export const FUNCTIONS = {

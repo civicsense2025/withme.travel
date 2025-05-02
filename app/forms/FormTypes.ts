@@ -4,7 +4,7 @@
  * This file contains TypeScript types and Zod schemas for the forms system
  */
 
-import { ENUMS } from '@/utils/constants/database';
+import { DB_ENUMS } from '@/utils/constants/database';
 import { z } from 'zod';
 
 // =========================================

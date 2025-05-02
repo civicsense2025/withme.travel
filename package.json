@@ -190,7 +190,8 @@
   "directories": {
     "doc": "docs",
     "lib": "lib",
-    "test": "tests"
+    "test": "tests",
+    "exclude": ["mobile", "mobile/withme-app", "scripts"]
   },
   "repository": {
     "type": "git",

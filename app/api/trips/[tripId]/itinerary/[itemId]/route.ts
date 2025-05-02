@@ -1,7 +1,7 @@
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { DB_TABLES } from '@/utils/constants/database';
+import {  TABLES , ENUMS } from "@/utils/constants/database";
 import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
@@ -10,10 +10,10 @@ async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  allowedRoles: string[] = [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR]
+  allowedRoles: string[] = [ENUMS.TRIP_ROLES.ADMIN, ENUMS.TRIP_ROLES.EDITOR, ENUMS.TRIP_ROLES.CONTRIBUTOR]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(DB_TABLES.TRIP_MEMBERS)
+    .from(TABLES.TRIP_MEMBERS)
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)
@@ -55,7 +55,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     const {
       data: { user },
       error: authError,
@@ -74,7 +74,7 @@ export async function DELETE(
 
     // Delete the item
     const { error: deleteError } = await awaitedSupabase
-      .from(DB_TABLES.ITINERARY_ITEMS)
+      .from(TABLES.ITINERARY_ITEMS)
       .delete()
       .eq('id', itemId)
       .eq('trip_id', tripId);

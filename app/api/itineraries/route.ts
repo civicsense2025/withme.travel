@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+import { TABLES, FIELDS } from "@/utils/constants/database";
 
 export async function GET(request: NextRequest) {
   const supabase = createServerSupabaseClient();
@@ -12,15 +12,15 @@ export async function GET(request: NextRequest) {
 
   // Get published itineraries
   const { data, error } = await supabase
-    .from(DB_TABLES.ITINERARY_TEMPLATES)
+    .from(TABLES.ITINERARY_TEMPLATES)
     .select(
       `
       *,
-      ${DB_TABLES.DESTINATIONS}(*)
+      ${TABLES.DESTINATIONS}(*)
     `
     )
-    .eq(DB_FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
-    .order(DB_FIELDS.ITINERARY_TEMPLATES.CREATED_AT, { ascending: false });
+    .eq(FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
+    .order(FIELDS.ITINERARY_TEMPLATES.CREATED_AT, { ascending: false });
 
   if (error) {
     console.error('Error fetching itineraries:', error);
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Insert the itinerary template
     const { data: template, error: templateError } = await supabase
-      .from(DB_TABLES.ITINERARY_TEMPLATES)
+      .from(TABLES.ITINERARY_TEMPLATES)
       .insert({
         title: itineraryData.title,
         slug: slug,
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { data: sectionData, error: sectionError } = await supabase
-          .from(DB_TABLES.ITINERARY_TEMPLATE_SECTIONS)
+          .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
           .insert({
             template_id: template.id,
             day_number: section.day_number,
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           }));
 
           const { data: itemsData, error: itemsError } = await supabase
-            .from(DB_TABLES.ITINERARY_TEMPLATE_ITEMS)
+            .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
             .insert(items)
             .select();
 

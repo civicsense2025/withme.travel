@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -7,13 +7,13 @@ export async function GET(
 ) {
   const { tripId } = await params;
   const url = new URL(request.url);
-  const itemId = url.searchParams.get('itemId');
+  const itemId = url.searchParams?.get('itemId');
 
   if (!itemId) {
     return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -62,7 +62,7 @@ export async function POST(
     return NextResponse.json({ error: 'Item ID and content are required' }, { status: 400 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();

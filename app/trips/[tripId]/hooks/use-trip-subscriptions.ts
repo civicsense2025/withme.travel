@@ -6,6 +6,20 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/nextjs';
 import { TABLES } from '@/utils/constants/database';
 
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 interface UseTripSubscriptionsProps {
   tripId: string;
   onTripUpdate?: () => Promise<void>;
@@ -57,7 +71,7 @@ export function useTripSubscriptions({
             {
               event: 'UPDATE',
               schema: 'public',
-              table: TABLES.TRIPS,
+              table: Tables.TRIPS,
               filter: `id=eq.${tripId}`,
             },
             () => {
@@ -101,7 +115,7 @@ export function useTripSubscriptions({
             {
               event: '*',
               schema: 'public',
-              table: TABLES.ITINERARY_ITEMS,
+              table: Tables.ITINERARY_ITEMS,
               filter: `trip_id=eq.${tripId}`,
             },
             () => {
@@ -145,7 +159,7 @@ export function useTripSubscriptions({
             {
               event: '*',
               schema: 'public',
-              table: TABLES.TRIP_MEMBERS,
+              table: Tables.TRIP_MEMBERS,
               filter: `trip_id=eq.${tripId}`,
             },
             () => {

@@ -46,7 +46,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
-          onPress={() => Alert.alert('Edit Profile', 'This feature is coming soon!')}
+          onPress={() => navigation.navigate('EditProfile')}
         >
           <Ionicons name="person-outline" size={22} color={theme.colors.foreground} />
           <Text variant="body1" style={[styles.settingText, { color: theme.colors.foreground }]}>
@@ -66,7 +66,7 @@ export default function SettingsScreen({ navigation }: any) {
       <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
         <TouchableOpacity
           style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
-          onPress={() => Alert.alert('Notification Settings', 'This feature is coming soon!')}
+          onPress={() => navigation.navigate('Notifications')}
         >
           <Ionicons name="notifications-outline" size={22} color={theme.colors.foreground} />
           <Text variant="body1" style={[styles.settingText, { color: theme.colors.foreground }]}>
@@ -77,9 +77,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
-          onPress={() =>
-            Alert.alert('Appearance Settings', 'Change theme, text size, etc. Coming soon!')
-          }
+          onPress={() => navigation.navigate('Appearance')}
         >
           <Ionicons name="color-palette-outline" size={22} color={theme.colors.foreground} />
           <Text variant="body1" style={[styles.settingText, { color: theme.colors.foreground }]}>
@@ -90,11 +88,24 @@ export default function SettingsScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={styles.settingItem}
-          onPress={() => Alert.alert('Privacy Settings', 'This feature is coming soon!')}
+          onPress={() => navigation.navigate('Privacy')}
         >
           <Ionicons name="shield-outline" size={22} color={theme.colors.foreground} />
           <Text variant="body1" style={[styles.settingText, { color: theme.colors.foreground }]}>
             Privacy
+          </Text>
+          <Ionicons name="chevron-forward" size={22} color={theme.colors.mutedForeground} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.settingItem}
+          onPress={() => navigation.navigate('UIShowcase')}
+        >
+          <Ionicons name="color-wand-outline" size={22} color={theme.colors.foreground} />
+          <Text
+            style={{ flex: 1, marginLeft: 16, color: theme.colors.foreground }}
+          >
+            UI Components
           </Text>
           <Ionicons name="chevron-forward" size={22} color={theme.colors.mutedForeground} />
         </TouchableOpacity>

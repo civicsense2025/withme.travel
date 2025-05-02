@@ -43,7 +43,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDate, formatError, getInitials } from '@/lib/utils';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+import { TABLES, FIELDS } from "@/utils/constants/database";
 import { limitItems } from '@/lib/utils';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { TripMemberFromSSR } from '@/components/members-tab';

@@ -1,4 +1,4 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -49,7 +49,7 @@ export async function POST(
     const { title, description, options, expiresAt } = validationResult.data;
 
     // Get authenticated user
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

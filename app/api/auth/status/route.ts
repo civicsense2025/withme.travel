@@ -6,7 +6,7 @@ import { captureException } from '@sentry/nextjs';
 export async function GET(request: NextRequest) {
   try {
     // Create Supabase client for checking auth status
-    const supabase = createApiClient(cookies());
+    const supabase = createServerSupabaseClient(cookies());
 
     // Get current session information
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

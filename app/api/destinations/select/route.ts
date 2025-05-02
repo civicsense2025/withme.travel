@@ -1,4 +1,4 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Destination ID is required' }, { status: 400 });
     }
 
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // Increment the popularity counter for this destination
     const { error } = await supabase

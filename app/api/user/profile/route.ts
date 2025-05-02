@@ -2,6 +2,20 @@ import { getRouteHandlerClient } from '@/utils/supabase/unified';
 import { NextRequest, NextResponse } from 'next/server';
 import { TABLES } from '@/utils/constants/database';
 
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await getRouteHandlerClient();
@@ -15,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // Get user profile data
     const { data: profile, error } = await supabase
-      .from(TABLES.PROFILES)
+      .from(Tables.PROFILES)
       .select('*')
       .eq('id', userData.user.id)
       .single();
@@ -54,7 +68,7 @@ export async function PUT(request: NextRequest) {
 
     // Update user profile
     const { data, error } = await supabase
-      .from(TABLES.PROFILES)
+      .from(Tables.PROFILES)
       .update({
         name: updateData.name,
         bio: updateData.bio,

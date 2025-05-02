@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
 
   // Check for token in URL
   useEffect(() => {
-    const token = searchParams.get('token');
+    const token = searchParams?.get('token');
     if (!token) {
       toast({
         title: 'Missing Token',

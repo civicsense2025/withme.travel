@@ -1,6 +1,6 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
 import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
@@ -44,7 +44,7 @@ export async function GET(
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // Auth check
     const {
@@ -71,16 +71,16 @@ export async function GET(
 
     // Fetch tags associated with the noteId
     const { data: tags, error: tagsError } = await supabase
-      .from(DB_TABLES.NOTE_TAGS) // Use the new table constant
+      .from(TABLES.NOTE_TAGS) // Use the new table constant
       .select(
         `
             tags (
-                ${DB_FIELDS.TAGS.ID},
-                ${DB_FIELDS.TAGS.NAME}
+                ${FIELDS.TAGS.ID},
+                ${FIELDS.TAGS.NAME}
             )
         `
       )
-      .eq(DB_FIELDS.NOTE_TAGS.NOTE_ID, noteId); // Use constant
+      .eq(FIELDS.NOTE_TAGS.NOTE_ID, noteId); // Use constant
 
     if (tagsError) {
       console.error(`[Note Tags API GET ${noteId}] Error fetching tags:`, tagsError);
@@ -109,7 +109,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
     const { tags: newTags }: { tags: string[] } = await request.json();
 
     // Auth check
@@ -146,9 +146,9 @@ export async function PUT(
 
     // 1. Find existing tags and identify names for new tags
     const { data: existingTags, error: fetchTagsError } = await supabase
-      .from(DB_TABLES.TAGS)
-      .select(`${DB_FIELDS.TAGS.ID}, ${DB_FIELDS.TAGS.NAME}`)
-      .in(DB_FIELDS.TAGS.NAME, trimmedTags);
+      .from(TABLES.TAGS)
+      .select(`${FIELDS.TAGS.ID}, ${FIELDS.TAGS.NAME}`)
+      .in(FIELDS.TAGS.NAME, trimmedTags);
 
     if (fetchTagsError) {
       console.error(`[Note Tags API PUT ${noteId}] Error fetching existing tags:`, fetchTagsError);
@@ -165,9 +165,9 @@ export async function PUT(
     if (newTagNames.length > 0) {
       const newTagsToInsert = newTagNames.map((name) => ({ name })); // Assumes name is unique and other fields can be default
       const { data: insertedTags, error: insertTagsError } = await supabase
-        .from(DB_TABLES.TAGS)
+        .from(TABLES.TAGS)
         .insert(newTagsToInsert)
-        .select(`${DB_FIELDS.TAGS.ID}, ${DB_FIELDS.TAGS.NAME}`);
+        .select(`${FIELDS.TAGS.ID}, ${FIELDS.TAGS.NAME}`);
 
       if (insertTagsError) {
         console.error(`[Note Tags API PUT ${noteId}] Error inserting new tags:`, insertTagsError);
@@ -182,9 +182,9 @@ export async function PUT(
 
     // Delete existing associations
     const { error: deleteError } = await supabase
-      .from(DB_TABLES.NOTE_TAGS)
+      .from(TABLES.NOTE_TAGS)
       .delete()
-      .eq(DB_FIELDS.NOTE_TAGS.NOTE_ID, noteId);
+      .eq(FIELDS.NOTE_TAGS.NOTE_ID, noteId);
 
     if (deleteError) {
       console.error(`[Note Tags API PUT ${noteId}] Error deleting old tags:`, deleteError);
@@ -197,11 +197,11 @@ export async function PUT(
     // Insert new associations if there are tags to associate
     if (allTagIds.length > 0) {
       const newNoteTags = allTagIds.map((tagId) => ({
-        [DB_FIELDS.NOTE_TAGS.NOTE_ID]: noteId,
-        [DB_FIELDS.NOTE_TAGS.TAG_ID]: tagId,
+        [FIELDS.NOTE_TAGS.NOTE_ID]: noteId,
+        [FIELDS.NOTE_TAGS.TAG_ID]: tagId,
       }));
       const { error: insertNoteTagsError } = await supabase
-        .from(DB_TABLES.NOTE_TAGS)
+        .from(TABLES.NOTE_TAGS)
         .insert(newNoteTags);
 
       if (insertNoteTagsError) {
@@ -218,9 +218,9 @@ export async function PUT(
 
     // 4. Fetch and return the final list of tags for the note
     const { data: finalTagsData, error: finalFetchError } = await supabase
-      .from(DB_TABLES.NOTE_TAGS)
-      .select(`tags (${DB_FIELDS.TAGS.ID}, ${DB_FIELDS.TAGS.NAME})`)
-      .eq(DB_FIELDS.NOTE_TAGS.NOTE_ID, noteId);
+      .from(TABLES.NOTE_TAGS)
+      .select(`tags (${FIELDS.TAGS.ID}, ${FIELDS.TAGS.NAME})`)
+      .eq(FIELDS.NOTE_TAGS.NOTE_ID, noteId);
 
     if (finalFetchError) {
       console.error(`[Note Tags API PUT ${noteId}] Error fetching final tags:`, finalFetchError);

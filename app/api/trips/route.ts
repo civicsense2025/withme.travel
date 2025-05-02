@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { API_ROUTES } from '@/utils/constants/routes';
 // Use original DB constants
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
 import { type Trip } from '@/types/database.types';
 
 // Define interfaces for better type safety
@@ -11,16 +11,16 @@ import { type Trip } from '@/types/database.types';
 // Define TripRole type locally if not exported
 type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
 
-// Use the imported DB_ENUMS
-const TRIP_ROLES = DB_ENUMS.TRIP_ROLES;
+// Use the imported ENUMS
+const TRIP_ROLES = ENUMS.TRIP_ROLES;
 
 export async function GET(request: NextRequest) {
   const supabase = createServerSupabaseClient();
 
   const searchParams = request.nextUrl.searchParams;
-  const limitParam = searchParams.get('limit');
-  const sortParam = searchParams.get('sort');
-  const fieldsParam = searchParams.get('fields');
+  const limitParam = searchParams?.get('limit');
+  const sortParam = searchParams?.get('sort');
+  const fieldsParam = searchParams?.get('fields');
 
   const limit = limitParam ? parseInt(limitParam, 10) : undefined;
   const sort = sortParam || 'newest';
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
 
     // Step 1: Get trip_ids the user is a member of
     const { data: memberData, error: memberError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.TRIP_ID)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id);
+      .from(TABLES.TRIP_MEMBERS)
+      .select(FIELDS.TRIP_MEMBERS.TRIP_ID)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id);
 
     if (memberError) {
       console.error('[API /trips] Error fetching user trip memberships:', memberError);
@@ -68,16 +68,16 @@ export async function GET(request: NextRequest) {
     );
 
     // Step 2: Fetch details for those trips
-    let query = supabase.from(DB_TABLES.TRIPS).select(selectFields).in(DB_FIELDS.TRIPS.ID, tripIds);
+    let query = supabase.from(TABLES.TRIPS).select(selectFields).in(FIELDS.TRIPS.ID, tripIds);
 
-    // Apply sorting using DB_FIELDS
+    // Apply sorting using FIELDS
     if (sort === 'oldest') {
-      query = query.order(DB_FIELDS.TRIPS.CREATED_AT, { ascending: true });
+      query = query.order(FIELDS.TRIPS.CREATED_AT, { ascending: true });
     } else if (sort === 'name') {
-      query = query.order(DB_FIELDS.TRIPS.NAME, { ascending: true });
+      query = query.order(FIELDS.TRIPS.NAME, { ascending: true });
     } else {
       // Default to newest first
-      query = query.order(DB_FIELDS.TRIPS.CREATED_AT, { ascending: false });
+      query = query.order(FIELDS.TRIPS.CREATED_AT, { ascending: false });
     }
 
     // Apply limit if specified
@@ -134,19 +134,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Ensure the trip is associated with the current user using DB_FIELDS
+    // Ensure the trip is associated with the current user using FIELDS
     const createdById = user.id;
 
-    // Prepare payload using DB_FIELDS and correct 'name' column
+    // Prepare payload using FIELDS and correct 'name' column
     const { title: tripTitle, ...restOfBody } = body; // Assume input uses 'title'
     const insertPayload = {
       ...restOfBody,
-      [DB_FIELDS.TRIPS.NAME]: tripTitle, // Map input title to 'name' column
-      [DB_FIELDS.TRIPS.CREATED_BY]: createdById,
+      [FIELDS.TRIPS.NAME]: tripTitle, // Map input title to 'name' column
+      [FIELDS.TRIPS.CREATED_BY]: createdById,
     };
 
     const { data, error } = await supabase
-      .from(DB_TABLES.TRIPS)
+      .from(TABLES.TRIPS)
       .insert(insertPayload)
       .select()
       .single();
@@ -160,12 +160,12 @@ export async function POST(request: NextRequest) {
       throw new Error('Trip data not returned after insert');
     }
 
-    // Also add the creator as a member with 'admin' role using DB_FIELDS
-    const tripId = data[DB_FIELDS.TRIPS.ID];
-    const { error: memberError } = await supabase.from(DB_TABLES.TRIP_MEMBERS).insert({
-      [DB_FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
-      [DB_FIELDS.TRIP_MEMBERS.USER_ID]: user.id,
-      [DB_FIELDS.TRIP_MEMBERS.ROLE]: TRIP_ROLES.ADMIN, // Use ADMIN role constant
+    // Also add the creator as a member with 'admin' role using FIELDS
+    const tripId = data[FIELDS.TRIPS.ID];
+    const { error: memberError } = await supabase.from(TABLES.TRIP_MEMBERS).insert({
+      [FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
+      [FIELDS.TRIP_MEMBERS.USER_ID]: user.id,
+      [FIELDS.TRIP_MEMBERS.ROLE]: ENUMS.TRIP_ROLES.ADMIN, // Use ADMIN role constant
     });
 
     if (memberError) {

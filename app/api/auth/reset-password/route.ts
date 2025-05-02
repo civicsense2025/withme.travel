@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Create Supabase client
-  const supabase = createApiClient(cookies());
+  const supabase = createServerSupabaseClient(cookies());
 
   try {
     // Get current session (the user should be authenticated with the recovery link)

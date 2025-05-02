@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
@@ -25,7 +25,7 @@ export async function POST(
     }
 
     // Get authenticated user
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

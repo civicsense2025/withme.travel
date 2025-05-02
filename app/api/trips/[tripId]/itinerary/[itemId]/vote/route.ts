@@ -1,6 +1,20 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createApiClient } from '@/utils/supabase/server';
-import { TABLES, ENUMS } from '@/utils/constants/database';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { TABLES, DB_ENUMS } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { TRIP_ROLES } from '@/utils/constants/status';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
@@ -20,7 +34,7 @@ async function checkTripAccess(
   ]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
+    .from(Tables.TRIP_MEMBERS)
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)
@@ -57,7 +71,7 @@ async function checkTripMembership(
   userId: string
 ): Promise<boolean> {
   const { data, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
+    .from(Tables.TRIP_MEMBERS)
     .select('user_id')
     .eq('trip_id', tripId)
     .eq('user_id', userId)
@@ -80,7 +94,7 @@ export async function POST(
     return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
   }
 
-  const supabase = await createApiClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { user },
     error: authError,
@@ -113,7 +127,7 @@ export async function POST(
 
   try {
     // Upsert the vote: If the user already voted on this item, update the vote. Otherwise, insert a new vote.
-    const { error: upsertError } = await supabase.from(TABLES.VOTES).upsert(
+    const { error: upsertError } = await supabase.from(Tables.VOTES).upsert(
       {
         itinerary_item_id: itemId,
         user_id: userId,

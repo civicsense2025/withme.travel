@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const name = searchParams.get('name') || 'User';
+  const name = searchParams?.get('name') || 'User';
 
   // Generate a simple SVG avatar with the user's initials
   const initials = name

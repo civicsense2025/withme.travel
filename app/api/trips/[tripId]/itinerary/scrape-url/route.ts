@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/utils/supabase/server';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
+import {  TABLES, FIELDS , ENUMS } from "@/utils/constants/database";
 
 // Helper function to extract meta tag content using basic string matching
 function extractMetaContent(html: string, property: string): string | null {
@@ -64,7 +64,7 @@ export async function POST(
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   try {
     // 1. Authentication and Authorization
@@ -79,10 +79,10 @@ export async function POST(
 
     // Check if the user is a member of the trip with sufficient permissions
     const { data: memberData, error: memberError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from(TABLES.TRIP_MEMBERS)
+      .select(FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .maybeSingle();
 
     if (memberError || !memberData) {
@@ -92,7 +92,7 @@ export async function POST(
 
     const role = memberData.role?.toUpperCase();
     const canEdit =
-      role === TRIP_ROLES.ADMIN.toUpperCase() || role === TRIP_ROLES.EDITOR.toUpperCase();
+      role === ENUMS.TRIP_ROLES.ADMIN.toUpperCase() || role === ENUMS.TRIP_ROLES.EDITOR.toUpperCase();
 
     if (!canEdit) {
       return NextResponse.json(

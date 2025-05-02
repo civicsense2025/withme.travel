@@ -1,8 +1,8 @@
-import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { data, error: authError } = await supabase.auth.getSession();
 
   if (authError || !data.session) {

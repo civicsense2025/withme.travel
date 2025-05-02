@@ -16,6 +16,7 @@ import { getAllItineraryTemplates } from '../utils/database';
 import { fetchWithCache, clearCacheEntry } from '../utils/cache';
 import { ItineraryTemplate } from '../types/supabase'; // Correctly import the type
 import { Feather } from '@expo/vector-icons';
+import { TABLES, COLUMNS } from '../constants/database';
 
 // Section for templates grouped by category or destination
 interface TemplateSection {
@@ -148,7 +149,10 @@ export default function ItinerariesScreen({ navigation }: any) {
       }
 
       const fetcher = async () => {
-        const data = await getAllItineraryTemplates({ column: 'name', ascending: true });
+        const data = await getAllItineraryTemplates({ 
+          column: COLUMNS.NAME, 
+          ascending: true 
+        });
         return data as ItineraryTemplate[];
       };
 

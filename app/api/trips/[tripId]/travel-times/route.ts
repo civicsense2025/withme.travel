@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 import { calculateTravelTimes, TravelInfo } from '@/lib/mapbox';
-import { DB_TABLES } from '@/utils/constants/database';
+import { TABLES } from "@/utils/constants/database";
 
 export async function GET(
   request: NextRequest,
@@ -15,12 +15,12 @@ export async function GET(
   }
 
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // 1. Fetch itinerary items required for calculation
     // Type assertion might need adjustment based on actual DB schema/types
     const { data: items, error: itemsError } = await supabase
-      .from(DB_TABLES.ITINERARY_ITEMS)
+      .from(TABLES.ITINERARY_ITEMS)
       .select('id, day_number, latitude, longitude, position, start_time') // Select fields needed by calculateTravelTimes
       .eq('trip_id', tripId)
       .not('latitude', 'is', null)

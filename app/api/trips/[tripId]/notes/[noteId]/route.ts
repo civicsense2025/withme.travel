@@ -1,6 +1,6 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
 import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
@@ -36,7 +36,7 @@ export async function GET(
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // Auth check
     const {
@@ -63,7 +63,7 @@ export async function GET(
 
     // Fetch the specific note content
     const { data: note, error: noteError } = await supabase
-      .from(DB_TABLES.TRIP_NOTES)
+      .from(TABLES.TRIP_NOTES)
       .select('id, title, content, updated_at, updated_by') // Select relevant fields
       .eq('id', noteId)
       .eq('trip_id', tripId) // Ensure it belongs to the correct trip
@@ -101,7 +101,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
     const body = await request.json();
     const { title, content } = body;
 
@@ -131,7 +131,7 @@ export async function PUT(
     // Authorization check (Editor/Admin or last updater)
     // Fetch the note first to check updated_by
     const { data: existingNote, error: fetchError } = await supabase
-      .from(DB_TABLES.TRIP_NOTES)
+      .from(TABLES.TRIP_NOTES)
       .select('updated_by')
       .eq('id', noteId)
       .eq('trip_id', tripId)
@@ -167,7 +167,7 @@ export async function PUT(
 
     // Perform update
     const { data: updatedNote, error: updateError } = await supabase
-      .from(DB_TABLES.TRIP_NOTES)
+      .from(TABLES.TRIP_NOTES)
       .update(updateData)
       .eq('id', noteId)
       .eq('trip_id', tripId)
@@ -203,7 +203,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // Auth check
     const {
@@ -228,7 +228,7 @@ export async function DELETE(
 
     // Perform deletion
     const { error: deleteError } = await supabase
-      .from(DB_TABLES.TRIP_NOTES)
+      .from(TABLES.TRIP_NOTES)
       .delete()
       .eq('id', noteId)
       .eq('trip_id', tripId);

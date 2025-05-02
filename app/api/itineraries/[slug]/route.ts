@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+import { TABLES, FIELDS } from "@/utils/constants/database";
 import { getRouteHandlerClient } from '@/utils/supabase/unified';
 import {
   createSuccessResponse,
@@ -30,11 +30,11 @@ export async function GET(
     console.log(`[Template API] Fetching template with slug: "${slug}"`);
 
     const { data: template, error: templateError } = await supabase
-      .from(DB_TABLES.ITINERARY_TEMPLATES)
+      .from(TABLES.ITINERARY_TEMPLATES)
       .select(
         `
         *,
-        ${DB_TABLES.DESTINATIONS}(*),
+        ${TABLES.DESTINATIONS}(*),
         creator:profiles(id, name, avatar_url)
       `
       )
@@ -69,16 +69,16 @@ export async function GET(
     console.log(`[Template API] Found template with ID: "${template.id}"`);
 
     const { data: sections, error: sectionsError } = await supabase
-      .from(DB_TABLES.ITINERARY_TEMPLATE_SECTIONS)
+      .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
       .select(
         `
         *,
-        ${DB_TABLES.TEMPLATE_ACTIVITIES}(*)
+        ${TABLES.TEMPLATE_ACTIVITIES}(*)
       `
       )
-      .eq(DB_FIELDS.ITINERARY_TEMPLATE_SECTIONS.TEMPLATE_ID, template.id)
-      .order(DB_FIELDS.ITINERARY_TEMPLATE_SECTIONS.POSITION, { ascending: true })
-      .order(DB_FIELDS.ITINERARY_TEMPLATE_SECTIONS.DAY_NUMBER, { ascending: true });
+      .eq(FIELDS.ITINERARY_TEMPLATE_SECTIONS.TEMPLATE_ID, template.id)
+      .order(FIELDS.ITINERARY_TEMPLATE_SECTIONS.POSITION, { ascending: true })
+      .order(FIELDS.ITINERARY_TEMPLATE_SECTIONS.DAY_NUMBER, { ascending: true });
 
     interface Activity {
       position: number | null;
@@ -110,7 +110,7 @@ export async function GET(
     );
 
     const { error: viewError } = await supabase
-      .from(DB_TABLES.ITINERARY_TEMPLATES)
+      .from(TABLES.ITINERARY_TEMPLATES)
       .update({ view_count: (template.view_count || 0) + 1 })
       .eq('id', template.id);
 
@@ -160,7 +160,7 @@ export async function PUT(
 
     // Check if user is an admin
     const { data: userData, error: userError } = await supabase
-      .from(DB_TABLES.PROFILES)
+      .from(TABLES.PROFILES)
       .select('is_admin')
       .eq('id', user.id)
       .single();
@@ -180,7 +180,7 @@ export async function PUT(
     // Update the template
     const body = await request.json();
     const { data, error } = await supabase
-      .from(DB_TABLES.ITINERARY_TEMPLATES)
+      .from(TABLES.ITINERARY_TEMPLATES)
       .update(body)
       .eq('slug', slug)
       .select();

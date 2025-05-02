@@ -1,4 +1,6 @@
 'use client';
+import { ENUMS } from "@/utils/constants/database";
+
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 import {
@@ -218,7 +220,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   const [originalItemsOnDragStart, setOriginalItemsOnDragStart] = useState<DisplayItineraryItem[]>(
     []
   );
-  const canEdit = userRole === TRIP_ROLES.ADMIN || userRole === TRIP_ROLES.EDITOR;
+  const canEdit = userRole === ENUMS.TRIP_ROLES.ADMIN || userRole === ENUMS.TRIP_ROLES.EDITOR;
 
   // Add state for quick add dialog
   const [isQuickAddDialogOpen, setIsQuickAddDialogOpen] = useState(false);

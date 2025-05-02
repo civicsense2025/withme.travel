@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   try {
     const {

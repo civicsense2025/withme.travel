@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
  */
 export async function POST() {
   const cookieStore = cookies();
-  const supabase = createApiClient(cookieStore);
+  const supabase = createServerSupabaseClient(cookieStore);
 
   // Log which user is attempting to sign out
   let userId = 'unknown';

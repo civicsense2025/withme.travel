@@ -1,9 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
-import type { TripRole } from '@/utils/constants/database';
-import { errorResponse } from './api-utils';
+import { TABLES, DB_FIELDS, DB_ENUMS, type TripRole } from '@/utils/constants/database';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import type { Database } from '@/types/database.types';
+import { errorResponse } from '@/lib/api-utils';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
 
 // Ensure environment variables are available
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -49,7 +62,7 @@ export async function checkTripAccess(
 
   // First check member role
   const { data: member, error: memberError } = await supabaseAdmin
-    .from(DB_TABLES.TRIP_MEMBERS)
+    .from(Tables.TRIP_MEMBERS)
     .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
     .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
     .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
@@ -70,7 +83,7 @@ export async function checkTripAccess(
   // (only relevant if viewer role is allowed)
   if (allowedRoles.includes(DB_ENUMS.TRIP_ROLES.VIEWER)) {
     const { data: trip, error: tripError } = await supabaseAdmin
-      .from(DB_TABLES.TRIPS)
+      .from(Tables.TRIPS)
       .select('is_public, privacy_setting')
       .eq(DB_FIELDS.TRIPS.ID, tripId)
       .single();
@@ -126,7 +139,7 @@ export async function getTripPermissions(userId: string, tripId: string) {
 
   // Check if trip exists and get basic info
   const { data: trip, error: tripError } = await supabaseAdmin
-    .from(DB_TABLES.TRIPS)
+    .from(Tables.TRIPS)
     .select('id, created_by, is_public, privacy_setting')
     .eq(DB_FIELDS.TRIPS.ID, tripId)
     .single();
@@ -160,7 +173,7 @@ export async function getTripPermissions(userId: string, tripId: string) {
 
   // Check if user is a member of this trip
   const { data: member, error: memberError } = await supabaseAdmin
-    .from(DB_TABLES.TRIP_MEMBERS)
+    .from(Tables.TRIP_MEMBERS)
     .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
     .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
     .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
@@ -275,7 +288,7 @@ export async function checkTripMembership(userId: string, tripId: string): Promi
 
   try {
     const { data, error } = await supabaseAdmin
-      .from(DB_TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
       .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
@@ -303,7 +316,7 @@ export async function getUserTripRole(userId: string, tripId: string): Promise<s
 
   try {
     const { data, error } = await supabaseAdmin
-      .from(DB_TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
       .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
@@ -331,7 +344,7 @@ export async function canUserEditTrip(userId: string, tripId: string): Promise<b
 
   try {
     const { data, error } = await supabaseAdmin
-      .from(DB_TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
       .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)

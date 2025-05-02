@@ -320,7 +320,7 @@ export function FormRenderer({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [currentQuestionIndex, isCompleted]);
+  }, [currentQuestionIndex, isCompleted, handleNext]);
 
   // Handle form submission
   const handleFormSubmit = async () => {

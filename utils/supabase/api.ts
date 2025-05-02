@@ -7,7 +7,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { Cookies } from 'next/dist/server/web/spec-extension/cookies';
 import type { Database } from '@/types/database.types';
 import { captureException } from '@sentry/nextjs';
 
@@ -17,19 +16,54 @@ interface CookieError extends Error {
   cause?: unknown;
 }
 
-// Configuration for Supabase client
-const supabaseConfig = {
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-};
-
-// Throw error if env variables are missing
-if (!supabaseConfig.supabaseUrl || !supabaseConfig.supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
 // Type definition for Supabase server client
 export type SupabaseServerClient = ReturnType<typeof createServerClient<Database>>;
+
+// Ensure environment variables are present
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase URL or Anon Key');
+}
+
+/**
+ * Creates a Supabase client configured for API routes.
+ */
+export function createApiClient() {
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get: async (name) => {
+        try {
+          const cookieStore = await cookies();
+          return cookieStore.get(name)?.value;
+        } catch (error) {
+          console.error(`[Cookie Get Error] Failed to get cookie ${name}:`, error);
+          return undefined;
+        }
+      },
+      set: async (name, value, options) => {
+        try {
+          const cookieStore = await cookies();
+          cookieStore.set({ name, value, ...options });
+        } catch (error) {
+          console.error(`[Cookie Set Error] Failed to set cookie ${name}:`, error);
+        }
+      },
+      remove: async (name, options) => {
+        try {
+          const cookieStore = await cookies();
+          cookieStore.delete({ name, ...options });
+        } catch (error) {
+          console.error(`[Cookie Remove Error] Failed to remove cookie ${name}:`, error);
+        }
+      },
+    },
+  });
+}
+
+// Legacy alias for createApiClient
+export const createRouteHandlerClient = createApiClient;
 
 /**
  * Creates a Supabase client for API routes with proper cookie handling
@@ -37,14 +71,14 @@ export type SupabaseServerClient = ReturnType<typeof createServerClient<Database
  * @param cookieStore Optional cookie store from next/headers cookies()
  * @returns A typed Supabase client for API routes
  */
-export function createApiClient(cookieStore?: ReturnType<typeof cookies>): SupabaseServerClient {
+export function createServerSupabaseClient(cookieStore?: ReturnType<typeof cookies>): SupabaseServerClient {
   try {
     // Use provided cookie store or create a new one
     const store = cookieStore || cookies();
 
     return createServerClient<Database>(
-      supabaseConfig.supabaseUrl!,
-      supabaseConfig.supabaseAnonKey!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         cookies: {
           get(name: string) {
@@ -106,7 +140,7 @@ export function createApiClient(cookieStore?: ReturnType<typeof cookies>): Supab
  */
 export async function getAuthUser() {
   try {
-    const supabase = createApiClient(cookies());
+    const supabase = createServerSupabaseClient(cookies());
     const { data, error } = await supabase.auth.getUser();
 
     if (error) {
@@ -130,7 +164,7 @@ export async function getAuthUser() {
  */
 export async function isAuthenticated(): Promise<boolean> {
   try {
-    const supabase = createApiClient(cookies());
+    const supabase = createServerSupabaseClient(cookies());
     const { data, error } = await supabase.auth.getSession();
 
     if (error) {

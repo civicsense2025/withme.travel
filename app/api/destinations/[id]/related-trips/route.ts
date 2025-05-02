@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiClient } from '@/utils/supabase/api';
 import { TABLES } from '@/utils/constants/database';
 
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 /**
  * GET related trips for a destination
  *
@@ -11,13 +25,13 @@ import { TABLES } from '@/utils/constants/database';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: destinationId } = await params;
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '4', 10);
+    const limit = parseInt(searchParams?.get('limit') || '4', 10);
 
     // Fetch public trips associated with this destination
     const { data: trips, error } = await supabase
-      .from(TABLES.TRIPS)
+      .from(Tables.TRIPS)
       .select(
         `
         id, 

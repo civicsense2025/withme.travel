@@ -76,17 +76,59 @@ export const createSupabaseClient = (): SupabaseClient => {
     return supabaseInstance;
   }
 
-  // Initialize Supabase client with React Native optimizations
-  supabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      storage: AsyncStorage,
-      detectSessionInUrl: false, // Disable for React Native
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    debugLog('Missing Supabase credentials', { url: !!SUPABASE_URL, key: !!SUPABASE_ANON_KEY });
+    clientErrors.push('Missing Supabase credentials');
+    throw new Error('Supabase URL or Anon Key not configured properly');
+  }
 
-  return supabaseInstance;
+  try {
+    debugLog('Creating new Supabase client');
+    clientCreatedAt = new Date();
+    clientCreationCount++;
+
+    // Initialize Supabase client with React Native optimizations
+    supabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: AsyncStorage,
+        detectSessionInUrl: false, // Disable for React Native
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+      global: {
+        // Add global error handling and fetch options
+        fetch: (url, options) => {
+          // Use a custom fetch with timeout
+          const fetchWithTimeout = async (url: any, options: RequestInit = {}, timeout = 30000) => {
+            const controller = new AbortController();
+            const { signal } = controller;
+            
+            const timeoutId = setTimeout(() => {
+              controller.abort();
+            }, timeout);
+            
+            try {
+              const response = await fetch(url, { ...options, signal });
+              clearTimeout(timeoutId);
+              return response;
+            } catch (error) {
+              clearTimeout(timeoutId);
+              throw error;
+            }
+          };
+          
+          return fetchWithTimeout(url, options);
+        },
+      },
+    });
+
+    debugLog('Supabase client created successfully');
+    return supabaseInstance;
+  } catch (error) {
+    debugLog('Error creating Supabase client:', error);
+    clientErrors.push(`Client creation error: ${error}`);
+    throw error;
+  }
 };
 
 /**
@@ -185,3 +227,12 @@ export const checkSupabaseHealth = async () => {
 export const clearSupabaseInstance = (): void => {
   supabaseInstance = null;
 };
+
+// Handle network state changes to improve reconnection
+NetInfo.addEventListener((state) => {
+  if (state.isConnected && clientErrors.length > 0) {
+    debugLog('Network reconnected, resetting Supabase client on next use');
+    // Don't reset immediately, but mark for reset on next use
+    supabaseInstance = null;
+  }
+});

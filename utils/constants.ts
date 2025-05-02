@@ -2,7 +2,21 @@
 // DEPRECATED: This file is being gradually migrated to more specific modules.
 //
 // PLEASE USE THE FOLLOWING IMPORTS INSTEAD:
-//  - Database tables/fields:   import { TABLES, FIELDS } from '@/utils/constants/database';
+//  - Database tables/fields:   import { TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 //  - Route constants:          import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 //  - Status/enums:             import { TRIP_ROLES, ITEM_STATUSES } from '@/utils/constants/status';
 //  - UI/theme constants:       import { THEME, LIMITS } from '@/utils/constants/ui';
@@ -10,40 +24,9 @@
 // For migration guidance, see docs/constants-migration.md
 // =======================================================================
 
-// Import constants from modules for re-export
-import * as Database from '@/utils/constants/database';
-import * as Status from '@/utils/constants/status';
-import * as Routes from '@/utils/constants/routes';
-import * as UI from '@/utils/constants/ui';
-import { ItemStatus } from '../types/common';
+// DO NOT IMPORT FROM THIS FILE - Use the specific module imports shown above
 
-// Re-export core constants for backward compatibility
-export const TABLES = Database.TABLES;
-export const TRIP_ROLES = Status.TRIP_ROLES;
-export const API_ROUTES = Routes.API_ROUTES;
-export const PAGE_ROUTES = Routes.PAGE_ROUTES;
-
-// Re-export UI constants
-export const LIMITS = UI.LIMITS;
-export const TIME_FORMATS = UI.TIME_FORMATS;
-export const THEME = UI.THEME;
-
-// Re-export status constants
-export const PERMISSION_STATUSES = Status.PERMISSION_STATUSES;
-export const ITINERARY_CATEGORIES = Status.ITINERARY_CATEGORIES;
-export const ITEM_STATUSES = Status.ITEM_STATUSES;
-export const TRIP_STATUSES = Status.TRIP_STATUSES;
-export const SPLIT_TYPES = Status.SPLIT_TYPES;
-export const TRIP_TYPES = Status.TRIP_TYPES;
-export const BUDGET_CATEGORIES = Status.BUDGET_CATEGORIES;
-export const TEMPLATE_CATEGORIES = Status.TEMPLATE_CATEGORIES;
-export const TEMPLATE_TYPES = Status.TEMPLATE_TYPES;
-
-// =======================================================================
-// THE CONTENTS BELOW SHOULD BE MIGRATED TO THE APPROPRIATE MODULE
-// =======================================================================
-
-// API endpoints
+// API endpoints that haven't been migrated yet
 export const API_ENDPOINTS = {
   TRIPS: '/api/trips',
   TRIP_BY_ID: (id: string) => `/api/trips/${id}`,
@@ -64,24 +47,6 @@ export const API_ENDPOINTS = {
   TRIP_TRAVEL_TIMES: (id: string) => `/api/trips/${id}/travel-times`,
   USER_PROFILE: '/api/user/profile',
 };
-
-// Type declarations for our enums
-export type TripRole = (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
-// export type DbTable = typeof DB_TABLES[keyof typeof DB_TABLES]; // Already exported
-export type PermissionStatus = (typeof PERMISSION_STATUSES)[keyof typeof PERMISSION_STATUSES];
-export type ItineraryCategory = (typeof ITINERARY_CATEGORIES)[keyof typeof ITINERARY_CATEGORIES];
-
-// Re-export ItemStatus for compatibility
-export type { ItemStatus };
-
-// Budget Item Categories
-export type BudgetCategory = (typeof BUDGET_CATEGORIES)[keyof typeof BUDGET_CATEGORIES];
-
-// Template Categories
-export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[keyof typeof TEMPLATE_CATEGORIES];
-
-// Add template types
-export type TemplateType = (typeof TEMPLATE_TYPES)[keyof typeof TEMPLATE_TYPES];
 
 // Form Field Limits
 export const FORM_LIMITS = {
@@ -201,5 +166,3 @@ export const VOTE_TYPES = {
 } as const;
 
 export type VoteType = (typeof VOTE_TYPES)[keyof typeof VOTE_TYPES];
-
-// Add other constants as needed

@@ -3,7 +3,21 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import chalk from 'chalk';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
-import { TABLES, FIELDS, TRIP_ROLES } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/database';
+import { TRIP_ROLES } from '@/utils/constants/status';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
 
 const LOG_PREFIX = '[Trip Create API]';
 
@@ -90,7 +104,7 @@ export async function POST(request: NextRequest) {
     };
 
     const { data: newTrip, error: tripError } = await supabaseAdmin
-      .from(TABLES.TRIPS)
+      .from(Tables.TRIPS)
       .insert([tripData])
       .select()
       .single();
@@ -108,12 +122,12 @@ export async function POST(request: NextRequest) {
     const memberData = {
       trip_id: newTripId,
       user_id: user.id,
-      role: TRIP_ROLES.ADMIN,
+      role: TRIP_ROLES.ADMIN, // Use directly from status constants
       joined_at: new Date().toISOString(),
     };
 
     const { error: memberError } = await supabaseAdmin
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .insert([memberData]);
 
     if (memberError) {
@@ -135,7 +149,7 @@ export async function POST(request: NextRequest) {
 
     if (sections.length > 0) {
       const { error: sectionsError } = await supabaseAdmin
-        .from(TABLES.ITINERARY_SECTIONS)
+        .from(Tables.ITINERARY_SECTIONS)
         .insert(sections);
 
       if (sectionsError) {
@@ -173,7 +187,7 @@ export async function POST(request: NextRequest) {
     ];
 
     const { error: itemsError } = await supabaseAdmin
-      .from(TABLES.ITINERARY_ITEMS)
+      .from(Tables.ITINERARY_ITEMS)
       .insert(defaultItems);
 
     if (itemsError) {

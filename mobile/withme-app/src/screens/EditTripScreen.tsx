@@ -11,14 +11,15 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  FlatList,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createSupabaseClient } from '../utils/supabase';
 import { Trip } from '../types/supabase';
-import { TABLES, ENUM_VALUES } from '../constants/database';
-import { MainStackParamList } from '../navigation';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
+import { MainStackParamList } from '../navigation';
+import { TABLES, COLUMNS, ENUM_VALUES } from '../constants/database';
 
 // Common travel emojis for picker
 const TRAVEL_EMOJIS = [
@@ -44,8 +45,7 @@ const TRAVEL_EMOJIS = [
   '🌆',
   '🏙️',
   '🌉',
-  '🏰',
-  '🏯',
+  '🏟️',
   '🏛️',
   '🕌',
   '⛩️',
@@ -74,7 +74,7 @@ export default function EditTripScreen() {
   const navigation = useNavigation<EditTripNavigationProp>();
   const route = useRoute<EditTripRouteProp>();
   const { trip } = route.params;
-  const { user } = useAuth();
+  const { profile } = useAuth();
 
   // Form state
   const [tripName, setTripName] = useState(trip.name);
@@ -185,28 +185,74 @@ export default function EditTripScreen() {
 
       // Calculate duration if both dates are provided
       const duration_days = startDate && endDate ? calculateDuration(startDate, endDate) : null;
+      
+      // Prepare update object with all fields
+      const updateData = {
+        [COLUMNS.NAME]: tripName.trim(),
+        [COLUMNS.DESCRIPTION]: description.trim() || null,
+        [COLUMNS.START_DATE]: startDate || null,
+        [COLUMNS.END_DATE]: endDate || null,
+        [COLUMNS.DURATION_DAYS]: duration_days,
+        [COLUMNS.TRIP_EMOJI]: selectedEmoji,
+        [COLUMNS.IS_PUBLIC]: isPublic,
+        [COLUMNS.PRIVACY_SETTING]: isPublic
+          ? ENUM_VALUES.PRIVACY_SETTING.PUBLIC
+          : ENUM_VALUES.PRIVACY_SETTING.PRIVATE,
+        [COLUMNS.UPDATED_AT]: new Date().toISOString(),
+      };
+      
+      // Determine trip status based on dates
+      if (startDate && endDate) {
+        const now = new Date();
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (end < now) {
+          // Trip is in the past
+          updateData[COLUMNS.STATUS] = ENUM_VALUES.TRIP_STATUS.COMPLETED;
+        } else if (start > now) {
+          // Trip is in the future
+          updateData[COLUMNS.STATUS] = ENUM_VALUES.TRIP_STATUS.UPCOMING;
+        } else if (start <= now && end >= now) {
+          // Trip is currently happening
+          updateData[COLUMNS.STATUS] = ENUM_VALUES.TRIP_STATUS.IN_PROGRESS;
+        } else {
+          // Default to planning if dates are invalid
+          updateData[COLUMNS.STATUS] = ENUM_VALUES.TRIP_STATUS.PLANNING;
+        }
+      } else {
+        // No dates, so it's in planning
+        updateData[COLUMNS.STATUS] = ENUM_VALUES.TRIP_STATUS.PLANNING;
+      }
 
+      // Update the trip record
       const { error } = await supabase
         .from(TABLES.TRIPS)
-        .update({
-          name: tripName.trim(),
-          description: description.trim() || null,
-          start_date: startDate || null,
-          end_date: endDate || null,
-          duration_days,
-          trip_emoji: selectedEmoji,
-          is_public: isPublic,
-          privacy_setting: isPublic
-            ? ENUM_VALUES.PRIVACY_SETTING.PUBLIC
-            : ENUM_VALUES.PRIVACY_SETTING.PRIVATE,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', trip.id);
+        .update(updateData)
+        .eq(COLUMNS.ID, trip.id);
 
       if (error) {
         console.error('Error updating trip:', error);
         Alert.alert('Error', 'Failed to update trip. Please try again.');
         return;
+      }
+      
+      // Update trip history record to log this update
+      try {
+        await supabase
+          .from('trip_history')
+          .insert({
+            trip_id: trip.id,
+            action_type: 'TRIP_UPDATED',
+            user_id: profile?.id,
+            details: { 
+              updated_fields: Object.keys(updateData).filter(key => key !== COLUMNS.UPDATED_AT),
+              edited_at: new Date().toISOString()
+            }
+          });
+      } catch (historyError) {
+        // Non-critical error, just log it
+        console.warn('Error logging trip history:', historyError);
       }
 
       Alert.alert('Success', 'Trip updated successfully', [

@@ -89,7 +89,32 @@ const nextConfig = {
       };
     }
 
+    // Create a new watchOptions configuration
+    config.watchOptions = {
+      ...(config.watchOptions || {}),
+      // Use only string patterns for ignored
+      ignored: [
+        '**/node_modules/**',
+        '**/mobile/withme-app/**',
+        '**/scripts/**',
+      ],
+    };
+
+    // Exclude directories from webpack processing without using custom loaders
+    config.module.rules.push({
+      test: /\.(js|jsx|ts|tsx)$/,
+      exclude: [/mobile\/withme-app\//, /scripts\//],
+      // Do not include a custom loader here as Next.js has its own
+    });
+
     return config;
+  },
+  // Exclude specific directories from build process
+  distDir: 'build',
+  // Explicitly specify which directories to exclude from build process
+  onDemandEntries: {
+    maxInactiveAge: 60 * 1000,
+    pagesBufferLength: 2,
   },
   // Enable optimizePackageImports to reduce bundle size for large packages
   experimental: {

@@ -4,6 +4,48 @@ import { ApiResponse, DbQueryParams } from './types';
 import type { Database } from '@/types/database.types';
 import { getServerComponentClient } from '@/utils/supabase/unified';
 import { cache } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
+import { TABLES } from '@/utils/constants/database';
+
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
+// Define interfaces for our data types
+interface TripMember {
+  trip_id: string;
+  user_id: string;
+  role: string;
+}
+
+interface Trip {
+  id: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  destination?: string;
+  created_by?: string;
+  is_public?: boolean;
+  cover_image_url?: string;
+  cover_image?: string;
+  created_at?: string;
+  updated_at?: string;
+  deleted?: boolean;
+  trip_members?: Array<{user_id: string; role?: string}>;
+  [key: string]: any;
+}
 
 // Ensure environment variables are available
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -243,6 +285,36 @@ export async function deleteRecord(
  * Enhanced database wrapper for server components that provides caching and error handling
  */
 class DatabaseClient {
+  private supabase: any;
+
+  constructor() {
+    // Initialize supabase client if in browser environment
+    if (typeof window !== 'undefined') {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (supabaseUrl && supabaseKey) {
+        this.supabase = createBrowserClient(supabaseUrl, supabaseKey);
+      }
+    }
+  }
+
+  // Helper to get supabase client (server or client side)
+  private async getSupabaseClient() {
+    // If we already have a client (client-side), use it
+    if (this.supabase) {
+      return this.supabase;
+    }
+    
+    // Otherwise create a server-side client
+    try {
+      return await getServerComponentClient();
+    } catch (error) {
+      console.error('Error creating supabase client:', error);
+      throw error;
+    }
+  }
+
   /**
    * Execute a database query with caching
    * @param sql SQL query with parameterized values
@@ -258,7 +330,7 @@ class DatabaseClient {
     cacheTtl: number = 60
   ): Promise<any[]> {
     try {
-      const supabase = await getServerComponentClient();
+      const supabase = await this.getSupabaseClient();
 
       // Use the query content as cache key if not provided
       const actualCacheKey = cacheKey || `db:${sql}:${JSON.stringify(params)}`;
@@ -292,11 +364,11 @@ class DatabaseClient {
 
             // Process the data to match the expected format
             if (data) {
-              return data.map((trip) => {
+              return data.map((trip: Trip) => {
                 // Count unique members
                 const memberIds = new Set();
                 if (trip.trip_members) {
-                  trip.trip_members.forEach((member: any) => {
+                  trip.trip_members.forEach((member: {user_id: string}) => {
                     if (member.user_id) memberIds.add(member.user_id);
                   });
                 }
@@ -406,36 +478,59 @@ class DatabaseClient {
    * @param limit Maximum number of trips to return
    * @returns List of trips
    */
-  async getRecentTrips(userId: string, limit: number = 3): Promise<any[]> {
-    // Use a more efficient query that joins tables directly
-    const sql = `
-      SELECT 
-        t.*,
-        tm.role,
-        COUNT(DISTINCT tm2.user_id) as members
-      FROM 
-        trips t
-      JOIN 
-        trip_members tm ON t.id = tm.trip_id AND tm.user_id = $1
-      LEFT JOIN 
-        trip_members tm2 ON t.id = tm2.trip_id
-      WHERE 
-        t.deleted IS NOT TRUE OR t.deleted = FALSE
-      GROUP BY 
-        t.id, tm.role
-      ORDER BY 
-        t.created_at DESC
-      LIMIT $2
-    `;
-
-    const trips = await this.query(sql, [userId, limit]);
-
-    // Transform trips to standardize field names
-    return trips.map((trip: any) => ({
-      ...trip,
-      title: trip.name,
-      cover_image: trip.cover_image_url,
-    }));
+  async getRecentTrips(userId: string, limit: number = 3): Promise<Trip[]> {
+    try {
+      const supabase = await this.getSupabaseClient();
+      
+      // First get trip IDs where user is a member
+      const { data: memberTrips, error: memberError } = await supabase
+        .from('trip_members')
+        .select('trip_id, role')
+        .eq('user_id', userId)
+        .limit(limit);
+      
+      if (memberError || !memberTrips || memberTrips.length === 0) {
+        console.error('Error fetching member trips:', memberError);
+        return [];
+      }
+      
+      // Get the trip IDs
+      const tripIds = memberTrips.map((mt: TripMember) => mt.trip_id);
+      const tripRoles = new Map(memberTrips.map((mt: TripMember) => [mt.trip_id, mt.role]));
+      
+      // Now fetch the actual trips
+      const { data: trips, error: tripsError } = await supabase
+        .from('trips')
+        .select('*, trip_members(user_id)')
+        .in('id', tripIds)
+        .not('deleted', 'is', true)
+        .order('created_at', { ascending: false });
+        
+      if (tripsError || !trips) {
+        console.error('Error fetching trips:', tripsError);
+        return [];
+      }
+      
+      // Process trips to add member count and role information
+      return trips.map((trip: Trip) => {
+        const memberCount = trip.trip_members 
+          ? new Set(trip.trip_members.map((m: {user_id: string}) => m.user_id)).size 
+          : 0;
+        
+        return {
+          ...trip,
+          role: tripRoles.get(trip.id) || null,
+          members: memberCount,
+          title: trip.name || trip.title,
+          cover_image: trip.cover_image_url || trip.cover_image,
+          // Remove nested fields from the response
+          trip_members: undefined
+        };
+      });
+    } catch (error) {
+      console.error('Error in getRecentTrips:', error);
+      return [];
+    }
   }
 
   /**
@@ -444,19 +539,26 @@ class DatabaseClient {
    * @returns Number of trips
    */
   async getTripCount(userId: string): Promise<number> {
-    const sql = `
-      SELECT 
-        COUNT(DISTINCT t.id) as trip_count
-      FROM 
-        trips t
-      JOIN 
-        trip_members tm ON t.id = tm.trip_id AND tm.user_id = $1
-      WHERE 
-        t.deleted IS NOT TRUE OR t.deleted = FALSE
-    `;
+    try {
+      const supabase = await this.getSupabaseClient();
+      
+      // Use a more appropriate query that gets trips for a specific user
+      const { count, error } = await supabase
+        .from('trips')
+        .select('*', { count: 'exact', head: true })
+        .eq('trip_members.user_id', userId)
+        .not('deleted', 'is', true);
 
-    const results = await this.query(sql, [userId]);
-    return results.length > 0 ? parseInt(results[0].trip_count) : 0;
+      if (error) {
+        console.error('Error fetching trip count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    } catch (error) {
+      console.error('Error in getTripCount:', error);
+      return 0;
+    }
   }
 }
 

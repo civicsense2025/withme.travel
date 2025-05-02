@@ -6,7 +6,7 @@ import { borders } from '../constants/borders';
 import { shadows } from '../constants/shadows';
 
 // Get screen dimensions
-const { width } = Dimensions.get('window');
+// const { width } = Dimensions.get('window'); // Removed unused import
 
 // Export color type for TypeScript usage
 export type ColorThemeSchema = typeof colors.lightColors; // Corrected to use imported colors

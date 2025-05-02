@@ -1,402 +1,354 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { createBrowserClient } from '@/utils/supabase/client';
+import { StateInspector } from '@/components/debug';
+import { ArrowLeft, RefreshCw, LogOut } from 'lucide-react';
 
-// Type for server auth status
-interface ServerAuthStatus {
-  timestamp: string;
-  environment: string;
-  auth_status: {
-    has_session: boolean;
-    session_error?: string;
-    has_user: boolean;
-    user_error?: string;
-    user_id?: string;
-    user_email?: string;
-    auth_provider?: string;
-    last_sign_in?: string;
-  };
-  user_data: any;
+type CookieInfo = {
+  name: string;
+  value: string;
+  domain: string;
+  path: string;
+  expires: string;
+  size: number;
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: string;
+};
+
+interface AuthState {
+  session: any;
+  user: any;
+  error: any;
+  loading: boolean;
+  apiTestResult?: any;
 }
 
-export default function AuthStatusDebugPage() {
-  const { user, session, isLoading, error, supabase } = useAuth();
-  const [serverAuth, setServerAuth] = useState<ServerAuthStatus | null>(null);
-  const [isServerLoading, setIsServerLoading] = useState(true);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [authCookies, setAuthCookies] = useState<string[]>([]);
-  const [configIssues, setConfigIssues] = useState<
-    { name: string; issue: string; severity: 'error' | 'warning' }[]
-  >([]);
-
-  // Fetch server auth status
-  const fetchServerStatus = async () => {
-    setIsServerLoading(true);
-    setServerError(null);
+export default function AuthStatusPage() {
+  const [authState, setAuthState] = useState<AuthState>({
+    session: null,
+    user: null,
+    error: null,
+    loading: true,
+    apiTestResult: null
+  });
+  
+  const [cookies, setCookies] = useState<CookieInfo[]>([]);
+  const [localStorageItems, setLocalStorageItems] = useState<Record<string, string>>({});
+  const [sessionStorageItems, setSessionStorageItems] = useState<Record<string, string>>({});
+  
+  const refreshAuthState = async () => {
     try {
-      const response = await fetch('/api/debug/auth-status');
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-      const data = await response.json();
-      setServerAuth(data);
-
-      // Check for mismatches
-      analyzeAuthState(data);
-    } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'Failed to fetch server auth status');
-      console.error('Error fetching server auth status:', err);
-    } finally {
-      setIsServerLoading(false);
+      setAuthState(prev => ({ ...prev, loading: true }));
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase.auth.getSession();
+      
+      setAuthState({
+        session: data.session,
+        user: data.session?.user || null,
+        error,
+        loading: false,
+        apiTestResult: authState.apiTestResult
+      });
+    } catch (e) {
+      setAuthState({
+        session: null,
+        user: null,
+        error: e,
+        loading: false,
+        apiTestResult: authState.apiTestResult
+      });
     }
   };
-
-  // Analyze auth state for mismatches
-  const analyzeAuthState = (serverData: any) => {
-    const issues: { name: string; issue: string; severity: 'error' | 'warning' }[] = [];
-
-    // Handle case where serverData has different structure than expected
-    if (!serverData || typeof serverData !== 'object') {
-      issues.push({
-        name: 'API Response',
-        issue: 'Server response is not in expected format',
-        severity: 'error',
-      });
-      setConfigIssues(issues);
-      return;
-    }
-
-    // Check for cookie exists but not logged in
-    if (document.cookie.includes('sb-') && !user) {
-      issues.push({
-        name: 'components/auth-provider.tsx',
-        issue:
-          'Browser has auth cookies but client auth state is not set - cookie parsing may be incorrect',
-        severity: 'error',
-      });
-    }
-
-    // Check for client/server mismatch
-    const clientHasAuth = !!user;
-
-    // Use the direct 'authenticated' field from the updated API response
-    const serverHasAuth = serverData.authenticated === true; // Check boolean directly
-
-    if (clientHasAuth !== serverHasAuth) {
-      issues.push({
-        name: 'Auth State Synchronization',
-        issue: `Client auth (${clientHasAuth ? 'logged in' : 'logged out'}) doesn't match server auth (${serverHasAuth ? 'logged in' : 'logged out'})`,
-        severity: 'error',
-      });
-
-      // Additional detail for server-only auth
-      if (!clientHasAuth && serverHasAuth) {
-        issues.push({
-          name: 'Server Session Persistence',
-          issue:
-            "Server sees you as logged in but browser doesn't. Try clearing cookies AND restarting the server.",
-          severity: 'error',
+  
+  const refreshStorageInfo = () => {
+    // Get cookies
+    const cookieList: CookieInfo[] = [];
+    if (document.cookie !== '') {
+      document.cookie.split(';').forEach(cookie => {
+        const [name, value] = cookie.trim().split('=');
+        cookieList.push({
+          name,
+          value: value || '',
+          domain: 'Same as page',
+          path: '/',
+          expires: 'Session',
+          size: (name?.length || 0) + (value?.length || 0),
+          httpOnly: false, // Can't detect from JS
+          secure: location.protocol === 'https:',
+          sameSite: 'Lax', // Default, can't detect from JS
         });
+      });
+    }
+    setCookies(cookieList);
+    
+    // Get localStorage
+    const localItems: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        localItems[key] = localStorage.getItem(key) || '';
       }
     }
-
-    // Check for supabase client initialization
-    if (!supabase) {
-      issues.push({
-        name: 'components/auth-provider.tsx',
-        issue: 'Supabase client not properly initialized in auth provider',
-        severity: 'error',
-      });
+    setLocalStorageItems(localItems);
+    
+    // Get sessionStorage
+    const sessionItems: Record<string, string> = {};
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key) {
+        sessionItems[key] = sessionStorage.getItem(key) || '';
+      }
     }
-
-    // Parse cookies for debugging
-    const cookies = document.cookie.split(';').map((c) => c.trim());
-    const authCookiesFound = cookies.filter((c) => c.startsWith('sb-'));
-    setAuthCookies(authCookiesFound);
-
-    // Check for cookies without auth state
-    if (authCookiesFound.length > 0 && !user && !serverHasAuth) {
-      issues.push({
-        name: 'Cookie Parsing',
-        issue: 'Auth cookies found but not being correctly parsed by either client or server',
-        severity: 'error',
-      });
-    }
-
-    setConfigIssues(issues);
+    setSessionStorageItems(sessionItems);
   };
-
-  // Force a complete authentication reset
-  const forceAuthReset = async () => {
+  
+  const clearAllCookies = () => {
+    const allCookies = document.cookie.split(';');
+    
+    for (let i = 0; i < allCookies.length; i++) {
+      const cookie = allCookies[i];
+      const eqPos = cookie.indexOf('=');
+      const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+    }
+    
+    refreshStorageInfo();
+    refreshAuthState();
+  };
+  
+  const handleLogout = async () => {
     try {
-      // Clear cookies via API
-      await fetch('/api/auth/clear-cookies');
-
-      // Clear any local storage items that might be related to auth
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('supabase-auth-token');
-      sessionStorage.removeItem('supabase.auth.token');
-      sessionStorage.removeItem('supabase-auth-token');
-
-      // Force reload page to ensure all state is cleared
-      window.location.href = '/debug/auth-status';
-    } catch (error) {
-      console.error('Error during forced auth reset:', error);
+      const supabase = createBrowserClient();
+      await supabase.auth.signOut();
+      refreshAuthState();
+      refreshStorageInfo();
+    } catch (e) {
+      console.error('Logout error:', e);
     }
   };
-
+  
+  const callAuthApiEndpoint = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      return { error: e };
+    }
+  };
+  
   useEffect(() => {
-    fetchServerStatus();
+    refreshAuthState();
+    refreshStorageInfo();
+    
+    // Set up session change listener
+    const supabase = createBrowserClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async () => {
+      refreshAuthState();
+      refreshStorageInfo();
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
-
+  
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-4">Authentication Status Debug</h1>
-      <p className="mb-6 text-muted-foreground">
-        This page shows the authentication state as seen by both the client and server.
-      </p>
-
-      {/* Authentication Issues */}
-      {configIssues.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <AlertCircle className="mr-2 h-5 w-5 text-red-500" /> Authentication Issues Detected
-          </h2>
-          <div className="space-y-3">
-            {configIssues.map((issue, i) => (
-              <Alert key={i} variant={issue.severity === 'error' ? 'destructive' : 'default'}>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Issue in {issue.name}</AlertTitle>
-                <AlertDescription>{issue.issue}</AlertDescription>
-              </Alert>
-            ))}
-          </div>
+    <div className="container mx-auto p-4 max-w-5xl">
+      <div className="flex items-center mb-6">
+        <Link href="/debug" className="mr-2">
+          <ArrowLeft className="h-4 w-4 inline-block" />
+        </Link>
+        <h1 className="text-3xl font-bold">Authentication Status</h1>
+        
+        <div className="ml-auto space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={refreshAuthState}
+            disabled={authState.loading}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleLogout}
+            disabled={!authState.session}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
-      )}
-
-      {/* Client/Server Auth Comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Client Auth State */}
+      </div>
+      
+      <div className="mb-6 bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800 text-sm">
+        <p>
+          This page shows the current authentication state and allows debugging auth-related issues.
+          You can view auth details, storage contents, and manually test endpoints.
+        </p>
+      </div>
+      
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>Client Auth State</CardTitle>
-            <CardDescription>Auth state from useAuth() hook</CardDescription>
+            <CardTitle>Auth Status</CardTitle>
+            <CardDescription>
+              Current authentication state: {' '}
+              <span className={authState.session ? 'text-green-500' : 'text-red-500'}>
+                {authState.session ? 'Authenticated' : 'Not Authenticated'}
+              </span>
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <div className="font-medium">Session</div>
-                  <div className="text-sm text-muted-foreground">
-                    {session ? 'Active' : 'No active session'}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="font-medium">User</div>
-                  <div className="text-sm text-muted-foreground">
-                    {user ? `ID: ${user.id.slice(0, 8)}...` : 'Not authenticated'}
-                  </div>
-                </div>
-
-                {user && (
-                  <>
-                    <div>
-                      <div className="font-medium">Email</div>
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
-                    </div>
-
-                    <div>
-                      <div className="font-medium">Last Sign In</div>
-                      <div className="text-sm text-muted-foreground">
-                        {user.last_sign_in_at || 'Unknown'}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {error && (
-                  <div>
-                    <div className="font-medium text-red-500">Error</div>
-                    <div className="text-sm text-red-500">{error.message}</div>
-                  </div>
-                )}
-
-                <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">
-                  {JSON.stringify({ user, session }, null, 2)}
-                </pre>
-              </div>
-            )}
+            <StateInspector data={authState} title="Auth State" expanded={true} />
           </CardContent>
         </Card>
-
-        {/* Server Auth State */}
+        
         <Card>
           <CardHeader>
-            <CardTitle>Server Auth State</CardTitle>
-            <CardDescription>Auth state from API endpoint</CardDescription>
+            <CardTitle>User Details</CardTitle>
+            <CardDescription>
+              {authState.user ? `Logged in as ${authState.user.email}` : 'No authenticated user'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {isServerLoading ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : serverError ? (
-              <div className="text-red-500 py-4">{serverError}</div>
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <div className="font-medium">Session</div>
-                  <div className="text-sm text-muted-foreground">
-                    {serverAuth?.auth_status.has_session ? 'Active' : 'No active session'}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="font-medium">User</div>
-                  <div className="text-sm text-muted-foreground">
-                    {serverAuth?.auth_status.has_user
-                      ? `ID: ${serverAuth.auth_status.user_id?.slice(0, 8)}...`
-                      : 'Not authenticated'}
-                  </div>
-                </div>
-
-                {serverAuth?.auth_status.has_user && (
-                  <>
-                    <div>
-                      <div className="font-medium">Email</div>
-                      <div className="text-sm text-muted-foreground">
-                        {serverAuth.auth_status.user_email}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="font-medium">Last Sign In</div>
-                      <div className="text-sm text-muted-foreground">
-                        {serverAuth.auth_status.last_sign_in || 'Unknown'}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {(serverAuth?.auth_status.session_error || serverAuth?.auth_status.user_error) && (
-                  <div>
-                    <div className="font-medium text-red-500">Error</div>
-                    <div className="text-sm text-red-500">
-                      {serverAuth?.auth_status.session_error || serverAuth?.auth_status.user_error}
-                    </div>
-                  </div>
-                )}
-
-                <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">
-                  {JSON.stringify(serverAuth, null, 2)}
-                </pre>
-              </div>
-            )}
+            <StateInspector data={authState.user} title="User Object" expanded={true} />
           </CardContent>
+          <CardFooter>
+            <Link href="/test-auth">
+              <Button variant="outline" size="sm">Go to Auth Testing Page</Button>
+            </Link>
+          </CardFooter>
         </Card>
       </div>
-
-      {/* Browser Cookies Info */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Browser Auth Cookies</CardTitle>
-          <CardDescription>Auth cookies found in the browser</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {authCookies.length > 0 ? (
-            <div>
-              <div className="mb-2 flex items-center">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-                <span>{authCookies.length} Supabase auth cookies found</span>
-              </div>
-              <ul className="list-disc pl-5 space-y-1">
-                {authCookies.map((cookie, i) => (
-                  <li key={i} className="text-sm">
-                    {cookie.split('=')[0]}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-              <span>No Supabase auth cookies found</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Possible File Issues */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Auth Configuration Analysis</CardTitle>
-          <CardDescription>Analyzing auth-related files for issues</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {configIssues.length > 0 ? (
-            <div className="space-y-4">
-              <p className="text-red-500 font-medium">
-                Found {configIssues.length} potential issues:
-              </p>
-              {configIssues.map((issue, i) => (
-                <div
-                  key={i}
-                  className="p-3 border border-red-200 rounded-md bg-red-50 dark:bg-red-950 dark:border-red-800"
+      
+      <Tabs defaultValue="cookies">
+        <TabsList className="mb-4">
+          <TabsTrigger value="cookies">Cookies</TabsTrigger>
+          <TabsTrigger value="localStorage">Local Storage</TabsTrigger>
+          <TabsTrigger value="sessionStorage">Session Storage</TabsTrigger>
+          <TabsTrigger value="endpoints">API Endpoints</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="cookies">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cookies</CardTitle>
+              <CardDescription>
+                {cookies.length} cookies found {' '}
+                <Button 
+                  onClick={refreshStorageInfo} 
+                  variant="ghost" 
+                  size="sm"
                 >
-                  <div className="font-medium">File: {issue.name}</div>
-                  <div className="text-sm mt-1">{issue.issue}</div>
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Refresh
+                </Button>
+                <Button 
+                  onClick={clearAllCookies} 
+                  variant="outline" 
+                  size="sm" 
+                  className="ml-2 text-red-500"
+                >
+                  Clear All Cookies
+                </Button>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StateInspector data={cookies} title="Browser Cookies" expanded={true} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="localStorage">
+          <Card>
+            <CardHeader>
+              <CardTitle>Local Storage</CardTitle>
+              <CardDescription>
+                {Object.keys(localStorageItems).length} items in localStorage {' '}
+                <Button 
+                  onClick={refreshStorageInfo} 
+                  variant="ghost" 
+                  size="sm"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Refresh
+                </Button>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StateInspector data={localStorageItems} title="Local Storage Items" expanded={true} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="sessionStorage">
+          <Card>
+            <CardHeader>
+              <CardTitle>Session Storage</CardTitle>
+              <CardDescription>
+                {Object.keys(sessionStorageItems).length} items in sessionStorage {' '}
+                <Button 
+                  onClick={refreshStorageInfo} 
+                  variant="ghost" 
+                  size="sm"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Refresh
+                </Button>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StateInspector data={sessionStorageItems} title="Session Storage Items" expanded={true} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="endpoints">
+          <Card>
+            <CardHeader>
+              <CardTitle>Auth API Endpoints</CardTitle>
+              <CardDescription>Test authentication-related API endpoints</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Button 
+                    onClick={async () => {
+                      const result = await callAuthApiEndpoint();
+                      setAuthState(prev => ({ ...prev, apiTestResult: result }));
+                    }} 
+                    variant="outline"
+                  >
+                    Test /api/auth/me
+                  </Button>
+                  
+                  {authState.apiTestResult && (
+                    <div className="mt-4">
+                      <StateInspector data={authState.apiTestResult} title="API Response" expanded={true} />
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-              <span>No obvious configuration issues detected</span>
-            </div>
-          )}
-
-          <div className="mt-4 text-sm text-muted-foreground">
-            <p className="font-medium mb-2">Key files for authentication:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>
-                <code>components/auth-provider.tsx</code> - Client auth state management
-              </li>
-              <li>
-                <code>utils/supabase/unified.ts</code> - Unified client utilities
-              </li>
-              <li>
-                <code>middleware.ts</code> - Auth middleware for protected routes
-              </li>
-              <li>
-                <code>utils/supabase/server.ts</code> - Server-side auth utilities
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-wrap justify-center gap-4 mb-6">
-        <Button onClick={fetchServerStatus}>Refresh Status</Button>
-        <Button
-          variant="destructive"
-          onClick={() => (window.location.href = '/api/auth/clear-cookies')}
-        >
-          Clear Auth Cookies
-        </Button>
-        <Button variant="destructive" onClick={forceAuthReset}>
-          Force Complete Reset
-        </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      <div className="mt-8 text-sm text-gray-500">
+        <p>
+          Debug tools are only available in development mode. Add additional auth tests in{' '}
+          <code className="text-xs bg-gray-100 p-0.5 rounded">app/debug/auth-status/page.tsx</code>
+        </p>
       </div>
     </div>
   );

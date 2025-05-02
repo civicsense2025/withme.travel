@@ -11,6 +11,14 @@
 /build
 /components/presence
 /components/trips/trip-presence-indicator.tsx
+/mobile
+/utils/testing
+/__tests__
+/__mocks__
+/debug
+/components/debug
+/app/debug
+/app/design-sandbox
 
 # debug
 npm-debug.log*

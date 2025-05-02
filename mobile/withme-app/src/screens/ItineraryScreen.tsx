@@ -34,6 +34,22 @@ import {
 } from 'react-native-gesture-handler';
 import { Animated as NativeAnimated } from 'react-native'; // Import Animated from react-native for type hints in Swipeable render prop
 
+// Extended types for itinerary items with place join
+interface ExtendedItineraryItem extends ItineraryItem {
+  places?: {
+    id: string;
+    name: string;
+    description?: string;
+    address?: string;
+    category?: string;
+    latitude?: number;
+    longitude?: number;
+    images?: string[];
+    rating?: number;
+    price_level?: number;
+  };
+}
+
 export default function ItineraryScreen({ route, navigation }: any) {
   const { tripId } = route.params;
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -52,15 +68,66 @@ export default function ItineraryScreen({ route, navigation }: any) {
 
       const supabase = createSupabaseClient();
 
-      // Load trip details and itinerary items in parallel
+      // Load trip details and itinerary items in parallel with enhanced queries
       const [tripResult, itemsResult] = await Promise.all([
-        supabase.from(TABLES.TRIPS).select('*').eq(COLUMNS.ID, tripId).single(),
+        // Get trip with destination info
+        supabase
+          .from(TABLES.TRIPS)
+          .select(`
+            id, 
+            name, 
+            description, 
+            start_date, 
+            end_date, 
+            destination_id, 
+            destination_name, 
+            cover_image_url, 
+            trip_emoji,
+            status,
+            travelers_count,
+            member_count
+          `)
+          .eq(COLUMNS.ID, tripId)
+          .single(),
+          
+        // Get itinerary items with place details using join
         supabase
           .from(TABLES.ITINERARY_ITEMS)
-          .select('*')
+          .select(`
+            id, 
+            title, 
+            description,
+            notes,
+            day_number, 
+            start_time, 
+            end_time, 
+            location, 
+            address,
+            place_id,
+            category,
+            order_in_day,
+            date,
+            latitude,
+            longitude,
+            cost,
+            currency,
+            cover_image_url,
+            places:place_id (
+              id,
+              name,
+              description,
+              address,
+              category,
+              latitude,
+              longitude,
+              images,
+              rating,
+              price_level
+            )
+          `)
           .eq(COLUMNS.TRIP_ID, tripId)
+          .order(COLUMNS.DAY_NUMBER, { ascending: true })
           .order(COLUMNS.ORDER_IN_DAY, { ascending: true })
-          .order(COLUMNS.DAY_NUMBER, { ascending: true }),
       ]);
 
       const { data: tripData, error: tripError } = tripResult;
@@ -81,20 +148,83 @@ export default function ItineraryScreen({ route, navigation }: any) {
         return;
       }
 
-      // Make sure each item has an order_in_day value
-      const processedItems = ((itemsData as unknown as ItineraryItem[]) || []).map(
-        (item, index) => ({
-          ...item,
-          order_in_day: item.order_in_day !== null ? item.order_in_day : index,
-        })
+      // Process itinerary items - add order_in_day, add missing day_numbers, 
+      // and incorporate place data if available
+      const processedItems = ((itemsData as unknown as ExtendedItineraryItem[]) || []).map(
+        (item, index) => {
+          // Get place data if it exists
+          const placeData = item.places;
+          
+          // Create a processed item with defaults for missing values
+          const processedItem = {
+            ...item,
+            order_in_day: item.order_in_day !== null ? item.order_in_day : index,
+            day_number: item.day_number !== null ? item.day_number : 0,
+            // If we have place data but no coordinates, use those from the place
+            latitude: item.latitude || (placeData?.latitude || null),
+            longitude: item.longitude || (placeData?.longitude || null),
+            // If location is not set but we have place name, use that
+            location: item.location || (placeData?.name || null),
+            // If address is not set but we have place address, use that
+            address: item.address || (placeData?.address || null),
+          };
+          
+          // Create a clean copy without the places property
+          const cleanItem = { ...processedItem };
+          delete (cleanItem as any).places;
+          
+          return cleanItem as ItineraryItem;
+        }
       );
 
       setItineraryItems(processedItems);
+      
+      // After loading, check if items have dates - if not, set them based on trip start date
+      if (processedItems.length > 0 && tripData.start_date) {
+        const needsDateUpdate = processedItems.some(item => !item.date);
+        
+        if (needsDateUpdate) {
+          await updateItemDatesFromTripStart(tripData.start_date, processedItems);
+        }
+      }
     } catch (err) {
       console.error('Error in loadTripAndItinerary:', err);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Helper function to update dates for items that don't have them
+  const updateItemDatesFromTripStart = async (tripStartDate: string, items: ItineraryItem[]) => {
+    try {
+      const supabase = createSupabaseClient();
+      const startDate = new Date(tripStartDate);
+      
+      // Create update promises for items that need dates
+      const updatePromises = items
+        .filter(item => !item.date && item.day_number !== undefined && item.day_number !== null)
+        .map(item => {
+          // Calculate date based on trip start date + day_number
+          const itemDate = new Date(startDate);
+          itemDate.setDate(startDate.getDate() + (item.day_number || 0));
+          const formattedDate = itemDate.toISOString().split('T')[0];
+          
+          // Update the item's date in the database
+          return supabase
+            .from(TABLES.ITINERARY_ITEMS)
+            .update({ date: formattedDate })
+            .eq(COLUMNS.ID, item.id);
+        });
+      
+      if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+        // Reload data to get updated dates
+        loadTripAndItinerary();
+      }
+    } catch (error) {
+      console.error('Error updating item dates:', error);
+      // Don't show an error to the user, just log it
     }
   };
 

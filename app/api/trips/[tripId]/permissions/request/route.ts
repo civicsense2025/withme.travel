@@ -2,6 +2,20 @@ import { cookies } from 'next/headers';
 import { NextResponse, NextRequest } from 'next/server';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { getRouteHandlerClient } from '@/utils/supabase/unified';
 // Define expected request body structure
 interface RequestBody {
@@ -30,7 +44,7 @@ export async function POST(
 
     // Check if trip exists
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
+      .from(Tables.TRIPS)
       .select('id, name')
       .eq('id', tripId)
       .single();
@@ -41,7 +55,7 @@ export async function POST(
 
     // Check if user is already a member with sufficient permissions
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select('role')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
@@ -57,7 +71,7 @@ export async function POST(
 
     // Check if there's already a pending request
     const { data: existingRequest } = await supabase
-      .from(TABLES.PERMISSION_REQUESTS)
+      .from(Tables.PERMISSION_REQUESTS)
       .select('id, status')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
@@ -73,7 +87,7 @@ export async function POST(
 
     // Create the permission request
     const { data: requestData, error: requestError } = await supabase
-      .from(TABLES.PERMISSION_REQUESTS)
+      .from(Tables.PERMISSION_REQUESTS)
       .insert({
         trip_id: tripId,
         user_id: user.id,
@@ -90,7 +104,7 @@ export async function POST(
 
     // Get trip admins to notify
     const { data: admins } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select('user_id')
       .eq('trip_id', tripId)
       .in('role', ['owner', 'admin']);

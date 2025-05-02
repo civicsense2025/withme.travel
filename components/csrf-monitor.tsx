@@ -28,7 +28,7 @@ export function CsrfMonitor() {
   // Check on mount and when token changes
   useEffect(() => {
     checkCsrfConsistency();
-  }, [csrfToken, error]);
+  }, [csrfToken, error, checkCsrfConsistency]);
 
   // Function to repair the CSRF token if needed
   const repairCsrfToken = async () => {

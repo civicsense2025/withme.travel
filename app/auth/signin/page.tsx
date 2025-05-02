@@ -20,7 +20,7 @@ export default function SignInRedirectPage() {
 
   useEffect(() => {
     // Only check for redirect loop based on redirect_count
-    const redirectCount = parseInt(searchParams.get('redirect_count') || '0', 10);
+    const redirectCount = parseInt(searchParams?.get('redirect_count') || '0', 10);
     if (redirectCount >= MAX_REDIRECTS) {
       setIsRedirectLoop(true);
     }
@@ -28,7 +28,7 @@ export default function SignInRedirectPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      const redirectTo = searchParams.get('redirect');
+      const redirectTo = searchParams?.get('redirect');
       if (redirectTo) {
         router.replace(decodeURIComponent(redirectTo));
       } else {

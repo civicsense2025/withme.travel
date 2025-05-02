@@ -28,7 +28,7 @@ export function TripTabsWrapper({
   const searchParams = useSearchParams();
 
   // Get current tab from URL or use default
-  const currentTab = searchParams.get('tab') || defaultValue || tabs[0]?.value;
+  const currentTab = searchParams?.get('tab') || defaultValue || tabs[0]?.value;
 
   // Refs for touch handling
   const touchStartX = useRef(0);

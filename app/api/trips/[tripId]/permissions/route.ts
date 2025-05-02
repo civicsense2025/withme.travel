@@ -1,7 +1,24 @@
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse, NextRequest } from 'next/server';
 // Removed problematic constant imports
-// import { DB_TABLES, DB_FIELDS, DB_ENUMS, type TripRole } from '@/utils/constants/database';
+// import { TABLES, DB_FIELDS, DB_ENUMS, type TripRole } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Import TABLES
+import { TABLES } from '@/utils/constants/database';
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { errorResponse, successResponse, validateInput, ApiError } from '@/lib/api-utils';
 import { requireAuth, withAuth } from '@/lib/auth-middleware';
 import { checkTripAccess, getTripPermissions, ensureTripAccess } from '@/lib/trip-access';

@@ -1,6 +1,20 @@
 import { createApiClient } from '@/utils/supabase/api';
 import { NextResponse } from 'next/server';
 import { TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { Database } from '@/types/database.types';
 import { rateLimit, withRateLimit } from '@/utils/middleware/rate-limit';
 import { sanitizeAuthCredentials, sanitizeString } from '@/utils/sanitize';
@@ -47,7 +61,7 @@ async function signupHandler(request: Request) {
     }
 
     // Create Supabase client
-    const supabase = createApiClient(cookieStore);
+    const supabase = createServerSupabaseClient(cookieStore);
 
     // Sign up with Supabase Auth
     const { data, error } = await supabase.auth.signUp({

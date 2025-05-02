@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { z } from 'zod';
-import { DB_TABLES } from '@/utils/constants/database';
+import { TABLES } from "@/utils/constants/database";
 
 // Define the expected request body structure from Mapbox Geocoder
 // Adjust based on the actual structure of Mapbox result properties
@@ -40,7 +40,7 @@ const parseContext = (context: any) => {
 };
 
 export async function POST(request: NextRequest) {
-  const supabase = await createApiClient();
+  const supabase = await createServerSupabaseClient();
 
   // 1. Authentication
   const {
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     // 3. Check by mapbox_id (Primary Key)
     console.log(`Checking destination by mapbox_id: ${mapbox_id}`);
     let { data: existingDest, error: selectError } = await supabase
-      .from(DB_TABLES.DESTINATIONS)
+      .from(TABLES.DESTINATIONS)
       .select('id') // Only need the id
       .eq('mapbox_id', mapbox_id)
       .maybeSingle();
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     // Note: Floating point comparisons can be tricky. Use a small tolerance.
     // const tolerance = 0.0001;
     // let { data: existingByCoords, error: coordError } = await supabase
-    //     .from(DB_TABLES.DESTINATIONS)
+    //     .from(TABLES.DESTINATIONS)
     //     .select('id')
     //     .gte('latitude', latitude - tolerance)
     //     .lte('latitude', latitude + tolerance)
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     console.log('Attempting to insert destination data:', newDestinationData);
 
     const { data: insertedDest, error: insertError } = await supabase
-      .from(DB_TABLES.DESTINATIONS)
+      .from(TABLES.DESTINATIONS)
       .insert(newDestinationData)
       .select('id')
       .single();
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         // Unique constraint violation (likely mapbox_id)
         console.warn(`Race condition detected for mapbox_id: ${mapbox_id}. Refetching.`);
         const { data: raceDest, error: raceError } = await supabase
-          .from(DB_TABLES.DESTINATIONS)
+          .from(TABLES.DESTINATIONS)
           .select('id')
           .eq('mapbox_id', mapbox_id)
           .single();

@@ -1,8 +1,8 @@
-import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { data, error: authError } = await supabase.auth.getSession();
 
   if (authError || !data.session) {
@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url);
-  const limit = parseInt(url.searchParams.get('limit') || '20');
-  const offset = parseInt(url.searchParams.get('offset') || '0');
-  const unreadOnly = url.searchParams.get('unread_only') === 'true';
+  const limit = parseInt(url.searchParams?.get('limit') || '20');
+  const offset = parseInt(url.searchParams?.get('offset') || '0');
+  const unreadOnly = url.searchParams?.get('unread_only') === 'true';
 
   try {
     let query = supabase
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { data, error: authError } = await supabase.auth.getSession();
 
   if (authError || !data.session) {

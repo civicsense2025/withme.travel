@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Get query params
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
+    const type = searchParams?.get('type');
 
     // Build query
     let query = supabase.from('likes').select('*').eq('user_id', userData.user.id);
@@ -116,8 +116,8 @@ export async function DELETE(request: NextRequest) {
 
     // Get query params
     const { searchParams } = new URL(request.url);
-    const itemId = searchParams.get('itemId');
-    const itemType = searchParams.get('itemType');
+    const itemId = searchParams?.get('itemId');
+    const itemType = searchParams?.get('itemType');
 
     if (!itemId || !itemType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

@@ -1,6 +1,6 @@
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextResponse, type NextRequest } from 'next/server';
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
 
 /**
  * Check if a user has access to a specific trip
@@ -16,7 +16,7 @@ export async function GET(
   const { tripId } = await params;
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
 
     // Check if user is authenticated
     const {
@@ -29,10 +29,10 @@ export async function GET(
 
     // Check if user is a member of this trip
     const { data: membership, error: membershipError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from(TABLES.TRIP_MEMBERS)
+      .select(FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .maybeSingle();
 
     if (membershipError) {
@@ -50,9 +50,9 @@ export async function GET(
 
     // Check if trip is public
     const { data: trip, error: tripError } = await supabase
-      .from(DB_TABLES.TRIPS)
-      .select(DB_FIELDS.TRIPS.IS_PUBLIC)
-      .eq(DB_FIELDS.TRIPS.ID, tripId)
+      .from(TABLES.TRIPS)
+      .select(FIELDS.TRIPS.IS_PUBLIC)
+      .eq(FIELDS.TRIPS.ID, tripId)
       .maybeSingle();
 
     if (tripError) {

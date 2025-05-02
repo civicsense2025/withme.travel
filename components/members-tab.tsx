@@ -1,7 +1,8 @@
 'use client';
+import { DB_ENUMS, type TripRole } from '@/utils/constants/database';
 import { TRIP_ROLES, PERMISSION_STATUSES } from '@/utils/constants/status';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
-import { TripRole } from '@/utils/constants/database';
+import { getInitials } from '@/lib/utils';
 
 import { useState, useEffect } from 'react';
 import {
@@ -51,7 +52,6 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { getInitials } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,10 +107,10 @@ export function MembersTab({
   const [newMember, setNewMember] = useState({
     name: '',
     email: '',
-    role: TRIP_ROLES.VIEWER as TripRole,
+    role: DB_ENUMS.TRIP_ROLES.VIEWER as TripRole,
   });
   const { toast } = useToast();
-  const isAdmin = [TRIP_ROLES.ADMIN.toUpperCase(), TRIP_ROLES.EDITOR.toUpperCase()].includes(
+  const isAdmin = [DB_ENUMS.TRIP_ROLES.ADMIN.toUpperCase(), DB_ENUMS.TRIP_ROLES.EDITOR.toUpperCase()].includes(
     userRole?.toUpperCase() ?? ''
   );
 
@@ -188,7 +188,7 @@ export function MembersTab({
       toast({ title: 'Invitation Sent', description: `Invitation sent to ${newMember.email}.` });
 
       setIsAddMemberOpen(false);
-      setNewMember({ name: '', email: '', role: TRIP_ROLES.VIEWER }); // Reset form
+      setNewMember({ name: '', email: '', role: DB_ENUMS.TRIP_ROLES.VIEWER }); // Reset form
     } catch (error: any) {
       console.error('Error sending invitation:', error);
       toast({

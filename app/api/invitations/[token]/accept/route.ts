@@ -1,4 +1,4 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -8,7 +8,7 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const { token } = await params;
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // Check if user is authenticated
     const {

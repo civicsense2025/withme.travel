@@ -1,22 +1,22 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database'; // Keep DB_TABLES import
+import { TABLES, FIELDS } from "@/utils/constants/database"; // Keep TABLES import
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const destinationId = searchParams.get('destination_id');
-    const query = searchParams.get('query');
-    const type = searchParams.get('type');
+    const destinationId = searchParams?.get('destination_id');
+    const query = searchParams?.get('query');
+    const type = searchParams?.get('type');
 
     if (!destinationId) {
       return new NextResponse('Destination ID is required', { status: 400 });
     }
 
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     let placesQuery = supabase
-      .from(DB_TABLES.PLACES)
+      .from(TABLES.PLACES)
       .select(`*`) // Select only columns from the places table
       .eq('destination_id', destinationId)
       .order('rating', { ascending: false });
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 // POST /api/places - Add a new place suggestion
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // 1. Check user authentication
     const {
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Insert into Supabase
     const { data: newPlace, error: insertError } = await supabase
-      .from(DB_TABLES.PLACES)
+      .from(TABLES.PLACES)
       .insert(placeToInsert)
       .select()
       .single();

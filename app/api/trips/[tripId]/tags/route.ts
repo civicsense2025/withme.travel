@@ -1,6 +1,6 @@
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextResponse, NextRequest } from 'next/server';
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
 import { z } from 'zod';
 
 // Helper function to generate a simple slug
@@ -58,7 +58,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   // 1. Get authenticated user
   console.log('Tag Sync: Attempting to get user...');
@@ -88,11 +88,11 @@ export async function PUT(
   // 3. Check user permission (Admin or Editor) for the trip
   // Important: Reuse permission check logic if available elsewhere
   const { data: member, error: permissionError } = await supabase
-    .from(DB_TABLES.TRIP_MEMBERS)
+    .from(TABLES.TRIP_MEMBERS)
     .select('user_id')
-    .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-    .in('role', [DB_ENUMS.TRIP_ROLES.ADMIN, DB_ENUMS.TRIP_ROLES.EDITOR]) // Use role enum constants
+    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+    .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+    .in('role', [ENUMS.ENUMS.TRIP_ROLES.ADMIN, ENUMS.ENUMS.TRIP_ROLES.EDITOR]) // Use role enum constants
     .maybeSingle();
 
   if (permissionError) {
@@ -128,7 +128,7 @@ export async function PUT(
     let upsertedTags: { id: string; name: string }[] | null = [];
     if (upsertTags.length > 0) {
       const { data, error: upsertError } = await supabase
-        .from(DB_TABLES.TAGS)
+        .from(TABLES.TAGS)
         .upsert(upsertTags, { onConflict: 'name', ignoreDuplicates: false })
         .select('id, name');
 
@@ -143,9 +143,9 @@ export async function PUT(
 
     // 5. Get current tag associations for the trip
     const { data: currentTripTags, error: fetchCurrentError } = await supabase
-      .from(DB_TABLES.TRIP_TAGS)
+      .from(TABLES.TRIP_TAGS)
       .select('tag_id')
-      .eq(DB_FIELDS.TRIP_TAGS.TRIP_ID, tripId);
+      .eq(FIELDS.TRIP_TAGS.TRIP_ID, tripId);
 
     if (fetchCurrentError) {
       console.error('Fetch Current Tags Error:', fetchCurrentError);
@@ -160,10 +160,10 @@ export async function PUT(
     // 7. Remove old associations
     if (tagIdsToRemove.length > 0) {
       const { error: deleteError } = await supabase
-        .from(DB_TABLES.TRIP_TAGS)
+        .from(TABLES.TRIP_TAGS)
         .delete()
-        .eq(DB_FIELDS.TRIP_TAGS.TRIP_ID, tripId)
-        .in(DB_FIELDS.TRIP_TAGS.TAG_ID, tagIdsToRemove);
+        .eq(FIELDS.TRIP_TAGS.TRIP_ID, tripId)
+        .in(FIELDS.TRIP_TAGS.TAG_ID, tagIdsToRemove);
 
       if (deleteError) {
         console.error('Tag Delete Error:', deleteError);
@@ -177,7 +177,7 @@ export async function PUT(
         trip_id: tripId,
         tag_id: tag_id,
       }));
-      const { error: insertError } = await supabase.from(DB_TABLES.TRIP_TAGS).insert(newLinks);
+      const { error: insertError } = await supabase.from(TABLES.TRIP_TAGS).insert(newLinks);
 
       if (insertError) {
         console.error('Tag Insert Error:', insertError);

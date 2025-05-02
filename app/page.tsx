@@ -7,6 +7,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerSession } from '@/utils/supabase/server';
 
+// Mark this page as dynamic since it uses cookies
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   // Check if user is logged in on the server
   const {

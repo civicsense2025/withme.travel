@@ -45,35 +45,69 @@ export default function RootLayout({ children }) {
 Server-side authentication in Next.js 15 requires proper cookie handling and session management. We provide utility functions that make this easy:
 
 ```tsx
-// In utils/supabase/server.ts
-import { createServerComponentClient } from '@supabase/ssr';
+// In utils/supabase/unified.ts
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 // Use this in server components
-export async function getServerClient() {
-  const cookieStore = cookies();
-  return createServerComponentClient({
-    cookies: () => cookieStore,
-  });
+export async function getServerComponentClient(): Promise<TypedSupabaseClient> {
+  try {
+    const cookieStore = await cookies();
+    return createServerClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+      cookies: {
+        get(name: string) {
+          try {
+            return cookieStore.get(name)?.value;
+          } catch (error) {
+            console.warn(`[supabase] Error accessing cookie ${name}:`, error);
+            return undefined;
+          }
+        },
+        // Server Components cannot set cookies
+      },
+    });
+  } catch (error) {
+    console.error('[supabase] Error creating server component client:', error);
+    // Create a minimal client with no cookie access as fallback
+    return createServerClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+      cookies: {
+        get(name: string) {
+          return undefined;
+        },
+      },
+    });
+  }
 }
 
 // Use this to get the session in server components and API routes
 export async function getServerSession() {
-  const supabase = await getServerClient();
-  return await supabase.auth.getSession();
+  try {
+    const supabase = await getServerComponentClient();
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Get session error:', error.message);
+      return { data: { session: null } };
+    }
+    
+    return { data: { session: data.session } };
+  } catch (error) {
+    console.error('Error getting server session:', error);
+    return { data: { session: null } };
+  }
 }
 ```
 
 **Best Practices**:
 
 - Always use the correct client creation function for the environment:
-  - `createServerComponentClient` for server components
-  - `createRouteHandlerClient` for API routes
-  - `createMiddlewareClient` for middleware
-  - `createBrowserClient` for client components (via `components/auth-provider.tsx`)
-- Set proper cookie handling for each environment
-- Create reusable utility functions for common auth tasks
+  - `getServerComponentClient()` for server components
+  - `getRouteHandlerClient()` for API routes
+  - `getMiddlewareClient()` for middleware
+  - `getBrowserClient()` for client components (via `components/auth-provider.tsx`)
+- Use the unified helpers from `utils/supabase/unified.ts`
 - Handle errors gracefully with proper status codes and messages
+- Use constants from `utils/constants/database.ts` for table and field names
 
 ### 3. Client Authentication Hook
 
@@ -140,128 +174,18 @@ export default async function ProtectedPage({ params }: { params: Promise<{ id: 
 - Create reusable auth check functions
 - Add detailed logging for debugging auth issues
 
-### 5. Authentication in Middleware
+### 5. Database Access with Constants
 
-Middleware is a critical part of the authentication system, especially for protecting routes and refreshing sessions:
-
-```tsx
-// In middleware.ts
-import { createMiddlewareClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
-
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request: { headers: request.headers } });
-
-  const supabase = createMiddlewareClient({ req: request, res: response });
-
-  // CRITICAL: This refreshes the session if needed
-  await supabase.auth.getSession();
-
-  // Now perform auth checks
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Protected routes check
-  if (!user && request.nextUrl.pathname.startsWith('/trips')) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  return response;
-}
-
-export const config = {
-  matcher: ['/trips/:path*', '/dashboard/:path*'],
-};
-```
-
-**Best Practices**:
-
-- Always call `supabase.auth.getSession()` at the start to refresh tokens if needed
-- Use the correct matcher for protected routes
-- Return the modified response with updated cookies
-
-## Common Authentication Patterns
-
-### Handling Authentication in Client vs. Server Components
-
-**Server Components**
-
-Server components cannot use hooks, but can perform direct authentication checks:
+Always use the constants from `utils/constants/database.ts` when accessing database tables and fields:
 
 ```tsx
-// Server component
-import { getServerSession } from '@/utils/supabase/server';
+import { TABLES, FIELDS } from '@/utils/constants/database';
 
-export default async function ServerComponent() {
-  const {
-    data: { session },
-  } = await getServerSession();
-
-  if (!session) {
-    return <NotAuthenticatedUI />;
-  }
-
-  return <AuthenticatedUI userId={session.user.id} />;
-}
-```
-
-**Client Components**
-
-Client components can use the useAuth hook:
-
-```tsx
-'use client';
-import { useAuth } from '@/components/auth-provider';
-
-export default function ClientComponent() {
-  const { user, signIn } = useAuth();
-
-  // Use user data and auth methods...
-}
-```
-
-### Authentication Error Handling
-
-Proper error handling is crucial for a good user experience:
-
-```tsx
-// In a client component form
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setLoading(true);
-
-  try {
-    await signIn(email, password);
-    // Success - redirect or update UI
-  } catch (error) {
-    // Extract readable error message
-    const message = error.message || 'Failed to sign in';
-    setError(message.includes('credentials') ? 'Invalid email or password' : message);
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
-Server-side error handling:
-
-```tsx
-// In a server action or API route
-try {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) throw error;
-
-  // Success
-} catch (error) {
-  console.error('Authentication error:', error);
-  // Return appropriate error response
-}
+// Access user trips
+const { data, error } = await supabase
+  .from(TABLES.TRIPS)
+  .select(`*, ${TABLES.TRIP_MEMBERS}(*)`)
+  .eq(`${TABLES.TRIP_MEMBERS}.${FIELDS.TRIP_MEMBERS.USER_ID}`, userId);
 ```
 
 ## Specific Next.js 15 Considerations
@@ -290,7 +214,7 @@ Next.js 15 has improved cookie handling through the cookies() API:
 import { cookies } from 'next/headers';
 
 export async function GET() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   // Use cookieStore to get auth cookies
 }
 ```
@@ -325,7 +249,7 @@ With our new service worker implementation, authentication has some additional c
 
 Common Issues:
 
-1. **"Not authenticated" redirects:** Often caused by cookie issues or session expiry. Check cookie configuration in server.ts and ensure proper session handling.
+1. **"Not authenticated" redirects:** Often caused by cookie issues or session expiry. Check cookie configuration in unified.ts and ensure proper session handling.
 2. **Redirect loops:** Can occur when redirect logic isn't properly handling authentication state. Add redirect counters or debug logs to track the flow.
 3. **Auth state not updating:** The AuthProvider should update state when auth events occur. Check your event subscriptions.
 4. **Server/client auth mismatch:** Ensure consistent session handling between server and client code.
@@ -336,7 +260,7 @@ Specific Trip Page Issues:
 If experiencing issues with trip pages not loading:
 • Ensure params are awaited before use: const { tripId } = await params;
 • Check that the getServerSession() function is being used correctly
-• Add diagnostic logging to see where authentiation checks might be failing
+• Add diagnostic logging to see where authentication checks might be failing
 • Verify redirect URLs are properly encoded
 
 ## Implementation Summary
@@ -349,5 +273,6 @@ Our authentication system:
 • Handles Next.js 15's async route parameters properly
 • Includes comprehensive error handling and recovery
 • Simplifies authentication checks in both client and server contexts
-• Avoids complexity that leads to bugs (no refresh locks, counters, etc.)
+• Uses constants from database.ts for all database interactions
+• Avoids complexity that leads to bugs
 • Follows best practices for security and user experience

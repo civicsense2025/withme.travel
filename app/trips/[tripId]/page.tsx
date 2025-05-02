@@ -2,10 +2,21 @@ import { createServerComponentClient } from '@/utils/supabase/ssr-client';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import type { Database } from '@/types/database.types';
-// Import from index file which has all the exports
-import { TABLES, ENUMS } from '@/utils/constants/index';
+// Import TABLES but use type assertion
+import { TABLES } from '@/utils/constants/database';
+import { TRIP_ROLES } from '@/utils/constants/status';
 import type { TripRole } from '@/types/trip';
 import TripPageClientWrapper from './trip-page-client-wrapper';
+
+// Define a more complete type for TABLES
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
 
 export default async function TripPage({ params }: { params: Promise<{ tripId: string }> }) {
   // In Next.js 15, we must await the params
@@ -32,11 +43,11 @@ export default async function TripPage({ params }: { params: Promise<{ tripId: s
     redirect(`/login?redirectTo=${encodeURIComponent(`/trips/${tripId}`)}`);
   }
 
-  // Fetch trip and user's membership in parallel using TABLES
+  // Fetch trip and user's membership in parallel using Tables
   const [tripResult, memberResult] = await Promise.all([
-    supabase.from(TABLES.TRIPS).select('id, name').eq('id', tripId).single(),
+    supabase.from(Tables.TRIPS).select('id, name').eq('id', tripId).single(),
     supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select('role')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
@@ -60,9 +71,9 @@ export default async function TripPage({ params }: { params: Promise<{ tripId: s
     return notFound();
   }
 
-  // Use ENUMS.TRIP_ROLES (with the correct property name)
+  // Use TRIP_ROLES directly from status constants
   const userRole = member?.role as TripRole | undefined;
-  const canEdit = userRole === ENUMS.TRIP_ROLES.ADMIN || userRole === ENUMS.TRIP_ROLES.EDITOR;
+  const canEdit = userRole === TRIP_ROLES.ADMIN || userRole === TRIP_ROLES.EDITOR;
 
   return (
     <Suspense fallback={<div className="p-4">Loading trip...</div>}>

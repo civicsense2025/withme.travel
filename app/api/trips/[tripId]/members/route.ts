@@ -3,6 +3,20 @@ import { NextResponse, NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 // Use the direct TABLES export as per constants guide
 import { TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import type { Database } from '@/types/database.types';
 
 export async function GET(
@@ -35,11 +49,11 @@ export async function GET(
 
     // Fetch trip members using the correct TABLES constant
     const { data, error } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select(
         `
         *,
-        profiles:${TABLES.PROFILES}(*)
+        profiles:${Tables.PROFILES}(*)
       `
       )
       .eq('trip_id', tripId);

@@ -29,10 +29,10 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [destination, setDestination] = useState(searchParams.get('destination') || '');
-  const [duration, setDuration] = useState(searchParams.get('duration') || '');
-  const [category, setCategory] = useState(searchParams.get('category') || '');
+  const [search, setSearch] = useState(searchParams?.get('search') || '');
+  const [destination, setDestination] = useState(searchParams?.get('destination') || '');
+  const [duration, setDuration] = useState(searchParams?.get('duration') || '');
+  const [category, setCategory] = useState(searchParams?.get('category') || '');
 
   const durations = [
     { value: '1-3', label: '1-3 days' },
@@ -74,10 +74,10 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
 
   useEffect(() => {
     // Update state when URL params change
-    setSearch(searchParams.get('search') || '');
-    setDestination(searchParams.get('destination') || '');
-    setDuration(searchParams.get('duration') || '');
-    setCategory(searchParams.get('category') || '');
+    setSearch(searchParams?.get('search') || '');
+    setDestination(searchParams?.get('destination') || '');
+    setDuration(searchParams?.get('duration') || '');
+    setCategory(searchParams?.get('category') || '');
   }, [searchParams]);
 
   return (

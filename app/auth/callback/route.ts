@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Get the auth 'code' from the query string
     const requestUrl = new URL(request.url);
-    const code = requestUrl.searchParams.get('code');
+    const code = requestUrl.searchParams?.get('code');
 
     // Check if we got a code, if not redirect with error
     if (!code) {
@@ -50,12 +50,12 @@ export async function GET(request: NextRequest) {
 
       // Redirect to login page with error
       const redirectTo = new URL('/login', requestUrl.origin);
-      redirectTo.searchParams.set('error', 'missing_code');
+      redirectTo.searchParams?.set('error', 'missing_code');
       return NextResponse.redirect(redirectTo.toString());
     }
 
     // Check for redirect parameter
-    let redirectPath = requestUrl.searchParams.get('redirect') || '/';
+    let redirectPath = requestUrl.searchParams?.get('redirect') || '/';
 
     // For security, validate that the redirect is to our own domain or is a relative path
     // and not to an external site
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 
       // Redirect to login page with error
       const redirectTo = new URL('/login', requestUrl.origin);
-      redirectTo.searchParams.set('error', error.message);
+      redirectTo.searchParams?.set('error', error.message);
       return NextResponse.redirect(redirectTo.toString());
     }
 
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 
     // On error, redirect to login page with generic error
     const returnUrl = new URL('/login', request.url);
-    returnUrl.searchParams.set('error', 'auth_callback_error');
+    returnUrl.searchParams?.set('error', 'auth_callback_error');
 
     return NextResponse.redirect(returnUrl.toString());
   }

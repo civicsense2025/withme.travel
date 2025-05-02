@@ -4,6 +4,20 @@ import TripsClientPage from './trips-client';
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/database';
 
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +48,7 @@ export default async function TripsPage() {
       `
       role, 
       joined_at,
-      trip:${TABLES.TRIPS} (
+      trip:${Tables.TRIPS} (
         id, name, start_date, 
         end_date, created_at,
         status, destination_id, destination_name,
@@ -45,11 +59,11 @@ export default async function TripsPage() {
     )
     .eq('user_id', user.id)
     .order('start_date', {
-      foreignTable: TABLES.TRIPS,
+      foreignTable: Tables.TRIPS,
       ascending: false,
       nullsFirst: false,
     })
-    .order('created_at', { foreignTable: TABLES.TRIPS, ascending: false });
+    .order('created_at', { foreignTable: Tables.TRIPS, ascending: false });
 
   // Log if there was a query error
   if (queryError) {

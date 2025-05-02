@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 // Import from unified.ts which has the proper dependencies configured
 import { getMiddlewareClient as createUnifiedMiddlewareClient } from '@/utils/supabase/unified';
 
@@ -29,7 +29,7 @@ export async function updateSession(request: NextRequest) {
       console.log('[Middleware] Attempting to update session...');
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
 
     // It's generally recommended to handle the response, although getUser often works implicitly
     const { data, error } = await supabase.auth.getUser();

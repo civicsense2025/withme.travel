@@ -9,14 +9,16 @@ import {
   Alert,
   Modal,
   FlatList,
+  Dimensions,
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { createSupabaseClient } from '../utils/supabase';
 import { Trip } from '../types/supabase';
 import { useTheme } from '../hooks/useTheme';
 import { Text, Button, Card } from '../components/ui'; // Import themed components
-import Emoji from 'react-native-emoji';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import * as dbUtils from '../utils/database';
+import { TABLES, COLUMNS, ENUM_VALUES } from '../constants/database';
 
 // Common travel emojis for picker
 const TRAVEL_EMOJIS = [
@@ -62,15 +64,39 @@ const TRAVEL_EMOJIS = [
   '🐪',
 ];
 
+// Add a more comprehensive type to include joined data
+interface ExtendedTrip extends Trip {
+  destination?: {
+    id: string;
+    name: string;
+    city?: string;
+    country?: string;
+    emoji?: string;
+    image_url?: string;
+  };
+  members?: Array<{
+    id: string;
+    user_id: string;
+    role: string;
+    profile?: {
+      id: string;
+      name?: string;
+      avatar_url?: string;
+    };
+  }>;
+}
+
 export default function TripDetailScreen({ route, navigation }: any) {
   const { tripId } = route.params;
   const theme = useTheme();
   const styles = createStyles(theme);
-  const { user } = useAuth();
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const { user, profile } = useAuth();
+  const [trip, setTrip] = useState<ExtendedTrip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [tripMembers, setTripMembers] = useState<Array<any>>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const loadTripDetails = useCallback(async () => {
     try {
@@ -79,8 +105,39 @@ export default function TripDetailScreen({ route, navigation }: any) {
 
       const supabase = createSupabaseClient();
 
-      // Load trip details
-      const { data, error } = await supabase.from('trips').select('*').eq('id', tripId).single();
+      // Enhanced query using foreign table joins
+      const { data, error } = await supabase
+        .from(TABLES.TRIPS)
+        .select(`
+          id,
+          name,
+          description,
+          trip_emoji,
+          start_date,
+          end_date,
+          duration_days,
+          destination_id,
+          destination_name,
+          cover_image_url,
+          status,
+          created_by,
+          created_at,
+          updated_at,
+          privacy_setting,
+          is_public,
+          member_count,
+          travelers_count,
+          destination:destination_id (
+            id,
+            name,
+            city,
+            country,
+            emoji,
+            image_url
+          )
+        `)
+        .eq(COLUMNS.ID, tripId)
+        .single();
 
       if (error) {
         console.error('Error loading trip:', error);
@@ -88,14 +145,51 @@ export default function TripDetailScreen({ route, navigation }: any) {
         return;
       }
 
-      setTrip(data as unknown as Trip);
+      // Fetch trip members in a separate query
+      const { data: membersData, error: membersError } = await supabase
+        .from(TABLES.TRIP_MEMBERS)
+        .select(`
+          id,
+          user_id,
+          role,
+          joined_at,
+          profile: user_id (
+            id,
+            name,
+            avatar_url
+          )
+        `)
+        .eq(COLUMNS.TRIP_ID, tripId);
+
+      if (membersError) {
+        console.error('Error loading trip members:', membersError);
+        // Non-critical error, so continue without members data
+      } else {
+        setTripMembers(membersData || []);
+        
+        // Determine current user's role in this trip
+        if (user?.id) {
+          const currentUserMember = membersData?.find(m => m.user_id === user.id);
+          if (currentUserMember) {
+            setUserRole(currentUserMember.role);
+          }
+        }
+      }
+
+      // Combine trip data with members for the extended trip object
+      const extendedTripData: ExtendedTrip = {
+        ...(data as unknown as Trip),
+        members: membersData || []
+      };
+
+      setTrip(extendedTripData);
     } catch (err) {
       console.error('Error in loadTripDetails:', err);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [tripId]);
+  }, [tripId, user?.id]);
 
   useEffect(() => {
     loadTripDetails();
@@ -104,19 +198,26 @@ export default function TripDetailScreen({ route, navigation }: any) {
   // Update navigation options when trip data loads
   useEffect(() => {
     if (trip) {
+      // Only show Edit button if user is admin or editor
+      const canEdit = userRole === ENUM_VALUES.TRIP_MEMBER_ROLE.ADMIN || 
+                      userRole === ENUM_VALUES.TRIP_MEMBER_ROLE.EDITOR ||
+                      trip.created_by === user?.id;
+                      
       navigation.setOptions({
         title: trip.name,
         headerRight: () => (
-          <Button
-            label="Edit"
-            variant="ghost"
-            size="sm"
-            onPress={() => navigation.navigate('EditTrip', { trip })}
-          />
+          canEdit ? (
+            <Button
+              label="Edit"
+              variant="ghost"
+              size="sm"
+              onPress={() => navigation.navigate('EditTrip', { trip })}
+            />
+          ) : null
         ),
       });
     }
-  }, [navigation, trip]);
+  }, [navigation, trip, userRole, user?.id]);
 
   const handleShare = async () => {
     if (!trip) return;
@@ -179,7 +280,12 @@ export default function TripDetailScreen({ route, navigation }: any) {
   if (error || !trip) {
     return (
       <View style={styles.centeredContainer}>
-        <Text variant="body1" color="destructive" style={styles.errorText}>
+        <Text 
+          variant="body1" 
+          color="custom" 
+          customColor={theme.colors.destructive}
+          style={styles.errorText}
+        >
           {error || 'Trip not found'}
         </Text>
         <Button label="Retry" onPress={loadTripDetails} />

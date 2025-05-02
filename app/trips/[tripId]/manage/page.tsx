@@ -47,7 +47,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { Trip } from '@/types/trip';
 import { Database } from '@/types/supabase';
 import { PlaylistEmbed } from '@/components/trips/PlaylistEmbed';
-import { DB_FIELDS } from '@/utils/constants/database';
+import { FIELDS } from "@/utils/constants/database";
 
 interface User {
   id: string;

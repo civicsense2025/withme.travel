@@ -45,9 +45,9 @@ export default function SignupPage() {
   const supabase = createClient();
 
   // Get invitation token or referral code from URL
-  const invitationToken = searchParams.get('invitation');
-  const referralCode = searchParams.get('ref');
-  const redirectParam = searchParams.get('redirect');
+  const invitationToken = searchParams?.get('invitation');
+  const referralCode = searchParams?.get('ref');
+  const redirectParam = searchParams?.get('redirect');
 
   // Pre-fill email if coming from invitation
   useEffect(() => {
@@ -175,13 +175,13 @@ export default function SignupPage() {
       setIsGoogleLoading(true);
 
       // Get the redirect URL from search params or default to home
-      const redirectUrl = searchParams.get('redirect') || '/';
+      const redirectUrl = searchParams?.get('redirect') || '/';
 
       // Construct the callback URL base
       const callbackUrl = new URL('/auth/callback', window.location.origin);
 
       // Append existing search params from the signup page (like redirect, ref, invitation) to the callback
-      searchParams.forEach((value, key) => {
+      searchParams?.forEach((value, key) => {
         callbackUrl.searchParams.append(key, value);
       });
       // Ensure the intended final redirect is included if not already present

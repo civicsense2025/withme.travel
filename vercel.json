@@ -4,7 +4,7 @@
       "src": "package.json",
       "use": "@vercel/node",
       "config": {
-        "excludeFiles": "components/trips/trip-presence-indicator.tsx"
+        "excludeFiles": "components/trips/trip-presence-indicator.tsx, mobile/*"
       }
     }
   ]

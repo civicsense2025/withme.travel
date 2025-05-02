@@ -1,3 +1,4 @@
+import { ENUMS } from "@/utils/constants/database";
 import { getRouteHandlerClient } from '@/utils/supabase/unified';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { createClient } from '@supabase/supabase-js';
@@ -333,7 +334,7 @@ export async function POST(request: NextRequest) {
     const memberData = {
       trip_id: tripId,
       user_id: user.id,
-      role: TRIP_ROLES.ADMIN,
+      role: ENUMS.TRIP_ROLES.ADMIN,
       joined_at: new Date().toISOString(),
     };
 

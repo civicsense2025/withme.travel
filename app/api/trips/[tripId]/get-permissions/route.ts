@@ -1,10 +1,35 @@
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
-import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/database';
+import { TRIP_ROLES } from '@/utils/constants/status';
 
-// Use imported ENUMS directly
-const TRIP_ROLES = ENUMS.TRIP_ROLES;
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
+// Define field constants locally to avoid any import issues
+const FIELDS = {
+  TRIP_MEMBERS: {
+    ROLE: 'role',
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id'
+  },
+  TRIPS: {
+    CREATED_BY: 'created_by',
+    IS_PUBLIC: 'is_public',
+    ID: 'id'
+  }
+};
 
 export interface PermissionCheck {
   canView: boolean;
@@ -49,7 +74,7 @@ export async function GET(
 
     // Check if the user is a member of the trip
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select(FIELDS.TRIP_MEMBERS.ROLE)
       .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
@@ -67,7 +92,7 @@ export async function GET(
       is_public: boolean | null;
     };
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
+      .from(Tables.TRIPS)
       .select(`${FIELDS.TRIPS.CREATED_BY}, ${FIELDS.TRIPS.IS_PUBLIC}`)
       .eq(FIELDS.TRIPS.ID, tripId)
       .single<TripCreatorCheck>(); // Apply the type here

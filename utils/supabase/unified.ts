@@ -6,17 +6,27 @@
  * and Middleware within a Next.js App Router application.
  */
 import { unstable_cache } from 'next/cache';
-import { cookies } from 'next/headers';
-import {
-  createBrowserClient as _createBrowserClient,
-  createServerClient as _createServerClient,
-  type CookieOptions,
-  // SupabaseClient type is usually imported from the core package
-} from '@supabase/ssr';
+import { createBrowserClient as _createBrowserClient, createServerClient as _createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js'; // Import SupabaseClient type here
 import type { Database } from '@/types/database.types';
 import { NextRequest, NextResponse } from 'next/server'; // Changed NextResponse to regular import
 import { captureException } from '@sentry/nextjs'; // Assuming Sentry setup
+
+// Dynamically import next/headers to prevent client-side import issues
+let cookies: () => any;
+if (typeof window === 'undefined') {
+  // Server-side: Import next/headers
+  import('next/headers').then(mod => {
+    cookies = mod.cookies;
+  }).catch(err => {
+    console.error('[supabase] Error importing next/headers:', err);
+  });
+} else {
+  // Client-side: Create dummy function that throws an appropriate error
+  cookies = () => {
+    throw new Error('Cannot access cookies() from client components. Use getBrowserClient() instead.');
+  };
+}
 
 // --- Configuration ---
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

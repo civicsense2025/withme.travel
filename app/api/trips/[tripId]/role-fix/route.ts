@@ -1,6 +1,6 @@
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
-import { DB_TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +13,7 @@ export async function POST(
       return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
     }
 
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
     const {
       data: { user },
       error: authError,
@@ -26,9 +26,9 @@ export async function POST(
     // IMPORTANT: In a real app, do proper admin verification here
     // This is a very basic check that would need to be improved
     const { data: userProfile, error: profileError } = await supabase
-      .from(DB_TABLES.PROFILES)
-      .select(DB_FIELDS.PROFILES.IS_ADMIN)
-      .eq(DB_FIELDS.PROFILES.ID, user.id)
+      .from(TABLES.PROFILES)
+      .select(FIELDS.PROFILES.IS_ADMIN)
+      .eq(FIELDS.PROFILES.ID, user.id)
       .single();
 
     if (profileError || !userProfile?.is_admin) {
@@ -37,10 +37,10 @@ export async function POST(
 
     // Check if the user is a member of this trip
     const { data: member, error: memberError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from(TABLES.TRIP_MEMBERS)
+      .select(FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .single();
 
     if (memberError) {
@@ -49,9 +49,9 @@ export async function POST(
 
     // Get all members of the trip
     const { data: members, error: membersError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(`${DB_FIELDS.COMMON.ID}, ${DB_FIELDS.TRIP_MEMBERS.ROLE}`)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
+      .from(TABLES.TRIP_MEMBERS)
+      .select(`${FIELDS.COMMON.ID}, ${FIELDS.TRIP_MEMBERS.ROLE}`)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
 
     if (membersError) {
       return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 });
@@ -61,10 +61,10 @@ export async function POST(
     const membersToFix = members.filter((member) => {
       // Check for roles that don't match our expected values
       return ![
-        DB_ENUMS.TRIP_ROLES.ADMIN,
-        DB_ENUMS.TRIP_ROLES.EDITOR,
-        DB_ENUMS.TRIP_ROLES.CONTRIBUTOR,
-        DB_ENUMS.TRIP_ROLES.VIEWER,
+        ENUMS.TRIP_ROLES.ADMIN,
+        ENUMS.TRIP_ROLES.EDITOR,
+        ENUMS.TRIP_ROLES.CONTRIBUTOR,
+        ENUMS.TRIP_ROLES.VIEWER,
       ].includes(member.role);
     });
 
@@ -79,9 +79,9 @@ export async function POST(
     // Fix roles (this is a simple example that sets invalid roles to viewer)
     const updatePromises = membersToFix.map((member) => {
       return supabase
-        .from(DB_TABLES.TRIP_MEMBERS)
-        .update({ [DB_FIELDS.TRIP_MEMBERS.ROLE]: DB_ENUMS.TRIP_ROLES.VIEWER })
-        .eq(DB_FIELDS.COMMON.ID, member.id);
+        .from(TABLES.TRIP_MEMBERS)
+        .update({ [FIELDS.TRIP_MEMBERS.ROLE]: ENUMS.TRIP_ROLES.VIEWER })
+        .eq(FIELDS.COMMON.ID, member.id);
     });
 
     const results = await Promise.all(updatePromises);

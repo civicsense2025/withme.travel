@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes the missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
 
 // POST /api/trips/[tripId]/members/import
 // Imports members from a linked Splitwise group to the trip
 export async function POST(request: NextRequest, context: { params: Promise<{ tripId: string }> }) {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createServerSupabaseClient();
   const { data, error: authError } = await supabase.auth.getUser();
 
   if (authError || !data.user) {
@@ -46,10 +56,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
   try {
     // 1. Check if user has permission to manage this trip
     const { data: memberData, error: permissionError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select('role')
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, data.user.id)
+      .eq('trip_id', tripId)
+      .eq('user_id', data.user.id)
       .maybeSingle();
 
     if (permissionError || !memberData) {
@@ -126,10 +136,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
 
           // Check if user already exists in trip
           const { count, error: checkError } = await supabase
-            .from(TABLES.TRIP_MEMBERS)
+            .from(Tables.TRIP_MEMBERS)
             .select('*', { count: 'exact', head: true })
-            .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-            .eq(FIELDS.TRIP_MEMBERS.USER_ID, member.userId);
+            .eq('trip_id', tripId)
+            .eq('user_id', member.userId);
 
           if (checkError) {
             console.error(`Error checking membership for ${member.userId}:`, checkError);
@@ -146,7 +156,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
           }
 
           // Add user to trip
-          const { error: addError } = await supabase.from(TABLES.TRIP_MEMBERS).insert({
+          const { error: addError } = await supabase.from(Tables.TRIP_MEMBERS).insert({
             trip_id: tripId,
             user_id: member.userId,
             role,

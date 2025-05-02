@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createBrowserClient } from '@/utils/supabase/client';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,7 +20,7 @@ interface Destination {
 
 export default function TravelMapPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const supabase = createClient();
+  // Don't initialize the Supabase client during server-side rendering
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [visited, setVisited] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +40,9 @@ export default function TravelMapPage() {
       setError(null);
 
       try {
+        // Initialize the Supabase client only on the client side
+        const supabase = createBrowserClient();
+        
         // Fetch visited destinations
         const { data: visitedData, error: visitedError } = await supabase
           .from('user_travel')
@@ -73,7 +76,7 @@ export default function TravelMapPage() {
     if (!authLoading) {
       fetchData();
     }
-  }, [user, authLoading, supabase]);
+  }, [user, authLoading]);
 
   if (!googleMapsApiKey) {
     return (

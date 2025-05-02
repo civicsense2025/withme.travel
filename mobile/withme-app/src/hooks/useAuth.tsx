@@ -28,6 +28,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: any | null; data: any | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   googleSignIn: () => Promise<{ error: any | null }>;
 }
 
@@ -42,6 +43,7 @@ const defaultContextValue: AuthContextType = {
   signUp: async () => ({ error: new Error('AuthContext not initialized'), data: null }),
   signOut: async () => {},
   refreshSession: async () => {},
+  refreshProfile: async () => {},
   googleSignIn: async () => ({ error: new Error('AuthContext not initialized') }),
 };
 
@@ -292,6 +294,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     refreshSession,
+    refreshProfile: async () => {
+      if (user) {
+        debugLog(`Refreshing profile for user: ${user.id}`);
+        const profileData = await getProfile(user.id);
+        setProfile(profileData);
+        return profileData;
+      }
+      return null;
+    },
     googleSignIn,
   };
 

@@ -38,7 +38,7 @@ interface Trip {
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
+  const query = searchParams?.get('q') || '';
   const { addToSearchHistory } = useSearch();
   const { toast } = useToast();
   const searchPerformed = useRef(false);

@@ -2,33 +2,44 @@ import React, { useEffect, useState, useCallback, memo } from 'react';
 import {
   View,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { createSupabaseClient } from '../utils/supabase';
 import { Trip } from '../types/supabase';
-import { TABLES, COLUMNS } from '../constants/database';
+import { TABLES, COLUMNS, ENUM_VALUES } from '../constants/database';
 import * as dbUtils from '../utils/database';
 import { fetchWithCache, clearCacheEntry } from '../utils/cache';
 import { useTheme } from '../hooks/useTheme';
 import { Text, Button } from '../components/ui'; // Import themed components
 import { TripCard as ThemedTripCard } from '../components/TripCard'; // Import themed TripCard
+import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Dev flag for debugging (set to false in production)
 const DEBUG_MODE = __DEV__; // Keep debug mode for dev builds
 
 const MemoizedTripCard = memo(ThemedTripCard);
 
+// Section for trips grouped by month
+interface TripSection {
+  month: string;
+  title: string;
+  data: Trip[];
+}
+
 export default function HomeScreen({ navigation }: any) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
   const styles = createStyles(theme); // Create styles using theme
   const { user, signOut, profile, isLoading: authLoading } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [tripSections, setTripSections] = useState<TripSection[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +87,91 @@ export default function HomeScreen({ navigation }: any) {
   };
   // -----------------------------------------------------
 
+  // Group trips by month
+  const organizeTripsByMonth = (trips: Trip[]) => {
+    // Group trips by month
+    const tripsByMonth: Record<string, Trip[]> = {};
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    // Add special categories
+    tripsByMonth['Upcoming'] = [];
+    tripsByMonth['In Progress'] = [];
+    tripsByMonth['Planning'] = [];
+    tripsByMonth['Unscheduled'] = [];
+    tripsByMonth['Past'] = [];
+
+    const now = new Date();
+    
+    trips.forEach((trip) => {
+      // First categorize by status
+      if (trip.status === ENUM_VALUES.TRIP_STATUS.UPCOMING) {
+        tripsByMonth['Upcoming'].push(trip);
+      } 
+      else if (trip.status === ENUM_VALUES.TRIP_STATUS.IN_PROGRESS) {
+        tripsByMonth['In Progress'].push(trip);
+      }
+      else if (trip.status === ENUM_VALUES.TRIP_STATUS.PLANNING) {
+        tripsByMonth['Planning'].push(trip);
+      }
+      else if (trip.status === ENUM_VALUES.TRIP_STATUS.COMPLETED) {
+        tripsByMonth['Past'].push(trip);
+      }
+      else if (!trip.start_date) {
+        tripsByMonth['Unscheduled'].push(trip);
+      } 
+      else {
+        // Then also categorize by month for normal display
+        const startDate = new Date(trip.start_date);
+        const monthYear = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+
+        if (!tripsByMonth[monthYear]) {
+          tripsByMonth[monthYear] = [];
+        }
+
+        tripsByMonth[monthYear].push(trip);
+      }
+    });
+
+    // Convert to array format for sections
+    const sections: TripSection[] = Object.keys(tripsByMonth)
+      .filter((month) => tripsByMonth[month].length > 0) // Only include months with trips
+      .map((month) => {
+        // Set custom titles for special categories
+        let title = month;
+        if (month === 'Upcoming') title = '🗓️ Upcoming Trips';
+        else if (month === 'In Progress') title = '✈️ Current Trips';
+        else if (month === 'Planning') title = '📝 Planning';
+        else if (month === 'Unscheduled') title = '⏱️ Unscheduled Trips';
+        else if (month === 'Past') title = '📚 Past Trips';
+        else title = `Trips in ${month}`;
+        
+        return {
+          month,
+          title,
+          data: tripsByMonth[month],
+        };
+      });
+
+    // Sort sections in a logical order: In Progress, Upcoming, Planning, monthly sections, Past, Unscheduled
+    return sections.sort((a, b) => {
+      const order = {
+        'In Progress': 1,
+        'Upcoming': 2,
+        'Planning': 3,
+        'Past': 98,
+        'Unscheduled': 99
+      };
+      
+      const orderA = order[a.month as keyof typeof order] || 50;
+      const orderB = order[b.month as keyof typeof order] || 50;
+      
+      return orderA - orderB;
+    });
+  };
+
   const loadTrips = async (forceRefresh = false) => {
     try {
       debugLog('Loading trips started', { forceRefresh });
@@ -85,6 +181,7 @@ export default function HomeScreen({ navigation }: any) {
       if (!user?.id) {
         debugLog('No user ID found, skipping trip loading');
         setTrips([]);
+        setTripSections([]);
         setIsLoading(false);
         return;
       }
@@ -99,21 +196,103 @@ export default function HomeScreen({ navigation }: any) {
       try {
         const fetcher = async () => {
           debugLog(`Fetching fresh trips for user: ${user.id}`);
-          const tripsData = await dbUtils.getByForeignKey(
-            TABLES.TRIPS,
-            COLUMNS.CREATED_BY,
-            user.id,
-            { column: COLUMNS.UPDATED_AT, ascending: false }
-          );
-          debugLog('Fresh trips fetched', { count: tripsData?.length || 0 });
-          return (tripsData as unknown as Trip[]) || [];
+          
+          // Get trips using the available database utility
+          const supabase = createSupabaseClient();
+          
+          // Add a timeout for the Supabase query
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Query timeout after 15 seconds')), 15000);
+          });
+          
+          // Use raw query for more flexibility
+          const queryPromise = supabase
+            .from(TABLES.TRIPS)
+            .select(`
+              id, 
+              name, 
+              description, 
+              start_date, 
+              end_date, 
+              destination_name, 
+              destination_id, 
+              cover_image_url, 
+              trip_emoji, 
+              status, 
+              member_count, 
+              travelers_count,
+              privacy_setting
+            `)
+            .eq(COLUMNS.CREATED_BY, user.id)
+            .order(COLUMNS.START_DATE, { ascending: true });
+          
+          // Race between the query and the timeout
+          const { data: tripsData, error } = await Promise.race([
+            queryPromise,
+            timeoutPromise.then(() => {
+              throw new Error('Query timeout after 15 seconds');
+            })
+          ]) as any;
+          
+          if (error) {
+            debugLog('Error fetching trips:', error);
+            throw error;
+          }
+          
+          // If we get here but tripsData is null/undefined, return an empty array
+          if (!tripsData) {
+            debugLog('No trips data returned (null/undefined)');
+            return [];
+          }
+          
+          // Sort the trips in memory for better organization
+          const sortedTrips = sortTripsByStatus(tripsData as Trip[]);
+          
+          debugLog('Fresh trips fetched', { count: sortedTrips?.length || 0 });
+          return sortedTrips || [];
         };
 
-        const tripsData = await fetchWithCache(cacheKey, fetcher);
-        debugLog('Trips loaded (from cache or fresh)', { count: tripsData.length });
-        if (tripsData.length > 0) debugLog('Sample trip data:', tripsData[0]);
+        // Add a timeout for the entire fetch with cache operation
+        const fetchWithTimeout = async () => {
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Fetch with cache timeout after ‎30 seconds')), 30000);
+          });
+          
+          return Promise.race([
+            fetchWithCache(cacheKey, fetcher),
+            timeoutPromise
+          ]);
+        };
 
-        setTrips(tripsData);
+        try {
+          const tripsData = await fetchWithTimeout() as Trip[];
+          debugLog('Trips loaded (from cache or fresh)', { count: tripsData.length });
+          if (tripsData.length > 0) debugLog('Sample trip data:', tripsData[0]);
+
+          setTrips(tripsData);
+          
+          // Organize trips by month
+          const sections = organizeTripsByMonth(tripsData);
+          setTripSections(sections);
+        } catch (timeoutError) {
+          debugLog('Timeout error:', timeoutError);
+          setError(`Request timed out. Please check your connection and try again.`);
+          
+          // Try to load from cache as a fallback
+          try {
+            const cachedItem = await AsyncStorage.getItem(cacheKey);
+            if (cachedItem) {
+              const entry = JSON.parse(cachedItem);
+              debugLog('Using expired cache as fallback after timeout');
+              
+              setTrips(entry.data);
+              const sections = organizeTripsByMonth(entry.data);
+              setTripSections(sections);
+            }
+          } catch (cacheError) {
+            debugLog('Cache fallback error:', cacheError);
+          }
+        }
       } catch (queryError) {
         debugLog('Error loading trips (cache/fetch):', queryError);
         setError(
@@ -121,12 +300,10 @@ export default function HomeScreen({ navigation }: any) {
         );
       }
     } catch (error) {
-      debugLog('Outer error in loadTrips:', error);
-      setError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      debugLog('Exception in loadTrips:', error);
+      setError(`An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      debugLog('Finished loading trips');
       setIsLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -225,27 +402,67 @@ export default function HomeScreen({ navigation }: any) {
     [navigation]
   );
 
-  // Use the themed TripCard component
-  const renderTripItem = useCallback(
-    ({ item }: { item: Trip }) => (
-      <MemoizedTripCard
-        id={item.id}
-        name={item.name}
-        description={item.description}
-        imageUrl={item.image_url || null} // Pass image URL
-        dates={{ start: item.start_date, end: item.end_date }}
-        location={item.destination_city || undefined} // Pass location
-        onPress={handleNavigateToTripDetail}
-        style={styles.tripCardItem} // Add specific margin/padding if needed
-      />
-    ),
-    [handleNavigateToTripDetail, styles.tripCardItem]
-  );
-
   const handleNavigateToCreateTrip = useCallback(() => {
     debugLog('Navigating to create trip screen');
     navigation.navigate('CreateTripStep1');
   }, [navigation]);
+
+  // Render a trip section with horizontal carousel
+  const renderTripSection = useCallback(
+    ({ section }: { section: TripSection }) => {
+      if (section.data.length === 0) return null;
+
+      return (
+        <View style={styles.tripSection}>
+          <Text variant="h3" weight="bold" style={styles.sectionTitle}>
+            {section.title}
+          </Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tripCarousel}
+          >
+            {section.data.map((trip) => (
+              <View key={trip.id} style={styles.tripCardContainer}>
+                <MemoizedTripCard
+                  id={trip.id}
+                  name={trip.name}
+                  description={trip.description}
+                  imageUrl={trip.image_url || null}
+                  dates={{
+                    start: trip.start_date,
+                    end: trip.end_date,
+                  }}
+                  location={trip.destination_city || undefined}
+                  onPress={handleNavigateToTripDetail}
+                  style={styles.tripCard}
+                />
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={styles.createTripCard}
+              onPress={handleNavigateToCreateTrip}
+            >
+              <View style={styles.createTripCardInner}>
+                <Feather name="plus-circle" size={36} color={theme.colors.primary} />
+                <Text
+                  variant="body1"
+                  weight="medium"
+                  color="primary"
+                  style={{ marginTop: theme.spacing['2'] }}
+                >
+                  Create New Trip
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      );
+    },
+    [handleNavigateToTripDetail, handleNavigateToCreateTrip, theme]
+  );
 
   // Updated Empty State using themed components
   const renderEmptyState = useCallback(
@@ -270,6 +487,33 @@ export default function HomeScreen({ navigation }: any) {
     [handleNavigateToCreateTrip, styles, theme, DEBUG_MODE, renderEnhancedDebugView]
   );
 
+  // Add this new helper function for sorting trips by status
+  const sortTripsByStatus = (trips: Trip[]) => {
+    const statusOrder = {
+      [ENUM_VALUES.TRIP_STATUS.IN_PROGRESS]: 1,
+      [ENUM_VALUES.TRIP_STATUS.UPCOMING]: 2,
+      [ENUM_VALUES.TRIP_STATUS.PLANNING]: 3,
+      [ENUM_VALUES.TRIP_STATUS.COMPLETED]: 4,
+      [ENUM_VALUES.TRIP_STATUS.CANCELLED]: 5
+    };
+    
+    return [...trips].sort((a, b) => {
+      // First sort by status
+      const statusA = a.status ? statusOrder[a.status as keyof typeof statusOrder] || 99 : 99;
+      const statusB = b.status ? statusOrder[b.status as keyof typeof statusOrder] || 99 : 99;
+      
+      if (statusA !== statusB) {
+        return statusA - statusB;
+      }
+      
+      // Then sort by date if statuses are the same
+      if (!a.start_date) return 1;  // No date goes last
+      if (!b.start_date) return -1; // No date goes last
+      
+      return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+    });
+  };
+
   return (
     <View style={styles.container}>
       {renderDebugInfo()}
@@ -284,10 +528,6 @@ export default function HomeScreen({ navigation }: any) {
 
       {/* Main Content Area */}
       <View style={styles.contentContainer}>
-        <Text variant="h2" weight="bold" style={styles.title}>
-          Your Trips
-        </Text>
-
         {isLoading && !refreshing ? (
           <View style={styles.centeredMessageContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -297,7 +537,7 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         ) : error ? (
           <View style={styles.centeredMessageContainer}>
-            <Text variant="body1" color="destructive" style={{ textAlign: 'center' }}>
+            <Text variant="body1" color="custom" customColor={theme.colors.destructive} style={{ textAlign: 'center' }}>
               {error}
             </Text>
             <Button
@@ -309,16 +549,8 @@ export default function HomeScreen({ navigation }: any) {
             {DEBUG_MODE && renderEnhancedDebugView()}
           </View>
         ) : (
-          <FlatList
-            data={trips}
-            keyExtractor={(item) => item.id}
-            renderItem={renderTripItem}
-            ListEmptyComponent={renderEmptyState}
-            contentContainerStyle={styles.listContentContainer}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={5}
-            windowSize={5}
-            initialNumToRender={5}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -327,7 +559,21 @@ export default function HomeScreen({ navigation }: any) {
                 tintColor={theme.colors.primary}
               />
             }
-          />
+          >
+            <Text variant="h2" weight="bold" style={styles.mainTitle}>
+              Your Trips
+            </Text>
+
+            {tripSections.length > 0 ? (
+              tripSections.map((section) => (
+                <View key={section.month}>
+                  {renderTripSection({ section })}
+                </View>
+              ))
+            ) : (
+              renderEmptyState()
+            )}
+          </ScrollView>
         )}
       </View>
     </View>
@@ -353,11 +599,14 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     },
     contentContainer: {
       flex: 1,
-      paddingHorizontal: theme.spacing['4'],
     },
-    title: {
-      marginTop: theme.spacing['4'],
-      marginBottom: theme.spacing['4'],
+    scrollContent: {
+      paddingBottom: 24,
+    },
+    mainTitle: {
+      paddingHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 4,
     },
     centeredMessageContainer: {
       flex: 1,
@@ -365,11 +614,38 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       alignItems: 'center',
       padding: theme.spacing['5'],
     },
-    listContentContainer: {
-      paddingBottom: theme.spacing['8'], // Ensure space at the bottom
+    tripSection: {
+      marginBottom: 24,
     },
-    tripCardItem: {
-      marginBottom: theme.spacing['4'], // Space between cards
+    sectionTitle: {
+      paddingHorizontal: 16,
+      marginBottom: 12,
+    },
+    tripCarousel: {
+      paddingLeft: 16,
+      paddingRight: 8,
+    },
+    tripCardContainer: {
+      width: 280,
+      marginRight: 8,
+    },
+    tripCard: {
+      height: 180,
+    },
+    createTripCard: {
+      width: 150,
+      height: 180,
+      marginRight: 16,
+    },
+    createTripCardInner: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.colors.card,
+      borderRadius: theme.borderRadius.lg,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderStyle: 'dashed',
     },
     emptyStateContainer: {
       marginTop: theme.spacing['8'],

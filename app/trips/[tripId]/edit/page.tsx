@@ -1,6 +1,21 @@
 import { getServerComponentClient, getServerSession } from '@/utils/supabase/unified';
-import { DB_TABLES, DB_FIELDS, TripRole } from '@/utils/constants/database';
+import { TABLES, DB_FIELDS } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { PAGE_ROUTES } from '@/utils/constants/routes';
+import { TRIP_ROLES, type TripRole } from '@/utils/constants/status';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { redirect } from 'next/navigation';
@@ -78,10 +93,10 @@ export default async function EditTripPage({ params }: PageProps) {
 
     // Check if user has permission to edit this trip
     const { data: tripMember, error: tripMemberError } = await supabase
-      .from(DB_TABLES.TRIP_MEMBERS)
-      .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
+      .from(Tables.TRIP_MEMBERS)
+      .select(FIELDS.TRIP_MEMBERS.ROLE)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
       .single();
 
     if (tripMemberError || !tripMember) {
@@ -90,13 +105,13 @@ export default async function EditTripPage({ params }: PageProps) {
     }
 
     // Check if user has editor/organizer role
-    if (![TripRole.EDITOR, TripRole.ADMIN].includes(tripMember.role)) {
+    if (![TRIP_ROLES.EDITOR, TRIP_ROLES.ADMIN].includes(tripMember.role)) {
       redirect(`/trips/${tripId}`);
     }
 
     // Fetch trip data with destination and tags
     const { data: trip, error: tripError } = (await supabase
-      .from(DB_TABLES.TRIPS)
+      .from(Tables.TRIPS)
       .select(
         `
         id, name, start_date, end_date, destination_id, cover_image_url, privacy_setting,
@@ -110,7 +125,7 @@ export default async function EditTripPage({ params }: PageProps) {
         )
       `
       )
-      .eq(DB_FIELDS.COMMON.ID, tripId)
+      .eq(FIELDS.COMMON.ID, tripId)
       .single()) as { data: FetchedTripData | null; error: any };
 
     if (tripError || !trip) {

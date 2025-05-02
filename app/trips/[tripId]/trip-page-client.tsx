@@ -38,6 +38,20 @@ import {
 // UI Components
 import { MemberProfile } from '@/components/members-tab';
 import { TABLES } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { formatDate } from '@/lib/utils';
 import { type TripRole } from '@/utils/constants/status';
 import { Profile } from '@/types/profile';
@@ -905,7 +919,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         // await refetchTrip(); // Or maybe just refetch itinerary/sections?
       }
     },
-    [tripId, toast, refetchTrip] // Add dependencies (refetchTrip might be needed for revert)
+    [tripId, toast] // Remove refetchTrip as it's not used in the function body
   );
 
   // --- Itinerary Item Callbacks --- //
@@ -1407,14 +1421,9 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
     handleDeleteItem,
     handleVote,
     handleItemStatusChange,
-    handleAddItem,
-    handleEditItem,
-    refetchItinerary,
-    refetchTrip,
-    refetchMembers,
     handleSectionReorder,
-    accessRequests,
-    handleManageAccessRequest,
+    refetchItinerary,
+    refetchTrip
   ]);
 
   // --- Rendering --- //

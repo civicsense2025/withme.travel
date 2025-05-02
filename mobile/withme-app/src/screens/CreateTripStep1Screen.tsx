@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
-import { ENUM_VALUES } from '../constants/database';
+import { ENUM_VALUES, COLUMNS } from '../constants/database';
 
 // Emoji picker data - common travel related emojis
 const emojiOptions = [
@@ -77,13 +77,13 @@ export default function CreateTripStep1Screen() {
   const handleNext = () => {
     if (validate()) {
       const tripData = {
-        name: tripName.trim(),
-        trip_emoji: selectedEmoji,
-        description: description.trim() || null,
-        status: ENUM_VALUES.TRIP_STATUS.PLANNING,
-        created_by: user?.id,
-        is_public: false,
-        privacy_setting: ENUM_VALUES.PRIVACY_SETTING.PRIVATE,
+        [COLUMNS.NAME]: tripName.trim(),
+        [COLUMNS.TRIP_EMOJI]: selectedEmoji,
+        [COLUMNS.DESCRIPTION]: description.trim() || null,
+        [COLUMNS.STATUS]: ENUM_VALUES.TRIP_STATUS.PLANNING,
+        [COLUMNS.CREATED_BY]: user?.id,
+        [COLUMNS.IS_PUBLIC]: false,
+        [COLUMNS.PRIVACY_SETTING]: ENUM_VALUES.PRIVACY_SETTING.PRIVATE,
       };
 
       navigation.navigate('CreateTripStep2' as never, { tripData } as never);

@@ -12,7 +12,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import * as dbUtils from '../utils/database';
-import { TABLES, ENUM_VALUES } from '../constants/database';
+import { TABLES, ENUM_VALUES, COLUMNS } from '../constants/database';
 import { Trip } from '../types/supabase';
 import { MainStackParamList } from '../navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -69,11 +69,11 @@ export default function CreateTripStep3Screen() {
       // Prepare trip data
       const newTripData: Partial<Trip> = {
         ...tripData,
-        is_public: isPublic,
-        privacy_setting: privacySetting,
-        created_by: user!.id,
-        likes_count: 0,
-        view_count: 0,
+        [COLUMNS.IS_PUBLIC]: isPublic,
+        [COLUMNS.PRIVACY_SETTING]: privacySetting,
+        [COLUMNS.CREATED_BY]: user!.id,
+        [COLUMNS.LIKES_COUNT]: 0,
+        [COLUMNS.VIEW_COUNT]: 0,
       };
 
       // Specify the return type for createRecord if possible in dbUtils

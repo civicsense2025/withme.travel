@@ -12,23 +12,34 @@ import { z } from 'zod';
 import { ApiError, formatErrorResponse } from '@/lib/api-utils';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
-import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
-import type { Database, TripRole } from '@/types/database.types';
+import { TABLES } from '@/utils/constants/database';
+import { TRIP_ROLES } from '@/utils/constants/status';
+import type { Database } from '@/types/database.types';
+import type { TripRole } from '@/types/trip';
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 
-// Define TripRole based on ENUMS if not imported
-// type TripRole = (typeof ENUMS.TRIP_ROLES)[keyof typeof ENUMS.TRIP_ROLES];
+// Define a more complete type for TABLES that includes the missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  ITINERARY_SECTIONS: string;
+  ITINERARY_ITEMS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
 
 // Helper function to check user membership and role
 async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  // Use the imported or defined TripRole type
+  // Use the imported TripRole type
   allowedRoles: TripRole[] = ['admin', 'editor', 'viewer', 'contributor']
 ) {
   const { data: membership, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
+    .from(Tables.TRIP_MEMBERS)
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)
@@ -41,7 +52,7 @@ async function checkTripAccess(
 
   if (!membership) {
     const { data: tripData, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
+      .from(Tables.TRIPS)
       .select('privacy_setting')
       .eq('id', tripId)
       .single();
@@ -51,15 +62,15 @@ async function checkTripAccess(
       throw new ApiError('Could not verify trip access.', 500);
     }
 
-    if (tripData?.privacy_setting === ENUMS.TRIP_PRIVACY_SETTING.PUBLIC) {
-      // Use ENUMS for comparison
+    // Use TRIP_ROLES directly
+    if (tripData?.privacy_setting === 'public') {
       const isReadOnlyRequest =
-        allowedRoles.length === 1 && allowedRoles[0] === ENUMS.TRIP_ROLES.VIEWER;
+        allowedRoles.length === 1 && allowedRoles[0] === TRIP_ROLES.VIEWER;
       if (isReadOnlyRequest) {
         // Include hasAccess: true
         return {
           hasAccess: true,
-          role: ENUMS.TRIP_ROLES.VIEWER as TripRole,
+          role: TRIP_ROLES.VIEWER as TripRole,
         };
       }
     }
@@ -181,16 +192,16 @@ export async function GET(
       `[API /trips/${tripId}/itinerary] Access granted to user ${userId} with role ${access.role}`
     );
 
-    // Fetch sections and items (using correct TABLES constants)
+    // Fetch sections and items (using correct DB_TABLES constants)
     const [{ data: sections, error: sectionsError }, { data: items, error: itemsError }] =
       await Promise.all([
         supabase
-          .from(TABLES.ITINERARY_SECTIONS)
+          .from(Tables.ITINERARY_SECTIONS)
           .select('*')
           .eq('trip_id', tripId)
           .order('position', { ascending: true }),
         supabase
-          .from(TABLES.ITINERARY_ITEMS)
+          .from(Tables.ITINERARY_ITEMS)
           .select('*')
           .eq('trip_id', tripId)
           .order('position', { ascending: true }),
@@ -238,13 +249,12 @@ export async function POST(
 
     if (type === 'item') {
       const validatedData = createItineraryItemSchema.parse(payload);
-
       const { data: maxPositionData, error: positionError } = await supabase
-        .from(TABLES.ITINERARY_ITEMS)
-        .select('position') // Use FIELDS.ITINERARY_ITEMS.POSITION
-        .eq('trip_id', tripId) // Use FIELDS.ITINERARY_ITEMS.TRIP_ID
-        .is('section_id', validatedData.section_id ?? null) // Use is for null check
-        .order('position', { ascending: false }) // Use FIELDS.ITINERARY_ITEMS.POSITION
+        .from(Tables.ITINERARY_ITEMS)
+        .select('position')
+        .eq('trip_id', tripId)
+        .is('section_id', validatedData.section_id ?? null)
+        .order('position', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -254,7 +264,7 @@ export async function POST(
       const nextPosition = (maxPositionData?.position ?? -1) + 1;
 
       const { data: newItem, error: insertError } = await supabase
-        .from(TABLES.ITINERARY_ITEMS)
+        .from(Tables.ITINERARY_ITEMS)
         .insert([
           { ...validatedData, trip_id: tripId, created_by: user.id, position: nextPosition },
         ])
@@ -271,10 +281,10 @@ export async function POST(
       const validatedData = createItinerarySectionSchema.parse(payload);
 
       const { data: maxPositionData, error: positionError } = await supabase
-        .from(TABLES.ITINERARY_SECTIONS)
-        .select('position') // Use FIELDS.ITINERARY_SECTIONS.POSITION
-        .eq('trip_id', tripId) // Use FIELDS.ITINERARY_SECTIONS.TRIP_ID
-        .order('position', { ascending: false }) // Use FIELDS.ITINERARY_SECTIONS.POSITION
+        .from(Tables.ITINERARY_SECTIONS)
+        .select('position') // Use DB_FIELDS.ITINERARY_SECTIONS.POSITION
+        .eq('trip_id', tripId) // Use DB_FIELDS.ITINERARY_SECTIONS.TRIP_ID
+        .order('position', { ascending: false }) // Use DB_FIELDS.ITINERARY_SECTIONS.POSITION
         .limit(1)
         .maybeSingle();
 
@@ -284,7 +294,7 @@ export async function POST(
       const nextPosition = (maxPositionData?.position ?? -1) + 1;
 
       const { data: newSection, error: insertError } = await supabase
-        .from(TABLES.ITINERARY_SECTIONS)
+        .from(Tables.ITINERARY_SECTIONS)
         .insert([{ ...validatedData, trip_id: tripId, position: nextPosition }])
         .select('*')
         .single();
@@ -322,7 +332,7 @@ export async function DELETE(
 ) {
   try {
     const paramsResolved = await params;
-    const { tripId, itemId } = paramsResolved;
+    const { tripId, itemId } = await paramsResolved;
 
     if (!tripId || !itemId) {
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
@@ -344,7 +354,7 @@ export async function DELETE(
 
     // Delete the item
     const { error: deleteError } = await supabase
-      .from(TABLES.ITINERARY_ITEMS)
+      .from(Tables.ITINERARY_ITEMS)
       .delete()
       .eq('id', itemId)
       .eq('trip_id', tripId);

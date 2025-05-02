@@ -1,44 +1,55 @@
-import { createBrowserClient } from '@supabase/ssr';
+/**
+ * Client-side Supabase utilities
+ * This file is safe to import from client components
+ */
+
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
-// Create a cached client instance to avoid creating a new one on every call
-let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null;
+// Check for environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables (URL or Anon Key).');
+}
+
+// Create a singleton instance
+let clientSingleton: ReturnType<typeof createSupabaseClient<Database>> | null = null;
 
 /**
- * Creates a Supabase client for browser environments using @supabase/ssr.
- * Returns a cached instance if available to improve performance.
- *
- * @returns A typed Supabase client for browser use
+ * Creates a Supabase client for use in browser environments
  */
 export function createClient() {
-  // Only create a new client if we're in the browser and don't have one yet
-  if (typeof window !== 'undefined' && !clientInstance) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-
-    clientInstance = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-    });
+  if (typeof window === 'undefined') {
+    throw new Error('createClient should only be used in client components.');
   }
-
-  return clientInstance;
+  
+  if (clientSingleton) {
+    return clientSingleton;
+  }
+  
+  // Use non-null assertions since we've already checked the values
+  clientSingleton = createSupabaseClient<Database>(supabaseUrl!, supabaseAnonKey!);
+  return clientSingleton;
 }
 
 /**
- * Reset the client instance, forcing a new one to be created on next call.
- * Use this when you need a fresh client, such as after logout.
+ * Creates a browser client (alias for createClient)
  */
-export function resetClient() {
-  clientInstance = null;
+export const createBrowserClient = createClient;
+
+/**
+ * Resets the client singleton (useful for testing or logout)
+ */
+export function resetBrowserClient() {
+  clientSingleton = null;
 }
+
+// Also provide a reset function with the old name for compatibility
+export const resetClient = resetBrowserClient;
+
+export default createClient;
 
 /**
  * Attempts to repair auth state when client and server are out of sync.
@@ -61,13 +72,13 @@ export async function repairAuthState(): Promise<boolean> {
     const { data, error } = await client.auth.refreshSession();
 
     if (error || !data.session) {
-      resetClient();
+      resetBrowserClient();
       return false;
     }
 
     return true;
   } catch (e) {
-    resetClient();
+    resetBrowserClient();
     return false;
   }
 }
@@ -75,9 +86,9 @@ export async function repairAuthState(): Promise<boolean> {
 /**
  * Export type for convenience
  */
-export type SupabaseBrowserClient = ReturnType<typeof createBrowserClient<Database>>;
+export type SupabaseBrowserClient = ReturnType<typeof createSupabaseClient<Database>>;
 
 /**
- * Alias for resetClient for backward compatibility
+ * Alias for resetBrowserClient for backward compatibility
  */
-export const resetAuthState = resetClient;
+export const resetAuthState = resetBrowserClient;

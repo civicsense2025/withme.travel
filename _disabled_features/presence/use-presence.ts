@@ -6,7 +6,21 @@ import { AuthContext } from '@/components/auth-provider';
 import { useContext } from 'react';
 import _ from 'lodash';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
+import { TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { PresenceStatus, CursorPosition, UserPresence, ConnectionState } from '@/types/presence';
 import { RealtimePresence } from '@supabase/supabase-js';
 import { throttle, debounce } from 'lodash';
@@ -238,14 +252,14 @@ export function usePresence(
       if (presenceIdRef.current) {
         // Update existing record
         result = await supabaseRef.current
-          .from(TABLES.USER_PRESENCE)
+          .from(Tables.USER_PRESENCE)
           .update(presenceData)
           .eq(FIELDS.COMMON.ID, presenceIdRef.current)
           .select(FIELDS.COMMON.ID)
           .single();
       } else {
         result = await supabaseRef.current
-          .from(TABLES.USER_PRESENCE)
+          .from(Tables.USER_PRESENCE)
           .insert(presenceData)
           .select(FIELDS.COMMON.ID)
           .single();
@@ -273,7 +287,7 @@ export function usePresence(
     if (!supabaseRef.current || !tripId) return;
     try {
       const { data, error: fetchError } = await supabaseRef.current
-        .from(TABLES.USER_PRESENCE)
+        .from(Tables.USER_PRESENCE)
         .select('*')
         .eq('trip_id', tripId)
         .in('status', [
@@ -334,7 +348,7 @@ export function usePresence(
 
       // Attempt to get existing presence record
       const { data: existingPresence } = await supabaseRef.current
-        .from(TABLES.USER_PRESENCE)
+        .from(Tables.USER_PRESENCE)
         .select('id, status')
         .eq('user_id', user.id)
         .eq('trip_id', tripId)
@@ -748,7 +762,7 @@ export function usePresence(
             try {
               console.log(`Attempting DB offline update for presence ${localPresenceIdRef}...`);
               const { error: dbError } = await supabaseRef.current
-                .from(TABLES.USER_PRESENCE)
+                .from(Tables.USER_PRESENCE)
                 .update({
                   status: ENUMS.PRESENCE_STATUS.OFFLINE,
                   editing_item_id: null,
@@ -800,7 +814,7 @@ export function usePresence(
                 `Failsafe attempting DB offline update for presence ${localPresenceIdRef}...`
               );
               await supabaseRef.current
-                .from(TABLES.USER_PRESENCE)
+                .from(Tables.USER_PRESENCE)
                 .update({
                   status: ENUMS.PRESENCE_STATUS.OFFLINE,
                   editing_item_id: null,

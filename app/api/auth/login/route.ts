@@ -55,7 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { email, password } = sanitizeAuthCredentials(body);
 
     // Create Supabase client for authentication
-    const supabase = createApiClient(cookies());
+    const supabase = createServerSupabaseClient(cookies());
 
     // Attempt to sign in
     const { data, error } = await supabase.auth.signInWithPassword({

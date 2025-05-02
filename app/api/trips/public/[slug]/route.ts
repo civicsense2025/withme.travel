@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { calculateTravelTimes } from '@/lib/mapbox';
 import { type TravelTimesResult } from '@/lib/mapbox';
 
@@ -111,7 +111,7 @@ export async function GET(
   }
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
 
     // Fetch trip details with the given slug that is public or shared
     const { data: trip, error: tripError } = await supabase

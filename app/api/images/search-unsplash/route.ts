@@ -18,9 +18,9 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('query');
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const perPage = parseInt(searchParams.get('per_page') || '20', 10);
+  const query = searchParams?.get('query');
+  const page = parseInt(searchParams?.get('page') || '1', 10);
+  const perPage = parseInt(searchParams?.get('per_page') || '20', 10);
 
   if (!query) {
     return NextResponse.json({ error: 'Search query is required' }, { status: 400 });

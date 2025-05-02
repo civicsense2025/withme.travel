@@ -1,7 +1,7 @@
 // Server-side database functions that use the Supabase server client
 // These should only be used in API routes or server components
 
-import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 // ----- NOTE ON TYPE HANDLING -----
 // This file uses an untyped Supabase client to work around complex TypeScript issues.
@@ -94,7 +94,7 @@ interface VoteResponse {
 
 // Trip-related functions
 export async function getTrips(): Promise<TripWithMembers[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trips_with_member_count');
@@ -108,7 +108,7 @@ export async function getTrips(): Promise<TripWithMembers[]> {
 }
 
 export async function getTripById(id: string): Promise<TripWithMembers | null> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   try {
     // Use SQL query to avoid TypeScript issues
@@ -138,7 +138,7 @@ export async function getTripById(id: string): Promise<TripWithMembers | null> {
 }
 
 export async function getTripMembers(tripId: string): Promise<TripMemberWithUser[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trip_members', { trip_id: tripId });
@@ -156,7 +156,7 @@ export async function getItineraryItems(
   tripId: string,
   userId?: string
 ): Promise<ItineraryItemWithVotes[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_itinerary_items_with_votes', {
@@ -176,7 +176,7 @@ export async function getItineraryItems(
  * Get the trip ID for an itinerary item
  */
 async function getItemTripId(itemId: string): Promise<string> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase.rpc('get_item_trip_id', { item_id: itemId });
 
@@ -202,7 +202,7 @@ async function getItemTripId(itemId: string): Promise<string> {
  * Get the vote count for an itinerary item
  */
 async function getItemVoteCount(itemId: string): Promise<number> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase.rpc('get_item_vote_count', { item_id: itemId });
 
@@ -236,7 +236,7 @@ export async function castVote(
   userId: string,
   voteType: 'up' | 'down' | null
 ): Promise<VoteResponse> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase.rpc('cast_vote', {
     item_id: itemId,
@@ -260,7 +260,7 @@ export async function castVote(
  * @returns An array of expense categories with amounts
  */
 export async function getExpensesByCategory(tripId: string): Promise<ExpenseCategory[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase.rpc('get_expenses_by_category', { trip_id: tripId });
 

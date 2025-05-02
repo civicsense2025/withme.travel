@@ -31,7 +31,7 @@ export default function LoginPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Get redirect path and decode safely
-  const redirectPath = searchParams.get('redirect') || '/';
+  const redirectPath = searchParams?.get('redirect') || '/';
   const [safeRedirectPath, setSafeRedirectPath] = useState('/');
 
   // Process the redirect path safely
@@ -74,7 +74,7 @@ export default function LoginPage() {
   // Process URL parameters - message and login context
   useEffect(() => {
     // Handle message from query params
-    const message = searchParams.get('message');
+    const message = searchParams?.get('message');
     if (message) {
       setMessage(message);
 
@@ -88,7 +88,7 @@ export default function LoginPage() {
     }
 
     // Detect login context from redirect path
-    const redirectParam = searchParams.get('redirect');
+    const redirectParam = searchParams?.get('redirect');
     if (redirectParam) {
       if (redirectParam.includes('/trips/create')) {
         setLoginContext('to create a new trip');

@@ -1,3 +1,18 @@
+import { DB_ENUMS } from '@/utils/constants/database';
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
@@ -33,7 +48,7 @@ async function checkTripAccess(
   ]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(LOCAL_TABLES.TRIP_MEMBERS) // Use local constant
+    .from(LOCAL_Tables.TRIP_MEMBERS) // Use local constant
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)

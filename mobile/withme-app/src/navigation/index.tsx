@@ -36,6 +36,11 @@ import CreateTripStep3Screen from '../screens/CreateTripStep3Screen';
 import ItinerariesScreen from '../screens/ItinerariesScreen';
 import EditTripScreen from '../screens/EditTripScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import AppearanceScreen from '../screens/AppearanceScreen';
+import PrivacyScreen from '../screens/PrivacyScreen';
+import { UIShowcaseScreen } from '../screens/UIShowcaseScreen';
 
 // Import theme
 import { lightTheme, darkTheme } from '../constants/theme'; // Correct import for themes
@@ -68,6 +73,11 @@ export type MainStackParamList = {
   Debug: undefined;
   Diagnostic: undefined;
   Settings: undefined;
+  EditProfile: undefined;
+  Notifications: undefined;
+  Appearance: undefined;
+  Privacy: undefined;
+  UIShowcase: undefined;
 };
 
 // Define Auth stack params
@@ -268,12 +278,48 @@ function MainNavigator() {
         }}
       />
       <MainStack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <MainStack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <MainStack.Screen
+        name="Appearance"
+        component={AppearanceScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <MainStack.Screen
+        name="Privacy"
+        component={PrivacyScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <MainStack.Screen
         name="Debug"
         component={DebugScreen}
         options={{
           title: 'Debug Info',
           headerBackTitle: 'Back',
           presentation: 'modal',
+        }}
+      />
+      <MainStack.Screen
+        name="UIShowcase"
+        component={UIShowcaseScreen}
+        options={{
+          title: 'UI Components',
+          headerShown: true,
         }}
       />
     </MainStack.Navigator>

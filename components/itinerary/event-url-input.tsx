@@ -15,6 +15,7 @@ import { Loader2, LinkIcon, Clock, MapPin, Calendar, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { ScrapedUrlData, DisplayItineraryItem } from '@/types/itinerary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Image from 'next/image';
 
 interface EventUrlInputProps {
   tripId: string;
@@ -203,10 +204,11 @@ export function EventUrlInput({ tripId, userId, onEventAdded, dayNumber }: Event
             )}
             {scrapedData.imageUrl && (
               <div className="relative h-40 w-full mb-4 rounded-md overflow-hidden">
-                <img
+                <Image
                   src={scrapedData.imageUrl}
                   alt={scrapedData.title || 'Event image'}
-                  className="object-cover w-full h-full"
+                  fill
+                  className="object-cover"
                 />
               </div>
             )}

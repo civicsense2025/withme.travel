@@ -106,33 +106,15 @@ export function RelatedItinerariesWidget({
     );
   }
 
-  // If error, show error message
+  // If error, return null instead of showing an error message
   if (error) {
-    return (
-      <div className={`py-4 ${className}`}>
-        <h2 className="text-xl font-bold lowercase mb-4">Related Itineraries</h2>
-        <p className="text-muted-foreground text-sm">Could not load related itineraries</p>
-      </div>
-    );
+    // Just return null to hide the widget completely
+    return null;
   }
 
-  // If no trips found, show empty state
+  // If no trips found, return null to hide the widget completely
   if (trips.length === 0) {
-    return (
-      <div className={`py-4 ${className}`}>
-        <h2 className="text-xl font-bold lowercase mb-4">Related Itineraries</h2>
-        <Card className="bg-muted/30">
-          <CardContent className="p-4 text-center space-y-3">
-            <p className="text-muted-foreground text-sm">
-              No related itineraries found for this destination yet.
-            </p>
-            <Button variant="outline" asChild>
-              <Link href="/trips/create">Create the first one</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
   return (

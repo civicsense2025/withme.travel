@@ -17,7 +17,12 @@ console.log(
 );
 
 // API configuration
-export const API_URL = (extra.apiUrl as string) || 'https://api.withme.travel';
+let apiUrl = (extra.apiUrl as string) || 'https://api.withme.travel';
+// Make sure the URL has the correct protocol
+if (apiUrl && !apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+  apiUrl = `https://${apiUrl}`;
+}
+export const API_URL = apiUrl;
 console.log('API_URL:', API_URL);
 
 // App configuration

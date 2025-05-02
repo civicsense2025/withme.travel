@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 export function NavbarLogo() {
   const { theme } = useTheme();
@@ -24,9 +25,10 @@ export function NavbarLogo() {
   return (
     <Link href="/" className="flex items-center space-x-2">
       <div className="relative h-8 w-8">
-        <img
+        <Image
           src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'}
           alt="WithMe Logo"
+          fill
           className="h-full w-full"
         />
       </div>

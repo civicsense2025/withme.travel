@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/server';
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { TABLES, FIELDS } from "@/utils/constants/database";
 
 // Splitwise integration removed; expense operations should use Supabase directly or be implemented here.
 

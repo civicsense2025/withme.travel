@@ -30,7 +30,7 @@ function TripSuccessPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const tripId = searchParams.get('id');
+  const tripId = searchParams?.get('id');
 
   // Effect 1: Redirect if not logged in (after auth check)
   useEffect(() => {

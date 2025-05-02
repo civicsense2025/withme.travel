@@ -4,6 +4,7 @@ import type { Database } from '@/types/database.types';
 type TripRole = Database['public']['Enums']['trip_role'];
 
 import { TripCard } from '@/components/trip-card';
+import Link from 'next/link';
 // Trip interface
 interface Trip {
   id: string;
@@ -37,9 +38,9 @@ export function TripsList({ trips }: { trips: Trip[] }) {
       <div className="text-center p-8 border rounded-lg bg-muted/20">
         <p className="text-muted-foreground">You haven't created any trips yet.</p>
         <p className="mt-2">
-          <a href="/trips/create" className="underline hover:text-primary">
+          <Link href="/trips/create" className="underline hover:text-primary">
             Create your first trip
-          </a>
+          </Link>
         </p>
       </div>
     );

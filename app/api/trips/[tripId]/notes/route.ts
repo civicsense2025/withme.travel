@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextResponse, NextRequest } from 'next/server';
 import { z } from 'zod';
-// import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database'; // Removed old import
+// import {  TABLES, FIELDS , ENUMS } from "@/utils/constants/database"; // Removed old import
 
 // Local constants workaround to avoid import/linter issues
 const LOCAL_TABLES = {
@@ -73,10 +73,10 @@ export async function GET(
         _trip_id: tripId,
         _user_id: user.id,
         _roles: [
-          LOCAL_ENUMS.TRIP_ROLES.ADMIN,
-          LOCAL_ENUMS.TRIP_ROLES.EDITOR,
-          LOCAL_ENUMS.TRIP_ROLES.CONTRIBUTOR,
-          LOCAL_ENUMS.TRIP_ROLES.VIEWER,
+          LOCAL_ENUMS.ENUMS.TRIP_ROLES.ADMIN,
+          LOCAL_ENUMS.ENUMS.TRIP_ROLES.EDITOR,
+          LOCAL_ENUMS.ENUMS.TRIP_ROLES.CONTRIBUTOR,
+          LOCAL_ENUMS.ENUMS.TRIP_ROLES.VIEWER,
         ],
       }
     );
@@ -167,7 +167,7 @@ export async function POST(
       {
         _trip_id: tripId,
         _user_id: user.id,
-        _roles: [LOCAL_ENUMS.TRIP_ROLES.ADMIN, LOCAL_ENUMS.TRIP_ROLES.EDITOR],
+        _roles: [LOCAL_ENUMS.ENUMS.TRIP_ROLES.ADMIN, LOCAL_ENUMS.ENUMS.TRIP_ROLES.EDITOR],
       }
     );
 

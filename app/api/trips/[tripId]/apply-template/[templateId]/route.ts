@@ -1,3 +1,4 @@
+import { ENUMS } from "@/utils/constants/database";
 import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type SupabaseClient } from '@supabase/supabase-js';
@@ -59,9 +60,9 @@ export async function POST(
 
     // Check if user has permission to edit the trip
     const access = await checkTripAccess(supabase, tripId, user.id, [
-      TRIP_ROLES.ADMIN,
-      TRIP_ROLES.EDITOR,
-      TRIP_ROLES.CONTRIBUTOR,
+      ENUMS.TRIP_ROLES.ADMIN,
+      ENUMS.TRIP_ROLES.EDITOR,
+      ENUMS.TRIP_ROLES.CONTRIBUTOR,
     ]);
     if (!access.allowed) {
       return NextResponse.json({ error: access.error }, { status: access.status });

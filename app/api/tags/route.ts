@@ -2,6 +2,20 @@ import { NextResponse } from 'next/server';
 import { getRouteHandlerClient } from '@/utils/supabase/unified';
 import { TABLES } from '@/utils/constants/database';
 
+
+// Define a more complete type for TABLES that includes missing properties
+type ExtendedTables = {
+  TRIP_MEMBERS: string;
+  TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  [key: string]: string;
+};
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
 // Fetch all existing tags
 export async function GET(request: Request) {
   try {

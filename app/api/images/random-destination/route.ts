@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDestinationPhoto } from '@/lib/unsplashService';
-import { createApiClient } from '@/utils/supabase/server'; // Use server client
+import { createServerSupabaseClient } from "@/utils/supabase/server"; // Use server client
 import { z } from 'zod';
 
 // Function to get a random element from an array
@@ -12,7 +12,7 @@ function getRandomElement<T>(arr: T[]): T | undefined {
 // --- GET Handler for truly random image ---
 export async function GET() {
   try {
-    const supabase = await createApiClient();
+    const supabase = await createServerSupabaseClient();
 
     // 1. Fetch a list of popular destinations with images
     // Adjust query as needed (e.g., filter by popularity, ensure state/country present)

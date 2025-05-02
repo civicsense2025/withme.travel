@@ -1,23 +1,19 @@
 import { useColorScheme } from 'react-native';
-import {
-  lightColors,
-  darkColors,
-  Typography as typography,
-  Spacing as spacing,
-  BorderRadius as borderRadius,
-  Shadows as shadows,
-  Animation,
+import { 
+  lightTheme, 
+  darkTheme
 } from '../constants/theme';
 
 // Define the Theme interface
+// Ensure this matches the structure of lightTheme/darkTheme
 export interface AppTheme {
   isDark: boolean;
-  colors: typeof lightColors;
-  typography: typeof typography;
-  spacing: typeof spacing;
-  borderRadius: typeof borderRadius;
-  shadows: typeof shadows;
-  getResponsiveSize: (size: number, factor?: number) => number;
+  colors: typeof lightTheme.colors; // Use the structure from the imported theme
+  typography: typeof lightTheme.typography;
+  spacing: typeof lightTheme.spacing;
+  borderRadius: typeof lightTheme.borderRadius;
+  shadows: typeof lightTheme.shadows;
+  getResponsiveSize: (size: number) => number; // Removed unused factor
 }
 
 /**
@@ -28,21 +24,16 @@ export function useTheme(): AppTheme {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // Select colors based on the current color scheme
-  const colors = isDark ? darkColors : lightColors;
+  // Select theme based on the current color scheme
+  const currentTheme = isDark ? darkTheme : lightTheme;
 
   // Define responsiveSize function here since it's not exported directly
-  const getResponsiveSize = (size: number, factor = 0.5): number => {
-    return size;
+  const getResponsiveSize = (size: number): number => { // Removed unused factor
+    return size + (0.5 * size) / 100; // Use default factor 0.5
   };
 
   return {
-    isDark,
-    colors,
-    typography,
-    spacing,
-    borderRadius,
-    shadows,
+    ...currentTheme, // Spread the selected theme
     getResponsiveSize,
   };
 }

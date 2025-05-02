@@ -26,12 +26,12 @@ export function LoginForm() {
   const [retryCount, setRetryCount] = useState(0);
 
   // Get and process redirect path
-  const redirectPath = searchParams.get('redirect') || '/';
+  const redirectPath = searchParams?.get('redirect') || '/';
   const [decodedRedirectPath, setDecodedRedirectPath] = useState('/');
 
   // Check for URL error parameter
   useEffect(() => {
-    const urlError = searchParams.get('error');
+    const urlError = searchParams?.get('error');
     if (urlError) {
       const errorMessage = urlError.replace(/_/g, ' ').toLowerCase();
       setLocalError(errorMessage);

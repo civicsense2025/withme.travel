@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,12 +14,12 @@ import {
 import { Image } from 'expo-image';
 import RenderHtml, { MixedStyleDeclaration } from 'react-native-render-html';
 import { createSupabaseClient } from '../utils/supabase';
-import { Destination, Trip } from '../types/supabase';
+import { Destination, Trip, ItineraryItem } from '../types/supabase';
 import { TABLES, COLUMNS } from '../constants/database';
 import * as dbUtils from '../utils/database';
 import { getCountryFlag, getContinentEmoji } from '../utils/emojiUtils';
 import { useTheme } from '../hooks/useTheme';
-import { Text, Button, Card } from '../components/ui';
+import { Text, Button, Card, Tabs } from '../components/ui';
 import { TripCard } from '../components/TripCard';
 import { Feather } from '@expo/vector-icons';
 
@@ -35,8 +35,10 @@ export default function DestinationDetailScreen({ route, navigation }: any) {
   const styles = createStyles(theme);
   const [destination, setDestination] = useState<Destination | null>(null);
   const [relatedTrips, setRelatedTrips] = useState<Trip[]>([]);
+  const [itineraryItems, setItineraryItems] = useState<ItineraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('about');
   const { width: windowWidth } = useWindowDimensions();
 
   // Debug function
@@ -58,8 +60,8 @@ export default function DestinationDetailScreen({ route, navigation }: any) {
 
       const supabase = createSupabaseClient();
 
-      // Load destination details and related trips in parallel
-      const [destinationResult, tripsResult] = await Promise.all([
+      // Load destination details, related trips, and itinerary items in parallel
+      const [destinationResult, tripsResult, itineraryItemsResult] = await Promise.all([
         supabase.from(TABLES.DESTINATIONS).select('*').eq(COLUMNS.ID, destinationId).single(),
         supabase
           .from(TABLES.TRIPS)
@@ -67,10 +69,24 @@ export default function DestinationDetailScreen({ route, navigation }: any) {
           .eq(COLUMNS.DESTINATION_ID, destinationId)
           .order(COLUMNS.CREATED_AT, { ascending: false })
           .limit(5),
+        supabase
+          .from(TABLES.ITINERARY_ITEMS)
+          .select('*')
+          .in(
+            COLUMNS.TRIP_ID,
+            supabase
+              .from(TABLES.TRIPS)
+              .select(COLUMNS.ID)
+              .eq(COLUMNS.DESTINATION_ID, destinationId)
+          )
+          .order(COLUMNS.DATE, { ascending: true })
+          .order(COLUMNS.DAY_NUMBER, { ascending: true })
+          .order(COLUMNS.START_TIME, { ascending: true }),
       ]);
 
       const { data: destinationData, error: destinationError } = destinationResult;
       const { data: tripsData, error: tripsError } = tripsResult;
+      const { data: itemsData, error: itemsError } = itineraryItemsResult;
 
       if (destinationError) {
         debugLog('Error loading destination:', destinationError);
@@ -88,6 +104,13 @@ export default function DestinationDetailScreen({ route, navigation }: any) {
       } else {
         setRelatedTrips((tripsData as unknown as Trip[]) || []);
         debugLog('Related trips loaded', { count: tripsData?.length || 0 });
+      }
+
+      if (itemsError) {
+        debugLog('Error loading itinerary items:', itemsError);
+      } else {
+        setItineraryItems((itemsData as unknown as ItineraryItem[]) || []);
+        debugLog('Itinerary items loaded', { count: itemsData?.length || 0 });
       }
     } catch (err) {
       debugLog('Error in loadDestinationData:', err);
@@ -175,6 +198,168 @@ export default function DestinationDetailScreen({ route, navigation }: any) {
     },
   };
 
+  // Group itinerary items by day
+  const itemsByDay = useMemo(() => {
+    const grouped: Record<number | string, ItineraryItem[]> = {};
+    
+    itineraryItems.forEach(item => {
+      const day = item.day_number || 'unscheduled';
+      if (!grouped[day]) {
+        grouped[day] = [];
+      }
+      grouped[day].push(item);
+    });
+    
+    return grouped;
+  }, [itineraryItems]);
+
+  // Generate tab data for the days
+  const dayTabs = useMemo(() => {
+    const tabs = [
+      { id: 'about', label: 'About' },
+    ];
+    
+    // Add a tab for each day that has items
+    Object.keys(itemsByDay).forEach(day => {
+      const dayNumber = parseInt(day);
+      if (!isNaN(dayNumber)) {
+        tabs.push({ id: `day${day}`, label: `Day ${day}` });
+      }
+    });
+    
+    // If there are unscheduled items, add an "Unscheduled" tab
+    if (itemsByDay['unscheduled'] && itemsByDay['unscheduled'].length > 0) {
+      tabs.push({ id: 'unscheduled', label: 'Unscheduled' });
+    }
+    
+    return tabs;
+  }, [itemsByDay]);
+
+  const renderTime = (item: ItineraryItem) => {
+    if (item.start_time) {
+      if (item.end_time) {
+        return `${item.start_time.substring(0, 5)} - ${item.end_time.substring(0, 5)}`;
+      }
+      return item.start_time.substring(0, 5);
+    }
+    return null;
+  };
+
+  const renderItineraryItem = (item: ItineraryItem) => {
+    return (
+      <Card key={item.id} style={styles.itineraryItemCard}>
+        <View style={styles.itineraryItemHeader}>
+          <Text variant="h4" weight="semibold" style={styles.itineraryItemTitle}>
+            {item.title}
+          </Text>
+          {item.category && (
+            <View style={styles.categoryBadge}>
+              <Text variant="caption" style={styles.categoryText}>
+                {item.category}
+              </Text>
+            </View>
+          )}
+        </View>
+        
+        {renderTime(item) && (
+          <View style={styles.timeContainer}>
+            <Feather name="clock" size={14} color={theme.colors.mutedForeground} />
+            <Text variant="body2" color="muted" style={styles.timeText}>
+              {renderTime(item)}
+            </Text>
+          </View>
+        )}
+        
+        {item.location_name && (
+          <View style={styles.locationContainer}>
+            <Feather name="map-pin" size={14} color={theme.colors.mutedForeground} />
+            <Text variant="body2" color="muted" style={styles.locationText}>
+              {item.location_name}
+            </Text>
+          </View>
+        )}
+        
+        {item.description && (
+          <Text variant="body2" style={styles.itineraryItemDescription}>
+            {item.description}
+          </Text>
+        )}
+      </Card>
+    );
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'about':
+        return (
+          <>
+            {/* About Section */}
+            <Card style={styles.sectionCard}>
+              <Text variant="h3" weight="semibold" style={styles.sectionTitle}>
+                About
+              </Text>
+              {sanitizedDescription ? (
+                <RenderHtml
+                  contentWidth={windowWidth - theme.spacing['4'] * 4} // Adjust for padding
+                  source={{ html: sanitizedDescription }}
+                  tagsStyles={htmlTagsStyles}
+                />
+              ) : (
+                <Text variant="body1" color="muted">
+                  No description available for this destination.
+                </Text>
+              )}
+            </Card>
+
+            {/* Location Section */}
+            {destination?.latitude && destination?.longitude && (
+              <Card style={styles.sectionCard}>
+                <Text variant="h3" weight="semibold" style={styles.sectionTitle}>
+                  Location
+                </Text>
+                <View style={styles.locationContent}>
+                  <Feather name="map-pin" size={20} color={theme.colors.mutedForeground} />
+                  <Text variant="body1" color="muted" style={styles.coordinates}>
+                    {destination.latitude.toFixed(4)}, {destination.longitude.toFixed(4)}
+                  </Text>
+                </View>
+                <Button
+                  label="Open in Maps"
+                  variant="outline"
+                  size="md"
+                  onPress={handleOpenMap}
+                  style={styles.mapButton}
+                />
+              </Card>
+            )}
+          </>
+        );
+      
+      case 'unscheduled':
+        return (
+          <View style={styles.itineraryContainer}>
+            {itemsByDay['unscheduled']?.map(renderItineraryItem) || (
+              <Text variant="body1" color="muted" style={styles.emptyStateMessage}>
+                No unscheduled items found.
+              </Text>
+            )}
+          </View>
+        );
+        
+      default:
+        // Handle day tabs (format: 'day1', 'day2', etc.)
+        const dayNumber = parseInt(activeTab.replace('day', ''));
+        if (!isNaN(dayNumber) && itemsByDay[dayNumber]) {
+          return (
+            <View style={styles.itineraryContainer}>
+              {itemsByDay[dayNumber].map(renderItineraryItem)}
+            </View>
+          );
+        }
+        return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.centeredContainer}>
@@ -252,45 +437,16 @@ export default function DestinationDetailScreen({ route, navigation }: any) {
           style={styles.addToTripButton}
         />
 
-        {/* About Section */}
-        <Card style={styles.sectionCard}>
-          <Text variant="h3" weight="semibold" style={styles.sectionTitle}>
-            About
-          </Text>
-          {sanitizedDescription ? (
-            <RenderHtml
-              contentWidth={windowWidth - theme.spacing['4'] * 4} // Adjust for padding
-              source={{ html: sanitizedDescription }}
-              tagsStyles={htmlTagsStyles}
-            />
-          ) : (
-            <Text variant="body1" color="muted">
-              No description available for this destination.
-            </Text>
-          )}
-        </Card>
+        {/* Tabs Navigation */}
+        <Tabs
+          tabs={dayTabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          style={styles.tabs}
+        />
 
-        {/* Location Section */}
-        {destination.latitude && destination.longitude && (
-          <Card style={styles.sectionCard}>
-            <Text variant="h3" weight="semibold" style={styles.sectionTitle}>
-              Location
-            </Text>
-            <View style={styles.locationContent}>
-              <Feather name="map-pin" size={20} color={theme.colors.mutedForeground} />
-              <Text variant="body1" color="muted" style={styles.coordinates}>
-                {destination.latitude.toFixed(4)}, {destination.longitude.toFixed(4)}
-              </Text>
-            </View>
-            <Button
-              label="Open in Maps"
-              variant="outline"
-              size="md"
-              onPress={handleOpenMap}
-              style={styles.mapButton}
-            />
-          </Card>
-        )}
+        {/* Tab Content */}
+        {renderTabContent()}
 
         {/* Related Trips Section */}
         {relatedTrips.length > 0 && (
@@ -432,5 +588,58 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     relatedTripContainer: {
       width: 220, // Fixed width for horizontal cards
       marginRight: theme.spacing['3'],
+    },
+    tabs: {
+      marginBottom: theme.spacing['4'],
+    },
+    itineraryContainer: {
+      marginBottom: theme.spacing['5'],
+    },
+    itineraryItemCard: {
+      marginBottom: theme.spacing['3'],
+      padding: theme.spacing['3'],
+    },
+    itineraryItemHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing['2'],
+    },
+    itineraryItemTitle: {
+      flex: 1,
+    },
+    categoryBadge: {
+      backgroundColor: theme.colors.travelPurple,
+      paddingHorizontal: theme.spacing['2'],
+      paddingVertical: theme.spacing['0.5'],
+      borderRadius: theme.borders.radius.full,
+      marginLeft: theme.spacing['2'],
+    },
+    categoryText: {
+      color: theme.colors.travelPurpleForeground,
+      fontSize: theme.typography.fontSizes.xs,
+    },
+    timeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing['1'],
+    },
+    timeText: {
+      marginLeft: theme.spacing['1'],
+    },
+    locationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing['2'],
+    },
+    locationText: {
+      marginLeft: theme.spacing['1'],
+    },
+    itineraryItemDescription: {
+      marginTop: theme.spacing['2'],
+    },
+    emptyStateMessage: {
+      textAlign: 'center',
+      padding: theme.spacing['4'],
     },
   });

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest } from 'next/server';
 import { type SupabaseClient } from '@supabase/supabase-js'; // Import SupabaseClient
 import type { Database } from '@/types/database.types'; // Import Database type
 
 // Re-use or import the checkTripAccess helper function (assuming it's defined elsewhere or paste it here)
-import { DB_TABLES, DB_FIELDS } from '@/utils/constants/database';
+import {  TABLES, FIELDS , ENUMS } from "@/utils/constants/database";
 async function checkTripAccess(
   supabase: SupabaseClient<Database>, // Use correct SupabaseClient type
   tripId: string,
@@ -13,10 +13,10 @@ async function checkTripAccess(
   allowedRoles: string[]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(DB_TABLES.TRIP_MEMBERS)
-    .select(DB_FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(DB_FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(DB_FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .from(TABLES.TRIP_MEMBERS)
+    .select(FIELDS.TRIP_MEMBERS.ROLE)
+    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
     .maybeSingle();
 
   if (error) {
@@ -54,7 +54,7 @@ export async function PATCH(
   }
 
   try {
-    const supabase = await createApiClient(); // Use server helper
+    const supabase = await createServerSupabaseClient(); // Use server helper
     const {
       data: { user },
       error: authError,
@@ -66,8 +66,8 @@ export async function PATCH(
 
     // Access Check: Only admins and editors can change status
     const access = await checkTripAccess(supabase, tripId, user.id, [
-      TRIP_ROLES.ADMIN,
-      TRIP_ROLES.EDITOR,
+      ENUMS.TRIP_ROLES.ADMIN,
+      ENUMS.TRIP_ROLES.EDITOR,
     ]);
     if (!access.allowed) {
       return NextResponse.json({ error: access.error }, { status: access.status });
@@ -86,7 +86,7 @@ export async function PATCH(
 
     // Check if the item exists and belongs to the trip (optional but good practice)
     const { data: itemCheck, error: itemCheckError } = await supabase
-      .from(DB_TABLES.ITINERARY_ITEMS)
+      .from(TABLES.ITINERARY_ITEMS)
       .select('id')
       .eq('id', itemId)
       .eq('trip_id', tripId)
@@ -105,12 +105,12 @@ export async function PATCH(
 
     // Update the item status
     const { error: updateError } = await supabase
-      .from(DB_TABLES.ITINERARY_ITEMS)
+      .from(TABLES.ITINERARY_ITEMS)
       .update({
         status: newStatus,
         updated_at: new Date().toISOString(), // Assuming you have moddatetime trigger or want manual update
       })
-      .eq(DB_FIELDS.ITINERARY_ITEMS.ID, itemId);
+      .eq(FIELDS.ITINERARY_ITEMS.ID, itemId);
 
     if (updateError) {
       console.error('Error updating itinerary item status:', updateError);
