@@ -1,12 +1,19 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
+=======
+import React from 'react';
+>>>>>>> a07d631d04d45af415c90c18b62199d289862037
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './src/hooks/useAuth';
 import Navigation from './src/navigation';
+<<<<<<< HEAD
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { checkSupabaseHealth } from './src/utils/supabase';
 import NetInfo from '@react-native-community/netinfo';
+=======
+>>>>>>> a07d631d04d45af415c90c18b62199d289862037
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -18,6 +25,7 @@ const queryClient = new QueryClient({
   },
 });
 
+<<<<<<< HEAD
 // Debug mode flag
 const DEBUG_MODE = __DEV__;
 
@@ -305,3 +313,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+=======
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="auto" />
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Navigation />
+        </AuthProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
+  );
+}
+>>>>>>> a07d631d04d45af415c90c18b62199d289862037
