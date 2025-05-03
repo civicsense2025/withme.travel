@@ -161,7 +161,7 @@ export function AddItineraryItemClient({
     }
   };
 
-  const handleGeocoderResult = (result: GeocoderResult) => {
+  const handleGeocoderResult = (result: GeocoderResult | null) => {
     console.log('Geocoder Result:', result);
     setSelectedPlace(result);
   };

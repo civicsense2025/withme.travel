@@ -83,9 +83,7 @@ export function CommandMenu() {
         localStorage.setItem('withme-cmd-tooltip-seen', 'true');
 
         // Hide tooltip after 8 seconds
-        tooltipTimerRef.current = setTimeout(() => {
-          setShowTooltip(false);
-        }, 8000);
+        tooltipTimerRef.current = setTimeout(() => setShowTooltip(false), 8000);
 
         firstOpenRef.current = true;
       }
@@ -185,7 +183,7 @@ export function CommandMenu() {
           router.push('/login?redirect=/trips/create');
           toast({
             title: 'Login required',
-            description: 'Please log in to plan a trip',
+            description: 'Please log in to plan a trip'
           });
         } else {
           router.push('/trips/create');
@@ -198,7 +196,7 @@ export function CommandMenu() {
           router.push('/login?redirect=/trips');
           toast({
             title: 'Login required',
-            description: 'Please log in to view your trips',
+            description: 'Please log in to view your trips'
           });
         } else {
           router.push('/trips');
@@ -242,13 +240,13 @@ export function CommandMenu() {
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      handleSubmit(event as any);
+      handleSubmit(event);
     }
   };
 
   return (
     <Dialog open={isSearchOpen} onOpenChange={(open: boolean) => !open && closeSearch()}>
-      <DialogTrigger asChild>{/* Placeholder for the children prop */}</DialogTrigger>
+      <DialogTrigger>{/* Placeholder for the children prop */}</DialogTrigger>
       <DialogContent className="p-0 gap-0 max-w-[650px] rounded-xl border-0 shadow-2xl bg-background/95 backdrop-blur-lg">
         <VisuallyHidden>
           <DialogTitle>Search Menu</DialogTitle>

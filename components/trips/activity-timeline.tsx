@@ -87,7 +87,6 @@ export function ActivityTimeline({
   className = '',
   useTripHistory = false,
 }: ActivityTimelineProps) {
-  // Always call the hooks, but conditionally use their results
   const { activities, loading, error, refreshTimeline, loadMore, pagination } = useActivityTimeline(
     tripId,
     { limit }
@@ -258,16 +257,19 @@ export function ActivityTimeline({
       return `${actorName} deleted a comment`;
     }
     if (actionType === 'VOTE_CAST') {
-      return `${actorName} voted on a poll`;
+      return `${actorName} cast a vote`;
+    }
+    if (actionType === 'ACCESS_REQUEST_UPDATED') {
+      return `${actorName} updated an access request`;
     }
     if (actionType === 'IMAGE_UPLOADED') {
       return `${actorName} uploaded an image`;
     }
     if (actionType === 'TAG_ADDED') {
-      return `${actorName} added a tag: ${details.name || 'a tag'}`;
+      return `${actorName} added a tag: "${details.name || 'a tag'}"`;
     }
     if (actionType === 'TAG_REMOVED') {
-      return `${actorName} removed a tag: ${details.name || 'a tag'}`;
+      return `${actorName} removed a tag: "${details.name || 'a tag'}"`;
     }
     if (actionType === 'NOTE_CREATED') {
       return `${actorName} created a note`;
@@ -279,25 +281,25 @@ export function ActivityTimeline({
       return `${actorName} deleted a note`;
     }
     if (actionType === 'FOCUS_INITIATED') {
-      return `${actorName} started a focus session on ${details.section_name || 'a section'}`;
+      return `${actorName} started a focus session on "${details.section_name || 'a section'}"`;
     }
 
     // Trip history action types
     if (actionType === 'TRIP_VISITED') {
-      return `${actorName} visited ${details.destination || 'a destination'}`;
+      return `${actorName} visited "${details.destination || 'a destination'}"`;
     }
     if (actionType === 'TRIP_PLANNED') {
-      return `${actorName} planned a trip to ${details.destination || 'a destination'}`;
+      return `${actorName} planned a trip to "${details.destination || 'a destination'}"`;
     }
     if (actionType === 'TRAVEL_HISTORY_ADDED') {
-      return `${actorName} added travel history for ${details.destination || 'a destination'}`;
+      return `${actorName} added travel history for "${details.destination || 'a destination'}"`;
     }
     if (actionType === 'DESTINATION_VISITED') {
-      return `${actorName} visited ${details.destination || 'a destination'}`;
+      return `${actorName} visited "${details.destination || 'a destination'}"`;
     }
     if (actionType === 'DESTINATION_RATED') {
       const rating = details.rating ? `${details.rating}/5` : '';
-      return `${actorName} rated ${details.destination || 'a destination'} ${rating}`;
+      return `${actorName} rated "${details.destination || 'a destination'}" ${rating}`;
     }
 
     // Default case
@@ -411,8 +413,7 @@ export function ActivityTimeline({
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={getActorAvatar(activity) || ''}
-                      alt={`${getActorName(activity) || 'User'}'s avatar`}
-                    />
+                      alt={`${getActorName(activity) || 'User'}'s avatar`} />
                     <AvatarFallback
                       className={`text-white ${
                         getActorName(activity)
@@ -422,8 +423,7 @@ export function ActivityTimeline({
                               ? 'bg-gray-500'
                               : getBgColorFromName(getActorName(activity))
                           : 'bg-blue-500'
-                      }`}
-                    >
+                      }`}>
                       {getAvatarInitials(getActorName(activity) || '')}
                     </AvatarFallback>
                   </Avatar>

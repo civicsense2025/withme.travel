@@ -11,6 +11,8 @@ import { OfflineNotification } from '@/components/offline-notification';
 import { UpdateNotification } from '@/components/update-notification';
 import Script from 'next/script';
 import { ClientSideProviders } from '@/components/client-side-providers';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/components/footer';
 
 // Define font but don't export it
 const fontSans = FontSans({
@@ -85,6 +87,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
 
         <Providers>
+          {/* Add Navbar here */}
+          <Navbar />
+          
           {/* Main content always rendered for SSR */}
           <div
             id="main-content"
@@ -93,6 +98,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             {children}
           </div>
+          
+          {/* Add Footer here */}
+          <Footer />
 
           {/* Client-side only components wrapped in ClientSideProviders */}
           <ClientSideProviders>

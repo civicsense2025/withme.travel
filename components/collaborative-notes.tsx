@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Loader2, X } from 'lucide-react';
 import { TripNotesEditor } from './trip-notes-editor';
 import { useToast } from '@/hooks/use-toast';
-import { formatError } from '@/lib/utils';
+import { formatError } from '@/utils/lib-utils';
 import { TagInput } from '@/components/ui/tag-input';
 import { type Tag } from '@/types/tag';
 import {
@@ -45,21 +45,20 @@ type CollaborativeNotesProps = {
 };
 
 export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNotesProps) {
+  const { toast } = useToast();
+  const [isLoadingList, setIsLoadingList] = useState(false);
+  const [isLoadingNote, setIsLoadingNote] = useState(false);
+  const [isSavingTags, setIsSavingTags] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [notesList, setNotesList] = useState<NoteListItem[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [currentNoteTags, setCurrentNoteTags] = useState<Tag[]>([]);
-  const [isLoadingList, setIsLoadingList] = useState(true);
-  const [isLoadingNote, setIsLoadingNote] = useState(false);
-  const [isSavingTags, setIsSavingTags] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState('');
-  const supabase = createClient();
-  const { toast } = useToast();
   const saveTagsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch notes list on component mount
+  // Fetch notes list on component mount and when selectedNoteId changes
   useEffect(() => {
     async function fetchNotesList() {
       setIsLoadingList(true);
@@ -78,7 +77,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         }
       } catch (err) {
         console.error('Error fetching notes list:', err);
-        setError(formatError(err, 'Failed to load notes list'));
+        setError(formatError(err));
       } finally {
         setIsLoadingList(false);
       }
@@ -120,7 +119,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
               title: 'Note not found',
               description: 'Maybe it was deleted? Refreshing list...',
               variant: 'destructive',
-            });
+  });
             // TODO: Implement list refresh
             setSelectedNoteId(null);
             return;
@@ -138,7 +137,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
           const fetchedTags: Tag[] = (tagsData.tags || []).map((tag: any) => ({
             id: tag.id,
             name: tag.name,
-          }));
+  }));
           setCurrentNoteTags(fetchedTags);
         } else {
           console.error('Failed to fetch tags for note:', selectedNoteId, tagsResponse.status);
@@ -147,7 +146,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         }
       } catch (err) {
         console.error('Error fetching note details:', err);
-        setError(formatError(err, 'Failed to load note details'));
+        setError(formatError(err));
         setSelectedNote(null);
         setCurrentNoteTags([]);
       } finally {
@@ -163,7 +162,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         title: 'Title required',
         description: 'Please enter a title for your new note.',
         variant: 'destructive',
-      });
+  });
       return;
     }
     setIsLoadingNote(true); // Use note loading state for creation action
@@ -191,7 +190,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         title: 'Error Creating Note',
         description: formatError(err),
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsLoadingNote(false);
     }
@@ -205,7 +204,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
     try {
       const response = await fetch(`${API_ROUTES.COLLABORATIVE_NOTES(tripId)}/${noteIdToDelete}`, {
         method: 'DELETE',
-      });
+  });
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.error || `Failed to delete note (status ${response.status})`);
@@ -227,7 +226,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         title: 'Error Deleting Note',
         description: formatError(err),
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsLoadingNote(false);
     }
@@ -293,7 +292,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
       const finalTags: Tag[] = (data.tags || []).map((tag: any) => ({
         id: tag.id,
         name: tag.name,
-      }));
+  }));
       setCurrentNoteTags(finalTags);
     } catch (err) {
       console.error('Error saving tags:', err);
@@ -417,10 +416,8 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
                                 Cancel
                               </AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  confirmDeleteNote(note.id);
-                                }}
+                                onClick={(e) => { return e.stopPropagation();
+                                  confirmDeleteNote(note.id); }}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
                                 Delete

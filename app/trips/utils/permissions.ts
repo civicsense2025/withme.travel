@@ -1,5 +1,11 @@
 import { createClient } from '@/utils/supabase/client';
-import { TripRole, TABLES } from '@/utils/constants/database';
+import { TABLES, ENUMS } from '@/utils/constants/database';
+import type { TripRole } from '@/utils/constants/database';
+
+// Use the shared enum from constants
+const { TRIP_ROLES } = ENUMS;
+
+export type TripRole = typeof LOCAL_TRIP_ROLES[keyof typeof LOCAL_TRIP_ROLES];
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -62,18 +68,18 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
     .eq('id', tripId)
     .single();
 
-  const role = membership?.role;
+  const role = membership?.role as TripRole | null;
   const isCreator = trip?.created_by === user.id;
   const isPublic = trip?.is_public || false;
 
   return {
     canView: !!role || isCreator || isPublic,
-    canEdit: (!!role && [TripRole.ADMIN, TripRole.EDITOR].includes(role as TripRole)) || isCreator,
-    canManage: (!!role && [TripRole.ADMIN].includes(role as TripRole)) || isCreator,
-    canAddMembers: (!!role && [TripRole.ADMIN].includes(role as TripRole)) || isCreator,
+    canEdit: (!!role && (role === LOCAL_TRIP_ROLES.ADMIN || role === LOCAL_TRIP_ROLES.EDITOR)) || isCreator,
+    canManage: (!!role && role === LOCAL_TRIP_ROLES.ADMIN) || isCreator,
+    canAddMembers: (!!role && role === LOCAL_TRIP_ROLES.ADMIN) || isCreator,
     canDeleteTrip: isCreator,
     isCreator,
-    role: role as TripRole | null,
+    role,
   };
 }
 
@@ -140,13 +146,13 @@ export function getRoleName(role: string | null): string {
   if (!role) return 'Viewer';
 
   switch (role) {
-    case TripRole.ADMIN:
+    case LOCAL_TRIP_ROLES.ADMIN:
       return 'Admin';
-    case TripRole.EDITOR:
+    case LOCAL_TRIP_ROLES.EDITOR:
       return 'Editor';
-    case TripRole.CONTRIBUTOR:
+    case LOCAL_TRIP_ROLES.CONTRIBUTOR:
       return 'Contributor';
-    case TripRole.VIEWER:
+    case LOCAL_TRIP_ROLES.VIEWER:
       return 'Viewer';
     default:
       return 'Viewer';

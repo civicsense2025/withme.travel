@@ -5,7 +5,44 @@
  * endpoints, and external API configurations.
  */
 
-// API Routes
+/**
+ * Constants related to API integrations
+ */
+
+/**
+ * Unsplash API configuration
+ */
+export const UNSPLASH_CONFIG = {
+  API_URL: 'https://api.unsplash.com',
+  ENDPOINTS: {
+    SEARCH: '/search/photos',
+    RANDOM: '/photos/random',
+    PHOTO: '/photos',
+  },
+  DEFAULT_QUERY_PARAMS: {
+    per_page: 20,
+    orientation: 'landscape',
+  },
+};
+
+/**
+ * Pexels API configuration
+ */
+export const PEXELS_CONFIG = {
+  API_URL: 'https://api.pexels.com/v1',
+  ENDPOINTS: {
+    SEARCH: '/search',
+    CURATED: '/curated',
+  },
+  DEFAULT_QUERY_PARAMS: {
+    per_page: 20,
+    orientation: 'landscape',
+  },
+};
+
+/**
+ * Common API routes used in the application
+ */
 export const API_ROUTES = {
   TRIPS: '/api/trips',
   TRIP_DETAILS: (id: string) => `/api/trips/${id}`,
@@ -49,25 +86,36 @@ export const API_ROUTES = {
   TRIP_TRAVEL_TIMES: (id: string) => `/api/trips/${id}/travel-times`,
   APPLY_TEMPLATE: (slug: string) => `/api/itineraries/${slug}/use`,
   VALIDATE_TEMPLATE: (id: string) => `/api/templates/${id}/validate`,
+  USERS: '/api/users',
+  SEARCH: '/api/search',
 } as const;
 
-// Unsplash API Configuration
-export const UNSPLASH_CONFIG = {
-  API_URL: 'https://api.unsplash.com',
-  ACCESS_KEY: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || '',
-  SECRET_KEY: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_SECRET || '',
-  ENDPOINTS: {
-    SEARCH: '/search/photos',
-    RANDOM: '/photos/random',
-  },
-  DEFAULT_QUERY_PARAMS: {
-    orientation: 'landscape',
-    content_filter: 'high',
-  },
-} as const;
+/**
+ * Query snippets for common database queries
+ */
+export const QUERY_SNIPPETS = {
+  TRIP_WITH_CREATOR: `
+    id,
+    name,
+    description,
+    start_date,
+    end_date,
+    destination_id,
+    created_at,
+    destination:destinations(
+      id,
+      name,
+      city,
+      country,
+      image_url
+    ),
+    creator:profiles!creator_id(
+      id,
+      name,
+      avatar_url
+    )
+  `,
 
-// Database query examples using the constants
-export const DB_QUERIES = {
   // Get trips created by a user
   GET_USER_TRIPS: (userId: string) => ({
     table: 'trips',
@@ -109,58 +157,4 @@ export const FOREIGN_KEYS = {
   ITINERARY_ITEMS_CREATED_BY: 'itinerary_items_created_by_fkey',
   BUDGET_ITEMS_CREATED_BY: 'budget_items_created_by_fkey',
   BUDGET_ITEMS_PAID_BY: 'budget_items_paid_by_fkey',
-} as const;
-
-// Supabase query snippets for commonly used joins
-export const QUERY_SNIPPETS = {
-  USER_BASIC: 'id, name, email, avatar_url',
-
-  TRIP_MEMBER_WITH_USER: `
-    id,
-    role,
-    created_at,
-    joined_at,
-    user:users!${FOREIGN_KEYS.TRIP_MEMBERS_USER_ID}(
-      id,
-      name,
-      email,
-      avatar_url
-    ),
-    inviter:users!${FOREIGN_KEYS.TRIP_MEMBERS_INVITED_BY}(
-      id,
-      name,
-      email,
-      avatar_url
-    )
-  `,
-
-  TRIP_NOTE_WITH_USER: `
-    *,
-    updated_by_user:users!${FOREIGN_KEYS.TRIP_NOTES_UPDATED_BY}(
-      id, 
-      name, 
-      email, 
-      avatar_url
-    )
-  `,
-
-  TRIP_WITH_CREATOR: `
-    *,
-    creator:users!${FOREIGN_KEYS.TRIPS_USER_ID}(
-      id,
-      name,
-      email,
-      avatar_url
-    )
-  `,
-
-  ITINERARY_ITEM_WITH_CREATOR: `
-    *,
-    creator:users!${FOREIGN_KEYS.ITINERARY_ITEMS_CREATED_BY}(
-      id,
-      name,
-      email,
-      avatar_url
-    )
-  `,
 } as const;

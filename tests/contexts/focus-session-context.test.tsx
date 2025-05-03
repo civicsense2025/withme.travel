@@ -51,7 +51,7 @@ function TestComponent({ onSessionChange }: { onSessionChange?: (session: any) =
       <div data-testid="loading">{loading ? 'Loading...' : 'Not loading'}</div>
       <div data-testid="error">{error ? error.message : 'No error'}</div>
       <div data-testid="session-status">
-        {activeFocusSession ? `Active session: ${activeFocusSession.id}` : 'No active session'}
+        {activeFocusSession ? `Active session: ${activeFocusSession.id}` : `No active session`}
       </div>
 
       <button data-testid="start-btn" onClick={() => startFocusSession('itinerary')}>

@@ -1,5 +1,4 @@
-import { getServerComponentClient } from '@/utils/supabase/unified';
-import { cookies } from 'next/headers';
+import { createServerComponentClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import { CreateItineraryClient } from './page-client';
@@ -13,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CreateItineraryPage() {
-  const supabase = await getServerComponentClient();
+  const supabase = createServerComponentClient();
 
   // Check if user is authenticated
   const {

@@ -1,38 +1,8 @@
 'use client';
-import { ENUMS } from "@/utils/constants/database";
-
-import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
-import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
-import {
-  DndContext,
-  DragOverlay,
-  MouseSensor,
-  TouchSensor,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  DragStartEvent,
-  DragOverEvent,
-  DragEndEvent,
-  closestCorners,
-  getFirstCollision,
-  pointerWithin,
-  rectIntersection,
-  MeasuringStrategy,
-  DropAnimation,
-  defaultDropAnimationSideEffects,
-  UniqueIdentifier,
-  useDroppable,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  sortableKeyboardCoordinates,
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { ITINERARY_CATEGORIES, ITEM_STATUSES, type ItemStatus } from '@/utils/constants/status';
+import { DndContext, DragOverlay, MouseSensor, TouchSensor, PointerSensor, KeyboardSensor, useSensor, useSensors, DragStartEvent, DragOverEvent, DragEndEvent, closestCorners, getFirstCollision, pointerWithin, rectIntersection, MeasuringStrategy, DropAnimation, defaultDropAnimationSideEffects, UniqueIdentifier, useDroppable } from '@dnd-kit/core';
+import { arrayMove, sortableKeyboardCoordinates, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { DisplayItineraryItem } from '@/types/itinerary';
-import { ItemStatus } from '@/types/common';
 import { Profile } from '@/types/profile';
 import { ItineraryItemCard } from '@/components/itinerary/ItineraryItemCard';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,11 +12,12 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, PlusCircle, GripVertical, MapPin, HomeIcon, Car } from 'lucide-react';
 import { SortableItem } from './SortableItem';
-import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { QuickAddItemDialog } from './QuickAddItemDialog';
 import { UnscheduledItemsSection } from './UnscheduledItemsSection';
 import { TripDetailsSection } from './TripDetailsSection';
+
+import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 
 // Dynamically import the MapboxGeocoderComponent to prevent it from being loaded unnecessarily
 const MapboxGeocoderComponent = lazy(() => import('@/components/maps/mapbox-geocoder'));
@@ -110,14 +81,14 @@ const renormalizePositions = (
     (a, b) => (originalOrderMap.get(a.id) ?? Infinity) - (originalOrderMap.get(b.id) ?? Infinity)
   );
 
-  itemsToNormalize.forEach((item, index) => {
-    item.position = index;
+  itemsToNormalize.forEach((item, index) => { 
+    item.position = index; 
   });
 
   // Return the full array with updated positions for the target day
-  return items.map((item) => {
+  return items.map((item) => { 
     const updatedItem = itemsToNormalize.find((normItem) => normItem.id === item.id);
-    return updatedItem || item;
+    return updatedItem || item; 
   });
 };
 
@@ -127,10 +98,10 @@ const renormalizeAllPositions = (items: DisplayItineraryItem[]): DisplayItinerar
   const itemsByDay = new Map<string | number, DisplayItineraryItem[]>();
 
   // Group items by day/unscheduled
-  items.forEach((item) => {
+  items.forEach((item) => { 
     const key = item.day_number ?? 'unscheduled';
     if (!itemsByDay.has(key)) itemsByDay.set(key, []);
-    itemsByDay.get(key)!.push(item);
+    itemsByDay.get(key)!.push(item); 
   });
 
   // Sort within each group and assign new positions
@@ -138,18 +109,18 @@ const renormalizeAllPositions = (items: DisplayItineraryItem[]): DisplayItinerar
     // Sort by original position first to maintain relative order where possible
     dayItems.sort((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity));
     // Assign new sequential positions
-    dayItems.forEach((item, index) => {
+    dayItems.forEach((item, index) => { 
       item.position = index;
-      finalItemsState.push(item); // Add to the final list
+      finalItemsState.push(item); // Add to the final list 
     });
   });
 
   // Final sort by day then position
-  finalItemsState.sort((a, b) => {
+  finalItemsState.sort((a, b) => { 
     const dayA = a.day_number ?? Infinity; // Treat null (unscheduled) as Infinity for sorting
     const dayB = b.day_number ?? Infinity;
     if (dayA !== dayB) return dayA - dayB;
-    return (a.position ?? 0) - (b.position ?? 0); // Position should be set now
+    return (a.position ?? 0) - (b.position ?? 0); // Position should be set now 
   });
   //  console.log("[RenormalizeAll] New State:", finalItemsState.map(i => ({id: i.id, day: i.day_number, pos: i.position})));
   return finalItemsState;
@@ -220,20 +191,18 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   const [originalItemsOnDragStart, setOriginalItemsOnDragStart] = useState<DisplayItineraryItem[]>(
     []
   );
-  const canEdit = userRole === ENUMS.TRIP_ROLES.ADMIN || userRole === ENUMS.TRIP_ROLES.EDITOR;
+  const canEdit = userRole === TRIP_ROLES.ADMIN || userRole === TRIP_ROLES.EDITOR;
 
   // Add state for quick add dialog
   const [isQuickAddDialogOpen, setIsQuickAddDialogOpen] = useState(false);
   const [quickAddDefaultCategory, setQuickAddDefaultCategory] = useState<string | null>(null);
   const [quickAddDialogConfig, setQuickAddDialogConfig] = useState({
     title: 'Add Unscheduled Item',
-    description: 'Add another item to your unscheduled items list.',
+    description: 'Add another item to your unscheduled items list.'
   });
 
   // Set isBrowser to true on mount (for client-side portal rendering)
-  useEffect(() => {
-    setIsBrowser(true);
-  }, []);
+  useEffect(() => { return setIsBrowser(true); }, []);
 
   // Configure the sensors
   const sensors = useSensors(
@@ -292,9 +261,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
           // Save original items for potential cancel
           setOriginalItemsOnDragStart([...itineraryItems]);
         }
-      }
-
-      if (type === 'section') {
+      } else if (type === 'section') {
         setActiveId(active.id);
         // Save original items for potential cancel
         setOriginalItemsOnDragStart([...itineraryItems]);
@@ -372,7 +339,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
       }
 
       const activeData = active.data.current as any;
-      const overData = over.data.current as any;
+      const overData = over?.data.current as any;
 
       if (!activeData || !overData) {
         setActiveId(null);
@@ -506,16 +473,16 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
     setQuickAddDefaultCategory(null);
     setQuickAddDialogConfig({
       title: 'Add Unscheduled Item',
-      description: 'Add another item to your unscheduled items list.',
+      description: 'Add another item to your unscheduled items list.'
     });
     setIsQuickAddDialogOpen(true);
   };
 
   const handleAddAccommodation = () => {
-    setQuickAddDefaultCategory(ITINERARY_CATEGORIES.ACCOMMODATIONS);
+    setQuickAddDefaultCategory(ITINERARY_CATEGORIES.ACCOMMODATION);
     setQuickAddDialogConfig({
       title: 'Add Accommodation',
-      description: "Add where you'll be staying during your trip.",
+      description: "Add where you'll be staying during your trip."
     });
     setIsQuickAddDialogOpen(true);
   };
@@ -524,7 +491,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
     setQuickAddDefaultCategory(ITINERARY_CATEGORIES.TRANSPORTATION);
     setQuickAddDialogConfig({
       title: 'Add Transportation',
-      description: "Add how you'll be getting around during your trip.",
+      description: "Add how you'll be getting around during your trip."
     });
     setIsQuickAddDialogOpen(true);
   };
@@ -534,7 +501,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
     // Refresh the itinerary
     toast({
       title: 'Item Added',
-      description: 'Your itinerary has been updated.',
+      description: 'Your itinerary has been updated.'
     });
   };
 
@@ -590,7 +557,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
 
   // Get accommodation and transportation items for the enhanced trip details section
   const accommodationItems = useMemo(
-    () => itineraryItems.filter((item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS),
+    () => itineraryItems.filter((item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATION),
     [itineraryItems]
   );
 
@@ -778,10 +745,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                     canEdit={canEdit}
                     onEditItem={onEditItem}
                     onAddItemToDay={() => onAddItem(dayNumber)}
-                    onMoveItem={(itemId, targetDay) => {
-                      // Handle move item logic if needed
-                      console.log('Move item requested:', itemId, targetDay);
-                    }}
+                    onMoveItem={(itemId, targetDay) => { return // Handle move item logic if needed
+                      console.log('Move item requested:', itemId, targetDay); }}
                     durationDays={durationDays}
                     containerId={sectionId}
                   />

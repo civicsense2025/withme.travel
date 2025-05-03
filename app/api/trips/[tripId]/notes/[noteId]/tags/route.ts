@@ -1,27 +1,56 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/database';
 import { type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import { Database } from '@/types/database.types';
+
+// Define trip roles and field constants to avoid linting issues
+const TRIP_ROLES = {
+  ADMIN: 'admin',
+  EDITOR: 'editor',
+  CONTRIBUTOR: 'contributor',
+  VIEWER: 'viewer'
+} as const;
+
+// Define field constants
+const FIELDS = {
+  TAGS: {
+    ID: 'id',
+    NAME: 'name'
+  },
+  NOTE_TAGS: {
+    NOTE_ID: 'note_id',
+    TAG_ID: 'tag_id'
+  },
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    ROLE: 'role'
+  }
+};
 
 // Helper function - Assume is_trip_member_with_role exists from previous migration
-// Or define locally/import if moved to shared utils
 async function checkTripMembershipAndRole(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  roles: string[]
+  roles: (keyof typeof TRIP_ROLES)[]
 ) {
   // Added validation for inputs
   if (!supabase || !tripId || !userId || !Array.isArray(roles)) {
     console.error('Invalid arguments passed to checkTripMembershipAndRole');
     throw new Error('Internal server error checking permissions.');
   }
+  
+  // Map role keys to their values for the check
+  const roleValues = roles.map((roleKey) => TRIP_ROLES[roleKey]);
+
   const { data, error } = await supabase.rpc('is_trip_member_with_role', {
     _trip_id: tripId,
     _user_id: userId,
-    _roles: roles,
+    _roles: roleValues // Pass actual role values
   });
+  
   if (error) {
     console.error(
       `Error checking trip membership/role for user ${userId} on trip ${tripId}:`,
@@ -37,15 +66,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  // Extract params properly inside the function
   const { tripId, noteId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createServerSupabaseClient();
-
     // Auth check
     const {
       data: { user },
@@ -57,10 +84,10 @@ export async function GET(
 
     // Authorization check (any member can read tags of a note in their trip)
     const canRead = await checkTripMembershipAndRole(supabase, tripId, user.id, [
-      'admin',
-      'editor',
-      'contributor',
-      'viewer',
+      'ADMIN',
+      'EDITOR',
+      'CONTRIBUTOR',
+      'VIEWER',
     ]);
     if (!canRead) {
       return NextResponse.json(
@@ -69,18 +96,18 @@ export async function GET(
       );
     }
 
-    // Fetch tags associated with the noteId
+    // Fetch tags associated with the noteId using FIELDS
     const { data: tags, error: tagsError } = await supabase
-      .from(TABLES.NOTE_TAGS) // Use the new table constant
+      .from('note_tags') // Using table name directly as it may not be in TABLES constant
       .select(
         `
-            tags (
-                ${FIELDS.TAGS.ID},
-                ${FIELDS.TAGS.NAME}
+            tags ( 
+                id,
+                name
             )
         `
       )
-      .eq(FIELDS.NOTE_TAGS.NOTE_ID, noteId); // Use constant
+      .eq('note_id', noteId);
 
     if (tagsError) {
       console.error(`[Note Tags API GET ${noteId}] Error fetching tags:`, tagsError);
@@ -88,7 +115,10 @@ export async function GET(
     }
 
     // Extract the tag objects from the join table result
-    const extractedTags = tags ? tags.map((item) => item.tags).filter((tag) => tag !== null) : [];
+    // Updated to handle potential type differences
+    const extractedTags = tags
+      ? tags.map((item: any) => item.tags).filter((tag) => tag !== null)
+      : [];
 
     return NextResponse.json({ tags: extractedTags });
   } catch (error: any) {
@@ -102,14 +132,13 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  // Extract params properly
   const { tripId, noteId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createServerSupabaseClient();
     const { tags: newTags }: { tags: string[] } = await request.json();
 
     // Auth check
@@ -123,8 +152,8 @@ export async function PUT(
 
     // Authorization check (Editor or Admin can manage tags)
     const canEdit = await checkTripMembershipAndRole(supabase, tripId, user.id, [
-      'admin',
-      'editor',
+      'ADMIN',
+      'EDITOR',
     ]);
     if (!canEdit) {
       return NextResponse.json(
@@ -146,9 +175,9 @@ export async function PUT(
 
     // 1. Find existing tags and identify names for new tags
     const { data: existingTags, error: fetchTagsError } = await supabase
-      .from(TABLES.TAGS)
-      .select(`${FIELDS.TAGS.ID}, ${FIELDS.TAGS.NAME}`)
-      .in(FIELDS.TAGS.NAME, trimmedTags);
+      .from('tags')
+      .select(`id, name`)
+      .in('name', trimmedTags);
 
     if (fetchTagsError) {
       console.error(`[Note Tags API PUT ${noteId}] Error fetching existing tags:`, fetchTagsError);
@@ -163,28 +192,25 @@ export async function PUT(
 
     // 2. Create new tags if any
     if (newTagNames.length > 0) {
-      const newTagsToInsert = newTagNames.map((name) => ({ name })); // Assumes name is unique and other fields can be default
+      const newTagsToInsert = newTagNames.map((name) => ({ name }));
       const { data: insertedTags, error: insertTagsError } = await supabase
-        .from(TABLES.TAGS)
+        .from('tags')
         .insert(newTagsToInsert)
-        .select(`${FIELDS.TAGS.ID}, ${FIELDS.TAGS.NAME}`);
+        .select(`id, name`);
 
       if (insertTagsError) {
         console.error(`[Note Tags API PUT ${noteId}] Error inserting new tags:`, insertTagsError);
-        // Handle potential unique constraint violation if needed
         return NextResponse.json({ error: 'Error creating new tags' }, { status: 500 });
       }
       insertedTags.forEach((tag: { id: string }) => allTagIds.push(tag.id));
     }
 
     // 3. Synchronize note_tags table
-    // Simplest way: Delete all existing associations for this note, then insert the new ones.
-
     // Delete existing associations
     const { error: deleteError } = await supabase
-      .from(TABLES.NOTE_TAGS)
+      .from('note_tags')
       .delete()
-      .eq(FIELDS.NOTE_TAGS.NOTE_ID, noteId);
+      .eq('note_id', noteId);
 
     if (deleteError) {
       console.error(`[Note Tags API PUT ${noteId}] Error deleting old tags:`, deleteError);
@@ -197,11 +223,11 @@ export async function PUT(
     // Insert new associations if there are tags to associate
     if (allTagIds.length > 0) {
       const newNoteTags = allTagIds.map((tagId) => ({
-        [FIELDS.NOTE_TAGS.NOTE_ID]: noteId,
-        [FIELDS.NOTE_TAGS.TAG_ID]: tagId,
+        note_id: noteId,
+        tag_id: tagId,
       }));
       const { error: insertNoteTagsError } = await supabase
-        .from(TABLES.NOTE_TAGS)
+        .from('note_tags')
         .insert(newNoteTags);
 
       if (insertNoteTagsError) {
@@ -218,18 +244,17 @@ export async function PUT(
 
     // 4. Fetch and return the final list of tags for the note
     const { data: finalTagsData, error: finalFetchError } = await supabase
-      .from(TABLES.NOTE_TAGS)
-      .select(`tags (${FIELDS.TAGS.ID}, ${FIELDS.TAGS.NAME})`)
-      .eq(FIELDS.NOTE_TAGS.NOTE_ID, noteId);
+      .from('note_tags')
+      .select(`tags (id, name)`)
+      .eq('note_id', noteId);
 
     if (finalFetchError) {
       console.error(`[Note Tags API PUT ${noteId}] Error fetching final tags:`, finalFetchError);
-      // Don't fail the whole request, but maybe log or return a partial success?
-      return NextResponse.json({ tags: [] });
+      return NextResponse.json({ tags: [] }); // Return empty on fetch error after sync
     }
 
     const finalTags = finalTagsData
-      ? finalTagsData.map((item: { tags: any }) => item.tags).filter((tag: any) => tag !== null)
+      ? finalTagsData.map((item: any) => item.tags).filter((tag: any) => tag !== null)
       : [];
     return NextResponse.json({ tags: finalTags });
   } catch (error: any) {

@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NextThemeProvider } from 'next-themes'; // If you are using a theme provider
+import { ThemeProvider } from 'next-themes'; // If you are using a theme provider
 
 // Add any providers that are commonly used in your app here
 // This is just an example, adjust according to your actual providers
@@ -26,16 +26,16 @@ export function customRender(
     ...renderOptions
   }: CustomRenderOptions = {}
 ) {
-  // eslint-disable-next-line react/display-name
+  // Create a wrapper component that includes all providers
   const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
     let wrappedChildren = children;
 
     // Wrap with theme provider if required
     if (withNextTheme) {
       wrappedChildren = (
-        <NextThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {wrappedChildren}
-        </NextThemeProvider>
+        </ThemeProvider>
       );
     }
 

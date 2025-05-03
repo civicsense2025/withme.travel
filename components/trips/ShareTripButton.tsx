@@ -12,10 +12,9 @@ interface ShareTripButtonProps {
 }
 
 export function ShareTripButton({ slug, privacySetting, className = '' }: ShareTripButtonProps) {
-  const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-
-  // Don't show share button for private trips
+  const [copied, setCopied] = useState(false);
+  
   if (!slug || privacySetting === 'private') {
     return null;
   }

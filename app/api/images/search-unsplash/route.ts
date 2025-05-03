@@ -6,13 +6,12 @@ const unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY;
 
 if (!unsplashAccessKey) {
   console.error('UNSPLASH_ACCESS_KEY environment variable is not set.');
-  // Optionally throw an error during build/startup if needed
 }
 
 // Initialize Unsplash client (handle case where key might be missing at runtime)
 const unsplash = unsplashAccessKey ? createApi({ accessKey: unsplashAccessKey }) : null;
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   if (!unsplash) {
     return NextResponse.json({ error: 'Unsplash API key not configured.' }, { status: 500 });
   }

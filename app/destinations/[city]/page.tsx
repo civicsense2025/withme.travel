@@ -18,7 +18,7 @@ import {
   Wifi,
   Train,
   Leaf,
-  FootprintsIcon as Walking,
+  Footprints as Walking,
   Heart,
   Instagram,
   Briefcase,
@@ -38,7 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DestinationReviews } from '@/components/destinations/destination-reviews';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { AuthContextType } from '@/lib/hooks/use-auth';
+import { AuthContextType } from '@/components/auth-provider';
 import { Rating } from '@/components/ui/rating';
 import { RelatedItinerariesWidget } from '@/components/destinations/related-itineraries-widget';
 
@@ -97,11 +97,10 @@ export default function CityPage() {
   const router = useRouter();
   const params = useParams<{ city: string }>();
   const { toast } = useToast();
-  const { user, profile } = useAuth() as AuthContextType;
+  const { user } = useAuth() as AuthContextType;
   const [destination, setDestination] = useState<Destination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user: currentUser } = useAuth() as { user: SupabaseUser | null };
 
   const cityParam = params?.city;
 
@@ -180,11 +179,11 @@ export default function CityPage() {
       }
 
       const photographerPart = photographer_url
-        ? `<a href=\"${photographer_url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${photographer_name}</a>`
+        ? `<a href="${photographer_url}" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">${photographer_name}</a>`
         : photographer_name;
 
       const sourcePart = sourceLink
-        ? `<a href=\"${sourceLink}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${sourceName}</a>`
+        ? `<a href="${sourceLink}" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">${sourceName}</a>`
         : sourceName;
 
       return `Photo by ${photographerPart} on ${sourcePart}`;
@@ -226,7 +225,7 @@ export default function CityPage() {
         imageUrl = `/destinations/${imageUrl}`;
       }
     } else {
-      imageUrl = `/destinations/${destination.city.toLowerCase().replace(/\s+/g, '-')}-${destination.country.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+      imageUrl = `/destinations/${destination.city.toLowerCase().replace(/\s+/g, '-')}-${destination.country.toLowerCase().replace(/\s+/g, `-`)}.jpg`;
     }
 
     return {
@@ -290,9 +289,9 @@ export default function CityPage() {
 
   const imageData = getDestinationImageData(destination);
 
-  // Use profile.name and fallback to 'My' if name is not available
-  const profileName = profile?.name?.split(' ')[0] || 'My';
-  const defaultTripName = `${profileName}'s trip to ${destination.city}`;
+  // Use user.profile.name and fallback to 'My' if name is not available
+  const profileName = user?.profile?.name?.split(' ')[0] || 'My';
+  const defaultTripName = `${profileName}s trip to ${destination.city}`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">

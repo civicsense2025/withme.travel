@@ -31,39 +31,83 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * Creates a Supabase client configured for API routes.
  */
 export function createApiClient() {
-  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get: async (name) => {
-        try {
-          const cookieStore = await cookies();
-          return cookieStore.get(name)?.value;
-        } catch (error) {
-          console.error(`[Cookie Get Error] Failed to get cookie ${name}:`, error);
-          return undefined;
-        }
-      },
-      set: async (name, value, options) => {
-        try {
-          const cookieStore = await cookies();
-          cookieStore.set({ name, value, ...options });
-        } catch (error) {
-          console.error(`[Cookie Set Error] Failed to set cookie ${name}:`, error);
-        }
-      },
-      remove: async (name, options) => {
-        try {
-          const cookieStore = await cookies();
-          cookieStore.delete({ name, ...options });
-        } catch (error) {
-          console.error(`[Cookie Remove Error] Failed to remove cookie ${name}:`, error);
-        }
-      },
-    },
-  });
+  try {
+    return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get: async (name) => {
+          try {
+            const cookieStore = cookies();
+            return (await cookieStore).get(name)?.value;
+          } catch (error) {
+            console.error(`[Cookie Get Error] Failed to get cookie ${name}:`, error);
+            return undefined;
+          }
+        },
+        set: async (name, value, options) => {
+          try {
+            const cookieStore = cookies();
+            (await cookieStore).set({ name, value, ...options });
+          } catch (error) {
+            console.error(`[Cookie Set Error] Failed to set cookie ${name}:`, error);
+          }
+        },
+        remove: async (name, options) => {
+          try {
+            const cookieStore = cookies();
+            (await cookieStore).delete({ name, ...options });
+          } catch (error) {
+            console.error(`[Cookie Remove Error] Failed to remove cookie ${name}:`, error);
+          }
+        },
+      }
+    });
+  } catch (error) {
+    console.error('Error creating API client:', error);
+    // Return a minimal client as fallback
+    return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get: () => undefined,
+        set: () => {},
+        remove: () => {},
+      }
+    });
+  }
 }
 
 // Legacy alias for createApiClient
 export const createRouteHandlerClient = createApiClient;
+
+/**
+ * Create an API route client for use in API routes or server actions
+ * This function handles request/response objects properly
+ */
+export function createApiRouteClient({ req, res }: { req: any; res: any }) {
+  const { createServerClient } = require('@supabase/ssr');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  return createServerClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      auth: {
+        persistSession: false,
+      },
+      cookies: {
+        get: (name: string) => {
+          const cookies = req.cookies;
+          return cookies[name];
+        },
+        set: (name: string, value: string, options: any) => {
+          res.setHeader('Set-Cookie', `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`);
+        },
+        remove: (name: string, options: any) => {
+          res.setHeader('Set-Cookie', `${name}=; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+        }
+      }
+    }
+  );
+}
 
 /**
  * Creates a Supabase client for API routes with proper cookie handling
@@ -81,9 +125,9 @@ export function createServerSupabaseClient(cookieStore?: ReturnType<typeof cooki
       supabaseAnonKey,
       {
         cookies: {
-          get(name: string) {
+          async get(name: string) {
             try {
-              return store.get(name)?.value;
+              return (await store).get(name)?.value;
             } catch (error) {
               const cookieError = error as CookieError;
               // Log error but don't crash the request
@@ -91,9 +135,9 @@ export function createServerSupabaseClient(cookieStore?: ReturnType<typeof cooki
               return undefined;
             }
           },
-          set(name: string, value: string, options: CookieOptions) {
+          async set(name: string, value: string, options: CookieOptions) {
             try {
-              store.set({ name, value, ...options });
+              (await store).set({ name, value, ...options });
             } catch (error) {
               const cookieError = error as CookieError;
               if (
@@ -107,9 +151,9 @@ export function createServerSupabaseClient(cookieStore?: ReturnType<typeof cooki
               captureException(cookieError);
             }
           },
-          remove(name: string, options: CookieOptions) {
+          async remove(name: string, options: CookieOptions) {
             try {
-              store.delete({ name, ...options });
+              (await store).delete({ name, ...options });
             } catch (error) {
               const cookieError = error as CookieError;
               if (
@@ -140,7 +184,7 @@ export function createServerSupabaseClient(cookieStore?: ReturnType<typeof cooki
  */
 export async function getAuthUser() {
   try {
-    const supabase = createServerSupabaseClient(cookies());
+    const supabase = createApiClient();
     const { data, error } = await supabase.auth.getUser();
 
     if (error) {

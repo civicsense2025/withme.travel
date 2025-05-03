@@ -13,16 +13,14 @@ export function ClientSideProviders({ children }: { children: React.ReactNode })
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Set mounted state
     setIsMounted(true);
-
-    // Initialize client-side services safely after mount
+    
     try {
-      initializeErrorLogging();
+      // initializeErrorLogging();
       initPerformanceMonitoring();
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('Client-side services initialized');
+        console.log('Client-side services initialized (error logging temporarily disabled)');
       }
     } catch (error) {
       console.error('Failed to initialize client-side services:', error);

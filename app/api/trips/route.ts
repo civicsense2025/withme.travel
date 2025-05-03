@@ -1,127 +1,156 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { API_ROUTES } from '@/utils/constants/routes';
-// Use original DB constants
-import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
-import { type Trip } from '@/types/database.types';
+// Import database tables from the correct location
+import { createApiRouteClient } from '@/utils/api-helpers/cookie-handlers';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TRIP_ROLES } from '@/utils/constants/status';
 
-// Define interfaces for better type safety
-// This interface might not be needed with the simplified query
+// Define table and field constants
+const TABLES = {
+  TRIPS: 'trips',
+  TRIP_MEMBERS: 'trip_members'
+};
+
+const FIELDS = {
+  TRIPS: {
+    ID: 'id',
+    NAME: 'name',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    CREATED_BY: 'created_by'
+  },
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    ROLE: 'role'
+  }
+};
 
 // Define TripRole type locally if not exported
 type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
 
-// Use the imported ENUMS
-const TRIP_ROLES = ENUMS.TRIP_ROLES;
+// Define types for trips and memberships
+interface TripMembership {
+  trip_id: string;
+  role: TripRole;
+  user_id: string;
+  [key: string]: any;
+}
 
-export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+interface Trip {
+  id: string;
+  name: string;
+  destination_id: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  [key: string]: any;
+}
 
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const searchParams = request.nextUrl.searchParams;
   const limitParam = searchParams?.get('limit');
-  const sortParam = searchParams?.get('sort');
-  const fieldsParam = searchParams?.get('fields');
-
-  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-  const sort = sortParam || 'newest';
-  // Ensure fields needed by useTrips are included
-  const selectFields = fieldsParam
-    ? fieldsParam
-        .split(',')
-        .map((f) => f.trim())
-        .join(',')
-    : 'id, name, start_date, end_date, destination_id, created_by, created_at, updated_at, status, duration_days, cover_image_url, destination_name';
-
+  const skipParam = searchParams?.get('skip');
+  const includeParam = searchParams?.get('include');
+  const sortParam = searchParams?.get('sort') || 'updated_at';
+  const orderParam = searchParams?.get('order') || 'desc';
+  
+  // Parse query params
+  const limit = limitParam ? parseInt(limitParam, 10) : 100;
+  const skip = skipParam ? parseInt(skipParam, 10) : 0;
+  
+  // Parse includes
+  const includes: string[] = [];
+  if (includeParam) {
+    includes.push(...includeParam.split(','));
+  }
+  
+  // Choose what to include in the response
+  let select = '*';
+  if (includes.length > 0) {
+    // Handle specific includes
+    if (includes.includes('members')) {
+      select += ', members:trip_members(*)';
+    }
+    
+    if (includes.includes('destination')) {
+      select += ', destination:destinations(*)';
+    }
+  }
+  
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    // Create Supabase client
+    const supabase = await createApiRouteClient();
+    
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('Authentication error:', authError);
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+    }
+    
     if (!user) {
-      console.log('[API /trips] Unauthorized request - no user found');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-
-    console.log(`[API /trips] Fetching trip IDs for user ${user.id}`);
-
-    // Step 1: Get trip_ids the user is a member of
-    const { data: memberData, error: memberError } = await supabase
+    
+    // Get all trips where the user is a member
+    const { data: memberships, error: membershipError } = await supabase
       .from(TABLES.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.TRIP_ID)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id);
-
-    if (memberError) {
-      console.error('[API /trips] Error fetching user trip memberships:', memberError);
-      throw memberError;
+      .select('trip_id, role')
+      .eq('user_id', user.id);
+    
+    if (membershipError) {
+      console.error('Error fetching memberships:', membershipError);
+      return NextResponse.json({ error: 'Failed to fetch memberships' }, { status: 500 });
     }
-
-    const tripIds = memberData?.map((m) => m.trip_id) || [];
-
-    if (tripIds.length === 0) {
-      console.log(`[API /trips] User ${user.id} is not a member of any trips.`);
-      return NextResponse.json({ trips: [], totalCount: 0 });
+    
+    // If no memberships, return empty array
+    if (!memberships || memberships.length === 0) {
+      return NextResponse.json({ data: [] });
     }
-
-    console.log(`[API /trips] User ${user.id} is member of trips: ${tripIds.join(', ')}`);
-    console.log(
-      `[API /trips] Fetching trip details for ${tripIds.length} trips. Fields: ${selectFields}`
-    );
-
-    // Step 2: Fetch details for those trips
-    let query = supabase.from(TABLES.TRIPS).select(selectFields).in(FIELDS.TRIPS.ID, tripIds);
-
-    // Apply sorting using FIELDS
-    if (sort === 'oldest') {
-      query = query.order(FIELDS.TRIPS.CREATED_AT, { ascending: true });
-    } else if (sort === 'name') {
-      query = query.order(FIELDS.TRIPS.NAME, { ascending: true });
-    } else {
-      // Default to newest first
-      query = query.order(FIELDS.TRIPS.CREATED_AT, { ascending: false });
-    }
-
-    // Apply limit if specified
-    if (limit && limit > 0) {
-      query = query.limit(limit);
-    }
-
-    const { data: tripsData, error: tripsError } = await query;
-
+    
+    // Extract trip IDs from memberships
+    const tripIds = memberships.map((m: any) => m.trip_id);
+    
+    // Fetch all trips that user is a member of
+    let query = supabase
+      .from(TABLES.TRIPS)
+      .select(select)
+      .in('id', tripIds)
+      .order(sortParam, { ascending: orderParam === 'asc' })
+      .range(skip, skip + limit - 1);
+    
+    const { data: trips, error: tripsError } = await query;
+    
     if (tripsError) {
-      console.error('[API /trips] Error fetching trips details:', tripsError);
-      throw tripsError;
+      console.error('Error fetching trips:', tripsError);
+      return NextResponse.json({ error: 'Failed to fetch trips' }, { status: 500 });
     }
-
-    // Map name to title for compatibility with useTrips hook
-    const trips =
-      tripsData?.map((trip) => ({
-        ...(trip as object), // Type assertion to help spread
-        title: (trip as any).name, // Access name, map to title
-      })) || [];
-
-    console.log(
-      `[API /trips] Found ${trips.length} trips for user ${user.id}. Total memberships: ${tripIds.length}`
-    );
-
-    return NextResponse.json({
-      trips: trips,
-      totalCount: tripIds.length, // Total count is based on memberships
-      limit: limit,
+    
+    // Add role from membership to each trip
+    const tripsWithRole = (trips as any[]).map((trip: any) => {
+      const membership = (memberships as any[]).find((m: any) => m.trip_id === trip.id);
+      return {
+        ...trip,
+        userRole: membership?.role
+      };
     });
+    
+    return NextResponse.json({ data: tripsWithRole });
   } catch (error) {
-    console.error('[API /trips] Error fetching trips:', error);
+    console.error('Error in GET /api/trips:', error);
     return NextResponse.json(
-      {
-        error: 'Failed to fetch trips',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  const supabase = createRouteHandlerClient();
 
   try {
     const {
@@ -138,10 +167,10 @@ export async function POST(request: NextRequest) {
     const createdById = user.id;
 
     // Prepare payload using FIELDS and correct 'name' column
-    const { title: tripTitle, ...restOfBody } = body; // Assume input uses 'title'
+    const { title: tripTitle, ...restOfBody } = body;
     const insertPayload = {
       ...restOfBody,
-      [FIELDS.TRIPS.NAME]: tripTitle, // Map input title to 'name' column
+      [FIELDS.TRIPS.NAME]: tripTitle,
       [FIELDS.TRIPS.CREATED_BY]: createdById,
     };
 
@@ -160,12 +189,12 @@ export async function POST(request: NextRequest) {
       throw new Error('Trip data not returned after insert');
     }
 
-    // Also add the creator as a member with 'admin' role using FIELDS
+    // Also add the creator as a member
     const tripId = data[FIELDS.TRIPS.ID];
     const { error: memberError } = await supabase.from(TABLES.TRIP_MEMBERS).insert({
       [FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
       [FIELDS.TRIP_MEMBERS.USER_ID]: user.id,
-      [FIELDS.TRIP_MEMBERS.ROLE]: ENUMS.TRIP_ROLES.ADMIN, // Use ADMIN role constant
+      [FIELDS.TRIP_MEMBERS.ROLE]: TRIP_ROLES.ADMIN,
     });
 
     if (memberError) {

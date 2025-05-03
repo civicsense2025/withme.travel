@@ -11,25 +11,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format a date range consistently
- * @param startDate Start date (string or Date)
- * @param endDate End date (string or Date)
- * @param format Format to use for each date
- * @returns Formatted date range string
+ * Format a date range with start and end times
  */
-export function formatDateRange(
-  startDate?: string | Date | null,
-  endDate?: string | Date | null,
-  format: keyof typeof TIME_FORMATS = 'DISPLAY_DATE'
-): string {
-  const startStr = startDate ? formatDate(startDate, format) : null;
-  const endStr = endDate ? formatDate(endDate, format) : null;
-
-  if (!startStr && !endStr) return 'Dates not set';
-  if (startStr && !endStr) return `From ${startStr}`;
-  if (!startStr && endStr) return `Until ${endStr}`;
+export function formatDateRange(startStr?: string, endStr?: string) {
+  if (!startStr && !endStr) return '';
+  if (startStr && !endStr) return 'From ' + startStr;
+  if (!startStr && endStr) return 'Until ' + endStr;
   if (startStr && endStr) {
-    return `${startStr} - ${endStr}`;
+    return startStr + ' - ' + endStr;
   }
   return 'Invalid date range';
 }
@@ -81,7 +70,7 @@ export function formatDate(
  */
 export function truncate(str: string, length: number): string {
   if (!str) return '';
-  return str.length > length ? `${str.substring(0, length)}...` : str;
+  return str.length > length ? str.substring(0, length) + '...' : str;
 }
 
 // List of common stop words
@@ -258,7 +247,7 @@ export function formatTime(timeStr?: string): string {
         hour: '2-digit',
         minute: '2-digit',
         hour12: true,
-      }
+  }
     );
   } catch (e) {
     return timeStr;
@@ -266,57 +255,44 @@ export function formatTime(timeStr?: string): string {
 }
 
 /**
- * Generate a consistent color class based on an ID
- * @param id The ID to use for generating the color
- * @returns CSS class for the color
+ * Format a currency amount with the appropriate symbol and locale formatting
+ * @param amount Amount to format
+ * @param currency Currency code (default: USD)
+ * @returns Formatted currency string
  */
-export function getColorClassFromId(id?: string): string {
-  const colorClasses = [
-    `bg-${THEME.COLORS.BLUE} text-blue-900`,
-    `bg-${THEME.COLORS.PINK} text-pink-900`,
-    `bg-${THEME.COLORS.YELLOW} text-amber-900`,
-    `bg-${THEME.COLORS.PURPLE} text-purple-900`,
-    `bg-${THEME.COLORS.MINT} text-emerald-900`,
-    `bg-${THEME.COLORS.PEACH} text-orange-900`,
-  ];
+export function formatCurrency(
+  amount: number | string | undefined,
+  currency: string = 'USD'
+): string {
+  if (amount === undefined || amount === null) {
+    return '$0.00';
+  }
 
-  if (!id) return colorClasses[0];
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
 
-  const colorIndex =
-    Math.abs(id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % colorClasses.length;
-  return colorClasses[colorIndex];
+  if (isNaN(numericAmount)) {
+    return '$0.00';
+  }
+
+  try {
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return formatter.format(numericAmount);
+  } catch (error) {
+    console.error('Error formatting currency:', error);
+    return '$' + numericAmount.toFixed(2);
+  }
 }
 
 /**
- * Generate a consistent card style class
- * @returns CSS class for card styling
- */
-export function getCardClass(): string {
-  return 'bg-background dark:bg-slate-900/60';
-}
-
-/**
- * Get initials from a name
- * @param name The name to get initials from
- * @returns Initials (up to 2 characters)
- */
-export function getInitials(name?: string | null): string {
-  if (!name) return '';
-
-  return name
-    .split(' ')
-    .map((part) => part.charAt(0))
-    .filter((char) => char.match(/[A-Za-z]/)) // Only include letters
-    .slice(0, 2) // Max 2 initials
-    .join('')
-    .toUpperCase();
-}
-
-/**
- * Format an error into a readable string
- * @param error Any error object or string
- * @param fallback Fallback message if error can't be parsed
- * @returns Formatted error message
+ * Extract a human-readable error message from various error types
+ * @param error Error object of any type
+ * @param fallback Fallback message if no specific error can be extracted
+ * @returns Human-readable error message
  */
 export function formatError(
   error: unknown,
@@ -324,78 +300,58 @@ export function formatError(
 ): string {
   if (!error) return fallback;
 
-  // If it's a string, return it directly
+  // Handle string errors
   if (typeof error === 'string') return error;
 
-  // If it's an Error object with a message
-  if (error instanceof Error) return error.message;
+  // Handle Error objects
+  if (error instanceof Error) return error.message || fallback;
 
-  // If it's an object with a message property
-  if (typeof error === 'object' && error !== null && 'message' in error) {
-    const msg = (error as { message: unknown }).message;
-    if (typeof msg === 'string') return msg;
-  }
-
-  // If it's an object with an error property containing a message
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'error' in error &&
-    typeof (error as { error: unknown }).error === 'object' &&
-    (error as { error: unknown }).error !== null &&
-    'message' in (error as { error: { message?: unknown } }).error
-  ) {
-    const msg = (error as { error: { message?: unknown } }).error.message;
-    if (typeof msg === 'string') return msg;
-  }
-
-  // If it can be stringified, stringify it
-  try {
-    if (typeof error === 'object' && error !== null) {
-      return JSON.stringify(error);
+  // Handle Supabase-style errors with data.error or error property
+  if (typeof error === 'object') {
+    const errorObj = error as Record<string, any>;
+    
+    // Check for data.error pattern
+    if (errorObj.data && errorObj.data.error) {
+      return errorObj.data.error;
     }
-  } catch (e) {
-    // Ignore stringification errors
+    
+    // Check for error or message property
+    if (errorObj.error) {
+      return typeof errorObj.error === 'string' 
+        ? errorObj.error 
+        : errorObj.error.message || fallback;
+    }
+    
+    if (errorObj.message) {
+      return errorObj.message;
+    }
   }
 
-  // Default fallback
   return fallback;
 }
 
 /**
- * Format a currency amount
- * @param amount The amount to format
- * @param currency The currency code
- * @returns Formatted currency string
+ * Get the initials from a name (first letter of first and last name)
+ * @param name Name to extract initials from
+ * @returns 1-2 character string of initials
  */
-export function formatCurrency(
-  amount: number | string | undefined,
-  currency: string = 'USD'
-): string {
-  if (amount === undefined || amount === null) return '';
+export function getInitials(name?: string | null): string {
+  if (!name) return '?';
 
-  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-
-  if (isNaN(numericAmount)) return '';
-
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(numericAmount);
-  } catch (error) {
-    console.error('Error formatting currency:', error);
-    return `${numericAmount} ${currency}`;
-  }
+  const parts = name.trim().split(/\s+/);
+  
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  
+  // Get first letter of first name and first letter of last name
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 /**
- * Limit an array of items with info about hidden items
+ * Limit an array of items to a specified size and return info about hidden items
  * @param items Array of items to limit
  * @param limit Maximum number of items to return
- * @returns Object with limited items and info about hidden items
+ * @returns Object with limited items and metadata about hidden items
  */
 export function limitItems<T>(
   items: T[],
@@ -409,21 +365,55 @@ export function limitItems<T>(
     return { items: [], hiddenCount: 0, hasMore: false };
   }
 
-  // If items are less than or equal to the limit, return them all
   if (items.length <= limit) {
-    return {
-      items,
-      hiddenCount: 0,
-      hasMore: false,
-    };
+    return { items, hiddenCount: 0, hasMore: false };
   }
 
-  // Otherwise, return the limited items and info about hidden items
   return {
     items: items.slice(0, limit),
     hiddenCount: items.length - limit,
     hasMore: true,
   };
+}
+
+/**
+ * Generate a background color class based on an ID string
+ * @param id String ID to use for color generation
+ * @returns Tailwind background color class
+ */
+export function getColorClassFromId(id?: string): string {
+  if (!id) return 'bg-gray-200';
+  
+  // Use a simple hash function to convert the ID to a number
+  const hash = Array.from(id).reduce(
+    (acc, char) => acc + char.charCodeAt(0),
+    0
+  );
+  
+  // List of color classes to choose from
+  const colorClasses = [
+    'bg-blue-100',
+    'bg-green-100',
+    'bg-yellow-100',
+    'bg-red-100',
+    'bg-purple-100',
+    'bg-pink-100',
+    'bg-indigo-100',
+    'bg-orange-100',
+    'bg-teal-100',
+    'bg-cyan-100',
+  ];
+  
+  // Use the hash to pick a color class
+  return colorClasses[hash % colorClasses.length];
+}
+
+/**
+ * Generate a consistent card style class
+ * @returns CSS class for card styling
+ */
+export function getCardClass(): string {
+  return 'bg-background dark:bg-slate-900/60';
 }
 
 /**
@@ -445,12 +435,12 @@ export function formatRelativeTime(date: Date | string): string {
     const diffDays = Math.round(diffSeconds / (60 * 60 * 24));
 
     if (diffSeconds < 60) return 'just now';
-    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} minutes ago`;
-    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} hours ago`;
+    if (diffSeconds < 3600) return Math.floor(diffSeconds / 60) + ' minutes ago';
+    if (diffSeconds < 86400) return Math.floor(diffSeconds / 3600) + ' hours ago';
     if (diffDays === 1) return 'yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    if (diffDays < 7) return diffDays + ' days ago';
+    if (diffDays < 30) return Math.floor(diffDays / 7) + ' weeks ago';
+    if (diffDays < 365) return Math.floor(diffDays / 30) + ' months ago';
 
     // For dates more than a year ago, return formatted date
     return formatDate(dateObj, 'DISPLAY_DATE');

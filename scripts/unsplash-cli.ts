@@ -211,7 +211,7 @@ const createAttributionFile = (
 
   switch (format) {
     case 'html':
-      content = `Photo by <a href="${userUrl}">${photo.user.name}</a> on <a href="${unsplashUrl}">Unsplash</a>`;
+      content = `Photo by <a href="${userUrl}`>${photo.user.name}</a> on <a href=`${unsplashUrl}">Unsplash</a>`;
       break;
     case 'json':
       content = JSON.stringify(
@@ -284,7 +284,7 @@ program
       const retryCount = parseInt(options.retries, 10);
       if (isNaN(retryCount) || retryCount < 0) {
         spinner.warn({
-          text: `Invalid retry count "${options.retries}". Using default: ${DEFAULT_RETRY_COUNT}`,
+          text: `Invalid retry count "${options.retries}`. Using default: ${DEFAULT_RETRY_COUNT}`,
         });
         options.retries = DEFAULT_RETRY_COUNT.toString();
       }
@@ -304,14 +304,14 @@ program
 
       const { photo, attribution, sourceQuery } = result;
 
-      spinner.update({ text: `Found photo: ${photo.id} (via query: "${sourceQuery}")` });
+      spinner.update({ text: `Found photo: ${photo.id} (via query: `${sourceQuery}`)` });
 
       const sanitize = (name: string) =>
         name
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
-      const defaultFilenameBase = `${sanitize(options.city)}-${sanitize(options.country)}${options.state ? '-' + sanitize(options.state) : ''}`;
+      const defaultFilenameBase = `${sanitize(options.city)}-${sanitize(options.country)}${options.state ? `-` + sanitize(options.state) : ''}`;
       const filenameBase = options.filename ? sanitize(options.filename) : defaultFilenameBase;
       const filenameExt =
         path.extname(new URL(photo.urls.raw || photo.urls.full || photo.urls.regular).pathname) ||
@@ -378,14 +378,14 @@ program
       const batchSize = parseInt(options.batchSize, 10);
       if (isNaN(batchSize) || batchSize <= 0) {
         batchSpinner.warn({
-          text: `Invalid batch size "${options.batchSize}". Using default: ${DEFAULT_BATCH_SIZE}`,
+          text: `Invalid batch size "${options.batchSize}`. Using default: ${DEFAULT_BATCH_SIZE}`,
         });
         options.batchSize = DEFAULT_BATCH_SIZE.toString();
       }
       const retryCount = parseInt(options.retries, 10);
       if (isNaN(retryCount) || retryCount < 0) {
         batchSpinner.warn({
-          text: `Invalid retry count "${options.retries}". Using default: ${DEFAULT_RETRY_COUNT}`,
+          text: `Invalid retry count "${options.retries}`. Using default: ${DEFAULT_RETRY_COUNT}`,
         });
         options.retries = DEFAULT_RETRY_COUNT.toString();
       }
@@ -410,7 +410,7 @@ program
           const parts = line.split(options.delimiter).map((p) => p.trim());
           if (parts.length < 2) {
             batchSpinner.warn({
-              text: `Skipping invalid line ${index + startIndex + 1}: Not enough columns (expected city, country, [state]). Line: "${line}"`,
+              text: `Skipping invalid line ${index + startIndex + 1}: Not enough columns (expected city, country, [state]). Line: `${line}``,
             });
             return null;
           }
@@ -465,7 +465,7 @@ program
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '');
-            const filenameBase = `${sanitize(city)}-${sanitize(country)}${state ? '-' + sanitize(state) : ''}`;
+            const filenameBase = `${sanitize(city)}-${sanitize(country)}${state ? `-` + sanitize(state) : ''}`;
             const filenameExt =
               path.extname(
                 new URL(photo.urls.raw || photo.urls.full || photo.urls.regular).pathname
@@ -542,7 +542,7 @@ program
       const retryCount = parseInt(options.retries, 10);
       if (isNaN(retryCount) || retryCount < 0) {
         searchSpinner.warn({
-          text: `Invalid retry count "${options.retries}". Using default: ${DEFAULT_RETRY_COUNT}`,
+          text: `Invalid retry count "${options.retries}`. Using default: ${DEFAULT_RETRY_COUNT}`,
         });
         options.retries = DEFAULT_RETRY_COUNT.toString();
       }

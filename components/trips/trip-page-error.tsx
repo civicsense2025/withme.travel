@@ -16,7 +16,7 @@ interface TripPageErrorProps {
  */
 export function TripPageError({ tripId, error }: TripPageErrorProps) {
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-
+  
   useEffect(() => {
     // Only show detailed error in development
     if (process.env.NODE_ENV === 'development' && error) {

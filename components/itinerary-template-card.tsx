@@ -26,22 +26,14 @@ interface ItineraryTemplateCardProps {
 }
 
 export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplateCardProps) {
-  // Ensure we have an image, with fallbacks
+  // Calculate fallback or placeholder image
   const imageUrl = itinerary.image || '/images/placeholder-itinerary.jpg';
-
-  // Get initials from author name for avatar fallback
-  const getInitials = (name: string | null) => {
-    if (!name) return '?';
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  const authorInitials = itinerary.author ? getInitials(itinerary.author.name) : '?';
-
+  
+  // Get author initials from name or use placeholder
+  const authorInitials = itinerary.author?.name
+    ? itinerary.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+    
   return (
     <Link href={`/itineraries/${itinerary.slug}`}>
       <Card className="overflow-hidden h-full hover:shadow-md transition-all">

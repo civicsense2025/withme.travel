@@ -14,10 +14,10 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { fadeIn, slideUp, staggerContainer } from '@/utils/animation';
 
 export function LoginForm() {
+  const { signIn, isLoading, user, refreshSession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { signIn, isLoading, error: authError, refreshAuth } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,11 +42,13 @@ export function LoginForm() {
       });
 
       // Remove error from URL
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.delete('error');
-      const newPath =
-        window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : '');
-      router.replace(newPath);
+      if (searchParams) {
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.delete('error');
+        const newPath =
+          window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : '');
+        router.replace(newPath);
+      }
     }
   }, [searchParams, toast, router]);
 
@@ -76,7 +78,7 @@ export function LoginForm() {
 
     try {
       // First, try to refresh auth state
-      await refreshAuth();
+      await refreshSession();
 
       // Then try to sign in again
       await signIn(email, password);
@@ -105,11 +107,6 @@ export function LoginForm() {
 
     try {
       console.log('Attempting sign in...');
-
-      // Clear any previous errors
-      if (authError) {
-        console.log('Clearing previous auth error before sign in');
-      }
 
       await signIn(email, password);
       // Auth provider will handle the session, and router will redirect in parent component
@@ -178,13 +175,6 @@ export function LoginForm() {
       });
     }
   };
-
-  // Display auth errors from context
-  useEffect(() => {
-    if (authError) {
-      setLocalError(authError.message);
-    }
-  }, [authError]);
 
   return (
     <motion.div

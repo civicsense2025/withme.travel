@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES, FIELDS } from "@/utils/constants/database";
-import { getRouteHandlerClient } from '@/utils/supabase/unified';
+import { TABLES } from '@/utils/constants/database';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -19,22 +19,26 @@ interface Template {
   // Other template properties
 }
 
+interface Activity {
+  position: number | null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
   try {
     const { slug } = await params;
-    const supabase = await getRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     console.log(`[Template API] Fetching template with slug: "${slug}"`);
 
     const { data: template, error: templateError } = await supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
+      .from('itinerary_templates')
       .select(
         `
         *,
-        ${TABLES.DESTINATIONS}(*),
+        destinations(*),
         creator:profiles(id, name, avatar_url)
       `
       )
@@ -69,20 +73,16 @@ export async function GET(
     console.log(`[Template API] Found template with ID: "${template.id}"`);
 
     const { data: sections, error: sectionsError } = await supabase
-      .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
+      .from('itinerary_template_sections')
       .select(
         `
         *,
-        ${TABLES.TEMPLATE_ACTIVITIES}(*)
+        template_activities(*)
       `
       )
-      .eq(FIELDS.ITINERARY_TEMPLATE_SECTIONS.TEMPLATE_ID, template.id)
-      .order(FIELDS.ITINERARY_TEMPLATE_SECTIONS.POSITION, { ascending: true })
-      .order(FIELDS.ITINERARY_TEMPLATE_SECTIONS.DAY_NUMBER, { ascending: true });
-
-    interface Activity {
-      position: number | null;
-    }
+      .eq('template_id', template.id)
+      .order('position', { ascending: true })
+      .order('day_number', { ascending: true });
 
     if (sectionsError) {
       console.error('[Template API] Error fetching template sections:', {
@@ -106,11 +106,11 @@ export async function GET(
       })) || [];
 
     console.log(
-      `[Template API] Successfully fetched ${processedSections.length} sections for template "${template.id}"`
+      `[Template API] Successfully fetched ${processedSections.length} sections for template ${template.id}`
     );
 
     const { error: viewError } = await supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
+      .from('itinerary_templates')
       .update({ view_count: (template.view_count || 0) + 1 })
       .eq('id', template.id);
 
@@ -137,7 +137,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const { slug } = await params;
-    const supabase = await getRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Authenticate the user
     const {
@@ -160,7 +160,7 @@ export async function PUT(
 
     // Check if user is an admin
     const { data: userData, error: userError } = await supabase
-      .from(TABLES.PROFILES)
+      .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
@@ -172,7 +172,7 @@ export async function PUT(
         userError
       );
     }
-
+    
     if (!userData?.is_admin) {
       return createForbiddenResponse('Only administrators can modify itinerary templates');
     }
@@ -180,7 +180,7 @@ export async function PUT(
     // Update the template
     const body = await request.json();
     const { data, error } = await supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
+      .from('itinerary_templates')
       .update(body)
       .eq('slug', slug)
       .select();
@@ -202,6 +202,6 @@ export async function PUT(
     if (error instanceof SyntaxError) {
       return createErrorResponse('Invalid request body', HTTP_STATUS.BAD_REQUEST);
     }
-    return handleRouteError(error);
+    return handleRouteError(error, 'Failed to update itinerary due to an unexpected error');
   }
 }

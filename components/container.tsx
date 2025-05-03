@@ -11,7 +11,7 @@ export function Container({ children, className, size = 'lg' }: ContainerProps) 
   return (
     <div
       className={cn(
-        'mx-auto px-4',
+        'w-full mx-auto px-4 sm:px-6 md:px-8',
         {
           'max-w-screen-sm': size === 'sm',
           'max-w-screen-md': size === 'md',

@@ -10,18 +10,11 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
   return (
-    <Card className="border-0 shadow-lg">
-      <CardContent className="pt-6 pb-8 px-6 text-center">
-        <div className="mb-6 text-4xl">✨</div>
-        <div className="text-center max-w-lg mx-auto">
-          <h1 className="text-5xl leading-loose font-bold mb-2 lowercase">
-            welcome to withme.travel!
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            plan your next group adventure seamlessly. let's get you set up!
-          </p>
-        </div>
-        <div className="flex flex-col gap-3">
+    <Card className="w-full max-w-md mx-auto">
+      <CardContent className="pt-6">
+        <h2 className="text-2xl font-bold text-center mb-4">Welcome to WithMe Travel</h2>
+        <p className="text-center mb-6">Plan and organize your trips with friends and family</p>
+        <div className="space-y-3">
           <Button onClick={onNext} size="lg" className="w-full lowercase">
             sign up
           </Button>

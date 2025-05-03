@@ -1,8 +1,9 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TRIP_ROLES } from '@/utils/constants/status';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import { z } from 'zod';
 
 // Helper function (from migration) - Consider moving to a shared utils file
 async function checkTripMembershipAndRole(
@@ -11,14 +12,14 @@ async function checkTripMembershipAndRole(
   userId: string,
   roles: string[]
 ) {
+  const roleValues = roles;
   const { data, error } = await supabase.rpc('is_trip_member_with_role', {
     _trip_id: tripId,
     _user_id: userId,
-    _roles: roles,
+    _roles: roleValues,
   });
   if (error) {
     console.error('Error checking trip membership/role:', error);
-    // Throw or return an indicator of the error
     throw new Error('Error checking trip permission');
   }
   return data; // Returns boolean
@@ -29,15 +30,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  // Extract params properly
   const { tripId, noteId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createServerSupabaseClient();
-
     // Auth check
     const {
       data: { user },
@@ -49,10 +48,10 @@ export async function GET(
 
     // Authorization check (any member can read)
     const canRead = await checkTripMembershipAndRole(supabase, tripId, user.id, [
-      'admin',
-      'editor',
-      'contributor',
-      'viewer',
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+      TRIP_ROLES.CONTRIBUTOR,
+      TRIP_ROLES.VIEWER,
     ]);
     if (!canRead) {
       return NextResponse.json(
@@ -63,10 +62,18 @@ export async function GET(
 
     // Fetch the specific note content
     const { data: note, error: noteError } = await supabase
-      .from(TABLES.TRIP_NOTES)
-      .select('id, title, content, updated_at, updated_by') // Select relevant fields
+      .from('trip_notes')
+      .select(
+        `
+          id,
+          title,
+          content,
+          updated_at,
+          updated_by
+      `
+      )
       .eq('id', noteId)
-      .eq('trip_id', tripId) // Ensure it belongs to the correct trip
+      .eq('trip_id', tripId)
       .single();
 
     if (noteError) {
@@ -94,14 +101,13 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  // Extract params properly
   const { tripId, noteId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createServerSupabaseClient();
     const body = await request.json();
     const { title, content } = body;
 
@@ -131,7 +137,7 @@ export async function PUT(
     // Authorization check (Editor/Admin or last updater)
     // Fetch the note first to check updated_by
     const { data: existingNote, error: fetchError } = await supabase
-      .from(TABLES.TRIP_NOTES)
+      .from('trip_notes')
       .select('updated_by')
       .eq('id', noteId)
       .eq('trip_id', tripId)
@@ -142,8 +148,8 @@ export async function PUT(
     }
 
     const canUpdateRoles = await checkTripMembershipAndRole(supabase, tripId, user.id, [
-      'admin',
-      'editor',
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
     ]);
     const isLastUpdater = existingNote.updated_by === user.id;
 
@@ -155,7 +161,7 @@ export async function PUT(
     }
 
     // Prepare update object
-    const updateData: { title?: string; content?: string; updated_by: string } = {
+    const updateData: { [key: string]: any } = {
       updated_by: user.id,
     };
     if (title !== undefined) {
@@ -167,11 +173,19 @@ export async function PUT(
 
     // Perform update
     const { data: updatedNote, error: updateError } = await supabase
-      .from(TABLES.TRIP_NOTES)
+      .from('trip_notes')
       .update(updateData)
       .eq('id', noteId)
       .eq('trip_id', tripId)
-      .select('id, title, content, updated_at, updated_by') // Return updated note
+      .select(
+        `
+         id,
+         title,
+         content,
+         updated_at,
+         updated_by
+      `
+      )
       .single();
 
     if (updateError) {
@@ -196,15 +210,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  // Extract params properly
   const { tripId, noteId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
 
   try {
-    const supabase = await createServerSupabaseClient();
-
     // Auth check
     const {
       data: { user },
@@ -216,8 +228,8 @@ export async function DELETE(
 
     // Authorization check (Editors or Admins can delete notes)
     const canEdit = await checkTripMembershipAndRole(supabase, tripId, user.id, [
-      'admin',
-      'editor',
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
     ]);
     if (!canEdit) {
       return NextResponse.json(
@@ -228,18 +240,17 @@ export async function DELETE(
 
     // Perform deletion
     const { error: deleteError } = await supabase
-      .from(TABLES.TRIP_NOTES)
+      .from('trip_notes')
       .delete()
       .eq('id', noteId)
       .eq('trip_id', tripId);
 
     if (deleteError) {
       console.error(`[Notes API DELETE ${noteId}] Error deleting note:`, deleteError);
-      // Handle case where note might not exist (e.g., deleted twice) - check error code if needed
       return NextResponse.json({ error: 'Error deleting note' }, { status: 500 });
     }
 
-    return NextResponse.json({ message: 'Note deleted successfully' });
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error(`[Notes API DELETE ${noteId}] Unexpected error:`, error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });

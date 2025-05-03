@@ -73,7 +73,7 @@ export function TagList({ destinationId, className }: TagListProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Tags</h3>
         <Dialog open={showSuggestDialog} onOpenChange={setShowSuggestDialog}>
-          <DialogTrigger asChild>
+          <DialogTrigger>
             <Button variant="outline" size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Suggest Tag
@@ -100,7 +100,7 @@ export function TagList({ destinationId, className }: TagListProps) {
                   onValueChange={(value) => setNewTag({ ...newTag, category: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue>Select a category</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">General</SelectItem>

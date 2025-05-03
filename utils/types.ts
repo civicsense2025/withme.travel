@@ -1,7 +1,24 @@
-import { TripRole, PermissionStatus, ItineraryCategory } from './constants';
-
-// Define ItemStatus before its use
-export type ItemStatus = 'suggested' | 'confirmed' | 'rejected';
+// Define types directly in this file to avoid import issues
+// TODO: Once the imports from database.ts and status.ts are fixed, switch back to importing them
+export type TripRole = 'admin' | 'editor' | 'contributor' | 'viewer';
+export type ItemStatus = 'suggested' | 'confirmed' | 'canceled' | 'flexible' | 'rejected';
+export type ItineraryCategory = 
+  | 'Iconic Landmarks' 
+  | 'Local Secrets' 
+  | 'Cultural Experiences' 
+  | 'Outdoor Adventures'
+  | 'Food & Drink'
+  | 'Nightlife'
+  | 'Relaxation'
+  | 'Shopping'
+  | 'Group Activities'
+  | 'Day Excursions'
+  | 'Accommodations'
+  | 'Transportation'
+  | 'Flexible Options'
+  | 'Special Occasions'
+  | 'Other';
+export type PermissionStatus = 'pending' | 'approved' | 'rejected';
 
 // Trip entity as stored in the database
 export interface Trip {
@@ -43,7 +60,7 @@ export interface TripWithDetails extends Trip {
 
 // Trip with member role information
 export interface TripWithMemberInfo extends TripWithDetails {
-  role: TripRole | null; // Allow null for role
+  role: TripRole | null; // Using imported TripRole
   memberSince?: string;
 }
 
@@ -52,11 +69,15 @@ export interface TripMember {
   id: string;
   trip_id: string;
   user_id: string;
-  role: TripRole;
+  role: TripRole; // Using imported TripRole
   created_at: string;
   invited_by?: string;
   joined_at?: string;
   external_email?: string;
+  category?: ItineraryCategory | null; // Using imported ItineraryCategory
+  status?: ItemStatus | null; // Using imported ItemStatus
+  position?: number | null; // Type is numeric in schema
+  duration_minutes?: number | null; // Added from schema
 }
 
 // User profile entity
@@ -113,44 +134,43 @@ export interface Destination {
   digital_nomad_friendly?: number;
 }
 
-// Replace the old ItineraryItem definition with the more complete one
+// Itinerary item entity
 export interface ItineraryItem {
   id: string;
   trip_id: string;
-  section_id?: string | null; // Added from API response structure
+  section_id?: string | null;
   title: string | null;
-  type?: string | null; // Original 'type' field from schema
-  item_type?: string | null; // Added 'item_type' field from schema
-  date: string | null; // Kept as string from fetch
-  start_time?: string | null; // Optional start time
-  end_time?: string | null; // Optional end time
-  description?: string | null; // Add optional description field
+  type?: string | null;
+  item_type?: string | null;
+  date: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  description?: string | null;
   location?: string | null;
   address?: string | null;
-  place_id?: string | null; // Added from schema
+  place_id?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  estimated_cost?: number | null; // Use correct name
+  estimated_cost?: number | null;
   currency?: string | null;
-  notes?: string | null; // Added notes field
+  notes?: string | null;
   created_at: string;
-  created_by?: string | null; // Added from schema
-  is_custom?: boolean | null; // Added from schema
-  day_number?: number | null; // Added from schema
-  category?: ItineraryCategory | null; // Use ItineraryCategory enum type
-  status?: ItemStatus | null; // Use ItemStatus enum type
-  position?: number | null; // Type is numeric in schema
-  duration_minutes?: number | null; // Added from schema
-  cover_image_url?: string | null; // Added from schema
-  // Define ProcessedVotes structure directly or import if defined elsewhere
+  created_by?: string | null;
+  is_custom?: boolean | null;
+  day_number?: number | null;
+  category?: ItineraryCategory | null;
+  status?: ItemStatus | null; // Use our modified ItemStatus type
+  position?: number | null;
+  duration_minutes?: number | null;
+  cover_image_url?: string | null;
   votes: {
     up: number;
     down: number;
-    upVoters: Profile[]; // Assuming Profile is defined/imported
-    downVoters: Profile[]; // Assuming Profile is defined/imported
+    upVoters: Profile[];
+    downVoters: Profile[];
     userVote: 'up' | 'down' | null;
   };
-  user_vote: 'up' | 'down' | null; // Keep this for direct access if needed
+  user_vote: 'up' | 'down' | null;
 }
 
 // Budget item entity
@@ -200,9 +220,9 @@ export interface PermissionRequest {
   id: string;
   trip_id: string;
   user_id: string;
-  role: TripRole;
+  role: TripRole; // Using imported TripRole
   created_at: string;
-  status: PermissionStatus;
+  status: PermissionStatus; // Using imported PermissionStatus
 }
 
 // Referral entity

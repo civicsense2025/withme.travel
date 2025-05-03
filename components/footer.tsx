@@ -5,12 +5,21 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { Logo } from '@/components/logo';
 
 export function Footer() {
-  const { user, profile } = useAuth();
-  const isAdmin = profile?.is_admin;
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
-  // Major continents for the footer links
-  const continents = ['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania'];
-
+  // List of continents
+  const continents = [
+    'Africa',
+    'Asia',
+    'Europe',
+    'North America',
+    'South America',
+    'Oceania',
+    'Antarctica'
+  ];
+  
+  // Navigate items for Explore section
   const exploreLinks = [
     { href: '/destinations', label: 'Destinations' },
     { href: '/itineraries', label: 'Itineraries' },

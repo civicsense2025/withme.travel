@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
  */
 export function TripPageSkeleton() {
   return (
-    <div className="flex flex-col min-h-screen max-w-4xl mx-auto p-4">
+    <div className="container mx-auto px-4 py-8">
       {/* Header skeleton */}
       <div className="mb-8">
         {/* Cover image skeleton */}

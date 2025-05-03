@@ -1,15 +1,21 @@
 'use client';
-
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { formatError } from '@/lib/utils';
-import type { DisplayItineraryItem, ItemStatus } from '@/types/itinerary';
-import type { TravelTimesResult } from '@/lib/mapbox';
+import { formatError } from '@/utils/lib-utils';
+import { ITEM_STATUSES, type ItemStatus } from '@/utils/constants/status';
+import type { DisplayItineraryItem, ItinerarySection } from '@/types/itinerary';
+
+// Define TravelTimesResult type inline
+interface TravelTimesResult {
+  duration: number;
+  distance: number;
+  route?: string;
+}
 
 export interface TripItineraryInitialData {
   tripId: string;
-  initialSections: any[]; // Replace with actual types from your app
+  initialSections: ItinerarySection[]; // Using proper type from @/types/itinerary
   initialUnscheduledItems: DisplayItineraryItem[];
   canEdit: boolean;
   userRole: string | null;
@@ -31,7 +37,7 @@ export function useTripItinerary({
   const { toast } = useToast();
 
   // Itinerary state
-  const [sections, setSections] = useState(initialSections || []);
+  const [sections, setSections] = useState<ItinerarySection[]>(initialSections || []);
   const [unscheduledItems, setUnscheduledItems] = useState<DisplayItineraryItem[]>(
     initialUnscheduledItems || []
   );
@@ -46,25 +52,28 @@ export function useTripItinerary({
   // Initialize the combined items list when sections or unscheduled items change
   useEffect(() => {
     const combinedItems = [
-      ...(sections?.flatMap((s) => s.items) || []),
+      ...(sections?.flatMap((s) => s.items ?? []) || []),
       ...(unscheduledItems || []),
     ];
 
     // Sort items by day (nulls/undefined last) and then position
     combinedItems.sort((a, b) => {
+      // Both items should be defined at this point, but TypeScript doesn't know that
+      if (!a || !b) return 0;
+      
       const dayA = a.day_number ?? Number.MAX_SAFE_INTEGER;
       const dayB = b.day_number ?? Number.MAX_SAFE_INTEGER;
       const posA = a.position ?? 0;
       const posB = b.position ?? 0;
 
-      if (dayA !== dayB) {
-        return dayA - dayB; // Sort by day number first
-      } else {
-        return posA - posB; // If days are the same, sort by position
-      }
+      // First sort by day_number, then by position
+      return dayA === dayB ? posA - posB : dayA - dayB;
     });
 
-    setAllItems(combinedItems);
+    // Filter out any null/undefined values before setting state
+    setAllItems(combinedItems.filter((item): item is DisplayItineraryItem => 
+      item !== null && item !== undefined
+    ));
   }, [sections, unscheduledItems]);
 
   // Calculate derived itinerary duration
@@ -138,8 +147,10 @@ export function useTripItinerary({
         // Remove item from its old position (if it exists)
         newSections = newSections.map((section) => ({
           ...section,
-          items: section.items.filter((item: DisplayItineraryItem) => {
-            if (item.id === itemId) {
+          items: (section.items ?? []).filter((item) => {
+            // Cast to any to handle type compatibility between ItineraryItem and DisplayItineraryItem
+            const typedItem = item as any;
+            if (typedItem.id === itemId) {
               itemFound = true;
               return false; // Remove from old section
             }
@@ -158,7 +169,7 @@ export function useTripItinerary({
 
             newSections[targetSectionIndex] = {
               ...newSections[targetSectionIndex],
-              items: [...newSections[targetSectionIndex].items, newItem].sort(
+              items: [...(newSections[targetSectionIndex].items || []), newItem].sort(
                 (a, b) => (a.position ?? 0) - (b.position ?? 0)
               ),
             };
@@ -201,7 +212,7 @@ export function useTripItinerary({
             const newSections = [...prevSections];
             newSections[targetSectionIndex] = {
               ...newSections[targetSectionIndex],
-              items: [...newSections[targetSectionIndex].items, newItem].sort(
+              items: [...(newSections[targetSectionIndex].items ?? []), newItem].sort(
                 (a, b) => (a.position ?? 0) - (b.position ?? 0)
               ),
             };
@@ -279,7 +290,7 @@ export function useTripItinerary({
         setAllItems(originalItems); // Revert
         toast({
           title: 'Error Updating Item',
-          description: formatError(error as Error, 'Failed to update item'),
+          description: formatError(error),
           variant: 'destructive',
         });
       }
@@ -315,7 +326,7 @@ export function useTripItinerary({
         console.error('Reorder failed:', error);
         toast({
           title: 'Reorder Failed',
-          description: formatError(error as Error),
+          description: formatError(error),
           variant: 'destructive',
         });
         throw error;
@@ -352,7 +363,7 @@ export function useTripItinerary({
         console.error('Failed to create item:', error);
         toast({
           title: 'Error Creating Item',
-          description: formatError(error as Error),
+          description: formatError(error),
           variant: 'destructive',
         });
         throw error;
@@ -423,7 +434,7 @@ export function useTripItinerary({
             if (section.day_number === itemToDelete?.day_number) {
               return {
                 ...section,
-                items: section.items.filter((item: DisplayItineraryItem) => item.id !== itemId),
+                items: (section.items || []).filter((item: DisplayItineraryItem) => item.id !== itemId),
               };
             }
             return section;
@@ -491,7 +502,7 @@ export function useTripItinerary({
         console.error('Vote failed:', error);
         toast({
           title: 'Error',
-          description: formatError(error as Error, 'Failed to submit vote'),
+          description: formatError(error),
           variant: 'destructive',
         });
         throw error;

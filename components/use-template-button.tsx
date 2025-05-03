@@ -22,7 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  type SelectItemProps,
+  type SelectProps,
 } from '@/components/ui/select';
 import { CreateTripFromTemplateDialog } from './CreateTripFromTemplateDialog';
 import { Loader2 } from 'lucide-react';
@@ -103,7 +103,7 @@ export function UseTemplateButton({
   return (
     <>
       <Dialog open={showMainDialog} onOpenChange={setShowMainDialog}>
-        <DialogTrigger asChild>
+        <DialogTrigger>
           <Button className={className} disabled={isLoadingApply || isLoadingCreate}>
             Use Template
           </Button>
@@ -139,7 +139,7 @@ export function UseTemplateButton({
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-trips" disabled={true} {...({} as SelectItemProps)}>
+                      <SelectItem value="no-trips">
                         No trips available
                       </SelectItem>
                     )}

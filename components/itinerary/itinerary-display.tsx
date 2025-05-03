@@ -1,33 +1,19 @@
 import { API_ROUTES } from '@/utils/constants/routes';
 import { ITEM_STATUSES } from '@/utils/constants/status';
-('use client');
-
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  ThumbsUp,
-  ThumbsDown,
-  Clock,
-  MapPin,
-  User,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Check,
-  Ban,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Clock, MapPin, User, CheckCircle2, XCircle, AlertCircle, Check, Ban, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Profile } from '@/types/profile';
 import { DisplayItineraryItem } from '@/types/itinerary';
-import { getInitials } from '@/lib/utils'; // Assuming getInitials utility exists
-import { ItemStatus } from '@/types/common';
+import { getInitials, cn } from '@/utils/lib-utils';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+
+
+'use client';
+
 
 // Define a type alias for profile information in votes
 type ProfileBasic = Profile;
@@ -40,9 +26,9 @@ interface ItineraryDisplayProps {
 
 export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDisplayProps) {
   const [items, setItems] = useState<DisplayItineraryItem[]>(initialItems);
-  const { toast } = useToast();
   const [updatingStatusItemId, setUpdatingStatusItemId] = useState<string | null>(null);
   const [expandedVoteItemId, setExpandedVoteItemId] = useState<string | null>(null); // State for expanded item
+  const { toast } = useToast();
 
   const handleVote = async (itemId: string, voteType: 'up' | 'down') => {
     // Optimistic UI update (optional but improves UX)
@@ -59,8 +45,8 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
             voteType === 'up' ? newUpVotes-- : newDownVotes--;
             return {
               ...item,
-              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: null },
-            };
+              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: null }
+  };
           } else {
             // New vote or changing vote
             if (currentUserVote === 'up') newUpVotes--;
@@ -68,7 +54,7 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
             voteType === 'up' ? newUpVotes++ : newDownVotes++;
             return {
               ...item,
-              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: voteType },
+              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: voteType }
             };
           }
         }
@@ -183,7 +169,7 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
     return <p className="text-muted-foreground text-center py-8">No itinerary items added yet.</p>;
   }
 
-  const getStatusBadge = (status: ItemStatus) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
         // Use secondary variant with green text/icon for success indication
@@ -204,6 +190,7 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
         );
       case 'pending':
       case 'suggested': // Use string literal instead of constant
+      case null:
       case null:
       default:
         // Outline variant is suitable for pending

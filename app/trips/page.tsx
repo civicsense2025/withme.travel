@@ -1,9 +1,8 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import TripsClientPage from './trips-client';
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { getServerComponentClient } from '@/utils/supabase/unified';
 import { TABLES } from '@/utils/constants/database';
-
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -23,7 +22,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function TripsPage() {
   // Use the correct client creation function
-  const supabase = createServerSupabaseClient();
+  const supabase = await getServerComponentClient();
   // Get user directly instead of session for better security
   const {
     data: { user },

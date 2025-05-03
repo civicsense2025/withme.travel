@@ -35,7 +35,7 @@ export function CreateTripFromTemplateDialog({
 }: CreateTripFromTemplateDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [tripName, setTripName] = useState(`Trip based on ${templateTitle}`);
+  const [tripName, setTripName] = useState<string>(`Trip based on ${templateTitle}`);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
 

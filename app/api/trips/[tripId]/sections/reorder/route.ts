@@ -1,32 +1,28 @@
-import { createServerSupabaseClient } from '@/utils/supabase/server';
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { type SupabaseClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import type { Database } from '@/types/database.types';
-import { type TripRole } from '@/utils/constants/status';
 
-// --- Local Constant Definitions ---
-const LOCAL_TABLES = {
-  TRIP_MEMBERS: 'trip_members',
-};
-const LOCAL_ENUMS = {
-  TRIP_ROLES: {
-    ADMIN: 'admin',
-    EDITOR: 'editor',
-    // Contributors usually shouldn't reorder sections
-  } as const,
-};
-type ModifiableTripRole = 'admin' | 'editor';
-// --- End Local Definitions ---
+// Define trip roles constants
+const TRIP_ROLES = {
+  ADMIN: 'admin',
+  EDITOR: 'editor',
+  CONTRIBUTOR: 'contributor',
+  VIEWER: 'viewer'
+} as const;
+
+type ModifiableRoleKey = keyof typeof TRIP_ROLES;
 
 // Reusable access check function (modify allowed roles)
 async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  allowedRoles: ModifiableTripRole[] = [LOCAL_ENUMS.TRIP_ROLES.ADMIN, LOCAL_ENUMS.TRIP_ROLES.EDITOR]
+  allowedRoles: ModifiableRoleKey[] = ['ADMIN', 'EDITOR']
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(LOCAL_TABLES.TRIP_MEMBERS)
+    .from('trip_members')
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)
@@ -37,7 +33,9 @@ async function checkTripAccess(
     return { allowed: false, error: 'Failed to check trip membership.', status: 500 };
   }
 
-  if (!member || !allowedRoles.includes(member.role as ModifiableTripRole)) {
+  const allowedRoleValues = allowedRoles.map((roleKey) => TRIP_ROLES[roleKey]);
+
+  if (!member || !allowedRoleValues.includes(member.role)) {
     return {
       allowed: false,
       error: 'Access Denied: You do not have permission to reorder sections.',
@@ -54,10 +52,8 @@ export async function POST(
 ) {
   try {
     const { tripId } = await params;
-    // Expect an array of day numbers (or null for unscheduled) in the desired order
     const { orderedDayNumbers }: { orderedDayNumbers: (number | null)[] } = await request.json();
 
-    // Basic validation
     if (!tripId || !Array.isArray(orderedDayNumbers)) {
       return NextResponse.json(
         { error: 'Missing required parameters (tripId, orderedDayNumbers array)' },
@@ -65,7 +61,7 @@ export async function POST(
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -76,7 +72,7 @@ export async function POST(
     }
 
     // Check user's access (Admin or Editor required to reorder sections)
-    const accessCheck = await checkTripAccess(supabase, tripId, user.id);
+    const accessCheck = await checkTripAccess(supabase, tripId, user.id, ['ADMIN', 'EDITOR']);
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status || 403 });
     }

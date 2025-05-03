@@ -9,9 +9,8 @@ export async function createToken(user: { id: string; email: string }) {
 }
 
 export async function verifyUser(email: string, password: string) {
-  // This is a stub implementation; replace with a real database lookup in production
   const user = await fakeUserLookup(email);
-  if (user && (await bcrypt.compare(password, user.password))) {
+  if (user && await bcrypt.compare(password, user.password)) {
     return user;
   }
   return null;
@@ -27,7 +26,6 @@ export async function createUser({
   username: string;
 }) {
   const hashedPassword = await bcrypt.hash(password, 10);
-  // Simulate creating a new user. Replace this with an actual DB insert.
   const newUser = { id: Date.now().toString(), email, username, password: hashedPassword };
   return newUser;
 }

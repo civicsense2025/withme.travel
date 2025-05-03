@@ -1,15 +1,13 @@
 'use client';
-
-import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Pencil } from 'lucide-react';
-import { formatDate } from '@/lib/utils'; // Use formatDate instead of formatDateRange
+import { Pencil, Check, X } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, X } from 'lucide-react';
 import { type TripRole } from '@/utils/constants/status';
+import React from 'react';
 
 // Define TripPrivacySetting type locally or import if defined elsewhere
 type TripPrivacySetting = 'private' | 'shared_with_link' | 'public';
@@ -66,9 +64,10 @@ export function TripSidebarContent({
   onEdit,
   onManageAccessRequest,
 }: TripSidebarContentProps) {
+  // Check if user is admin or owner to manage access requests
   const isAdmin = userRole === 'admin';
-
-  // Simple helper function for formatting privacy as display text
+  
+  // Format privacy setting for display
   const formatPrivacy = (setting: TripPrivacySetting | null): string => {
     if (!setting) return 'Private';
     switch (setting) {

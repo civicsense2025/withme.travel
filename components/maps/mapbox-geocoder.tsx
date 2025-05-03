@@ -20,7 +20,7 @@ interface GeocoderResult {
 }
 
 interface MapboxGeocoderProps {
-  onResult: (result: GeocoderResult) => void; // Use our defined result type
+  onResult: (result: GeocoderResult | null) => void; // Use our defined result type
   initialValue?: string;
   options?: Omit<GeocoderOptions, 'accessToken' | 'mapboxgl'>; // Allow passing other options
 }
@@ -74,7 +74,7 @@ const MapboxGeocoderComponent: React.FC<MapboxGeocoderProps> = ({
       geocoder.on('clear', () => {
         // Handle clear event if needed, e.g., reset parent state
         // Call onResult with null when the input is cleared internally
-        onResult(null as any); // Pass null to signal clearing
+        onResult(null);
       });
 
       // Cleanup on unmount

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
-) {
-  const supabase = await createServerSupabaseClient();
-
+): Promise<NextResponse> {
   try {
     const { token } = await params;
+    const supabase = await createRouteHandlerClient();
 
     const { data: invitation, error } = await supabase
       .from('invitations')

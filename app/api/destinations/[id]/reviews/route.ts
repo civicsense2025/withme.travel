@@ -1,8 +1,8 @@
 // app/api/destinations/[id]/reviews/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { TABLES, FIELDS } from "@/utils/constants/database";
+import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/database';
 
 // Placeholder for database fetching logic
 async function getReviewsForDestination(
@@ -27,7 +27,10 @@ async function getReviewsForDestination(
   return []; // Return empty array for now
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   const { id } = await params;
   const destinationId = id;
 

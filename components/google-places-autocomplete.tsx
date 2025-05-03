@@ -66,12 +66,8 @@ export function GooglePlacesAutocomplete({
   const autocompleteListener = useRef<google.maps.MapsEventListener | null>(null);
 
   const initAutocompleteService = useCallback(() => {
-    if (
-      !inputRef.current ||
-      !(window as any).google ||
-      !(window as any).google.maps ||
-      !(window as any).google.maps.places
-    ) {
+    const google = (window as any).google;
+    if (!google || !google.maps || !google.maps.places || !inputRef.current) {
       console.error('Google Maps Places library not loaded or input ref not available.');
       return;
     }
@@ -99,7 +95,7 @@ export function GooglePlacesAutocomplete({
           latitude: place.geometry.location?.lat() ?? null,
           longitude: place.geometry.location?.lng() ?? null,
           googlePlaceId: place.place_id,
-        };
+  };
         setInputValue(place.formatted_address); // Update input with formatted address
         onPlaceSelect(result);
       } else {

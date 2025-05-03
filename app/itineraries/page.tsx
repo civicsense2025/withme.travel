@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { createServerComponentClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
@@ -37,7 +39,7 @@ interface Itinerary {
 
 // Fetch itineraries from the database
 async function getItineraries() {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServerComponentClient();
 
   try {
     // Get all published templates

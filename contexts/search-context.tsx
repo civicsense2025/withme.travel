@@ -29,14 +29,16 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   // Load search history from localStorage
   useEffect(() => {
-    const savedHistory = localStorage.getItem('withme-search-history');
-    if (savedHistory) {
-      try {
-        const parsedHistory = JSON.parse(savedHistory);
-        setSearchHistory(parsedHistory);
-      } catch (error) {
-        console.error('Failed to parse search history:', error);
-        localStorage.removeItem('withme-search-history');
+    if (typeof window !== 'undefined') {
+      const savedHistory = localStorage.getItem('withme-search-history');
+      if (savedHistory) {
+        try {
+          const parsedHistory = JSON.parse(savedHistory);
+          setSearchHistory(parsedHistory);
+        } catch (error) {
+          console.error('Failed to parse search history:', error);
+          localStorage.removeItem('withme-search-history');
+        }
       }
     }
   }, []);
@@ -109,7 +111,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
 export function useSearch() {
   const context = useContext(SearchContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useSearch must be used within a SearchProvider');
   }
   return context;

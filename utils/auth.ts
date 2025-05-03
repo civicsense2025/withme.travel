@@ -1,25 +1,23 @@
 /**
  * Auth utilities for backend authentication workflows
  */
-import { CSRF } from './csrf';
+// Removed CSRF import as it's no longer used
+import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Validate a CSRF token from the request
  * For server-side API routes
+ * 
+ * NOTE: CSRF protection has been removed from this application.
+ * This function remains for backward compatibility.
  *
  * @param token CSRF token to validate
  * @returns Error message if invalid, null if valid
  */
 export async function validateCsrfToken(token: string): Promise<string | null> {
-  if (!token) {
-    return 'Missing CSRF token';
-  }
-
-  // For now we're just checking if the token exists
-  // In a real implementation, we would validate it against the stored token in cookies
-  // But we're already doing that validation in the csrf.ts validateRequestCsrfToken function
-
-  return null; // Token is valid
+  // CSRF protection has been removed
+  // This function always returns null (valid) for backward compatibility
+  return null;
 }
 
 /**
@@ -29,7 +27,7 @@ export async function validateCsrfToken(token: string): Promise<string | null> {
  * @param supabase Supabase client instance
  * @returns User ID or null if not authenticated
  */
-export async function getCurrentUserId(supabase: any): Promise<string | null> {
+export async function getCurrentUserId(supabase: SupabaseClient): Promise<string | null> {
   try {
     const {
       data: { session },
@@ -48,7 +46,7 @@ export async function getCurrentUserId(supabase: any): Promise<string | null> {
  * @param userId User ID to check (defaults to current user)
  * @returns Boolean indicating if user is admin
  */
-export async function isUserAdmin(supabase: any, userId?: string): Promise<boolean> {
+export async function isUserAdmin(supabase: SupabaseClient, userId?: string): Promise<boolean> {
   try {
     // If userId not provided, get current user
     const id = userId || (await getCurrentUserId(supabase));

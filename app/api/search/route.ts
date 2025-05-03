@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams?.get('q');
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] });
     }
 
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
 
     let destinations = [];
     let trips = [];

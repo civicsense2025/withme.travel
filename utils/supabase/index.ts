@@ -4,7 +4,7 @@
  * This file provides type-safe Supabase client creation for both client and server components
  * with proper cookie handling throughout your Next.js application.
  */
-import { createBrowserClient, createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createBrowserClient as createSupabaseBrowserClient, createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database.types';
 import { createApiClient } from './api';
@@ -18,54 +18,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Keep a singleton for the browser client
-let browserClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
+let browserClient: ReturnType<typeof createSupabaseBrowserClient<Database>> | null = null;
 
 /**
  * Creates a Supabase client configured for browser use.
  * In browser environments, we want a singleton client to avoid cookie conflicts.
  */
 export function createBrowserSupabaseClient() {
-  if (browserClient) return browserClient;
+  if (browserClient) {
+    return browserClient;
+  }
 
-  browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  browserClient = createSupabaseBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  
   return browserClient;
-}
-
-/**
- * Creates a Supabase client configured for server use.
- * Properly handles cookie reading/writing for server components.
- */
-export function createServerSupabaseClient() {
-  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get: async (name) => {
-        try {
-          const cookieStore = await cookies();
-          return cookieStore.get(name)?.value;
-        } catch (error) {
-          console.error(`[Cookie Get Error] Failed to get cookie ${name}:`, error);
-          return undefined;
-        }
-      },
-      set: async (name, value, options) => {
-        try {
-          const cookieStore = await cookies();
-          cookieStore.set({ name, value, ...options });
-        } catch (error) {
-          console.error(`[Cookie Set Error] Failed to set cookie ${name}:`, error);
-        }
-      },
-      remove: async (name, options) => {
-        try {
-          const cookieStore = await cookies();
-          cookieStore.delete({ name, ...options });
-        } catch (error) {
-          console.error(`[Cookie Remove Error] Failed to remove cookie ${name}:`, error);
-        }
-      },
-    },
-  });
 }
 
 // Export the API client to make imports consistent
 export { createApiClient };
+
+// Export types for convenience
+export type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient<Database>>;
+export type SupabaseServerClient = ReturnType<typeof createServerClient<Database>>;

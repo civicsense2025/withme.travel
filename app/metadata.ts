@@ -16,8 +16,8 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
-  },
-};
+  }
+  };
 
 export const viewport: Viewport = {
   width: 'device-width',

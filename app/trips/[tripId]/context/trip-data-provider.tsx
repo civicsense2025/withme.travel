@@ -10,7 +10,7 @@ import {
   ItinerarySection as DbItinerarySection,
 } from '@/types/database.types';
 import { createClient } from '@/utils/supabase/client';
-import { TABLES, FIELDS } from '@/utils/constants/index';
+import { TABLES } from '@/utils/constants/database';
 // Default import for fast-deep-equal
 import deepEqual from 'fast-deep-equal';
 
@@ -39,13 +39,13 @@ export interface TripMember {
   };
 }
 
-export interface TripTag {
-  id: string;
-  name: string;
-}
-
-interface TripContextType {
-  tripData: TripData | null;
+export default function TripDataProvider({
+  tripId,
+  children,
+}: {
+  children: React.ReactNode;
+  tripId: string;
+}) {
   isLoading: boolean;
   isItemsLoading: boolean;
   isMembersLoading: boolean;
@@ -62,7 +62,7 @@ interface TripContextType {
 
 // Custom fetcher that handles error responses and includes credentials
 const fetcher = async (url: string) => {
-  // console.log(`[Fetcher] Starting fetch for: ${url}`); // Removed log
+  // console.log(`[Fetcher] Starting fetch for: `${url}`); // Removed log
   try {
     const response = await fetch(url, {
       headers: {

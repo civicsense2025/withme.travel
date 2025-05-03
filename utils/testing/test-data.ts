@@ -5,7 +5,9 @@ import { v4 as uuidv4 } from 'uuid';
  *
  * @param overrides - Optional properties to override default values
  * @returns A test user object
+ 
  */
+
 export const generateTestUser = (overrides = {}) => {
   return {
     id: uuidv4(),
@@ -22,7 +24,9 @@ export const generateTestUser = (overrides = {}) => {
  *
  * @param overrides - Optional properties to override default values
  * @returns A test trip object
+ 
  */
+
 export const generateTestTrip = (overrides = {}) => {
   return {
     id: uuidv4(),
@@ -47,7 +51,9 @@ export const generateTestTrip = (overrides = {}) => {
  * @param count - Number of trips to generate
  * @param baseOverrides - Base overrides to apply to all trips
  * @returns Array of test trip objects
+ 
  */
+
 export const generateTestTrips = (count = 3, baseOverrides = {}) => {
   return Array.from({ length: count }, (_, index) =>
     generateTestTrip({
@@ -63,7 +69,9 @@ export const generateTestTrips = (count = 3, baseOverrides = {}) => {
  *
  * @param overrides - Optional properties to override default values
  * @returns A test itinerary item object
+ 
  */
+
 export const generateTestItineraryItem = (overrides = {}) => {
   return {
     id: uuidv4(),
@@ -87,7 +95,9 @@ export const generateTestItineraryItem = (overrides = {}) => {
  * @param tripId - Trip ID to associate with items
  * @param count - Number of items to generate
  * @returns Array of test itinerary item objects
+ 
  */
+
 export const generateTestItineraryItems = (tripId: string, count = 5) => {
   return Array.from({ length: count }, (_, index) =>
     generateTestItineraryItem({
@@ -106,7 +116,9 @@ export const generateTestItineraryItems = (tripId: string, count = 5) => {
  *
  * @param overrides - Optional properties to override default values
  * @returns A test focus session object
+ 
  */
+
 export const generateTestFocusSession = (overrides = {}) => {
   return {
     id: uuidv4(),
@@ -129,7 +141,9 @@ export const generateTestFocusSession = (overrides = {}) => {
  *
  * @param overrides - Optional properties to override default values
  * @returns A test comment object
+ 
  */
+
 export const generateTestComment = (overrides = {}) => {
   return {
     id: uuidv4(),

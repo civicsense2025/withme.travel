@@ -18,14 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function UserMenu() {
-  const { user, profile, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Get user initials for avatar
   const getInitials = () => {
     if (!user) return 'U';
-    if (profile?.name) {
-      return profile.name
+    if (user.profile?.name) {
+      return user.profile.name
         .split(' ')
         .map((part) => part.charAt(0))
         .join('')
@@ -58,8 +58,8 @@ export function UserMenu() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={profile?.avatar_url || user.user_metadata?.avatar_url || ''}
-              alt={profile?.name || user.email || 'User'}
+              src={user.profile?.avatar_url || user.user_metadata?.avatar_url || ''}
+              alt={user.profile?.name || user.email || 'User'}
             />
             <AvatarFallback>{getInitials()}</AvatarFallback>
           </Avatar>
@@ -69,9 +69,9 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none truncate">
-              {profile?.name || user.email}
+              {user.profile?.name || user.email}
             </p>
-            {profile?.name && (
+            {user.profile?.name && (
               <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>
             )}
           </div>
@@ -102,7 +102,7 @@ export function UserMenu() {
               <span>Travel Map</span>
             </Link>
           </DropdownMenuItem>
-          {profile?.is_admin && (
+          {user.user_metadata?.is_admin === true && (
             <DropdownMenuItem asChild>
               <Link href="/admin/dashboard" className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />

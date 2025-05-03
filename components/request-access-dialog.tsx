@@ -46,7 +46,7 @@ export function RequestAccessDialog({ tripId }: RequestAccessDialogProps) {
       setHasRequested(true);
       toast({
         title: 'Request submitted',
-        description: 'Trip organizers have been notified of your request',
+        description: 'Trip organizers have been notified of your request'
       });
 
       // Close dialog after a short delay
@@ -68,7 +68,7 @@ export function RequestAccessDialog({ tripId }: RequestAccessDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button variant="outline" className="gap-1">
           <Lock className="h-4 w-4" />
           Request Edit Access

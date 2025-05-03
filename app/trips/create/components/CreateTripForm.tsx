@@ -178,7 +178,7 @@ const TripSummary = ({
         label: '🗓️ Dates',
         value:
           values.start_date || values.end_date
-            ? `${values.start_date || '?'} - ${values.end_date || '?'}`
+            ? `${values.start_date || '?'} - ${values.end_date || `?`}`
             : '',
         step: 1,
       },
@@ -494,7 +494,7 @@ export function CreateTripForm() {
                         ? 'bg-primary text-primary-foreground shadow-md scale-110'
                         : 'bg-muted text-muted-foreground'
                     } 
-                    ${stepNumber < step ? 'cursor-pointer hover:scale-105' : ''}
+                    ${stepNumber < step ? 'cursor-pointer hover:scale-105' : ``}
                   `}
                 >
                   {step > stepNumber ? (
@@ -748,7 +748,7 @@ export function CreateTripForm() {
                                   onClick={() => setIsImageSelectorOpen(true)}
                                 >
                                   <div className="flex flex-col items-center text-muted-foreground">
-                                    <Image className="h-8 w-8 mb-1" />
+                                    <Image className="h-8 w-8 mb-1" aria-hidden="true" />
                                     <span className="text-sm">Add an image</span>
                                   </div>
                                 </div>

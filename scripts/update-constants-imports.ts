@@ -17,17 +17,17 @@ const IMPORT_MAPPINGS: ImportMapping[] = [
   {
     oldImport: '@/utils/constants',
     newImport: '@/utils/constants/database',
-    constantName: 'DB_TABLES',
+    constantName: 'TABLES',
   },
   {
     oldImport: '@/utils/constants',
     newImport: '@/utils/constants/database',
-    constantName: 'DB_FIELDS',
+    constantName: 'FIELDS',
   },
   {
     oldImport: '@/utils/constants',
     newImport: '@/utils/constants/database',
-    constantName: 'DB_ENUMS',
+    constantName: 'ENUMS',
   },
 
   // API constants

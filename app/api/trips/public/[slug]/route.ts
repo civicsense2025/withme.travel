@@ -1,14 +1,28 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { calculateTravelTimes } from '@/lib/mapbox';
 import { type TravelTimesResult } from '@/lib/mapbox';
+import { Database } from '@/types/database.types';
+
+// Define FIELDS locally to avoid import errors
+const FIELDS = {
+  TRIPS: {
+    ID: 'id',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    START_DATE: 'start_date',
+    END_DATE: 'end_date',
+    COVER_IMAGE_URL: 'cover_image_url',
+    CREATED_BY: 'created_by'
+  }
+};
 
 // Define privacy setting type locally
 type TripPrivacySetting = 'private' | 'shared_with_link' | 'public';
 
-// --- Define expected structure for PublicTripData ---
+// Define the structure for fetched itinerary items
 interface FetchedItineraryItem {
-  id: number | string; // Allow string ID as well, just in case
+  id: number | string;
   title: string | null;
   date: string | null;
   start_time?: string | null;
@@ -17,56 +31,52 @@ interface FetchedItineraryItem {
   latitude: number | null;
   longitude: number | null;
   day_number?: number | null;
-  estimated_cost?: number | string | null; // Allow string initially
+  estimated_cost?: number | string | null;
   currency?: string | null;
   notes?: string | null;
   category?: string | null;
   item_type?: string | null;
 }
 
-// --- Add TripMember interface ---
-interface TripMember {
-  id: string; // trip_member primary key
-  user_id: string;
-  role: string; // e.g., admin, editor, viewer
-  profiles:
-    | {
-        id: string;
-        name: string | null;
-        avatar_url: string | null;
-      }[]
-    | null;
+// Define profile structure
+interface Profile {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
 }
 
+// Define trip member structure
+interface TripMember {
+  id: string;
+  user_id: string;
+  role: string;
+  profiles: Profile | Profile[] | null;
+}
+
+// Define the shape of the fetched trip data
 interface FetchedTrip {
   id: string;
   name: string | null;
   description: string | null;
   start_date: string | null;
   end_date: string | null;
-  // Replace created_by with members for more info
-  // created_by: {
-  //   id: string;
-  //   name: string | null;
-  //   avatar_url: string | null;
-  // } | null;
   destination_id: string | null;
   destination_name: string | null;
   cover_image_url: string | null;
   status: string | null;
-  itinerary_items: FetchedItineraryItem[] | null;
-  trip_members: TripMember[] | null; // Add members here
-  privacy_setting: TripPrivacySetting | null; // Add privacy setting
+  created_at: string | null;
+  privacy_setting: TripPrivacySetting | null;
   playlist_url?: string | null;
+  trip_members: TripMember[] | null;
 }
 
+// Define the structure for the formatted public trip data
 interface PublicTripData {
   id: string;
   name: string | null;
   description: string | null;
   startDate: string | null;
   endDate: string | null;
-  // Keep creator minimal or derive from members if needed
   creator: {
     id: string;
     name: string | null;
@@ -77,13 +87,13 @@ interface PublicTripData {
     name: string | null;
     avatarUrl: string | null;
     role: string;
-  }[]; // Add formatted members list
+  }[];
   destinationId: string | null;
   destinationName: string | null;
   coverImageUrl: string | null;
   status: string | null;
   itineraryItems: {
-    id: number | string; // Allow string ID
+    id: number | string;
     title: string | null;
     date: string | null;
     startTime: string | null;
@@ -99,20 +109,17 @@ interface PublicTripData {
     type: string | null;
   }[];
 }
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
   const { slug } = await params;
-
+  const supabase = await createRouteHandlerClient();
   if (!slug) {
     return NextResponse.json({ error: 'Missing slug parameter' }, { status: 400 });
   }
 
   try {
-    const supabase = await createServerSupabaseClient();
-
     // Fetch trip details with the given slug that is public or shared
     const { data: trip, error: tripError } = await supabase
       .from('trips')
@@ -193,7 +200,6 @@ export async function GET(
             // This case might occur if the relationship is one-to-one? Keep the logic but add a type assertion if needed
             profile = m.profiles as any; // If this still causes issues, refine the TripMember type further
           }
-
           return {
             id: m.user_id,
             name: profile ? profile.name : null,
@@ -212,10 +218,9 @@ export async function GET(
         latitude: item.latitude,
         longitude: item.longitude,
         day: item.day_number,
-        cost:
-          typeof item.estimated_cost === 'string'
-            ? parseFloat(item.estimated_cost)
-            : item.estimated_cost,
+        cost: typeof item.estimated_cost === 'string'
+          ? parseFloat(item.estimated_cost)
+          : item.estimated_cost,
         currency: item.currency,
         notes: item.notes,
         category: item.category,

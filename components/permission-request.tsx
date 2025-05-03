@@ -50,13 +50,11 @@ export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) 
       setIsRequested(true);
       toast({
         title: 'Request submitted',
-        description: 'Trip organizers have been notified of your request',
+        description: 'Trip organizers have been notified of your request'
       });
 
       // Close dialog after a short delay
-      setTimeout(() => {
-        setIsOpen(false);
-      }, 2000);
+      setTimeout(() => setIsOpen(false), 2000);
     } catch (error: any) {
       console.error('Error requesting permissions:', error);
       toast({
@@ -71,7 +69,7 @@ export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button variant="outline" size="sm" className="gap-1">
           <Shield className="h-4 w-4" />
           Request Edit Access

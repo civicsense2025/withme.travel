@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/api';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { rateLimit } from '@/utils/middleware/rate-limit';
 import { z } from 'zod';
 import { captureException } from '@sentry/nextjs';
 import { sanitizeAuthCredentials } from '@/utils/sanitize';
-import { cookies } from 'next/headers';
 
 // Simple schema for login validation
 const loginSchema = z.object({
@@ -18,7 +17,7 @@ const loginRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
 });
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: NextRequest) : Promise<NextResponse> {
   const responseHeaders = new Headers({
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -54,8 +53,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Sanitize credentials
     const { email, password } = sanitizeAuthCredentials(body);
 
-    // Create Supabase client for authentication
-    const supabase = createServerSupabaseClient(cookies());
+    // Use the server-specific client creator
+    const supabase = createRouteHandlerClient();
 
     // Attempt to sign in
     const { data, error } = await supabase.auth.signInWithPassword({

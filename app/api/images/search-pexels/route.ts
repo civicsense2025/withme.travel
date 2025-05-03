@@ -11,7 +11,7 @@ if (!pexelsApiKey) {
 // Initialize Pexels client
 const pexelsClient = pexelsApiKey ? createClient(pexelsApiKey) : null;
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   if (!pexelsClient) {
     return NextResponse.json({ error: 'Pexels API key not configured.' }, { status: 500 });
   }

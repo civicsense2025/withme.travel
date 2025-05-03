@@ -1,24 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createBrowserClient } from '@supabase/ssr';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/nextjs';
-import { TABLES } from '@/utils/constants/database';
-
-
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 interface UseTripSubscriptionsProps {
   tripId: string;
@@ -38,7 +23,10 @@ export function useTripSubscriptions({
   onMembersUpdate,
   enabled = true,
 }: UseTripSubscriptionsProps) {
-  const supabase = createClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
 
   // Use refs to store subscription channels for cleanup
   const tripSubscriptionRef = useRef<RealtimeChannel | null>(null);
@@ -71,7 +59,7 @@ export function useTripSubscriptions({
             {
               event: 'UPDATE',
               schema: 'public',
-              table: Tables.TRIPS,
+              table: 'trips',
               filter: `id=eq.${tripId}`,
             },
             () => {
@@ -115,7 +103,7 @@ export function useTripSubscriptions({
             {
               event: '*',
               schema: 'public',
-              table: Tables.ITINERARY_ITEMS,
+              table: 'itinerary_items',
               filter: `trip_id=eq.${tripId}`,
             },
             () => {
@@ -159,7 +147,7 @@ export function useTripSubscriptions({
             {
               event: '*',
               schema: 'public',
-              table: Tables.TRIP_MEMBERS,
+              table: 'trip_members',
               filter: `trip_id=eq.${tripId}`,
             },
             () => {
@@ -247,11 +235,25 @@ export function useTripSubscriptions({
     // Setup subscriptions
     setupSubscriptions();
 
+    // Capture current values for cleanup
+    const tripSubscription = tripSubscriptionRef.current;
+    const itinerarySubscription = itinerarySubscriptionRef.current;
+    const membersSubscription = membersSubscriptionRef.current;
+
     // Cleanup function
     return () => {
-      cleanupSubscriptions();
+      // Clean up using captured references to avoid stale closures
+      if (tripSubscription) {
+        tripSubscription.unsubscribe();
+      }
+      if (itinerarySubscription) {
+        itinerarySubscription.unsubscribe();
+      }
+      if (membersSubscription) {
+        membersSubscription.unsubscribe();
+      }
     };
-  }, [setupSubscriptions, cleanupSubscriptions]);
+  }, [setupSubscriptions]);
 
   return {
     isSubscribed: isSubscribedRef.current,

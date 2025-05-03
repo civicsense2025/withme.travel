@@ -1,8 +1,8 @@
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const supabase = await createRouteHandlerClient();
   const { data, error: authError } = await supabase.auth.getSession();
 
   if (authError || !data.session) {
@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PATCH(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+export async function PATCH(request: NextRequest): Promise<NextResponse> {
+  const supabase = await createRouteHandlerClient();
   const { data, error: authError } = await supabase.auth.getSession();
 
   if (authError || !data.session) {

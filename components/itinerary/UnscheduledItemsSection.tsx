@@ -28,7 +28,7 @@ export const UnscheduledItemsSection: React.FC<UnscheduledItemsSectionProps> = (
     data: {
       type: 'unscheduled-section',
       accepts: ['item'],
-    },
+  },
   });
 
   // Get all item IDs for sortable context

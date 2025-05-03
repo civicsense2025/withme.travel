@@ -23,10 +23,8 @@ export function Spinner({
   text = 'Loading...',
   ...props
 }: SpinnerProps) {
-  // Use isClient state to prevent hydration mismatches
   const [isClient, setIsClient] = useState(false);
-
-  // Only enable client-side features after hydration
+  
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -36,7 +34,7 @@ export function Spinner({
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
     lg: 'h-8 w-8',
-    xl: 'h-12 w-12',
+    xl: 'h-12 w-12'
   };
 
   const variantClasses = {

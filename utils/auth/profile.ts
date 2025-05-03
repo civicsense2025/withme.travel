@@ -171,7 +171,7 @@ export function applyOptimisticUpdate(
   }
 
   // Create updated profile
-  const updatedProfile = {
+  const updatedProfile: UserProfile = {
     ...currentProfile,
     ...changes,
     updated_at: new Date().toISOString(),

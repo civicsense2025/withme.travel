@@ -14,12 +14,13 @@ import { useAuth } from '@/lib/hooks/use-auth';
  *
  * To use: Add {process.env.NODE_ENV === 'development' && <DebugPanel />} to your layout
  */
-export function DebugPanel() {
-  const [expanded, setExpanded] = useState(false);
+export function DebugPanel() { 
   const [loggingEnabled, setLoggingEnabled] = useState(false);
-  const { user, session, isLoading, error } = useAuth();
+  const [expanded, setExpanded] = useState(false);
+  const { user, session, isLoading } = useAuth();
+  const [error, setError] = useState<Error | null>(null);
 
-  // Check if logging is enabled on mount
+  // Initialize logging state from dev utility
   useEffect(() => {
     setLoggingEnabled(dev.isLoggingEnabled());
   }, []);
@@ -34,13 +35,11 @@ export function DebugPanel() {
     const newState = !loggingEnabled;
     setLogging(newState);
     setLoggingEnabled(newState);
-    logger.info(`Logging ${newState ? 'enabled' : 'disabled'}`, 'ui');
+    logger.info(`Logging ${newState ? 'enabled' : 'disabled'}`, `ui`);
   };
 
   // Refresh the page
-  const refreshPage = () => {
-    window.location.reload();
-  };
+  const refreshPage = () => { return window.location.reload(); };
 
   // Extract key info from session
   const isAuthenticated = !!session;

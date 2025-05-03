@@ -13,7 +13,7 @@ export const HTTP_STATUS = {
   UNPROCESSABLE_ENTITY: 422,
   INTERNAL_SERVER_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
-} as const;
+  } as const;
 
 // Type for API error response
 export interface ApiErrorResponse {
@@ -147,7 +147,7 @@ export function handleSupabaseError(
       pgCode: error.code,
       pgMessage: error.message,
       pgDetails: error.details,
-    },
+  },
     `supabase_${error.code}`
   );
 }
@@ -174,7 +174,7 @@ export function handleRouteError(
   if (error instanceof Error) {
     return createErrorResponse(error.message || defaultMessage, HTTP_STATUS.INTERNAL_SERVER_ERROR, {
       stack: error.stack,
-    });
+  });
   }
 
   // Handle unknown errors

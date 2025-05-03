@@ -1,10 +1,11 @@
-import { createServerComponentClient } from '@/utils/supabase/ssr-client';
+import { getServerComponentClient } from '@/utils/supabase/unified';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import type { Database } from '@/types/database.types';
-// Import TABLES but use type assertion
 import { TABLES } from '@/utils/constants/database';
 import { TRIP_ROLES } from '@/utils/constants/status';
+
+import type { Database } from '@/types/database.types';
+// Import TABLES but use type assertion
 import type { TripRole } from '@/types/trip';
 import TripPageClientWrapper from './trip-page-client-wrapper';
 
@@ -22,8 +23,8 @@ export default async function TripPage({ params }: { params: Promise<{ tripId: s
   // In Next.js 15, we must await the params
   const { tripId } = await params;
 
-  // Use the (now refactored) client creator
-  const supabase = createServerComponentClient();
+  // Use the unified helper
+  const supabase = await getServerComponentClient();
 
   // Check authentication status using getUser() for security
   const {

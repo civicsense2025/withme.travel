@@ -56,14 +56,15 @@ export function TripVoting({
   expiresAt,
   onVote,
 }: TripVotingProps) {
+  const { toast } = useToast();
+  const supabase = createClient();
+  const { user } = useAuth();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(
     options.find((option) => option.hasVoted)?.id || null
   );
   const [localOptions, setLocalOptions] = useState<VoteOption[]>(options);
-  const { toast } = useToast();
-  const supabase = createClient();
-  const { user } = useAuth();
 
   const totalVotes = localOptions.reduce((sum, option) => sum + option.votes, 0);
 
@@ -129,7 +130,7 @@ export function TripVoting({
       }
 
       toast({
-        description: 'Your vote has been registered',
+        description: 'Your vote has been registered'
       });
     } catch (error) {
       console.error('Error voting:', error);

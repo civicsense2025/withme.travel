@@ -12,7 +12,7 @@ export interface ClientTimeProps {
  * Client-side time rendering component to prevent hydration mismatches
  */
 export function ClientTime({ timestamp, format = 'relative', prefix = '' }: ClientTimeProps) {
-  const [formattedTime, setFormattedTime] = useState<string>('Loading...');
+  const [formattedTime, setFormattedTime] = useState<string>('');
 
   useEffect(() => {
     if (!timestamp) {
@@ -50,16 +50,7 @@ export function ClientTimeExpiry({ expiryTime }: { expiryTime: number }) {
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
-    // Initial time set
-    updateTimeLeft();
-
-    // Update countdown every second
-    const interval = setInterval(updateTimeLeft, 1000);
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
-
-    function updateTimeLeft() {
+    const updateTimeLeft = () => {
       const now = Date.now();
       if (expiryTime <= now) {
         setTimeLeft('Expired');
@@ -75,7 +66,12 @@ export function ClientTimeExpiry({ expiryTime }: { expiryTime: number }) {
       else if (hours > 0) setTimeLeft(`In ${hours}h ${minutes % 60}m`);
       else if (minutes > 0) setTimeLeft(`In ${minutes}m ${seconds % 60}s`);
       else setTimeLeft(`In ${seconds}s`);
-    }
+    };
+    
+    updateTimeLeft();
+    const interval = setInterval(updateTimeLeft, 1000);
+    
+    return () => clearInterval(interval);
   }, [expiryTime]);
 
   return <span>{timeLeft}</span>;
@@ -87,15 +83,13 @@ export function ClientTimeExpiry({ expiryTime }: { expiryTime: number }) {
  */
 export function ClientOnly({ children }: { children: React.ReactNode }) {
   const [hasMounted, setHasMounted] = useState(false);
-
+  
   useEffect(() => {
     setHasMounted(true);
+    return () => {
+      setHasMounted(false);
+    };
   }, []);
-
-  // Prevent server-side rendering
-  if (typeof window === 'undefined') {
-    return null;
-  }
 
   // Don't render children until component has mounted in browser
   if (!hasMounted) {

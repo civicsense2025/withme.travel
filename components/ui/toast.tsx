@@ -31,12 +31,12 @@ const toastVariants = cva(
       variant: {
         default: 'border bg-background text-foreground',
         destructive:
-          'destructive group border-destructive bg-destructive text-destructive-foreground',
+          'destructive group border-destructive bg-destructive text-destructive-foreground'
       },
     },
     defaultVariants: {
       variant: 'default',
-    },
+  },
   }
 );
 
@@ -46,7 +46,7 @@ const AnimationWrapper = ({ children }: { children: React.ReactNode }) => {
     <div
       className="animate-toast-in"
       style={{
-        animation: 'toast-in 0.4s ease forwards',
+        animation: 'toast-in 0.4s ease forwards'
       }}
     >
       <style jsx global>{`

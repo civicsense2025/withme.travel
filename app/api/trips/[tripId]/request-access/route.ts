@@ -1,8 +1,15 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+// Direct table/field names used instead of imports
+import { TABLES } from '@/utils/constants/database';
+import { PERMISSION_STATUSES } from '@/utils/constants/status';
+import { EmailService } from '@/lib/services/email-service';
+import { Database } from '@/types/database.types';
 
-import { ENUMS } from "@/utils/constants/database";
-import { TABLES, FIELDS } from "@/utils/constants/database";
+// Define table names to avoid TypeScript errors
+const TRIPS_TABLE = 'trips';
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const PERMISSION_REQUESTS_TABLE = 'permission_requests';
 
 /**
  * Handle a user's request to access a trip
@@ -16,11 +23,11 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
   try {
-    const supabase = await createServerSupabaseClient();
     const { message } = await request.json();
 
     // Check if user is authenticated
@@ -35,9 +42,9 @@ export async function POST(
 
     // Check if trip exists
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
-      .select(FIELDS.TRIPS.ID)
-      .eq(FIELDS.TRIPS.ID, tripId)
+      .from(TRIPS_TABLE)
+      .select('id')
+      .eq('id', tripId)
       .single();
 
     if (tripError || !trip) {
@@ -46,10 +53,10 @@ export async function POST(
 
     // Check if user is already a member
     const { data: existingMember } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(TRIP_MEMBERS_TABLE)
       .select('id')
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (existingMember) {
@@ -58,27 +65,27 @@ export async function POST(
 
     // Check if user already has a pending request
     const { data: existingRequest } = await supabase
-      .from(TABLES.PERMISSION_REQUESTS)
-      .select(`id, ${FIELDS.PERMISSION_REQUESTS.STATUS}`)
-      .eq(FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
-      .eq(FIELDS.PERMISSION_REQUESTS.USER_ID, user.id)
+      .from(PERMISSION_REQUESTS_TABLE)
+      .select('id, status')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (existingRequest) {
-      if (existingRequest.status === ENUMS.REQUEST_STATUSES.PENDING) {
+      if (existingRequest.status === PERMISSION_STATUSES.PENDING) {
         return NextResponse.json(
           { error: 'You already have a pending request for this trip' },
           { status: 400 }
         );
-      } else if (existingRequest.status === ENUMS.REQUEST_STATUSES.REJECTED) {
+      } else if (existingRequest.status === PERMISSION_STATUSES.REJECTED) {
         return NextResponse.json({ error: 'Your previous request was rejected' }, { status: 400 });
       } else {
         // If denied, allow to request again by updating the existing request
         const { error: updateError } = await supabase
-          .from(TABLES.PERMISSION_REQUESTS)
+          .from(PERMISSION_REQUESTS_TABLE)
           .update({
-            [FIELDS.PERMISSION_REQUESTS.STATUS]: ENUMS.REQUEST_STATUSES.PENDING,
-            [FIELDS.PERMISSION_REQUESTS.MESSAGE]: message || '',
+            status: PERMISSION_STATUSES.PENDING,
+            message: message || '',
             updated_at: new Date().toISOString(),
           })
           .eq('id', existingRequest.id);
@@ -89,11 +96,11 @@ export async function POST(
       }
     } else {
       // Create new request
-      const { error: insertError } = await supabase.from(TABLES.PERMISSION_REQUESTS).insert({
-        [FIELDS.PERMISSION_REQUESTS.TRIP_ID]: tripId,
-        [FIELDS.PERMISSION_REQUESTS.USER_ID]: user.id,
-        [FIELDS.PERMISSION_REQUESTS.MESSAGE]: message || '',
-        [FIELDS.PERMISSION_REQUESTS.STATUS]: ENUMS.REQUEST_STATUSES.PENDING,
+      const { error: insertError } = await supabase.from(PERMISSION_REQUESTS_TABLE).insert({
+        trip_id: tripId,
+        user_id: user.id,
+        message: message || '',
+        status: PERMISSION_STATUSES.PENDING,
       });
 
       if (insertError) {

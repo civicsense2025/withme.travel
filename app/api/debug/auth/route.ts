@@ -1,9 +1,9 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get session info
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

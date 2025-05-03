@@ -1,4 +1,4 @@
-import { getServerComponentClient } from '@/utils/supabase/unified';
+import { createServerComponentClient } from '@/utils/supabase/server';
 import { ItineraryItem } from '@/types/database.types';
 import { AddItineraryItemClient } from './add-item-client'; // Import the new client component
 
@@ -24,7 +24,9 @@ export default async function AddItineraryItemPage({
   params: Promise<{ tripId: string }>;
 }) {
   const { tripId } = await params;
-  const supabase = await getServerComponentClient();
+  
+  // Get the supabase client using the project's standard approach
+  const supabase = createServerComponentClient();
 
   let initialDestination: DestinationInfo | null = null;
   try {

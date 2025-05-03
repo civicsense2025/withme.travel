@@ -1,5 +1,5 @@
-import { ENUMS } from "@/utils/constants/database";
-import { getRouteHandlerClient } from '@/utils/supabase/unified';
+// Direct table/field names used instead of imports
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
@@ -106,7 +106,7 @@ async function processTags(supabaseAdmin: any, tagNames: string[]): Promise<stri
     console.log(chalk.dim(`${logPrefix} No unique, non-empty tag names.`));
     return [];
   }
-  console.log(chalk.dim(`${logPrefix} Processing unique tags: ${uniqueTagNames.join(', ')}`));
+  console.log(chalk.dim(`${logPrefix} Processing unique tags: ${uniqueTagNames.join(`, `)}`));
 
   // Generate slugs along with names
   const tagsToUpsert = uniqueTagNames.map((name) => ({
@@ -116,7 +116,7 @@ async function processTags(supabaseAdmin: any, tagNames: string[]): Promise<stri
   console.log(chalk.dim(`${logPrefix} Upserting tags data: ${JSON.stringify(tagsToUpsert)}`));
 
   const { data: tags, error: tagUpsertError } = await supabaseAdmin
-    .from(TABLES.TAGS)
+    .from('tags')
     .upsert(tagsToUpsert, { onConflict: 'slug' }) // Use slug for conflict resolution
     .select('id');
 
@@ -132,7 +132,7 @@ async function processTags(supabaseAdmin: any, tagNames: string[]): Promise<stri
     // Fetch based on the generated slugs
     const slugsToFetch = tagsToUpsert.map((t) => t.slug);
     const { data: fetchedTags, error: tagFetchError } = await supabaseAdmin
-      .from(TABLES.TAGS)
+      .from('tags')
       .select('id')
       .in('slug', slugsToFetch); // Fetch by slug
 
@@ -142,23 +142,23 @@ async function processTags(supabaseAdmin: any, tagNames: string[]): Promise<stri
     }
     if (!fetchedTags || fetchedTags.length === 0) {
       console.error(
-        chalk.red(`${logPrefix} Could not find any tag IDs for slugs: ${slugsToFetch.join(', ')}`)
+        chalk.red(`${logPrefix} Could not find any tag IDs for slugs: ${slugsToFetch.join(`, `)}`)
       );
       throw new Error('Failed to find required tag IDs');
     }
     const fetchedIds = fetchedTags.map((tag: any) => tag.id);
-    console.log(chalk.dim(`${logPrefix} Successfully fetched tag IDs: ${fetchedIds.join(', ')}`));
+    console.log(chalk.dim(`${logPrefix} Successfully fetched tag IDs: ${fetchedIds.join(`, `)}`));
     return fetchedIds;
   }
 
   const upsertedIds = tags.map((tag: any) => tag.id);
   console.log(
-    chalk.dim(`${logPrefix} Successfully upserted/retrieved tag IDs: ${upsertedIds.join(', ')}`)
+    chalk.dim(`${logPrefix} Successfully upserted/retrieved tag IDs: ${upsertedIds.join(`, `)}`)
   );
   return upsertedIds;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log(chalk.blue(`${LOG_PREFIX} Processing request...`));
 
   // Log available cookies for debugging
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
     console.log(chalk.dim(`${LOG_PREFIX} Has auth cookie: ${hasAuthCookie}`));
   }
 
-  const supabase = await getRouteHandlerClient(request);
+  const supabase = await createRouteHandlerClient();
   console.log(chalk.dim(`${LOG_PREFIX} Created route handler client`));
 
   // Admin client using service role key (ensure env vars are set)
@@ -274,8 +274,8 @@ export async function POST(request: NextRequest) {
       );
       return NextResponse.json(
         {
-          error:
-            'Missing required fields for full trip creation (destination_id, start_date, end_date)',
+          error: null,
+          message: 'Missing required fields for full trip creation (destination_id, start_date, end_date)',
         },
         { status: 400 }
       );
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
     };
 
     const { data: trip, error: tripCreationError } = await supabaseAdmin
-      .from(TABLES.TRIPS)
+      .from('trips')
       .insert(tripData)
       .select('*');
 
@@ -334,12 +334,12 @@ export async function POST(request: NextRequest) {
     const memberData = {
       trip_id: tripId,
       user_id: user.id,
-      role: ENUMS.TRIP_ROLES.ADMIN,
+      role: TRIP_ROLES.ADMIN,
       joined_at: new Date().toISOString(),
     };
 
     const { data: member, error: memberCreationError } = await supabaseAdmin
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .insert(memberData)
       .select('*');
 
@@ -366,7 +366,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const { data: tripTags, error: tripTagCreationError } = await supabaseAdmin
-      .from(TABLES.TRIP_TAGS)
+      .from('trip_tags')
       .insert(tagData)
       .select('*');
 
@@ -382,24 +382,23 @@ export async function POST(request: NextRequest) {
 
     const createdTagIds = tripTags.map((tag: any) => tag.tag_id);
     console.log(
-      chalk.green(`${LOG_PREFIX} Created trip tags with IDs: ${createdTagIds.join(', ')}`)
+      chalk.green(`${LOG_PREFIX} Created trip tags with IDs: ${createdTagIds.join(`, `)}`)
     );
 
     // --- Handle Trip Itinerary --- START
-    const itineraryData = {
+    const itineraryItemData = {
       trip_id: tripId,
+      title: `Visit ${title}`,
       day_number: 1,
       position: 1,
-      date: start_date,
-      title: title,
-      category: ITINERARY_CATEGORIES.ICONIC_LANDMARKS,
+      category: ITINERARY_CATEGORIES.ATTRACTION,
       description: description,
-      status: ITEM_STATUSES.PENDING,
+      status: ITEM_STATUSES.SUGGESTED,
     };
 
     const { data: itinerary, error: itineraryCreationError } = await supabaseAdmin
-      .from(TABLES.ITINERARY_ITEMS)
-      .insert(itineraryData)
+      .from('itinerary_items')
+      .insert(itineraryItemData)
       .select('*');
 
     if (itineraryCreationError) {
@@ -430,7 +429,7 @@ export async function POST(request: NextRequest) {
     };
 
     const { data: section, error: sectionCreationError } = await supabaseAdmin
-      .from(TABLES.ITINERARY_SECTIONS)
+      .from('itinerary_sections')
       .insert(sectionData)
       .select('*');
 
@@ -460,7 +459,7 @@ export async function POST(request: NextRequest) {
     };
 
     const { data: destination, error: destinationCreationError } = await supabaseAdmin
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .insert(destinationData)
       .select('*');
 

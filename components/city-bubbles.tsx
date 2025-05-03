@@ -62,8 +62,8 @@ const BubbleItem = React.memo(function BubbleItem({
         delay: bubble.delay,
         duration: 0.5,
         ease: 'easeOut',
-      },
-    },
+  },
+    }
   };
 
   return (
@@ -78,7 +78,7 @@ const BubbleItem = React.memo(function BubbleItem({
         style={{
           left: bubble.x,
           top: bubble.y,
-        }}
+  }}
         initial="hidden"
         animate={isInView ? 'visible' : 'hidden'}
         variants={animations}
@@ -96,10 +96,9 @@ const BubbleItem = React.memo(function BubbleItem({
 
 export function CityBubbles() {
   const [windowWidth, setWindowWidth] = useState(0);
-  const bubblesRef = useRef(null);
-  const isInView = useInView(bubblesRef, { once: true, amount: 0.1 });
+  const bubblesRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(bubblesRef, { once: false, amount: 0.3 });
 
-  // Handle window resize with debounce
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setWindowWidth(window.innerWidth || 0);
@@ -108,9 +107,7 @@ export function CityBubbles() {
       let resizeTimer: NodeJS.Timeout;
       const handleResize = () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          setWindowWidth(window.innerWidth || 0);
-        }, 250);
+        resizeTimer = setTimeout(() => setWindowWidth(window.innerWidth || 0), 250);
       };
 
       window.addEventListener('resize', handleResize);

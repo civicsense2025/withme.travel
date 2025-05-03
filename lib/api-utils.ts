@@ -25,7 +25,7 @@ export function formatErrorResponse(error: any, defaultStatus = 500) {
     return NextResponse.json(
       {
         error: error.message,
-        details: error.details || undefined,
+        details: error.details || undefined
       },
       { status: error.status }
     );
@@ -52,7 +52,7 @@ export function errorResponse(message: string, status = 400, details?: any) {
   return NextResponse.json(
     {
       error: message,
-      details: details || undefined,
+      details: details || undefined
     },
     { status }
   );
@@ -66,12 +66,9 @@ export function successResponse(data: any, status = 200) {
 }
 
 /**
- * Validate request inputs against a schema
- * @param input Data to validate
- * @param schema Schema to validate against (e.g., Zod schema)
- * @returns Validated data or throws ApiError
+ * Validate and parse data with a schema
  */
-export async function validateInput<T extends object, U>(
+export async function validateData<T, U = T>(
   input: T,
   schema: { parse: (data: T) => U }
 ): Promise<U> {

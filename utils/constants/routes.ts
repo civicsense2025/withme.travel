@@ -105,9 +105,7 @@ export const PAGE_ROUTES = {
 export const ROUTE_HELPERS = {
   addQueryParams: (base: string, params: Record<string, string>) => {
     const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) searchParams.append(key, value);
-    });
+    Object.entries(params).forEach(([key, value]) => { if (value) searchParams.append(key, value); });
     const queryString = searchParams.toString();
     return queryString ? `${base}?${queryString}` : base;
   },

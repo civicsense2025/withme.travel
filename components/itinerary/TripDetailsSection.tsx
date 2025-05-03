@@ -34,7 +34,7 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
 }) => {
   // Filter items by category
   const accommodations = items.filter(
-    (item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS
+    (item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATION
   );
 
   const transportation = items.filter(
@@ -61,7 +61,7 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-lg" aria-hidden="true">
-                {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji}
+                {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATION].emoji}
               </span>
               <h3 className="font-medium">Accommodations</h3>
             </div>

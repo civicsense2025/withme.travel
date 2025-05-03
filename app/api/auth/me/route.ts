@@ -1,76 +1,71 @@
-import { NextResponse } from 'next/server';
-// Remove createServerClient import if not needed elsewhere in this file
-// import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers'; // Keep cookies import
+import { NextRequest, NextResponse } from 'next/server';
+// import { createServerSupabaseClient } from '@/utils/supabase/server'; // Old import
+// import { cookies } from 'next/headers'; // Now handled by getRouteHandlerClient
+// import { createServerClient, type CookieOptions } from '@supabase/ssr'; // Now handled by getRouteHandlerClient
+import { createRouteHandlerClient } from '@/utils/supabase/server'; // Use the unified helper
+import { captureException } from '@sentry/nextjs';
 import type { Database } from '@/types/database.types';
-import { createApiRouteClient } from '@/utils/supabase/ssr-client'; // Import the correct client creator
 
-export async function GET(request: Request) {
+/**
+ * GET /api/auth/me - Get authenticated user data
+ *
+ * Returns the current authenticated user with profile data
+ */
+export async function GET(request: NextRequest) : Promise<NextResponse> {
+  const responseHeaders = new Headers({
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  });
+
   try {
-    // Use the async client creator for API routes
-    const supabase = await createApiRouteClient();
+    // Create Supabase client using the unified helper
+    // const cookieStore = await cookies();
+    const supabase = await createRouteHandlerClient(); // Simplified client creation
 
-    // First, check if there's a valid session using the new supabase client
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError || !session) {
-      console.log(
-        'API Me Route: No active session found or error retrieving session.',
-        sessionError?.message
-      );
-      return NextResponse.json({ user: null, profile: null }, { status: 401 }); // Unauthorized
-    }
-
-    // If we have a session, verify the user
+    // Fetch user data
     const {
       data: { user },
-      error: userError,
+      error,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      // If there's an error or no user, it means the user is not authenticated
-      console.log(
-        'API Me Route: No active user found or error retrieving user.',
-        userError?.message
-      );
-      return NextResponse.json({ user: null, profile: null }, { status: 401 }); // Unauthorized
+    if (error) {
+      console.error('Error fetching user data:', error);
+      return NextResponse.json({ error: 'Authentication error' }, { status: 401 });
     }
 
-    // If user is authenticated, fetch their profile from the 'profiles' table
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles') // Your profile table name
-      .select('id, name, avatar_url, username, is_admin') // Include all important profile fields
-      .filter('id', 'eq', user.id) // Use filter instead of eq
-      .maybeSingle(); // Use maybeSingle() if a user might not have a profile yet
-
-    if (profileError) {
-      console.error('API Me Route: Error fetching profile:', profileError.message);
-      // Decide how to handle: return user without profile, or return an error?
-      // Returning user basic info but null profile might be acceptable.
-      return NextResponse.json(
-        {
-          user: { id: user.id, email: user.email },
-          profile: null,
-        },
-        { status: 200 }
-      ); // Still return 200 OK, but profile is null
+    if (!user) {
+      return NextResponse.json({ user: null, authenticated: false }, { status: 200 });
     }
 
-    // Successfully fetched user and profile
+    // Get user profile data
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Error fetching user profile:', profileError);
+    }
+
+    // Return user data with profile
     return NextResponse.json(
       {
-        user: { id: user.id, email: user.email }, // Return basic user info
-        profile: profileData, // Return fetched profile data
+        user: {
+          ...user,
+          profile: profile || null,
+        },
+        authenticated: true,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: responseHeaders,
+      }
     );
-  } catch (error: any) {
-    console.error('API Me Route Error:', error);
+  } catch (error) {
+    console.error('Error in /api/auth/me:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred while fetching user data' },
+      { error: 'An error occurred while checking authentication status' },
       { status: 500 }
     );
   }

@@ -56,19 +56,18 @@ export function ItineraryItemNotes({
   readOnly = false,
   onSave,
 }: ItineraryItemNotesProps) {
+  // Auth state
   const { user, supabase } = useAuth();
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-
+  const [isLoaded, setIsLoaded] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
-  const editorRef = useRef<any>(null);
-  const providerRef = useRef<WebsocketProvider | null>(null);
-
-  // Wrap ydoc initialization in useMemo
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Create refs for Y.js document and provider
   const ydoc = useMemo(() => new Y.Doc(), []);
-
-  // Wrap provider initialization in useMemo
+  const providerRef = useRef<WebsocketProvider | null>(null);
+  
+  // Create and connect to the WebSocket provider
   const provider = useMemo(() => {
     // Ensure this runs only on the client
     if (typeof window === 'undefined') {
@@ -105,15 +104,16 @@ export function ItineraryItemNotes({
     });
 
     return wsProvider;
-    // Dependencies: ydoc, tripId, itemId
   }, [ydoc, tripId, itemId]);
 
   const ytext = ydoc.getText('content');
 
   // If there's initial content and the ytext is empty, set it
-  if (initialContent && ytext.toString() === '') {
-    ytext.insert(0, initialContent);
-  }
+  useEffect(() => {
+    if (initialContent && ytext.toString() === '') {
+      ytext.insert(0, initialContent);
+    }
+  }, [initialContent, ytext]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -150,8 +150,10 @@ export function ItineraryItemNotes({
 
     return () => {
       // Use the captured variable instead of providerRef.current
-      currentProvider?.disconnect();
-      currentProvider?.destroy();
+      if (currentProvider) {
+        currentProvider.disconnect();
+        currentProvider.destroy();
+      }
       ydoc.destroy();
     };
   }, [user, supabase, provider, ydoc]); // Add supabase dependency
@@ -174,7 +176,7 @@ export function ItineraryItemNotes({
       content: '', // Content is managed by Yjs
       editorProps: {
         attributes: {
-          class: 'prose prose-sm focus:outline-none min-h-[100px] max-w-none',
+          class: 'prose prose-sm focus:outline-none min-h-[100px] max-w-none'
         },
       },
     },

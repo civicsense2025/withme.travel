@@ -113,10 +113,10 @@ export function ConnectionStatusIndicator({
           console.log('Presence sync received');
         })
         .on('presence', { event: 'join' }, ({ newPresences }) => {
-          console.log('New users joined:', newPresences);
+          return console.log('New users joined:', newPresences);
         })
         .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-          console.log('Users left:', leftPresences);
+          return console.log('Users left:', leftPresences);
         })
         .subscribe((subscribeStatus, err) => {
           // Clear the connection timeout once we get any response

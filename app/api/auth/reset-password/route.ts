@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/api';
+// import { createApiClient } from '@/utils/supabase/api';
 import { z } from 'zod';
 import { resetPasswordSchema } from '@/utils/validation';
 import { EmailService } from '@/lib/services/email-service';
 import { captureException } from '@sentry/nextjs';
-import { cookies } from 'next/headers';
+// import { createServerSupabaseClient } from '@/utils/supabase/server'; // Old import
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { User } from '@supabase/supabase-js';
 import { rateLimit } from '@/lib/rate-limit';
+import { sanitizeAuthCredentials } from '@/utils/sanitize';
 
 // Define interface for email service results
 interface EmailResult {
@@ -14,7 +16,7 @@ interface EmailResult {
   error?: string;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest) : Promise<NextResponse> {
   // Set security headers for all responses
   const headers = new Headers({
     'Content-Type': 'application/json',
@@ -72,10 +74,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Create Supabase client
-  const supabase = createServerSupabaseClient(cookies());
+  const { password } = sanitizeAuthCredentials(body);
 
   try {
+    // Create Supabase client using our utility
+    const supabase = await createRouteHandlerClient();
+
     // Get current session (the user should be authenticated with the recovery link)
     const {
       data: { session },
@@ -92,8 +96,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user's password
-    const { data: userData, error } = await supabase.auth.updateUser({
-      password: validatedData.password,
+    const { data: { user: userData }, error } = await supabase.auth.updateUser({
+      password: password,
     });
 
     if (error) {
@@ -112,9 +116,9 @@ export async function POST(request: NextRequest) {
 
     // Send password reset confirmation email
     try {
-      if (userData?.user?.email) {
+      if (userData?.email) {
         // Use the generic sendEmail method for confirmation
-        const userName = userData.user.user_metadata?.name || 'there';
+        const userName = userData.user_metadata?.name || 'there';
         const subject = 'Your WithMe Travel Password Has Been Reset';
         const body = `
           <h1>Password Reset Successful</h1>
@@ -125,12 +129,11 @@ export async function POST(request: NextRequest) {
         `;
 
         // Convert boolean result to EmailResult object
-        const emailSent = await EmailService.sendEmail(
-          userData.user.email,
+        const emailSent = await EmailService.sendEmail({
+          to: userData.email,
           subject,
-          body,
-          true // Send as HTML
-        );
+          html: body,
+        });
 
         // Create proper EmailResult from boolean
         const emailResult: EmailResult = {
@@ -156,8 +159,8 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Password has been successfully reset',
         user: {
-          id: userData.user?.id,
-          email: userData.user?.email,
+          id: userData?.id,
+          email: userData?.email,
         },
       },
       { headers }

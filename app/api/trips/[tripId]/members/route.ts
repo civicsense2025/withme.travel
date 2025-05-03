@@ -1,28 +1,23 @@
-import { NextResponse, NextRequest } from 'next/server';
-// Import the correct shared helper
-import { createServerSupabaseClient } from '@/utils/supabase/server';
-// Use the direct TABLES export as per constants guide
-import { TABLES } from '@/utils/constants/database';
-
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
+import { type NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import type { Database } from '@/types/database.types';
 
+// Define table names directly as string literals
+const TRIP_MEMBERS_TABLE = 'trip_members';
+
+// Define database field constants to avoid linting issues
+const FIELDS = {
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    ROLE: 'role'
+  }
+};
+
 export async function GET(
-  request: NextRequest, // Route Handlers receive NextRequest
+  request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
-) {
+): Promise<NextResponse> {
   try {
     // Must await params in Next.js 15
     const { tripId } = await params;
@@ -33,8 +28,8 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid trip ID format' }, { status: 400 });
     }
 
-    // Create the client using the correct helper
-    const supabase = createServerSupabaseClient();
+    // Explicitly use getRouteHandlerClient
+    const supabase = await createRouteHandlerClient();
 
     // Use getUser() for a more secure auth check
     const {
@@ -47,16 +42,16 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch trip members using the correct TABLES constant
+    // Fetch trip members
     const { data, error } = await supabase
-      .from(Tables.TRIP_MEMBERS)
+      .from(TRIP_MEMBERS_TABLE)
       .select(
         `
         *,
-        profiles:${Tables.PROFILES}(*)
+        profiles(*)
       `
       )
-      .eq('trip_id', tripId);
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
 
     if (error) {
       console.error('Error fetching members:', error);

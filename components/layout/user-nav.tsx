@@ -20,10 +20,10 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { ErrorBoundary } from '@sentry/nextjs';
 
 // Get profile initials - shared function to ensure consistency
-function getProfileInitials(profile: any, user: any): string {
-  if (profile?.name) {
+function getProfileInitials(user: any): string {
+  if (user?.profile?.name) {
     // Get first letters of each word in the name
-    return profile.name
+    return user.profile.name
       .split(' ')
       .map((part: string) => part.charAt(0))
       .join('')
@@ -34,8 +34,8 @@ function getProfileInitials(profile: any, user: any): string {
 }
 
 function UserNavContent() {
-  const { user, profile, signOut } = useAuth();
-  const isAdmin = profile?.is_admin;
+  const { user, signOut } = useAuth();
+  const isAdmin = user?.user_metadata?.is_admin === true;
 
   const handleSignOut = async () => {
     await signOut();
@@ -54,10 +54,10 @@ function UserNavContent() {
           <Avatar className="h-8 w-8">
             {/* Use profile avatar first, fallback to user metadata, then initial */}
             <AvatarImage
-              src={profile?.avatar_url || user.user_metadata?.avatar_url || ''}
-              alt={profile?.name || user.email || 'User'}
+              src={user.profile?.avatar_url || user.user_metadata?.avatar_url || ''}
+              alt={user.profile?.name || user.email || 'User'}
             />
-            <AvatarFallback>{getProfileInitials(profile, user)}</AvatarFallback>
+            <AvatarFallback>{getProfileInitials(user)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -65,9 +65,9 @@ function UserNavContent() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none truncate">
-              {profile?.name || user.email}
+              {user.profile?.name || user.email}
             </p>
-            {profile?.name && (
+            {user.profile?.name && (
               <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>
             )}
           </div>

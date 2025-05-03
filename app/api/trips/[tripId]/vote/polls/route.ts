@@ -1,12 +1,15 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+// Direct table/field names used instead of imports
+import { Database } from '@/types/database.types';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   // Validate trip ID
   if (!tripId || !/^\d+$/.test(tripId)) {
@@ -15,7 +18,6 @@ export async function GET(
 
   try {
     // Get authenticated user
-    const supabase = await createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -40,7 +42,7 @@ export async function GET(
 
     // Get all polls for this trip with options and vote counts
     const { data: polls, error: pollsError } = await supabase
-      .from('trip_polls')
+      .from('trip_vote_polls')
       .select(
         `
         id,
@@ -57,7 +59,7 @@ export async function GET(
       .order('created_at', { ascending: false });
 
     if (pollsError) {
-      console.error('Error fetching polls:', pollsError);
+console.error('Error fetching polls:', pollsError);
       return NextResponse.json({ error: 'Failed to fetch polls' }, { status: 500 });
     }
 
@@ -70,12 +72,12 @@ export async function GET(
     const pollIds = polls.map((poll) => poll.id);
 
     const { data: options, error: optionsError } = await supabase
-      .from('trip_poll_options')
+      .from('trip_vote_options')
       .select('id, poll_id, text')
       .in('poll_id', pollIds);
 
     if (optionsError) {
-      console.error('Error fetching poll options:', optionsError);
+console.error('Error fetching poll options:', optionsError);
       return NextResponse.json({ error: 'Failed to fetch poll options' }, { status: 500 });
     }
 
@@ -94,12 +96,12 @@ export async function GET(
 
     // Get votes for each option
     const { data: votes, error: votesError } = await supabase
-      .from('trip_poll_votes')
+      .from('trip_votes')
       .select('id, poll_id, option_id, user_id')
       .in('poll_id', pollIds);
 
     if (votesError) {
-      console.error('Error fetching poll votes:', votesError);
+console.error('Error fetching poll votes:', votesError);
       return NextResponse.json({ error: 'Failed to fetch poll votes' }, { status: 500 });
     }
 
@@ -148,7 +150,7 @@ export async function GET(
 
     return NextResponse.json(enrichedPolls);
   } catch (error) {
-    console.error('Error fetching polls:', error);
+console.error('Error fetching polls:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

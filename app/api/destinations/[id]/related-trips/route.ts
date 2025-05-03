@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/api';
+import { createServerSupabaseClient } from '@/utils/supabase/api';
 import { TABLES } from '@/utils/constants/database';
-
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -22,10 +21,13 @@ const Tables = TABLES as unknown as ExtendedTables;
  * This endpoint returns public trips associated with a destination
  * Trips are filtered based on privacy settings, and limited to a set number
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   try {
     const { id: destinationId } = await params;
-    const supabase = await createServerSupabaseClient();
+    const supabase = createServerSupabaseClient();
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams?.get('limit') || '4', 10);
 

@@ -10,9 +10,23 @@ interface PermissionRequestsProps {
   tripId: string;
 }
 
+interface RequestUser {
+  name: string | null;
+  email: string;
+  avatar_url: string | null;
+}
+
+interface PermissionRequest {
+  id: string;
+  user_id: string;
+  message: string;
+  created_at: string;
+  user: RequestUser;
+}
+
 export function PermissionRequests({ tripId }: PermissionRequestsProps) {
-  const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [requests, setRequests] = useState<PermissionRequest[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -53,7 +67,7 @@ export function PermissionRequests({ tripId }: PermissionRequestsProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: approve ? 'approved' : 'rejected',
+          status: approve ? 'approved' : 'rejected'
         }),
       });
 
@@ -66,7 +80,7 @@ export function PermissionRequests({ tripId }: PermissionRequestsProps) {
 
       toast({
         title: approve ? 'Request approved' : 'Request rejected',
-        description: approve ? 'User now has edit access' : 'Request has been rejected',
+        description: approve ? 'User now has edit access' : 'Request has been rejected'
       });
     } catch (error: any) {
       console.error('Error handling permission request:', error);

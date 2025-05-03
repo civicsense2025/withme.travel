@@ -30,7 +30,7 @@ export const CoreTravelItemsSection: React.FC<CoreTravelItemsSectionProps> = ({
 
   // Filter items by category
   const accommodations = items.filter(
-    (item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS
+    (item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATION
   );
 
   const transportation = items.filter(
@@ -74,7 +74,7 @@ export const CoreTravelItemsSection: React.FC<CoreTravelItemsSectionProps> = ({
                     <ChevronRight className="h-4 w-4" />
                   )}
                   <span className="text-base" aria-hidden="true">
-                    {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji}
+                    {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATION].emoji}
                   </span>
                   <span>Accommodations</span>
                 </h3>
@@ -83,10 +83,8 @@ export const CoreTravelItemsSection: React.FC<CoreTravelItemsSectionProps> = ({
                     variant="outline"
                     size="sm"
                     className="h-7 text-xs gap-1 border-dashed border-muted-foreground/50 hover:border-muted-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddItem(ITINERARY_CATEGORIES.ACCOMMODATIONS);
-                    }}
+                    onClick={(e) => { return e.stopPropagation();
+                      onAddItem(ITINERARY_CATEGORIES.ACCOMMODATION); }}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Accommodation
@@ -113,7 +111,7 @@ export const CoreTravelItemsSection: React.FC<CoreTravelItemsSectionProps> = ({
                         'border border-dashed rounded-md p-4 flex items-center justify-center cursor-pointer',
                         'text-sm text-muted-foreground hover:border-muted-foreground transition-colors'
                       )}
-                      onClick={() => canEdit && onAddItem(ITINERARY_CATEGORIES.ACCOMMODATIONS)}
+                      onClick={() => canEdit && onAddItem(ITINERARY_CATEGORIES.ACCOMMODATION)}
                     >
                       <div className="text-center space-y-1">
                         <Plus className="h-4 w-4 mx-auto" />
@@ -149,10 +147,8 @@ export const CoreTravelItemsSection: React.FC<CoreTravelItemsSectionProps> = ({
                     variant="outline"
                     size="sm"
                     className="h-7 text-xs gap-1 border-dashed border-muted-foreground/50 hover:border-muted-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddItem(ITINERARY_CATEGORIES.TRANSPORTATION);
-                    }}
+                    onClick={(e) => { return e.stopPropagation();
+                      onAddItem(ITINERARY_CATEGORIES.TRANSPORTATION); }}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Transportation

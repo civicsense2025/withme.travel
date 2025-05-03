@@ -1,6 +1,7 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { TABLES } from '@/utils/constants/database';
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const { token } = await params;
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const {

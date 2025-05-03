@@ -25,8 +25,17 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
-import { getInitials } from '@/lib/utils'; // Assuming getInitials is in lib/utils
-import { ConnectionState, ExtendedUserPresence, ImportedUserPresence } from '@/types/presence'; // Import presence types
+import libUtils from '@/utils/lib-utils';
+import { 
+  ConnectionState, 
+  ExtendedUserPresence, 
+  ImportedUserPresence, 
+  UserPresence,
+  UserPresenceStatus
+} from '@/types/presence';
+import { cn } from '@/lib/utils';
+
+const { getInitials } = libUtils;
 
 // Helper to format time ago
 const formatTimeAgo = (dateString: string | undefined): string => {
@@ -43,7 +52,7 @@ const formatTimeAgo = (dateString: string | undefined): string => {
 };
 
 // Helper to get status icon
-const getStatusIcon = (status: string | undefined) => {
+const getStatusIcon = (status: UserPresenceStatus | undefined) => {
   switch (status) {
     case 'editing':
       return <Edit className="h-3 w-3 text-blue-500" />;
@@ -58,13 +67,13 @@ const getStatusIcon = (status: string | undefined) => {
 };
 
 // Helper to get status badge
-const getStatusBadge = (status: string | undefined) => {
+const getStatusBadge = (status: UserPresenceStatus | undefined) => {
   const statusStyles: Record<string, string> = {
     editing: 'bg-blue-500 hover:bg-blue-600',
     online: 'bg-green-500 hover:bg-green-600',
     away: 'bg-yellow-500 hover:bg-yellow-600',
     offline: 'bg-gray-500 hover:bg-gray-600',
-    error: 'bg-red-500 hover:bg-red-600',
+    error: 'bg-red-500 hover: bg-red-600',
   };
   const currentStatus = status || 'offline';
 
@@ -83,7 +92,7 @@ const getStatusBadge = (status: string | undefined) => {
 const getActivityInfo = (user: ImportedUserPresence | ExtendedUserPresence | null): string => {
   if (!user) return 'Unknown activity';
 
-  if (user.status === 'editing' && user.editing_item_id) {
+  if (user.status === 'editing' && (user as ExtendedUserPresence).editing_item_id) {
     return 'Editing an item';
   }
 
@@ -122,14 +131,24 @@ const cleanupCursorElements = () => {
   });
 };
 
-export function TripPresenceIndicator(): React.ReactNode {
+// Type guard to check if a UserPresence is an ExtendedUserPresence
+function isExtendedUserPresence(user: UserPresence): user is ExtendedUserPresence {
+  return (
+    'cursor_position' in user || 
+    'editing_item_id' in user || 
+    'page_path' in user
+  );
+}
+
+export function TripPresenceIndicator(): JSX.Element {
+  const presenceContext = usePresenceContext();
   const {
-    activeUsers,
-    myPresence,
-    connectionState,
-    error: presenceError,
-    recoverPresence,
-  } = usePresenceContext();
+    activeUsers = [],
+    myPresence = null,
+    connectionState = 'disconnected' as ConnectionState,
+    error: presenceError = null,
+    recoverPresence = async () => {},
+  } = presenceContext || {};
 
   const [currentConnectionState, setCurrentConnectionState] =
     useState<ConnectionState>(connectionState);
@@ -144,6 +163,8 @@ export function TripPresenceIndicator(): React.ReactNode {
     null
   );
 
+  const mountedRef = useRef(true);
+  
   // Initialize throttled function
   useEffect(() => {
     throttledCursorUpdateRef.current = throttle((x: number, y: number) => {
@@ -152,8 +173,8 @@ export function TripPresenceIndicator(): React.ReactNode {
       }
     }, 50); // Throttle interval
 
-    return () => {
-      throttledCursorUpdateRef.current?.cancel();
+    return () => { 
+      throttledCursorUpdateRef.current?.cancel(); 
     };
   }, [myPresence]);
 
@@ -174,14 +195,14 @@ export function TripPresenceIndicator(): React.ReactNode {
   }, [connectionState, presenceError, reconnectAttempts]);
 
   // Update last update time when activeUsers changes
-  useEffect(() => {
-    setLastUpdateTime(new Date());
+  useEffect(() => { 
+    setLastUpdateTime(new Date()); 
   }, [activeUsers]);
 
   // Handle mouse movement for cursor tracking
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      throttledCursorUpdateRef.current?.(e.clientX, e.clientY);
+    const handleMouseMove = (e: MouseEvent) => { 
+      throttledCursorUpdateRef.current?.(e.clientX, e.clientY); 
     };
 
     if (showCursors) {
@@ -190,9 +211,9 @@ export function TripPresenceIndicator(): React.ReactNode {
       window.removeEventListener('mousemove', handleMouseMove);
     }
 
-    return () => {
+    return () => { 
       window.removeEventListener('mousemove', handleMouseMove);
-      throttledCursorUpdateRef.current?.cancel();
+      throttledCursorUpdateRef.current?.cancel(); 
     };
   }, [showCursors]);
 
@@ -258,8 +279,6 @@ export function TripPresenceIndicator(): React.ReactNode {
     }
   };
 
-  // Ref to track mount status for async operations
-  const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -274,9 +293,9 @@ export function TripPresenceIndicator(): React.ReactNode {
   // Group users by status
   const usersByStatus = useMemo(
     () => ({
-      editing: activeUsers.filter((user) => user.status === 'editing'),
-      online: activeUsers.filter((user) => user.status === 'online'),
-      away: activeUsers.filter((user) => user.status === 'away'),
+      editing: activeUsers.filter((user: UserPresence) => user.status === 'editing'),
+      online: activeUsers.filter((user: UserPresence) => user.status === 'online'),
+      away: activeUsers.filter((user: UserPresence) => user.status === 'away')
     }),
     [activeUsers]
   );
@@ -287,20 +306,24 @@ export function TripPresenceIndicator(): React.ReactNode {
   };
 
   // Render individual cursor position
-  const renderCursor = (user: ExtendedUserPresence) => {
+  const renderCursor = useCallback((user: UserPresence) => {
+    // Only render for extended users with cursor position
+    if (!('cursor_position' in user) || !user.cursor_position) return null;
+    const extUser = user as ExtendedUserPresence;
+    
     try {
-      const { x, y } = user.cursor_position || { x: -9999, y: -9999 }; // Position off-screen if null
-      const userColor = generateUserColor(user.user_id);
-      const statusClassName = user.status === 'editing' ? 'animate-pulse' : '';
+      const { x, y } = extUser.cursor_position || { x: -9999, y: -9999 }; // Position off-screen if null
+      const userColor = generateUserColor(extUser.user_id);
+      const statusClassName = extUser.status === 'editing' ? 'animate-pulse' : '';
       const tooltipClassName = `absolute left-5 top-0 px-2 py-1 rounded-md text-xs font-medium
         whitespace-nowrap opacity-0 group-hover:opacity-100 hover:opacity-100
         transition-opacity duration-200 z-50 pointer-events-none`;
 
       return createPortal(
         <div
-          key={user.user_id}
+          key={extUser.user_id}
           className="user-cursor absolute pointer-events-none z-[100] transition-transform duration-100 ease-linear group" // Increased z-index
-          data-presence-tooltip={`user-${user.user_id}`}
+          data-presence-tooltip={`user-${extUser.user_id}`}
           data-presence-portal="true"
           style={{
             transform: `translate(${x}px, ${y}px)`, // Use translate for positioning
@@ -322,16 +345,16 @@ export function TripPresenceIndicator(): React.ReactNode {
               }}
             >
               <div className="flex items-center gap-1">
-                <span className="font-medium">{user?.name || user?.email || 'User'}</span>
-                {user?.editing_item_id && (
+                <span className="font-medium">{extUser?.name || extUser?.email || 'User'}</span>
+                {extUser?.editing_item_id && (
                   <span className="ml-1 flex items-center text-[10px]">
                     <Edit className="h-2.5 w-2.5 mr-0.5" /> Editing
                   </span>
                 )}
               </div>
-              {user?.last_active && (
+              {extUser?.last_active && (
                 <span className="text-[10px] opacity-80">
-                  Active {formatTimeAgo(user.last_active)}
+                  Active {formatTimeAgo(extUser.last_active)}
                 </span>
               )}
             </div>
@@ -340,27 +363,32 @@ export function TripPresenceIndicator(): React.ReactNode {
         document.body
       );
     } catch (error) {
-      console.warn(`Error rendering cursor for user ${user.user_id}:`, error);
+      console.warn(`Error rendering cursor for user ${extUser.user_id}:`, error);
       return null;
     }
-  };
+  }, []);
 
   // Memoized rendering of all cursors
-  const renderedCursors = useMemo(() => {
+  const renderedCursors = useMemo(() => { 
     if (!showCursors) return null;
-    // Filter users who have cursor positions and are not offline/away
+
     return activeUsers
-      .filter((user) => user.cursor_position && user.status !== 'offline' && user.status !== 'away')
-      .map(renderCursor)
-      .filter(Boolean); // Filter out any nulls from render errors
-  }, [activeUsers, showCursors]);
+      .filter((user) => 
+        isExtendedUserPresence(user) && 
+        user.cursor_position && 
+        user.status !== 'offline' && 
+        user.status !== 'away'
+      )
+      .map((user) => renderCursor(user))
+      .filter(Boolean); // Filter out any nulls from render errors 
+  }, [activeUsers, showCursors, renderCursor]);
 
   // Connection Quality Indicator
   const getConnectionQualityIndicator = () => {
     const indicators = {
       good: { color: 'bg-green-500', message: 'Connection stable' },
       fair: { color: 'bg-yellow-500', message: 'Connection may have delays' },
-      poor: { color: 'bg-red-500', message: 'Connection unstable or disconnected' },
+      poor: { color: 'bg-red-500', message: 'Connection unstable or disconnected' }
     };
     const { color, message } = indicators[connectionQuality];
     return (
@@ -426,12 +454,15 @@ export function TripPresenceIndicator(): React.ReactNode {
         </div>
 
         {/* Cursor Toggle Button */}
-        {activeUsers.some((user) => user.cursor_position) && (
+        {activeUsers.some(user => isExtendedUserPresence(user) && user.cursor_position) && (
           <div className="mb-1">
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 text-xs px-2 py-0"
+              className={cn(
+                'h-6 text-xs px-2 py-0',
+                showCursors ? 'bg-muted' : 'bg-transparent'
+              )}
               onClick={toggleCursorVisibility}
             >
               <MousePointer className="h-3 w-3 mr-1" />{' '}

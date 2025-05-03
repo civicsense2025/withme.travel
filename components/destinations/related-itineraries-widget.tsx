@@ -49,9 +49,9 @@ export function RelatedItinerariesWidget({
   limit = 4,
   className = '',
 }: RelatedItinerariesWidgetProps) {
-  const [trips, setTrips] = useState<RelatedTrip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trips, setTrips] = useState<RelatedTrip[]>([]);
 
   useEffect(() => {
     const fetchRelatedTrips = async () => {

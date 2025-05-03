@@ -27,7 +27,9 @@ const createNoopSentry = (): SentryLikeAPI => ({
 
 /**
  * Initialize Sentry safely with fallbacks to prevent runtime errors
+ 
  */
+
 export const initSentrySafely = (Sentry: any, options: any): SentryLikeAPI => {
   // Skip Sentry in development mode to avoid errors
   if (process.env.NODE_ENV === 'development') {
@@ -61,7 +63,9 @@ export const initSentrySafely = (Sentry: any, options: any): SentryLikeAPI => {
 
 /**
  * Safely execute a Sentry function without throwing errors
+ 
  */
+
 export const executeSentryMethodSafely = <T>(fn: () => T, fallback: T): T => {
   try {
     return fn();
@@ -94,12 +98,13 @@ export const getSafeLogger = (Sentry: any) => {
       } catch (e) {
         console.error('Failed to log message to Sentry:', e);
       }
-    },
+    }
   };
 };
 
 /**
  * Utility functions for safely initializing and using Sentry
+ 
  */
 import * as Sentry from '@sentry/nextjs';
 
@@ -109,6 +114,7 @@ let _sentryInitialized = false;
 /**
  * Safely initialize Sentry with proper error handling
  * Returns true if initialization succeeded
+ 
  */
 export function initSentryInternalSafely(): boolean {
   // Skip in development mode
@@ -156,13 +162,7 @@ export function initSentryInternalSafely(): boolean {
  * Get a safe Sentry instance that won't throw if methods are missing
  */
 export function getSafeSentry() {
-  // In development, return a noop version
-  if (process.env.NODE_ENV === 'development') {
-    return createNoopSentry();
-  }
-
-  // Create a proxy around Sentry that catches errors
-  const safeProxy = new Proxy({} as typeof Sentry, {
+  const safeProxy = new Proxy<typeof Sentry>(Sentry as typeof Sentry, {
     get(target, prop) {
       try {
         const value = (Sentry as any)[prop];
@@ -191,6 +191,7 @@ export function getSafeSentry() {
 /**
  * Safely configure Sentry scope with proper error handling
  * Updated to use withScope which is available in newer versions
+ 
  */
 export function configureScopeIfAvailable(scopeConfig: (scope: any) => void): void {
   try {
@@ -205,6 +206,7 @@ export function configureScopeIfAvailable(scopeConfig: (scope: any) => void): vo
 
 /**
  * Safely capture exception with proper error handling
+ 
  */
 export function captureExceptionSafely(
   error: Error | unknown,

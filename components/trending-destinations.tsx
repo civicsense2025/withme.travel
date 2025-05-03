@@ -18,7 +18,7 @@ import Autoplay from 'embla-carousel-autoplay';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { API_ROUTES } from '@/utils/constants/api';
+import { API_ROUTES } from '@/utils/constants/routes';
 import { DestinationCard } from '@/components/destination-card';
 
 interface Destination {
@@ -101,13 +101,12 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export function TrendingDestinations() {
-  const router = useRouter();
-  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [shuffledDestinations, setShuffledDestinations] = useState<Destination[]>([]);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Using SWR for data fetching with stale-while-revalidate strategy
   const { data, error, isValidating } = useSWR<DestinationsResponse>(
-    `/api/destinations?trending=true&limit=8`,
+    API_ROUTES.DESTINATIONS,
     fetcher,
     {
       revalidateOnFocus: false, // Don't revalidate when window gets focus

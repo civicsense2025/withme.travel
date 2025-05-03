@@ -1,32 +1,36 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import type { Database } from '@/types/database.types';
-import { NextResponse, NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { z } from 'zod';
 import { isBefore, parseISO, differenceInCalendarDays } from 'date-fns';
+import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, type RateLimitResult } from '@/lib/rate-limit';
 import { ApiError, formatErrorResponse } from '@/lib/api-utils';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { createApiRouteClient } from '@/utils/api-helpers/cookie-handlers';
 
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
+// Define table names directly as string literals
+const TRIPS_TABLE = 'trips';
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const ITINERARY_ITEMS_TABLE = 'itinerary_items';
+const ITINERARY_SECTIONS_TABLE = 'itinerary_sections';
+const EXPENSES_TABLE = 'expenses';
+const TRIP_TAGS_TABLE = 'trip_tags';
 
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
+// Define trip roles and privacy settings constants
+const TRIP_ROLES = {
+  ADMIN: 'admin',
+  EDITOR: 'editor',
+  CONTRIBUTOR: 'contributor',
+  VIEWER: 'viewer'
+} as const;
 
-import { createServerSupabaseClient } from '@/utils/supabase/server';
-
-// Define trip roles based on ENUMS
-const TRIP_ROLES = DB_ENUMS.TRIP_ROLES;
+const TRIP_PRIVACY_SETTING = {
+  PRIVATE: 'private',
+  SHARED_WITH_LINK: 'shared_with_link',
+  PUBLIC: 'public'
+} as const;
 
 // Determine if running in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -35,7 +39,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
  * Constants and configuration for API handlers
  */
 // Maximum number of requests allowed per time window
-const MAX_REQUESTS_PER_WINDOW = 100;
+const MAX_REQUESTS_PER_WINDOW = 20;
 // Time window in seconds for rate limiting
 const RATE_LIMIT_WINDOW_SEC = 60;
 
@@ -254,7 +258,7 @@ async function checkTripAccess(
 }> {
   // Check if user is a member of the trip
   const { data: member, error: memberError } = await supabase
-    .from(Tables.TRIP_MEMBERS)
+    .from(TRIP_MEMBERS_TABLE)
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)
@@ -282,6 +286,30 @@ async function checkTripAccess(
 }
 // --- End checkTripAccess --- //
 
+// Create a reusable async function for cookie handlers
+async function createCookieHandlers() {
+  const cookieStore = await cookies();
+  return {
+    get(name: string) {
+      return cookieStore.get(name)?.value;
+    },
+    set(name: string, value: string, options: CookieOptions) {
+      try {
+        cookieStore.set({ name, value, ...options });
+      } catch (e) {
+        /* ignore */
+      }
+    },
+    remove(name: string, options: CookieOptions) {
+      try {
+        cookieStore.set({ name, value: '', ...options, maxAge: 0 });
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  };
+}
+
 /**
  * GET trip details with enhanced validation, rate limiting, and error handling
  */
@@ -289,11 +317,14 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
-  console.log(`[API /trips/${tripId}] GET handler started`); // Log start
+  const responseHeaders = new Headers({
+    /* ... headers ... */
+  });
 
   try {
+    const supabase = await createApiRouteClient();
+
     // Rate limit check (using correct rateLimit.limit)
     const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
     const limitKey = `API_TRIP_GET_${ip}_${tripId}`;
@@ -319,7 +350,7 @@ export async function GET(
       await Promise.all([
         supabase.auth.getUser(),
         supabase
-          .from(Tables.TRIPS)
+          .from(TRIPS_TABLE)
           .select('*, destination:destinations(*), tags:trip_tags(tags(*))')
           .eq('id', tripId)
           .single(),
@@ -349,7 +380,7 @@ export async function GET(
     if (user) {
       // If user is logged in, check membership
       const { data: member, error: memberError } = await supabase
-        .from(Tables.TRIP_MEMBERS)
+        .from(TRIP_MEMBERS_TABLE)
         .select('role')
         .eq('trip_id', tripId)
         .eq('user_id', user.id)
@@ -370,7 +401,7 @@ export async function GET(
     }
 
     // If not logged in or not a member, check if trip is public
-    if (!hasAccess && trip.privacy_setting === DB_ENUMS.TRIP_PRIVACY_SETTING.PUBLIC) {
+    if (!hasAccess && trip.privacy_setting === TRIP_PRIVACY_SETTING.PUBLIC) {
       console.log(`[API /trips/${tripId}] Granting access via public setting.`);
       hasAccess = true;
       // userRole remains undefined for anonymous public access
@@ -380,7 +411,7 @@ export async function GET(
     if (!hasAccess) {
       // --- Logging Access Denied --- //
       console.log(
-        `[API /trips/${tripId}] Access Denied. User: ${user?.id}, Role: ${userRole}, Public: ${trip.privacy_setting === DB_ENUMS.TRIP_PRIVACY_SETTING.PUBLIC}`
+        `[API /trips/${tripId}] Access Denied. User: ${user?.id}, Role: ${userRole}, Public: ${trip.privacy_setting === TRIP_PRIVACY_SETTING.PUBLIC}`
       );
       // --- End Logging --- //
       return formatErrorResponse(new TripApiError('Access denied', 403));
@@ -406,10 +437,13 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
+  const responseHeaders = new Headers({
+    /* ... headers ... */
+  });
 
   try {
+    // Apply rate limiting
     const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
     const limitKey = `API_TRIP_PATCH_${ip}_${tripId}`;
     const limitResult: RateLimitResult = await rateLimit.limit(
@@ -429,6 +463,8 @@ export async function PATCH(
       });
     }
 
+    const supabase = await createApiRouteClient();
+
     const {
       data: { user },
       error: authError,
@@ -440,8 +476,8 @@ export async function PATCH(
 
     // Check access using the helper function
     const access = await checkTripAccess(supabase, user.id, tripId, [
-      DB_ENUMS.TRIP_ROLES.ADMIN,
-      DB_ENUMS.TRIP_ROLES.EDITOR,
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
     ]);
 
     if (!access.hasAccess) {
@@ -463,7 +499,7 @@ export async function PATCH(
     // Additional logic for tags if needed...
 
     const { data: updatedTrip, error: updateError } = await supabase
-      .from(Tables.TRIPS)
+      .from(TRIPS_TABLE)
       .update(updateData)
       .eq('id', tripId)
       .select('*, destination:destinations(*), tags:trip_tags(tags(*))')
@@ -492,10 +528,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const supabase = createServerSupabaseClient();
   const { tripId } = await params;
+  const responseHeaders = new Headers({
+    /* ... headers ... */
+  });
 
   try {
+    // Apply rate limiting
     const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
     const limitKey = `API_TRIP_DELETE_${ip}_${tripId}`;
     const limitResult: RateLimitResult = await rateLimit.limit(
@@ -515,6 +554,8 @@ export async function DELETE(
       });
     }
 
+    const supabase = await createApiRouteClient();
+
     const {
       data: { user },
       error: authError,
@@ -525,7 +566,7 @@ export async function DELETE(
     }
 
     // Check access using the helper function
-    const access = await checkTripAccess(supabase, user.id, tripId, [DB_ENUMS.TRIP_ROLES.ADMIN]);
+    const access = await checkTripAccess(supabase, user.id, tripId, [TRIP_ROLES.ADMIN]);
 
     if (!access.hasAccess) {
       return formatErrorResponse(new TripApiError('Permission denied to delete trip', 403));
@@ -533,7 +574,7 @@ export async function DELETE(
 
     // Add logic to delete related data (members, items, etc.) first if needed
 
-    const { error: deleteError } = await supabase.from(Tables.TRIPS).delete().eq('id', tripId);
+    const { error: deleteError } = await supabase.from(TRIPS_TABLE).delete().eq('id', tripId);
 
     if (deleteError) {
       console.error('Error deleting trip:', deleteError);

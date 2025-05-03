@@ -103,7 +103,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
       category: defaultCategory || '',
       url: '',
       location: '',
-    },
+  },
   });
 
   // Update form values when defaultCategory changes
@@ -123,7 +123,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
         category: defaultCategory || form.getValues('category') || '',
         url: '',
         location: '',
-      });
+  });
     }
   }, [isOpen, form, defaultCategory]);
 
@@ -143,7 +143,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
         title: 'Missing Info',
         description: 'Please select an item type.',
         variant: 'destructive',
-      });
+  });
       return;
     }
 
@@ -163,7 +163,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
             mapbox_id: geocoderResult.id,
             latitude: geocoderResult.geometry?.coordinates[1],
             longitude: geocoderResult.geometry?.coordinates[0],
-          }
+  }
         : {}),
       day_number: null, // Unscheduled item
     };
@@ -185,7 +185,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
       const itemName = newItemData.title;
       toast({
         title: 'Item Added!',
-        description: `${itemName} added to unscheduled items.${!geocoderResult ? ' Remember to set a location later.' : ''}`,
+        description: `${itemName} added to unscheduled items.${!geocoderResult ? ` Remember to set a location later.` : ''}`,
       });
 
       onItemAdded(); // Refresh the itinerary items
@@ -208,7 +208,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
         title: 'Failed to Add',
         description: typeof error === 'string' ? error : error.message || 'An error occurred',
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsLoading(false);
     }
@@ -216,7 +216,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
 
   // Get appropriate title and description based on the selected category
   const getCategorySpecificTitle = () => {
-    if (category === ITINERARY_CATEGORIES.ACCOMMODATIONS) {
+    if (category === ITINERARY_CATEGORIES.ACCOMMODATION) {
       return 'Add Accommodation';
     } else if (category === ITINERARY_CATEGORIES.TRANSPORTATION) {
       return 'Add Transportation';
@@ -225,7 +225,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
   };
 
   const getCategorySpecificDescription = () => {
-    if (category === ITINERARY_CATEGORIES.ACCOMMODATIONS) {
+    if (category === ITINERARY_CATEGORIES.ACCOMMODATION) {
       return "Add where you'll be staying during your trip.";
     } else if (category === ITINERARY_CATEGORIES.TRANSPORTATION) {
       return "Add how you'll be getting around during your trip.";
@@ -264,49 +264,41 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ITINERARY_CATEGORIES.ACCOMMODATIONS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].label}
+                <SelectItem value={ITINERARY_CATEGORIES.ACCOMMODATION}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATION].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATION].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.TRANSPORTATION}>
                   {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].emoji}{' '}
                   {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.FOOD_DRINK}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_DRINK].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_DRINK].label}
+                <SelectItem value={ITINERARY_CATEGORIES.RESTAURANT}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RESTAURANT].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RESTAURANT].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.ICONIC_LANDMARKS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].label}
+                <SelectItem value={ITINERARY_CATEGORIES.ATTRACTION}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ATTRACTION].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ATTRACTION].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.LOCAL_SECRETS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].label}
+                <SelectItem value={ITINERARY_CATEGORIES.CUSTOM}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CUSTOM].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CUSTOM].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].label}
+                <SelectItem value={ITINERARY_CATEGORIES.ACTIVITY}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACTIVITY].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACTIVITY].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].label}
+                <SelectItem value={ITINERARY_CATEGORIES.FLIGHT}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLIGHT].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLIGHT].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.NIGHTLIFE}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].label}
+                <SelectItem value={ITINERARY_CATEGORIES.OTHER}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OTHER].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OTHER].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.RELAXATION}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.SHOPPING}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.DAY_EXCURSIONS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.DAY_EXCURSIONS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.DAY_EXCURSIONS].label}
+                <SelectItem value={ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS].label}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -330,7 +322,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
                 options={{
                   placeholder: 'Search for a place...',
                   marker: false,
-                }}
+  }}
               />
             </Suspense>
           </div>

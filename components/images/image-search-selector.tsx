@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Search, UploadCloud } from 'lucide-react';
@@ -43,7 +42,7 @@ export function ImageSearchSelector({
   initialSearchTerm = '',
 }: ImageSearchSelectorProps) {
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
-  const [activeTab, setActiveTab] = useState('unsplash'); // 'unsplash', 'pexels', or 'upload'
+  const [activeTab, setActiveTab] = useState<'unsplash' | 'pexels' | 'upload'>('unsplash');
   const [unsplashResults, setUnsplashResults] = useState<ImageResult[]>([]);
   const [pexelsResults, setPexelsResults] = useState<ImageResult[]>([]);
   const [unsplashPage, setUnsplashPage] = useState(1);
@@ -53,20 +52,14 @@ export function ImageSearchSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-
-  // --- Add state for preview ---
+  
+  // Preview mode state
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [currentPosition, setCurrentPosition] = useState<number>(50); // Default 50%
-  // --- End preview state ---
+  const [currentPosition, setCurrentPosition] = useState(50);
 
   const searchImages = useCallback(
-    async (
-      provider: 'unsplash' | 'pexels',
-      page: number,
-      query: string,
-      append: boolean = false
-    ) => {
+    async (provider: 'unsplash' | 'pexels', page: number, query: string, append: boolean = false) => {
       if (!query) return;
       setIsLoading(true);
       setError(null);
@@ -212,10 +205,9 @@ export function ImageSearchSelector({
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      console.log('File selected:', file.name);
-      // ** Placeholder for ACTUAL upload logic **
+      setIsLoading(true);
+      setError(null);
       try {
-        setIsLoading(true); // Show loading indicator
         // 1. Simulate API call to upload (replace with real call)
         const uploadedUrl = await new Promise<string>(
           (resolve) => setTimeout(() => resolve(URL.createObjectURL(file)), 1500) // Simulate delay & get local blob URL
@@ -224,8 +216,9 @@ export function ImageSearchSelector({
         setPreviewImageUrl(uploadedUrl);
         setCurrentPosition(50);
         setIsPreviewing(true);
-        setActiveTab('upload'); // Stay on upload tab or switch?
-      } catch (uploadError: any) {
+        // Don't need to set active tab while in preview mode
+      } catch (error) {
+        const uploadError = error as Error;
         setError(`Upload failed: ${uploadError.message}`);
       } finally {
         setIsLoading(false);
@@ -279,7 +272,10 @@ export function ImageSearchSelector({
           {!isPreviewing ? (
             <Tabs
               value={activeTab}
-              onValueChange={setActiveTab}
+              onValueChange={(value) => {
+                // Cast the string value to our union type
+                setActiveTab(value as 'unsplash' | 'pexels' | 'upload');
+              }}
               className="w-full flex flex-col flex-grow px-6 pt-4"
             >
               <TabsList className="grid w-full grid-cols-3 mb-4">
@@ -404,9 +400,7 @@ export function ImageSearchSelector({
               Back to Select
             </Button>
           ) : (
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
           )}
 
           <Button onClick={handleConfirm} disabled={!isPreviewing || !previewImageUrl || isLoading}>

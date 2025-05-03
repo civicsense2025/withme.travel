@@ -9,7 +9,7 @@ import Link from '@tiptap/extension-link';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createClient } from '@/utils/supabase/client';
-import { formatError } from '@/lib/utils';
+import { formatError } from '@/utils/lib-utils';
 import {
   Bold,
   Italic,
@@ -26,6 +26,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 type TripNotesEditorProps = {
   tripId: string;
@@ -42,6 +43,7 @@ export function TripNotesEditor({
   placeholder = 'Add notes about your trip...',
   readOnly = false,
 }: TripNotesEditorProps) {
+  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +59,7 @@ export function TripNotesEditor({
         allowBase64: true,
         inline: false,
         HTMLAttributes: {
-          class: 'rounded-md max-w-full h-auto my-4',
+          class: 'rounded-md max-w-full h-auto my-4'
         },
       }),
       Link.configure({
@@ -72,7 +74,7 @@ export function TripNotesEditor({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose focus:outline-none max-w-none p-4 min-h-[200px]',
+        class: 'prose prose-sm sm:prose focus:outline-none max-w-none p-4 min-h-[200px]'
       },
     },
     onUpdate: ({ editor }) => {
@@ -92,7 +94,7 @@ export function TripNotesEditor({
         title: 'Cannot Save',
         description: 'No note selected to save to.',
         variant: 'destructive',
-      });
+  });
       return;
     }
 
@@ -115,15 +117,15 @@ export function TripNotesEditor({
 
       toast({
         title: 'Note Saved!',
-        description: 'Your changes have been saved.',
+        description: 'Your changes have been saved.'
       });
     } catch (error) {
       console.error('Failed to save notes:', error);
       toast({
         title: 'Failed to save note',
-        description: formatError(error, 'Please try again later'),
+        description: formatError(error),
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsSaving(false);
     }
@@ -138,7 +140,7 @@ export function TripNotesEditor({
         title: 'Invalid file type',
         description: 'Please upload an image file',
         variant: 'destructive',
-      });
+  });
       return;
     }
 
@@ -147,7 +149,7 @@ export function TripNotesEditor({
         title: 'File too large',
         description: 'Image must be smaller than 5MB',
         variant: 'destructive',
-      });
+  });
       return;
     }
 
@@ -162,7 +164,7 @@ export function TripNotesEditor({
       reader.readAsDataURL(file);
 
       const timestamp = new Date().getTime();
-      const fileName = `trip-notes-${tripId}-${timestamp}-${file.name.replace(/\s+/g, '-')}`;
+      const fileName = `trip-notes-${tripId}-${timestamp}-${file.name.replace(/\s+/g, `-`)}`;
       const filePath = `trip-notes/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -203,7 +205,7 @@ export function TripNotesEditor({
 
         toast({
           title: 'Image uploaded',
-          description: 'Image has been added to your notes',
+          description: 'Image has been added to your notes'
         });
       }
     } catch (error) {
@@ -212,7 +214,7 @@ export function TripNotesEditor({
         title: 'Failed to upload image',
         description: 'Please try again later',
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -343,10 +345,8 @@ export function TripNotesEditor({
         <BubbleMenu
           editor={editor}
           tippyOptions={{ duration: 100 }}
-          shouldShow={({ editor, view, state, oldState, from, to }) => {
-            // Only show when text is selected
-            return !editor.isActive('image') && from !== to;
-          }}
+          shouldShow={({ editor, view, state, oldState, from, to }) => { return // Only show when text is selected
+            return !editor.isActive('image') && from !== to; }}
         >
           <div className="flex items-center gap-1 p-1 rounded-md bg-background border shadow-sm">
             <Button

@@ -1,17 +1,20 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+import { EmailService } from '@/lib/services/email-service';
+import { TRIP_ROLES } from '@/utils/constants/status';
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
 import { v4 as uuidv4 } from 'uuid';
-import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   try {
-    const supabase = await createServerSupabaseClient();
     const { email } = await request.json();
 
     // Check if user is authenticated
@@ -25,13 +28,13 @@ export async function POST(
 
     // Check if user has permission to invite (is admin or owner)
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from('trip_members')
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .single();
 
-    if (membershipError || !membership || ![ENUMS.TRIP_ROLES.ADMIN].includes(membership.role)) {
+    if (membershipError || !membership || ![TRIP_ROLES.ADMIN].includes(membership.role)) {
       return NextResponse.json(
         { error: "You don't have permission to invite members" },
         { status: 403 }
@@ -40,9 +43,9 @@ export async function POST(
 
     // Check if trip exists
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
-      .select(FIELDS.TRIPS.NAME)
-      .eq(FIELDS.TRIPS.ID, tripId)
+      .from('trips')
+      .select('name')
+      .eq('id', tripId)
       .single();
 
     if (tripError || !trip) {
@@ -51,9 +54,9 @@ export async function POST(
 
     // Check if user already exists
     const { data: existingUser } = await supabase
-      .from(TABLES.PROFILES)
-      .select(FIELDS.PROFILES.ID)
-      .eq(FIELDS.PROFILES.EMAIL, email)
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
       .single();
 
     let userId = existingUser?.id;
@@ -61,22 +64,22 @@ export async function POST(
     // If user doesn't exist, create a placeholder profile
     if (!userId) {
       userId = uuidv4();
-      await supabase.from(TABLES.PROFILES).insert({
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || user.email?.split('@')[0],
-        avatar_url: user.user_metadata?.avatar_url,
-        username: user.user_metadata?.username,
+      await supabase.from('profiles').insert({
+        id: userId,
+        email: email,
+        name: email.split('@')[0],
+        avatar_url: null,
+        username: null,
         updated_at: new Date().toISOString(),
       });
     }
 
     // Check if user is already a member
     const { data: existingMember } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select('id')
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+      .eq('trip_id', tripId)
+      .eq('user_id', userId)
       .single();
 
     if (existingMember) {
@@ -87,19 +90,19 @@ export async function POST(
     const inviteToken = uuidv4();
 
     // Store the invitation in the invitations table
-    await supabase.from(TABLES.INVITATIONS).insert({
+    await supabase.from('invitations').insert({
       trip_id: tripId,
       email: email,
       invited_by: user.id,
       token: inviteToken,
-      role: ENUMS.TRIP_ROLES.CONTRIBUTOR,
+      role: TRIP_ROLES.CONTRIBUTOR,
     });
 
     // Add user as a pending member
-    await supabase.from(TABLES.TRIP_MEMBERS).insert({
+    await supabase.from('trip_members').insert({
       trip_id: tripId,
       user_id: userId,
-      role: ENUMS.TRIP_ROLES.CONTRIBUTOR,
+      role: TRIP_ROLES.CONTRIBUTOR,
       status: 'pending',
       invited_by: user.id,
     });

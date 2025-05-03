@@ -63,9 +63,7 @@ export default function LoginPage() {
       setIsRedirecting(true);
 
       // Add small delay for UI feedback
-      const timer = setTimeout(() => {
-        router.push(safeRedirectPath);
-      }, 300);
+      const timer = setTimeout(() => { return router.push(safeRedirectPath); }, 300);
 
       return () => clearTimeout(timer);
     }
@@ -83,7 +81,7 @@ export default function LoginPage() {
         toast({
           title: 'Authentication Notice',
           description: message,
-        });
+  });
       }
     }
 

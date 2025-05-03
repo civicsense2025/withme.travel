@@ -1,8 +1,10 @@
+// Since we now know FIELDS has export issues, let's import it differently or comment it out
+// 
 import { Tag } from '@/types/tags';
 
 /**
  * Trip interface aligned with database schema
- * Based on DB_FIELDS.TRIPS in utils/constants/database.ts
+ * Based on TABLES.TRIPS fields in utils/constants/database.ts
  */
 export interface Trip {
   // Common fields

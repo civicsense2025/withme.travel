@@ -12,7 +12,7 @@ try {
   Sentry = {
     captureException: (error: Error) => {
       console.error('Error captured (Sentry not available):', error);
-    },
+    }
   };
 }
 

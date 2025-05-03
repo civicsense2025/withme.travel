@@ -31,7 +31,7 @@ export function useTripMutations(tripId: string) {
    * Update trip details with optimistic update
    */
   const updateTripDetails = async (updates: Partial<Trip>): Promise<MutationResult<Trip>> => {
-    if (!tripData.trip) {
+    if (!tripData?.trip) {
       return {
         data: null,
         error: new Error('No trip data available'),
@@ -179,6 +179,10 @@ export function useTripMutations(tripId: string) {
 
     try {
       // Find the section to update for optimistic update
+      if (!tripData?.sections) {
+        throw new Error('Trip sections data is not available');
+      }
+      
       const sectionIndex = tripData.sections.findIndex((s) => s.id === sectionId);
       if (sectionIndex === -1) {
         throw new Error('Section not found');
@@ -186,6 +190,7 @@ export function useTripMutations(tripId: string) {
 
       // Optimistic update
       await optimisticUpdate('sections', (currentSections) => {
+        if (!currentSections) return [];
         const updatedSections = [...currentSections];
         updatedSections[sectionIndex] = {
           ...updatedSections[sectionIndex],
@@ -252,6 +257,10 @@ export function useTripMutations(tripId: string) {
 
     try {
       // Find the section to delete for optimistic update
+      if (!tripData?.sections) {
+        throw new Error('Trip sections data is not available');
+      }
+      
       const sectionIndex = tripData.sections.findIndex((s) => s.id === sectionId);
       if (sectionIndex === -1) {
         throw new Error('Section not found');
@@ -259,11 +268,13 @@ export function useTripMutations(tripId: string) {
 
       // Optimistic update - remove section from the list
       await optimisticUpdate('sections', (currentSections) => {
+        if (!currentSections) return [];
         return currentSections.filter((s) => s.id !== sectionId);
       });
 
       // Also filter out items associated with this section
       await optimisticUpdate('items', (currentItems) => {
+        if (!currentItems) return [];
         return currentItems.filter((item) => item.section_id !== sectionId);
       });
 
@@ -387,6 +398,10 @@ export function useTripMutations(tripId: string) {
 
     try {
       // Find the item to update for optimistic update
+      if (!tripData) {
+        throw new Error('Trip data not available');
+      }
+      
       const itemIndex = tripData.items.findIndex((i) => i.id === itemId);
       if (itemIndex === -1) {
         throw new Error('Item not found');
@@ -394,6 +409,9 @@ export function useTripMutations(tripId: string) {
 
       // Optimistic update
       await optimisticUpdate('items', (currentItems) => {
+        if (!currentItems) {
+          return [];
+        }
         const updatedItems = [...currentItems];
         updatedItems[itemIndex] = {
           ...updatedItems[itemIndex],
@@ -460,6 +478,10 @@ export function useTripMutations(tripId: string) {
 
     try {
       // Find the item to delete for optimistic update
+      if (!tripData) {
+        throw new Error('Trip data not available');
+      }
+      
       const itemIndex = tripData.items.findIndex((i) => i.id === itemId);
       if (itemIndex === -1) {
         throw new Error('Item not found');
@@ -467,6 +489,9 @@ export function useTripMutations(tripId: string) {
 
       // Optimistic update - remove item from the list
       await optimisticUpdate('items', (currentItems) => {
+        if (!currentItems) {
+          return [];
+        }
         return currentItems.filter((i) => i.id !== itemId);
       });
 

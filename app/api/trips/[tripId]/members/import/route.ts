@@ -1,28 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
+// import { createServerSupabaseClient } from '@/utils/supabase/server'; // Old import
+import { checkTripAccess } from '@/lib/trip-access';
+import { TRIP_ROLES } from '@/constants/status';
 
-// Define a more complete type for TABLES that includes the missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  [key: string]: string;
+// Define hasMinimumRole locally
+function hasMinimumRole(userRole: string | null, requiredRole: string): boolean {
+  if (!userRole) return false;
+  
+  const roleValues = {
+    [TRIP_ROLES.ADMIN]: 4,
+    [TRIP_ROLES.EDITOR]: 3,
+    [TRIP_ROLES.CONTRIBUTOR]: 2,
+    [TRIP_ROLES.VIEWER]: 1
+  };
+  
+  return (roleValues[userRole] || 0) >= (roleValues[requiredRole] || 0);
+}
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
+import { TRIP_ROLES } from '@/utils/constants/status';
+
+// Define table names directly as string literals
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const TRIP_INVITATIONS_TABLE = 'trip_invitations';
+
+// Define database field constants to avoid linting issues
+const FIELDS = {
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    ROLE: 'role'
+  }
 };
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 // POST /api/trips/[tripId]/members/import
 // Imports members from a linked Splitwise group to the trip
-export async function POST(request: NextRequest, context: { params: Promise<{ tripId: string }> }) {
-  const supabase = createServerSupabaseClient();
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  const { tripId } = await params;
+  const supabase = await createRouteHandlerClient();
   const { data, error: authError } = await supabase.auth.getUser();
 
   if (authError || !data.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { tripId } = await context.params;
   if (!tripId) {
     return NextResponse.json({ error: 'Missing tripId parameter' }, { status: 400 });
   }
@@ -56,10 +80,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
   try {
     // 1. Check if user has permission to manage this trip
     const { data: memberData, error: permissionError } = await supabase
-      .from(Tables.TRIP_MEMBERS)
+      .from(TRIP_MEMBERS_TABLE)
       .select('role')
-      .eq('trip_id', tripId)
-      .eq('user_id', data.user.id)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, data.user.id)
       .maybeSingle();
 
     if (permissionError || !memberData) {
@@ -89,11 +113,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
           }
 
           // Set a default role if none provided
-          const role = invitation.role || 'member';
+          const role = invitation.role || TRIP_ROLES.CONTRIBUTOR;
 
           // Insert invitation record
           const { error: inviteError } = await supabase
-            .from('trip_invitations') // Adjust table name if different
+            .from(TRIP_INVITATIONS_TABLE)
             .insert({
               trip_id: tripId,
               email: invitation.email.toLowerCase(),
@@ -132,14 +156,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
           }
 
           // Set a default role if none provided
-          const role = member.role || 'member';
+          const role = member.role || TRIP_ROLES.CONTRIBUTOR;
 
           // Check if user already exists in trip
           const { count, error: checkError } = await supabase
-            .from(Tables.TRIP_MEMBERS)
+            .from(TRIP_MEMBERS_TABLE)
             .select('*', { count: 'exact', head: true })
-            .eq('trip_id', tripId)
-            .eq('user_id', member.userId);
+            .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+            .eq(FIELDS.TRIP_MEMBERS.USER_ID, member.userId);
 
           if (checkError) {
             console.error(`Error checking membership for ${member.userId}:`, checkError);
@@ -156,7 +180,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
           }
 
           // Add user to trip
-          const { error: addError } = await supabase.from(Tables.TRIP_MEMBERS).insert({
+          const { error: addError } = await supabase.from(TRIP_MEMBERS_TABLE).insert({
             trip_id: tripId,
             user_id: member.userId,
             role,
@@ -177,7 +201,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ tr
         }
       }
     }
-
+    
     return NextResponse.json({
       results,
       success: results.invitations.sent > 0 || results.members.added > 0,

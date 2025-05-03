@@ -29,7 +29,7 @@ export function RealtimeProvider({ tripId, children }: RealtimeProviderProps) {
   const supabase = createClient();
 
   const setupSubscriptions = useCallback(() => {
-    if (!tripId) return null;
+    if (!tripId || !supabase) return null;
 
     setStatus('connecting');
 
@@ -132,7 +132,7 @@ export function RealtimeProvider({ tripId, children }: RealtimeProviderProps) {
     const channels = setupSubscriptions();
 
     return () => {
-      if (channels) {
+      if (channels && supabase) {
         supabase.removeChannel(channels.tripChannel);
         supabase.removeChannel(channels.itineraryChannel);
         supabase.removeChannel(channels.membersChannel);

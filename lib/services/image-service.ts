@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { UNSPLASH_CONFIG } from '@/utils/constants';
+import { UNSPLASH_CONFIG } from '@/utils/constants/api';
 
 // Types
 export type ImageType = 'destination' | 'trip_cover' | 'user_avatar' | 'template_cover';

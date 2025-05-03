@@ -50,6 +50,12 @@
     "mobile/withme-app",
     "scripts",
     "**/.next",
-    "**/out"
+    "**/out",
+    "__tests__",
+    "tests",
+    "_disabled_features",
+    "coverage",
+    "playwright-report",
+    "build"
   ]
 }

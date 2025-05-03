@@ -1,6 +1,7 @@
 /**
  * Client-side Supabase utilities
  * This file is safe to import from client components
+ 
  */
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
@@ -21,10 +22,6 @@ let clientSingleton: ReturnType<typeof createSupabaseClient<Database>> | null = 
  * Creates a Supabase client for use in browser environments
  */
 export function createClient() {
-  if (typeof window === 'undefined') {
-    throw new Error('createClient should only be used in client components.');
-  }
-  
   if (clientSingleton) {
     return clientSingleton;
   }
@@ -36,28 +33,15 @@ export function createClient() {
 
 /**
  * Creates a browser client (alias for createClient)
+ 
  */
+
 export const createBrowserClient = createClient;
 
 /**
  * Resets the client singleton (useful for testing or logout)
  */
-export function resetBrowserClient() {
-  clientSingleton = null;
-}
-
-// Also provide a reset function with the old name for compatibility
-export const resetClient = resetBrowserClient;
-
-export default createClient;
-
-/**
- * Attempts to repair auth state when client and server are out of sync.
- * Simplified for better performance.
- *
- * @returns {Promise<boolean>} True if repair succeeded, false otherwise
- */
-export async function repairAuthState(): Promise<boolean> {
+export async function resetBrowserClient() {
   if (typeof window === 'undefined') {
     return false;
   }
@@ -72,20 +56,22 @@ export async function repairAuthState(): Promise<boolean> {
     const { data, error } = await client.auth.refreshSession();
 
     if (error || !data.session) {
-      resetBrowserClient();
+      clientSingleton = null;
       return false;
     }
 
     return true;
   } catch (e) {
-    resetBrowserClient();
+    clientSingleton = null;
     return false;
   }
 }
 
 /**
  * Export type for convenience
+ 
  */
+
 export type SupabaseBrowserClient = ReturnType<typeof createSupabaseClient<Database>>;
 
 /**

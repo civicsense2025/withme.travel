@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/types/supabase';
 import { Tag } from '@/hooks/use-tags';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { createBrowserClient } from '@/utils/supabase/client';
 
 export interface UserInterest {
   id: string;
@@ -12,9 +13,10 @@ export interface UserInterest {
 }
 
 export function useInterests() {
-  const { supabase } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth(); 
+  const supabase = createBrowserClient();
 
   const getUserInterests = useCallback(async () => {
     if (!supabase) {
@@ -70,7 +72,7 @@ export function useInterests() {
 
         toast({
           title: 'Success',
-          description: 'Interest updated',
+          description: 'Interest updated'
         });
 
         return true;

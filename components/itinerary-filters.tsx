@@ -28,7 +28,7 @@ interface ItineraryFiltersProps {
 export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-
+  
   const [search, setSearch] = useState(searchParams?.get('search') || '');
   const [destination, setDestination] = useState(searchParams?.get('destination') || '');
   const [duration, setDuration] = useState(searchParams?.get('duration') || '');
@@ -73,7 +73,6 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
   };
 
   useEffect(() => {
-    // Update state when URL params change
     setSearch(searchParams?.get('search') || '');
     setDestination(searchParams?.get('destination') || '');
     setDuration(searchParams?.get('duration') || '');
@@ -118,7 +117,7 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
         <motion.div variants={slideUp} transition={{ delay: 0.2 }}>
           <Select value={destination} onValueChange={setDestination}>
             <SelectTrigger>
-              <SelectValue placeholder="Destination" />
+              <SelectValue>Destination</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Destinations</SelectItem>
@@ -134,7 +133,7 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
         <motion.div variants={slideUp} transition={{ delay: 0.3 }}>
           <Select value={duration} onValueChange={setDuration}>
             <SelectTrigger>
-              <SelectValue placeholder="Duration" />
+              <SelectValue>Duration</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="any">Any Duration</SelectItem>
@@ -150,7 +149,7 @@ export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
         <motion.div variants={slideUp} transition={{ delay: 0.4 }}>
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger>
-              <SelectValue placeholder="Category" />
+              <SelectValue>Category</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>

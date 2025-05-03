@@ -1,8 +1,8 @@
 'use server';
 
-import db from '@/utils/db';
+import { getRecentTripsDB, getTripCountDB } from '@/utils/db';
 import { cookies } from 'next/headers';
-import { getServerSession } from '@/utils/supabase/unified';
+import { getServerSession } from '@/utils/supabase/server';
 import { Session } from '@supabase/supabase-js';
 
 /**
@@ -13,7 +13,7 @@ import { Session } from '@supabase/supabase-js';
  */
 export async function getRecentTrips(userId: string, limit: number = 3) {
   try {
-    return await db.getRecentTrips(userId, limit);
+    return await getRecentTripsDB(userId, limit);
   } catch (error) {
     console.error('Error fetching recent trips:', error);
     return [];
@@ -25,7 +25,7 @@ export async function getRecentTrips(userId: string, limit: number = 3) {
  */
 export async function getTripCount(userId: string) {
   try {
-    return await db.getTripCount(userId);
+    return await getTripCountDB(userId);
   } catch (error) {
     console.error('Error fetching trip count:', error);
     return 0;
@@ -37,7 +37,8 @@ export async function getTripCount(userId: string) {
  */
 export async function getUserProfile(userId: string) {
   try {
-    const session = await getServerSession();
+    const { data } = await getServerSession();
+    const session = data.session;
 
     if (!session || session.user.id !== userId) {
       throw new Error('Not authorized to access this profile');

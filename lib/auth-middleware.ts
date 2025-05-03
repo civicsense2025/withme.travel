@@ -145,12 +145,13 @@ export async function isAuthenticated(request: NextRequest): Promise<boolean> {
 
 // Middleware function to protect routes
 export async function authMiddleware(request: NextRequest) {
-  if (!supabaseAdmin) {
-    console.error('[authMiddleware] Supabase client not initialized.');
-    // Redirect to login or return error if client is missing
-    return NextResponse.redirect(new URL('/login?error=config_error', request.url));
-  }
   try {
+    if (!supabaseAdmin) {
+      console.error('[authMiddleware] Supabase client not initialized.');
+      const redirectUrl = new URL('/login?error=auth_setup_failed', request.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+
     const {
       data: { user },
     } = await supabaseAdmin.auth.getUser();

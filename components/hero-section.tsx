@@ -14,24 +14,20 @@ const CityBubbles = lazy(() =>
 );
 
 export function HeroSection() {
-  const [currentPlanningTypeIndex, setCurrentPlanningTypeIndex] = useState(0);
   const router = useRouter();
   const { user } = useAuth() as AuthContextType;
-
-  const planningTypes = useMemo(
-    () => [
-      'group planning',
-      'family vacations',
-      'destination weddings',
-      'work retreats',
-      'friend getaways',
-      'bachelor parties',
-      'reunion trips',
-      'festival groups',
-    ],
-    []
-  );
-
+  
+  // Define planning types for animation
+  const planningTypes = useMemo(() => [
+    'group travel planning',
+    'friend trip coordination',
+    'family vacation organizing',
+    'travel spreadsheets',
+    'messaging app chaos',
+  ], []);
+  
+  const [currentPlanningTypeIndex, setCurrentPlanningTypeIndex] = useState(0);
+  
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPlanningTypeIndex((current) => (current + 1) % planningTypes.length);
@@ -71,7 +67,7 @@ export function HeroSection() {
       '@type': 'SearchAction',
       target: 'https://withme.travel/destinations/{destination}',
       'query-input': 'required name=destination',
-    },
+    }
   };
 
   return (
@@ -111,7 +107,7 @@ export function HeroSection() {
                   transition={{
                     duration: 0.4,
                     ease: 'easeInOut',
-                  }}
+  }}
                 >
                   {planningTypes[currentPlanningTypeIndex]}
                 </motion.span>
@@ -149,7 +145,7 @@ export function HeroSection() {
       <div className="w-full px-0 -mx-3 sm:-mx-6 lg:-mx-8 overflow-visible">
         <h2 className="sr-only">Popular destinations</h2>
         <Suspense fallback={<div className="h-24"></div>}>
-          <CityBubbles />
+          {/* <CityBubbles /> */} {/* Temporarily comment out for debugging */}
         </Suspense>
       </div>
     </section>

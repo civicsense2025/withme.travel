@@ -26,7 +26,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 const pollSchema = z.object({
   title: z.string().min(3, {
-    message: 'Title must be at least 3 characters.',
+    message: 'Title must be at least 3 characters.'
   }),
   description: z.string().optional(),
   options: z
@@ -49,8 +49,8 @@ interface CreatePollFormProps {
 }
 
 export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<PollFormValues>({
     resolver: zodResolver(pollSchema),
@@ -103,7 +103,7 @@ export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormPr
       }
 
       toast({
-        description: 'Poll created successfully',
+        description: 'Poll created successfully'
       });
 
       if (onSuccess) {
@@ -123,7 +123,7 @@ export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormPr
   };
 
   return (
-    <Form {...form}>
+    <Form form={form} {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}

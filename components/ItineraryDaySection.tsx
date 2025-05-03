@@ -5,7 +5,7 @@ import { formatDate, cn } from '@/lib/utils';
 
 interface ItineraryDaySectionProps {
   section: ItinerarySection;
-  onDrop?: (itemId: string, targetDayNumber: number) => void;
+  onDrop?: (itemId: string, targetDayNumber: number | null) => void;
   onEdit?: (item: DisplayItineraryItem) => void;
   onDeleteItem?: (itemId: string) => void;
   onVote?: (itemId: string, type: 'up' | 'down') => void;
@@ -42,8 +42,8 @@ export function ItineraryDaySection({
 }: ItineraryDaySectionProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const itemId = e.dataTransfer.getData('text/plain');
-    if (onDrop && section.day_number !== null) {
+    if (onDrop) {
+      const itemId = e.dataTransfer.getData('itemId');
       onDrop(itemId, section.day_number);
     }
   };
@@ -86,10 +86,10 @@ export function ItineraryDaySection({
         {section.items?.map((item) => (
           <div key={item.id} className="relative group">
             <div
-              onClick={() => canEdit && onEdit?.(item)}
+              onClick={() => canEdit && onEdit?.(item as DisplayItineraryItem)}
               className={cn(canEdit && 'cursor-pointer')}
             >
-              <ItineraryItemCard item={item} dayNumber={section.day_number ?? undefined} />
+              <ItineraryItemCard item={item as DisplayItineraryItem} dayNumber={section.day_number ?? undefined} />
             </div>
             {editingItemId === item.id && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
@@ -98,10 +98,8 @@ export function ItineraryDaySection({
                   value={inlineEditValue}
                   onChange={(e) => handleInlineEditChange?.(e.target.value)}
                   className="w-full p-2 border rounded"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') onSaveEdit?.();
-                    if (e.key === 'Escape') onCancelEdit?.();
-                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') onSaveEdit?.();
+                    if (e.key === 'Escape') onCancelEdit?.(); }}
                   autoFocus
                 />
               </div>

@@ -5,7 +5,7 @@ import { PAGE_ROUTES } from '@/utils/constants/routes';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowRight, Users } from 'lucide-react';
-import { formatDateRange } from '@/lib/utils';
+import { formatDateRange } from '@/utils/lib-utils';
 import { TripWithMemberInfo } from '@/utils/types';
 import Image from 'next/image';
 
@@ -14,18 +14,15 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip }: TripCardProps) {
-  // Add fallbacks for potentially missing data with proper null checking
-  const location = trip.destination_name || trip.name || 'Unknown location';
-  const displayTitle = trip.title || trip.name || 'Untitled trip';
-  const imageUrl = trip.cover_image_url || '/images/placeholder-trip.jpg';
-  const membersCount = Array.isArray(trip.members)
-    ? trip.members.length
-    : trip.travelers_count || 1;
+  // Compute display values
+  const displayTitle = trip.name || 'Untitled Trip';
+  const location = trip.location || '';
+  const membersCount = Array.isArray(trip.members) ? trip.members.length : 0;
+  const imageUrl = trip.cover_image || '/images/default-trip-image.jpg';
 
   return (
-    <Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)} className="block group w-full">
+    <Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)} className="block group">
       <motion.div
-        className="rounded-xl overflow-hidden h-full border border-border/30 dark:border-border/10 bg-card shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300"
         whileHover={{ y: -3 }}
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}

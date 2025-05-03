@@ -1,63 +1,37 @@
 'use client';
-import { DB_ENUMS, type TripRole } from '@/utils/constants/database';
 import { TRIP_ROLES, PERMISSION_STATUSES } from '@/utils/constants/status';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
-import { getInitials } from '@/lib/utils';
-
+import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import {
-  Mail,
-  PlusCircle,
-  Trash2,
-  User,
-  Check,
-  X,
-  UserPlus,
-  Link2,
-  Link2Off,
-  RefreshCw,
-  Loader2,
-  ChevronDown,
-  Import,
-  Copy,
-} from 'lucide-react';
-
+import { Mail, PlusCircle, Trash2, User, Check, X, UserPlus, Link2, Link2Off, RefreshCw, Loader2, ChevronDown, Import, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+// Define helper function for getting initials from a name
+function getInitials(name?: string | null): string {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+}
+
+// Define TripRole type from the constants
+type TripRole = typeof TRIP_ROLES[keyof typeof TRIP_ROLES];
 
 // Exported MemberProfile
 export interface MemberProfile {
@@ -101,18 +75,20 @@ export function MembersTab({
   userRole = null,
   initialMembers = [],
 }: MembersTabProps) {
+  const { toast } = useToast();
   const [members, setMembers] = useState<TripMemberFromSSR[]>(initialMembers);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const [newMember, setNewMember] = useState({
-    name: '',
-    email: '',
-    role: DB_ENUMS.TRIP_ROLES.VIEWER as TripRole,
+  const [newMember, setNewMember] = useState({ 
+    name: '', 
+    email: '', 
+    role: TRIP_ROLES.VIEWER as TripRole 
   });
-  const { toast } = useToast();
-  const isAdmin = [DB_ENUMS.TRIP_ROLES.ADMIN.toUpperCase(), DB_ENUMS.TRIP_ROLES.EDITOR.toUpperCase()].includes(
-    userRole?.toUpperCase() ?? ''
-  );
+  
+  const isAdmin = [
+    TRIP_ROLES.ADMIN.toUpperCase(),
+    TRIP_ROLES.EDITOR.toUpperCase(),
+  ].includes(userRole?.toUpperCase() ?? '');
 
   const [inviteLink, setInviteLink] = useState('');
 
@@ -188,7 +164,7 @@ export function MembersTab({
       toast({ title: 'Invitation Sent', description: `Invitation sent to ${newMember.email}.` });
 
       setIsAddMemberOpen(false);
-      setNewMember({ name: '', email: '', role: DB_ENUMS.TRIP_ROLES.VIEWER }); // Reset form
+      setNewMember({ name: '', email: '', role: TRIP_ROLES.VIEWER as TripRole }); // Reset form
     } catch (error: any) {
       console.error('Error sending invitation:', error);
       toast({
@@ -266,7 +242,7 @@ export function MembersTab({
             id: updatedRequest.new_member.user_id, // Assuming profile ID is user ID
             name: updatedRequest.user_profile?.name || 'Unknown',
             avatar_url: updatedRequest.user_profile?.avatar_url || null,
-          },
+          }
         };
         setMembers((prev) => [...prev, newMemberSSR]);
         toast({ title: 'Access Approved', description: `User added to the trip.` });
@@ -468,7 +444,7 @@ export function MembersTab({
                 onValueChange={(value) => setNewMember({ ...newMember, role: value as TripRole })}
               >
                 <SelectTrigger id="role" className="col-span-3">
-                  <SelectValue placeholder="Select role" />
+                  <SelectValue>Select role</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {Object.values(TRIP_ROLES).map((role) => (

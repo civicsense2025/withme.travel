@@ -1,11 +1,15 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+// Direct table/field names used instead of imports
+import { Database } from '@/types/database.types';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; pollId: string }> }
 ) {
   const { tripId, pollId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   // Validate IDs
   if (!tripId || !/^\d+$/.test(tripId)) {
@@ -18,7 +22,6 @@ export async function GET(
 
   try {
     // Get authenticated user
-    const supabase = await createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -79,7 +82,7 @@ export async function GET(
       .order('id', { ascending: true });
 
     if (optionsError || !options) {
-      console.error('Error fetching poll options:', optionsError);
+console.error('Error fetching poll options:', optionsError);
       return NextResponse.json({ error: 'Failed to fetch poll options' }, { status: 500 });
     }
 
@@ -106,7 +109,7 @@ export async function GET(
       .eq('poll_id', pollId);
 
     if (votesError) {
-      console.error('Error fetching poll votes:', votesError);
+console.error('Error fetching poll votes:', votesError);
       return NextResponse.json({ error: 'Failed to fetch poll votes' }, { status: 500 });
     }
 
@@ -158,7 +161,7 @@ export async function GET(
       totalVotes,
     });
   } catch (error) {
-    console.error('Error fetching poll results:', error);
+console.error('Error fetching poll results:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

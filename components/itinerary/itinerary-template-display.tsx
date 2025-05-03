@@ -63,7 +63,7 @@ function formatTime(timeString: string | null): string {
     const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12; // Convert 0 to 12 for 12 AM
 
-    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+    return `${displayHour}:${minute.toString().padStart(2, `0`)} ${period}`;
   } catch (error) {
     console.error('Error formatting time:', error);
     return timeString; // Return original string if parsing fails
@@ -105,15 +105,13 @@ const ItemDisplay = ({ item, index }: { item: ItineraryTemplateItem; index: numb
 
 // Main component
 export function ItineraryTemplateDisplay({ template, sections }: ItineraryTemplateDisplayProps) {
-  // Sort sections by day number
+  // Sort sections by day_number for sequential display
   const sortedSections = [...sections].sort((a, b) => a.day_number - b.day_number);
-
-  // Use the first section's ID as the default tab value, or a fallback
-  const defaultTabValue = sortedSections.length > 0 ? sortedSections[0].id : 'day-1';
-
-  console.log(
-    `[DEBUG] ItineraryTemplateDisplay - template.id: ${template.id}, title: ${template.title}`
-  );
+  
+  // Set the first section's ID as the default tab value, or empty string if no sections
+  const defaultTabValue = sortedSections.length > 0 ? sortedSections[0].id : '';
+  
+  console.log(`[DEBUG] ItineraryTemplateDisplay - Template ID: ${template.id}, title: ${template.title}`);
   console.log(`[DEBUG] ItineraryTemplateDisplay - Received ${sections.length} sections`);
 
   if (sections.length === 0) {
@@ -230,7 +228,7 @@ function formatDate(dateString: string): string {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-    });
+  });
   } catch (error) {
     console.error('Error formatting date:', error);
     return dateString;

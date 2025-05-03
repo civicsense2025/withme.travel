@@ -36,7 +36,8 @@ export function TripTabsWrapper({
 
   // Handle tab change and update URL
   const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    // Create a new URLSearchParams, safely handling null searchParams
+    const params = searchParams ? new URLSearchParams(searchParams.toString()) : new URLSearchParams();
     params.set('tab', value);
     router.push(`${pathname}?${params.toString()}`);
   };

@@ -10,16 +10,18 @@ interface SuccessScreenProps {
 
 export function SuccessScreen({ onCreateTrip, onExplore }: SuccessScreenProps) {
   return (
-    <Card className="border-0 shadow-lg">
-      <CardContent className="pt-6 pb-8 px-6 text-center">
-        <div className="mb-6 text-4xl">🎉</div>
-        <div className="text-center max-w-lg mx-auto">
-          <h1 className="text-5xl leading-loose font-bold mb-2">you're all set!</h1>
-          <p className="text-muted-foreground mb-8">
-            your profile is complete. let's start planning your next adventure!
-          </p>
+    <Card className="w-full">
+      <CardContent className="p-6 text-center">
+        <div className="mb-6 mx-auto flex justify-center">
+          <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+            <span className="text-2xl">🎉</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-3">
+        <h2 className="text-2xl font-bold mb-2">You're all set!</h2>
+        <p className="text-muted-foreground mb-8">
+          Your profile is complete. Now you can start planning your first trip or explore the app.
+        </p>
+        <div className="space-y-3">
           <Button onClick={onCreateTrip} size="lg" className="w-full">
             create my first trip
           </Button>

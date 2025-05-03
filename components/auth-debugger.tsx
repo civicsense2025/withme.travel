@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@/utils/supabase/unified';
+import { getBrowserClient } from '@/utils/supabase/unified';
 
 /**
  * AuthDebugger - Client-side component to help debug authentication issues
@@ -22,7 +22,7 @@ export default function AuthDebugger() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const supabase = createBrowserClient();
+        const supabase = getBrowserClient();
         const { data, error } = await supabase.auth.getSession();
         setAuthState({
           loading: false,
@@ -43,10 +43,10 @@ export default function AuthDebugger() {
     checkAuth();
 
     // Add listener for auth state changes
-    const supabase = createBrowserClient();
+    const supabase = getBrowserClient();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       console.log(`[Client] Auth state change: ${event}`);
       setAuthState((prev) => ({
         ...prev,
@@ -56,9 +56,7 @@ export default function AuthDebugger() {
       }));
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   if (process.env.NODE_ENV !== 'development') {

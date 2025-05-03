@@ -1,14 +1,20 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { type NextRequest, NextResponse } from 'next/server';
-import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+import { TRIP_ROLES } from '@/utils/constants/status';
+import { Database } from '@/types/database.types';
+
+// Define table names directly
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const PERMISSION_REQUESTS_TABLE = 'permission_requests';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
-) {
+): Promise<NextResponse> {
   try {
     const { tripId } = await params;
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated using getUser
     const {
@@ -21,13 +27,13 @@ export async function GET(
 
     // Check if user is an admin of this trip
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from(TRIP_MEMBERS_TABLE)
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .single();
 
-    if (membershipError || !membership || membership.role !== ENUMS.TRIP_ROLES.ADMIN) {
+    if (membershipError || !membership || membership.role !== TRIP_ROLES.ADMIN) {
       return NextResponse.json(
         { error: "You don't have permission to view access requests" },
         { status: 403 }
@@ -36,7 +42,7 @@ export async function GET(
 
     // Fetch all pending access requests for this trip
     const { data, error } = await supabase
-      .from(TABLES.PERMISSION_REQUESTS)
+      .from(PERMISSION_REQUESTS_TABLE)
       .select(
         `
         id,

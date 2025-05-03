@@ -126,7 +126,7 @@ export function ItineraryItemForm({
       currency: initialData?.currency || null,
       notes: typeof initialData?.notes === 'string' ? initialData.notes : '',
       latitude: initialData?.latitude || null,
-      longitude: initialData?.longitude || null,
+      longitude: initialData?.longitude || null
     },
   });
 
@@ -162,7 +162,7 @@ export function ItineraryItemForm({
       currency: initialData?.currency || null,
       notes: typeof initialData?.notes === 'string' ? initialData.notes : '',
       latitude: initialData?.latitude || null,
-      longitude: initialData?.longitude || null,
+      longitude: initialData?.longitude || null
     });
   }, [initialData, form]);
 
@@ -220,7 +220,7 @@ export function ItineraryItemForm({
       longitude: form.getValues('longitude') || null, // Add longitude
     };
 
-    console.log(`Calling API: ${method} ${apiEndpoint}`, payload);
+    console.log(`Calling API: \`${method} ${apiEndpoint}\`, payload`);
 
     try {
       // --- ACTUAL API Call ---
@@ -233,7 +233,7 @@ export function ItineraryItemForm({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error || `Failed to ${isEditing ? 'update' : 'add'} item: ${response.status}`
+          errorData.error || `Failed to ${isEditing ? 'update' : 'add'} item: \`${response.status}\``
         );
       }
 
@@ -264,7 +264,7 @@ export function ItineraryItemForm({
   };
 
   return (
-    <Form {...form}>
+    <Form form={form} {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 px-4 pt-4 pb-6 h-full flex flex-col overflow-hidden"
@@ -432,7 +432,7 @@ export function ItineraryItemForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
+                          <SelectValue>Select a category</SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

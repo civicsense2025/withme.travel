@@ -1,5 +1,11 @@
-import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+import { Database } from '@/types/database.types';
+
+// Define table names directly
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const PROFILES_TABLE = 'profiles';
 
 // Define interfaces for type-safety
 interface TripHistoryRecord {
@@ -9,7 +15,7 @@ interface TripHistoryRecord {
   user_id: string | null;
   action_type: string;
   details: any | null;
-  profiles?: {
+  profile?: {
     id: string;
     name: string | null;
     avatar_url: string | null;
@@ -19,27 +25,27 @@ interface TripHistoryRecord {
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
-) {
+): Promise<NextResponse> {
   const { tripId } = await params;
   const url = new URL(request.url);
   const limit = parseInt(url.searchParams?.get('limit') || '5');
   const offset = parseInt(url.searchParams?.get('offset') || '0');
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = await createRouteHandlerClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user is a member of this trip
   const { data: isMember, error: memberError } = await supabase
-    .from('trip_members')
-    .select()
+    .from(TRIP_MEMBERS_TABLE)
+    .select('id')
     .eq('trip_id', tripId)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (memberError || !isMember) {
@@ -51,9 +57,8 @@ export async function GET(
       `[API DEBUG /activity] Fetching history for trip: ${tripId}, limit: ${limit}, offset: ${offset}`
     );
 
-    // Get all members of the trip to check if the current user is the only member
     const { data: tripMembers, error: tripMembersError } = await supabase
-      .from('trip_members')
+      .from(TRIP_MEMBERS_TABLE)
       .select('user_id')
       .eq('trip_id', tripId);
 
@@ -64,15 +69,13 @@ export async function GET(
       );
     }
 
-    // Check if current user is the only member of the trip
     const isOnlyMember =
-      tripMembers && tripMembers.length === 1 && tripMembers[0].user_id === session.user.id;
+      tripMembers && tripMembers.length === 1 && tripMembers[0].user_id === user.id;
 
-    // Get current user's profile info for activity attribution
     const { data: currentUserProfile, error: currentUserProfileError } = await supabase
-      .from('profiles')
+      .from(PROFILES_TABLE)
       .select('id, name, avatar_url')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (currentUserProfileError) {
@@ -180,45 +183,43 @@ export async function GET(
     // Transform the data to match the expected format by the frontend
     const transformedData = enrichedData.map((item) => {
       // Handle null user_id with current user when they're the only member
-      let userName, userAvatar;
-
-      if (item.user_id) {
-        // Regular user activity
-        userName = item.profile?.name || 'User';
-        userAvatar = item.profile?.avatar_url;
-      } else if (isOnlyMember && currentUserProfile) {
-        // System activity in a single-member trip - attribute to the current user
-        userName = currentUserProfile.name || 'You';
-        userAvatar = currentUserProfile.avatar_url;
-      } else {
-        // System activity in a multi-member trip
-        userName = 'System';
-        userAvatar = null;
-      }
+      const effectiveProfile =
+        !item.user_id && isOnlyMember
+          ? {
+              id: user.id,
+              name: currentUserProfile?.name || 'You',
+              avatar_url: currentUserProfile?.avatar_url,
+            }
+          : item.profile;
 
       return {
-        id: item.id.toString(),
-        trip_id: item.trip_id,
-        created_at: item.created_at,
-        action_type: item.action_type,
-        actor_id: item.user_id,
-        actor_name: userName,
-        actor_avatar: userAvatar,
-        details: item.details || {},
+        id: item.id,
+        tripId: item.trip_id,
+        userId: item.user_id,
+        actionType: item.action_type,
+        details: item.details,
+        createdAt: item.created_at,
+        user: effectiveProfile
+          ? {
+              id: effectiveProfile.id,
+              name: effectiveProfile.name || 'Unknown User',
+              avatarUrl: effectiveProfile.avatar_url,
+            }
+          : null,
       };
     });
 
     return NextResponse.json({
-      activity: transformedData,
-      pagination: {
-        total: count || 0,
-        offset,
-        limit,
-        hasMore: offset + limit < (count || 0),
-      },
+      data: transformedData,
+      count: count || 0,
+      hasMore: (offset + limit) < (count || 0),
+      nextOffset: offset + limit,
     });
-  } catch (error) {
-    console.error('Error fetching trip activity:', error);
-    return NextResponse.json({ error: 'Failed to fetch trip activity' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[API ERROR /activity]', error);
+    return NextResponse.json(
+      { error: error.message || 'An unexpected error occurred' },
+      { status: 500 }
+    );
   }
 }

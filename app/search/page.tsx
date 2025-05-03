@@ -79,7 +79,7 @@ export default function SearchPage() {
           title: 'Search failed',
           description: 'Please try again later',
           variant: 'destructive',
-        });
+  });
       } finally {
         setIsLoading(false);
       }
@@ -90,9 +90,7 @@ export default function SearchPage() {
 
   // Reset the searchPerformed ref when query changes
   useEffect(() => {
-    return () => {
-      searchPerformed.current = false;
-    };
+    return () => { searchPerformed.current = false; };
   }, [query]);
 
   const totalResults = destinations.length + trips.length;

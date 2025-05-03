@@ -109,7 +109,7 @@ export function PresenceIndicator({
                 'border-2 border-background relative',
                 isEditing && 'ring-2 ring-blue-500'
               )}
-              aria-label={`${user.name ?? 'Unknown user'} is ${user.status}${isEditing && editingItemName ? ` editing ${editingItemName}` : ''}`}
+              aria-label={`${user.name ?? 'Unknown user'} is ${user.status}${isEditing && editingItemName ? ` editing ${editingItemName}` : ``}`}
             >
               <AvatarImage src={user.avatar_url ?? undefined} alt="" />
               <AvatarFallback>{userInitials}</AvatarFallback>

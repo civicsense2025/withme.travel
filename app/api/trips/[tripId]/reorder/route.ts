@@ -1,62 +1,43 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
-import {  TABLES , ENUMS } from "@/utils/constants/database";
-import { type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { z } from 'zod';
+import { TABLES } from '@/utils/constants/database';
+import { TRIP_ROLES } from '@/utils/constants/status';
+import { checkTripAccess } from '@/lib/trip-access';
 
-// Helper function to check user membership and role
-async function checkTripAccess(
-  supabase: SupabaseClient<Database>,
-  tripId: string,
-  userId: string,
-  allowedRoles: string[] = [ENUMS.TRIP_ROLES.ADMIN, ENUMS.TRIP_ROLES.EDITOR, ENUMS.TRIP_ROLES.CONTRIBUTOR]
-): Promise<{ allowed: boolean; error?: string; status?: number }> {
-  const { data: member, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
-    .select('role')
-    .eq('trip_id', tripId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error checking trip membership:', error);
-    return { allowed: false, error: error.message, status: 500 };
+// Define local field constants for database access
+const FIELDS = {
+  COMMON: {
+    ID: 'id'
+  },
+  ITINERARY_ITEMS: {
+    ORDER: 'order',
+    TRIP_ID: 'trip_id',
+    SECTION_ID: 'section_id',
+    DAY: 'day'
   }
+};
 
-  if (!member) {
-    return {
-      allowed: false,
-      error: 'Access Denied: You are not a member of this trip.',
-      status: 403,
-    };
-  }
+// Schema for validating input
+const reorderSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string().uuid(),
+      order: z.number().int().min(0),
+    })
+  ),
+});
 
-  if (!allowedRoles.includes(member.role)) {
-    return {
-      allowed: false,
-      error: 'Access Denied: You do not have sufficient permissions.',
-      status: 403,
-    };
-  }
-
-  return { allowed: true };
-}
-
+// POST /api/trips/[tripId]/reorder - Reorder itinerary items
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   try {
     const { tripId } = await params;
-    const body = await request.json();
-    const { itemId, newDayNumber, newPosition } = body;
+    const supabase = createRouteHandlerClient();
 
-    if (!tripId || !itemId || newDayNumber === undefined || newPosition === undefined) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
-    }
-
-    const supabase = await createServerSupabaseClient();
+    // Authenticate the user
     const {
       data: { user },
       error: authError,
@@ -66,30 +47,48 @@ export async function POST(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Check user's access to the trip
-    const accessCheck = await checkTripAccess(supabase, tripId, user.id);
-    if (!accessCheck.allowed) {
-      return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status || 403 });
+    // Check if the user has edit access to this trip
+    const accessResult = await checkTripAccess(user.id, tripId, [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]);
+    if (!accessResult.allowed) {
+      return NextResponse.json(
+        { error: accessResult.error || 'You do not have permission to reorder items' },
+        { status: 403 }
+      );
     }
 
-    // Update the item's day_number and position
-    const { error: updateError } = await supabase
-      .from(TABLES.ITINERARY_ITEMS)
-      .update({
-        day_number: newDayNumber,
-        position: newPosition,
-      })
-      .eq('id', itemId)
-      .eq('trip_id', tripId);
+    // Parse and validate the request body
+    let requestData;
+    try {
+      const body = await request.json();
+      requestData = reorderSchema.parse(body);
+    } catch (error) {
+      console.error('Error parsing request body:', error);
+      return NextResponse.json(
+        { error: error instanceof z.ZodError ? error.errors : 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    // Update each item's order in a transaction
+    const { error: updateError } = await supabase.rpc('reorder_itinerary_items', {
+      items_data: requestData.items.map(item => ({
+        item_id: item.id,
+        new_order: item.order
+      })),
+      trip_id: tripId
+    });
 
     if (updateError) {
-      console.error('Error updating item:', updateError);
-      return NextResponse.json({ error: 'Failed to update item position' }, { status: 500 });
+      console.error('Error reordering items:', updateError);
+      return NextResponse.json({ error: 'Failed to reorder items' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in reorder handler:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error in reorder API route:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'An unexpected error occurred' },
+      { status: 500 }
+    );
   }
 }

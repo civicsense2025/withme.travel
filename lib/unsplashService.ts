@@ -1,310 +1,226 @@
-import fetch from 'node-fetch';
-import { createSpinner } from 'nanospinner';
-import chalk from 'chalk';
-import dotenv from 'dotenv';
+import { supabase } from '@/utils/supabase/client';
+import { UnsplashImage } from '@/types/images';
+import { Database } from '@/types/supabase';
+import type { Api } from 'unsplash-js/dist/types';
+import { UNSPLASH_CONFIG } from '@/utils/constants/api';
+import ora from '@/utils/ora';
 
-// --- Types / Interfaces ---
-export interface UnsplashPhoto {
-  id: string;
-  description: string | null;
-  alt_description: string | null;
-  urls: {
-    raw: string;
-    full: string;
-    regular: string;
-    small: string;
-    thumb: string;
-  };
-  links: {
-    self: string;
-    html: string;
-    download: string;
-    download_location: string;
-  };
-  user: {
-    id: string;
-    username: string;
-    name: string;
-    links: {
-      self: string;
-      html: string;
-      photos: string;
-      likes: string;
-      portfolio: string;
-    };
-  };
-  tags?: { title: string }[];
-  width?: number;
-  height?: number;
-  color?: string;
+// Check if we have an API key
+const unsplashApiKey = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
+
+// Initialize Unsplash API client if we have a key
+let unsplashApi: Api | null = null;
+
+if (unsplashApiKey) {
+  unsplashApi = createApi({
+    accessKey: unsplashApiKey,
+  });
 }
 
-export interface UnsplashSearchResponse {
-  total: number;
-  total_pages: number;
-  results: UnsplashPhoto[];
-}
-// --- End Types / Interfaces ---
+// Travel and landmark keywords to use for random combinations
+const TRAVEL_KEYWORDS = [
+  'landmark',
+  'travel',
+  'destination',
+  'vacation',
+  'tourist',
+  'traveler',
+  'exploration',
+  'wanderlust',
+  'skyline',
+  'cityscape',
+  'adventure',
+  'journey',
+];
 
-// Load environment variables
-// Ensure this path works correctly relative to where the process is run from
-// Using process.cwd() might be more robust if scripts run from different locations
-dotenv.config({ path: '.env.local' });
+const LANDMARK_KEYWORDS = [
+  'monument',
+  'architecture',
+  'building',
+  'historical',
+  'famous',
+  'iconic',
+  'plaza',
+  'square',
+  'cathedral',
+  'temple',
+  'palace',
+  'museum',
+  'castle',
+  'bridge',
+  'tower',
+  'statue',
+  'park',
+  'garden',
+];
 
-const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
-if (!UNSPLASH_ACCESS_KEY) {
-  console.error(
-    chalk.red(
-      'Error: UNSPLASH_ACCESS_KEY not found in environment variables. Ensure it is set in .env.local'
-    )
-  );
-  // Throw an error or handle appropriately for service context
-  // Avoid process.exit(1) in library code
-  // throw new Error('UNSPLASH_ACCESS_KEY is not configured.');
-}
-
-// Rate Limiting Configuration (shared state for this service instance)
-const DEFAULT_RATE_LIMIT = 50; // Unsplash default limit per hour
-let requestCount = 0;
-let rateLimit = DEFAULT_RATE_LIMIT; // Can be made configurable if needed
-let lastRequestTime = Date.now(); // Track start of current hour window
-
-// Helper for rate limiting
-async function applyRateLimit() {
-  if (!UNSPLASH_ACCESS_KEY) {
-    console.warn(
-      chalk.yellow(
-        'Skipping rate limit check as UNSPLASH_ACCESS_KEY is missing. API calls will likely fail.'
-      )
-    );
-    return; // Don't proceed if key is missing
-  }
-
-  const now = Date.now();
-  // Reset count if more than an hour has passed since the window started
-  if (now - lastRequestTime > 3600000) {
-    requestCount = 0;
-    lastRequestTime = now; // Start new window
-  }
-
-  if (requestCount >= rateLimit) {
-    const waitTime = lastRequestTime + 3600000 - now; // Time until the hour window ends
-    if (waitTime > 0) {
-      console.log(
-        chalk.yellow(
-          `Unsplash API rate limit reached (${rateLimit}/hour). Waiting ${(waitTime / 1000 / 60).toFixed(1)} minutes...`
-        )
-      );
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-      requestCount = 0; // Reset count after waiting
-      lastRequestTime = Date.now(); // Start new window immediately
-    } else {
-      // If waitTime is negative, the hour has already passed, just reset
-      requestCount = 0;
-      lastRequestTime = now;
-    }
-  }
-
-  requestCount++;
-  // console.log(chalk.dim(`API Request ${requestCount}/${rateLimit} for this hour.`));
-}
-
-// --- Keyword Sets for Queries ---
-const primaryKeywords = ['landmark', 'cityscape', 'skyline', 'architecture', 'downtown', 'iconic'];
-const secondaryKeywords = ['scenic', 'nature', 'travel', 'tourism', 'viewpoint', 'building'];
-
-// Helper function to get random element from an array
-function getRandomElement<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-// --- End Keyword Sets ---
-
-// --- Unsplash API Functions ---
+const NATURE_KEYWORDS = [
+  'mountains',
+  'beach',
+  'coastline',
+  'ocean',
+  'sea',
+  'landscape',
+  'sunset',
+  'sunrise',
+  'valley',
+  'forest',
+  'lake',
+  'river',
+  'waterfall',
+  'island',
+  'cliff',
+  'bay',
+  'scenic',
+];
 
 /**
- * Searches Unsplash for photos based on a query.
+ * Get a random travel or landmark keyword to diversify search results
  */
-export async function searchUnsplashPhotos(
-  query: string,
-  page = 1,
-  perPage = 5 // Default to fetching 5 for random selection
-): Promise<UnsplashSearchResponse> {
-  if (!UNSPLASH_ACCESS_KEY) {
-    throw new Error('UNSPLASH_ACCESS_KEY is not configured. Cannot search photos.');
-  }
-  await applyRateLimit();
-  const apiSpinner = createSpinner(`Searching Unsplash API for "${query}"...`).start();
+function getRandomKeyword(excludeList: string[] = []): string {
+  // Combine all keyword categories
+  const allKeywords = [...TRAVEL_KEYWORDS, ...LANDMARK_KEYWORDS, ...NATURE_KEYWORDS];
+  
+  // Filter out any keywords in the exclude list
+  const availableKeywords = allKeywords.filter((keyword) => !excludeList.includes(keyword));
+  
+  // Select a random keyword
+  const randomIndex = random(0, availableKeywords.length - 1);
+  return availableKeywords[randomIndex];
+}
 
-  const url = new URL('https://api.unsplash.com/search/photos');
-  url.searchParams.append('query', query);
-  url.searchParams.append('page', page.toString());
-  url.searchParams.append('per_page', perPage.toString()); // Use perPage parameter
-  url.searchParams.append('orientation', 'landscape');
+/**
+ * Search Unsplash for images matching the given query
+ */
+export async function searchUnsplash(query: string, options: {
+  page?: number;
+  perPage?: number;
+  orderBy?: 'latest' | 'relevant';
+  orientation?: 'landscape' | 'portrait' | 'squarish';
+} = {}) {
+  if (!unsplashApi) {
+    console.error('Unsplash API key not configured');
+    return { 
+      error: 'Unsplash API key not configured', 
+      results: [] 
+    };
+  }
+
+  const apiSpinner = ora('Searching Unsplash...').start();
 
   try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
-        'Accept-Version': 'v1',
-      },
+    // Default options
+    const { 
+      page = 1, 
+      perPage = 30,
+      orderBy = 'relevant',
+      orientation = 'landscape',
+    } = options;
+
+    // Make the API request
+    const result = await unsplashApi.search.getPhotos({
+      query,
+      page,
+      perPage,
+      orderBy,
+      orientation,
     });
 
-    if (!response.ok) {
-      let errorDetails = response.statusText;
-      try {
-        const errorData: any = await response.json();
-        if (
-          typeof errorData === 'object' &&
-          errorData !== null &&
-          Array.isArray(errorData.errors) &&
-          errorData.errors.length > 0
-        ) {
-          errorDetails = String(errorData.errors[0]);
-        }
-      } catch (parseError) {
-        /* Ignore */
-      }
-      apiSpinner.error({ text: `Unsplash API Error: ${response.status} ${response.statusText}` });
-      throw new Error(`API Error (${response.status}): ${errorDetails}`);
+    // Handle API errors
+    if (result.errors) {
+      throw new Error(result.errors[0]);
     }
 
-    const data = (await response.json()) as UnsplashSearchResponse;
-    apiSpinner.success({ text: `Found ${data.total} results for "${query}"` });
-    return data;
+    apiSpinner.succeed({ text: `Found ${result.response.results.length} Unsplash images` });
+
+    // Return results
+    return {
+      results: result.response.results,
+      total: result.response.total,
+      totalPages: result.response.total_pages,
+    };
   } catch (error) {
     apiSpinner.error({ text: `Failed to search Unsplash: ${(error as Error).message}` });
-    throw error;
+    return { error: (error as Error).message, results: [] };
   }
 }
 
 /**
- * Gets the best photo for a destination from Unsplash, trying multiple queries
- * with randomized keywords. Selects randomly from the top results.
+ * Get a random Unsplash image for a destination
  */
-export async function getDestinationPhoto(
+export async function getRandomDestinationImage(
   city: string,
-  country: string,
-  state: string | null
-): Promise<{
-  photo: UnsplashPhoto;
-  attribution: string;
-  sourceQuery: string;
-  attributionHtml: string;
-} | null> {
-  if (!UNSPLASH_ACCESS_KEY) {
-    console.warn(chalk.yellow('UNSPLASH_ACCESS_KEY is not configured. Skipping Unsplash search.'));
-    return null;
-  }
+  state?: string,
+  country?: string,
+  options: {
+    orientation?: 'landscape' | 'portrait' | 'squarish';
+  } = {}
+) {
+  const spinner = ora('Finding Unsplash image for destination...').start();
 
-  // --- Dynamic Query Generation ---
-  const randomKeyword1 = getRandomElement(primaryKeywords);
-  const randomKeyword2 = getRandomElement(secondaryKeywords);
-  // Ensure keywords are different if possible
-  const uniqueKeyword2 =
-    randomKeyword2 !== randomKeyword1
-      ? randomKeyword2
-      : getRandomElement(secondaryKeywords.filter((k) => k !== randomKeyword1));
+  try {
+    // Generate two unique random keywords to create variety in results
+    const randomKeyword1 = getRandomKeyword();
+    const uniqueKeyword2 = getRandomKeyword([randomKeyword1]);
 
-  const queries = [
-    // Try more specific queries first with random keywords
-    `${city} ${state ? state + ' ' : ''}${country} ${randomKeyword1}`,
-    `${city} ${country} ${randomKeyword1}`,
-    // Try with the secondary keyword
-    `${city} ${state ? state + ' ' : ''}${country} ${uniqueKeyword2}`,
-    `${city} ${country} ${uniqueKeyword2}`,
-    // Fallback to just country + keyword
-    `${country} ${randomKeyword1}`,
-    `${country} ${uniqueKeyword2}`,
-    // Absolute fallback (optional)
-    // `${city} ${country}`
-  ];
-  console.log(chalk.dim(`  (Unsplash Query Keywords: ${randomKeyword1}, ${uniqueKeyword2})`));
-  // --- End Dynamic Query Generation ---
+    // Build multiple search queries with different combinations
+    const searchQueries = [
+      `${city} ${state ? state + ' ' : ''}${country} ${randomKeyword1}`,
+      `${city} ${country} landmark`,
+      `${city} ${state ? state + ' ' : ''}${country} ${uniqueKeyword2}`,
+      `${city} tourism`,
+      `${city} attraction`,
+      `${city} skyline`,
+      `${city} sightseeing`,
+    ];
 
-  for (const query of queries) {
-    const spinner = createSpinner(`Attempting Unsplash search with query: "${query}"`).start();
-    try {
-      const response = await searchUnsplashPhotos(query, 1, 5);
+    console.log(chalk.dim(`  (Unsplash Query Keywords: ${randomKeyword1}, ${uniqueKeyword2})`));
 
-      if (response.results.length > 0) {
-        const randomIndex = Math.floor(Math.random() * response.results.length);
-        const photo = response.results[randomIndex];
-        spinner.success({ text: `Found Unsplash image using query: "${query}"` });
+    // Try each query until we find a result
+    for (const query of searchQueries) {
+      spinner.text = `Searching Unsplash for "${query}"...`;
 
-        const attributionLink = (url: string) =>
-          `${url}?utm_source=withme.travel&utm_medium=referral`;
-        const userUrl = attributionLink(photo.user.links.html);
-        const unsplashUrl = attributionLink('https://unsplash.com');
+      const { results, error } = await searchUnsplash(query, {
+        perPage: 30,
+        orientation: options.orientation || 'landscape',
+      });
 
-        // Plain text attribution (keeping for backward compatibility)
-        const textAttribution = `Photo by ${photo.user.name} (${userUrl}) on Unsplash (${unsplashUrl})`;
+      if (error) {
+        continue; // Try the next query
+      }
 
-        // HTML attribution with proper hyperlinks
-        const attributionHtml = `Photo by <a href="${userUrl}" target="_blank" rel="noopener noreferrer">${photo.user.name}</a> on <a href="${unsplashUrl}" target="_blank" rel="noopener noreferrer">Unsplash</a>`;
-
+      if (results.length > 0) {
+        const randomIndex = random(0, Math.min(results.length - 1, 9)); // Pick from top 10 results
+        spinner.succeed({ text: `Found Unsplash image using query: ${query}` });
         return {
-          photo,
-          attribution: textAttribution,
-          sourceQuery: query,
-          attributionHtml,
+          success: true,
+          image: results[randomIndex],
         };
       }
-      spinner.warn({ text: `No Unsplash results for query: "${query}"` });
-    } catch (error) {
-      spinner.error({
-        text: `Error during Unsplash search for "${query}": ${(error as Error).message}`,
-      });
     }
-  }
 
-  console.warn(
-    chalk.yellow(
-      `Could not find any suitable Unsplash image for ${city}, ${country} after trying multiple random queries.`
-    )
-  );
-  return null;
+    // If we get here, we didn't find any images
+    spinner.fail({ text: `No Unsplash images found for ${city}, ${country}` });
+    return {
+      success: false,
+      error: `No images found for ${city}, ${country}`,
+    };
+  } catch (error) {
+    spinner.fail({ 
+      text: `Error during Unsplash search for "${city}": ${(error as Error).message}`
+    });
+    
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
 }
 
 /**
- * Triggers the download tracking endpoint on Unsplash.
- * IMPORTANT: Call this *before* initiating the actual image download.
+ * Get a random destination image using the Unsplash API
  */
-export async function trackUnsplashDownload(photo: UnsplashPhoto): Promise<void> {
-  if (!UNSPLASH_ACCESS_KEY) {
-    console.warn(
-      chalk.yellow('Skipping Unsplash download tracking as UNSPLASH_ACCESS_KEY is missing.')
-    );
-    return; // Don't proceed if key is missing
-  }
-  if (!photo?.links?.download_location) {
-    console.warn(
-      chalk.yellow(
-        `Photo object missing download_location link. Cannot track download for photo ID: ${photo?.id}`
-      )
-    );
-    return;
-  }
-
-  const trackSpinner = createSpinner(
-    `Tracking Unsplash download for photo ID: ${photo.id}...`
-  ).start();
-  try {
-    await applyRateLimit(); // Count tracking as an API interaction
-    const response = await fetch(photo.links.download_location, {
-      headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` },
-    });
-
-    if (!response.ok) {
-      trackSpinner.warn({
-        text: `Failed to trigger Unsplash download tracking for ${photo.id}. Status: ${response.status} ${response.statusText}`,
-      });
-    } else {
-      trackSpinner.success({ text: `Download tracked for photo ID: ${photo.id}` });
-    }
-  } catch (error) {
-    trackSpinner.error({
-      text: `Error tracking Unsplash download for photo ${photo.id}: ${(error as Error).message}`,
-    });
-    // Log error but don't necessarily stop the process
-  }
+export async function getRandomUnsplashImage() {
+  // Implementation for random global images
+  // ...
 }

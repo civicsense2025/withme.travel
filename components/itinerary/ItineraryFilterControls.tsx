@@ -82,10 +82,8 @@ export const ItineraryFilterControls: React.FC<ItineraryFilterControlsProps> = (
           variant="ghost"
           size="sm"
           className="h-7 text-xs px-2"
-          onClick={() => {
-            onFilterChange('day', 'all');
-            onFilterChange('category', 'all');
-          }}
+          onClick={() => { return onFilterChange('day', 'all');
+            onFilterChange('category', 'all'); }}
         >
           Clear Filters
         </Button>

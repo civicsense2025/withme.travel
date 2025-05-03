@@ -17,7 +17,7 @@ dotenv.config({ path: '.env.local' });
 
 // --- DEBUG LINE ---
 console.log(
-  `DEBUG: NEXT_PUBLIC_UNSPLASH_ACCESS_KEY = "${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}"`
+  `DEBUG: NEXT_PUBLIC_UNSPLASH_ACCESS_KEY = "${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}``
 );
 // ------------------
 
@@ -131,7 +131,7 @@ async function updateDestinationImageMetadata() {
 
     let processedCount = 0;
     for (const [index, destination] of destinations.entries()) {
-      const locationString = `${destination.city}${destination.state_province ? ', ' + destination.state_province : ''}${destination.country ? ', ' + destination.country : ''}`;
+      const locationString = `${destination.city}${destination.state_province ? `, ` + destination.state_province : ''}${destination.country ? ', ' + destination.country : ''}`;
 
       try {
         console.log(`\n[${index + 1}/${destinations.length}] Processing ${locationString}...`);
@@ -204,7 +204,7 @@ async function updateDestinationImageMetadata() {
 
           console.log(
             chalk.green(
-              `  Found image via ${result.source}! ID: ${photo.id} (Query: "${result.sourceQuery}")`
+              `  Found image via ${result.source}! ID: ${photo.id} (Query: `${result.sourceQuery}`)`
             )
           );
 

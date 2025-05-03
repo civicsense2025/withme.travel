@@ -1,26 +1,17 @@
 import { cookies } from 'next/headers';
 import { NextResponse, NextRequest } from 'next/server';
 import { TRIP_ROLES } from '@/utils/constants/status';
-import { TABLES } from '@/utils/constants/database';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
+// Define table names directly as string literals
+const TRIPS_TABLE = 'trips';
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const PERMISSION_REQUESTS_TABLE = 'permission_requests';
 
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
-import { getRouteHandlerClient } from '@/utils/supabase/unified';
 // Define expected request body structure
 interface RequestBody {
   message?: string;
-  requestedRole?: (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES]; // Use TRIP_ROLES type
+  requestedRole?: (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
 }
 
 export async function POST(
@@ -29,7 +20,7 @@ export async function POST(
 ) {
   try {
     const { tripId } = await params;
-    const supabase = await getRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     // Type the parsed body
     const { message, requestedRole }: RequestBody = await request.json();
 
@@ -44,7 +35,7 @@ export async function POST(
 
     // Check if trip exists
     const { data: trip, error: tripError } = await supabase
-      .from(Tables.TRIPS)
+      .from(TRIPS_TABLE)
       .select('id, name')
       .eq('id', tripId)
       .single();
@@ -55,7 +46,7 @@ export async function POST(
 
     // Check if user is already a member with sufficient permissions
     const { data: membership, error: membershipError } = await supabase
-      .from(Tables.TRIP_MEMBERS)
+      .from(TRIP_MEMBERS_TABLE)
       .select('role')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
@@ -71,7 +62,7 @@ export async function POST(
 
     // Check if there's already a pending request
     const { data: existingRequest } = await supabase
-      .from(Tables.PERMISSION_REQUESTS)
+      .from(PERMISSION_REQUESTS_TABLE)
       .select('id, status')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
@@ -87,7 +78,7 @@ export async function POST(
 
     // Create the permission request
     const { data: requestData, error: requestError } = await supabase
-      .from(Tables.PERMISSION_REQUESTS)
+      .from(PERMISSION_REQUESTS_TABLE)
       .insert({
         trip_id: tripId,
         user_id: user.id,
@@ -104,7 +95,7 @@ export async function POST(
 
     // Get trip admins to notify
     const { data: admins } = await supabase
-      .from(Tables.TRIP_MEMBERS)
+      .from(TRIP_MEMBERS_TABLE)
       .select('user_id')
       .eq('trip_id', tripId)
       .in('role', ['owner', 'admin']);

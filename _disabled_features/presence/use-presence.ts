@@ -6,7 +6,7 @@ import { AuthContext } from '@/components/auth-provider';
 import { useContext } from 'react';
 import _ from 'lodash';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { TABLES, DB_FIELDS, DB_ENUMS } from '@/utils/constants/database';
+import { type TABLES, type ENUMS } from '@/utils/constants/database';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {

@@ -55,21 +55,14 @@ export function LocationSearch({
   initialValue = '',
   onClear,
 }: LocationSearchProps) {
-  const [searchQuery, setSearchQuery] = useState(initialValue);
-  // Update state to hold Mapbox features
+  const [searchQuery, setSearchQuery] = useState(initialValue || '');
   const [searchResults, setSearchResults] = useState<MapboxFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Reset error when query changes
-  useEffect(() => {
-    setSearchError(null);
-  }, [searchQuery]);
-
-  // Sync with initialValue prop changes
+  // Initialize with initial value when the prop changes
   useEffect(() => {
     setSearchQuery(initialValue);
   }, [initialValue]);
@@ -82,9 +75,7 @@ export function LocationSearch({
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => { document.removeEventListener('mousedown', handleClickOutside); };
   }, []);
 
   // Fetch logic using the new Mapbox proxy route

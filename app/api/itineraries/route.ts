@@ -1,9 +1,24 @@
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES, FIELDS } from "@/utils/constants/database";
+import { TABLES } from '@/utils/constants/database';
 
-export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+// Define constants for tables/fields not in the imported constants
+const ITINERARY_TABLES = {
+  ITINERARY_TEMPLATES: 'itinerary_templates',
+  ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
+  ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items',
+  DESTINATIONS: 'destinations'
+};
+
+const FIELDS = {
+  ITINERARY_TEMPLATES: {
+    IS_PUBLISHED: 'is_published',
+    CREATED_AT: 'created_at',
+  }
+};
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const supabase = await createRouteHandlerClient();
 
   // Get user for authorization (but don't require it for public templates)
   const {
@@ -12,11 +27,11 @@ export async function GET(request: NextRequest) {
 
   // Get published itineraries
   const { data, error } = await supabase
-    .from(TABLES.ITINERARY_TEMPLATES)
+    .from(ITINERARY_TABLES.ITINERARY_TEMPLATES)
     .select(
       `
       *,
-      ${TABLES.DESTINATIONS}(*)
+      ${ITINERARY_TABLES.DESTINATIONS}(*)
     `
     )
     .eq(FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
@@ -30,8 +45,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ data });
 }
 
-export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  const supabase = await createRouteHandlerClient();
 
   // Get user for authorization
   const {
@@ -59,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Insert the itinerary template
     const { data: template, error: templateError } = await supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
+      .from(ITINERARY_TABLES.ITINERARY_TEMPLATES)
       .insert({
         title: itineraryData.title,
         slug: slug,
@@ -88,7 +103,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { data: sectionData, error: sectionError } = await supabase
-          .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
+          .from(ITINERARY_TABLES.ITINERARY_TEMPLATE_SECTIONS)
           .insert({
             template_id: template.id,
             day_number: section.day_number,
@@ -117,7 +132,7 @@ export async function POST(request: NextRequest) {
           }));
 
           const { data: itemsData, error: itemsError } = await supabase
-            .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
+            .from(ITINERARY_TABLES.ITINERARY_TEMPLATE_ITEMS)
             .insert(items)
             .select();
 

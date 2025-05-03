@@ -16,7 +16,7 @@ import Link from 'next/link';
 
 interface TripListErrorProps {
   error?: Error;
-  onRetry: () => void;
+  onRetry: () => Promise<void>;
   title?: string;
   description?: string;
 }

@@ -1,11 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
+import type { Database } from '@/types/database.types';
 
-export async function GET(request: NextRequest) {
-  const supabase = await createServerSupabaseClient();
+// Define type for trip roles
+export type TripRole = 'admin' | 'editor' | 'contributor' | 'viewer' | 'owner';
 
+// Define constants directly
+const TRIP_ROLES = {
+  ADMIN: 'admin' as TripRole,
+  EDITOR: 'editor' as TripRole,
+  CONTRIBUTOR: 'contributor' as TripRole,
+  VIEWER: 'viewer' as TripRole,
+  OWNER: 'owner' as TripRole
+};
+
+// Define table names as string literals
+const TRIPS_TABLE = 'trips';
+const TRIP_MEMBERS_TABLE = 'trip_members';
+
+// Define FIELDS locally to avoid import errors
+const FIELDS = {
+  TRIPS: {
+    ID: 'id',
+    CREATED_BY: 'created_by'
+  },
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    ROLE: 'role'
+  }
+};
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -16,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // First, find all trips created by this user
     const { data: userTrips, error: tripsError } = await supabase
-      .from('trips')
+      .from(TRIPS_TABLE)
       .select('id, title, created_by')
       .eq('created_by', user.id);
 
@@ -35,7 +64,7 @@ export async function GET(request: NextRequest) {
     for (const trip of userTrips) {
       // Check if there's a membership record for this user and trip
       const { data: membershipRecord, error: membershipError } = await supabase
-        .from('trip_members')
+        .from(TRIP_MEMBERS_TABLE)
         .select('id')
         .eq('trip_id', trip.id)
         .eq('user_id', user.id)
@@ -51,10 +80,10 @@ export async function GET(request: NextRequest) {
 
       // If no membership record exists, create one
       if (!membershipRecord) {
-        const { error: insertError } = await supabase.from('trip_members').insert({
+        const { error: insertError } = await supabase.from(TRIP_MEMBERS_TABLE).insert({
           trip_id: trip.id,
           user_id: user.id,
-          role: 'owner',
+          role: TRIP_ROLES.OWNER,
           status: 'confirmed',
         });
 
@@ -72,13 +101,34 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       fixed: fixedCount,
-      message:
-        fixedCount > 0
+      message: fixedCount > 0
           ? `Fixed ${fixedCount} trips with missing membership records`
           : 'No trips needed fixing',
     });
   } catch (error) {
     console.error('[fix-membership] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// --- POST Handler --- //
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Implementation for POST handler would go here
+    return NextResponse.json({ 
+      message: 'POST endpoint not fully implemented yet' 
+    }, { status: 501 });
+  } catch (error) {
+    console.error('[fix-membership] Unexpected error in POST:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

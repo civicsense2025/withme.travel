@@ -1,16 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from '@/components/ui/use-toast';
+import Image from 'next/image';
 import { format } from 'date-fns';
+import { CalendarDays, MapPin, Users } from 'lucide-react';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { useToast } from './ui/use-toast';
+import { ItineraryTemplate } from '@/types/itinerary';
+import { supabase } from '@/utils/supabase/client';
+import { Database } from '@/types/supabase';
 
 interface ItineraryDay {
-  day_number: number;
+  day: number;
   items: {
+    id: string;
     title: string;
-    description: string;
+    description?: string;
     location: string;
     start_time: string | null;
     end_time: string | null;
@@ -51,25 +58,17 @@ export function ItineraryTemplateDetail({
   template,
   isLiked = false,
 }: ItineraryTemplateDetailProps) {
+  const templateImageUrl = `/images/templates/${template.slug}/cover.jpg`;
   const router = useRouter();
-  const [liked, setLiked] = useState(isLiked);
-  const [likeCount, setLikeCount] = useState(template.like_count);
-  const [isUseDialogOpen, setIsUseDialogOpen] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [tripTitle, setTripTitle] = useState(template.title);
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined,
-  });
+  const { toast } = useToast();
+  const [liked, setLiked] = useState<boolean>(isLiked);
+  const [likeCount, setLikeCount] = useState<number>(template.like_count || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLike = async () => {
     try {
       const response = await fetch(`/api/itineraries/${template.slug}/like`, {
-        method: liked ? 'DELETE' : 'POST',
+        method: liked ? 'DELETE' : 'POST'
       });
 
       if (response.ok) {
@@ -87,7 +86,7 @@ export function ItineraryTemplateDetail({
         title: 'Missing dates',
         description: 'Please select a start and end date for your trip.',
         variant: 'destructive',
-      });
+  });
       return;
     }
 
@@ -111,7 +110,7 @@ export function ItineraryTemplateDetail({
       if (response.ok) {
         toast({
           title: 'Success!',
-          description: 'Your trip has been created from this template.',
+          description: 'Your trip has been created from this template.'
         });
         setIsUseDialogOpen(false);
         router.push(`/trips/${data.trip_id}`);
@@ -123,7 +122,7 @@ export function ItineraryTemplateDetail({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create trip',
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +133,7 @@ export function ItineraryTemplateDetail({
     navigator.clipboard.writeText(url);
     toast({
       title: 'Link copied!',
-      description: 'The link to this template has been copied to your clipboard.',
+      description: 'The link to this template has been copied to your clipboard.'
     });
     setIsShareDialogOpen(false);
   };
@@ -146,7 +145,7 @@ export function ItineraryTemplateDetail({
   return (
     <div className="space-y-6">
       {/* Hero section */}
-      <div className="relative h-64 md:h-80 rounded-lg overflow-hidden">
+      <div className="relative w-full h-64 md:h-80 lg:h-96 overflow-hidden rounded-lg">
         <Image
           src={
             template.destinations.image_url ||

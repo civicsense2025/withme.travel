@@ -21,7 +21,7 @@ if (patternFlagIndex !== -1 && args.length > patternFlagIndex + 1) {
 }
 
 console.log(
-  chalk.blue(`Searching for destinations with image_url containing pattern: "${pattern}"`)
+  chalk.blue(`Searching for destinations with image_url containing pattern: "${pattern}``)
 );
 // --- End Argument Parsing ---
 
@@ -57,7 +57,7 @@ async function clearImagesByPattern(searchPattern: string) {
     console.log(chalk.cyan(`Found ${destinations.length} destinations to clear.`));
 
     for (const destination of destinations) {
-      const locationString = `${destination.city}${destination.state_province ? ', ' + destination.state_province : ''}${destination.country ? ', ' + destination.country : ''}`;
+      const locationString = `${destination.city}${destination.state_province ? `, ` + destination.state_province : ''}${destination.country ? ', ' + destination.country : ''}`;
       console.log(`Clearing image data for: ${locationString} (ID: ${destination.id})`);
       console.log(chalk.dim(`  Current URL: ${destination.image_url}`));
 

@@ -98,7 +98,7 @@ export class ClassErrorBoundary extends Component<ClassErrorBoundaryProps, Error
       Sentry.captureException(error, {
         tags: {
           tripId: this.props.tripId,
-          section: this.props.section || 'unknown',
+          section: this.props.section || 'unknown'
         },
         extra: { errorInfo },
       });
@@ -129,7 +129,5 @@ export class ClassErrorBoundary extends Component<ClassErrorBoundaryProps, Error
  * @param error The error to throw
  */
 export function useErrorBoundary(): (error: Error) => void {
-  return (error: Error) => {
-    throw error;
-  };
+  return (error: Error) => { throw error; };
 }

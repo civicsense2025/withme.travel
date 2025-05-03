@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { DisplayItineraryItem, ItemStatus } from '@/types/itinerary';
+import { DisplayItineraryItem } from '@/types/itinerary';
 import { ItineraryItemCard } from './ItineraryItemCard';
 import { addDays, format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,9 @@ import { useDroppable } from '@dnd-kit/core';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { type ItemStatus } from '@/utils/constants/status';
+
+import React, { useState } from 'react';
 
 // Color palette from city-bubbles.tsx
 const dayColors = [

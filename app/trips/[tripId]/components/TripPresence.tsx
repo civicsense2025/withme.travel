@@ -6,7 +6,8 @@ import { PresenceIndicator } from '@/components/presence/presence-indicator';
 import { CursorTracker } from '@/components/presence/cursor-tracker';
 import { Button } from '@/components/ui/button';
 import { Users, AlertTriangle, Wifi, WifiOff, Loader2, RefreshCw } from 'lucide-react';
-import { ConnectionState } from '@/types/presence';
+// Define ConnectionState inline instead of importing from a file that might not exist
+type ConnectionState = 'connected' | 'connecting' | 'disconnected';
 
 interface TripPresenceProps {
   className?: string;
@@ -18,7 +19,14 @@ interface TripPresenceProps {
  * and manages cursor tracking in the trip
  */
 export function TripPresence({ className = '', showActivityLabel = true }: TripPresenceProps) {
-  const { activeUsers, connectionState, error, recoverPresence } = usePresenceContext();
+  const context = usePresenceContext();
+
+  // Early return if context is null
+  if (!context) {
+    return <div className={className}>Presence not available</div>;
+  }
+
+  const { activeUsers, connectionState, error, recoverPresence } = context;
 
   // Only show users who are online or away
   const onlineUsers = activeUsers.filter((user) =>
@@ -75,7 +83,11 @@ export function TripPresence({ className = '', showActivityLabel = true }: TripP
       </div>
 
       {/* User avatars with status */}
-      <PresenceIndicator users={onlineUsers} showStatus showEditingItem />
+      <PresenceIndicator 
+         users={onlineUsers}
+         showStatus={true}
+         showEditingItem={true}
+      />
     </div>
   );
 }

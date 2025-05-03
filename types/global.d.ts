@@ -252,4 +252,3 @@ declare namespace Database {
     // Add more tables as needed
   }
 }
-

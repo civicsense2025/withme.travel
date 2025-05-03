@@ -1,7 +1,15 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { NextResponse, NextRequest } from 'next/server';
-import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
+import { Database } from '@/types/database.types';
+
+// Define trip roles constants
+const TRIP_ROLES = {
+  ADMIN: 'admin',
+  EDITOR: 'editor',
+  CONTRIBUTOR: 'contributor',
+  VIEWER: 'viewer'
+} as const;
 
 // Helper function to generate a simple slug
 const generateSlug = (name: string): string => {
@@ -46,6 +54,37 @@ async function checkTripMembershipAndRole(
   return data; // Returns boolean
 }
 
+// GET: Fetch all tags associated with a trip (via notes or directly if applicable)
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  const { tripId } = await params;
+  const supabase = await createRouteHandlerClient();
+
+  if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
+
+  try {
+    // TODO: Add implementation for fetching tags
+    const { data, error } = await supabase
+      .from('trip_tags')
+      .select('tags(*)')
+      .eq('trip_id', tripId);
+      
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // Extract tags from the join result
+    const tags = data?.map(item => item.tags) || [];
+    
+    return NextResponse.json({ tags });
+  } catch (error) {
+    console.error('Error fetching tags:', error);
+    return NextResponse.json({ error: 'Failed to fetch tags' }, { status: 500 });
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
@@ -58,7 +97,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = await createRouteHandlerClient();
 
   // 1. Get authenticated user
   console.log('Tag Sync: Attempting to get user...');
@@ -88,11 +127,11 @@ export async function PUT(
   // 3. Check user permission (Admin or Editor) for the trip
   // Important: Reuse permission check logic if available elsewhere
   const { data: member, error: permissionError } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
+    .from('trip_members')
     .select('user_id')
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
-    .in('role', [ENUMS.ENUMS.TRIP_ROLES.ADMIN, ENUMS.ENUMS.TRIP_ROLES.EDITOR]) // Use role enum constants
+    .eq('trip_id', tripId)
+    .eq('user_id', user.id)
+    .in('role', [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]) // Use role enum constants
     .maybeSingle();
 
   if (permissionError) {
@@ -128,7 +167,7 @@ export async function PUT(
     let upsertedTags: { id: string; name: string }[] | null = [];
     if (upsertTags.length > 0) {
       const { data, error: upsertError } = await supabase
-        .from(TABLES.TAGS)
+        .from('tags')
         .upsert(upsertTags, { onConflict: 'name', ignoreDuplicates: false })
         .select('id, name');
 
@@ -143,9 +182,9 @@ export async function PUT(
 
     // 5. Get current tag associations for the trip
     const { data: currentTripTags, error: fetchCurrentError } = await supabase
-      .from(TABLES.TRIP_TAGS)
+      .from('trip_tags')
       .select('tag_id')
-      .eq(FIELDS.TRIP_TAGS.TRIP_ID, tripId);
+      .eq('trip_id', tripId);
 
     if (fetchCurrentError) {
       console.error('Fetch Current Tags Error:', fetchCurrentError);
@@ -160,10 +199,10 @@ export async function PUT(
     // 7. Remove old associations
     if (tagIdsToRemove.length > 0) {
       const { error: deleteError } = await supabase
-        .from(TABLES.TRIP_TAGS)
+        .from('trip_tags')
         .delete()
-        .eq(FIELDS.TRIP_TAGS.TRIP_ID, tripId)
-        .in(FIELDS.TRIP_TAGS.TAG_ID, tagIdsToRemove);
+        .eq('trip_id', tripId)
+        .in('tag_id', tagIdsToRemove);
 
       if (deleteError) {
         console.error('Tag Delete Error:', deleteError);
@@ -177,14 +216,13 @@ export async function PUT(
         trip_id: tripId,
         tag_id: tag_id,
       }));
-      const { error: insertError } = await supabase.from(TABLES.TRIP_TAGS).insert(newLinks);
+      const { error: insertError } = await supabase.from('trip_tags').insert(newLinks);
 
       if (insertError) {
         console.error('Tag Insert Error:', insertError);
         throw new Error('Failed to add new tags');
       }
     }
-
     return NextResponse.json({ message: 'Tags synced successfully' }, { status: 200 });
   } catch (error) {
     console.error('Tag Sync Error:', error);
@@ -193,22 +231,5 @@ export async function PUT(
         ? error.message
         : 'An unexpected error occurred during tag synchronization';
     return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
-
-// GET: Fetch all tags associated with a trip (via notes or directly if applicable)
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
-  // Extract tripId properly
-  const { tripId } = await params;
-
-  if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
-
-  try {
-    // ... existing code ...
-  } catch (error) {
-    // ... existing error handling ...
   }
 }

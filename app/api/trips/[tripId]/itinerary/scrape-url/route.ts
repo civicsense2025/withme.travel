@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import {  TABLES, FIELDS , ENUMS } from "@/utils/constants/database";
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TRIP_ROLES } from '@/utils/constants/status';
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
 
 // Helper function to extract meta tag content using basic string matching
 function extractMetaContent(html: string, property: string): string | null {
@@ -34,37 +36,16 @@ function extractCanonicalUrl(html: string): string | null {
   return match && match[1] ? match[1].trim() : null;
 }
 
-async function checkUserPermission(
-  supabase: any,
-  tripId: string,
-  userId: string
-): Promise<boolean> {
-  // Implement permission check logic (e.g., check if user is member of the trip)
-  const { data, error } = await supabase
-    .from('trip_members')
-    .select('user_id')
-    .eq('trip_id', tripId)
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) {
-    console.error('Permission check error:', error);
-    return false;
-  }
-  return !!data;
-}
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  // Extract tripId properly
   const { tripId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId) {
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
-
-  const supabase = await createServerSupabaseClient();
 
   try {
     // 1. Authentication and Authorization
@@ -79,10 +60,10 @@ export async function POST(
 
     // Check if the user is a member of the trip with sufficient permissions
     const { data: memberData, error: memberError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from('trip_members')
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (memberError || !memberData) {
@@ -90,9 +71,8 @@ export async function POST(
       return NextResponse.json({ error: 'You must be a member of this trip.' }, { status: 403 });
     }
 
-    const role = memberData.role?.toUpperCase();
-    const canEdit =
-      role === ENUMS.TRIP_ROLES.ADMIN.toUpperCase() || role === ENUMS.TRIP_ROLES.EDITOR.toUpperCase();
+    const role = memberData.role;
+    const canEdit = role === TRIP_ROLES.ADMIN || role === TRIP_ROLES.EDITOR;
 
     if (!canEdit) {
       return NextResponse.json(
@@ -128,7 +108,7 @@ export async function POST(
           // Attempt to mimic a browser to avoid simple blocks
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          Accept:
+          'Accept':
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
         },
@@ -169,11 +149,11 @@ export async function POST(
     // 4. Extract Metadata (using basic string matching)
     const scrapedData = {
       title: extractMetaContent(htmlContent, 'og:title') || extractTitle(htmlContent),
-      description:
+      description: 
         extractMetaContent(htmlContent, 'og:description') ||
         extractMetaContent(htmlContent, 'description'),
       imageUrl: extractMetaContent(htmlContent, 'og:image'),
-      scrapedUrl:
+      scrapedUrl: 
         extractCanonicalUrl(htmlContent) ||
         extractMetaContent(htmlContent, 'og:url') ||
         urlToScrape,

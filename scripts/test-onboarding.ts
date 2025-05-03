@@ -105,7 +105,7 @@ async function testOnboardingFlow() {
       const foundSlugs = tagsData?.map((t) => t.slug) || [];
       const missingSlugs = tagSlugs.filter((slug) => !foundSlugs.includes(slug));
       throw new Error(
-        `Could not find all required tags with slugs: ${missingSlugs.join(', ')}. Please ensure they exist in the database. Found: ${foundSlugs.join(', ')}`
+        `Could not find all required tags with slugs: ${missingSlugs.join(', ')}. Please ensure they exist in the database. Found: ${foundSlugs.join(`, `)}`
       );
     }
 

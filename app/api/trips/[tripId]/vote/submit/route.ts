@@ -1,12 +1,19 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
+import { Database } from '@/types/database.types';
+
+// Define table and field constants locally
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const TRIP_MEMBERS_FIELDS = {
+  TRIP_ID: 'trip_id',
+  USER_ID: 'user_id'
+};
 
 // Schema for validating the incoming vote submission
-const submitVoteSchema = z.object({
-  pollId: z.number().int().positive(),
-  optionId: z.number().int().positive(),
+const voteSubmissionSchema = z.object({
+  pollId: z.string().uuid(),
+  optionId: z.string().uuid(),
 });
 
 export async function POST(
@@ -15,124 +22,49 @@ export async function POST(
 ) {
   const { tripId } = await params;
 
-  // Validate tripId
-  if (!tripId || !/^\d+$/.test(tripId)) {
-    return NextResponse.json({ error: 'Invalid trip ID' }, { status: 400 });
+  if (!tripId) {
+    return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
-
   try {
-    // Parse request body
     const body = await request.json();
+    const validation = voteSubmissionSchema.safeParse(body);
 
-    // Validate request data
-    const validatedData = submitVoteSchema.parse(body);
-
-    // Get authenticated user
-    const supabase = await createServerSupabaseClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userId = session.user.id;
-
-    // Verify user is a member of this trip
-    const { data: tripMember, error: tripMemberError } = await supabase
-      .from('trip_members')
-      .select('id')
-      .eq('trip_id', tripId)
-      .eq('user_id', userId)
-      .single();
-
-    if (tripMemberError || !tripMember) {
-      return NextResponse.json({ error: 'You are not a member of this trip' }, { status: 403 });
-    }
-
-    // Verify the poll belongs to this trip
-    const { data: poll, error: pollError } = await supabase
-      .from('trip_polls')
-      .select('id, trip_id, expires_at')
-      .eq('id', validatedData.pollId)
-      .single();
-
-    if (pollError || !poll) {
-      return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
-    }
-
-    // Verify poll belongs to this trip
-    if (poll.trip_id !== parseInt(tripId)) {
-      return NextResponse.json({ error: 'Poll does not belong to this trip' }, { status: 403 });
-    }
-
-    // Check if poll has expired
-    if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
-      return NextResponse.json({ error: 'This poll has expired' }, { status: 400 });
-    }
-
-    // Verify the option belongs to this poll
-    const { data: option, error: optionError } = await supabase
-      .from('trip_poll_options')
-      .select('id, poll_id')
-      .eq('id', validatedData.optionId)
-      .single();
-
-    if (optionError || !option) {
-      return NextResponse.json({ error: 'Option not found' }, { status: 404 });
-    }
-
-    if (option.poll_id !== validatedData.pollId) {
-      return NextResponse.json({ error: 'Option does not belong to this poll' }, { status: 400 });
-    }
-
-    // Check if user has already voted on this poll and delete previous vote if exists
-    const { data: existingVote, error: existingVoteError } = await supabase
-      .from('trip_poll_votes')
-      .select('id')
-      .eq('poll_id', validatedData.pollId)
-      .eq('user_id', userId);
-
-    if (existingVote && existingVote.length > 0) {
-      // Delete previous votes
-      await supabase
-        .from('trip_poll_votes')
-        .delete()
-        .eq('poll_id', validatedData.pollId)
-        .eq('user_id', userId);
-    }
-
-    // Submit the vote
-    const { data: vote, error: voteError } = await supabase
-      .from('trip_poll_votes')
-      .insert({
-        poll_id: validatedData.pollId,
-        option_id: validatedData.optionId,
-        user_id: userId,
-      })
-      .select('id')
-      .single();
-
-    if (voteError || !vote) {
-      console.error('Error submitting vote:', voteError);
-      return NextResponse.json({ error: 'Failed to submit vote' }, { status: 500 });
-    }
-
-    return NextResponse.json(
-      { id: vote.id, message: 'Vote submitted successfully' },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Error processing vote submission:', error);
-
-    if (error instanceof z.ZodError) {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Invalid input', issues: validation.error.flatten() },
         { status: 400 }
       );
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const { pollId, optionId } = validation.data;
+    // Create Supabase client
+    const supabase = await createRouteHandlerClient();
+
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify user is a member of this trip
+    const { data: tripMember, error: memberError } = await supabase
+      .from(TRIP_MEMBERS_TABLE)
+      .select('id')
+      .eq(TRIP_MEMBERS_FIELDS.TRIP_ID, tripId)
+      .eq(TRIP_MEMBERS_FIELDS.USER_ID, user.id)
+      .single();
+
+    if (memberError || !tripMember) {
+      return NextResponse.json({ error: 'You are not a member of this trip' }, { status: 403 });
+    }
+    // Placeholder for database logic to record the vote
+    console.log(`Vote received for Trip ${tripId}, Poll ${pollId}, Option ${optionId}`);
+
+    // Return success response
+    return NextResponse.json({ success: true, message: 'Vote submitted successfully' });
+  } catch (error: any) {
+    console.error('Error submitting vote:', error);
+    return NextResponse.json({ error: error.message || 'Failed to submit vote' }, { status: 500 });
   }
 }

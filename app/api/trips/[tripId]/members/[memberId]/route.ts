@@ -1,52 +1,45 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TRIP_ROLES } from '@/utils/constants/status';
 import { z } from 'zod';
-import { API_ROUTES } from '@/utils/constants/routes';
-import { TABLES, FIELDS, ENUMS } from "@/utils/constants/database";
+import { Database } from '@/types/database.types';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; memberId: string }> }
 ) {
   try {
-    const supabase = await createServerSupabaseClient();
     const { tripId, memberId } = await params;
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is an organizer of this trip
-    const { data: organizer, error: organizerError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select()
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
-      .eq(FIELDS.TRIP_MEMBERS.ROLE, 'organizer')
+    // Check if user is an Admin of this trip
+    const { data: caller, error: callerError } = await supabase
+      .from('trip_members')
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
+      .eq('role', TRIP_ROLES.ADMIN)
       .maybeSingle();
 
-    if (organizerError || !organizer) {
-      return NextResponse.json({ error: 'Only organizers can remove members' }, { status: 403 });
+    if (callerError || !caller) {
+      return NextResponse.json({ error: 'Only admins can remove members' }, { status: 403 });
     }
-
-    // Check if caller is a member of this trip
-    const { data: callerMember, error: callerError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
-      .single();
 
     // Fetch the requested member's details
     const { data: memberToDelete, error: memberError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select('*')
-      .eq(FIELDS.TRIP_MEMBERS.ID, memberId)
+      .eq('id', memberId)
       .single();
 
     if (memberError || !memberToDelete) {
@@ -55,9 +48,9 @@ export async function DELETE(
 
     // Delete member
     const { error } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .delete()
-      .eq(FIELDS.TRIP_MEMBERS.ID, memberId);
+      .eq('id', memberId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -74,75 +67,76 @@ export async function PATCH(
   { params }: { params: Promise<{ tripId: string; memberId: string }> }
 ) {
   try {
-    const supabase = await createServerSupabaseClient();
     const { tripId, memberId } = await params;
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if caller is an admin of this trip
     const { data: callerMember, error: callerError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
+      .from('trip_members')
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .single();
 
-    if (callerError || !callerMember || callerMember.role !== 'organizer') {
-      return NextResponse.json(
-        { error: 'Only organizers can update member roles' },
-        { status: 403 }
-      );
+    if (callerError || !callerMember || callerMember.role !== TRIP_ROLES.ADMIN) {
+      return NextResponse.json({ error: 'Only admins can update member roles' }, { status: 403 });
     }
 
     // Get update data
     const { role } = await request.json();
 
-    if (!role || (role !== 'organizer' && role !== 'member')) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    // Validate role using allowed values
+    const validRoles = [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER];
+    if (!role || !validRoles.includes(role)) {
+      return NextResponse.json({ error: 'Invalid role specified' }, { status: 400 });
     }
 
     // Get member to update
     const { data: memberToUpdate, error: memberError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select()
-      .eq(FIELDS.TRIP_MEMBERS.ID, memberId)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq('id', memberId)
+      .eq('trip_id', tripId)
       .maybeSingle();
 
     if (memberError || !memberToUpdate) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
 
-    // If downgrading from organizer, check if there's at least one other organizer
-    if (memberToUpdate.role === 'organizer' && role === 'member') {
-      // Count organizers
+    // If downgrading from admin, check if there's at least one other admin
+    if (memberToUpdate.role === TRIP_ROLES.ADMIN && role !== TRIP_ROLES.ADMIN) {
+      // Count admins
       const { count, error: countError } = await supabase
-        .from(TABLES.TRIP_MEMBERS)
+        .from('trip_members')
         .select('*', { count: 'exact', head: true })
-        .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-        .eq(FIELDS.TRIP_MEMBERS.ROLE, 'organizer');
+        .eq('trip_id', tripId)
+        .eq('role', TRIP_ROLES.ADMIN);
 
       if (countError) {
         return NextResponse.json({ error: countError.message }, { status: 500 });
       }
 
       if (count === 1) {
-        return NextResponse.json({ error: 'Cannot downgrade the last organizer' }, { status: 400 });
+        return NextResponse.json({ error: 'Cannot remove the last admin' }, { status: 400 });
       }
     }
 
     // Update member role
     const { data, error } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .update({ role })
-      .eq(FIELDS.TRIP_MEMBERS.ID, memberId).select(`
+      .eq('id', memberId)
+      .select(`
         *,
         user:user_id(id, name, email, avatar_url)
       `);
@@ -151,7 +145,10 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ member: data[0] });
+    // Ensure data is an array and return the first element
+    const updatedMember = Array.isArray(data) ? data[0] : data;
+
+    return NextResponse.json({ member: updatedMember });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

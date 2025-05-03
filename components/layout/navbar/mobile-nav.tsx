@@ -18,16 +18,17 @@ export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
-  const { user, profile, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
   const { openSearch } = useSearch();
 
-  const isAdmin = profile?.is_admin;
+  // Check for admin status from user_metadata instead
+  const isAdmin = user?.user_metadata?.is_admin === true;
 
   // Get user initials for avatar
   const getInitials = () => {
     if (!user) return 'U';
-    if (profile?.name) {
-      return profile.name
+    if (user.profile?.name) {
+      return user.profile.name
         .split(' ')
         .map((part) => part.charAt(0))
         .join('')
@@ -192,16 +193,16 @@ export function MobileNav() {
               <div className="flex items-center space-x-3 mb-3">
                 <Avatar className="h-9 w-9">
                   <AvatarImage
-                    src={profile?.avatar_url || user.user_metadata?.avatar_url || ''}
-                    alt={profile?.name || user.email || 'User'}
+                    src={user.profile?.avatar_url || user.user_metadata?.avatar_url || ''}
+                    alt={user.profile?.name || user.email || 'User'}
                   />
                   <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col overflow-hidden">
                   <span className="text-sm font-medium truncate">
-                    {profile?.name || user.email}
+                    {user.profile?.name || user.email}
                   </span>
-                  {profile?.name && (
+                  {user.profile?.name && (
                     <span className="text-xs text-muted-foreground truncate">{user.email}</span>
                   )}
                 </div>

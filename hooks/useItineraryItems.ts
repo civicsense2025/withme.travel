@@ -69,7 +69,7 @@ export function useItineraryItems(tripId: string): UseItineraryItemsReturn {
         title: 'Error Loading Itinerary',
         description: error.message,
         variant: 'destructive',
-      });
+  });
       setItemsByDay({});
       setDurationDays(1);
     } finally {
@@ -167,7 +167,7 @@ export function useItineraryItems(tripId: string): UseItineraryItemsReturn {
           title: 'Reorder Error',
           description: 'Could not finalize item position.',
           variant: 'destructive',
-        });
+  });
         return;
       }
 
@@ -304,7 +304,7 @@ export function useItineraryItems(tripId: string): UseItineraryItemsReturn {
         upVoters: [],
         downVoters: [],
         userVote: null,
-      };
+  };
       const completeNewItemData: Omit<ItineraryItem, 'id' | 'trip_id' | 'created_at' | 'position'> =
         {
           ...newItemData,
@@ -482,7 +482,7 @@ export function useItineraryItems(tripId: string): UseItineraryItemsReturn {
       try {
         const response = await fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
           method: 'DELETE',
-        });
+  });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -506,20 +506,14 @@ export function useItineraryItems(tripId: string): UseItineraryItemsReturn {
   );
 
   // Inline Editing Handlers
-  const startEditing = (item: ItineraryItem) => {
-    setEditingItemId(item.id);
+  const startEditing = (item: ItineraryItem) => { return setEditingItemId(item.id);
     // Allow item.title to be null, provide default empty string for input
-    setInlineEditValue(item.title ?? '');
-  };
+    setInlineEditValue(item.title ?? ''); };
 
-  const cancelEditing = () => {
-    setEditingItemId(null);
-    setInlineEditValue('');
-  };
+  const cancelEditing = () => { return setEditingItemId(null);
+    setInlineEditValue(''); };
 
-  const handleInlineEditChange = (value: string) => {
-    setInlineEditValue(value);
-  };
+  const handleInlineEditChange = (value: string) => { return setInlineEditValue(value); };
 
   const saveInlineEdit = async () => {
     if (!editingItemId || !inlineEditValue.trim()) {

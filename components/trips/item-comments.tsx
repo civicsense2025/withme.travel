@@ -54,16 +54,15 @@ export function ItemComments({
   showCommentCount = true,
   onNewComment,
 }: ItemCommentsProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [newComment, setNewComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [editingComment, setEditingComment] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
-
   const { toast } = useToast();
   const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  
   // Mock empty active users array (presence feature disabled)
   const activeUsers: {
     user_id: string;
@@ -71,7 +70,8 @@ export function ItemComments({
     name?: string;
     avatar_url?: string;
   }[] = [];
-  const supabase = createClient();
+  // Ensure supabase client is initialized once and is non-null
+  const supabase = createClient() || null;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Active collaborators for this item
@@ -91,6 +91,8 @@ export function ItemComments({
   // Load comments
   useEffect(() => {
     const loadComments = async () => {
+      if (!supabase) return;
+      
       try {
         setIsLoading(true);
 
@@ -127,7 +129,7 @@ export function ItemComments({
           likes_count: comment.likes ? comment.likes.length : 0,
           has_liked: comment.likes
             ? comment.likes.some((like: any) => like.user_id === user?.id)
-            : false,
+            : false
         }));
 
         setComments(processedComments);
@@ -150,7 +152,7 @@ export function ItemComments({
 
   // Set up realtime subscription for comments
   useEffect(() => {
-    if (!isOpen || !itemId) return;
+    if (!isOpen || !itemId || !supabase) return;
 
     // Subscribe to changes in comments
     const subscription = supabase
@@ -201,7 +203,7 @@ export function ItemComments({
                 likes_count: comment.likes ? comment.likes.length : 0,
                 has_liked: comment.likes
                   ? comment.likes.some((like: any) => like.user_id === user?.id)
-                  : false,
+                  : false
               }));
 
               setComments(processedComments);
@@ -210,27 +212,29 @@ export function ItemComments({
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(subscription);
+    return () => { 
+      if (supabase) {
+        supabase.removeChannel(subscription);
+      }
     };
   }, [isOpen, itemId, supabase, user?.id]);
 
   const handleSubmitComment = async () => {
-    if (!newComment.trim() || !user) return;
+    if (!commentText.trim() || !user || !supabase) return;
 
     try {
-      setIsSubmitting(true);
+      setIsSending(true);
 
       const { error } = await supabase.from('trip_item_comments').insert({
         item_id: itemId,
         trip_id: tripId,
         user_id: user.id,
-        content: newComment.trim(),
+        content: commentText.trim(),
       });
 
       if (error) throw error;
 
-      setNewComment('');
+      setCommentText('');
       if (onNewComment) onNewComment();
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -240,13 +244,13 @@ export function ItemComments({
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSending(false);
     }
   };
 
   const handleLikeComment = useCallback(
     async (commentId: string, currentlyLiked: boolean) => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         if (currentlyLiked) {
@@ -293,18 +297,18 @@ export function ItemComments({
   );
 
   const handleEditComment = useCallback(async () => {
-    if (!editingComment || !editText.trim() || !user) return;
+    if (!editingCommentId || !commentText.trim() || !user || !supabase) return;
 
     try {
-      setIsSubmitting(true);
+      setIsSending(true);
 
       const { error } = await supabase
         .from('trip_item_comments')
         .update({
-          content: editText.trim(),
-          updated_at: new Date().toISOString(),
+          content: commentText.trim(),
+          updated_at: new Date().toISOString()
         })
-        .eq('id', editingComment)
+        .eq('id', editingCommentId)
         .eq('user_id', user.id); // Ensure user can only edit their own comments
 
       if (error) throw error;
@@ -312,10 +316,10 @@ export function ItemComments({
       // Update local state
       setComments((prev) =>
         prev.map((comment) => {
-          if (comment.id === editingComment) {
+          if (comment.id === editingCommentId) {
             return {
               ...comment,
-              content: editText.trim(),
+              content: commentText.trim(),
               updated_at: new Date().toISOString(),
             };
           }
@@ -323,8 +327,8 @@ export function ItemComments({
         })
       );
 
-      setEditingComment(null);
-      setEditText('');
+      setEditingCommentId(null);
+      setCommentText('');
     } catch (error) {
       console.error('Error editing comment:', error);
       toast({
@@ -333,13 +337,13 @@ export function ItemComments({
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSending(false);
     }
-  }, [editingComment, editText, user, supabase, toast]);
+  }, [editingCommentId, commentText, user, supabase, toast]);
 
   const handleDeleteComment = useCallback(
     async (commentId: string) => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         const { error } = await supabase
@@ -365,18 +369,18 @@ export function ItemComments({
   );
 
   const startEditing = useCallback((comment: Comment) => {
-    setEditingComment(comment.id);
-    setEditText(comment.content);
+    setEditingCommentId(comment.id);
+    setCommentText(comment.content);
   }, []);
 
   const cancelEditing = useCallback(() => {
-    setEditingComment(null);
-    setEditText('');
+    setEditingCommentId(null);
+    setCommentText('');
   }, []);
 
   const renderComment = useCallback(
     (comment: Comment) => {
-      const isEditing = editingComment === comment.id;
+      const isEditing = editingCommentId === comment.id;
       const isOwnComment = comment.user_id === user?.id;
       const timeDisplay = formatDistanceToNow(new Date(comment.created_at), { addSuffix: true });
       const wasEdited = comment.created_at !== comment.updated_at;
@@ -420,8 +424,8 @@ export function ItemComments({
             {isEditing ? (
               <div className="space-y-2">
                 <Textarea
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
                   className="min-h-[80px]"
                   placeholder="Edit your comment..."
                 />
@@ -430,14 +434,14 @@ export function ItemComments({
                     variant="outline"
                     size="sm"
                     onClick={cancelEditing}
-                    disabled={isSubmitting}
+                    disabled={isSending}
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleEditComment}
-                    disabled={!editText.trim() || isSubmitting}
+                    disabled={!commentText.trim() || isSending}
                   >
                     Save
                   </Button>
@@ -463,10 +467,10 @@ export function ItemComments({
       );
     },
     [
-      editingComment,
+      editingCommentId,
       user?.id,
-      editText,
-      isSubmitting,
+      commentText,
+      isSending,
       handleEditComment,
       cancelEditing,
       handleDeleteComment,
@@ -557,14 +561,14 @@ export function ItemComments({
             <Textarea
               ref={textareaRef}
               placeholder={`Add a comment about ${itemName}...`}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
               className="resize-none min-h-[80px]"
             />
             <div className="flex justify-end">
               <Button
                 size="sm"
-                disabled={!newComment.trim() || isSubmitting}
+                disabled={!commentText.trim() || isSending}
                 onClick={handleSubmitComment}
               >
                 <Send className="h-4 w-4 mr-2" />

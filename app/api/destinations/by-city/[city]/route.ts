@@ -1,45 +1,35 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { sanitizeString } from '@/utils/sanitize';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ city: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { city: string } }
+): Promise<NextResponse> {
   try {
-    const { city } = await params;
-    const cityName = decodeURIComponent(city.replace(/-/g, ' '));
+    const city = params.city || '';
+    
+    if (!city) {
+      return NextResponse.json({ error: 'City parameter is required' }, { status: 400 });
+    }
 
-    const supabase = await createServerSupabaseClient();
-
-    // Search for the destination by city name (case insensitive)
-    // Remove .single() to handle multiple or zero results
-    const { data, error } = await supabase.from('destinations').select('*').ilike('city', cityName);
+    const sanitizedCity = sanitizeString(decodeURIComponent(city));
+    const supabase = await createRouteHandlerClient();
+    
+    const { data, error } = await supabase
+      .from('destinations')
+      .select('*')
+      .ilike('city', `%${sanitizedCity}%`)
+      .limit(10);
 
     if (error) {
-      console.error('Error fetching destination:', error);
-      return NextResponse.json({ error: 'Error fetching destination' }, { status: 500 });
+      console.error('Error fetching destinations by city:', error);
+      return NextResponse.json({ error: 'Failed to fetch destinations' }, { status: 500 });
     }
 
-    // Handle case where no destinations are found
-    if (!data || data.length === 0) {
-      return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
-    }
-
-    // Process image URLs to ensure they're properly formatted
-    const destination = data[0];
-
-    // If image_url doesn't start with http or /, add the / prefix
-    if (
-      destination.image_url &&
-      !destination.image_url.startsWith('http') &&
-      !destination.image_url.startsWith('/')
-    ) {
-      destination.image_url = `/${destination.image_url}`;
-    }
-
-    // Return the first match if multiple are found
-    // This ensures backward compatibility with code expecting a single destination
-    return NextResponse.json({ destination, allMatches: data });
-  } catch (error: any) {
-    console.error('Unexpected error in destination fetch:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error in destinations by city route:', error);
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

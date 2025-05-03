@@ -3,7 +3,7 @@
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { formatError } from '@/lib/utils';
+import { formatError } from '@/utils/lib-utils';
 import type { DisplayItineraryItem } from '@/types/itinerary';
 
 // Define ManualDbExpense type
@@ -235,7 +235,7 @@ export function useTripBudget({
       console.error('Failed to add expense:', error);
       toast({
         title: 'Error',
-        description: formatError(error as Error, 'Failed to add expense'),
+        description: formatError(error),
         variant: 'destructive',
       });
     }

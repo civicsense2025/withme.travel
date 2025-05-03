@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/service-role';
-import { TABLES, DB_ENUMS } from '@/utils/constants/database';
-
+import { TABLES } from '@/utils/constants/database';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -150,15 +149,17 @@ interface SchemaCheckResult {
     generatedConstants?: string;
     warnings?: SchemaWarning[];
   };
+  warnings?: SchemaWarning[];
 }
 
 interface SchemaWarning {
-  type:
+  type: 
     | 'missing_column'
     | 'type_mismatch'
     | 'missing_index'
     | 'missing_foreign_key'
-    | 'enum_value_mismatch';
+    | 'enum_value_mismatch'
+    | null;
   table?: string;
   column?: string;
   message: string;
@@ -166,7 +167,7 @@ interface SchemaWarning {
   actual?: string;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     const supabase = createClient();
     const url = new URL(request.url);
@@ -383,6 +384,7 @@ export async function GET(request: Request) {
       checkedTables: coreTablesFromConstants as string[],
       success: missingTables.length === 0 && (!validateEnums || missingEnums.length === 0),
       ...(validateEnums && { missingEnums }),
+      warnings,
       detail: detail
         ? {
             tables,
@@ -488,20 +490,13 @@ ${enumNames
     const values = enums[enumName];
     const typeName =
       enumName.charAt(0).toUpperCase() +
-      enumName.slice(1).replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-    return `export type ${typeName} = ${values.map((value) => `'${value}'`).join(' | ')};`;
+      enumName
+        .slice(1)
+        .replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+    
+    return `export type ${typeName} = ${values.map(v => `'${v}'`).join(' | ')};`;
   })
   .join('\n')}
-
-// Type for table names
-export type TableName = keyof typeof TABLES;
-
-// Type for field names by table
-export type TableField<T extends keyof typeof FIELDS> = keyof typeof FIELDS[T];
-
-// Legacy types (avoid using in new code)
-export type TableNames = (typeof TABLES)[keyof typeof TABLES];
-export type TableFields<T extends keyof typeof FIELDS> = (typeof FIELDS)[T][keyof (typeof FIELDS)[T]];
 `;
 
   return content;

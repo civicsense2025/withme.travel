@@ -73,7 +73,7 @@ export default function SettingsPage() {
             name: data.name || '',
             bio: data.bio || '',
             location: data.location || '',
-            avatar_url: data.avatar_url || '',
+            avatar_url: data.avatar_url || ''
           });
 
           // Handle interests as an array
@@ -85,7 +85,7 @@ export default function SettingsPage() {
             title: 'Error',
             description: 'Failed to load your profile data',
             variant: 'destructive',
-          });
+  });
         } finally {
           setIsLoadingUserData(false);
         }
@@ -111,9 +111,7 @@ export default function SettingsPage() {
     setNewInterest('');
   };
 
-  const handleRemoveInterest = (interest: string) => {
-    setInterests(interests.filter((i) => i !== interest));
-  };
+  const handleRemoveInterest = (interest: string) => { return setInterests(interests.filter((i) => i !== interest)); };
 
   const handleSaveProfile = async () => {
     try {
@@ -136,7 +134,7 @@ export default function SettingsPage() {
 
       toast({
         title: 'profile updated',
-        description: 'your profile has been updated successfully',
+        description: 'your profile has been updated successfully'
       });
     } catch (err: any) {
       console.error('Error updating profile:', err);
@@ -144,7 +142,7 @@ export default function SettingsPage() {
         title: 'Error',
         description: err.message || 'Failed to update profile',
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsSaving(false);
     }

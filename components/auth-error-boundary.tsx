@@ -13,9 +13,7 @@ const AuthErrorFallback: React.FC<FallbackProps> = ({ error, resetErrorBoundary 
   const errorMessage =
     error instanceof AuthError ? error.message : 'An authentication error occurred';
 
-  useEffect(() => {
-    toast.error(errorMessage);
-  }, [errorMessage]);
+  useEffect(() => { toast.error(errorMessage); }, [errorMessage]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -45,12 +43,10 @@ export const AuthErrorBoundary: React.FC<AuthErrorBoundaryProps> = ({ children }
   return (
     <ErrorBoundary
       FallbackComponent={AuthErrorFallback}
-      onError={(error: Error) => {
-        console.error('[Auth Error Boundary]', error);
-      }}
-      onReset={() => {
+      onError={(error: Error) => { console.error('[Auth Error Boundary]', error); }}
+      onReset={() => { 
         // Optionally add reset logic here
-        window.location.reload();
+        window.location.reload(); 
       }}
     >
       {children}

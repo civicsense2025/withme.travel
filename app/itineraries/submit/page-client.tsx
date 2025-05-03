@@ -431,7 +431,7 @@ export function CreateItineraryClient() {
                     onValueChange={handleDurationChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select duration" />
+                      <SelectValue>Select duration</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 21].map((days) => (
@@ -450,7 +450,7 @@ export function CreateItineraryClient() {
                     onValueChange={(value) => setItinerary({ ...itinerary, category: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue>Select category</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="city">City</SelectItem>
@@ -559,7 +559,7 @@ export function CreateItineraryClient() {
                                       }
                                     >
                                       <SelectTrigger>
-                                        <SelectValue placeholder="Category" />
+                                        <SelectValue>Category</SelectValue>
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="activity">Activity</SelectItem>

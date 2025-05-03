@@ -1,30 +1,24 @@
-import { getRouteHandlerClient } from '@/utils/supabase/unified';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import chalk from 'chalk';
-import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
-import { TABLES } from '@/utils/constants/database';
-import { TRIP_ROLES } from '@/utils/constants/status';
+import { ITINERARY_CATEGORIES, TRIP_ROLES } from '@/utils/constants/status';
 
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
+// Define table names directly as string constants
+const TABLES = {
+  TRIPS: 'trips',
+  TRIP_MEMBERS: 'trip_members',
+  USERS: 'users',
+  ITINERARY_ITEMS: 'itinerary_items',
+  ITINERARY_SECTIONS: 'itinerary_sections'
 };
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 const LOG_PREFIX = '[Trip Create API]';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log(chalk.blue(`${LOG_PREFIX} Processing request...`));
 
-  const supabase = await getRouteHandlerClient(request);
+  const supabase = createRouteHandlerClient();
   console.log(chalk.dim(`${LOG_PREFIX} Created route handler client`));
 
   // Admin client using service role key (ensure env vars are set)
@@ -104,7 +98,7 @@ export async function POST(request: NextRequest) {
     };
 
     const { data: newTrip, error: tripError } = await supabaseAdmin
-      .from(Tables.TRIPS)
+      .from(TABLES.TRIPS)
       .insert([tripData])
       .select()
       .single();
@@ -127,7 +121,7 @@ export async function POST(request: NextRequest) {
     };
 
     const { error: memberError } = await supabaseAdmin
-      .from(Tables.TRIP_MEMBERS)
+      .from(TABLES.TRIP_MEMBERS)
       .insert([memberData]);
 
     if (memberError) {
@@ -149,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     if (sections.length > 0) {
       const { error: sectionsError } = await supabaseAdmin
-        .from(Tables.ITINERARY_SECTIONS)
+        .from(TABLES.ITINERARY_SECTIONS)
         .insert(sections);
 
       if (sectionsError) {
@@ -171,7 +165,7 @@ export async function POST(request: NextRequest) {
         title: 'Add your accommodation',
         day_number: null, // Unscheduled
         position: 0,
-        category: ITINERARY_CATEGORIES.ACCOMMODATIONS,
+        category: ITINERARY_CATEGORIES.ACCOMMODATION,
         description: 'Where will you be staying?',
         status: null,
       },
@@ -187,7 +181,7 @@ export async function POST(request: NextRequest) {
     ];
 
     const { error: itemsError } = await supabaseAdmin
-      .from(Tables.ITINERARY_ITEMS)
+      .from(TABLES.ITINERARY_ITEMS)
       .insert(defaultItems);
 
     if (itemsError) {

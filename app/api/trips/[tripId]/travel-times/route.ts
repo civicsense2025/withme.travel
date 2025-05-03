@@ -1,8 +1,32 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
 import { calculateTravelTimes, TravelInfo } from '@/lib/mapbox';
-import { TABLES } from "@/utils/constants/database";
+
+// Define the interface for itinerary item coordinates
+interface ItineraryItemCoords {
+  id: string;
+  day_number: number | null;
+  latitude: number;
+  longitude: number;
+  position: number;
+  start_time?: string | null;
+}
+
+// Define field constants for queries
+const FIELDS = {
+  COMMON: {
+    ID: 'id'
+  },
+  ITINERARY_ITEMS: {
+    DAY_NUMBER: 'day_number',
+    LATITUDE: 'latitude',
+    LONGITUDE: 'longitude',
+    POSITION: 'position',
+    START_TIME: 'start_time'
+  }
+};
 
 export async function GET(
   request: NextRequest,
@@ -15,20 +39,24 @@ export async function GET(
   }
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
 
-    // 1. Fetch itinerary items required for calculation
-    // Type assertion might need adjustment based on actual DB schema/types
+    // 1. Fetch itinerary items required for calculation using FIELDS
     const { data: items, error: itemsError } = await supabase
-      .from(TABLES.ITINERARY_ITEMS)
-      .select('id, day_number, latitude, longitude, position, start_time') // Select fields needed by calculateTravelTimes
+      .from('itinerary_items')
+      .select(
+        `
+        ${FIELDS.COMMON.ID},
+        ${FIELDS.ITINERARY_ITEMS.DAY_NUMBER},
+        ${FIELDS.ITINERARY_ITEMS.LATITUDE},
+        ${FIELDS.ITINERARY_ITEMS.LONGITUDE},
+        ${FIELDS.ITINERARY_ITEMS.POSITION},
+        ${FIELDS.ITINERARY_ITEMS.START_TIME}
+      `
+      ) // Select fields needed by calculateTravelTimes
       .eq('trip_id', tripId)
-      .not('latitude', 'is', null)
-      .not('longitude', 'is', null);
-    // Sorting is handled within calculateTravelTimes now if day_number/position/start_time are passed
-    // .order('day_number', { ascending: true, nullsFirst: false })
-    // .order('position', { ascending: true, nullsFirst: true })
-    // .order('start_time', { ascending: true, nullsFirst: true });
+      .not(FIELDS.ITINERARY_ITEMS.LATITUDE, 'is', null)
+      .not(FIELDS.ITINERARY_ITEMS.LONGITUDE, 'is', null);
 
     if (itemsError) {
       console.error('Supabase error fetching itinerary items for travel times:', itemsError);
@@ -40,8 +68,7 @@ export async function GET(
     }
 
     // 2. Calculate travel times using the utility function
-    // Pass the fetched items directly
-    const travelTimes = await calculateTravelTimes(items);
+    const travelTimes = await calculateTravelTimes(items as ItineraryItemCoords[]);
 
     // 3. Return the calculated travel times
     return NextResponse.json(travelTimes);
@@ -49,4 +76,14 @@ export async function GET(
     console.error('Unexpected error in travel times API:', error);
     return NextResponse.json({ error: 'An unexpected server error occurred' }, { status: 500 });
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  const { tripId } = await params;
+  const supabase = await createRouteHandlerClient();
+  // ... rest of POST handler ...
+  return NextResponse.json({ error: 'POST method not implemented' }, { status: 405 });
 }

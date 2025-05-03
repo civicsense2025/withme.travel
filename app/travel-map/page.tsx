@@ -42,7 +42,7 @@ export default function TravelMapPage() {
       try {
         // Initialize the Supabase client only on the client side
         const supabase = createBrowserClient();
-        
+
         // Fetch visited destinations
         const { data: visitedData, error: visitedError } = await supabase
           .from('user_travel')

@@ -14,10 +14,10 @@ interface TripDataErrorFallbackProps {
  */
 export function TripDataErrorFallback({ error, resetErrorBoundary }: TripDataErrorFallbackProps) {
   return (
-    <div className="container mx-auto p-8">
-      <Alert variant="destructive" className="mb-4">
+    <div className="flex flex-col items-center gap-4 p-6 text-center">
+      <Alert variant="destructive" className="max-w-lg">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Failed to load trip data</AlertTitle>
+        <AlertTitle>Error loading trip data</AlertTitle>
         <AlertDescription>
           {error.message || 'There was an error loading the trip data'}
         </AlertDescription>

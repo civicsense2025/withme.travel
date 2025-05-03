@@ -1,12 +1,12 @@
 'use client';
-
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyTrips } from '@/components/empty-trips';
 import { TripCard } from '@/components/trip-card';
 import { ClassErrorBoundary } from '@/components/error-boundary';
+
+import Link from 'next/link';
 import type { TripRole } from '@/types/trip';
 
 // Type for a trip member row from the database
@@ -81,7 +81,7 @@ export default function TripsClientPage({
       privacy_setting: trip.privacy_setting ?? undefined,
       description: trip.description ?? undefined,
       role: role as TripRole | null,
-      memberSince: joined_at ?? undefined,
+      memberSince: joined_at ?? undefined
     }));
 
     // Type the array
@@ -119,9 +119,7 @@ export default function TripsClientPage({
             <p className="text-destructive">Failed to load trips.</p>
             <Button
               className="mt-4"
-              onClick={() => {
-                setRefreshKey((k) => k + 1);
-              }}
+              onClick={() => setRefreshKey((k) => k + 1)}
             >
               Refresh
             </Button>

@@ -34,14 +34,20 @@ export function LikeButton({
   count,
   onClick,
 }: LikeButtonProps) {
-  const router = useRouter();
   const { user } = useAuth();
   const { isLiked, toggleLike } = useLikes();
-  const [isLikedState, setIsLikedState] = useState(isLiked(itemId));
+  const [isLikedState, setIsLikedState] = useState<boolean>(false);
   const [likeCount, setLikeCount] = useState(count || 0);
   const [isLoading, setIsLoading] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Initialize the liked state when the component mounts or itemId changes
+  useEffect(() => {
+    if (isLiked) {
+      setIsLikedState(isLiked(itemId));
+    }
+  }, [itemId, isLiked]);
 
   // Handle like toggle
   const handleToggleLike = async (e: React.MouseEvent) => {

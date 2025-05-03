@@ -2,7 +2,7 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
-import { getColorClassFromId } from '@/lib/utils';
+import { getColorClassFromId } from '@/utils/lib-utils';
 
 interface TripCardSkeletonProps {
   delayIndex?: number;
@@ -14,13 +14,14 @@ interface TripCardSkeletonProps {
  * Used when trip data is being fetched
  */
 export function TripCardSkeleton({ delayIndex = 0, pulse = true }: TripCardSkeletonProps) {
-  // Generate a consistent color class based on delayIndex (or use a fixed ID)
-  const colorClass = getColorClassFromId(delayIndex.toString());
   const delay = delayIndex * 0.1;
+  // Generate a random but consistent color for the skeleton
+  const id = `skeleton-${delayIndex}`;
+  const colorClass = getColorClassFromId(id);
 
   return (
     <motion.div
-      className="rounded-3xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 max-w-xs mx-auto h-full"
+      className="rounded-lg shadow-md overflow-hidden"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
@@ -68,7 +69,7 @@ export function TripCardSkeleton({ delayIndex = 0, pulse = true }: TripCardSkele
  */
 export function TripCardGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: count }).map((_, i) => (
         <TripCardSkeleton key={i} delayIndex={i} />
       ))}

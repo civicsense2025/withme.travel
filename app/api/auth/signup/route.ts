@@ -1,24 +1,8 @@
-import { createApiClient } from '@/utils/supabase/api';
-import { NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database';
-
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
-import { Database } from '@/types/database.types';
+import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, withRateLimit } from '@/utils/middleware/rate-limit';
 import { sanitizeAuthCredentials, sanitizeString } from '@/utils/sanitize';
-import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { z } from 'zod';
 
 // Validate email format with a better regex
 const isValidEmail = (email: string): boolean => {
@@ -31,15 +15,9 @@ const isStrongPassword = (password: string): boolean => {
   return password.length >= 8; // Simplified check - more checks can be added
 };
 
-/**
- * POST /api/auth/signup
- * Handles user sign up with email validation
- */
-async function signupHandler(request: Request) {
+// Rename the handler function to avoid conflict
+async function signupHandler(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get cookies for session handling
-    const cookieStore = cookies();
-
     // Parse and validate request body
     const body = await request.json();
     const { email, password, username } = sanitizeAuthCredentials(body);
@@ -61,14 +39,17 @@ async function signupHandler(request: Request) {
     }
 
     // Create Supabase client
-    const supabase = createServerSupabaseClient(cookieStore);
+    const supabase = await createRouteHandlerClient();
 
     // Sign up with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?redirect=/onboarding`,
+        emailRedirectTo: `${request.nextUrl.origin}/auth/callback`,
+        data: {
+          full_name: username, // Include name in user metadata
+        },
       },
     });
 
@@ -129,8 +110,8 @@ async function signupHandler(request: Request) {
   }
 }
 
-// Apply rate limiting - 5 attempts per 10 minutes
+// Apply rate limiting and export as POST
 export const POST = withRateLimit(signupHandler, {
   limit: 5,
-  windowMs: 600, // 10 minutes
+  windowMs: 600 * 1000, // 10 minutes (fixed windowMs)
 });

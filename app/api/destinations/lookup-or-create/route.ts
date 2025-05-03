@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 import { z } from 'zod';
-import { TABLES } from "@/utils/constants/database";
+import { TABLES } from '@/utils/constants/database';
 
 // Define the expected request body structure from Mapbox Geocoder
 // Adjust based on the actual structure of Mapbox result properties
@@ -39,7 +39,7 @@ const parseContext = (context: any) => {
   return { city, region, country, postcode, continent };
 };
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const supabase = await createServerSupabaseClient();
 
   // 1. Authentication
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       // image_url: null,
       // description: null,
       // is_featured: false,
-      // slug: `${city?.toLowerCase().replace(/ /g, '-')}-${country?.toLowerCase().replace(/ /g, '-')}-${Date.now()}` // Remove slug generation here
+      // slug: `${city?.toLowerCase().replace(/ /g, '-')}-${country?.toLowerCase().replace(/ /g, -)}-${Date.now()}` // Remove slug generation here
     };
 
     console.log('Attempting to insert destination data:', newDestinationData);

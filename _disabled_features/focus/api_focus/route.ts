@@ -4,8 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // GET - Get active focus session for a trip
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
+  { params }: { params: Promise<{ tripId: string }> } )
 ) {
+ {
   const { tripId } = await params;
 
   const supabase = await createSupabaseServerClient();
@@ -59,8 +60,9 @@ export async function GET(
 // POST - Start a new focus session
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
+  { params }: { params: Promise<{ tripId: string }> } )
 ) {
+ {
   const { tripId } = await params;
   const { section_id, section_path, section_name, message, expires_at } = await request.json();
 
@@ -137,8 +139,9 @@ export async function POST(
 // PATCH - End a focus session
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
+  { params }: { params: Promise<{ tripId: string }> } )
 ) {
+ {
   const { tripId } = await params;
   const { session_id } = await request.json();
 

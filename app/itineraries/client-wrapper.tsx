@@ -49,8 +49,8 @@ interface ClientWrapperProps {
 }
 
 export function ClientWrapper({ itineraries, destinations }: ClientWrapperProps) {
-  // Convert itineraries to match the expected type
-  const formattedItineraries: ItineraryItem[] = itineraries.map((item) => ({
+  // Transform itineraries to match ItineraryItem type
+  const formattedItineraries = itineraries.map((item) => ({
     ...item,
     description: item.description || '', // Convert null to empty string
   }));

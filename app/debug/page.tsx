@@ -11,7 +11,7 @@ export default function DebugPage() {
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <h1 className="text-3xl font-bold mb-6">Debug Dashboard</h1>
-      
+
       <div className="grid gap-6 md:grid-cols-2">
         <Link href="/debug/system-status">
           <Card className="h-full hover:shadow-md transition-shadow">
@@ -20,12 +20,12 @@ export default function DebugPage() {
               <CardDescription>View system health, configurations, and diagnostics</CardDescription>
             </CardHeader>
             <CardContent>
-              Check server configuration, environment variables, API endpoints, 
-              and system performance metrics.
+              Check server configuration, environment variables, API endpoints, and system
+              performance metrics.
             </CardContent>
           </Card>
         </Link>
-        
+
         <Link href="/debug/auth-status">
           <Card className="h-full hover:shadow-md transition-shadow">
             <CardHeader>
@@ -37,7 +37,7 @@ export default function DebugPage() {
             </CardContent>
           </Card>
         </Link>
-        
+
         <Link href="/test-auth">
           <Card className="h-full hover:shadow-md transition-shadow">
             <CardHeader>
@@ -49,7 +49,7 @@ export default function DebugPage() {
             </CardContent>
           </Card>
         </Link>
-        
+
         <Link href="/debug/component-sandbox">
           <Card className="h-full hover:shadow-md transition-shadow">
             <CardHeader>
@@ -64,4 +64,4 @@ export default function DebugPage() {
       </div>
     </div>
   );
-} 
+}

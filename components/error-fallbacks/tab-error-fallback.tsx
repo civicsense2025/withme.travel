@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, RotateCw } from 'lucide-react';
@@ -23,13 +23,15 @@ export function TabErrorFallback({
   tripId,
   refetchFn,
 }: TabErrorFallbackProps) {
-  // Log to Sentry
-  Sentry.captureException(error, {
+  useEffect(() => {
+    // Report error to Sentry
+    Sentry.captureException(error, {
     tags: {
       section,
       tripId,
     },
   });
+  }, [error, section, tripId]);
 
   return (
     <div className="p-4 rounded border border-destructive bg-destructive/10">

@@ -9,9 +9,7 @@ export function SearchButton() {
   const { openSearch } = useSearch();
   const [isMac, setIsMac] = useState(false);
 
-  useEffect(() => {
-    setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
-  }, []);
+  useEffect(() => { return setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0); }, []);
 
   return (
     <Button

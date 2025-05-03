@@ -20,8 +20,8 @@ export function SearchForm({
   buttonText = 'Search',
   showButton = true,
 }: SearchFormProps) {
-  const router = useRouter();
   const { addToSearchHistory } = useSearch();
+  const router = useRouter();
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e: FormEvent) => {

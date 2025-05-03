@@ -207,7 +207,7 @@ export function FocusSession({ sessionId, title, description, className }: Focus
           users={sessionUsers}
           showStatus={true}
           showEditingItem={true}
-          itemLabels={{ [`focus-session-${sessionId}`]: 'this document' }}
+          itemLabels={{ [`focus-session-${sessionId}`]: `this document` }}
         />
 
         <Button variant="ghost" size="sm" onClick={toggleCursorVisibility}>

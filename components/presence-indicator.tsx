@@ -16,10 +16,12 @@ type User = {
 export function PresenceIndicator() {
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const params = useParams();
-  const tripId = params.id as string;
+  const tripId = params?.tripId as string;
   const supabase = createClient();
 
   useEffect(() => {
+    if (!tripId) return;
+
     const channel = supabase.channel(`presence:trip:${tripId}`);
 
     // Set up presence tracking

@@ -9,75 +9,92 @@
  * - TRIP_STATUSES: Trip statuses
  */
 
-// Trip member roles
+// Export common status enums, types and values from this file
+
+// ======= TRIP ROLES =======
 export const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer',
+  VIEWER: 'viewer'
 } as const;
 
-export type TripRole = (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
+export type TripRole = typeof TRIP_ROLES[keyof typeof TRIP_ROLES];
 
-// Permission request statuses
+// ======= ITEM STATUSES =======
+export const ITEM_STATUSES = {
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  SUGGESTED: 'suggested',
+  CONFIRMED: 'confirmed'
+} as const;
+
+export type ItemStatus = typeof ITEM_STATUSES[keyof typeof ITEM_STATUSES];
+
+// ======= ITINERARY CATEGORIES =======
+export const ITINERARY_CATEGORIES = {
+  FLIGHT: 'flight',
+  ACCOMMODATION: 'accommodation',
+  ATTRACTION: 'attraction',
+  RESTAURANT: 'restaurant',
+  TRANSPORTATION: 'transportation',
+  ACTIVITY: 'activity',
+  CUSTOM: 'custom',
+  FLEXIBLE_OPTIONS: 'flexible_options',
+  OTHER: 'other'
+} as const;
+
+export type ItineraryCategory = typeof ITINERARY_CATEGORIES[keyof typeof ITINERARY_CATEGORIES];
+
+// ======= TRIP STATUSES =======
+export const TRIP_STATUSES = {
+  PLANNING: 'planning',
+  BOOKED: 'booked',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled'
+} as const;
+
+export type TripStatus = typeof TRIP_STATUSES[keyof typeof TRIP_STATUSES];
+
+// ======= PERMISSION STATUSES =======
 export const PERMISSION_STATUSES = {
   PENDING: 'pending',
   APPROVED: 'approved',
-  REJECTED: 'rejected',
+  REJECTED: 'rejected'
 } as const;
 
-export type PermissionStatus = (typeof PERMISSION_STATUSES)[keyof typeof PERMISSION_STATUSES];
+export type PermissionStatus = typeof PERMISSION_STATUSES[keyof typeof PERMISSION_STATUSES];
 
-// Itinerary categories
-export const ITINERARY_CATEGORIES = {
-  ICONIC_LANDMARKS: 'Iconic Landmarks',
-  LOCAL_SECRETS: 'Local Secrets',
-  CULTURAL_EXPERIENCES: 'Cultural Experiences',
-  OUTDOOR_ADVENTURES: 'Outdoor Adventures',
-  FOOD_DRINK: 'Food & Drink',
-  NIGHTLIFE: 'Nightlife',
-  RELAXATION: 'Relaxation',
-  SHOPPING: 'Shopping',
-  GROUP_ACTIVITIES: 'Group Activities',
-  DAY_EXCURSIONS: 'Day Excursions',
-  ACCOMMODATIONS: 'Accommodations',
-  TRANSPORTATION: 'Transportation',
-  FLEXIBLE_OPTIONS: 'Flexible Options',
-  SPECIAL_OCCASIONS: 'Special Occasions',
+// ======= PRESENCE STATUSES =======
+export const PRESENCE_STATUSES = {
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+  AWAY: 'away'
 } as const;
 
-export type ItineraryCategory = (typeof ITINERARY_CATEGORIES)[keyof typeof ITINERARY_CATEGORIES];
+export type PresenceStatus = typeof PRESENCE_STATUSES[keyof typeof PRESENCE_STATUSES];
 
-// Item statuses
-export const ITEM_STATUSES = {
-  SUGGESTED: 'suggested',
-  CONFIRMED: 'confirmed',
-  CANCELED: 'canceled',
-  FLEXIBLE: 'flexible',
+// ======= NOTIFICATION TYPES =======
+export const NOTIFICATION_TYPES = {
+  TRIP_INVITATION: 'trip_invitation',
+  TRIP_UPDATE: 'trip_update',
+  NEW_COMMENT: 'new_comment',
+  MENTION: 'mention',
+  ACCESS_REQUEST: 'access_request'
 } as const;
 
-export type ItemStatus = 'suggested' | 'confirmed' | 'canceled' | 'flexible';
+export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
 
-// Trip statuses
-export const TRIP_STATUSES = {
-  PLANNING: 'planning',
-  CONFIRMED: 'confirmed',
-  IN_PROGRESS: 'in-progress',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-} as const;
-
-export type TripStatus = (typeof TRIP_STATUSES)[keyof typeof TRIP_STATUSES];
-
-// Split types
+// ======= SPLIT TYPES =======
 export const SPLIT_TYPES = {
   EQUAL: 'equal',
   PERCENTAGE: 'percentage',
-  FIXED: 'fixed',
-  CUSTOM: 'custom',
+  CUSTOM: 'custom'
 } as const;
 
-export type SplitType = (typeof SPLIT_TYPES)[keyof typeof SPLIT_TYPES];
+export type SplitType = typeof SPLIT_TYPES[keyof typeof SPLIT_TYPES];
 
 // Trip types
 export const TRIP_TYPES = {
@@ -134,25 +151,3 @@ export const USER_STATUSES = {
 } as const;
 
 export type UserStatus = 'online' | 'offline' | 'away' | 'editing';
-
-// Presence statuses
-export const PRESENCE_STATUSES = {
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-  AWAY: 'away',
-  EDITING: 'editing',
-} as const;
-
-export type PresenceStatus = 'online' | 'offline' | 'away' | 'editing';
-
-// Notification types
-export const NOTIFICATION_TYPES = {
-  TRIP_INVITATION: 'trip_invitation',
-  TRIP_UPDATE: 'trip_update',
-  COMMENT: 'comment',
-  MENTION: 'mention',
-  SYSTEM: 'system',
-  REMINDER: 'reminder',
-} as const;
-
-export type NotificationType = 'trip_invitation' | 'trip_update' | 'comment' | 'mention' | 'system' | 'reminder';

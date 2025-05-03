@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiClient } from '@/utils/supabase/api';
-import { cookies } from 'next/headers';
 import { captureException } from '@sentry/nextjs';
+import { createApiRouteClient } from '@/utils/api-helpers/cookie-handlers';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const responseHeaders = new Headers({
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  });
+
   try {
-    // Create Supabase client for checking auth status
-    const supabase = createServerSupabaseClient(cookies());
+    // Create Supabase client to check status
+    const supabase = await createApiRouteClient();
 
-    // Get current session information
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    // Get session data
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
     // Get current user information if session exists
     let userData = null;
@@ -17,17 +24,18 @@ export async function GET(request: NextRequest) {
     let profileData = null;
     let profileError = null;
 
-    if (sessionData?.session) {
-      const { data: user, error } = await supabase.auth.getUser();
-      userData = user;
-      userError = error;
+    if (session) {
+      // Retrieve user data
+      const userResponse = await supabase.auth.getUser();
+      userData = userResponse.data.user;
+      userError = userResponse.error;
 
-      if (user?.user) {
+      if (userData) {
         // Try to fetch profile data
         const { data: profile, error: pError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.user.id)
+          .eq('id', userData.id)
           .single();
 
         profileData = profile;
@@ -36,9 +44,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get cookie information (without exposing sensitive data)
-    // In Next.js 15, cookies() returns a Promise, so we'll skip the detailed cookie listing
     const cookieInfo = {
-      has_auth_cookies:
+      has_auth_cookies: 
         request.cookies.has('sb-access-token') ||
         request.cookies.has('sb-refresh-token') ||
         request.cookies.has('supabase-auth-token'),
@@ -48,15 +55,14 @@ export async function GET(request: NextRequest) {
     const diagnosticInfo = {
       timestamp: new Date().toISOString(),
       auth_state: {
-        has_session: !!sessionData?.session,
-        session_expires_at: sessionData?.session?.expires_at
-          ? new Date(sessionData.session.expires_at * 1000).toISOString()
-          : null,
-        has_user: !!userData?.user,
+        has_session: !!session,
+        session_expires_at: 
+          session && session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+        has_user: !!userData,
         has_profile: !!profileData,
       },
       errors: {
-        session_error: sessionError ? sessionError.message : null,
+        session_error: error ? error.message : null,
         user_error: userError ? userError.message : null,
         profile_error: profileError ? profileError.message : null,
       },
@@ -67,13 +73,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         status: 'success',
-        authenticated: !!sessionData?.session,
-        user: userData?.user
+        authenticated: !!session,
+        user: userData
           ? {
-              id: userData.user.id,
-              email: userData.user.email,
-              email_confirmed: !!userData.user.email_confirmed_at,
-              last_sign_in: userData.user.last_sign_in_at,
+              id: userData.id,
+              email: userData.email,
+              email_confirmed: !!userData.email_confirmed_at,
+              last_sign_in: userData.last_sign_in_at,
             }
           : null,
         profile: profileData
@@ -88,9 +94,7 @@ export async function GET(request: NextRequest) {
       },
       {
         status: 200,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        },
+        headers: responseHeaders,
       }
     );
   } catch (error) {
@@ -105,9 +109,7 @@ export async function GET(request: NextRequest) {
       },
       {
         status: 500,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        },
+        headers: responseHeaders,
       }
     );
   }

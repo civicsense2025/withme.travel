@@ -28,9 +28,7 @@ export const TagInput: React.FC<TagInputProps> = ({
     setSuggestions([]);
   };
 
-  const removeTag = (tagToRemove: string) => {
-    onChange(value.filter((tag) => tag.toLowerCase() !== tagToRemove.toLowerCase()));
-  };
+  const removeTag = (tagToRemove: string) => { return onChange(value.filter((tag) => tag.toLowerCase() !== tagToRemove.toLowerCase())); };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const currentInput = e.target.value;
@@ -58,9 +56,7 @@ export const TagInput: React.FC<TagInputProps> = ({
     }
   };
 
-  const handleSuggestionClick = (tag: Tag) => {
-    addTag(tag.name);
-  };
+  const handleSuggestionClick = (tag: Tag) => { return addTag(tag.name); };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -69,9 +65,7 @@ export const TagInput: React.FC<TagInputProps> = ({
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => { return document.removeEventListener('mousedown', handleClickOutside); };
   }, []);
 
   return (

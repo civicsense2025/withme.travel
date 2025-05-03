@@ -25,9 +25,7 @@ import { ErrorBoundary } from '@sentry/nextjs';
 function ClientOnlyTooltip({ children, text }: { children: React.ReactNode; text: string }) {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { return setMounted(true); }, []);
 
   if (!mounted) {
     return <>{children}</>;
@@ -137,14 +135,13 @@ function getProfileInitials(profile: any, user: any): string {
 }
 
 export function Navbar() {
-  const pathname = usePathname();
   const router = useRouter();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, profile, signOut, isLoading } = useAuth();
-  const isAdmin = profile?.is_admin ?? false;
-  // Single mounting state
   const [hasMounted, setHasMounted] = useState(false);
-
+  const { user, isLoading, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -200,10 +197,8 @@ export function Navbar() {
     document.addEventListener('click', handleClickOutside);
     document.addEventListener('keydown', handleEscapeKey);
 
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-      document.removeEventListener('keydown', handleEscapeKey);
-    };
+    return () => { return document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey); };
   }, [isMenuOpen]);
 
   // State to track how long loading has been active
@@ -234,7 +229,7 @@ export function Navbar() {
     //     hasProfile: !!profile,
     //   });
     // }
-  }, [isLoading, user, profile]);
+  }, [isLoading, user]);
 
   // Set up monitoring for prolonged loading state
   useEffect(() => {
@@ -242,18 +237,14 @@ export function Navbar() {
 
     if (isLoading) {
       // Start a timer when loading begins
-      timer = setInterval(() => {
-        setLoadingDuration((prev) => prev + 500);
-      }, 500);
+      timer = setInterval(() => { return setLoadingDuration((prev) => prev + 500); }, 500);
     } else {
       // Reset when loading completes
       setLoadingDuration(0);
     }
 
     // Clean up timer
-    return () => {
-      if (timer) clearInterval(timer);
-    };
+    return () => { if (timer) clearInterval(timer); };
   }, [isLoading]);
 
   // Show a retry button if loading takes too long
@@ -270,21 +261,13 @@ export function Navbar() {
     }
   }, []);
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const handleSignOut = async () => { return await signOut(); };
 
-  const toggleMenu = () => {
-    setIsMenuOpen((prevState) => !prevState);
-  };
+  const toggleMenu = () => { return setIsMenuOpen((prevState) => !prevState); };
 
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
+  const closeMenu = () => { return setIsMenuOpen(false); };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  const toggleTheme = () => { return setTheme(theme === 'dark' ? 'light' : 'dark'); };
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -474,10 +457,8 @@ export function Navbar() {
                 <Button
                   variant="outline"
                   size="default"
-                  onClick={() => {
-                    openSearch();
-                    closeMenu();
-                  }}
+                  onClick={() => { return openSearch();
+                    closeMenu(); }}
                   className={cn('mb-6 w-full justify-start')}
                 >
                   <Search className="h-4 w-4 mr-2" />
@@ -531,18 +512,6 @@ export function Navbar() {
                     support us
                   </Link>
 
-                  {!isLoadingState && isAdmin && (
-                    <Link
-                      href="/admin/dashboard"
-                      className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
-                        isActive('/admin/dashboard') ? 'text-foreground' : 'text-muted-foreground'
-                      }`}
-                      onClick={closeMenu}
-                    >
-                      admin dashboard
-                    </Link>
-                  )}
-
                   <div className="flex items-center justify-between pt-2">
                     <span className="text-sm font-medium lowercase">Theme</span>
                     <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -583,14 +552,14 @@ export function Navbar() {
                         >
                           <Avatar className="h-9 w-9">
                             <AvatarImage
-                              src={profile?.avatar_url || user.user_metadata?.avatar_url || ''}
-                              alt={profile?.name || user?.email || 'User'}
+                              src={user.user_metadata?.avatar_url || ''}
+                              alt={user?.email || 'User'}
                             />
-                            <AvatarFallback>{getProfileInitials(profile, user)}</AvatarFallback>
+                            <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col text-sm">
                             <span className="font-medium truncate">
-                              {profile?.name || user?.email}
+                              {user?.email}
                             </span>
                             <span className="text-muted-foreground">view account</span>
                           </div>
@@ -604,10 +573,8 @@ export function Navbar() {
                       <Button
                         variant="ghost"
                         className="w-full justify-start text-sm font-medium text-destructive lowercase p-2 hover:bg-destructive/10 focus:bg-destructive/10"
-                        onClick={() => {
-                          handleSignOut();
-                          closeMenu();
-                        }}
+                        onClick={() => { return handleSignOut();
+                          closeMenu(); }}
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         log out

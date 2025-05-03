@@ -119,7 +119,7 @@ export default function SignupPage() {
         setSuccess(true); // Show success message about checking email
         toast({
           title: 'account created!',
-          description: 'please check your email to verify your account.',
+          description: 'please check your email to verify your account.'
         });
       } else if (data.user) {
         // User created and possibly auto-confirmed (or confirmation disabled)
@@ -128,7 +128,7 @@ export default function SignupPage() {
         setSuccess(true);
         toast({
           title: 'account created!',
-          description: 'signup successful! you may need to verify your email.',
+          description: 'signup successful! you may need to verify your email.'
         });
       } else {
         // Handle case where sign up returns no user and no error (unlikely but possible)
@@ -140,7 +140,7 @@ export default function SignupPage() {
         name: '',
         email: '',
         password: '',
-      });
+  });
 
       // --- Invitation acceptance can be handled in the callback or after first login ---
       // Removing immediate invitation acceptance here as it requires the user to be logged in,
@@ -164,7 +164,7 @@ export default function SignupPage() {
         title: 'signup failed',
         description: errorMessage,
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsLoading(false);
     }
@@ -184,6 +184,7 @@ export default function SignupPage() {
       searchParams?.forEach((value, key) => {
         callbackUrl.searchParams.append(key, value);
       });
+      
       // Ensure the intended final redirect is included if not already present
       if (!callbackUrl.searchParams.has('redirect')) {
         callbackUrl.searchParams.set('redirect', redirectUrl);
@@ -213,7 +214,7 @@ export default function SignupPage() {
         title: 'Google sign-in failed',
         description: error.message || 'Please try again later.',
         variant: 'destructive',
-      });
+  });
       setIsGoogleLoading(false); // Ensure loading state is reset on error
     }
     // No finally block needed here, loading state reset on error
@@ -386,7 +387,7 @@ export default function SignupPage() {
               have an account?{' '}
               <Link
                 href={
-                  redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'
+                  redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : `/login`
                 }
                 className="text-primary hover:underline font-medium"
               >

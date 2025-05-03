@@ -9,15 +9,12 @@
 
 # production
 /build
-/components/presence
+/components/presence/*
 /components/trips/trip-presence-indicator.tsx
-/mobile
-/utils/testing
-/__tests__
-/__mocks__
-/debug
-/components/debug
-/app/debug
+/mobile/*
+/utils/testing/*
+/__tests__/*
+/__mocks__/*
 /app/design-sandbox
 
 # debug

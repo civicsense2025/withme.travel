@@ -1,27 +1,54 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { TABLES, DB_ENUMS } from '@/utils/constants/database';
-
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
-import { VOTE_TYPES } from './types';
-import type { VoteType } from './types';
+import { z } from 'zod';
 
-// Helper function to check user membership and role (can be reused or imported)
+// Define table names as string literals
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const ITINERARY_ITEMS_TABLE = 'itinerary_items';
+const ITINERARY_ITEM_VOTES_TABLE = 'itinerary_item_votes';
+
+// Define interfaces for our data models
+interface TripMember {
+  role: string;
+}
+
+// Type guard for TripMember
+function isTripMember(obj: any): obj is TripMember {
+  return obj && typeof obj === 'object' && 'role' in obj && typeof obj.role === 'string';
+}
+
+// Define local constants
+const VOTE_TYPES = {
+  UP: 'up',
+  DOWN: 'down'
+};
+
+type VoteType = typeof VOTE_TYPES[keyof typeof VOTE_TYPES];
+
+// Define fields for database access
+const FIELDS = {
+  COMMON: {
+    ID: 'id'
+  },
+  TRIP_MEMBERS: {
+    ROLE: 'role',
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id'
+  },
+  ITINERARY_ITEMS: {
+    TRIP_ID: 'trip_id'
+  },
+  ITINERARY_ITEM_VOTES: {
+    ITEM_ID: 'item_id',
+    USER_ID: 'user_id',
+    VOTE_TYPE: 'vote_type'
+  }
+};
+
+// Helper function to check user membership and role
 async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
@@ -29,15 +56,15 @@ async function checkTripAccess(
   allowedRoles: string[] = [
     TRIP_ROLES.ADMIN,
     TRIP_ROLES.EDITOR,
-    TRIP_ROLES.VIEWER,
     TRIP_ROLES.CONTRIBUTOR,
+    TRIP_ROLES.VIEWER
   ]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(Tables.TRIP_MEMBERS)
-    .select('role')
-    .eq('trip_id', tripId)
-    .eq('user_id', userId)
+    .from(TRIP_MEMBERS_TABLE)
+    .select(FIELDS.TRIP_MEMBERS.ROLE)
+    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
     .maybeSingle();
 
   if (error) {
@@ -53,6 +80,12 @@ async function checkTripAccess(
     };
   }
 
+  // Check if member has role property
+  if (!isTripMember(member)) {
+    console.error('Invalid member data format:', member);
+    return { allowed: false, error: 'Invalid member data format', status: 500 };
+  }
+
   if (!allowedRoles.includes(member.role)) {
     return {
       allowed: false,
@@ -64,17 +97,17 @@ async function checkTripAccess(
   return { allowed: true };
 }
 
-// Helper to check trip membership (can be reused or imported)
+// Helper to check trip membership
 async function checkTripMembership(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string
 ): Promise<boolean> {
   const { data, error } = await supabase
-    .from(Tables.TRIP_MEMBERS)
-    .select('user_id')
-    .eq('trip_id', tripId)
-    .eq('user_id', userId)
+    .from(TRIP_MEMBERS_TABLE)
+    .select(FIELDS.TRIP_MEMBERS.USER_ID)
+    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
     .maybeSingle();
 
   if (error) {
@@ -86,58 +119,64 @@ async function checkTripMembership(
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ tripId: string; itemId: string }> }
+  { params }: { params: Promise<{ tripId: string; itemId: string }> }
 ) {
-  const { tripId, itemId } = await context.params;
-
-  if (!tripId || !itemId) {
-    return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
-  }
-
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  const userId = user.id;
-
-  // Check if user is part of the trip
-  const isMember = await checkTripMembership(supabase, tripId, userId);
-  if (!isMember) {
-    return NextResponse.json(
-      { error: 'Forbidden: User is not a member of this trip.' },
-      { status: 403 }
-    );
-  }
-
-  let voteType: VoteType;
   try {
-    const body = await request.json();
-    if (body.voteType !== VOTE_TYPES.UP && body.voteType !== VOTE_TYPES.DOWN) {
-      throw new Error('Invalid vote type');
+    const { tripId, itemId } = await params;
+    const supabase = await createRouteHandlerClient();
+
+    if (!tripId || !itemId) {
+      return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
     }
-    voteType = body.voteType;
-  } catch (error) {
-    return NextResponse.json({ error: 'Invalid request body or vote type' }, { status: 400 });
-  }
 
-  try {
-    // Upsert the vote: If the user already voted on this item, update the vote. Otherwise, insert a new vote.
-    const { error: upsertError } = await supabase.from(Tables.VOTES).upsert(
-      {
-        itinerary_item_id: itemId,
-        user_id: userId,
-        vote_type: voteType,
-        // created_at is handled by default, updated_at by trigger or default
-      },
-      {
-        onConflict: 'itinerary_item_id, user_id',
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = user.id;
+
+    // Check if user is part of the trip
+    const isMember = await checkTripMembership(supabase, tripId, userId);
+    if (!isMember) {
+      return NextResponse.json(
+        { error: 'Forbidden: User is not a member of this trip.' },
+        { status: 403 }
+      );
+    }
+
+    let voteType: VoteType;
+    try {
+      const body = await request.json();
+      // Validate using defined vote types
+      const validVoteTypes = Object.values(VOTE_TYPES);
+      if (!body.voteType || !validVoteTypes.includes(body.voteType)) {
+        throw new Error(`Invalid vote type. Must be one of: ${validVoteTypes.join(', ')}`);
       }
-    );
+      voteType = body.voteType;
+    } catch (error: any) {
+      return NextResponse.json(
+        { error: error.message || 'Invalid request body or vote type' },
+        { status: 400 }
+      );
+    }
+
+    // Upsert the vote: If the user already voted on this item, update the vote. Otherwise, insert a new vote.
+    const { error: upsertError } = await supabase
+      .from(ITINERARY_ITEM_VOTES_TABLE)
+      .upsert(
+        {
+          [FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID]: itemId,
+          [FIELDS.ITINERARY_ITEM_VOTES.USER_ID]: userId,
+          [FIELDS.ITINERARY_ITEM_VOTES.VOTE_TYPE]: voteType,
+        },
+        {
+          onConflict: `${FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID},${FIELDS.ITINERARY_ITEM_VOTES.USER_ID}`,
+        }
+      );
 
     if (upsertError) {
       console.error('Error upserting vote:', upsertError);

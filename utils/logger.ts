@@ -52,22 +52,22 @@ export const logger = {
     if (!isLoggingEnabled()) return;
     console.debug(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
   },
-
+  
   info: (message: string, context: LogContext = 'general', data?: any) => {
     if (!isLoggingEnabled()) return;
     console.info(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
   },
-
+  
   warn: (message: string, context: LogContext = 'general', data?: any) => {
     if (!isLoggingEnabled()) return;
     console.warn(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
   },
-
+  
   error: (message: string, context: LogContext = 'general', data?: any) => {
     if (!isLoggingEnabled()) return;
     console.error(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
   },
-
+  
   // Group related logs together
   group: (title: string, context: LogContext = 'general', collapsed = false) => {
     if (!isLoggingEnabled()) return;
@@ -77,22 +77,22 @@ export const logger = {
       console.group(`[WithMe:${context}] ${title}`);
     }
   },
-
+  
   groupEnd: () => {
     if (!isLoggingEnabled()) return;
     console.groupEnd();
   },
-
+  
   // Measure performance
   time: (label: string, context: LogContext = 'general') => {
     if (!isLoggingEnabled()) return;
     console.time(`[WithMe:${context}] ${label}`);
   },
-
+  
   timeEnd: (label: string, context: LogContext = 'general') => {
     if (!isLoggingEnabled()) return;
     console.timeEnd(`[WithMe:${context}] ${label}`);
-  },
+  }
 };
 
 // Helper for development-only console commands
@@ -122,7 +122,7 @@ export const dev = {
     if (!authCookie) return null;
 
     return authCookie.trim().split('=')[1];
-  },
+  }
 };
 
 export default logger;

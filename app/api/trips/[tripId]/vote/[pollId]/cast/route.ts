@@ -1,11 +1,16 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+import { z } from 'zod';
+// Direct table/field names used instead of imports
+import { Database } from '@/types/database.types';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; pollId: string }> }
 ) {
   const { tripId, pollId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   // Validate trip ID and poll ID
   if (!tripId || !/^\d+$/.test(tripId)) {
@@ -25,7 +30,6 @@ export async function POST(
     }
 
     // Get authenticated user
-    const supabase = await createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

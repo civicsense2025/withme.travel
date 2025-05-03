@@ -22,7 +22,6 @@ export function DatePicker({
   disabled = false,
   placeholder = 'Pick a date',
 }: DatePickerProps) {
-  // Format date safely with error handling
   const formattedDate = React.useMemo(() => {
     if (!date) return null;
     try {
@@ -34,9 +33,7 @@ export function DatePicker({
   }, [date]);
 
   // Custom handler to adapt the Calendar's type to our expected types
-  const handleSelect = (day: Date | undefined) => {
-    setDate(day || null);
-  };
+  const handleSelect = (day: Date | undefined) => { return setDate(day || null); };
 
   return (
     <Popover>

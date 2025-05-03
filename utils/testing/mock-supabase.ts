@@ -6,6 +6,7 @@ interface MockedSupabaseMethod {
   mockResolvedValue: (value: any) => MockedSupabaseMethod;
   mockRejectedValue: (value: any) => MockedSupabaseMethod;
   mockImplementation: (fn: (...args: any[]) => any) => MockedSupabaseMethod;
+  [key: string]: any; // Add index signature for dynamic access
 }
 
 // Base mock for chained supabase methods
@@ -26,16 +27,16 @@ const createMockChain = (): MockedSupabaseMethod => {
     mockImplementation: (fn: (...args: any[]) => any) => {
       mock.implementation = fn;
       return mock;
-    },
+    }
   };
 
   // Make the mock function itself callable
-  const mockFn = (...args: any[]) => {
+  const mockFn: MockedSupabaseMethod = ((...args: any[]) => {
     if (mock.implementation) {
       return mock.implementation(...args);
     }
     return mock;
-  };
+  }) as unknown as MockedSupabaseMethod;
 
   // Add the mock methods to the function
   Object.assign(mockFn, mock);
@@ -80,14 +81,16 @@ const createMockChain = (): MockedSupabaseMethod => {
     mockFn[method] = createMockChain();
   });
 
-  return mockFn as MockedSupabaseMethod;
+  return mockFn;
 };
 
 /**
  * Creates a mock Supabase client for testing
  *
  * @returns Mocked Supabase client with Jest mock methods
+ 
  */
+
 export const createMockSupabaseClient = () => {
   // Create a base mock object
   const mockClient: any = {
@@ -133,6 +136,7 @@ export const createMockSupabaseClient = () => {
  *
  * Use this in your jest.mock() calls
  */
+
 export const mockSupabaseCreateClient = () => {
   return createMockSupabaseClient();
 };
@@ -146,6 +150,7 @@ export const mockSupabaseCreateClient = () => {
  *   createClient: mockSupabaseCreateClient,
  * }));
  */
+
 export const setupSupabaseMocks = () => {
   jest.mock('@supabase/supabase-js', () => ({
     createClient: jest.fn().mockImplementation(mockSupabaseCreateClient),
@@ -157,7 +162,9 @@ export const setupSupabaseMocks = () => {
  *
  * @param data The data to include in the response
  * @returns Mocked Supabase response object
+ 
  */
+
 export const mockSupabaseSuccess = (data: any) => ({
   data,
   error: null,
@@ -169,7 +176,9 @@ export const mockSupabaseSuccess = (data: any) => ({
  * @param message Error message
  * @param code Optional error code
  * @returns Mocked Supabase error response object
+ 
  */
+
 export const mockSupabaseError = (message: string, code?: string) => ({
   data: null,
   error: {

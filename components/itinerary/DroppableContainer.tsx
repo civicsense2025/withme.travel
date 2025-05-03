@@ -18,7 +18,7 @@ export function DroppableContainer({
   className,
   disabled,
   items = [], // Default to empty array
-}: DroppableContainerProps) {
+}: DroppableContainerProps) { 
   const { isOver, setNodeRef } = useDroppable({
     id: id,
     disabled: disabled,

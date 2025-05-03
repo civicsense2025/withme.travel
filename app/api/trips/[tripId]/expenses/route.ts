@@ -1,7 +1,8 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
-import { NextResponse, type NextRequest } from 'next/server';
-import { TABLES, FIELDS } from "@/utils/constants/database";
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { tripId } = await params;
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -21,10 +22,10 @@ export async function GET(
 
     // Verify user membership
     const { data: tripMembership, error: tripError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select('*')
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .single();
 
     if (tripError || !tripMembership) {
@@ -34,14 +35,14 @@ export async function GET(
 
     // Fetch expenses from the 'expenses' table
     const { data: localExpenses, error: localError } = await supabase
-      .from(TABLES.EXPENSES)
+      .from('expenses')
       .select(
         `
         *,
         paid_by_user:profiles!expenses_paid_by_fkey(id, name, email, avatar_url)
       `
       )
-      .eq(FIELDS.TRIPS.ID, tripId)
+      .eq('trip_id', tripId)
       .order('date', { ascending: false });
 
     if (localError) {
@@ -83,7 +84,7 @@ export async function POST(
 ) {
   try {
     const { tripId } = await params;
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -95,10 +96,10 @@ export async function POST(
 
     // Verify user membership
     const { count, error: permissionError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select('*', { count: 'exact', head: true })
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id);
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id);
 
     if (permissionError || count === 0) {
       console.error('Permission error checking trip membership for expense POST:', permissionError);
@@ -130,7 +131,7 @@ export async function POST(
     }
 
     const { data: newExpense, error } = await supabase
-      .from(TABLES.EXPENSES)
+      .from('expenses')
       .insert(expenseData)
       .select()
       .single();

@@ -23,7 +23,7 @@ export function ItineraryShareButton() {
       setIsCopied(true);
       toast({
         title: 'Link Copied!',
-        description: 'Itinerary URL copied to clipboard.',
+        description: 'Itinerary URL copied to clipboard.'
       });
       setTimeout(() => setIsCopied(false), 2000); // Reset icon after 2 seconds
     } catch (err) {
@@ -32,7 +32,7 @@ export function ItineraryShareButton() {
         title: 'Error',
         description: 'Could not copy URL to clipboard.',
         variant: 'destructive',
-      });
+  });
     }
   };
 

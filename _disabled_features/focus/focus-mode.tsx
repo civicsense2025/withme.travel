@@ -80,7 +80,7 @@ export function FocusMode({ tripId }: FocusModeProps) {
       const diffMins = Math.floor(diffMs / 60000);
       const diffSecs = Math.floor((diffMs % 60000) / 1000);
 
-      setTimeRemaining(`${diffMins}:${diffSecs.toString().padStart(2, '0')}`);
+      setTimeRemaining(`${diffMins}:${diffSecs.toString().padStart(2, `0`)}`);
     };
 
     // Update immediately
@@ -228,7 +228,7 @@ export function FocusMode({ tripId }: FocusModeProps) {
           <div className="flex-1">
             <Select value={section} onValueChange={setSection}>
               <SelectTrigger className="h-7">
-                <SelectValue placeholder="Select a section" />
+                <SelectValue>Select a section</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {TRIP_SECTIONS.map((section) => (

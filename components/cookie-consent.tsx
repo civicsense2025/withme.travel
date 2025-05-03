@@ -31,8 +31,7 @@ function getCookie(name: string): string | null {
 
 export function CookieConsent() {
   const [showConsent, setShowConsent] = useState(false);
-  const { supabase } = useAuth();
-
+  
   useEffect(() => {
     const cookiesAccepted =
       getCookie(COOKIE_CONSENT_KEY) === 'true' ||

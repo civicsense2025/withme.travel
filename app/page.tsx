@@ -12,12 +12,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   // Check if user is logged in on the server
-  const {
-    data: { session },
-  } = await getServerSession();
+  const sessionResult = await getServerSession(); // Get the raw result first
 
-  // If logged in, redirect to dashboard
-  if (session) {
+  // Safely check if session exists
+  if (sessionResult) {
     redirect('/dashboard');
   }
 

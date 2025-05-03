@@ -18,7 +18,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 
 export default function TestAuthPage() {
   const router = useRouter();
-  const { signIn, signOut, user, isLoading, error } = useAuth();
+  const { signIn, signOut, user, isLoading } = useAuth();
   const [email, setEmail] = useState('test@example.com');
   const [password, setPassword] = useState('password123');
   const [loginStatus, setLoginStatus] = useState('');
@@ -34,9 +34,7 @@ export default function TestAuthPage() {
       setLoginStatus('Login detected, redirecting...');
 
       // Short timeout to allow state to update before redirect
-      const timer = setTimeout(() => {
-        router.push(redirect);
-      }, 1000);
+      const timer = setTimeout(() => { router.push(redirect); }, 1000);
 
       return () => clearTimeout(timer);
     }
@@ -50,7 +48,7 @@ export default function TestAuthPage() {
         const response = await fetch('/api/auth/csrf', {
           method: 'GET',
           credentials: 'include',
-        });
+  });
 
         if (!response.ok) {
           throw new Error('Failed to fetch security token');
@@ -105,7 +103,7 @@ export default function TestAuthPage() {
       const response = await fetch('/api/auth/csrf', {
         method: 'GET',
         credentials: 'include',
-      });
+  });
 
       if (!response.ok) {
         throw new Error('Failed to fetch CSRF token');
@@ -131,7 +129,7 @@ export default function TestAuthPage() {
       await fetch('/api/auth/clear-cookies', {
         method: 'POST',
         credentials: 'include',
-      });
+  });
       setLoginStatus('Cookies cleared!');
     } catch (error) {
       console.error('Clear cookies error:', error);
@@ -182,11 +180,6 @@ export default function TestAuthPage() {
                 />
               </div>
               {loginStatus && <div className="bg-muted p-2 rounded text-sm">{loginStatus}</div>}
-              {error && (
-                <div className="bg-destructive/10 text-destructive p-2 rounded text-sm">
-                  Error: {error.message}
-                </div>
-              )}
               {user && (
                 <div className="bg-muted p-2 rounded text-sm">
                   <p>Logged in as: {user.email}</p>

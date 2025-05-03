@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Don't make changes to /Users/tanho/Projects/withme.travel-main/mobile/*. It's not a part of our web app, its a part of our react mobile app.

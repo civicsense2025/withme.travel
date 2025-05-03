@@ -33,13 +33,12 @@ interface UseItineraryButtonProps {
 }
 
 export function UseItineraryButton({ slug, className }: UseItineraryButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [tripName, setTripName] = useState('');
-
   const router = useRouter();
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [tripName, setTripName] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -77,7 +76,7 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
 
       toast({
         title: 'Success!',
-        description: 'Trip created from this itinerary template. Redirecting to your new trip...',
+        description: 'Trip created from this itinerary template. Redirecting to your new trip...'
       });
 
       // Redirect to the new trip

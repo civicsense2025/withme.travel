@@ -1,43 +1,73 @@
 'use client';
 import { PAGE_ROUTES, API_ROUTES } from '@/utils/constants/routes';
-import { ITINERARY_CATEGORIES, ITEM_STATUSES } from '@/utils/constants/status';
-
-// React imports
+import { ITINERARY_CATEGORIES, ITEM_STATUSES, TRIP_ROLES, type TripRole, type ItemStatus } from '@/utils/constants/status';
+import { TABLES } from '@/utils/constants/database';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { TabErrorFallback } from '@/components/error-fallbacks/tab-error-fallback';
+import { TripDataErrorFallback } from '@/components/error-fallbacks/trip-data-error-fallback';
+import { TripDataProvider, useTripData } from './context/trip-data-provider';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useTripSubscriptions } from './hooks/use-trip-subscriptions';
+import { ItineraryTabContent, BudgetTabContent, NotesTabContent, ManageTabContent } from './components/tab-contents';
+import { MemberProfile } from '@/components/members-tab';
+import { formatDate } from '@/lib/utils';
+import { Profile } from '@/types/profile';
+import { Button } from '@/components/ui/button';
+import { Pencil, ChevronLeft, Camera, Loader2, Users, CalendarDays, Info, PanelLeftClose, PanelRightClose, DollarSign, ImagePlus, AlertCircle, Wifi, WifiOff, Clock, Edit, Eye, UserRound, Activity, RefreshCw, ExternalLink, ImageIcon, RotateCw, MapPin, MousePointer, Coffee, MousePointerClick, CheckCircle, XCircle, PanelLeftOpen, Plane, BedDouble, Landmark, Utensils, Car, Sparkles, HelpCircle, MapIcon, Share, Calendar, FileEdit, UserPlus2, LogOut, Settings, Heart } from 'lucide-react';
+import { User, RealtimeChannel } from '@supabase/supabase-js';
+import { type DisplayItineraryItem, type ItineraryCategory } from '@/types/itinerary';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { createClient } from '@/utils/supabase/client';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { QuickAddItemForm } from '@/app/trips/components/QuickAddItemForm';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ImageSearchSelector } from '@/components/images/image-search-selector';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ShareTripButton } from '@/components/trips/ShareTripButton';
+import { TripHeader, type TripHeaderProps, type MemberWithProfile } from '@/components/trip-header';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { type TravelInfo, type TravelTimesResult, calculateTravelTimes } from '@/lib/mapbox';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose } from '@/components/ui/sheet';
+import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
+import { EditTripForm, type EditTripFormValues } from '@/app/trips/components/EditTripForm';
+import { useToast } from '@/components/ui/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Trip, ItineraryItem, ItinerarySection as DbItinerarySection } from '@/types/database.types';
+import { ManualDbExpense, UnifiedExpense, ItinerarySection, TripPrivacySetting } from '@/types/trip';
+import { ProcessedVotes } from '@/types/votes';
+
+import { ActivityTabContent } from '@/app/trips/[tripId]/components/tab-contents/activity-tab-content';
+
+
+// React imports
 
 // Next.js imports
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 
 // Error fallback components
-import { TabErrorFallback } from '@/components/error-fallbacks/tab-error-fallback';
-import { TripDataErrorFallback } from '@/components/error-fallbacks/trip-data-error-fallback';
 
 // Monitoring
 import * as Sentry from '@sentry/nextjs';
 
 // Context providers
-import { TripDataProvider, useTripData } from './context/trip-data-provider';
-import { useAuth } from '@/lib/hooks/use-auth';
 
 // Custom hooks
-import { useTripSubscriptions } from './hooks/use-trip-subscriptions';
 
 // Tab content components
-import {
-  ItineraryTabContent,
-  BudgetTabContent,
-  NotesTabContent,
-  ManageTabContent,
-} from './components/tab-contents';
 
 // UI Components
-import { MemberProfile } from '@/components/members-tab';
-import { TABLES } from '@/utils/constants/database';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -52,133 +82,13 @@ type ExtendedTables = {
 // Use the extended type with the existing TABLES constant
 const Tables = TABLES as unknown as ExtendedTables;
 
-import { formatDate } from '@/lib/utils';
-import { type TripRole } from '@/utils/constants/status';
-import { Profile } from '@/types/profile';
-import { Button } from '@/components/ui/button';
-import {
-  Pencil,
-  ChevronLeft,
-  Camera,
-  Loader2,
-  Users,
-  CalendarDays,
-  Info,
-  PanelLeftClose,
-  PanelRightClose,
-  DollarSign,
-  ImagePlus,
-  AlertCircle,
-  Wifi,
-  WifiOff,
-  Clock,
-  Edit,
-  Eye,
-  UserRound,
-  Activity,
-  RefreshCw,
-  ExternalLink,
-  ImageIcon,
-  RotateCw,
-  MapPin,
-  MousePointer,
-  Coffee,
-  MousePointerClick,
-  CheckCircle,
-  XCircle,
-  PanelLeftOpen,
-  Plane,
-  BedDouble,
-  Landmark,
-  Utensils,
-  Car,
-  Sparkles,
-  HelpCircle,
-} from 'lucide-react';
-import { User } from '@supabase/supabase-js';
-import { type DisplayItineraryItem, type ItineraryCategory } from '@/types/itinerary';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { createClient } from '@/utils/supabase/client';
-import { RealtimeChannel } from '@supabase/supabase-js';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { QuickAddItemForm } from '@/app/trips/components/QuickAddItemForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ImageSearchSelector } from '@/components/images/image-search-selector';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ShareTripButton } from '@/components/trips/ShareTripButton';
-import { TripHeader, type TripHeaderProps, type MemberWithProfile } from '@/components/trip-header';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { type TravelInfo, type TravelTimesResult, calculateTravelTimes } from '@/lib/mapbox';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-  SheetClose,
-} from '@/components/ui/sheet';
-import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
-import { EditTripForm, type EditTripFormValues } from '@/app/trips/components/EditTripForm';
-import { useToast } from '@/components/ui/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  MapIcon,
-  Share,
-  Calendar,
-  FileEdit,
-  UserPlus2,
-  LogOut,
-  Settings,
-  Heart,
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
-import {
-  Trip,
-  ItineraryItem,
-  ItinerarySection as DbItinerarySection,
-} from '@/types/database.types';
 import type { TripMember } from './context/trip-data-provider';
-import type { ItemStatus } from '@/types/common';
 
 // --- Import Extracted Components ---
 import BudgetSnapshotSidebar from '@/components/trips/budget-snapshot-sidebar';
 import TripSidebarContent from '@/components/trips/trip-sidebar-content';
 // Types
-import {
-  ManualDbExpense,
-  UnifiedExpense,
-  ItinerarySection,
-  TripPrivacySetting,
-} from '@/types/trip';
-import { ProcessedVotes } from '@/types/votes';
-import { ActivityTabContent } from '@/app/trips/[tripId]/components/tab-contents/activity-tab-content';
 
 // Local utility functions to avoid import issues
 // Format error messages consistently
@@ -235,6 +145,7 @@ interface AccessRequestUser {
   email: string | null;
   avatar_url: string | null;
 }
+
 interface AccessRequest {
   id: string;
   user_id: string;
@@ -336,7 +247,7 @@ const mapApiItemToDisplay = (item: any): DisplayItineraryItem => {
 
   return {
     ...item,
-    category: mappedCategory, // Ensure category matches DisplayItineraryItem type
+    category: mappedCategory,
     // Map other fields if necessary to match DisplayItineraryItem
     // For example, ensure required fields have default values if nullable in API type
     title: item.title ?? 'Untitled Item',
@@ -352,6 +263,21 @@ const mapApiSections = (apiSections: any[] | undefined): ItinerarySection[] => {
     ...section,
     items: (section.itinerary_items || []).map(mapApiItemToDisplay), // Map each item within the section
   }));
+};
+
+// Helper function for comparing item arrays (simplified ID check)
+const compareItemArrays = (arr1: DisplayItineraryItem[], arr2: DisplayItineraryItem[]): boolean => {
+  if (arr1.length !== arr2.length) return false;
+  const ids1 = new Set(arr1.map(item => item.id));
+  const ids2 = new Set(arr2.map(item => item.id));
+  if (ids1.size !== ids2.size) return false; // Check size for efficiency
+  // Check if all IDs from arr1 exist in arr2
+  for (const id of ids1) {
+    if (!ids2.has(id)) {
+      return false;
+    }
+  }
+  return true;
 };
 
 // --- Main Client Component --- //
@@ -520,40 +446,35 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   });
 
   /**
-   * Sync local state with context/props when they change
-   * This ensures the UI stays in sync with the latest data from the server
+   * Synchronize local itinerary items with data from TripContext
+   * This effect runs when tripData.items or tripData.sections change.
+   * It compares the derived items with the current local state inside the setter
+   * to prevent unnecessary updates and infinite loops.
    */
   useEffect(() => {
+    // Calculate the items based SOLELY on the incoming tripData
     const incomingItems = tripData?.items || [];
     const incomingSections = tripData?.sections || [];
+    const mappedSections = mapApiSections(incomingSections); // Use helper
+    const sectionItems = mappedSections.flatMap((s) => s.items || []);
+    const unscheduledItems = incomingItems.map(mapApiItemToDisplay); // Map unscheduled items
+    const newCombinedItems = [...sectionItems, ...unscheduledItems];
 
-    // Create IDs sets for comparison to avoid infinite loops from object references
-    const incomingItemIds = new Set(incomingItems.map((item) => item.id));
-    const currentItemIds = new Set(allItineraryItems.map((item) => item.id));
-
-    // Check if sets are different (more robust than length check)
-    let areDifferent = incomingItemIds.size !== currentItemIds.size;
-    if (!areDifferent) {
-      for (const id of incomingItemIds) {
-        if (!currentItemIds.has(id)) {
-          areDifferent = true;
-          break;
-        }
+    // Use functional update to compare with current state inside the setter
+    setAllItineraryItems(currentLocalItems => {
+      // Compare the newly calculated items with the current state items
+      if (!compareItemArrays(newCombinedItems, currentLocalItems)) {
+        console.log(
+          '[TripPageClient] Syncing itinerary items from context because item sets differ.'
+        );
+        // If different, update the state
+        return newCombinedItems;
       }
-    }
+      // If they are the same, return the existing state to prevent update loop
+      return currentLocalItems;
+    });
 
-    // Only update if the item sets are actually different
-    if (areDifferent) {
-      console.log(
-        '[TripPageClient] Syncing itinerary items from context because item sets differ.'
-      );
-      const mappedSections = mapApiSections(incomingSections); // Use helper
-      const sectionItems = mappedSections.flatMap((s) => s.items || []);
-      const unscheduledItems = incomingItems.map(mapApiItemToDisplay); // Map unscheduled items
-      const combinedItems = [...sectionItems, ...unscheduledItems];
-      setAllItineraryItems(combinedItems);
-    }
-  }, [tripData?.items, tripData?.sections]); // Depend only on context data, not local state
+  }, [tripData?.items, tripData?.sections]); // Now only depends on incoming data
 
   /**
    * Update URL when activeTab changes to maintain tab state in the URL
@@ -791,7 +712,6 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       });
     }
   }, [tripId, toast, newExpense]);
-
   /**
    * Handles the selection of a new cover image for the trip
    * Updates local state immediately for quick UI feedback
@@ -1328,7 +1248,9 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
               startDate={tripData?.trip?.start_date || null}
               handleDeleteItem={handleDeleteItem}
               handleVote={handleVote}
-              handleItemStatusChange={handleItemStatusChange}
+              handleItemStatusChange={(id: string, status: ItemStatus | null) => 
+                handleItemStatusChange(id, status as ItemStatus | null)
+              }
               handleReorder={handleReorder}
               handleSectionReorder={handleSectionReorder}
             />
@@ -1423,7 +1345,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
     handleItemStatusChange,
     handleSectionReorder,
     refetchItinerary,
-    refetchTrip
+    refetchTrip,
   ]);
 
   // --- Rendering --- //
@@ -1435,7 +1357,6 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   if (combinedIsLoading && !tripData?.trip) {
     return <Skeleton className="h-screen w-full" />;
   }
-
   // Show specific error message if context provides an error
   if (error) {
     return (
@@ -1465,7 +1386,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       </div>
     );
   }
-
+  
   // Add a final check to ensure tripData.trip is definitely available before rendering main content
   // This prevents errors if loading finished but data somehow didn't arrive
   if (!tripData?.trip) {

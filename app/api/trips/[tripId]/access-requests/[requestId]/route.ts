@@ -1,31 +1,16 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { PERMISSION_STATUSES, TRIP_ROLES } from '@/utils/constants/status';
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
 
-import { TABLES, DB_FIELDS } from '@/utils/constants/database';
-
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
-import { TRIP_ROLES, type TripRole } from '@/utils/constants/status';
+// Define table names as constants to keep code consistent
+const TRIP_MEMBERS_TABLE = 'trip_members';
+const PERMISSION_REQUESTS_TABLE = 'permission_requests';
 
 // Define RequestStatus type and constants
-const REQUEST_STATUS = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected',
-} as const;
-
-type RequestStatus = typeof REQUEST_STATUS[keyof typeof REQUEST_STATUS];
+const REQUEST_STATUS = PERMISSION_STATUSES;
+type RequestStatus = keyof typeof PERMISSION_STATUSES;
 
 /**
  * Handle updating the status of a trip access request (approve/reject)
@@ -37,15 +22,20 @@ type RequestStatus = typeof REQUEST_STATUS[keyof typeof REQUEST_STATUS];
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; requestId: string }> }
-) {
+): Promise<NextResponse> {
   const { tripId, requestId } = await params;
+  const supabase = await createRouteHandlerClient();
 
   try {
-    const supabase = await createServerSupabaseClient();
     const { status } = await request.json();
 
-    if (!status || (status !== REQUEST_STATUS.APPROVED && status !== REQUEST_STATUS.REJECTED)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    // Validate status using REQUEST_STATUS
+    const validStatuses = Object.values(REQUEST_STATUS);
+    if (!status || !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { status: 400 }
+      );
     }
 
     // Check if user is authenticated
@@ -60,10 +50,10 @@ export async function PATCH(
 
     // Check if user is an admin of this trip
     const { data: membership, error: membershipError } = await supabase
-      .from(Tables.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from(TRIP_MEMBERS_TABLE)
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .single();
 
     if (membershipError || !membership || membership.role !== TRIP_ROLES.ADMIN) {
@@ -75,10 +65,10 @@ export async function PATCH(
 
     // Get the access request
     const { data: accessRequestData, error: requestError } = await supabase
-      .from(Tables.PERMISSION_REQUESTS)
-      .select(`${FIELDS.PERMISSION_REQUESTS.USER_ID}, ${FIELDS.PERMISSION_REQUESTS.STATUS}`)
-      .eq(FIELDS.PERMISSION_REQUESTS.ID, requestId)
-      .eq(FIELDS.PERMISSION_REQUESTS.TRIP_ID, tripId)
+      .from(PERMISSION_REQUESTS_TABLE)
+      .select('user_id, status, role')
+      .eq('id', requestId)
+      .eq('trip_id', tripId)
       .single();
 
     if (requestError || !accessRequestData) {
@@ -94,12 +84,12 @@ export async function PATCH(
 
     // Update the access request status
     const { error: updateError } = await supabase
-      .from(Tables.PERMISSION_REQUESTS)
+      .from(PERMISSION_REQUESTS_TABLE)
       .update({
-        status,
+        status: status,
         updated_at: new Date().toISOString(),
       })
-      .eq(FIELDS.PERMISSION_REQUESTS.ID, requestId);
+      .eq('id', requestId);
 
     if (updateError) {
       throw updateError;
@@ -109,10 +99,10 @@ export async function PATCH(
     if (status === REQUEST_STATUS.APPROVED) {
       // Check if member already exists (rare edge case)
       const { data: existingMember, error: memberCheckError } = await supabase
-        .from(Tables.TRIP_MEMBERS)
+        .from(TRIP_MEMBERS_TABLE)
         .select('id')
-        .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-        .eq(FIELDS.TRIP_MEMBERS.USER_ID, accessRequestData.user_id)
+        .eq('trip_id', tripId)
+        .eq('user_id', accessRequestData.user_id)
         .maybeSingle();
 
       if (memberCheckError) {
@@ -121,17 +111,20 @@ export async function PATCH(
       }
 
       if (!existingMember) {
-        // Add user as a member
-        const { error: memberError } = await supabase.from(Tables.TRIP_MEMBERS).insert({
-          [FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
-          [FIELDS.TRIP_MEMBERS.USER_ID]: accessRequestData.user_id,
-          [FIELDS.TRIP_MEMBERS.ROLE]: TRIP_ROLES.CONTRIBUTOR,
-          [FIELDS.TRIP_MEMBERS.INVITED_BY]: user.id,
-          [FIELDS.TRIP_MEMBERS.JOINED_AT]: new Date().toISOString(),
+        // Add user as a member with the role from the request (or default)
+        const requestedRole = accessRequestData.role || TRIP_ROLES.CONTRIBUTOR;
+        const { error: memberError } = await supabase.from(TRIP_MEMBERS_TABLE).insert({
+          trip_id: tripId,
+          user_id: accessRequestData.user_id,
+          role: requestedRole,
+          invited_by: user.id,
+          joined_at: new Date().toISOString(),
         });
 
         if (memberError) {
           console.error('Error adding member:', memberError);
+          // Don't fail the whole request if adding member fails, but log it.
+          // Might happen due to race conditions or other issues.
         }
       }
     }

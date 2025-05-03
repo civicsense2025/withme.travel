@@ -86,14 +86,12 @@ export async function calculateTravelTimes(
 
   // Sort items within each day group if sorting fields are present
   for (const day in itemsByDay) {
-    itemsByDay[day].sort((a, b) => {
-      // Basic sort: position first, then start_time
+    itemsByDay[day].sort((a, b) => { // Basic sort: position first, then start_time
       const posCompare = (a.position ?? Infinity) - (b.position ?? Infinity);
       if (posCompare !== 0) return posCompare;
       const timeA = a.start_time ?? '';
       const timeB = b.start_time ?? '';
-      return timeA.localeCompare(timeB);
-    });
+      return timeA.localeCompare(timeB); });
   }
 
   const fetchPromises: Promise<void>[] = [];

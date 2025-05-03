@@ -1,25 +1,11 @@
 'use client';
-
-import type { Database } from '@/types/database.types';
-type TripRole = Database['public']['Enums']['trip_role'];
-
-import React from 'react';
-// NOTE: These imports are intentionally disabled to prevent build errors while keeping the modules in the codebase
+// Comment out the missing import until it's available
 // import { FocusSession } from '@/components/presence/focus-session';
-// import { PresenceProvider } from '@/components/presence/presence-context';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
+import { PresenceProvider } from '@/components/presence/presence-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-// import { FocusSessionProvider } from '@/contexts/focus-session-context';
-import FocusSessionExample from '@/components/trips/components/FocusSessionExample';
+import { FocusSessionProvider } from '@/contexts/focus-session-context';
 import { Todo } from '@/components/Todo';
-import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,60 +14,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import {
-  AlertCircle,
-  CheckCircle,
-  Info,
-  X,
-  Grid2X2,
-  Box,
-  LayoutGrid,
-  SquareStack,
-  MapPin,
-} from 'lucide-react';
+import { AlertCircle, CheckCircle, Info, X, Grid2X2, Box, LayoutGrid, SquareStack, MapPin } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-
-// Import custom components
-// NOTE: These imports are intentionally disabled to prevent build errors
-// import TripPresenceIndicator from '@/components/trips/trip-presence-indicator';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ShareTripButton } from '@/components/trips/ShareTripButton';
 import { DestinationCard } from '@/components/destination-card';
 import { CityBubbles } from '@/components/city-bubbles';
-import TravelTracker from '@/components/TravelTracker';
 import { EmptyTrips } from '@/components/empty-trips';
 import { TripCard } from '@/components/trip-card';
 import { ActivityTimeline } from '@/components/trips/activity-timeline';
@@ -90,7 +34,22 @@ import { PlaylistEmbed } from '@/components/trips/PlaylistEmbed';
 import { LikeButton } from '@/components/like-button';
 import { LocationSearch } from '@/components/location-search';
 import { PageHeader } from '@/components/page-header';
-import { ItemStatus } from '@/types/common';
+
+import { TRIP_ROLES } from '@/utils/constants/status';
+type TripRole = typeof TRIP_ROLES[keyof typeof TRIP_ROLES];
+import { type ItemStatus } from '@/utils/constants/status';
+
+import React from 'react';
+// NOTE: These imports are intentionally disabled to prevent build errors while keeping the modules in the codebase
+// ;
+
+import FocusSessionExample from '@/components/trips/components/FocusSessionExample';
+import Image from 'next/image';
+
+// Import custom components
+// NOTE: These imports are intentionally disabled to prevent build errors
+// import TripPresenceIndicator from '@/components/trips/trip-presence-indicator';
+import TravelTracker from '@/components/TravelTracker';
 
 // Example todo items - same as in the todo-example page
 const todoItems = [
@@ -190,7 +149,7 @@ const destinationSample = {
   beach_quality: 2,
   avg_cost_per_day: 100,
   safety_rating: 4,
-};
+}
 
 const popularCities = [
   { id: '1', name: 'Paris', country: 'France', count: 342 },
@@ -876,8 +835,8 @@ export default function DesignSandboxClient() {
                       <div className="bg-muted/50 p-4 rounded-md border border-dashed">
                         <h3 className="font-medium mb-2">Focus Sessions Disabled</h3>
                         <p className="text-sm text-muted-foreground">
-                          Focus session features are currently disabled in this sandbox.
-                          These features are kept in the codebase but not actively imported.
+                          Focus session features are currently disabled in this sandbox. These
+                          features are kept in the codebase but not actively imported.
                         </p>
                       </div>
                     </CardContent>
@@ -1099,8 +1058,8 @@ export default function DesignSandboxClient() {
                       <div className="p-4 bg-muted/50 rounded-md border border-dashed w-full">
                         <h3 className="font-medium mb-2">Presence Features Disabled</h3>
                         <p className="text-sm text-muted-foreground">
-                          Trip presence features are currently disabled in this sandbox.
-                          These features are kept in the codebase but not actively imported.
+                          Trip presence features are currently disabled in this sandbox. These
+                          features are kept in the codebase but not actively imported.
                         </p>
                       </div>
                     </CardContent>

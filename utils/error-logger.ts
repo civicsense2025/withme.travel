@@ -65,17 +65,15 @@ export function logError(
 
   // Use safe Sentry methods that won't throw errors
   try {
-    captureExceptionSafely(error);
+    // captureExceptionSafely(error);
 
     // Add additional context using the safe wrapper
-    configureScopeIfAvailable((scope) => {
+    /* configureScopeIfAvailable((scope) => {
       scope.setTag('category', category);
       scope.setTag('source', source);
 
-      Object.entries(context).forEach(([key, value]) => {
-        scope.setExtra(key, value);
-      });
-    });
+      Object.entries(context).forEach(([key, value]) => { return scope.setExtra(key, value); });
+    }); */
   } catch (e) {
     // This shouldn't happen due to our safe wrappers, but just in case
     console.error('Failed to log error with Sentry:', e);
@@ -93,9 +91,7 @@ export function logError(
         body: JSON.stringify(errorLog),
         // Use keepalive to ensure the request completes even during page unloads
         keepalive: true,
-      }).catch((e) => {
-        console.error('Failed to send error log to API:', e);
-      });
+      }).catch((e) => { return console.error('Failed to send error log to API:', e); });
     } catch (e) {
       // Don't let logging errors cause additional issues
       console.error('Failed to log error to API:', e);
@@ -153,7 +149,7 @@ export function initializeErrorLogging(): void {
           lineno: event.lineno,
           colno: event.colno,
           timestamp: event.timeStamp,
-        }
+  }
       );
     });
 
@@ -164,7 +160,7 @@ export function initializeErrorLogging(): void {
       logError(error, ErrorCategory.UNKNOWN, 'promise', {
         timestamp: event.timeStamp,
         reason: String(event.reason),
-      });
+  });
     });
 
     // Optionally intercept fetch requests to log network errors

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { createServerComponentClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import ItineraryTemplatePageClient from './page-client';
@@ -100,7 +100,7 @@ export interface ItineraryPageProps {
 
 export async function generateMetadata({ params }: ItineraryPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerComponentClient();
 
   try {
     // Fetch the itinerary template
@@ -122,8 +122,8 @@ export async function generateMetadata({ params }: ItineraryPageProps): Promise<
       description: template.description || 'View this trip itinerary template',
       openGraph: {
         images: template.destinations?.image_url ? [template.destinations.image_url] : [],
-      },
-    };
+      }
+  };
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
@@ -136,7 +136,7 @@ export async function generateMetadata({ params }: ItineraryPageProps): Promise<
 export default async function ItineraryPage({ params }: ItineraryPageProps) {
   const { slug } = await params;
   console.log('[DEBUG] slug =', slug);
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerComponentClient();
 
   // ——————— 1. Fetch the template itself (with its destination) ———————
   const { data: tmpl, error: tmplErr } = await supabase

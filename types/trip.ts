@@ -1,4 +1,7 @@
-import { TripStatus, TripType } from '@/utils/constants/status';
+import { TripType, TripStatus } from '@/utils/constants/status';
+import { User } from './user';
+import { Destination } from './destination';
+import { Database } from './database.types';
 
 /**
  * Type for a trip member passed from SSR data
@@ -68,10 +71,6 @@ export interface ItinerarySection {
   items: any[]; // Use a more specific type in your actual implementation
 }
 
-import { User } from './user';
-import { Destination } from './destination';
-import { Database } from './database.types';
-
 // Define the complex budget object type
 export interface TripBudgetObject {
   total: number;
@@ -112,11 +111,6 @@ export interface Trip {
   playlist_url: string | null;
   // Update budget type
   budget: TripBudgetObject | number | null; // Allow number for simpler budget or the object
-
-  // Keep existing relationship fields if they were there
-  // creator?: User // Example
-  // destination?: Destination // Example
-  // Add other fields if they were part of the original interface
 }
 
 // Define TripRole based on the constants structure

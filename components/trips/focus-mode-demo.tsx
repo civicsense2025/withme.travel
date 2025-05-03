@@ -20,31 +20,27 @@ interface FocusModeDemoProps {
 
 export function FocusModeDemo({ tripId }: FocusModeDemoProps) {
   const [showFocusMode, setShowFocusMode] = useState(false);
-
+  
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Coffee className="h-5 w-5" />
-            Focus Mode Demo
-          </CardTitle>
+          <CardTitle>Focus Mode</CardTitle>
           <CardDescription>
-            Focus Mode helps team members collaborate in real-time on specific sections of a trip
+            Collaborate in real-time and stay focused on your trip planning with Focus Mode.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Alert>
             <Info className="h-4 w-4" />
-            <AlertTitle>What is Focus Mode?</AlertTitle>
+            <AlertTitle>Beta Feature</AlertTitle>
             <AlertDescription>
-              When you start a focus session, other team members will see what you're working on.
-              They can join your session to collaborate on that specific part of the trip planning.
+              Focus Mode is currently in beta. Try it out and let us know what you think!
             </AlertDescription>
           </Alert>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button
+          <Button 
             variant={showFocusMode ? 'secondary' : 'outline'}
             onClick={() => setShowFocusMode(!showFocusMode)}
           >

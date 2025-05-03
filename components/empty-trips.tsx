@@ -13,15 +13,16 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+
 export function EmptyTrips() {
   const router = useRouter();
-
+  
   const quickStartDestinations = [
     {
       name: 'beach getaway',
       icon: <Beach className="h-5 w-5" />,
-      destination: 'Cancun, Mexico',
-      description: 'relax on white sand beaches',
+      destination: 'Bali, Indonesia',
+      description: 'sun, sand, and surf',
     },
     {
       name: 'city adventure',

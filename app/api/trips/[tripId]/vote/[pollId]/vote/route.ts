@@ -1,11 +1,34 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { Database } from '@/types/database.types';
+
+// Define FIELDS locally
+const FIELDS = {
+  COMMON: {
+    ID: 'id',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at'
+  },
+  TRIP_VOTES: {
+    POLL_ID: 'poll_id',
+    OPTION_ID: 'option_id',
+    USER_ID: 'user_id'
+  },
+  TRIP_VOTE_POLLS: {
+    TITLE: 'title',
+    IS_ACTIVE: 'is_active'
+  },
+  TRIP_VOTE_OPTIONS: {
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    IMAGE_URL: 'image_url'
+  }
+};
 
 // Schema for vote submission validation
 const voteSchema = z.object({
-  optionId: z.number().positive('Option ID must be positive'),
+  optionId: z.string().uuid('Option ID must be a valid UUID'),
 });
 
 export async function POST(
@@ -38,16 +61,14 @@ export async function POST(
     const { optionId } = validationResult.data;
 
     // Get authenticated user
-    const supabase = await createServerSupabaseClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
+    const supabase = await createRouteHandlerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Verify user is a member of this trip
     const { data: tripMember, error: tripMemberError } = await supabase
@@ -63,7 +84,7 @@ export async function POST(
 
     // Verify the poll exists and belongs to this trip
     const { data: poll, error: pollError } = await supabase
-      .from('trip_polls')
+      .from('trip_vote_polls')
       .select('id, expires_at')
       .eq('id', pollId)
       .eq('trip_id', tripId)
@@ -83,7 +104,7 @@ export async function POST(
 
     // Verify the option belongs to this poll
     const { data: option, error: optionError } = await supabase
-      .from('trip_poll_options')
+      .from('trip_vote_options')
       .select('id')
       .eq('id', optionId)
       .eq('poll_id', pollId)
@@ -95,7 +116,7 @@ export async function POST(
 
     // Check if user has already voted on this poll
     const { data: existingVote, error: voteCheckError } = await supabase
-      .from('trip_poll_votes')
+      .from('trip_votes')
       .select('id')
       .eq('poll_id', pollId)
       .eq('user_id', userId)
@@ -104,12 +125,12 @@ export async function POST(
     // If user has already voted, update their vote
     if (existingVote) {
       const { error: updateError } = await supabase
-        .from('trip_poll_votes')
+        .from('trip_votes')
         .update({ option_id: optionId, voted_at: new Date().toISOString() })
         .eq('id', existingVote.id);
 
       if (updateError) {
-        console.error('Error updating vote:', updateError);
+console.error('Error updating vote:', updateError);
         return NextResponse.json({ error: 'Failed to update your vote' }, { status: 500 });
       }
 
@@ -120,7 +141,7 @@ export async function POST(
     }
 
     // If user hasn't voted yet, create a new vote
-    const { error: insertError } = await supabase.from('trip_poll_votes').insert({
+    const { error: insertError } = await supabase.from('trip_votes').insert({
       poll_id: pollId,
       option_id: optionId,
       user_id: userId,
@@ -128,7 +149,7 @@ export async function POST(
     });
 
     if (insertError) {
-      console.error('Error creating vote:', insertError);
+console.error('Error creating vote:', insertError);
       return NextResponse.json({ error: 'Failed to cast your vote' }, { status: 500 });
     }
 
@@ -137,7 +158,7 @@ export async function POST(
       optionId,
     });
   } catch (error) {
-    console.error('Error processing vote:', error);
+console.error('Error processing vote:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

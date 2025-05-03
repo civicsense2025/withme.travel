@@ -1,6 +1,10 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { TABLES, FIELDS } from "@/utils/constants/database";
+import { NextRequest, NextResponse } from 'next/server';
+// import { createServerSupabaseClient } from "@/utils/supabase/server"; // Old import
+import { createRouteHandlerClient } from '@/utils/supabase/server'; // Use unified client
+import { checkTripAccess } from '@/lib/trip-access';
+import { z } from 'zod';
+import { TABLES, FIELDS } from '@/utils/constants/database';
+import type { Database } from '@/types/database.types';
 
 // Splitwise integration removed; expense operations should use Supabase directly or be implemented here.
 
@@ -8,20 +12,52 @@ import { TABLES, FIELDS } from "@/utils/constants/database";
 // Updates an existing Splitwise expense
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string; expenseId: string }> }
-) {
-  const { tripId, expenseId } = await params;
+  { params }: { params: { tripId: string; expenseId: string } }
+): Promise<NextResponse> {
+  try {
+    const { tripId, expenseId } = params;
+    const supabase = createRouteHandlerClient();
+    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
   // Expense update endpoint stubbed. Implement Supabase update logic here.
   return NextResponse.json({ error: 'Expense update not implemented' }, { status: 501 });
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    return NextResponse.json({ error: 'Failed to update expense' }, { status: 500 });
+  }
 }
 
 // DELETE /api/trips/[tripId]/expenses/[expenseId]
 // Deletes a Splitwise expense
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string; expenseId: string }> }
-) {
-  const { tripId, expenseId } = await params;
+  { params }: { params: { tripId: string; expenseId: string } }
+): Promise<NextResponse> {
+  try {
+    const { tripId, expenseId } = params;
+    const supabase = createRouteHandlerClient();
+    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
   // Expense delete endpoint stubbed. Implement Supabase delete logic here.
   return NextResponse.json({ error: 'Expense delete not implemented' }, { status: 501 });
+  } catch (error) {
+    console.error('Error deleting expense:', error);
+    return NextResponse.json({ error: 'Failed to delete expense' }, { status: 500 });
+  }
 }

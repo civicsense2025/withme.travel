@@ -1,0 +1,1270 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Instructions for AI Coding Assistants: How to Be More Helpful and Write Better Code
+
+## Understanding Your Role
+
+You are an AI coding assistant working with a developer. Your goal is to help them write, fix, and maintain code efficiently without introducing new issues. This guide will help you understand how to be more effective at your job and avoid common pitfalls.
+
+## Making Targeted Changes Without Overwriting Important Code
+
+### 1. Respect Boundary Markers
+
+When you see comments that indicate boundaries, never modify code outside those boundaries:
+
+```javascript
+// AI-EDIT-ZONE-START
+// You can modify code in this area
+function buggyFunction() {
+  // Fix bugs here
+}
+// AI-EDIT-ZONE-END
+```
+
+### 2. Only Modify What's Asked
+
+If the developer asks you to modify a specific function or block, modify ONLY that function or block, even if you see other issues elsewhere. Do not attempt to "fix" code that wasn't mentioned in the request.
+
+### 3. Preserve Structure and Naming
+
+Unless explicitly asked to rename variables, functions, or restructure code, preserve the existing structure and naming conventions used in the codebase, even if you think different names would be better.
+
+### 4. Use Minimal Changes
+
+When fixing issues, make the smallest possible changes needed to address the specific problem. Avoid rewriting entire functions when a single line change would suffice.
+
+**Bad Example:**
+```javascript
+// When asked to fix a date formatting issue
+// Original code:
+function formatDate(date) {
+  return date.getMonth() + '/' + date.getDate() + '/' + date.getFullYear();
+}
+
+// Don't do a complete rewrite:
+function formatDate(date) {
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+  return new Date(date).toLocaleDateString('en-US', options);
+}
+```
+
+**Good Example:**
+```javascript
+// Do a targeted fix:
+function formatDate(date) {
+  return (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
+}
+```
+
+## Learning From Mistakes
+
+### 1. Remember Project-Specific Patterns
+
+When the developer corrects you, add these patterns to your understanding of the project:
+
+If the developer says:
+```
+Don't use fetch() directly, always use our api.request() utility
+```
+
+You should remember this for all future suggestions in this project.
+
+### 2. Recognize Pattern Files
+
+Pay special attention to files that define patterns:
+
+- `.eslintrc.js` - Code style rules
+- `tsconfig.json` - TypeScript configurations
+- Files named `*Pattern.js` or `*Example.js`
+- Files with many comments explaining architectural decisions
+
+### 3. Incorporate Feedback
+
+When the developer tells you something like:
+
+```
+We always use async/await instead of .then() chains in this project
+```
+
+Apply this feedback to ALL future code you generate, not just the current file.
+
+## Writing Resilient and Sustainable Code
+
+### 1. Add Defensive Programming
+
+Always include proper validation for function inputs:
+
+```javascript
+function calculateTotal(cart) {
+  // Add defensive checks
+  if (!cart || !Array.isArray(cart.items)) {
+    return 0;
+  }
+  
+  return cart.items.reduce((sum, item) => 
+    sum + (item?.price || 0) * (item?.quantity || 0), 0);
+}
+```
+
+### 2. Include Error Handling
+
+Always wrap code that could throw exceptions in try/catch blocks, especially:
+- Network requests
+- File operations
+- JSON parsing
+- Accessing potentially undefined properties
+
+```javascript
+async function fetchUserData(userId) {
+  try {
+    const response = await api.request(`/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    // Provide a reasonable fallback or re-throw with more context
+    throw new Error(`Could not retrieve user data: ${error.message}`);
+  }
+}
+```
+
+### 3. Write Pure Functions Where Possible
+
+Prefer pure functions (functions that don't have side effects and always return the same output for the same input) when feasible:
+
+```javascript
+// Impure function (avoid when possible)
+function addToTotal() {
+  global.total += item.price;
+}
+
+// Pure function (preferred)
+function calculateNewTotal(currentTotal, item) {
+  return currentTotal + item.price;
+}
+```
+
+### 4. Add Proper Types
+
+Always define and use appropriate types (especially in TypeScript):
+
+```typescript
+// Add clear interfaces for data structures
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface Cart {
+  items: CartItem[];
+  customerId?: string;
+}
+
+// Use those types in functions
+function calculateTotal(cart: Cart): number {
+  if (!cart || !Array.isArray(cart.items)) {
+    return 0;
+  }
+  
+  return cart.items.reduce((sum, item) => 
+    sum + item.price * item.quantity, 0);
+}
+```
+
+## Example Pattern: Consistent API Functions
+
+When writing API-related functions, follow this pattern:
+
+```javascript
+/**
+ * Fetches a user by ID
+ * @param {string} userId - The user's unique identifier
+ * @returns {Promise<User>} The user object
+ * @throws {ApiError} If the request fails
+ */
+async function fetchUser(userId) {
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+
+  try {
+    // Use the project's standard API utility, not raw fetch
+    const response = await api.request(`/users/${userId}`);
+    
+    // Validate the response shape
+    if (!response || !response.data || !response.data.id) {
+      throw new Error('Invalid user data received');
+    }
+    
+    return response.data;
+  } catch (error) {
+    // Log with context
+    logger.error(`Failed to fetch user ${userId}`, error);
+    
+    // Rethrow with better context
+    throw new ApiError(`Could not retrieve user ${userId}`, error);
+  }
+}
+```
+
+## Example Pattern: React Components
+
+When writing React components, follow this pattern:
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+
+/**
+ * UserProfile displays a user's information
+ */
+function UserProfile({ userId, showDetails = false }) {
+  // State with default values
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Effects with cleanup
+  useEffect(() => {
+    let isMounted = true;
+    
+    async function loadUser() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const userData = await fetchUser(userId);
+        
+        // Prevent state updates if component unmounted
+        if (isMounted) {
+          setUser(userData);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message || 'Failed to load user');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+    
+    loadUser();
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+  
+  // Handle different states
+  if (loading) return <Loading />;
+  if (error) return <ErrorDisplay message={error} />;
+  if (!user) return <EmptyState message="No user found" />;
+  
+  return (
+    <ErrorBoundary fallback={<ErrorDisplay message="Profile error" />}>
+      <div className="user-profile">
+        <h2>{user.name}</h2>
+        {showDetails && (
+          <div className="user-details">
+            <p>Email: {user.email}</p>
+            <p>Member since: {formatDate(user.createdAt)}</p>
+          </div>
+        )}
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+// Always include PropTypes
+UserProfile.propTypes = {
+  userId: PropTypes.string.isRequired,
+  showDetails: PropTypes.bool
+};
+
+export default UserProfile;
+```
+
+## Example Pattern: Test Files
+
+When writing tests, follow this pattern:
+
+```javascript
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { mockUserData } from '../__mocks__/userData';
+import { fetchUser } from '../api/userApi';
+import UserProfile from './UserProfile';
+
+// Mock dependencies
+jest.mock('../api/userApi');
+
+describe('UserProfile', () => {
+  // Reset mocks before each test
+  beforeEach(() => {
+    fetchUser.mockReset();
+  });
+  
+  test('displays user information when loaded successfully', async () => {
+    // Arrange
+    fetchUser.mockResolvedValueOnce(mockUserData);
+    
+    // Act
+    render(<UserProfile userId="123" />);
+    
+    // Assert - first check loading state
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    
+    // Wait for the data to load
+    await waitFor(() => {
+      expect(screen.getByText(mockUserData.name)).toBeInTheDocument();
+    });
+    
+    // Verify correct data is displayed
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  });
+  
+  test('displays error message when API call fails', async () => {
+    // Arrange
+    const errorMessage = 'Failed to fetch user';
+    fetchUser.mockRejectedValueOnce(new Error(errorMessage));
+    
+    // Act
+    render(<UserProfile userId="123" />);
+    
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+    });
+  });
+  
+  test('toggles details when show details is true', async () => {
+    // Arrange
+    fetchUser.mockResolvedValueOnce(mockUserData);
+    
+    // Act
+    render(<UserProfile userId="123" showDetails={true} />);
+    
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText(/Email:/i)).toBeInTheDocument();
+      expect(screen.getByText(/Member since:/i)).toBeInTheDocument();
+    });
+  });
+});
+```
+
+## State Management Example
+
+When managing state, follow this pattern:
+
+```javascript
+// Use immutable patterns for updating state
+function userReducer(state, action) {
+  switch (action.type) {
+    case 'SET_USER':
+      return {
+        ...state,
+        data: action.payload,
+        loading: false,
+        error: null
+      };
+    case 'SET_LOADING':
+      return {
+        ...state,
+        loading: true,
+        error: null
+      };
+    case 'SET_ERROR':
+      return {
+        ...state,
+        data: null,
+        loading: false,
+        error: action.payload
+      };
+    default:
+      throw new Error(`Unhandled action type: ${action.type}`);
+  }
+}
+
+// Create reusable state hooks
+function useUser(userId) {
+  const [state, dispatch] = useReducer(userReducer, {
+    data: null,
+    loading: false,
+    error: null
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    async function fetchUserData() {
+      if (!userId) return;
+      
+      dispatch({ type: 'SET_LOADING' });
+      
+      try {
+        const userData = await fetchUser(userId);
+        if (isMounted) {
+          dispatch({ type: 'SET_USER', payload: userData });
+        }
+      } catch (error) {
+        if (isMounted) {
+          dispatch({ type: 'SET_ERROR', payload: error.message });
+        }
+      }
+    }
+    
+    fetchUserData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+  
+  return state;
+}
+```
+
+# Advanced JavaScript Best Practices: Symbols, Objects, and Modern Patterns
+
+Let me create a comprehensive guide on leveraging JavaScript's more advanced features effectively, particularly focusing on Symbols, Objects, and modern patterns.
+
+## Symbols: Creating Truly Private Properties
+
+Symbols provide a unique and powerful way to create non-enumerable, truly private properties in JavaScript.
+
+```javascript
+// Creating and using a Symbol
+const idSymbol = Symbol('id');
+
+class User {
+  constructor(name, id) {
+    this.name = name;
+    // Using Symbol as a property key
+    this[idSymbol] = id;
+  }
+  
+  getId() {
+    return this[idSymbol];
+  }
+}
+
+const user = new User('Alice', 42);
+console.log(user.name); // "Alice"
+console.log(user[idSymbol]); // 42 (only if you have access to idSymbol)
+console.log(Object.keys(user)); // ["name"] - Symbol is not enumerated!
+```
+
+### Best Practices for Symbols
+
+1. **Well-Known Symbols**: Leverage built-in Symbols for customizing object behavior:
+
+```javascript
+// Custom iterator using Symbol.iterator
+class Range {
+  constructor(start, end) {
+    this.start = start;
+    this.end = end;
+  }
+
+  // Custom iteration behavior
+  *[Symbol.iterator]() {
+    for (let i = this.start; i <= this.end; i++) {
+      yield i;
+    }
+  }
+}
+
+const numbers = new Range(1, 5);
+console.log([...numbers]); // [1, 2, 3, 4, 5]
+```
+
+2. **Symbol.for() Registry**: For shared symbols across code:
+
+```javascript
+// Using the global Symbol registry
+const userIdSymbol = Symbol.for('userId');
+
+// Later in another file/module
+const sameSymbol = Symbol.for('userId');
+console.log(userIdSymbol === sameSymbol); // true
+```
+
+## Object Patterns: Beyond Simple Key-Value Pairs
+
+### Property Descriptors for Control
+
+```javascript
+const config = {};
+
+// Create a non-writable property
+Object.defineProperty(config, 'API_KEY', {
+  value: 'abc123',
+  writable: false,
+  enumerable: true,
+  configurable: false
+});
+
+// Attempting to modify it fails silently (or throws in strict mode)
+config.API_KEY = 'new_value';
+console.log(config.API_KEY); // Still "abc123"
+```
+
+### Getters and Setters for Computed Properties
+
+```javascript
+const circle = {
+  radius: 5,
+  
+  // Getter - computed property
+  get area() {
+    return Math.PI * this.radius * this.radius;
+  },
+  
+  // Setter with validation
+  set diameter(value) {
+    if (value <= 0) throw new Error('Diameter must be positive');
+    this.radius = value / 2;
+  }
+};
+
+console.log(circle.area); // ~78.54
+circle.diameter = 20;
+console.log(circle.radius); // 10
+```
+
+### Object Sealing and Freezing
+
+```javascript
+// Create an immutable configuration object
+const settings = Object.freeze({
+  theme: 'dark',
+  notifications: true,
+  fontSize: 16
+});
+
+// Fails silently (or throws error in strict mode)
+settings.theme = 'light';
+// settings.theme is still 'dark'
+
+// Object.seal() prevents adding/removing properties but allows changing existing ones
+const profile = Object.seal({
+  name: 'Bob',
+  role: 'Admin'
+});
+
+// Allowed
+profile.name = 'Robert';
+// Not allowed
+profile.age = 30; // Fails
+```
+
+## Proxy and Reflect: Meta-Programming Magic
+
+```javascript
+const handler = {
+  get(target, prop) {
+    if (prop in target) {
+      console.log(`Accessing ${prop}`);
+      return target[prop];
+    }
+    return `Property ${prop} doesn't exist`;
+  },
+  
+  set(target, prop, value) {
+    if (prop === 'age' && typeof value !== 'number') {
+      throw new TypeError('Age must be a number');
+    }
+    
+    console.log(`Setting ${prop} to ${value}`);
+    // Use Reflect for proper object manipulation
+    return Reflect.set(target, prop, value);
+  }
+};
+
+const person = new Proxy({}, handler);
+person.name = 'Charlie'; // "Setting name to Charlie"
+person.age = 'thirty'; // TypeError: Age must be a number
+console.log(person.address); // "Property address doesn't exist"
+```
+
+### Proxy Use Cases
+
+1. **Validation**:
+```javascript
+function createValidator(target, validations) {
+  return new Proxy(target, {
+    set(obj, prop, value) {
+      if (validations[prop]) {
+        const valid = validations[prop](value);
+        if (!valid) throw new Error(`Invalid value for ${prop}`);
+      }
+      return Reflect.set(obj, prop, value);
+    }
+  });
+}
+
+const user = createValidator({}, {
+  age: value => Number.isInteger(value) && value > 0,
+  email: value => /^\S+@\S+\.\S+$/.test(value)
+});
+
+user.age = 25; // Works
+user.email = "invalid"; // Error: Invalid value for email
+```
+
+2. **Reactive Programming**:
+```javascript
+function reactive(obj) {
+  const observers = new Map();
+  
+  return new Proxy(obj, {
+    set(target, key, value) {
+      const result = Reflect.set(target, key, value);
+      
+      // Notify observers about change
+      if (observers.has(key)) {
+        observers.get(key).forEach(callback => callback(value));
+      }
+      
+      return result;
+    },
+    
+    // Method to subscribe to changes
+    get(target, key) {
+      if (key === 'subscribe') {
+        return (property, callback) => {
+          if (!observers.has(property)) {
+            observers.set(property, new Set());
+          }
+          observers.get(property).add(callback);
+        };
+      }
+      
+      return Reflect.get(target, key);
+    }
+  });
+}
+
+const state = reactive({count: 0});
+state.subscribe('count', value => console.log(`Count changed to: ${value}`));
+state.count++; // "Count changed to: 1"
+```
+
+## WeakMap and WeakSet: Memory-Efficient Associations
+
+```javascript
+// Using WeakMap for private instance data
+const privateData = new WeakMap();
+
+class SecretAgent {
+  constructor(name, secretCode) {
+    this.name = name;
+    // Store sensitive data in WeakMap instead of instance
+    privateData.set(this, {
+      secretCode,
+      missions: []
+    });
+  }
+  
+  addMission(mission) {
+    const data = privateData.get(this);
+    data.missions.push(mission);
+  }
+  
+  verify(code) {
+    return privateData.get(this).secretCode === code;
+  }
+}
+
+const agent = new SecretAgent('Bond', '007');
+console.log(agent.verify('007')); // true
+console.log(privateData.get(agent)); // {secretCode: "007", missions: []}
+
+// When agent is garbage collected, the WeakMap entry is also removed
+```
+
+## Advanced Object Patterns
+
+### Composition Over Inheritance
+
+```javascript
+// Instead of building complex inheritance hierarchies
+const hasName = (state) => ({
+  getName: () => state.name,
+  setName: (name) => state.name = name
+});
+
+const canFly = (state) => ({
+  fly: () => console.log(`${state.name} is flying!`)
+});
+
+const canSwim = (state) => ({
+  swim: () => console.log(`${state.name} is swimming!`)
+});
+
+// Compose objects with the behaviors they need
+function createDuck(name) {
+  const state = { name };
+  
+  return Object.assign(
+    {},
+    hasName(state),
+    canFly(state),
+    canSwim(state)
+  );
+}
+
+function createPenguin(name) {
+  const state = { name };
+  
+  return Object.assign(
+    {},
+    hasName(state),
+    canSwim(state)
+    // No flying for penguins!
+  );
+}
+
+const duck = createDuck('Donald');
+duck.swim(); // "Donald is swimming!"
+duck.fly(); // "Donald is flying!"
+
+const penguin = createPenguin('Kowalski');
+penguin.swim(); // "Kowalski is swimming!"
+// penguin.fly is not a function
+```
+
+### Object Deep Merging
+
+```javascript
+// Deep merge utility
+function deepMerge(target, source) {
+  const result = { ...target };
+  
+  for (const key in source) {
+    if (source[key] instanceof Object && key in target && target[key] instanceof Object) {
+      result[key] = deepMerge(target[key], source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  
+  return result;
+}
+
+const defaultSettings = {
+  theme: {
+    primary: 'blue',
+    secondary: 'gray',
+    text: {
+      main: 'black',
+      light: 'darkgray'
+    }
+  },
+  notifications: true
+};
+
+const userSettings = {
+  theme: {
+    primary: 'purple',
+    text: {
+      main: 'white'
+    }
+  }
+};
+
+const mergedSettings = deepMerge(defaultSettings, userSettings);
+console.log(mergedSettings.theme.primary); // "purple"
+console.log(mergedSettings.theme.secondary); // "gray" (preserved)
+console.log(mergedSettings.theme.text.main); // "white" (overridden)
+console.log(mergedSettings.theme.text.light); // "darkgray" (preserved)
+```
+
+## Modern JavaScript Patterns for Performance
+
+### Object Pooling
+
+```javascript
+class ObjectPool {
+  constructor(createFn, initialSize = 5) {
+    this.createFn = createFn;
+    this.pool = Array(initialSize).fill().map(() => createFn());
+  }
+  
+  acquire() {
+    return this.pool.length > 0 
+      ? this.pool.pop() 
+      : this.createFn();
+  }
+  
+  release(obj) {
+    // Reset the object if needed
+    if (obj.reset) obj.reset();
+    this.pool.push(obj);
+  }
+}
+
+// Example: Pooling expensive particle objects
+const particlePool = new ObjectPool(() => {
+  return {
+    x: 0,
+    y: 0,
+    velocity: { x: 0, y: 0 },
+    active: false,
+    reset() {
+      this.x = 0;
+      this.y = 0;
+      this.velocity.x = 0;
+      this.velocity.y = 0;
+      this.active = false;
+    }
+  };
+}, 100);
+
+// Use a particle
+const particle = particlePool.acquire();
+particle.x = 100;
+particle.y = 200;
+particle.active = true;
+
+// When done, return it to pool instead of letting it be garbage collected
+particlePool.release(particle);
+```
+
+### Memoization Pattern
+
+```javascript
+function memoize(fn) {
+  const cache = new Map();
+  
+  return function(...args) {
+    const key = JSON.stringify(args);
+    
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    
+    const result = fn.apply(this, args);
+    cache.set(key, result);
+    return result;
+  };
+}
+
+// Example: Memoized expensive calculation
+const calculateFactorial = memoize(n => {
+  console.log(`Calculating factorial for ${n}`);
+  if (n === 0) return 1;
+  return n * calculateFactorial(n - 1);
+});
+
+console.log(calculateFactorial(5)); // Logs calculation messages
+console.log(calculateFactorial(5)); // Returns cached result, no calculation
+```
+
+# Making JavaScript Features More Explicit
+
+To make your code even more explicit and maintainable, here are additional JavaScript techniques that complement the advanced features mentioned earlier:
+
+## Tagged Template Literals for Domain-Specific Languages
+
+Tagged templates provide explicit transformation of template literals:
+
+```javascript
+// SQL query builder with explicit parameter handling
+function sql(strings, ...values) {
+  // Convert values to SQL-safe parameters
+  const params = values.map(value => {
+    if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
+    if (value === null) return 'NULL';
+    return value;
+  });
+  
+  // Interleave the strings and parameters
+  return strings.reduce((query, string, i) => 
+    query + string + (i < params.length ? params[i] : ''), '');
+}
+
+const table = 'users';
+const userId = 5;
+const name = "O'Connor"; // Note the apostrophe
+
+const query = sql`SELECT * FROM ${table} WHERE id = ${userId} AND name = ${name}`;
+console.log(query); // SELECT * FROM users WHERE id = 5 AND name = 'O''Connor'
+```
+
+## JSDoc for Explicit Type Documentation
+
+When not using TypeScript, make types explicit with JSDoc:
+
+```javascript
+/**
+ * Processes a user transaction
+ * @param {Object} transaction - The transaction details
+ * @param {string} transaction.id - Unique transaction identifier
+ * @param {number} transaction.amount - Transaction amount in cents
+ * @param {string} transaction.currency - Three-letter currency code
+ * @param {Date} transaction.date - When the transaction occurred
+ * @param {Object} options - Processing options
+ * @param {boolean} [options.sendReceipt=true] - Whether to send a receipt
+ * @param {string} [options.receiptFormat='email'] - Receipt format: 'email' or 'sms'
+ * @returns {Promise<Object>} The processed transaction with receipt info
+ * @throws {ValidationError} If transaction data is invalid
+ */
+async function processTransaction(transaction, options = {}) {
+  // Implementation...
+}
+```
+
+## Error Subclassing for Explicit Error Types
+
+Create a hierarchy of error types for more explicit error handling:
+
+```javascript
+// Base application error
+class AppError extends Error {
+  constructor(message, code = 'GENERAL_ERROR', httpStatus = 500) {
+    super(message);
+    this.name = this.constructor.name;
+    this.code = code;
+    this.httpStatus = httpStatus;
+    
+    // Capture stack trace, excluding constructor call
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// Specific error types
+class ValidationError extends AppError {
+  constructor(message, field) {
+    super(message, 'VALIDATION_ERROR', 400);
+    this.field = field;
+  }
+}
+
+class AuthenticationError extends AppError {
+  constructor(message = 'Authentication failed') {
+    super(message, 'AUTH_ERROR', 401);
+  }
+}
+
+// Usage with explicit error handling
+try {
+  if (!isValid(user.email)) {
+    throw new ValidationError('Invalid email format', 'email');
+  }
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.log(`Validation failed for field: ${error.field}`);
+  } else if (error instanceof AuthenticationError) {
+    console.log('Please log in again');
+  } else {
+    console.log('An unexpected error occurred');
+  }
+}
+```
+
+## Explicit Property Controls with Descriptors
+
+Use property descriptors for more explicit property behavior:
+
+```javascript
+class ConfigManager {
+  constructor(initialConfig = {}) {
+    // Create the internal config object with frozen defaults
+    const config = Object.create(null);
+    
+    // Set up core properties with explicit behaviors
+    Object.defineProperties(this, {
+      // Non-enumerable internal storage
+      _config: {
+        value: config,
+        writable: true,
+        enumerable: false
+      },
+      
+      // Public API with explicit behaviors
+      production: {
+        get: () => Reflect.get(config, 'NODE_ENV') === 'production',
+        enumerable: true,
+        configurable: false
+      },
+      
+      // Explicit setter validation
+      port: {
+        get: () => Reflect.get(config, 'PORT') || 3000,
+        set: (value) => {
+          const port = Number(value);
+          if (isNaN(port) || port < 0 || port > 65535) {
+            throw new RangeError('Port must be between 0 and 65535');
+          }
+          Reflect.set(config, 'PORT', port);
+        },
+        enumerable: true
+      }
+    });
+    
+    // Initialize with provided config
+    Object.entries(initialConfig).forEach(([key, value]) => {
+      this.set(key, value);
+    });
+  }
+  
+  // Explicit getter with defaults
+  get(key, defaultValue = null) {
+    return key in this._config ? this._config[key] : defaultValue;
+  }
+  
+  // Explicit setter that maintains immutability
+  set(key, value) {
+    // Don't allow changing special properties
+    if (['NODE_ENV'].includes(key) && key in this._config) {
+      throw new Error(`Cannot modify ${key} after initialization`);
+    }
+    
+    this._config[key] = value;
+    return this;
+  }
+}
+
+const config = new ConfigManager({ NODE_ENV: 'development', PORT: 8080 });
+console.log(config.production); // false
+config.port = 3000; // Valid
+config.port = -1; // Error: Port must be between 0 and 65535
+```
+
+## Symbol.toPrimitive for Explicit Type Conversion
+
+Control how objects convert to primitives:
+
+```javascript
+class Currency {
+  constructor(amount, code = 'USD') {
+    this.amount = amount;
+    this.code = code;
+  }
+  
+  // Explicitly control conversions
+  [Symbol.toPrimitive](hint) {
+    switch (hint) {
+      case 'number':
+        return this.amount;
+      case 'string':
+        return `${this.amount.toFixed(2)} ${this.code}`;
+      default: // 'default' hint
+        return this.amount;
+    }
+  }
+}
+
+const price = new Currency(19.99, 'USD');
+
+// Explicit conversion behaviors
+console.log(+price);          // 19.99 (number)
+console.log(`${price}`);      // "19.99 USD" (string)
+console.log(price + 0.01);    // 20 (number coercion then addition)
+```
+
+## Design by Contract with Explicit Pre/Post Conditions
+
+Make function contracts explicit:
+
+```javascript
+function ensureType(value, expectedType, paramName) {
+  const actualType = typeof value;
+  if (actualType !== expectedType) {
+    throw new TypeError(`Parameter '${paramName}' must be ${expectedType}, got ${actualType}`);
+  }
+}
+
+function ensureRange(value, min, max, paramName) {
+  if (value < min || value > max) {
+    throw new RangeError(`Parameter '${paramName}' must be between ${min} and ${max}`);
+  }
+}
+
+function calculateDiscount(price, discountPercent) {
+  // Preconditions - explicit expectations
+  ensureType(price, 'number', 'price');
+  ensureType(discountPercent, 'number', 'discountPercent');
+  ensureRange(price, 0, Infinity, 'price');
+  ensureRange(discountPercent, 0, 100, 'discountPercent');
+  
+  // Implementation
+  const discount = (price * discountPercent) / 100;
+  const discountedPrice = price - discount;
+  
+  // Postconditions - explicit guarantees
+  if (discountedPrice > price) {
+    throw new Error('Postcondition failed: Discounted price is higher than original');
+  }
+  if (discountedPrice < 0) {
+    throw new Error('Postcondition failed: Discounted price is negative');
+  }
+  
+  return discountedPrice;
+}
+```
+
+## Explicit Module Pattern with Object Freeze
+
+Create explicitly immutable modules:
+
+```javascript
+const MathUtils = Object.freeze({
+  // Public API
+  add: (a, b) => a + b,
+  subtract: (a, b) => a - b,
+  
+  // Nested namespaces can be frozen too
+  geometry: Object.freeze({
+    circle: Object.freeze({
+      area: (radius) => Math.PI * radius * radius,
+      circumference: (radius) => 2 * Math.PI * radius
+    }),
+    rectangle: Object.freeze({
+      area: (width, height) => width * height,
+      perimeter: (width, height) => 2 * (width + height)
+    })
+  })
+});
+
+// Attempt to modify fails silently (or throws in strict mode)
+MathUtils.multiply = (a, b) => a * b;
+// MathUtils remains unchanged
+```
+
+## Factory Functions with Explicit Interfaces
+
+Use factory functions for more explicit object creation:
+
+```javascript
+// Factory function with explicit interface
+function createPerson({
+  firstName = '',
+  lastName = '',
+  age = null,
+  ...rest
+} = {}) {
+  // Validate inputs
+  if (typeof firstName !== 'string') {
+    throw new TypeError('firstName must be a string');
+  }
+  
+  if (typeof lastName !== 'string') {
+    throw new TypeError('lastName must be a string');
+  }
+  
+  if (age !== null && (typeof age !== 'number' || age < 0)) {
+    throw new TypeError('age must be a positive number or null');
+  }
+  
+  // Private data and methods
+  const birthYear = age !== null 
+    ? new Date().getFullYear() - age 
+    : null;
+  
+  // Return public interface
+  return Object.freeze({
+    firstName,
+    lastName,
+    
+    // Computed property
+    get fullName() {
+      return `${firstName} ${lastName}`;
+    },
+    
+    // Methods
+    getAge() {
+      return age;
+    },
+    
+    getBirthYear() {
+      return birthYear;
+    },
+    
+    // Metadata
+    [Symbol.toStringTag]: 'Person'
+  });
+}
+
+const person = createPerson({ firstName: 'Jane', lastName: 'Doe', age: 30 });
+```
+
+## Prefer Object.is() for More Explicit Equality
+
+`Object.is()` makes equality checks more explicit:
+
+```javascript
+// Regular equality operators have quirks
+console.log(0 == '0');       // true (coercion)
+console.log(0 === '0');      // false (no coercion)
+
+console.log(NaN === NaN);    // false (special case)
+console.log(+0 === -0);      // true (special case)
+
+// Object.is is more explicit about equality semantics
+console.log(Object.is(0, '0'));  // false (no coercion)
+console.log(Object.is(NaN, NaN)); // true (what we usually expect)
+console.log(Object.is(+0, -0));  // false (mathematically different)
+
+// Explicit comparison utility
+function compareValues(a, b) {
+  if (Object.is(a, b)) {
+    return 'Identical';
+  }
+  
+  if (a === b) {
+    if (Object.is(a, 0)) {
+      return a < 0 ? 'Negative zero' : 'Positive zero';
+    }
+    return 'Equal but not identical';
+  }
+  
+  if (a == b) {
+    return 'Equal with coercion';
+  }
+  
+  return 'Different values';
+}
+```
+
+## Adapting to Coding Style
+
+Observe and match the style of the existing codebase:
+
+1. **Indentation**: Use the same indentation style (tabs vs spaces, 2 vs 4 spaces)
+2. **Naming Conventions**: Follow existing patterns for naming (camelCase, snake_case, etc.)
+3. **Code Organization**: Match how existing code is structured
+4. **Comment Style**: Follow the same commenting pattern (JSDoc, inline, etc.)
+
+## Asking Clarifying Questions
+
+When you're unsure about how to proceed, ask specific questions:
+
+```
+Before I modify this authentication code, I need to know:
+1. Should I preserve the existing password hashing method?
+2. Do you want me to add additional validation for the email field?
+3. Should error messages be user-friendly or technical for debugging?
+```
+
+## Summary Checklist
+
+Before suggesting code changes, verify:
+
+1. ✅ You're only modifying what was requested
+2. ✅ You've included appropriate error handling
+3. ✅ The code is defensive against invalid inputs
+4. ✅ You've preserved the existing naming and coding style
+5. ✅ Types are properly defined and used (if applicable)
+6. ✅ You've included comments for complex logic
+7. ✅ The code follows patterns established in previous corrections

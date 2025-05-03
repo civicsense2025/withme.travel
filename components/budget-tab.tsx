@@ -2,7 +2,7 @@
 import { BUDGET_CATEGORIES, SPLIT_TYPES } from '@/utils/constants/status';
 import { API_ROUTES } from '@/utils/constants/routes';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   PlusCircle,
   DollarSign,
@@ -42,9 +42,9 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, formatDate, formatError, getInitials } from '@/lib/utils';
-import { TABLES, FIELDS } from "@/utils/constants/database";
-import { limitItems } from '@/lib/utils';
+import { formatCurrency, formatDate, formatError, getInitials } from '@/utils/lib-utils';
+
+import { limitItems } from '@/utils/lib-utils';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { TripMemberFromSSR } from '@/components/members-tab';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -93,7 +93,6 @@ export function BudgetTab({
   plannedExpenses,
   initialMembers,
 }: BudgetTabProps) {
-  const { supabase } = useAuth();
   const { toast } = useToast();
 
   const members = initialMembers;
@@ -134,7 +133,7 @@ export function BudgetTab({
       .map((member) => ({
         id: member.user_id,
         name: member.profiles?.name || 'Unknown User',
-        totalPaid: totals[member.user_id] || 0,
+        totalPaid: totals[member.user_id] || 0
       }))
       .sort((a, b) => b.totalPaid - a.totalPaid);
   }, [manualExpenses, members]);
@@ -343,7 +342,7 @@ export function BudgetTab({
                                               src={member.profiles?.avatar_url ?? undefined}
                                             />
                                             <AvatarFallback className="text-xs">
-                                              {getInitials(member.profiles?.name)}
+                                              {getInitials(member.profiles?.name ?? '')}
                                             </AvatarFallback>
                                           </Avatar>
                                           <span>{formatCurrency(costPerPerson ?? 0)}</span>

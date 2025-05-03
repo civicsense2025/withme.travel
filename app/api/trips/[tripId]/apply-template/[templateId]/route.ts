@@ -1,16 +1,38 @@
-import { ENUMS } from "@/utils/constants/database";
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
-import { createClient } from '@supabase/supabase-js';
+import { TRIP_ROLES } from '@/utils/constants/status';
 
-// Define the role constants
-const TRIP_ROLES = {
-  ADMIN: 'admin',
-  EDITOR: 'editor',
-  CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer',
+type AllowedRoleKey = keyof typeof TRIP_ROLES;
+
+// Constants for tables and fields
+const TABLES = {
+  TRIP_MEMBERS: 'trip_members',
+  ITINERARY_ITEMS: 'itinerary_items',
+  ITINERARY_TEMPLATES: 'itinerary_templates',
+  ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
+  ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items'
+};
+
+const FIELDS = {
+  COMMON: {
+    ID: 'id'
+  },
+  TRIP_MEMBERS: {
+    ROLE: 'role',
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id'
+  },
+  ITINERARY_ITEMS: {
+    DAY_NUMBER: 'day_number',
+    TRIP_ID: 'trip_id'
+  },
+  ITINERARY_TEMPLATE_ITEMS: {
+    TEMPLATE_ID: 'template_id',
+    DAY: 'day',
+    ITEM_ORDER: 'item_order'
+  }
 };
 
 // Re-use or import checkTripAccess function
@@ -18,18 +40,20 @@ async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  allowedRoles: string[]
+  allowedRoles: AllowedRoleKey[]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
-  // (Implementation is the same as in reorder/route.ts - copy or import)
   const { data: member, error } = await supabase
-    .from('trip_members')
-    .select(`role`)
-    .eq('trip_id', tripId)
-    .eq('user_id', userId)
+    .from(TABLES.TRIP_MEMBERS)
+    .select(FIELDS.TRIP_MEMBERS.ROLE)
+    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
     .maybeSingle();
   if (error) return { allowed: false, error: error.message, status: 500 };
   if (!member) return { allowed: false, error: 'Not a member', status: 403 };
-  if (!allowedRoles.includes(member.role))
+
+  const allowedRoleValues = allowedRoles.map((roleKey) => TRIP_ROLES[roleKey]);
+
+  if (!allowedRoleValues.includes(member.role))
     return { allowed: false, error: 'Insufficient permissions', status: 403 };
   return { allowed: true };
 }
@@ -37,18 +61,16 @@ async function checkTripAccess(
 // POST /api/trips/[tripId]/apply-template/[templateId] - Apply an itinerary template to a trip
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string; templateId: string }> }
-) {
-  // Extract params properly
-  const { tripId, templateId } = await params;
+  { params }: { params: { tripId: string; templateId: string } }
+): Promise<NextResponse> {
+  const { tripId, templateId } = params;
+  const supabase = createRouteHandlerClient();
 
   if (!tripId || !templateId) {
     return NextResponse.json({ error: 'Trip ID and Template ID are required' }, { status: 400 });
   }
 
   try {
-    const supabase = createServerSupabaseClient();
-
     // Get the current user
     const {
       data: { user },
@@ -60,9 +82,9 @@ export async function POST(
 
     // Check if user has permission to edit the trip
     const access = await checkTripAccess(supabase, tripId, user.id, [
-      ENUMS.TRIP_ROLES.ADMIN,
-      ENUMS.TRIP_ROLES.EDITOR,
-      ENUMS.TRIP_ROLES.CONTRIBUTOR,
+      'ADMIN',
+      'EDITOR',
+      'CONTRIBUTOR',
     ]);
     if (!access.allowed) {
       return NextResponse.json({ error: access.error }, { status: access.status });
@@ -70,10 +92,10 @@ export async function POST(
 
     // 1. Check for existing items in the trip and find the maximum day number
     const { data: existingItems, error: existingItemsError } = await supabase
-      .from('itinerary_items')
-      .select('day_number')
-      .eq('trip_id', tripId)
-      .order('day_number', { ascending: false })
+      .from(TABLES.ITINERARY_ITEMS)
+      .select(FIELDS.ITINERARY_ITEMS.DAY_NUMBER)
+      .eq(FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId)
+      .order(FIELDS.ITINERARY_ITEMS.DAY_NUMBER, { ascending: false })
       .limit(1);
 
     if (existingItemsError) {
@@ -89,20 +111,20 @@ export async function POST(
 
     // 2. Fetch the template details (sections and activities)
     const { data: templateData, error: templateError } = await supabase
-      .from('itinerary_templates')
+      .from(TABLES.ITINERARY_TEMPLATES)
       .select(
         `
         id,
         title,
         duration_days,
         version,
-        itinerary_template_sections (
+        ${TABLES.ITINERARY_TEMPLATE_SECTIONS} (
           *,
-          itinerary_template_items (*)
+          ${TABLES.ITINERARY_TEMPLATE_ITEMS} (*)
         )
       `
       )
-      .eq('id', templateId)
+      .eq(FIELDS.COMMON.ID, templateId)
       .maybeSingle();
 
     if (templateError) {
@@ -119,11 +141,11 @@ export async function POST(
     if (templateSections.length === 0) {
       console.log('[DEBUG] No sections found, fetching items directly');
       const { data: templateItems, error: templateItemsError } = await supabase
-        .from('itinerary_template_items')
+        .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
         .select('*')
-        .eq('template_id', templateId)
-        .order('day', { ascending: true })
-        .order('item_order', { ascending: true });
+        .eq(FIELDS.ITINERARY_TEMPLATE_ITEMS.TEMPLATE_ID, templateId)
+        .order(FIELDS.ITINERARY_TEMPLATE_ITEMS.DAY, { ascending: true })
+        .order(FIELDS.ITINERARY_TEMPLATE_ITEMS.ITEM_ORDER, { ascending: true });
 
       if (templateItemsError) {
         console.error('Error fetching template items:', templateItemsError);
@@ -237,8 +259,6 @@ export async function POST(
       day_number: dayNumber,
       title: `Day ${dayNumber}`,
       position: nextPosition++,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     }));
 
     // Insert sections if there are any
@@ -252,7 +272,6 @@ export async function POST(
 
       if (sectionError) {
         console.error('[WARNING] Error creating itinerary sections:', sectionError);
-        // Don't fail the entire operation if section creation fails, just log it
       } else {
         console.log(`[DEBUG] Successfully created ${sectionsToInsert.length} itinerary sections`);
       }
@@ -278,7 +297,6 @@ export async function POST(
       console.log(`[DEBUG] Incremented usage count for template ${templateId}`);
     } catch (error) {
       console.error('[DEBUG] Could not increment template uses:', error);
-      // Non-critical error, continue
     }
 
     return NextResponse.json(

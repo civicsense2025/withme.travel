@@ -1,72 +1,137 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess, type TripRole } from '@/lib/trip-access';
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
+import { TRIP_ROLES } from '@/utils/constants/status';
 
-export async function PUT(
+// Define table names directly as string literals
+const ITINERARY_ITEMS_TABLE = 'itinerary_items';
+
+const notesSchema = z.object({
+  content: z.string().max(10000).optional() // Allow optional for update
+});
+
+// --- GET Handler --- //
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; itemId: string }> }
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = await createServerSupabaseClient();
-    const { content } = await request.json();
+    const supabase = createRouteHandlerClient();
 
-    // Check if user is authenticated
+    // Get the user from auth
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify the user is a member of this trip
-    const { data: membership, error: membershipError } = await supabase
-      .from('trip_members')
-      .select('role')
-      .eq('trip_id', tripId)
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-
-    if (membershipError || !membership) {
-      return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 });
+    // Check access (Viewer allowed)
+    const access = await checkTripAccess(
+      user.id,
+      tripId,
+      [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER] as TripRole[]
+    );
+    
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error?.message || 'Forbidden' }, { status: access.error?.status || 403 });
     }
 
-    // Verify the item exists and belongs to the trip
-    const { data: item, error: itemError } = await supabase
-      .from('itinerary_items')
-      .select('id')
+    // Fetch the specific itinerary item to get notes
+    const { data: item, error } = await supabase
+      .from(ITINERARY_ITEMS_TABLE)
+      .select('notes')
       .eq('id', itemId)
       .eq('trip_id', tripId)
       .single();
 
-    if (itemError || !item) {
+    if (error) {
+      console.error('Error fetching itinerary item notes:', error);
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Itinerary item not found' }, { status: 404 });
+      }
+      throw new Error('Failed to fetch item notes');
+    }
+
+    return NextResponse.json({ notes: item?.notes || '' }); // Return notes or empty string
+  } catch (error) {
+    console.error('[API Itinerary Item Notes GET] Error:', error);
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+// --- POST Handler (Update Notes) --- //
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string; itemId: string }> }
+) {
+  try {
+    const { tripId, itemId } = await params;
+    const supabase = createRouteHandlerClient();
+
+    // Get the user from auth
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check access (editor or admin)
+    const access = await checkTripAccess(
+      user.id,
+      tripId,
+      [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR] as TripRole[]
+    );
+    
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error?.message || 'Forbidden' }, { status: access.error?.status || 403 });
+    }
+
+    const body = await request.json();
+    const validation = notesSchema.safeParse(body);
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Item not found or doesn't belong to this trip" },
-        { status: 404 }
+        { error: 'Invalid input', issues: validation.error.flatten() },
+        { status: 400 }
       );
     }
 
-    // Update the item notes
-    const { data: updatedItem, error: updateError } = await supabase
-      .from('itinerary_items')
+    const { content } = validation.data;
+
+    // Update the itinerary item notes
+    const { data, error } = await supabase
+      .from(ITINERARY_ITEMS_TABLE)
       .update({ notes: content })
       .eq('id', itemId)
       .eq('trip_id', tripId)
-      .select()
+      .select('notes')
       .single();
 
-    if (updateError) {
-      console.error('Error updating notes:', updateError);
-      return NextResponse.json({ error: 'Failed to update notes' }, { status: 500 });
+    if (error) {
+      console.error('Error updating itinerary item notes:', error);
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Itinerary item not found' }, { status: 404 });
+      }
+      throw new Error('Failed to update item notes');
     }
 
-    return NextResponse.json({
-      success: true,
-      item: updatedItem,
-    });
-  } catch (error: any) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ notes: data?.notes });
+  } catch (error) {
+    console.error('[API Itinerary Item Notes POST] Error:', error);
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+// Retain PUT as an alias for POST for potential backward compatibility or specific use cases
+export { POST as PUT };

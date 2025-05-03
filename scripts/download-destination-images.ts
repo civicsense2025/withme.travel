@@ -27,7 +27,7 @@ async function processDestination(destination: Destination): Promise<void> {
   const { city, country, state_province } = destination;
 
   // Format filename the same way as existing files
-  const filename = `${city.toLowerCase().replace(/\s+/g, '-')}-${country.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+  const filename = `${city.toLowerCase().replace(/\s+/g, '-')}-${country.toLowerCase().replace(/\s+/g, `-`)}.jpg`;
   const filepath = path.join(process.cwd(), 'public', 'destinations', filename);
 
   // Skip if file already exists

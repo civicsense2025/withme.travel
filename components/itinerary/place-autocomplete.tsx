@@ -19,11 +19,11 @@ export function PlaceAutocomplete({
   initialValue = '',
   className,
 }: PlaceAutocompleteProps) {
-  const placesLibrary = useMapsLibrary('places');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState(initialValue);
   const [autoComplete, setAutoComplete] = useState<google.maps.places.Autocomplete | null>(null);
-  const [inputValue, setInputValue] = useState<string>(initialValue);
-  const { toast } = useToast(); // Get toast function
+  const placesLibrary = useMapsLibrary('places');
+  const { toast } = useToast();
 
   // Handler for when a place is selected from the dropdown
   const handlePlaceChanged = useCallback(

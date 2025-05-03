@@ -49,11 +49,8 @@ export function AvatarGroup({
   className,
   ...props
 }: AvatarGroupProps) {
-  // Handle both items prop and children
-  const hasChildren = React.Children.count(children) > 0;
-
-  // If using children approach
-  if (hasChildren) {
+  // If children are provided, render those with max limit
+  if (children) {
     const childrenArray = React.Children.toArray(children);
     const visibleChildren = childrenArray.slice(0, max);
     const extraCount = Math.max(0, childrenArray.length - max);

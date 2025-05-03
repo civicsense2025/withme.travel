@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createRouteHandlerClient();
 
   const {
     data: { user },
@@ -164,9 +164,9 @@ export async function POST(
           address: item.address,
           latitude: item.latitude,
           longitude: item.longitude,
-          start_time:
+          start_time: 
             item.start_time && itemDateStr ? `${itemDateStr}T${item.start_time}` : item.start_time,
-          end_time:
+          end_time: 
             item.end_time && itemDateStr ? `${itemDateStr}T${item.end_time}` : item.end_time,
           day_number: section.day_number || 1,
           position: item.item_order || 0,
@@ -223,7 +223,6 @@ export async function POST(
   } catch (error: any) {
     console.error('[DEBUG] Error processing template use:', error);
     const message = error.message || 'An unexpected error occurred processing the template.';
-    const status = error.status || 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

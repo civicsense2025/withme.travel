@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getRouteHandlerClient } from '@/utils/supabase/unified';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 // This endpoint clears all authentication cookies and local storage, to help resolve issues with corrupted auth data
 // Changed from GET to POST for better security (state-changing operations should use POST)
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const cookieStore = await cookies();
-    const supabase = await getRouteHandlerClient(request);
+    const supabase = createRouteHandlerClient();
 
     // Try to sign out from Supabase first (if there's an active session)
     try {
@@ -39,47 +38,40 @@ export async function POST(request: NextRequest) {
       'user_session',
       'is_authenticated',
     ];
-    const failedCookies = [];
-    const clearedCookies = [];
-
-    for (const cookieName of cookiesToClear) {
-      try {
-        // Only attempt to delete if the cookie exists
-        const cookie = await cookieStore.get(cookieName);
-        if (cookie) {
-          await cookieStore.delete(cookieName);
-          clearedCookies.push(cookieName);
-        }
-      } catch (e) {
-        console.error(`Error clearing cookie ${cookieName}:`, e);
-        failedCookies.push(cookieName);
+    
+    // Create response for cookie clearing
+    const response = NextResponse.json({
+      success: true,
+      message: "You're now logged out. Your session has been cleared.",
+      details: {
+        cookies_cleared: cookiesToClear
       }
-    }
-
-    console.log(
-      `API Clear Cookies: Cleared ${clearedCookies.length} cookies, failed to clear ${failedCookies.length} cookies`
-    );
+    }, { status: 200 });
 
     // Set headers to prevent caching
-    const headers = new Headers();
-    headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    headers.set('Pragma', 'no-cache');
-    headers.set('Expires', '0');
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "You're now logged out. Your session has been cleared.",
-        details: {
-          cookies_cleared: clearedCookies,
-          cookies_failed: failedCookies,
-        },
-      },
-      {
-        headers,
-        status: 200,
-      }
+    // Set expired cookies to clear them
+    cookiesToClear.forEach((cookieName) => {
+      console.log(`API Clear Cookies: Clearing cookie: ${cookieName}`);
+      response.cookies.set({
+        name: cookieName,
+        value: '',
+        expires: new Date(0),
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+      });
+    });
+
+    console.log(
+      `API Clear Cookies: Cleared ${cookiesToClear.length} cookies`
     );
+
+    return response;
   } catch (error) {
     console.error('Error clearing auth cookies:', error);
     return NextResponse.json(
@@ -97,7 +89,7 @@ export async function POST(request: NextRequest) {
  * This endpoint completely clears all auth cookies and actively signs out
  * the user from both client and server sessions
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('[Auth] Clearing auth cookies...');
 
@@ -146,7 +138,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Also try to sign out via API client to clear server-side session
     try {
-      const supabase = await getRouteHandlerClient(request);
+      const supabase = createRouteHandlerClient();
       await supabase.auth.signOut({ scope: 'global' });
       console.log('[Auth] Signed out via Supabase API');
     } catch (error) {

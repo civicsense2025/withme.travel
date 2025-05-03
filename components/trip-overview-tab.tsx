@@ -1,8 +1,7 @@
-import { TripRole } from '@/utils/constants/database';
-import { API_ROUTES } from '@/utils/constants/routes';
-('use client');
+'use client';
 
 import React, { useState, useEffect } from 'react';
+import { API_ROUTES } from '@/utils/constants/routes';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -10,26 +9,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { TagInput } from '@/components/ui/tag-input';
 import { LocationSearch } from '@/components/location-search';
-import { formatDateRange, formatError } from '@/lib/utils';
+import { format } from 'date-fns';
 import { Tag } from '@/types/tag';
 import { ItineraryTab } from '@/components/itinerary/itinerary-tab';
 import { MembersTab, TripMemberFromSSR } from '@/components/members-tab';
 import { DisplayItineraryItem, ItinerarySection, ItemStatus } from '@/types/itinerary';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Profile } from '@/types/profile';
+import { TripRole } from '@/types/trip';
+import * as z from 'zod';
+
+// Temporarily define the missing utility functions until properly migrated
+const formatDateRange = (startDate: string | null, endDate: string | null): string => {
+  if (!startDate) return 'No dates set';
+  if (!endDate) return format(new Date(startDate), 'MMM d, yyyy');
+  return `${format(new Date(startDate), 'MMM d')} - ${format(new Date(endDate), `MMM d, yyyy`)}`;
+};
+
+const formatError = (error: any): string => {
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  return 'An unknown error occurred';
+};
 
 const overviewFormSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters').max(100),
@@ -65,18 +71,22 @@ export function TripOverviewTab({
   initialUnscheduledItems,
   userRole,
 }: TripOverviewTabProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { user } = useAuth();
 
   const [itineraryItems, setItineraryItems] = useState<DisplayItineraryItem[]>(() => {
-    const scheduled = initialSections.flatMap((section) => section.items || []);
+    const scheduled = initialSections.flatMap((section) => 
+      (section.items || []) as DisplayItineraryItem[]
+    );
     return [...scheduled, ...initialUnscheduledItems];
   });
 
   useEffect(() => {
-    const scheduled = initialSections.flatMap((section) => section.items || []);
+    const scheduled = initialSections.flatMap((section) => 
+      (section.items || []) as DisplayItineraryItem[]
+    );
     setItineraryItems([...scheduled, ...initialUnscheduledItems]);
   }, [initialSections, initialUnscheduledItems]);
 
@@ -84,14 +94,14 @@ export function TripOverviewTab({
     resolver: zodResolver(overviewFormSchema),
     defaultValues: {
       name: tripName || '',
-      description: tripDescription || '',
+      description: tripDescription || ''
     },
   });
 
   useEffect(() => {
     form.reset({
       name: tripName || '',
-      description: tripDescription || '',
+      description: tripDescription || ''
     });
   }, [tripName, tripDescription, form, isEditing]);
 
@@ -131,6 +141,7 @@ export function TripOverviewTab({
   const placeholderOnDeleteItem = async (id: string) => {
     console.warn('Delete action not implemented in overview tab');
   };
+
   const placeholderOnVote = async (
     itemId: string,
     dayNumber: number | null,
@@ -138,15 +149,19 @@ export function TripOverviewTab({
   ) => {
     console.warn('Vote action not implemented in overview tab');
   };
+
   const placeholderOnEditItem = async (item: DisplayItineraryItem) => {
     console.warn('Edit action not implemented in overview tab');
   };
+
   const placeholderOnItemStatusChange = async (id: string, status: ItemStatus | null) => {
     console.warn('Status change action not implemented in overview tab');
   };
+
   const placeholderOnAddItem = (dayNumber: number | null) => {
     console.warn('Add item action not implemented in overview tab');
   };
+
   const placeholderOnReorder = async (reorderInfo: {
     itemId: string;
     newDayNumber: number | null;
@@ -159,10 +174,10 @@ export function TripOverviewTab({
   const profileForTab: Profile | null = user?.profile
     ? {
         id: user.profile.id,
-        email: user.profile.email, // Use email from UserProfile
+        email: user.profile.email ?? '', // Use email from UserProfile, default to empty string if null
         name: user.profile.name || 'User', // Ensure name is string, default if null
         avatar_url: user.profile.avatar_url,
-        username: user.profile.username,
+        username: user.profile.username ?? null,
         // Add defaults for fields required by Profile but optional in UserProfile
         bio: user.profile.bio ?? null,
         location: user.profile.location ?? null,
@@ -178,7 +193,7 @@ export function TripOverviewTab({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="md:col-span-1 space-y-6">
         <Card>
-          <Form {...form}>
+          <Form form={form} {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Trip Details</CardTitle>

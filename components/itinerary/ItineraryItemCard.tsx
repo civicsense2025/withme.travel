@@ -33,14 +33,14 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
 }) => {
   const [isLiked, setIsLiked] = useState(false);
 
-  const handleLikeClick = (e: React.MouseEvent) => {
+  const handleLikeClick = (e: React.MouseEvent) => { 
     e.stopPropagation();
-    setIsLiked(!isLiked);
+    setIsLiked(!isLiked); 
   };
 
-  const handleEditClick = (e: React.MouseEvent) => {
+  const handleEditClick = (e: React.MouseEvent) => { 
     e.stopPropagation();
-    if (onEdit) onEdit();
+    if (onEdit) onEdit(); 
   };
 
   const address = item.address || item.location;

@@ -20,8 +20,8 @@ interface ExportCalendarDialogProps {
 }
 
 export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogProps) {
-  const [isExporting, setIsExporting] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async () => {
@@ -29,7 +29,7 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
     try {
       const response = await fetch(`/api/trips/${tripId}/export-calendar`, {
         method: 'POST',
-      });
+  });
 
       if (!response.ok) {
         throw new Error('Failed to export calendar');
@@ -42,7 +42,7 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
 
       toast({
         title: 'calendar exported!',
-        description: 'your trip has been added to google calendar',
+        description: 'your trip has been added to google calendar'
       });
 
       setOpen(false);
@@ -52,7 +52,7 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
         title: 'export failed',
         description: 'there was an error exporting to google calendar',
         variant: 'destructive',
-      });
+  });
     } finally {
       setIsExporting(false);
     }
@@ -60,7 +60,7 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button variant="outline" size="sm" className="gap-2">
           <Calendar className="h-4 w-4" />
           export to calendar

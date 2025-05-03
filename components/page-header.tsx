@@ -9,8 +9,8 @@ interface PageHeaderProps {
 
 export function PageHeader({ heading, description, children, className }: PageHeaderProps) {
   return (
-    <div
-      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 ${className}`}
+    <div 
+      className={`flex flex-col space-y-4 md:flex-row md:justify-between md:space-y-0 pb-5 ${className}`}
     >
       <div>
         <h1 className="text-5xl leading-loose font-bold tracking-tight lowercase">{heading}</h1>

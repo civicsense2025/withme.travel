@@ -13,12 +13,17 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 
 export function NotificationIndicator() {
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, refreshNotifications } =
-    useNotifications();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const { 
+    notifications, 
+    loading, 
+    unreadCount, 
+    refreshNotifications, 
+    markAsRead, 
+    markAllAsRead 
+  } = useNotifications();
 
-  // When popover opens, refresh notifications
   useEffect(() => {
     if (open) {
       refreshNotifications();

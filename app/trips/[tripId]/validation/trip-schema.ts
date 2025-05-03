@@ -3,7 +3,9 @@ import { ZOD_SCHEMAS } from '@/utils/constants/validation';
 
 /**
  * Schema for validating trip data from API responses
+ 
  */
+
 export const TripDataSchema = z.object({
   tripId: z.string(),
   tripName: z.string(),
@@ -156,5 +158,7 @@ export const TripDataSchema = z.object({
 
 /**
  * Type derived from the TripDataSchema
+ 
  */
+
 export type TripData = z.infer<typeof TripDataSchema>;

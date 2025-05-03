@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { ClientFocusMode } from '@/components/trips/client-focus-mode';
-import { FocusSessionProvider } from '@/contexts/focus-session-context';
+import { FocusSessionProvider } from '@/components/focus/focus-session-provider';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';
 import { Coffee, RefreshCw, AlertCircle } from 'lucide-react';
@@ -97,7 +97,15 @@ export function TripFocusModeSection({
             setTimeout(() => setIsLoading(false), 300);
           }}
         >
-          {isLoading ? <Skeleton className="h-12 w-full" /> : <ClientFocusMode tripId={tripId} />}
+          {isLoading ? (
+            <Skeleton className="h-12 w-full" /> 
+          ) : (
+            <ClientFocusMode tripId={tripId}>
+              <div className="text-sm mt-2 text-muted-foreground">
+                Focus mode helps your team collaborate in real-time
+              </div>
+            </ClientFocusMode>
+          )}
         </ErrorBoundary>
       </div>
     </FocusSessionProvider>

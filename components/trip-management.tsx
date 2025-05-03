@@ -1,5 +1,3 @@
-import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
-import { TRIP_ROLES } from '@/utils/constants/status';
 ('use client');
 
 import { useState, useEffect } from 'react';
@@ -7,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Settings, Trash2, Share2, Lock, Globe, UserPlus, Mail, Copy } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
+import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
+import { TRIP_ROLES } from '@/utils/constants/status';
 import { AuthContextType } from '@/components/auth-provider';
 
 import { Button } from '@/components/ui/button';
@@ -42,18 +42,18 @@ interface TripManagementProps {
 }
 
 export function TripManagement({ tripId }: TripManagementProps) {
-  const supabase = createClient();
-  const router = useRouter();
   const { toast } = useToast();
-  const [trip, setTrip] = useState<any>(null);
-  const [members, setMembers] = useState<Member[]>([]);
+  const router = useRouter();
+  const supabase = createClient();
   const [isLoading, setIsLoading] = useState(true);
-  const [isPublic, setIsPublic] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [publicLink, setPublicLink] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
   const [editMode, setEditMode] = useState(false);
-  const [editedTrip, setEditedTrip] = useState<any>({});
+  const [editedTrip, setEditedTrip] = useState<Partial<Trip>>({});
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [publicLink, setPublicLink] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
 
   // Fetch trip data and members
   useEffect(() => {
@@ -135,9 +135,9 @@ export function TripManagement({ tripId }: TripManagementProps) {
           is_public: newStatus,
           // Generate a slug if making public and no slug exists
           public_slug:
-            newStatus && !trip.public_slug
-              ? `${trip.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`
-              : trip.public_slug,
+            newStatus && !trip?.public_slug
+              ? `${trip?.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`
+              : trip?.public_slug,
         }),
       });
 
@@ -261,7 +261,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
       toast({
         title: 'Member removed',
-        description: 'Member has been removed from the trip',
+        description: 'Member has been removed from the trip'
       });
     } catch (error) {
       console.error('Error removing member:', error);
@@ -278,7 +278,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
     navigator.clipboard.writeText(publicLink);
     toast({
       title: 'Link copied',
-      description: 'Public link copied to clipboard',
+      description: 'Public link copied to clipboard'
     });
   };
 
@@ -299,7 +299,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
       toast({
         title: 'Trip updated',
-        description: 'Trip details have been updated',
+        description: 'Trip details have been updated'
       });
     } catch (error) {
       console.error('Error updating trip:', error);
@@ -448,7 +448,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
             {isAdmin && (
               <Dialog>
-                <DialogTrigger asChild>
+                <DialogTrigger>
                   <Button variant="destructive" className="mt-4">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Trip
@@ -477,7 +477,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
                           toast({
                             title: 'Trip deleted',
-                            description: 'Trip has been permanently deleted',
+                            description: 'Trip has been permanently deleted'
                           });
 
                           router.push('/trips');

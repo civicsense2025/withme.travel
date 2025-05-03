@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/utils/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient, TypedSupabaseClient } from '@/utils/supabase/server';
 
 // Force-dynamic export to ensure up-to-date information
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication status
     const {

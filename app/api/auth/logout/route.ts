@@ -1,86 +1,57 @@
-import { createApiClient } from '@/utils/supabase/api';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { captureException } from '@sentry/nextjs';
 
 /**
  * POST /api/auth/logout
  * Handles server-side session cleanup during sign out
  */
-export async function POST() {
-  const cookieStore = cookies();
-  const supabase = createServerSupabaseClient(cookieStore);
+export async function POST(request: NextRequest) : Promise<NextResponse> {
+  const responseHeaders = new Headers({
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  });
 
-  // Log which user is attempting to sign out
+  // Declare supabase outside the try block to ensure correct scope
   let userId = 'unknown';
-  try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    userId = session?.user?.id || 'unknown';
-    console.log(`[/api/auth/logout] Attempting sign out for user: ${userId}`);
-  } catch (sessionError) {
-    console.warn('[/api/auth/logout] Could not determine user ID for logging:', sessionError);
-  }
 
   try {
-    // Sign out from Supabase (this will clear the session and handle cookies)
-    const { error } = await supabase.auth.signOut({
-      scope: 'global', // Sign out from all devices
-    });
+    // Create Supabase client for signing out using our utility
+    const supabase = await createRouteHandlerClient();
+
+    // Get user ID *before* signing out
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        userId = session.user.id;
+      }
+      console.log(`[Auth] Attempting logout for user: ${userId}`);
+    } catch (sessionError) {
+      console.warn('[Auth] Failed to get session before logout:', sessionError);
+    }
+
+    // Attempt to sign out
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error(`[/api/auth/logout] Supabase sign out error for user ${userId}:`, error);
+      console.error('[Auth] Supabase sign out error:', error);
+      captureException(error);
       return NextResponse.json(
-        {
-          success: true,
-          warning: 'Supabase reported an error during sign out.',
-          message: 'You have been signed out',
-          error: error.message,
-        },
-        { status: 200 }
+        { error: error.message || 'Failed to sign out' },
+        { status: error.status || 500, headers: responseHeaders }
       );
     }
 
-    // Double-check session to confirm logout was successful
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (session) {
-      console.warn(`[/api/auth/logout] Session still exists after logout for user ${userId}.`);
-
-      // Try signing out once more
-      await supabase.auth.signOut();
-
-      return NextResponse.json(
-        {
-          success: true,
-          warning: 'Session persisted after logout. Forced session termination.',
-          message: 'You have been signed out',
-        },
-        { status: 200 }
-      );
-    }
-
-    console.log(`[/api/auth/logout] User ${userId} successfully signed out`);
+    console.log(`[Auth] User ${userId} signed out successfully.`);
+    return NextResponse.json({ success: true }, { status: 200, headers: responseHeaders });
+  } catch (error) {
+    console.error('[Auth] Unexpected logout error:', error);
+    captureException(error);
     return NextResponse.json(
-      {
-        success: true,
-        message: 'You have been successfully signed out',
-      },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error(`[/api/auth/logout] Unexpected error during sign out for user ${userId}:`, error);
-
-    // Since we've tried to clear session, the user is effectively logged out client-side
-    return NextResponse.json(
-      {
-        success: true,
-        warning: 'An error occurred, but you have been signed out.',
-        error: error.message || 'Unknown error during sign out',
-      },
-      { status: 200 }
+      { error: 'An unexpected error occurred during logout.' },
+      { status: 500, headers: responseHeaders }
     );
   }
 }

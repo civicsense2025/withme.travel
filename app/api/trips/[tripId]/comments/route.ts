@@ -1,46 +1,67 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient, TypedSupabaseClient } from '@/utils/supabase/server';
+import { z } from 'zod';
+import { TABLES } from '@/utils/constants/database';
+
+// Define FIELDS locally for what's needed
+const FIELDS = {
+  TRIP_ITEM_COMMENTS: {
+    USER_ID: 'user_id',
+    CONTENT: 'content',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at'
+  },
+  COMMON: {
+    ID: 'id'
+  },
+  PROFILES: {
+    NAME: 'name',
+    AVATAR_URL: 'avatar_url'
+  }
+};
+import type { Database } from '@/types/database.types';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
-  const { tripId } = await params;
-  const url = new URL(request.url);
-  const itemId = url.searchParams?.get('itemId');
-
-  if (!itemId) {
-    return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
-  }
-
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+  { params }: { params: { tripId: string } }
+): Promise<NextResponse> {
   try {
+    const { tripId } = params;
+    const url = new URL(request.url);
+    const itemId = url.searchParams?.get('itemId');
+
+    if (!itemId) {
+      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    }
+
+    const supabase = createRouteHandlerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { data, error } = await supabase
-      .from('trip_item_comments')
+      .from(TABLES.TRIP_ITEM_COMMENTS)
       .select(
         `
         *,
-        profiles:user_id (
-          name,
-          avatar_url
+        ${TABLES.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
+          ${FIELDS.PROFILES.NAME},
+          ${FIELDS.PROFILES.AVATAR_URL}
         ),
-        likes:trip_comment_likes (
-          id,
-          user_id
+        likes:${TABLES.TRIP_COMMENT_LIKES} (
+          ${FIELDS.COMMON.ID},
+          ${FIELDS.TRIP_COMMENT_LIKES.USER_ID}
         )
       `
       )
-      .eq('trip_id', tripId)
-      .eq('item_id', itemId)
-      .order('created_at', { ascending: false });
+      .eq(FIELDS.TRIP_ITEM_COMMENTS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_ITEM_COMMENTS.ITEM_ID, itemId)
+      .order(FIELDS.COMMON.CREATED_AT, { ascending: false });
 
     if (error) throw error;
 
@@ -53,51 +74,51 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
-  const { tripId } = await params;
-  const { itemId, content } = await request.json();
-
-  if (!itemId || !content) {
-    return NextResponse.json({ error: 'Item ID and content are required' }, { status: 400 });
-  }
-
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Check if user is a member of this trip
-  const { data: member, error: memberError } = await supabase
-    .from('trip_members')
-    .select()
-    .eq('trip_id', tripId)
-    .eq('user_id', session.user.id)
-    .maybeSingle();
-
-  if (memberError || !member) {
-    return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 });
-  }
-
+  { params }: { params: { tripId: string } }
+): Promise<NextResponse> {
   try {
+    const { tripId } = params;
+    const { itemId, content } = await request.json();
+
+    if (!itemId || !content) {
+      return NextResponse.json({ error: 'Item ID and content are required' }, { status: 400 });
+    }
+
+    const supabase = createRouteHandlerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: member, error: memberError } = await supabase
+      .from(TABLES.TRIP_MEMBERS)
+      .select(FIELDS.COMMON.ID)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .maybeSingle();
+
+    if (memberError || !member) {
+      return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 });
+    }
+
     const { data, error } = await supabase
-      .from('trip_item_comments')
+      .from(TABLES.TRIP_ITEM_COMMENTS)
       .insert({
-        trip_id: tripId,
-        item_id: itemId,
-        user_id: session.user.id,
-        content: content.trim(),
+        [FIELDS.TRIP_ITEM_COMMENTS.TRIP_ID]: tripId,
+        [FIELDS.TRIP_ITEM_COMMENTS.ITEM_ID]: itemId,
+        [FIELDS.TRIP_ITEM_COMMENTS.USER_ID]: user.id,
+        [FIELDS.TRIP_ITEM_COMMENTS.CONTENT]: content.trim(),
       })
       .select(
         `
         *,
-        profiles:user_id (
-          name,
-          avatar_url
+        ${TABLES.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
+          ${FIELDS.PROFILES.NAME},
+          ${FIELDS.PROFILES.AVATAR_URL}
         )
       `
       )

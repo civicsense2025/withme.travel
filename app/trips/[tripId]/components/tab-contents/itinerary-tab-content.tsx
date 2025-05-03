@@ -1,35 +1,26 @@
 'use client';
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { ItineraryTab } from '@/components/itinerary/itinerary-tab';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { DisplayItineraryItem, ItemStatus } from '@/types/itinerary';
+import { DisplayItineraryItem } from '@/types/itinerary';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useToast } from '@/hooks/use-toast';
 import { Suspense } from 'react';
+import { type ItemStatus } from '@/utils/constants/status';
 import { useRouter } from 'next/navigation';
+import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
+import { ImportPlacesButton } from '../TripItinerary/ImportPlacesButton';
+
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+
 import dynamic from 'next/dynamic';
 import type { GeocoderOptions } from '@mapbox/mapbox-gl-geocoder';
-import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
 
 // Dynamically import MapboxGeocoderComponent to avoid SSR issues
 const MapboxGeocoderComponent = dynamic(() => import('@/components/maps/mapbox-geocoder'), {
@@ -245,11 +236,11 @@ export function ItineraryTabContent({
 
         // Item was successfully added
         const dayDescription =
-          selectedDayNumber !== null ? `day ${selectedDayNumber}` : 'unscheduled items';
+          selectedDayNumber !== null ? `day ${selectedDayNumber}` : `unscheduled items`;
 
         toast({
           title: 'Item Added!',
-          description: `${newItemPayload.title} added to ${dayDescription}.${!selectedPlace ? ' Remember to set a location later.' : ''}`,
+          description: `${newItemPayload.title} added to ${dayDescription}.${!selectedPlace ? ` Remember to set a location later.` : ''}`,
         });
 
         // Close dialog and reset form
@@ -325,6 +316,20 @@ export function ItineraryTabContent({
 
   return (
     <div className="w-full space-y-6">
+      {/* Add action buttons row above the itinerary */}
+      {userRole && (userRole === 'admin' || userRole === 'editor') && (
+        <div className="flex flex-wrap gap-2 items-center mb-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleAddItem(null)}
+          >
+            Add Unscheduled Item
+          </Button>
+          <ImportPlacesButton />
+        </div>
+      )}
+      
       <ItineraryTab
         tripId={tripId}
         itineraryItems={itineraryItems}

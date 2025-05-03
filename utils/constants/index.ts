@@ -1,21 +1,9 @@
-/**
 import { TABLES } from '@/utils/constants/database';
-
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
 import { API_ROUTES } from '@/utils/constants/routes';
 import { TRIP_ROLES } from '@/utils/constants/status';
+import { THEME } from '@/utils/constants/ui';
+
+/**
  * Constants entry point for the withme.travel application
  *
  * This file re-exports all constants from specific modules:
@@ -30,12 +18,11 @@ import { TRIP_ROLES } from '@/utils/constants/status';
  *   import { TRIP_ROLES } from '@/utils/constants/status';
  *   import { THEME } from '@/utils/constants/ui';
  *
- * For backward compatibility, you can also import from here:
- *   ;
+ * For backward compatibility, you can also import from here.
  */
 
 // Re-export database constants
-export { TABLES, FIELDS, ENUMS, RELATIONSHIPS } from './database';
+export { TABLES } from './database';
 
 // Re-export route constants
 export { API_ROUTES, PAGE_ROUTES } from './routes';
@@ -51,7 +38,7 @@ export {
   TRIP_TYPES,
   BUDGET_CATEGORIES,
   TEMPLATE_CATEGORIES,
-  TEMPLATE_TYPES,
+  TEMPLATE_TYPES
 } from './status';
 
 export type {
@@ -63,7 +50,7 @@ export type {
   TripType,
   BudgetCategory,
   TemplateCategory,
-  TemplateType,
+  TemplateType
 } from './status';
 
 // Re-export UI constants

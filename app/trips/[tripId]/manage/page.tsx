@@ -36,8 +36,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
+import { DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -47,7 +47,6 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { Trip } from '@/types/trip';
 import { Database } from '@/types/supabase';
 import { PlaylistEmbed } from '@/components/trips/PlaylistEmbed';
-import { FIELDS } from "@/utils/constants/database";
 
 interface User {
   id: string;
@@ -72,7 +71,7 @@ interface LoadingProps {
 
 export default function ManageTripPage() {
   const params = useParams<{ tripId: string }>();
-  const tripId = params?.tripId;
+  const tripId = params?.tripId || '';
   const { user, isLoading: authLoading } = useAuth() as AuthContextType;
   const router = useRouter();
   const { toast } = useToast();
@@ -630,12 +629,12 @@ export default function ManageTripPage() {
           {isAdmin && (
             <section>
               <Dialog>
-                <DialogTrigger asChild>
+                <div className="relative">
                   <Button variant="destructive" size="sm">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Trip
                   </Button>
-                </DialogTrigger>
+                </div>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Delete Trip</DialogTitle>

@@ -59,9 +59,7 @@ export default function BudgetSnapshotSidebar({
   const combinedProgress = spentProgress + plannedProgress;
   const overBudget = targetBudget !== null && totalSpent + totalPlanned > targetBudget;
 
-  useEffect(() => {
-    setEditedBudget(targetBudget?.toString() ?? '');
-  }, [targetBudget, isEditing]);
+  useEffect(() => { return setEditedBudget(targetBudget?.toString() ?? ''); }, [targetBudget, isEditing]);
 
   const handleSaveClick = async () => {
     const newBudgetValue = parseFloat(editedBudget);
@@ -82,10 +80,8 @@ export default function BudgetSnapshotSidebar({
     }
   };
 
-  const handleCancelClick = () => {
-    setEditedBudget(targetBudget?.toString() ?? '');
-    onEditToggle(false);
-  };
+  const handleCancelClick = () => { return setEditedBudget(targetBudget?.toString() ?? '');
+    onEditToggle(false); };
 
   const remaining = targetBudget !== null ? targetBudget - totalPlanned : null;
 

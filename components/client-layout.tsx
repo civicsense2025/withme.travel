@@ -14,11 +14,10 @@ import { AuthErrorBoundary } from '@/components/auth-error-boundary';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const showNavbar = !pathname?.startsWith('/trips/public');
-
+  const showNavbar = !pathname?.startsWith('/auth/');
+  
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      {/* Using AuthErrorBoundary to gracefully handle auth errors */}
+    <ThemeProvider>
       <AuthErrorBoundary>
         <AuthProvider>
           <SearchProvider>

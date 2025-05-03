@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-// @ts-expect-error - Ensure react-map-gl and @types/react-map-gl are installed
 import Map, {
   Source,
   Layer,
   Marker,
-  MapRef,
   NavigationControl,
   GeolocateControl,
 } from 'react-map-gl';
@@ -44,7 +42,7 @@ export const MultimodalMapView: React.FC<MultimodalMapViewProps> = ({
   initialMode = 'driving',
   mapStyle = 'mapbox://styles/mapbox/streets-v12',
 }) => {
-  const mapRef = useRef<MapRef>(null);
+  const mapRef = useRef<any>(null);
   const [mode, setMode] = useState<TransportMode>(initialMode);
   const [routeGeojson, setRouteGeojson] = useState<
     GeoJSON.FeatureCollection | GeoJSON.Feature | null
@@ -95,7 +93,7 @@ export const MultimodalMapView: React.FC<MultimodalMapViewProps> = ({
           setRouteInfo({
             duration: route.duration,
             distance: route.distance,
-          });
+  });
         } else {
           throw new Error('No route found.');
         }

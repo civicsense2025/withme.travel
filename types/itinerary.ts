@@ -1,7 +1,7 @@
 import { Place } from './places';
 import { Profile } from './profile';
 import { ProcessedVotes, Vote } from './votes';
-import { ItemStatus } from './common';
+import { type ItemStatus } from '@/utils/constants/status';
 
 // --- Base Itinerary Item Interfaces ---
 

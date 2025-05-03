@@ -48,7 +48,7 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
         if (!response.ok) {
           const errorData = await response.text();
           throw new Error(
-            `Transit API Error (${response.status}): ${errorData || 'Failed to fetch transit route'}`
+            `Transit API Error (${response.status}): ${errorData || `Failed to fetch transit route`}`
           );
         }
 
@@ -163,7 +163,7 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
                   geometry: {
                     type: 'Point',
                     coordinates: stop.coordinates,
-                  },
+  },
                 }}
               >
                 <Layer

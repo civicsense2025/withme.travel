@@ -32,7 +32,7 @@ export function CreatePollModal({ tripId, onPollCreated, children }: CreatePollM
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         {children || (
           <Button variant="outline" size="sm" className="gap-1.5">
             <VoteIcon className="h-4 w-4" />

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getDestinationPhoto } from '@/lib/unsplashService';
-import { createServerSupabaseClient } from "@/utils/supabase/server"; // Use server client
+import { getRandomDestinationImage } from '@/lib/unsplashService';
+import { createServerSupabaseClient } from '@/utils/supabase/server'; // Use server client
 import { z } from 'zod';
 
 // Function to get a random element from an array
@@ -10,7 +10,7 @@ function getRandomElement<T>(arr: T[]): T | undefined {
 }
 
 // --- GET Handler for truly random image ---
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const supabase = await createServerSupabaseClient();
 
@@ -42,13 +42,13 @@ export async function GET() {
 
     // 3. Fetch image using Unsplash service
     console.log(`API: Getting random image for: ${randomDestination.city}`);
-    const result = await getDestinationPhoto(
+    const result = await getRandomDestinationImage(
       randomDestination.city,
       randomDestination.country,
-      randomDestination.state_province || null
+      randomDestination.state_province || undefined
     );
 
-    if (!result?.photo?.urls?.regular) {
+    if (!result?.success || !result?.image?.src) {
       console.warn(
         `API: Could not find Unsplash image for random destination: ${randomDestination.city}`
       );
@@ -56,7 +56,7 @@ export async function GET() {
       return NextResponse.json({ imageUrl: '/images/placeholder.svg' }, { status: 404 });
     }
 
-    const imageUrl = result.photo.urls.regular;
+    const imageUrl = result.image.src;
     console.log(`API: Found random image URL: ${imageUrl}`);
 
     // 4. Return just the image URL
@@ -78,7 +78,7 @@ const schema = z.object({
   state: z.string().optional(),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = await request.json();
     const validation = schema.safeParse(body);
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No suitable image found for the destination' }, { status: 404 });
     }
     const photo = result.photo;
-    console.log(`API: Found photo ${photo.id} for ${city} via query "${result.sourceQuery}"`);
+    console.log(`API: Found photo ${photo.id} for ${city} via query ${result.sourceQuery}`);
 
     // Prepare metadata (Original POST returned full metadata)
     const metadata = { // : Omit<ImageMetadata, 'id' | 'created_at' | 'updated_at'> = {

@@ -35,8 +35,8 @@ export function TripDetailError({
   isNotFound = false,
   isPermissionDenied = false,
 }: TripDetailErrorProps) {
-  const router = useRouter();
   const { toast } = useToast();
+  const router = useRouter();
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [errorDetails, setErrorDetails] = useState<string | null>(
@@ -64,7 +64,7 @@ export function TripDetailError({
     navigator.clipboard.writeText(tripId);
     toast({
       title: 'Trip ID copied',
-      description: 'The trip ID has been copied to your clipboard',
+      description: 'The trip ID has been copied to your clipboard'
     });
   };
 

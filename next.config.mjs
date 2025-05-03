@@ -97,13 +97,32 @@ const nextConfig = {
         '**/node_modules/**',
         '**/mobile/withme-app/**',
         '**/scripts/**',
+        // Add new ignores
+        '**/__tests__/**',
+        '**/tests/**',
+        '**/_disabled_features/**',
+        '**/coverage/**',
+        '**/playwright-report/**',
+        '**/build/**', // Ignore the build output directory
+        '**/.next/**', // Ignore the next build cache
       ],
     };
 
     // Exclude directories from webpack processing without using custom loaders
     config.module.rules.push({
       test: /\.(js|jsx|ts|tsx)$/,
-      exclude: [/mobile\/withme-app\//, /scripts\//],
+      exclude: [
+        /mobile\/withme-app\//,
+        /scripts\//,
+        // Add new excludes as regex
+        /__tests__\//,
+        /tests\//,
+        /_disabled_features\//,
+        /coverage\//,
+        /playwright-report\//,
+        /build\//, // Exclude the build output directory
+        /.next\//, // Exclude the next build cache
+      ],
       // Do not include a custom loader here as Next.js has its own
     });
 

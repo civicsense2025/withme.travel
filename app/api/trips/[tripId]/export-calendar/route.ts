@@ -1,14 +1,43 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { checkTripAccess } from '@/lib/trip-access';
+import { TABLES } from '@/utils/constants/database';
+
+// Define missing table constants
+const EXTENDED_TABLES = {
+  ...TABLES,
+  TRIP_MEMBERS: 'trip_members',
+  ITINERARY_ITEMS: 'itinerary_items'
+};
+
+// Define FIELDS locally
+const FIELDS = {
+  TRIPS: {
+    ID: 'id',
+    NAME: 'name',
+    START_DATE: 'start_date',
+    END_DATE: 'end_date'
+  },
+  ITINERARY_ITEMS: {
+    TITLE: 'title',
+    START_TIME: 'start_time',
+    END_TIME: 'end_time',
+    DATE: 'date',
+    DESCRIPTION: 'description',
+    NOTES: 'notes',
+    LOCATION: 'location'
+  }
+};
+import type { Database } from '@/types/database.types';
 import { cookies } from 'next/headers';
-import { NextResponse, type NextRequest } from 'next/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
+  { params }: { params: { tripId: string } }
+): Promise<NextResponse> {
   try {
-    const { tripId } = await params;
-    const supabase = await createServerSupabaseClient();
+    const { tripId } = params;
+    const supabase = createRouteHandlerClient();
 
     // Check if user is authenticated
     const {
@@ -21,10 +50,10 @@ export async function POST(
 
     // Check if user is a member of this trip
     const { data: member, error: memberError } = await supabase
-      .from('trip_members')
+      .from(TABLES.TRIP_MEMBERS)
       .select()
-      .eq('trip_id', tripId)
-      .eq('user_id', session.user.id)
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
       .maybeSingle();
 
     if (memberError || !member) {
@@ -36,9 +65,9 @@ export async function POST(
 
     // Get trip details
     const { data: trip, error: tripError } = await supabase
-      .from('trips')
-      .select('title, description, start_date, end_date')
-      .eq('id', tripId)
+      .from(TABLES.TRIPS)
+      .select(`${FIELDS.TRIPS.TITLE}, ${FIELDS.TRIPS.DESCRIPTION}, ${FIELDS.TRIPS.START_DATE}, ${FIELDS.TRIPS.END_DATE}`)
+      .eq(FIELDS.COMMON.ID, tripId)
       .single();
 
     if (tripError) {
@@ -46,11 +75,14 @@ export async function POST(
     }
 
     // Get itinerary items
-    let query = supabase.from('itinerary_items').select('*').eq('trip_id', tripId);
+    let query = supabase
+      .from(EXTENDED_TABLES.ITINERARY_ITEMS)
+      .select('*')
+      .eq(FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId);
 
     // Filter by selected days if applicable
     if (exportOption === 'selected' && selectedDays && selectedDays.length > 0) {
-      query = query.in('date', selectedDays);
+      query = query.in(FIELDS.ITINERARY_ITEMS.DATE, selectedDays);
     }
 
     const { data: items, error: itemsError } = await query;
@@ -126,6 +158,32 @@ export async function POST(
     });
   } catch (error: any) {
     console.error('Calendar export error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// --- GET Handler --- //
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { tripId: string } }
+): Promise<NextResponse> {
+  try {
+    const { tripId } = params;
+    const supabase = createRouteHandlerClient();
+    
+    // Check if user is authenticated
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Placeholder for GET endpoint implementation
+  return NextResponse.json({ message: 'GET endpoint not implemented' }, { status: 501 });
+  } catch (error: any) {
+    console.error('Calendar export GET error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -26,11 +26,19 @@ interface Destination {
   country: string;
   continent: string;
   description: string | null;
+  byline?: string | null;
+  highlights?: string[] | null;
   image_url?: string | null;
   emoji?: string | null;
   image_metadata?: {
     alt_text?: string;
     attribution?: string;
+    attributionHtml?: string;
+    photographer_name?: string;
+    photographer_url?: string;
+    source?: string;
+    source_id?: string;
+    url?: string;
   };
   cuisine_rating: number;
   nightlife_rating: number;
@@ -163,8 +171,8 @@ const CONTINENT_DATA = {
       area: '8.53 million km²',
       population: '44 million',
     },
-  },
-};
+  }
+  };
 
 // Animation variants
 const containerVariants = {
@@ -172,17 +180,17 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: { staggerChildren: 0.1 },
-  },
-};
+  }
+  };
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1 },
-};
+  visible: { y: 0, opacity: 1 }
+  };
 
 export default function ContinentPage() {
   const params = useParams();
-  const continentSlug = typeof params.continent === 'string' ? params.continent : '';
+  const continentSlug = typeof params?.continent === 'string' ? params.continent : '';
   // Use the defined Destination type for state
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -195,7 +203,7 @@ export default function ContinentPage() {
     coverImage: '/images/continents/default.jpg',
     accentColor: 'travel-blue',
     highlights: [],
-    stats: { countries: 0, languages: '0', area: '0', population: '0' },
+    stats: { countries: 0, languages: '0', area: '0', population: '0' }
   };
 
   useEffect(() => {

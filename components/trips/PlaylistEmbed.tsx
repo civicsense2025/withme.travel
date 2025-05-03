@@ -8,7 +8,7 @@ interface Props {
 
 export function PlaylistEmbed({ url, width = 300, height = 150 }: Props) {
   const [embedHtml, setEmbedHtml] = useState<string | null>(null);
-
+  
   useEffect(() => {
     if (!url) {
       setEmbedHtml(null);

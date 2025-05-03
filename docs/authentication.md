@@ -190,23 +190,65 @@ const { data, error } = await supabase
 
 ## Specific Next.js 15 Considerations
 
-### 1. Awaiting Dynamic Route Parameters
+### 1. Route Parameters Are Not Promises
 
-Next.js 15 requires you to await route parameters before using them:
+Important update: In the latest version, route parameters are no longer Promises that need to be awaited:
 
 ```tsx
-// BEFORE (Next.js 14)
-export default function Page({ params }: { params: { id: string } }) {
-  const id = params.id; // Works in Next.js 14
+// DEPRECATED - NO LONGER CORRECT IN LATEST NEXT.JS
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params; // This was previously required
 }
 
-// AFTER (Next.js 15)
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params; // Required in Next.js 15
+// CURRENT CORRECT APPROACH
+export default async function Page({ params }: { params: { id: string } }) {
+  const { id } = params; // Direct access, no await needed
 }
 ```
 
-### 2. Cookie Handling
+This also applies to API route handlers:
+
+```tsx
+// DEPRECATED - NO LONGER CORRECT
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string }> }
+): Promise<NextResponse> {
+  const { tripId } = await params;
+  // ...
+}
+
+// CURRENT CORRECT APPROACH
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { tripId: string } }
+): Promise<NextResponse> {
+  const { tripId } = params;
+  // ...
+}
+```
+
+### 2. Supabase Client Initialization
+
+The `createRouteHandlerClient` and similar functions are not async and should not be awaited:
+
+```tsx
+// INCORRECT - awaiting a non-async function
+const supabase = await createRouteHandlerClient();
+
+// CORRECT - direct assignment
+const supabase = createRouteHandlerClient();
+```
+
+If you need TypeScript type assertions:
+
+```tsx
+import { createRouteHandlerClient, TypedSupabaseClient } from '@/utils/supabase/server';
+
+const supabase = createRouteHandlerClient() as TypedSupabaseClient;
+```
+
+### 3. Cookie Handling
 
 Next.js 15 has improved cookie handling through the cookies() API:
 
@@ -214,23 +256,23 @@ Next.js 15 has improved cookie handling through the cookies() API:
 import { cookies } from 'next/headers';
 
 export async function GET() {
-  const cookieStore = await cookies();
+  const cookieStore = cookies(); // No longer needs to be awaited
   // Use cookieStore to get auth cookies
 }
 ```
 
-### 3. Session Management in API Routes
+### 4. Session Management in API Routes
 
 API routes should use consistent authentication patterns:
 
 ```tsx
-export async function GET(request: Request) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const {
     data: { session },
   } = await getServerSession();
 
   if (!session) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // Continue with authenticated request

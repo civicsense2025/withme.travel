@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-// import { ImageDebug } from "@/components/debug/ImageDebug" // Import the debug component
+// import { ImageDebug } from "@/components/debug/ImageDebug"; // Import the debug component
 import { Heart, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -104,14 +104,22 @@ export function DestinationCard({
   className = '',
   hideAttributionMobile = false,
 }: DestinationCardProps) {
-  const { city, country, image_url, description, image_metadata, emoji, byline, highlights } =
-    destination;
-
   const [showSneak, setShowSneak] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  // Render rating stars
-  const renderRating = (rating: number | null | undefined, max = 5) => {
+  
+  // Destructure destination properties
+  const { 
+    city, 
+    country, 
+    image_url, 
+    emoji, 
+    image_metadata, 
+    highlights,
+    byline
+  } = destination;
+  
+  // Render rating stars helper function
+  const renderRating = (rating: number, max: number) => {
     if (rating === null || rating === undefined) return 'N/A';
     const stars = [];
     for (let i = 0; i < max; i++) {
@@ -133,9 +141,7 @@ export function DestinationCard({
 
   // Handle mouse enter
   const handleMouseEnter = () => {
-    const timeout = setTimeout(() => {
-      setShowSneak(true);
-    }, 3000);
+    const timeout = setTimeout(() => { return setShowSneak(true); }, 3000);
     setHoverTimeout(timeout);
   };
 
@@ -157,7 +163,7 @@ export function DestinationCard({
     if (destination.cultural_attractions >= 4) features.push('cultural landmarks');
     if (destination.outdoor_activities >= 4) features.push('outdoor attractions');
 
-    return features.length > 0 ? `${baseAlt} featuring ${features.join(', ')}` : baseAlt;
+    return features.length > 0 ? `${baseAlt} featuring ${features.join(`, `)}` : baseAlt;
   };
 
   const altText = generateAltText();
@@ -184,11 +190,11 @@ export function DestinationCard({
       }
 
       const photographerPart = photographer_url
-        ? `<a href=\"${photographer_url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${photographer_name}</a>`
+        ? `<a href="${photographer_url}" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">${photographer_name}</a>`
         : photographer_name;
 
       const sourcePart = sourceLink
-        ? `<a href=\"${sourceLink}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-white\">${sourceName}</a>`
+        ? `<a href="${sourceLink}" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">${sourceName}</a>`
         : sourceName;
 
       return `Photo by ${photographerPart} on ${sourcePart}`;
@@ -204,9 +210,9 @@ export function DestinationCard({
   const attributionText = createAttributionText(image_metadata);
 
   // Handle like button click
-  const handleLikeClick = (e: React.MouseEvent) => {
+  const handleLikeClick = (e: React.MouseEvent) => { 
     e.preventDefault();
-    e.stopPropagation();
+    e.stopPropagation(); 
   };
 
   // Use the highlights prop directly (or an empty array)
@@ -253,9 +259,11 @@ export function DestinationCard({
               )}
               {city}
             </h3>
-            <p className="text-white/80 text-sm font-medium group-hover:translate-y-[-2px] transition-transform duration-300 delay-75">
+            <Link href={`/countries/${country?.toLowerCase().replace(/\s+/g, '-')}`} 
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-white/80 text-sm font-medium group-hover:translate-y-[-2px] transition-transform duration-300 delay-75 hover:text-white hover:underline">
               {country}
-            </p>
+            </Link>
           </div>
           {/* Like button */}
           <div className="absolute top-4 right-4 z-20" onClick={handleLikeClick}>
@@ -276,9 +284,9 @@ export function DestinationCard({
                   <TooltipTrigger asChild>
                     <button
                       className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
-                      onClick={(e) => {
+                      onClick={(e) => { 
                         e.preventDefault();
-                        e.stopPropagation();
+                        e.stopPropagation(); 
                       }}
                       aria-label="Image attribution information"
                     >

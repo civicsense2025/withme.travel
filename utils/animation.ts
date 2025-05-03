@@ -34,8 +34,8 @@ export const fadeIn: Variants = {
       duration: ANIMATION_DURATIONS.fast,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Fade + scale animations
 export const fadeInScale: Variants = {
@@ -55,8 +55,8 @@ export const fadeInScale: Variants = {
       duration: ANIMATION_DURATIONS.fast,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Slide up animation
 export const slideUp: Variants = {
@@ -76,8 +76,8 @@ export const slideUp: Variants = {
       duration: ANIMATION_DURATIONS.fast,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Slide down animation
 export const slideDown: Variants = {
@@ -97,8 +97,8 @@ export const slideDown: Variants = {
       duration: ANIMATION_DURATIONS.fast,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Slide in from left animation
 export const slideInLeft: Variants = {
@@ -118,8 +118,8 @@ export const slideInLeft: Variants = {
       duration: ANIMATION_DURATIONS.medium,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Slide in from right animation
 export const slideInRight: Variants = {
@@ -139,8 +139,8 @@ export const slideInRight: Variants = {
       duration: ANIMATION_DURATIONS.medium,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Bounce animation for important elements
 export const bounceIn: Variants = {
@@ -160,8 +160,8 @@ export const bounceIn: Variants = {
       duration: ANIMATION_DURATIONS.fast,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Staggered children animation (parent)
 export const staggerContainer: Variants = {
@@ -179,8 +179,8 @@ export const staggerContainer: Variants = {
       staggerChildren: 0.05,
       staggerDirection: -1,
     },
-  },
-};
+  }
+  };
 
 // Toast notification animations
 export const toastAnimation: Variants = {
@@ -202,8 +202,8 @@ export const toastAnimation: Variants = {
       duration: ANIMATION_DURATIONS.fast,
       ease: easings.smooth,
     },
-  },
-};
+  }
+  };
 
 // Page transitions
 export const pageTransition: Variants = {
@@ -226,5 +226,5 @@ export const pageTransition: Variants = {
       staggerChildren: 0.05,
       staggerDirection: -1,
     },
-  },
-};
+  }
+  };
