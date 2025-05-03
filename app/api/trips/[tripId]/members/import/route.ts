@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 // import { createServerSupabaseClient } from '@/utils/supabase/server'; // Old import
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { checkTripAccess } from '@/lib/trip-access';
-import { TRIP_ROLES } from '@/constants/status';
+import { TRIP_ROLES } from '@/utils/constants/status';
+import { z } from 'zod';
+import { Database } from '@/types/database.types';
 
 // Define hasMinimumRole locally
 function hasMinimumRole(userRole: string | null, requiredRole: string): boolean {
   if (!userRole) return false;
   
-  const roleValues = {
+  const roleValues: {[key: string]: number} = {
     [TRIP_ROLES.ADMIN]: 4,
     [TRIP_ROLES.EDITOR]: 3,
     [TRIP_ROLES.CONTRIBUTOR]: 2,
@@ -16,9 +19,6 @@ function hasMinimumRole(userRole: string | null, requiredRole: string): boolean 
   
   return (roleValues[userRole] || 0) >= (roleValues[requiredRole] || 0);
 }
-import { z } from 'zod';
-import { Database } from '@/types/database.types';
-import { TRIP_ROLES } from '@/utils/constants/status';
 
 // Define table names directly as string literals
 const TRIP_MEMBERS_TABLE = 'trip_members';

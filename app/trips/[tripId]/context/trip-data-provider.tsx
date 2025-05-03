@@ -20,7 +20,7 @@ export interface TripData {
   sections: DbItinerarySection[];
   items: ItineraryItem[];
   members: TripMember[];
-  tags: TripTag[];
+  tags: any[]; // Using any[] for tags
   manual_expenses: any[]; // Add manual_expenses field
 }
 
@@ -39,18 +39,14 @@ export interface TripMember {
   };
 }
 
-export default function TripDataProvider({
-  tripId,
-  children,
-}: {
-  children: React.ReactNode;
-  tripId: string;
-}) {
+// Define the trip context type
+export interface TripContextType {
+  tripData: TripData | null;
+  error: Error | null;
   isLoading: boolean;
   isItemsLoading: boolean;
   isMembersLoading: boolean;
   isFetching: boolean;
-  error: Error | null;
   refetchTrip: () => Promise<void>;
   refetchItinerary: () => Promise<void>;
   refetchMembers: () => Promise<void>;
@@ -60,9 +56,11 @@ export default function TripDataProvider({
   ) => Promise<void>;
 }
 
+// Create the context 
+const TripContext = createContext<TripContextType | null>(null);
+
 // Custom fetcher that handles error responses and includes credentials
 const fetcher = async (url: string) => {
-  // console.log(`[Fetcher] Starting fetch for: `${url}`); // Removed log
   try {
     const response = await fetch(url, {
       headers: {
@@ -71,16 +69,12 @@ const fetcher = async (url: string) => {
       credentials: 'include', // Include cookies for authenticated requests
     });
 
-    // console.log(`[Fetcher] Response for ${url}: Status ${response.status}`); // Removed log
-
     if (!response.ok) {
       let errorData = { error: response.statusText };
       try {
         errorData = await response.json();
-        // console.error(`[Fetcher] Error JSON for ${url}:`, errorData); // Removed log
       } catch (parseError) {
         const textError = await response.text();
-        // console.error(`[Fetcher] Error Text for ${url} (JSON parse failed):`, textError); // Removed log
         errorData = { error: textError || response.statusText };
       }
       const error = new Error(errorData.error || 'An error occurred while fetching the data');
@@ -88,29 +82,22 @@ const fetcher = async (url: string) => {
       throw error;
     }
 
-    // Don't need to clone anymore
-    // const clonedResponse = response.clone();
-    // const rawBody = await clonedResponse.text();
-    // console.log(`[Fetcher] Raw Body for ${url}:`, rawBody); // Removed log
-
     const data = await response.json();
-    // console.log(`[Fetcher] Parsed Data for ${url}:`, data); // Removed log
     return data;
   } catch (err) {
-    // console.error(`[Fetcher] CATCH block error for ${url}:`, err); // Keep this one maybe?
-    console.error(`Fetch error for ${url}:`, err); // Revert to original simpler log
+    console.error(`Fetch error for ${url}:`, err);
     throw err;
   }
 };
 
-const TripContext = createContext<TripContextType | null>(null);
-
-interface TripDataProviderProps {
+// Provider component
+export interface TripDataProviderProps {
   children: React.ReactNode;
-  initialData?: any; // Add initialData prop to allow passing from server component
+  initialData?: any;
   tripId?: string;
 }
 
+// Named export only (no default export)
 export function TripDataProvider({ children, initialData, tripId }: TripDataProviderProps) {
   const id = initialData?.tripId || tripId;
 

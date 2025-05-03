@@ -165,7 +165,7 @@ export async function PATCH(
 }
 
 // --- PUT Handler --- //
-export async function PATCH(
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; itemId: string }> }
 ) {
