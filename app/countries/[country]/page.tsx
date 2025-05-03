@@ -160,10 +160,32 @@ const itemVariants = {
 interface Destination {
   id: string;
   name: string | null;
-  city: string | null;
-  country: string | null;
+  city: string;
+  country: string;
+  continent: string;
   description: string | null;
   image_url: string | null;
+  byline?: string | null;
+  highlights?: string[] | null;
+  emoji?: string | null;
+  image_metadata?: {
+    alt_text?: string;
+    attribution?: string;
+    attributionHtml?: string;
+    photographer_name?: string;
+    photographer_url?: string;
+    source?: string;
+    source_id?: string;
+    url?: string;
+  };
+  cuisine_rating: number;
+  nightlife_rating: number;
+  cultural_attractions: number;
+  outdoor_activities: number;
+  beach_quality: number;
+  best_season?: string;
+  avg_cost_per_day?: number;
+  safety_rating?: number;
   [key: string]: any; // For other properties
 }
 
@@ -184,6 +206,12 @@ export default async function CountryPage({
 }) {
   const { country } = await params;
   const [activeTab, setActiveTab] = useState('overview');
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Get slug from the country param
+  const countrySlug = country.toLowerCase();
 
   // Safely access country data
   const countryData = COUNTRY_DATA[countrySlug as keyof typeof COUNTRY_DATA] || {
@@ -258,7 +286,7 @@ export default async function CountryPage({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className={`text-5xl leading-loose md:text-6xl md:leading-loose font-bold mb-4 text-${countryData.accentColor}`}
+              className={`text-5xl leading-loose md:text-6xl md:leading-loose font-bold mb-4 ${countryData.accentColor ? `text-${countryData.accentColor}` : 'text-primary'}`}
             >
               {countryData.name}
             </motion.h1>
@@ -370,7 +398,7 @@ export default async function CountryPage({
                       variants={itemVariants}
                       className="flex items-start gap-3"
                     >
-                      <span className={`text-${countryData.accentColor} text-lg`}>•</span>
+                      <span className={countryData.accentColor ? `text-${countryData.accentColor}` : 'text-primary'} style={{ fontSize: '1.125rem' }}>•</span>
                       <span>{highlight}</span>
                     </motion.li>
                   ))}
@@ -389,7 +417,7 @@ export default async function CountryPage({
                   <Button
                     variant="ghost"
                     onClick={() => setActiveTab('destinations')}
-                    className={`text-${countryData.accentColor}`}
+                    className={countryData.accentColor ? `text-${countryData.accentColor}` : 'text-primary'}
                   >
                     View all cities
                   </Button>

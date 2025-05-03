@@ -35,21 +35,21 @@ import { LikeButton } from '@/components/like-button';
 import { LocationSearch } from '@/components/location-search';
 import { PageHeader } from '@/components/page-header';
 
-import { TRIP_ROLES } from '@/utils/constants/status';
-type TripRole = typeof TRIP_ROLES[keyof typeof TRIP_ROLES];
-import { type ItemStatus } from '@/utils/constants/status';
+import { TRIP_ROLES, ITEM_STATUSES, type ItemStatus, PERMISSION_STATUSES } from '@/utils/constants/status';
+import { TripWithMemberInfo } from '@/utils/types';
 
 import React from 'react';
 // NOTE: These imports are intentionally disabled to prevent build errors while keeping the modules in the codebase
 // ;
 
-import FocusSessionExample from '@/components/trips/components/FocusSessionExample';
+// import FocusSessionExample from '@/components/trips/components/FocusSessionExample';
 import Image from 'next/image';
 
 // Import custom components
 // NOTE: These imports are intentionally disabled to prevent build errors
 // import TripPresenceIndicator from '@/components/trips/trip-presence-indicator';
 import TravelTracker from '@/components/TravelTracker';
+type TravelTrackerComponent = typeof TravelTracker;
 
 // Example todo items - same as in the todo-example page
 const todoItems = [
@@ -58,7 +58,7 @@ const todoItems = [
     title: 'Plan itinerary for trip to Japan',
     description:
       'Research attractions, accommodations, and transportation options for a 7-day trip to Tokyo and Kyoto.',
-    status: 'pending' as ItemStatus,
+    status: PERMISSION_STATUSES.PENDING as unknown as ItemStatus,
     dueDate: '2023-11-15',
     priority: 'high' as const,
     votes: {
@@ -78,7 +78,7 @@ const todoItems = [
     id: '2',
     title: 'Book flights for winter vacation',
     description: 'Compare airline prices and select seats for the trip to Europe in December.',
-    status: 'approved' as ItemStatus,
+    status: PERMISSION_STATUSES.APPROVED as unknown as ItemStatus,
     dueDate: '2023-10-01',
     priority: 'medium' as const,
     votes: {
@@ -97,7 +97,7 @@ const todoItems = [
     id: '3',
     title: 'Research restaurants for Barcelona trip',
     description: 'Find popular local restaurants and make reservations for our stay in Barcelona.',
-    status: 'pending' as ItemStatus,
+    status: PERMISSION_STATUSES.PENDING as unknown as ItemStatus,
     dueDate: '2023-11-20',
     priority: 'low' as const,
     votes: {
@@ -124,13 +124,13 @@ const tripSample = {
   created_by: 'user-123',
   is_public: true,
   destination_name: 'Athens, Greece',
-  role: 'admin' as TripRole,
+  role: 'admin',
   member_count: 3,
   slug: 'summer-in-greece',
   public_slug: 'summer-in-greece',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
-};
+} as TripWithMemberInfo;
 
 const destinationSample = {
   id: 'dest-123',
@@ -157,6 +157,9 @@ const popularCities = [
   { id: '3', name: 'Barcelona', country: 'Spain', count: 215 },
   { id: '4', name: 'New York', country: 'USA', count: 312 },
 ];
+
+// Define TripRole type
+type TripRole = keyof typeof TRIP_ROLES;
 
 export default function DesignSandboxClient() {
   return (

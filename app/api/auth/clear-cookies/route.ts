@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createRouteHandlerClient } from '../../../utils/supabase/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 // This endpoint clears all authentication cookies and local storage, to help resolve issues with corrupted auth data
 // Changed from GET to POST for better security (state-changing operations should use POST)
 export async function POST(request: NextRequest): Promise<NextResponse> {

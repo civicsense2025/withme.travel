@@ -10,30 +10,44 @@ import * as Sentry from '@sentry/nextjs';
 export function instrumentApiCall<T>(
   fn: () => Promise<T>,
   name: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ): Promise<T> {
-  const transaction = Sentry.startTransaction({
-    name: `api.${name}`,
-    op: 'http.client',
-    data: metadata,
-  });
-
+  const apiCallStart = Date.now();
+  
   return fn()
     .then((result) => {
-      transaction.setStatus('ok');
-      transaction.finish();
+      // No transaction, just return the result
       return result;
     })
     .catch((error) => {
-      transaction.setStatus('error');
+      // Calculate duration for the failed call
+      const duration = Date.now() - apiCallStart;
+      
+      // Extract tags safely with proper typing
+      const tags: Record<string, string> = { 
+        apiCall: name,
+        duration: String(duration)
+      };
+      
+      // Add any string tags from metadata
+      if (metadata.tags && typeof metadata.tags === 'object' && metadata.tags !== null) {
+        Object.entries(metadata.tags as Record<string, unknown>).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            tags[key] = value;
+          }
+        });
+      }
+      
+      // Capture the exception with Sentry
       Sentry.captureException(error, {
-        tags: {
-          apiCall: name,
-          ...metadata.tags,
+        tags,
+        extra: {
+          ...metadata,
+          duration
         },
-        extra: metadata,
       });
-      transaction.finish();
+      
+      // Rethrow the error
       throw error;
     });
 }

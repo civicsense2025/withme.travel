@@ -1,61 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import type { Database } from '@/types/database.types';
 
-// Define constants locally since we're having import issues
+// Define local constants for tables and fields to avoid dependency issues
 const TABLES = {
   TRIPS: 'trips',
   TRIP_MEMBERS: 'trip_members',
   ITINERARY_ITEMS: 'itinerary_items'
 };
 
-// Define FIELDS locally
+// Define local field constants since they're not all available in central constants
 const FIELDS = {
   COMMON: {
-    ID: 'id'
+    ID: 'id',
   },
   TRIPS: {
-    ID: 'id',
     NAME: 'name',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
     START_DATE: 'start_date',
-    END_DATE: 'end_date'
+    END_DATE: 'end_date',
   },
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   ITINERARY_ITEMS: {
     TRIP_ID: 'trip_id',
-    TITLE: 'title',
-    START_TIME: 'start_time',
-    END_TIME: 'end_time',
     DATE: 'date',
-    DESCRIPTION: 'description',
-    NOTES: 'notes',
-    LOCATION: 'location'
   }
 };
 
-// Simulation of Supabase client for TypeScript checking purposes
-function createRouteHandlerClient() {
-  return {
-    auth: {
-      getSession: async () => ({ 
-        data: { session: null },
-        error: null
-      })
-    },
-    from: (table) => ({
-      select: (fields) => ({
-        eq: (field, value) => ({
-          maybeSingle: async () => ({ data: null, error: null }),
-          single: async () => ({ data: null, error: null }),
-        }),
-        in: (field, values) => ({})
-      })
-    })
-  };
+// Define item type for proper handling
+interface ItineraryItem {
+  id: string;
+  title: string;
+  notes?: string | null;
+  location?: string | null;
+  date: string; // ISO date string
+  start_time?: string | null;
+  end_time?: string | null;
+}
+
+// Type for export options
+interface ExportOptions {
+  exportOption: 'all' | 'selected';
+  selectedDays?: string[];
 }
 
 export async function POST(
@@ -88,7 +77,7 @@ export async function POST(
     }
 
     // Get export options from request
-    const { exportOption, selectedDays } = await request.json();
+    const { exportOption, selectedDays }: ExportOptions = await request.json();
 
     // Get trip details
     const { data: trip, error: tripError } = await supabase
@@ -123,7 +112,8 @@ export async function POST(
     }
 
     // Check if user has connected Google account
-    if (session.user.app_metadata?.provider !== 'google') {
+    const provider = session.user.app_metadata?.provider;
+    if (provider !== 'google') {
       return NextResponse.json(
         {
           error: 'Google account not connected. Please sign in with Google to use this feature.',
@@ -147,36 +137,68 @@ export async function POST(
     }
 
     // Format items for Google Calendar
-    const calendarEvents =
-      items?.map((item) => {
-        // Default to all day event if no times specified
-        const hasStartTime = !!item.start_time;
-        const hasEndTime = !!item.end_time;
+    const calendarEvents = items && Array.isArray(items) && items.length > 0
+      ? items.map((item: any) => {
+          // Default to all day event if no times specified
+          const hasStartTime = !!item.start_time;
+          const hasEndTime = !!item.end_time;
 
-        // Format date and times
-        const itemDate = new Date(item.date);
-        const startDateTime = hasStartTime
-          ? new Date(`${item.date}T${item.start_time}`)
-          : new Date(itemDate.setHours(9, 0, 0));
+          // Format date and times with proper null checking
+          if (!item.date) {
+            return null; // Skip items without a date
+          }
 
-        const endDateTime = hasEndTime
-          ? new Date(`${item.date}T${item.end_time}`)
-          : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default to 1 hour later
+          // Safely create date objects with fallbacks
+          let itemDate: Date;
+          try {
+            itemDate = new Date(item.date);
+            // Check if date is valid
+            if (isNaN(itemDate.getTime())) {
+              return null; // Skip items with invalid dates
+            }
+          } catch (error) {
+            return null; // Skip items with invalid dates
+          }
 
-        return {
-          summary: item.title,
-          description: item.notes || `Part of your trip with withme.travel`,
-          location: item.location,
-          start: {
-            dateTime: startDateTime.toISOString(),
-            timeZone: 'UTC',
-          },
-          end: {
-            dateTime: endDateTime.toISOString(),
-            timeZone: 'UTC',
-          },
-        };
-      }) || [];
+          let startDateTime: Date;
+          let endDateTime: Date;
+
+          try {
+            startDateTime = hasStartTime && item.start_time
+              ? new Date(`${item.date}T${item.start_time}`)
+              : new Date(itemDate.setHours(9, 0, 0));
+
+            endDateTime = hasEndTime && item.end_time
+              ? new Date(`${item.date}T${item.end_time}`)
+              : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default to 1 hour later
+
+            // Validate date objects
+            if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+              // Fallback to all-day event
+              startDateTime = new Date(itemDate.setHours(9, 0, 0));
+              endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+            }
+          } catch (error) {
+            // Fallback to all-day event
+            startDateTime = new Date(itemDate.setHours(9, 0, 0));
+            endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+          }
+
+          return {
+            summary: item.title || 'Untitled Event',
+            description: item.notes || `Part of your trip with withme.travel`,
+            location: item.location || undefined,
+            start: {
+              dateTime: startDateTime.toISOString(),
+              timeZone: 'UTC',
+            },
+            end: {
+              dateTime: endDateTime.toISOString(),
+              timeZone: 'UTC',
+            },
+          };
+        }).filter(Boolean) // Remove null entries
+      : [];
 
     // In a real implementation, we would use the Google Calendar API to create events
     // For now, we'll just return success with the events that would be created
@@ -189,7 +211,7 @@ export async function POST(
     });
   } catch (error: any) {
     console.error('Calendar export error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Unknown error occurred' }, { status: 500 });
   }
 }
 
@@ -215,6 +237,6 @@ export async function GET(
     return NextResponse.json({ message: 'GET endpoint not implemented' }, { status: 501 });
   } catch (error: any) {
     console.error('Calendar export GET error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Unknown error occurred' }, { status: 500 });
   }
 }

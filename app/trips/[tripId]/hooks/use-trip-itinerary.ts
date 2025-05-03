@@ -137,65 +137,46 @@ export function useTripItinerary({
    * Update sections and unscheduled items after an item is added or edited
    */
   const updateItemsAfterEdit = useCallback(
-    (itemId: string, updatedData: Partial<DisplayItineraryItem>) => {
-      const dayNumber = updatedData.day_number;
+    (itemId: string, updates: Partial<DisplayItineraryItem>) => {
+      // Update in allItems first
+      setAllItems((prevItems) =>
+        prevItems.map((item) => (item.id === itemId ? { ...item, ...updates } : item))
+      );
 
-      setSections((prevSections) => {
-        let newSections = [...prevSections];
-        let itemFound = false;
+      // Then update in sections or unscheduled items based on section
+      const itemToUpdate = allItems.find((item) => item.id === itemId);
+      
+      if (!itemToUpdate) {
+        console.error(`Item with ID ${itemId} not found for update`);
+        return;
+      }
 
-        // Remove item from its old position (if it exists)
-        newSections = newSections.map((section) => ({
-          ...section,
-          items: (section.items ?? []).filter((item) => {
-            // Cast to any to handle type compatibility between ItineraryItem and DisplayItineraryItem
-            const typedItem = item as any;
-            if (typedItem.id === itemId) {
-              itemFound = true;
-              return false; // Remove from old section
+      // If the item has a day number, it's in a section
+      if (itemToUpdate.day_number !== null && itemToUpdate.day_number !== undefined) {
+        setSections((prevSections) => {
+          return prevSections.map((section) => {
+            if (section.day_number === itemToUpdate.day_number) {
+              return {
+                ...section,
+                items: (section.items || []).map((item) => {
+                  if (item.id === itemId) {
+                    return { ...item, ...updates };
+                  }
+                  return item;
+                }),
+              };
             }
-            return true;
-          }),
-        }));
-
-        // Add item to its new section (if it has a day number)
-        if (dayNumber !== null && dayNumber !== undefined) {
-          const targetSectionIndex = newSections.findIndex((s) => s.day_number === dayNumber);
-          if (targetSectionIndex !== -1) {
-            // Combine updated data with existing item data (if found)
-            // This assumes the full item data isn't always in updatedData
-            const existingItem = allItems.find((i) => i.id === itemId) || {};
-            const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem;
-
-            newSections[targetSectionIndex] = {
-              ...newSections[targetSectionIndex],
-              items: [...(newSections[targetSectionIndex].items || []), newItem].sort(
-                (a, b) => (a.position ?? 0) - (b.position ?? 0)
-              ),
-            };
-          } else {
-            // Handle case where section for dayNumber doesn't exist (should ideally not happen if sections match duration)
-            console.warn(`Section for day ${dayNumber} not found while updating item ${itemId}`);
-          }
-        }
-
-        return newSections;
-      });
-
-      setUnscheduledItems((prevUnscheduled) => {
-        let newUnscheduled = prevUnscheduled.filter((item) => item.id !== itemId);
-        // If item is now unscheduled (dayNumber is null/undefined)
-        if (dayNumber === null || dayNumber === undefined) {
-          const existingItem = allItems.find((i) => i.id === itemId) || {};
-          const newItem = { ...existingItem, ...updatedData, id: itemId } as DisplayItineraryItem;
-          newUnscheduled = [...newUnscheduled, newItem].sort(
-            (a, b) => (a.position ?? 0) - (b.position ?? 0)
-          );
-        }
-        return newUnscheduled;
-      });
+            return section;
+          });
+        });
+      } else {
+        // Otherwise it's in unscheduled items
+        setUnscheduledItems((prevItems) =>
+          prevItems.map((item) => (item.id === itemId ? { ...item, ...updates } : item))
+        );
+      }
     },
-    [setSections, setUnscheduledItems, allItems]
+    [allItems, setSections, setUnscheduledItems, setAllItems]
   );
 
   /**
@@ -426,15 +407,26 @@ export function useTripItinerary({
 
       // Also remove from sections or unscheduled items
       const itemToDelete = allItems.find((item) => item.id === itemId);
-      if (itemToDelete?.day_number === null) {
+      
+      if (!itemToDelete) {
+        console.warn(`Item with ID ${itemId} not found for deletion`);
+        return;
+      }
+
+      // Safe check for day_number
+      const dayNumber = itemToDelete.day_number;
+      
+      if (dayNumber === null || dayNumber === undefined) {
         setUnscheduledItems((prev) => prev.filter((item) => item.id !== itemId));
       } else {
         setSections((prevSections) => {
           return prevSections.map((section) => {
-            if (section.day_number === itemToDelete?.day_number) {
+            if (section.day_number === dayNumber) {
               return {
                 ...section,
-                items: (section.items || []).filter((item: DisplayItineraryItem) => item.id !== itemId),
+                items: section.items ? 
+                  section.items.filter((item) => item.id !== itemId) : 
+                  [],
               };
             }
             return section;

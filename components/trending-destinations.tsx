@@ -100,6 +100,14 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
+// Add a helper function to safely generate destination URLs
+const generateDestinationUrl = (destination: Destination): string => {
+  if (!destination.city) {
+    return '/destinations/unknown';
+  }
+  return `/destinations/${destination.city.toLowerCase().replace(/\s+/g, '-')}`;
+};
+
 export function TrendingDestinations() {
   const [shuffledDestinations, setShuffledDestinations] = useState<Destination[]>([]);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
@@ -113,7 +121,7 @@ export function TrendingDestinations() {
       revalidateIfStale: true, // Revalidate if data is stale
       dedupingInterval: 60000, // Dedupe requests within 1 minute
       errorRetryCount: 3, // Retry 3 times on failure
-      onError: (err) => {
+      onError: (err: Error) => {
         console.error('SWR Error:', err);
         setErrorDetails(err.message || 'Unknown error');
       },
@@ -186,7 +194,7 @@ export function TrendingDestinations() {
           delay: 5000, // 5 seconds delay
           stopOnInteraction: true, // Stop autoplay on user interaction
           stopOnMouseEnter: true, // Stop autoplay when hovering over the carousel
-        }),
+        }) as any,
       ]}
       className="w-full"
     >
@@ -208,7 +216,7 @@ export function TrendingDestinations() {
             >
               <DestinationCard
                 destination={destination}
-                href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, '-')}`}
+                href={generateDestinationUrl(destination)}
                 hideAttributionMobile
               />
             </motion.div>

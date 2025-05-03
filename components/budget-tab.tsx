@@ -103,16 +103,23 @@ export function BudgetTab({
 
   // Restore combinedExpenses calculation (needed for paidByMemberTotals)
   const combinedExpenses = useMemo(() => {
-    const mappedManual: UnifiedExpense[] = manualExpenses.map((exp) => ({
-      id: exp.id,
-      title: exp.title,
-      amount: Number(exp.amount),
-      currency: 'USD',
-      category: exp.category,
-      date: exp.date,
-      paidBy: members.find((m) => m.user_id === exp.paid_by)?.profiles?.name || 'Unknown',
-      source: 'manual',
-    }));
+    const mappedManual: UnifiedExpense[] = manualExpenses.map((exp) => {
+      // Find member who paid this expense
+      const payer = members.find((m) => m.user_id === exp.paid_by);
+      // Safely access profile name with fallback
+      const payerName = payer?.profiles?.name || 'Unknown';
+      
+      return {
+        id: exp.id,
+        title: exp.title,
+        amount: Number(exp.amount),
+        currency: 'USD',
+        category: exp.category,
+        date: exp.date,
+        paidBy: payerName,
+        source: 'manual' as const,
+      };
+    });
     const allExpenses = [...mappedManual, ...plannedExpenses];
     return allExpenses.sort((a, b) => {
       if (a.date === null && b.date === null) return 0;
@@ -143,16 +150,23 @@ export function BudgetTab({
     const groups: Record<string, UnifiedExpense[]> = {};
     const nullDateKey = 'unscheduled';
 
-    const mappedManual: UnifiedExpense[] = manualExpenses.map((exp) => ({
-      id: exp.id,
-      title: exp.title,
-      amount: Number(exp.amount),
-      currency: 'USD',
-      category: exp.category,
-      date: exp.date, // Keep original date string/null
-      paidBy: members.find((m) => m.user_id === exp.paid_by)?.profiles?.name || 'Unknown',
-      source: 'manual',
-    }));
+    const mappedManual: UnifiedExpense[] = manualExpenses.map((exp) => {
+      // Find member who paid this expense
+      const payer = members.find((m) => m.user_id === exp.paid_by);
+      // Safely access profile name with fallback
+      const payerName = payer?.profiles?.name || 'Unknown';
+      
+      return {
+        id: exp.id,
+        title: exp.title,
+        amount: Number(exp.amount),
+        currency: 'USD',
+        category: exp.category,
+        date: exp.date, // Keep original date string/null
+        paidBy: payerName,
+        source: 'manual' as const, // Use const assertion for literal type
+      };
+    });
 
     const allExpenses = [...mappedManual, ...plannedExpenses];
 
@@ -289,12 +303,20 @@ export function BudgetTab({
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-0.5">
                                     <span>{expense.category || 'Uncategorized'}</span>
-                                    {expense.date && (
-                                      <>
-                                        <span> • </span>
-                                        <span>{formatDate(expense.date)}</span>
-                                      </>
-                                    )}
+                                    
+                                    {/* Handle null dates and formatting separately */}
+                                    <span>
+                                      {expense.date ? (
+                                        <> • {(() => {
+                                          try {
+                                            return format(new Date(expense.date), 'MMM d, yyyy');
+                                          } catch {
+                                            return 'Invalid date';
+                                          }
+                                        })()}</>
+                                      ) : null}
+                                    </span>
+                                    
                                     {expense.source === 'manual' && expense.paidBy && (
                                       <>
                                         <span> • </span>
@@ -355,7 +377,7 @@ export function BudgetTab({
                                       <Avatar className="h-5 w-5">
                                         <AvatarImage src={payerProfile.avatar_url ?? undefined} />
                                         <AvatarFallback className="text-xs">
-                                          {getInitials(payerProfile.name)}
+                                          {getInitials(payerProfile.name ?? '')}
                                         </AvatarFallback>
                                       </Avatar>
                                       <span>Paid {formatCurrency(expense.amount ?? 0)}</span>

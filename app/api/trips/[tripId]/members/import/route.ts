@@ -4,7 +4,7 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { checkTripAccess } from '@/lib/trip-access';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { z } from 'zod';
-import { Database } from '@/types/database.types';
+import type { Database } from '@/types/database.types';
 
 // Define hasMinimumRole locally
 function hasMinimumRole(userRole: string | null, requiredRole: string): boolean {
@@ -40,7 +40,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
   const { data, error: authError } = await supabase.auth.getUser();
 
   if (authError || !data.user) {

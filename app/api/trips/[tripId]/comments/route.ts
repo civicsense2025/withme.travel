@@ -1,22 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient, TypedSupabaseClient } from '@/utils/supabase/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
 import { TABLES } from '@/utils/constants/database';
 
-// Define FIELDS locally for what's needed
+// Define a more complete type for TABLES that includes missing properties
+interface ExtendedTables {
+  USERS: string;
+  TRIPS: string;
+  DESTINATIONS: string;
+  TRIP_ITEM_COMMENTS: string;
+  PROFILES: string;
+  TRIP_COMMENT_LIKES: string;
+  TRIP_MEMBERS: string;
+  [key: string]: string;
+}
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
+
+// Define all needed FIELDS locally for what's needed
 const FIELDS = {
   TRIP_ITEM_COMMENTS: {
     USER_ID: 'user_id',
     CONTENT: 'content',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
+    TRIP_ID: 'trip_id',
+    ITEM_ID: 'item_id'
   },
   COMMON: {
-    ID: 'id'
+    ID: 'id',
+    CREATED_AT: 'created_at'
   },
   PROFILES: {
     NAME: 'name',
     AVATAR_URL: 'avatar_url'
+  },
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id'
+  },
+  TRIP_COMMENT_LIKES: {
+    USER_ID: 'user_id'
   }
 };
 import type { Database } from '@/types/database.types';
@@ -45,15 +70,15 @@ export async function GET(
     }
 
     const { data, error } = await supabase
-      .from(TABLES.TRIP_ITEM_COMMENTS)
+      .from(Tables.TRIP_ITEM_COMMENTS)
       .select(
         `
         *,
-        ${TABLES.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
+        ${Tables.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
           ${FIELDS.PROFILES.NAME},
           ${FIELDS.PROFILES.AVATAR_URL}
         ),
-        likes:${TABLES.TRIP_COMMENT_LIKES} (
+        likes:${Tables.TRIP_COMMENT_LIKES} (
           ${FIELDS.COMMON.ID},
           ${FIELDS.TRIP_COMMENT_LIKES.USER_ID}
         )
@@ -95,7 +120,7 @@ export async function POST(
     }
 
     const { data: member, error: memberError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from(Tables.TRIP_MEMBERS)
       .select(FIELDS.COMMON.ID)
       .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
@@ -105,18 +130,20 @@ export async function POST(
       return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 });
     }
 
+    const insertObject = {
+      [FIELDS.TRIP_ITEM_COMMENTS.TRIP_ID]: tripId,
+      [FIELDS.TRIP_ITEM_COMMENTS.ITEM_ID]: itemId,
+      [FIELDS.TRIP_ITEM_COMMENTS.USER_ID]: user.id,
+      [FIELDS.TRIP_ITEM_COMMENTS.CONTENT]: content.trim(),
+    };
+
     const { data, error } = await supabase
-      .from(TABLES.TRIP_ITEM_COMMENTS)
-      .insert({
-        [FIELDS.TRIP_ITEM_COMMENTS.TRIP_ID]: tripId,
-        [FIELDS.TRIP_ITEM_COMMENTS.ITEM_ID]: itemId,
-        [FIELDS.TRIP_ITEM_COMMENTS.USER_ID]: user.id,
-        [FIELDS.TRIP_ITEM_COMMENTS.CONTENT]: content.trim(),
-      })
+      .from(Tables.TRIP_ITEM_COMMENTS)
+      .insert(insertObject)
       .select(
         `
         *,
-        ${TABLES.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
+        ${Tables.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
           ${FIELDS.PROFILES.NAME},
           ${FIELDS.PROFILES.AVATAR_URL}
         )

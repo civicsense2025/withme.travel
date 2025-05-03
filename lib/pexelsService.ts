@@ -289,25 +289,22 @@ export async function getRandomDestinationImage(
       `${city} travel`,
     ];
 
-    console.log(chalk.dim(`  (Pexels Query Keywords: ${randomKeyword1}, ${uniqueKeyword2})`));
+    console.log(`  (Pexels Query Keywords: ${randomKeyword1}, ${uniqueKeyword2})`);
 
     // Try each query until we find a result
     for (const query of searchQueries) {
-      const spinner = ora(`Attempting Pexels search with query: "${query}"`).start();
+      logger.log(`Attempting Pexels search with query: "${query}"`);
 
-      const { photos, error } = await searchPexels(query, {
-        perPage: 30,
-        orientation: options.orientation || 'landscape',
-      });
+      const { photos, error } = await searchPexels(query, 30);
 
       if (error) {
-        spinner.warn({ text: error });
+        logger.warning(error);
         continue; // Try the next query
       }
 
       if (photos.length > 0) {
         const randomIndex = random(0, Math.min(photos.length - 1, 9)); // Pick from top 10 results
-        spinner.succeed({ text: `Found Pexels image using query: "${query}"` });
+        logger.success(`Found Pexels image using query: "${query}"`);
         
         const photo = photos[randomIndex];
         
@@ -331,7 +328,7 @@ export async function getRandomDestinationImage(
         };
       }
       
-      spinner.warn({ text: `No Pexels results for query: "${query}"` });
+      logger.warning(`No Pexels results for query: "${query}"`);
     }
     
     // If we get here, we didn't find any images with any of our queries

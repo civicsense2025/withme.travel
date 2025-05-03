@@ -1,6 +1,6 @@
 ('use client');
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Settings, Trash2, Share2, Lock, Globe, UserPlus, Mail, Copy } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -8,15 +8,8 @@ import { cn } from '@/lib/utils';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { AuthContextType } from '@/components/auth-provider';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   Dialog,
   DialogContent,
@@ -27,19 +20,87 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getInitials } from '@/utils/lib-utils';
+import { format } from 'date-fns';
+import { Loader2, Check, MoreHorizontal, UserMinus, UserCog } from 'lucide-react';
+import { TABLES } from '@/utils/constants/database';
+
+// Define FIELDS locally for what's needed in this component
+const FIELDS = {
+  TRIP_MEMBERS: {
+    TRIP_ID: 'trip_id',
+    USER_ID: 'user_id',
+    ROLE: 'role',
+    STATUS: 'status'
+  }
+};
+
+// Define proper type for trip members
+interface TripMember {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string | null;
+  role: string; // 'admin' | 'editor' | 'viewer' | 'contributor'
+  status: 'active' | 'pending';
+  user_id?: string;
+  trip_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 interface Member {
   id: string;
   name: string;
   email: string;
-  avatar_url?: string;
-  role: 'owner' | 'admin' | 'member';
+  avatar_url?: string | null;
+  role: 'admin' | 'editor' | 'viewer' | 'contributor';
   status: 'active' | 'pending';
+}
+
+interface Trip {
+  id: string;
+  name: string;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at?: string;
+  created_by?: string;
+  is_public?: boolean;
+  public_slug?: string | null;
+  destination?: string | null;
+  owner_id?: string;
 }
 
 interface TripManagementProps {
   tripId: string;
 }
+
+// Define a properly typed interface for the TABLES being used
+interface TableNames {
+  TRIP_MEMBERS: string;
+  USERS: string;
+  TRIPS: string;
+  DESTINATIONS: string;
+  [key: string]: string;
+}
+
+// Cast the imported TABLES to the interface for proper type safety
+const Tables = TABLES as unknown as TableNames;
 
 export function TripManagement({ tripId }: TripManagementProps) {
   const { toast } = useToast();
@@ -54,6 +115,8 @@ export function TripManagement({ tripId }: TripManagementProps) {
   const [isPublic, setIsPublic] = useState(false);
   const [publicLink, setPublicLink] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Fetch trip data and members
   useEffect(() => {
@@ -83,30 +146,38 @@ export function TripManagement({ tripId }: TripManagementProps) {
         });
 
         // Fetch members
-        const { data, error } = await supabase.from('trip_members').select('*');
+        const { data, error } = await supabase
+          .from(Tables.TRIP_MEMBERS)
+          .select('*')
+          .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
 
         if (error) throw error;
 
-        setMembers(
-          data.map((member: any) => ({
-            id: member.id,
-            name: member.name,
-            email: member.email,
-            avatar_url: member.avatar_url,
-            role: member.role,
-            status: member.status,
-          }))
-        );
+        if (data) {
+          setMembers(
+            data.map((member: TripMember) => ({
+              id: member.id,
+              name: member.name,
+              email: member.email,
+              avatar_url: member.avatar_url,
+              role: member.role as Member['role'],
+              status: member.status,
+            }))
+          );
+        }
 
         // Check if current user is owner or admin
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        const currentUserMember = data.find((m: any) => m.id === user?.id);
-        setIsAdmin(
-          currentUserMember?.role === TRIP_ROLES.ADMIN ||
+        
+        if (user) {
+          const currentUserMember = data?.find((m: TripMember) => m.user_id === user.id);
+          setIsAdmin(
+            currentUserMember?.role === TRIP_ROLES.ADMIN ||
             currentUserMember?.role === TRIP_ROLES.EDITOR
-        );
+          );
+        }
       } catch (error) {
         console.error('Error fetching trip data:', error);
         toast({
@@ -193,20 +264,25 @@ export function TripManagement({ tripId }: TripManagementProps) {
       setInviteEmail('');
 
       // Refresh members list
-      const { data, error } = await supabase.from('trip_members').select('*');
+      const { data, error } = await supabase
+        .from(Tables.TRIP_MEMBERS)
+        .select('*')
+        .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
 
       if (error) throw error;
 
-      setMembers(
-        data.map((member: any) => ({
-          id: member.id,
-          name: member.name,
-          email: member.email,
-          avatar_url: member.avatar_url,
-          role: member.role,
-          status: member.status,
-        }))
-      );
+      if (data) {
+        setMembers(
+          data.map((member: TripMember) => ({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            avatar_url: member.avatar_url,
+            role: member.role as Member['role'],
+            status: member.status,
+          }))
+        );
+      }
     } catch (error) {
       console.error('Error inviting member:', error);
       toast({
@@ -218,7 +294,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
   };
 
   // Update member role
-  const updateMemberRole = async (memberId: string, newRole: 'admin' | 'member') => {
+  const updateMemberRole = async (memberId: string, newRole: Member['role']) => {
     try {
       const response = await fetch(API_ROUTES.TRIP_MEMBERS(tripId) + `/${memberId}`, {
         method: 'PATCH',
@@ -549,11 +625,11 @@ export function TripManagement({ tripId }: TripManagementProps) {
                             onClick={() =>
                               updateMemberRole(
                                 member.id,
-                                member.role === 'admin' ? 'member' : 'admin'
+                                member.role === TRIP_ROLES.ADMIN ? TRIP_ROLES.VIEWER : TRIP_ROLES.ADMIN
                               )
                             }
                           >
-                            {member.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                            {member.role === TRIP_ROLES.ADMIN ? 'Remove Admin' : 'Make Admin'}
                           </Button>
                           <Button
                             size="sm"

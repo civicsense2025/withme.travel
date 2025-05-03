@@ -345,8 +345,10 @@ export function TripNotesEditor({
         <BubbleMenu
           editor={editor}
           tippyOptions={{ duration: 100 }}
-          shouldShow={({ editor, view, state, oldState, from, to }) => { return // Only show when text is selected
-            return !editor.isActive('image') && from !== to; }}
+          shouldShow={({ editor, view, state, oldState, from, to }: any) => {
+            // Only show when text is selected
+            return !editor.isActive('image') && from !== to;
+          }}
         >
           <div className="flex items-center gap-1 p-1 rounded-md bg-background border shadow-sm">
             <Button

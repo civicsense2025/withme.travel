@@ -1,9 +1,40 @@
-import { supabase } from '@/utils/supabase/client';
-import { UnsplashImage } from '@/types/images';
-import { Database } from '@/types/supabase';
-import type { Api } from 'unsplash-js/dist/types';
+import { createClient } from '@/utils/supabase/client';
+import { createApi } from 'unsplash-js';
+// Using any for Api type since the module can't be found
+import type { Random } from 'unsplash-js/dist/methods/photos/types';
 import { UNSPLASH_CONFIG } from '@/utils/constants/api';
 import ora from '@/utils/ora';
+import chalk from 'chalk';
+
+// Define a basic type for the unsplash API
+type Api = any;
+
+// Interface for unsplash image
+export interface UnsplashImage {
+  id: string;
+  url: string;
+  alt_description?: string;
+  description?: string;
+  urls: {
+    raw: string;
+    full: string;
+    regular: string;
+    small: string;
+    thumb: string;
+  };
+  user: {
+    name: string;
+    username: string;
+    links: {
+      html: string;
+    };
+  };
+}
+
+// Define a utility function for random number generation
+function random(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 // Check if we have an API key
 const unsplashApiKey = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;

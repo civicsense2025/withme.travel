@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { Transporter } from 'nodemailer';
 // Using dynamic import for nodemailer
-const nodemailer = async () => {
+const importNodemailer = async () => {
   return await import('nodemailer');
 };
 import { resend } from './resend';
@@ -152,7 +152,19 @@ export class EmailService {
         });
 
         if (error) {
-          throw new Error(`Resend error: ${error.message}`);
+          // Use type assertion for unknown error type
+          const errorObj = error as unknown;
+          let errorMessage: string;
+          
+          if (errorObj instanceof Error) {
+            errorMessage = errorObj.message;
+          } else if (typeof errorObj === 'object' && errorObj !== null) {
+            errorMessage = JSON.stringify(errorObj);
+          } else {
+            errorMessage = String(errorObj);
+          }
+          
+          throw new Error(`Resend error: ${errorMessage}`);
         }
 
         return { success: true, data };
@@ -160,7 +172,8 @@ export class EmailService {
 
       // Fall back to Nodemailer for development/testing
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-        const transporter = nodemailer.createTransport({
+        const nodemailerModule = await importNodemailer();
+        const transporter = nodemailerModule.default.createTransport({
           host: process.env.SMTP_HOST,
           port: parseInt(process.env.SMTP_PORT || '587'),
           secure: process.env.SMTP_SECURE === 'true',

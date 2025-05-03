@@ -8,9 +8,6 @@ import { CalendarDays, MapPin, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useToast } from './ui/use-toast';
-import { ItineraryTemplate } from '@/types/itinerary';
-import { supabase } from '@/utils/supabase/client';
-import { Database } from '@/types/supabase';
 
 interface ItineraryDay {
   day: number;
@@ -22,6 +19,11 @@ interface ItineraryDay {
     start_time: string | null;
     end_time: string | null;
   }[];
+}
+
+interface DateRange {
+  from: Date | null;
+  to: Date | null;
 }
 
 interface ItineraryTemplateDetailProps {
@@ -64,6 +66,10 @@ export function ItineraryTemplateDetail({
   const [liked, setLiked] = useState<boolean>(isLiked);
   const [likeCount, setLikeCount] = useState<number>(template.like_count || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
+  const [tripTitle, setTripTitle] = useState<string>(`Trip to ${template.destinations.name}`);
+  const [isUseDialogOpen, setIsUseDialogOpen] = useState<boolean>(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState<boolean>(false);
 
   const handleLike = async () => {
     try {
@@ -86,7 +92,7 @@ export function ItineraryTemplateDetail({
         title: 'Missing dates',
         description: 'Please select a start and end date for your trip.',
         variant: 'destructive',
-  });
+      });
       return;
     }
 
@@ -122,7 +128,7 @@ export function ItineraryTemplateDetail({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create trip',
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsSubmitting(false);
     }

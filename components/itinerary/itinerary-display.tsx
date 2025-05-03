@@ -10,10 +10,9 @@ import { Profile } from '@/types/profile';
 import { DisplayItineraryItem } from '@/types/itinerary';
 import { getInitials, cn } from '@/utils/lib-utils';
 import { Badge } from '@/components/ui/badge';
-
+import { PERMISSION_STATUSES } from '@/utils/constants/status';
 
 'use client';
-
 
 // Define a type alias for profile information in votes
 type ProfileBasic = Profile;
@@ -96,13 +95,17 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
     }
   };
 
-  const handleStatusUpdate = async (itemId: string, newStatus: 'approved' | 'rejected') => {
+  const handleStatusUpdate = async (itemId: string, newStatus: typeof PERMISSION_STATUSES.APPROVED | typeof PERMISSION_STATUSES.REJECTED) => {
     setUpdatingStatusItemId(itemId); // Indicate loading state for this item
     const originalItems = [...items];
 
     // Optimistic UI Update
     setItems((currentItems) =>
-      currentItems.map((item) => (item.id === itemId ? { ...item, status: newStatus } : item))
+      currentItems.map((item) => 
+        item.id === itemId 
+          ? { ...item, status: newStatus as any } // Type casting needed here
+          : item
+      )
     );
 
     try {
@@ -136,7 +139,7 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
     }
   };
 
-  const renderVoters = (voters: Profile[]) => {
+  const renderVoters = (voters: Profile[] | undefined) => {
     // Only render if expanded
     if (!voters || voters.length === 0) return null;
     return (
@@ -169,9 +172,9 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
     return <p className="text-muted-foreground text-center py-8">No itinerary items added yet.</p>;
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | null) => {
     switch (status) {
-      case 'approved':
+      case PERMISSION_STATUSES.APPROVED:
         // Use secondary variant with green text/icon for success indication
         return (
           <Badge
@@ -181,17 +184,14 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
             <CheckCircle2 className="h-3 w-3 mr-1" /> Approved
           </Badge>
         );
-      case 'rejected':
+      case PERMISSION_STATUSES.REJECTED:
         // Destructive variant works well for rejected
         return (
           <Badge variant="destructive" className="ml-2">
             <XCircle className="h-3 w-3 mr-1" /> Rejected
           </Badge>
         );
-      case 'pending':
-      case 'suggested': // Use string literal instead of constant
-      case null:
-      case null:
+      case PERMISSION_STATUSES.PENDING:
       default:
         // Outline variant is suitable for pending
         return (
@@ -208,7 +208,7 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
       {items.map((item) => {
         const isExpanded = expandedVoteItemId === item.id;
         return (
-          <Card key={item.id} className={cn(item.status === 'rejected' && 'opacity-60')}>
+          <Card key={item.id} className={cn((item.status as string) === PERMISSION_STATUSES.REJECTED && 'opacity-60')}>
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
@@ -274,14 +274,14 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
                   )}
                 </button>
                 {/* Expanded Actions (only render if expanded) */}
-                {isExpanded && canEdit && item.status === 'pending' && (
+                {isExpanded && canEdit && (item.status as string) === PERMISSION_STATUSES.PENDING && (
                   <div className="flex items-center gap-2">
                     {/* Approve/Reject Buttons */}
                     <Button
                       variant="outline"
                       size="sm"
                       className="h-auto p-1.5 text-green-600 border-green-600/40 hover:bg-green-500/10"
-                      onClick={() => handleStatusUpdate(item.id, 'approved')}
+                      onClick={() => handleStatusUpdate(item.id, PERMISSION_STATUSES.APPROVED)}
                       disabled={updatingStatusItemId === item.id}
                     >
                       {updatingStatusItemId === item.id ? (
@@ -296,7 +296,7 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
                       variant="outline"
                       size="sm"
                       className="h-auto p-1.5 text-red-600 border-red-600/40 hover:bg-red-500/10"
-                      onClick={() => handleStatusUpdate(item.id, 'rejected')}
+                      onClick={() => handleStatusUpdate(item.id, PERMISSION_STATUSES.REJECTED)}
                       disabled={updatingStatusItemId === item.id}
                     >
                       {updatingStatusItemId === item.id ? (

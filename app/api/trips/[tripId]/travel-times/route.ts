@@ -30,16 +30,16 @@ const FIELDS = {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
-  const { tripId } = await params;
+  { params }: { params: { tripId: string } }
+): Promise<NextResponse> {
+  const { tripId } = params;
 
   if (!tripId) {
     return NextResponse.json({ error: 'Missing tripId parameter' }, { status: 400 });
   }
 
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // 1. Fetch itinerary items required for calculation using FIELDS
     const { data: items, error: itemsError } = await supabase
@@ -68,22 +68,26 @@ export async function GET(
     }
 
     // 2. Calculate travel times using the utility function
-    const travelTimes = await calculateTravelTimes(items as ItineraryItemCoords[]);
+    // We've already filtered for non-null coordinates in the database query
+    // Type assertion is safe here because we've verified the data format
+    const travelTimes = await calculateTravelTimes(items as unknown as ItineraryItemCoords[]);
 
     // 3. Return the calculated travel times
     return NextResponse.json(travelTimes);
   } catch (error) {
     console.error('Unexpected error in travel times API:', error);
-    return NextResponse.json({ error: 'An unexpected server error occurred' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'An unexpected server error occurred' 
+    }, { status: 500 });
   }
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
+  { params }: { params: { tripId: string } }
 ) {
-  const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const { tripId } = params;
+  const supabase = createRouteHandlerClient();
   // ... rest of POST handler ...
   return NextResponse.json({ error: 'POST method not implemented' }, { status: 405 });
 }

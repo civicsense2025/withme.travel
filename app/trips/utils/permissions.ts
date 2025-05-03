@@ -1,11 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
-import { TABLES, ENUMS } from '@/utils/constants/database';
-import type { TripRole } from '@/utils/constants/database';
-
-// Use the shared enum from constants
-const { TRIP_ROLES } = ENUMS;
-
-export type TripRole = typeof LOCAL_TRIP_ROLES[keyof typeof LOCAL_TRIP_ROLES];
+import { TABLES } from '@/utils/constants/database';
+import { TRIP_ROLES, type TripRole } from '@/utils/constants/status';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -74,9 +69,9 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
 
   return {
     canView: !!role || isCreator || isPublic,
-    canEdit: (!!role && (role === LOCAL_TRIP_ROLES.ADMIN || role === LOCAL_TRIP_ROLES.EDITOR)) || isCreator,
-    canManage: (!!role && role === LOCAL_TRIP_ROLES.ADMIN) || isCreator,
-    canAddMembers: (!!role && role === LOCAL_TRIP_ROLES.ADMIN) || isCreator,
+    canEdit: (!!role && (role === TRIP_ROLES.ADMIN || role === TRIP_ROLES.EDITOR)) || isCreator,
+    canManage: (!!role && role === TRIP_ROLES.ADMIN) || isCreator,
+    canAddMembers: (!!role && role === TRIP_ROLES.ADMIN) || isCreator,
     canDeleteTrip: isCreator,
     isCreator,
     role,
@@ -146,13 +141,13 @@ export function getRoleName(role: string | null): string {
   if (!role) return 'Viewer';
 
   switch (role) {
-    case LOCAL_TRIP_ROLES.ADMIN:
+    case TRIP_ROLES.ADMIN:
       return 'Admin';
-    case LOCAL_TRIP_ROLES.EDITOR:
+    case TRIP_ROLES.EDITOR:
       return 'Editor';
-    case LOCAL_TRIP_ROLES.CONTRIBUTOR:
+    case TRIP_ROLES.CONTRIBUTOR:
       return 'Contributor';
-    case LOCAL_TRIP_ROLES.VIEWER:
+    case TRIP_ROLES.VIEWER:
       return 'Viewer';
     default:
       return 'Viewer';

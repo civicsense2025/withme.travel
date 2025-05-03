@@ -25,7 +25,7 @@ import { TripRole } from '@/types/trip';
 import * as z from 'zod';
 
 // Temporarily define the missing utility functions until properly migrated
-const formatDateRange = (startDate: string | null, endDate: string | null): string => {
+const formatDateRange = (startDate?: string | null, endDate?: string | null): string => {
   if (!startDate) return 'No dates set';
   if (!endDate) return format(new Date(startDate), 'MMM d, yyyy');
   return `${format(new Date(startDate), 'MMM d')} - ${format(new Date(endDate), `MMM d, yyyy`)}`;
@@ -171,20 +171,20 @@ export function TripOverviewTab({
   };
 
   // --- Create a Profile object suitable for ItineraryTab ---
-  const profileForTab: Profile | null = user?.profile
+  const profileForTab: Profile | null = user
     ? {
-        id: user.profile.id,
-        email: user.profile.email ?? '', // Use email from UserProfile, default to empty string if null
-        name: user.profile.name || 'User', // Ensure name is string, default if null
-        avatar_url: user.profile.avatar_url,
-        username: user.profile.username ?? null,
-        // Add defaults for fields required by Profile but optional in UserProfile
-        bio: user.profile.bio ?? null,
-        location: user.profile.location ?? null,
-        website: user.profile.website ?? null,
-        is_verified: user.profile.is_verified ?? false,
-        created_at: user.profile.created_at ?? new Date().toISOString(),
-        updated_at: user.profile.updated_at ?? user.profile.created_at ?? new Date().toISOString(),
+        id: user.id || '', // Use user ID which is always available
+        email: user.email || '', // Use user email for backward compatibility
+        name: user?.profile?.name || user.email?.split('@')[0] || 'User', // Use email username or default
+        avatar_url: user?.profile?.avatar_url || null,
+        username: user?.profile?.username || null,
+        // Add defaults for required Profile fields not present in ExtendedUser
+        bio: null,
+        location: null,
+        website: null,
+        is_verified: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
     : null;
   // --- End Profile object creation ---
@@ -317,6 +317,10 @@ export function TripOverviewTab({
               onItemStatusChange={placeholderOnItemStatusChange}
               onAddItem={placeholderOnAddItem}
               onReorder={placeholderOnReorder}
+              onSectionReorder={async (orderedDayNumbers) => {
+                console.warn('Section reorder not implemented in overview tab');
+                return Promise.resolve();
+              }}
             />
           </CardContent>
         </Card>

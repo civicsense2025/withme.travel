@@ -165,12 +165,11 @@ export async function PATCH(
 }
 
 // --- PUT Handler --- //
+// Re-purpose PUT to just return a 405 response since we only want to use PATCH for status updates
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string; itemId: string }> }
 ) {
-  const { tripId, itemId } = await params;
-  const supabase = createRouteHandlerClient();
   return NextResponse.json(
     { error: 'PUT method not implemented for status update. Use PATCH.' },
     { status: 405 }
