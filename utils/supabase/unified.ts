@@ -1,6 +1,6 @@
 /**
  * Unified Supabase utilities for both App Router and Pages Router
- * 
+ *
  * This file provides a consistent interface for authentication that works in both
  * the app/ directory (Server Components) and pages/ directory (Client Components)
  */
@@ -28,18 +28,25 @@ export function getBrowserClient(): TypedSupabaseClient {
 }
 
 /**
- * Dynamic import for the getServerComponentClient function
- * This approach prevents next/headers from being imported in client bundles
+ * Create a Supabase client for server components without requiring dynamic imports
+ * This avoids the webpack bundling issues with next/headers
  */
-export async function getServerComponentClient(): Promise<TypedSupabaseClient> {
-  try {
-    // Dynamic import to prevent next/headers from being included in client bundles
-    const { getServerComponentClient: getClient } = await import('./server-component');
-    return getClient();
-    } catch (error) {
-      console.error('Error importing server component client:', error);
-    throw new Error('Failed to create server component client');
+export function getServerComponentClient(): TypedSupabaseClient {
+  if (typeof window !== 'undefined') {
+    throw new Error('getServerComponentClient should only be used in server components');
   }
+  
+  // Import next/headers at runtime
+  const { cookies } = require('next/headers');
+  
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      async get(name: string) {
+        const cookieStore = await cookies();
+        return cookieStore.get(name)?.value;
+      },
+    },
+  });
 }
 
 /**
@@ -47,10 +54,21 @@ export async function getServerComponentClient(): Promise<TypedSupabaseClient> {
  */
 export async function getServerSession() {
   try {
-    const { getServerComponentSession } = await import('./server-component');
-    return await getServerComponentSession();
-    } catch (error) {
-      console.error('Error getting server session:', error);
+    if (typeof window !== 'undefined') {
+      throw new Error('getServerSession should only be used in server components');
+    }
+    
+    const supabase = getServerComponentClient();
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Get session error:', error.message);
+      return { data: { session: null } };
+    }
+    
+    return { data: { session: data.session } };
+  } catch (error) {
+    console.error('Error getting server session:', error);
     return { data: { session: null } };
   }
 }
@@ -62,7 +80,7 @@ export function getPagesServerClient(req: any, res: any): TypedSupabaseClient {
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: false,
-  },
+    },
     cookies: {
       get(name: string) {
         const cookies = req.cookies;
@@ -87,7 +105,7 @@ export function getPagesServerClient(req: any, res: any): TypedSupabaseClient {
 export function getMiddlewareClient(req: Request): TypedSupabaseClient {
   const requestHeaders = new Headers(req.headers);
   const cookieString = requestHeaders.get('cookie') || '';
-  
+
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {

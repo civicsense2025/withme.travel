@@ -32,7 +32,7 @@ export const BUDGET_CATEGORY_COLORS: Record<keyof typeof BUDGET_CATEGORIES, stri
   ACTIVITIES: EXPENSE_CATEGORY_COLORS.activities,
   SHOPPING: EXPENSE_CATEGORY_COLORS.shopping,
   OTHER: EXPENSE_CATEGORY_COLORS.other,
-  } as const;
+} as const;
 
 /**
  * Status colors for various UI elements

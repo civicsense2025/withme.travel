@@ -62,11 +62,11 @@ export function ItineraryItemNotes({
   const [isLoaded, setIsLoaded] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Create refs for Y.js document and provider
   const ydoc = useMemo(() => new Y.Doc(), []);
   const providerRef = useRef<WebsocketProvider | null>(null);
-  
+
   // Create and connect to the WebSocket provider
   const provider = useMemo(() => {
     // Ensure this runs only on the client
@@ -176,7 +176,7 @@ export function ItineraryItemNotes({
       content: '', // Content is managed by Yjs
       editorProps: {
         attributes: {
-          class: 'prose prose-sm focus:outline-none min-h-[100px] max-w-none'
+          class: 'prose prose-sm focus:outline-none min-h-[100px] max-w-none',
         },
       },
     },

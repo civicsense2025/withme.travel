@@ -16,9 +16,9 @@ export function Footer() {
     'North America',
     'South America',
     'Oceania',
-    'Antarctica'
+    'Antarctica',
   ];
-  
+
   // Navigate items for Explore section
   const exploreLinks = [
     { href: '/destinations', label: 'Destinations' },

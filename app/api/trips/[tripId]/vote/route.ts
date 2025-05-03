@@ -9,7 +9,7 @@ const TRIP_VOTE_POLLS_TABLE = 'trip_vote_polls';
 // Field constants
 const TRIP_MEMBERS_FIELDS = {
   TRIP_ID: 'trip_id',
-  USER_ID: 'user_id'
+  USER_ID: 'user_id',
 };
 
 export async function GET(
@@ -22,11 +22,14 @@ export async function GET(
   if (!tripId || !/^\d+$/.test(tripId)) {
     return NextResponse.json({ error: 'Invalid trip ID' }, { status: 400 });
   }
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   try {
     // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -47,7 +50,8 @@ export async function GET(
     // Get active polls for this trip
     const { data: polls, error: pollsError } = await supabase
       .from(TRIP_VOTE_POLLS_TABLE)
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
@@ -55,7 +59,8 @@ export async function GET(
         expires_at,
         created_by,
         is_active
-      `)
+      `
+      )
       .eq('trip_id', tripId)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
@@ -78,12 +83,9 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
-  
+  const supabase = createRouteHandlerClient();
+
   // For now, return a "not implemented" message
   // This can be expanded later to support creating polls
-  return NextResponse.json(
-    { error: 'POST method not fully implemented yet' },
-    { status: 501 }
-  );
+  return NextResponse.json({ error: 'POST method not fully implemented yet' }, { status: 501 });
 }

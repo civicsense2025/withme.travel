@@ -19,7 +19,12 @@ interface DashboardClientProps {
   tripCount: number;
 }
 
-export default function DashboardClient({ user, profile, recentTrips, tripCount }: DashboardClientProps) {
+export default function DashboardClient({
+  user,
+  profile,
+  recentTrips,
+  tripCount,
+}: DashboardClientProps) {
   return (
     <main className="container py-12 md:py-16">
       <div className="flex flex-col md:flex-row gap-8 md:gap-12">
@@ -119,4 +124,4 @@ export default function DashboardClient({ user, profile, recentTrips, tripCount 
       </div>
     </main>
   );
-} 
+}

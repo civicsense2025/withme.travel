@@ -3,14 +3,50 @@ import { TRIP_ROLES, PERMISSION_STATUSES } from '@/utils/constants/status';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Mail, PlusCircle, Trash2, User, Check, X, UserPlus, Link2, Link2Off, RefreshCw, Loader2, ChevronDown, Import, Copy } from 'lucide-react';
+import {
+  Mail,
+  PlusCircle,
+  Trash2,
+  User,
+  Check,
+  X,
+  UserPlus,
+  Link2,
+  Link2Off,
+  RefreshCw,
+  Loader2,
+  ChevronDown,
+  Import,
+  Copy,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -31,7 +67,7 @@ function getInitials(name?: string | null): string {
 }
 
 // Define TripRole type from the constants
-type TripRole = typeof TRIP_ROLES[keyof typeof TRIP_ROLES];
+type TripRole = (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
 
 // Exported MemberProfile
 export interface MemberProfile {
@@ -79,16 +115,15 @@ export function MembersTab({
   const [members, setMembers] = useState<TripMemberFromSSR[]>(initialMembers);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const [newMember, setNewMember] = useState({ 
-    name: '', 
-    email: '', 
-    role: TRIP_ROLES.VIEWER as TripRole 
+  const [newMember, setNewMember] = useState({
+    name: '',
+    email: '',
+    role: TRIP_ROLES.VIEWER as TripRole,
   });
-  
-  const isAdmin = [
-    TRIP_ROLES.ADMIN.toUpperCase(),
-    TRIP_ROLES.EDITOR.toUpperCase(),
-  ].includes(userRole?.toUpperCase() ?? '');
+
+  const isAdmin = [TRIP_ROLES.ADMIN.toUpperCase(), TRIP_ROLES.EDITOR.toUpperCase()].includes(
+    userRole?.toUpperCase() ?? ''
+  );
 
   const [inviteLink, setInviteLink] = useState('');
 
@@ -242,7 +277,7 @@ export function MembersTab({
             id: updatedRequest.new_member.user_id, // Assuming profile ID is user ID
             name: updatedRequest.user_profile?.name || 'Unknown',
             avatar_url: updatedRequest.user_profile?.avatar_url || null,
-          }
+          },
         };
         setMembers((prev) => [...prev, newMemberSSR]);
         toast({ title: 'Access Approved', description: `User added to the trip.` });

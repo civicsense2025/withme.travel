@@ -32,6 +32,7 @@ Unless explicitly asked to rename variables, functions, or restructure code, pre
 When fixing issues, make the smallest possible changes needed to address the specific problem. Avoid rewriting entire functions when a single line change would suffice.
 
 **Bad Example:**
+
 ```javascript
 // When asked to fix a date formatting issue
 // Original code:
@@ -47,10 +48,11 @@ function formatDate(date) {
 ```
 
 **Good Example:**
+
 ```javascript
 // Do a targeted fix:
 function formatDate(date) {
-  return (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
+  return date.getMonth() + 1 + '/' + date.getDate() + '/' + date.getFullYear();
 }
 ```
 
@@ -61,6 +63,7 @@ function formatDate(date) {
 When the developer corrects you, add these patterns to your understanding of the project:
 
 If the developer says:
+
 ```
 Don't use fetch() directly, always use our api.request() utility
 ```
@@ -98,15 +101,15 @@ function calculateTotal(cart) {
   if (!cart || !Array.isArray(cart.items)) {
     return 0;
   }
-  
-  return cart.items.reduce((sum, item) => 
-    sum + (item?.price || 0) * (item?.quantity || 0), 0);
+
+  return cart.items.reduce((sum, item) => sum + (item?.price || 0) * (item?.quantity || 0), 0);
 }
 ```
 
 ### 2. Include Error Handling
 
 Always wrap code that could throw exceptions in try/catch blocks, especially:
+
 - Network requests
 - File operations
 - JSON parsing
@@ -164,9 +167,8 @@ function calculateTotal(cart: Cart): number {
   if (!cart || !Array.isArray(cart.items)) {
     return 0;
   }
-  
-  return cart.items.reduce((sum, item) => 
-    sum + item.price * item.quantity, 0);
+
+  return cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 ```
 
@@ -189,17 +191,17 @@ async function fetchUser(userId) {
   try {
     // Use the project's standard API utility, not raw fetch
     const response = await api.request(`/users/${userId}`);
-    
+
     // Validate the response shape
     if (!response || !response.data || !response.data.id) {
       throw new Error('Invalid user data received');
     }
-    
+
     return response.data;
   } catch (error) {
     // Log with context
     logger.error(`Failed to fetch user ${userId}`, error);
-    
+
     // Rethrow with better context
     throw new ApiError(`Could not retrieve user ${userId}`, error);
   }
@@ -223,18 +225,18 @@ function UserProfile({ userId, showDetails = false }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Effects with cleanup
   useEffect(() => {
     let isMounted = true;
-    
+
     async function loadUser() {
       try {
         setLoading(true);
         setError(null);
-        
+
         const userData = await fetchUser(userId);
-        
+
         // Prevent state updates if component unmounted
         if (isMounted) {
           setUser(userData);
@@ -249,20 +251,20 @@ function UserProfile({ userId, showDetails = false }) {
         }
       }
     }
-    
+
     loadUser();
-    
+
     // Cleanup function to prevent memory leaks
     return () => {
       isMounted = false;
     };
   }, [userId]);
-  
+
   // Handle different states
   if (loading) return <Loading />;
   if (error) return <ErrorDisplay message={error} />;
   if (!user) return <EmptyState message="No user found" />;
-  
+
   return (
     <ErrorBoundary fallback={<ErrorDisplay message="Profile error" />}>
       <div className="user-profile">
@@ -281,7 +283,7 @@ function UserProfile({ userId, showDetails = false }) {
 // Always include PropTypes
 UserProfile.propTypes = {
   userId: PropTypes.string.isRequired,
-  showDetails: PropTypes.bool
+  showDetails: PropTypes.bool,
 };
 
 export default UserProfile;
@@ -306,47 +308,47 @@ describe('UserProfile', () => {
   beforeEach(() => {
     fetchUser.mockReset();
   });
-  
+
   test('displays user information when loaded successfully', async () => {
     // Arrange
     fetchUser.mockResolvedValueOnce(mockUserData);
-    
+
     // Act
     render(<UserProfile userId="123" />);
-    
+
     // Assert - first check loading state
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
-    
+
     // Wait for the data to load
     await waitFor(() => {
       expect(screen.getByText(mockUserData.name)).toBeInTheDocument();
     });
-    
+
     // Verify correct data is displayed
     expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
   });
-  
+
   test('displays error message when API call fails', async () => {
     // Arrange
     const errorMessage = 'Failed to fetch user';
     fetchUser.mockRejectedValueOnce(new Error(errorMessage));
-    
+
     // Act
     render(<UserProfile userId="123" />);
-    
+
     // Assert
     await waitFor(() => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
   });
-  
+
   test('toggles details when show details is true', async () => {
     // Arrange
     fetchUser.mockResolvedValueOnce(mockUserData);
-    
+
     // Act
     render(<UserProfile userId="123" showDetails={true} />);
-    
+
     // Assert
     await waitFor(() => {
       expect(screen.getByText(/Email:/i)).toBeInTheDocument();
@@ -369,20 +371,20 @@ function userReducer(state, action) {
         ...state,
         data: action.payload,
         loading: false,
-        error: null
+        error: null,
       };
     case 'SET_LOADING':
       return {
         ...state,
         loading: true,
-        error: null
+        error: null,
       };
     case 'SET_ERROR':
       return {
         ...state,
         data: null,
         loading: false,
-        error: action.payload
+        error: action.payload,
       };
     default:
       throw new Error(`Unhandled action type: ${action.type}`);
@@ -394,17 +396,17 @@ function useUser(userId) {
   const [state, dispatch] = useReducer(userReducer, {
     data: null,
     loading: false,
-    error: null
+    error: null,
   });
 
   useEffect(() => {
     let isMounted = true;
-    
+
     async function fetchUserData() {
       if (!userId) return;
-      
+
       dispatch({ type: 'SET_LOADING' });
-      
+
       try {
         const userData = await fetchUser(userId);
         if (isMounted) {
@@ -416,14 +418,14 @@ function useUser(userId) {
         }
       }
     }
-    
+
     fetchUserData();
-    
+
     return () => {
       isMounted = false;
     };
   }, [userId]);
-  
+
   return state;
 }
 ```
@@ -446,7 +448,7 @@ class User {
     // Using Symbol as a property key
     this[idSymbol] = id;
   }
-  
+
   getId() {
     return this[idSymbol];
   }
@@ -505,7 +507,7 @@ Object.defineProperty(config, 'API_KEY', {
   value: 'abc123',
   writable: false,
   enumerable: true,
-  configurable: false
+  configurable: false,
 });
 
 // Attempting to modify it fails silently (or throws in strict mode)
@@ -518,17 +520,17 @@ console.log(config.API_KEY); // Still "abc123"
 ```javascript
 const circle = {
   radius: 5,
-  
+
   // Getter - computed property
   get area() {
     return Math.PI * this.radius * this.radius;
   },
-  
+
   // Setter with validation
   set diameter(value) {
     if (value <= 0) throw new Error('Diameter must be positive');
     this.radius = value / 2;
-  }
+  },
 };
 
 console.log(circle.area); // ~78.54
@@ -543,7 +545,7 @@ console.log(circle.radius); // 10
 const settings = Object.freeze({
   theme: 'dark',
   notifications: true,
-  fontSize: 16
+  fontSize: 16,
 });
 
 // Fails silently (or throws error in strict mode)
@@ -553,7 +555,7 @@ settings.theme = 'light';
 // Object.seal() prevents adding/removing properties but allows changing existing ones
 const profile = Object.seal({
   name: 'Bob',
-  role: 'Admin'
+  role: 'Admin',
 });
 
 // Allowed
@@ -573,16 +575,16 @@ const handler = {
     }
     return `Property ${prop} doesn't exist`;
   },
-  
+
   set(target, prop, value) {
     if (prop === 'age' && typeof value !== 'number') {
       throw new TypeError('Age must be a number');
     }
-    
+
     console.log(`Setting ${prop} to ${value}`);
     // Use Reflect for proper object manipulation
     return Reflect.set(target, prop, value);
-  }
+  },
 };
 
 const person = new Proxy({}, handler);
@@ -594,6 +596,7 @@ console.log(person.address); // "Property address doesn't exist"
 ### Proxy Use Cases
 
 1. **Validation**:
+
 ```javascript
 function createValidator(target, validations) {
   return new Proxy(target, {
@@ -603,36 +606,40 @@ function createValidator(target, validations) {
         if (!valid) throw new Error(`Invalid value for ${prop}`);
       }
       return Reflect.set(obj, prop, value);
-    }
+    },
   });
 }
 
-const user = createValidator({}, {
-  age: value => Number.isInteger(value) && value > 0,
-  email: value => /^\S+@\S+\.\S+$/.test(value)
-});
+const user = createValidator(
+  {},
+  {
+    age: (value) => Number.isInteger(value) && value > 0,
+    email: (value) => /^\S+@\S+\.\S+$/.test(value),
+  }
+);
 
 user.age = 25; // Works
-user.email = "invalid"; // Error: Invalid value for email
+user.email = 'invalid'; // Error: Invalid value for email
 ```
 
 2. **Reactive Programming**:
+
 ```javascript
 function reactive(obj) {
   const observers = new Map();
-  
+
   return new Proxy(obj, {
     set(target, key, value) {
       const result = Reflect.set(target, key, value);
-      
+
       // Notify observers about change
       if (observers.has(key)) {
-        observers.get(key).forEach(callback => callback(value));
+        observers.get(key).forEach((callback) => callback(value));
       }
-      
+
       return result;
     },
-    
+
     // Method to subscribe to changes
     get(target, key) {
       if (key === 'subscribe') {
@@ -643,14 +650,14 @@ function reactive(obj) {
           observers.get(property).add(callback);
         };
       }
-      
+
       return Reflect.get(target, key);
-    }
+    },
   });
 }
 
-const state = reactive({count: 0});
-state.subscribe('count', value => console.log(`Count changed to: ${value}`));
+const state = reactive({ count: 0 });
+state.subscribe('count', (value) => console.log(`Count changed to: ${value}`));
 state.count++; // "Count changed to: 1"
 ```
 
@@ -666,15 +673,15 @@ class SecretAgent {
     // Store sensitive data in WeakMap instead of instance
     privateData.set(this, {
       secretCode,
-      missions: []
+      missions: [],
     });
   }
-  
+
   addMission(mission) {
     const data = privateData.get(this);
     data.missions.push(mission);
   }
-  
+
   verify(code) {
     return privateData.get(this).secretCode === code;
   }
@@ -695,32 +702,27 @@ console.log(privateData.get(agent)); // {secretCode: "007", missions: []}
 // Instead of building complex inheritance hierarchies
 const hasName = (state) => ({
   getName: () => state.name,
-  setName: (name) => state.name = name
+  setName: (name) => (state.name = name),
 });
 
 const canFly = (state) => ({
-  fly: () => console.log(`${state.name} is flying!`)
+  fly: () => console.log(`${state.name} is flying!`),
 });
 
 const canSwim = (state) => ({
-  swim: () => console.log(`${state.name} is swimming!`)
+  swim: () => console.log(`${state.name} is swimming!`),
 });
 
 // Compose objects with the behaviors they need
 function createDuck(name) {
   const state = { name };
-  
-  return Object.assign(
-    {},
-    hasName(state),
-    canFly(state),
-    canSwim(state)
-  );
+
+  return Object.assign({}, hasName(state), canFly(state), canSwim(state));
 }
 
 function createPenguin(name) {
   const state = { name };
-  
+
   return Object.assign(
     {},
     hasName(state),
@@ -744,7 +746,7 @@ penguin.swim(); // "Kowalski is swimming!"
 // Deep merge utility
 function deepMerge(target, source) {
   const result = { ...target };
-  
+
   for (const key in source) {
     if (source[key] instanceof Object && key in target && target[key] instanceof Object) {
       result[key] = deepMerge(target[key], source[key]);
@@ -752,7 +754,7 @@ function deepMerge(target, source) {
       result[key] = source[key];
     }
   }
-  
+
   return result;
 }
 
@@ -762,19 +764,19 @@ const defaultSettings = {
     secondary: 'gray',
     text: {
       main: 'black',
-      light: 'darkgray'
-    }
+      light: 'darkgray',
+    },
   },
-  notifications: true
+  notifications: true,
 };
 
 const userSettings = {
   theme: {
     primary: 'purple',
     text: {
-      main: 'white'
-    }
-  }
+      main: 'white',
+    },
+  },
 };
 
 const mergedSettings = deepMerge(defaultSettings, userSettings);
@@ -792,15 +794,15 @@ console.log(mergedSettings.theme.text.light); // "darkgray" (preserved)
 class ObjectPool {
   constructor(createFn, initialSize = 5) {
     this.createFn = createFn;
-    this.pool = Array(initialSize).fill().map(() => createFn());
+    this.pool = Array(initialSize)
+      .fill()
+      .map(() => createFn());
   }
-  
+
   acquire() {
-    return this.pool.length > 0 
-      ? this.pool.pop() 
-      : this.createFn();
+    return this.pool.length > 0 ? this.pool.pop() : this.createFn();
   }
-  
+
   release(obj) {
     // Reset the object if needed
     if (obj.reset) obj.reset();
@@ -821,7 +823,7 @@ const particlePool = new ObjectPool(() => {
       this.velocity.x = 0;
       this.velocity.y = 0;
       this.active = false;
-    }
+    },
   };
 }, 100);
 
@@ -840,14 +842,14 @@ particlePool.release(particle);
 ```javascript
 function memoize(fn) {
   const cache = new Map();
-  
-  return function(...args) {
+
+  return function (...args) {
     const key = JSON.stringify(args);
-    
+
     if (cache.has(key)) {
       return cache.get(key);
     }
-    
+
     const result = fn.apply(this, args);
     cache.set(key, result);
     return result;
@@ -855,7 +857,7 @@ function memoize(fn) {
 }
 
 // Example: Memoized expensive calculation
-const calculateFactorial = memoize(n => {
+const calculateFactorial = memoize((n) => {
   console.log(`Calculating factorial for ${n}`);
   if (n === 0) return 1;
   return n * calculateFactorial(n - 1);
@@ -877,15 +879,17 @@ Tagged templates provide explicit transformation of template literals:
 // SQL query builder with explicit parameter handling
 function sql(strings, ...values) {
   // Convert values to SQL-safe parameters
-  const params = values.map(value => {
+  const params = values.map((value) => {
     if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
     if (value === null) return 'NULL';
     return value;
   });
-  
+
   // Interleave the strings and parameters
-  return strings.reduce((query, string, i) => 
-    query + string + (i < params.length ? params[i] : ''), '');
+  return strings.reduce(
+    (query, string, i) => query + string + (i < params.length ? params[i] : ''),
+    ''
+  );
 }
 
 const table = 'users';
@@ -931,7 +935,7 @@ class AppError extends Error {
     this.name = this.constructor.name;
     this.code = code;
     this.httpStatus = httpStatus;
-    
+
     // Capture stack trace, excluding constructor call
     Error.captureStackTrace(this, this.constructor);
   }
@@ -976,23 +980,23 @@ class ConfigManager {
   constructor(initialConfig = {}) {
     // Create the internal config object with frozen defaults
     const config = Object.create(null);
-    
+
     // Set up core properties with explicit behaviors
     Object.defineProperties(this, {
       // Non-enumerable internal storage
       _config: {
         value: config,
         writable: true,
-        enumerable: false
+        enumerable: false,
       },
-      
+
       // Public API with explicit behaviors
       production: {
         get: () => Reflect.get(config, 'NODE_ENV') === 'production',
         enumerable: true,
-        configurable: false
+        configurable: false,
       },
-      
+
       // Explicit setter validation
       port: {
         get: () => Reflect.get(config, 'PORT') || 3000,
@@ -1003,28 +1007,28 @@ class ConfigManager {
           }
           Reflect.set(config, 'PORT', port);
         },
-        enumerable: true
-      }
+        enumerable: true,
+      },
     });
-    
+
     // Initialize with provided config
     Object.entries(initialConfig).forEach(([key, value]) => {
       this.set(key, value);
     });
   }
-  
+
   // Explicit getter with defaults
   get(key, defaultValue = null) {
     return key in this._config ? this._config[key] : defaultValue;
   }
-  
+
   // Explicit setter that maintains immutability
   set(key, value) {
     // Don't allow changing special properties
     if (['NODE_ENV'].includes(key) && key in this._config) {
       throw new Error(`Cannot modify ${key} after initialization`);
     }
-    
+
     this._config[key] = value;
     return this;
   }
@@ -1046,7 +1050,7 @@ class Currency {
     this.amount = amount;
     this.code = code;
   }
-  
+
   // Explicitly control conversions
   [Symbol.toPrimitive](hint) {
     switch (hint) {
@@ -1063,9 +1067,9 @@ class Currency {
 const price = new Currency(19.99, 'USD');
 
 // Explicit conversion behaviors
-console.log(+price);          // 19.99 (number)
-console.log(`${price}`);      // "19.99 USD" (string)
-console.log(price + 0.01);    // 20 (number coercion then addition)
+console.log(+price); // 19.99 (number)
+console.log(`${price}`); // "19.99 USD" (string)
+console.log(price + 0.01); // 20 (number coercion then addition)
 ```
 
 ## Design by Contract with Explicit Pre/Post Conditions
@@ -1092,11 +1096,11 @@ function calculateDiscount(price, discountPercent) {
   ensureType(discountPercent, 'number', 'discountPercent');
   ensureRange(price, 0, Infinity, 'price');
   ensureRange(discountPercent, 0, 100, 'discountPercent');
-  
+
   // Implementation
   const discount = (price * discountPercent) / 100;
   const discountedPrice = price - discount;
-  
+
   // Postconditions - explicit guarantees
   if (discountedPrice > price) {
     throw new Error('Postcondition failed: Discounted price is higher than original');
@@ -1104,7 +1108,7 @@ function calculateDiscount(price, discountPercent) {
   if (discountedPrice < 0) {
     throw new Error('Postcondition failed: Discounted price is negative');
   }
-  
+
   return discountedPrice;
 }
 ```
@@ -1118,18 +1122,18 @@ const MathUtils = Object.freeze({
   // Public API
   add: (a, b) => a + b,
   subtract: (a, b) => a - b,
-  
+
   // Nested namespaces can be frozen too
   geometry: Object.freeze({
     circle: Object.freeze({
       area: (radius) => Math.PI * radius * radius,
-      circumference: (radius) => 2 * Math.PI * radius
+      circumference: (radius) => 2 * Math.PI * radius,
     }),
     rectangle: Object.freeze({
       area: (width, height) => width * height,
-      perimeter: (width, height) => 2 * (width + height)
-    })
-  })
+      perimeter: (width, height) => 2 * (width + height),
+    }),
+  }),
 });
 
 // Attempt to modify fails silently (or throws in strict mode)
@@ -1143,51 +1147,44 @@ Use factory functions for more explicit object creation:
 
 ```javascript
 // Factory function with explicit interface
-function createPerson({
-  firstName = '',
-  lastName = '',
-  age = null,
-  ...rest
-} = {}) {
+function createPerson({ firstName = '', lastName = '', age = null, ...rest } = {}) {
   // Validate inputs
   if (typeof firstName !== 'string') {
     throw new TypeError('firstName must be a string');
   }
-  
+
   if (typeof lastName !== 'string') {
     throw new TypeError('lastName must be a string');
   }
-  
+
   if (age !== null && (typeof age !== 'number' || age < 0)) {
     throw new TypeError('age must be a positive number or null');
   }
-  
+
   // Private data and methods
-  const birthYear = age !== null 
-    ? new Date().getFullYear() - age 
-    : null;
-  
+  const birthYear = age !== null ? new Date().getFullYear() - age : null;
+
   // Return public interface
   return Object.freeze({
     firstName,
     lastName,
-    
+
     // Computed property
     get fullName() {
       return `${firstName} ${lastName}`;
     },
-    
+
     // Methods
     getAge() {
       return age;
     },
-    
+
     getBirthYear() {
       return birthYear;
     },
-    
+
     // Metadata
-    [Symbol.toStringTag]: 'Person'
+    [Symbol.toStringTag]: 'Person',
   });
 }
 
@@ -1200,34 +1197,34 @@ const person = createPerson({ firstName: 'Jane', lastName: 'Doe', age: 30 });
 
 ```javascript
 // Regular equality operators have quirks
-console.log(0 == '0');       // true (coercion)
-console.log(0 === '0');      // false (no coercion)
+console.log(0 == '0'); // true (coercion)
+console.log(0 === '0'); // false (no coercion)
 
-console.log(NaN === NaN);    // false (special case)
-console.log(+0 === -0);      // true (special case)
+console.log(NaN === NaN); // false (special case)
+console.log(+0 === -0); // true (special case)
 
 // Object.is is more explicit about equality semantics
-console.log(Object.is(0, '0'));  // false (no coercion)
+console.log(Object.is(0, '0')); // false (no coercion)
 console.log(Object.is(NaN, NaN)); // true (what we usually expect)
-console.log(Object.is(+0, -0));  // false (mathematically different)
+console.log(Object.is(+0, -0)); // false (mathematically different)
 
 // Explicit comparison utility
 function compareValues(a, b) {
   if (Object.is(a, b)) {
     return 'Identical';
   }
-  
+
   if (a === b) {
     if (Object.is(a, 0)) {
       return a < 0 ? 'Negative zero' : 'Positive zero';
     }
     return 'Equal but not identical';
   }
-  
+
   if (a == b) {
     return 'Equal with coercion';
   }
-  
+
   return 'Different values';
 }
 ```

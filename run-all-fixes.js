@@ -67,10 +67,10 @@ for (const step of steps) {
   try {
     console.log(`\n📌 ${step.name}...`);
     const scriptPath = path.join(ROOT_DIR, step.script);
-    
+
     // Make sure the script is executable
     execSync(`chmod +x ${scriptPath}`, { stdio: 'inherit' });
-    
+
     // Run the script
     execSync(`node ${scriptPath}`, { stdio: 'inherit' });
   } catch (error) {
@@ -91,4 +91,4 @@ console.log('\nNext step: Run TypeScript compiler to check remaining errors:');
 console.log('  npx tsc --noEmit');
 
 console.log('\nYou may need to create additional fix scripts for remaining issues.');
-console.log('Check the typescript-fixes-summary.md file for guidance on next steps.'); 
+console.log('Check the typescript-fixes-summary.md file for guidance on next steps.');

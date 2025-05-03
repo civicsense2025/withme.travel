@@ -15,7 +15,7 @@ export interface UserInterest {
 export function useInterests() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const supabase = createBrowserClient();
 
   const getUserInterests = useCallback(async () => {
@@ -72,7 +72,7 @@ export function useInterests() {
 
         toast({
           title: 'Success',
-          description: 'Interest updated'
+          description: 'Interest updated',
         });
 
         return true;

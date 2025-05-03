@@ -138,7 +138,7 @@ export function validateSession(session: Session | null): AuthError | null {
   if (!session.access_token || !session.refresh_token) {
     return createAuthError({
       code: 'auth/invalid-session',
-      message: 'Session is missing required tokens'
+      message: 'Session is missing required tokens',
     });
   }
 
@@ -146,7 +146,7 @@ export function validateSession(session: Session | null): AuthError | null {
   if (!session.expires_at) {
     return createAuthError({
       code: 'auth/invalid-session',
-      message: 'Session is missing expiry time'
+      message: 'Session is missing expiry time',
     });
   }
 
@@ -154,7 +154,7 @@ export function validateSession(session: Session | null): AuthError | null {
   if (expiresAt < new Date()) {
     return createAuthError({
       code: 'auth/session-expired',
-      message: 'Session has expired'
+      message: 'Session has expired',
     });
   }
 
@@ -162,7 +162,7 @@ export function validateSession(session: Session | null): AuthError | null {
   if (!session.user?.id) {
     return createAuthError({
       code: 'auth/invalid-session',
-      message: 'Session is missing user data'
+      message: 'Session is missing user data',
     });
   }
 

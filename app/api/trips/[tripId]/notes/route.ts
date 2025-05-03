@@ -9,14 +9,14 @@ const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 } as const;
 
 const NOTE_TYPES = {
   TEXT: 'text',
   LIST: 'list',
   CHECKLIST: 'checklist',
-  LOCATION: 'location'
+  LOCATION: 'location',
 } as const;
 
 // Define field constants
@@ -29,13 +29,13 @@ const FIELDS = {
     UPDATED_AT: 'updated_at',
     UPDATED_BY: 'updated_by',
     TYPE: 'type',
-    ITEM_ID: 'item_id'
+    ITEM_ID: 'item_id',
   },
   PROFILES: {
     ID: 'id',
     NAME: 'name',
-    AVATAR_URL: 'avatar_url'
-  }
+    AVATAR_URL: 'avatar_url',
+  },
 };
 
 // Get all notes for a trip
@@ -44,7 +44,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
@@ -65,12 +65,7 @@ export async function GET(
       {
         _trip_id: tripId,
         _user_id: user.id,
-        _roles: [
-          TRIP_ROLES.ADMIN,
-          TRIP_ROLES.EDITOR,
-          TRIP_ROLES.CONTRIBUTOR,
-          TRIP_ROLES.VIEWER,
-        ],
+        _roles: [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER],
       }
     );
 
@@ -120,12 +115,7 @@ const createNoteSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   content: z.string().optional().nullable(),
   type: z
-    .enum([
-      NOTE_TYPES.TEXT,
-      NOTE_TYPES.LIST,
-      NOTE_TYPES.CHECKLIST,
-      NOTE_TYPES.LOCATION,
-    ])
+    .enum([NOTE_TYPES.TEXT, NOTE_TYPES.LIST, NOTE_TYPES.CHECKLIST, NOTE_TYPES.LOCATION])
     .default(NOTE_TYPES.TEXT),
   item_id: z.string().uuid().optional().nullable(), // Allow associating with itinerary item
 });
@@ -136,7 +126,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 

@@ -36,8 +36,10 @@ export function shuffle<T>(array: T[]): T[] {
 }
 
 /**
- * Generates a random ID 
+ * Generates a random ID
  */
 export function randomId(length = 8): string {
-  return Math.random().toString(36).substring(2, 2 + length);
-} 
+  return Math.random()
+    .toString(36)
+    .substring(2, 2 + length);
+}

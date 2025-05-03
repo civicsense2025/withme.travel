@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   // Validate trip ID
   if (!tripId || !/^\d+$/.test(tripId)) {
@@ -59,7 +59,7 @@ export async function GET(
       .order('created_at', { ascending: false });
 
     if (pollsError) {
-console.error('Error fetching polls:', pollsError);
+      console.error('Error fetching polls:', pollsError);
       return NextResponse.json({ error: 'Failed to fetch polls' }, { status: 500 });
     }
 
@@ -77,7 +77,7 @@ console.error('Error fetching polls:', pollsError);
       .in('poll_id', pollIds);
 
     if (optionsError) {
-console.error('Error fetching poll options:', optionsError);
+      console.error('Error fetching poll options:', optionsError);
       return NextResponse.json({ error: 'Failed to fetch poll options' }, { status: 500 });
     }
 
@@ -101,7 +101,7 @@ console.error('Error fetching poll options:', optionsError);
       .in('poll_id', pollIds);
 
     if (votesError) {
-console.error('Error fetching poll votes:', votesError);
+      console.error('Error fetching poll votes:', votesError);
       return NextResponse.json({ error: 'Failed to fetch poll votes' }, { status: 500 });
     }
 
@@ -150,7 +150,7 @@ console.error('Error fetching poll votes:', votesError);
 
     return NextResponse.json(enrichedPolls);
   } catch (error) {
-console.error('Error fetching polls:', error);
+    console.error('Error fetching polls:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

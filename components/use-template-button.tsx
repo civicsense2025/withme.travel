@@ -139,9 +139,7 @@ export function UseTemplateButton({
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-trips">
-                        No trips available
-                      </SelectItem>
+                      <SelectItem value="no-trips">No trips available</SelectItem>
                     )}
                   </SelectContent>
                 </Select>

@@ -75,7 +75,9 @@ export function LocationSearch({
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => { document.removeEventListener('mousedown', handleClickOutside); };
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   // Fetch logic using the new Mapbox proxy route

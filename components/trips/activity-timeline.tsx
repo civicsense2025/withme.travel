@@ -413,7 +413,8 @@ export function ActivityTimeline({
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={getActorAvatar(activity) || ''}
-                      alt={`${getActorName(activity) || 'User'}'s avatar`} />
+                      alt={`${getActorName(activity) || 'User'}'s avatar`}
+                    />
                     <AvatarFallback
                       className={`text-white ${
                         getActorName(activity)
@@ -423,7 +424,8 @@ export function ActivityTimeline({
                               ? 'bg-gray-500'
                               : getBgColorFromName(getActorName(activity))
                           : 'bg-blue-500'
-                      }`}>
+                      }`}
+                    >
                       {getAvatarInitials(getActorName(activity) || '')}
                     </AvatarFallback>
                   </Avatar>

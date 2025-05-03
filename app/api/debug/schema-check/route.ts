@@ -153,7 +153,7 @@ interface SchemaCheckResult {
 }
 
 interface SchemaWarning {
-  type: 
+  type:
     | 'missing_column'
     | 'type_mismatch'
     | 'missing_index'
@@ -490,11 +490,9 @@ ${enumNames
     const values = enums[enumName];
     const typeName =
       enumName.charAt(0).toUpperCase() +
-      enumName
-        .slice(1)
-        .replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
-    
-    return `export type ${typeName} = ${values.map(v => `'${v}'`).join(' | ')};`;
+      enumName.slice(1).replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+
+    return `export type ${typeName} = ${values.map((v) => `'${v}'`).join(' | ')};`;
   })
   .join('\n')}
 `;

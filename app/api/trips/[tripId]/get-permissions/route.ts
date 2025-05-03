@@ -7,18 +7,18 @@ import type { Database } from '@/types/database.types';
 // Define local constants for any tables not in central constants
 const LOCAL_TABLES = {
   TRIPS: 'trips',
-  TRIP_MEMBERS: 'trip_members'
+  TRIP_MEMBERS: 'trip_members',
 };
 
 // Define field constants locally to avoid linting issues
 const FIELDS = {
   TRIPS: {
     CREATED_BY: 'created_by',
-    IS_PUBLIC: 'is_public'
+    IS_PUBLIC: 'is_public',
   },
   TRIP_MEMBERS: {
-    ROLE: 'role'
-  }
+    ROLE: 'role',
+  },
 };
 
 export interface PermissionCheck {
@@ -76,7 +76,8 @@ export async function GET(
         .maybeSingle<TripPublicCheck>();
 
       // Type guard for publicTripData
-      const isPublicTrip = publicTripData && 'is_public' in publicTripData && publicTripData.is_public === true;
+      const isPublicTrip =
+        publicTripData && 'is_public' in publicTripData && publicTripData.is_public === true;
 
       if (!publicTripError && isPublicTrip) {
         return NextResponse.json({
@@ -117,8 +118,10 @@ export async function GET(
     }
 
     // Determine role, isCreator, isPublic with safe type checking
-    const roleValue = membership && typeof membership === 'object' && 'role' in membership ? 
-      (membership as { role: string }).role : undefined;
+    const roleValue =
+      membership && typeof membership === 'object' && 'role' in membership
+        ? (membership as { role: string }).role
+        : undefined;
     const role = roleValue ? (roleValue as keyof typeof TRIP_ROLES) : null;
     const isCreator = trip.created_by === user.id;
     const isPublic = trip.is_public === true;
@@ -128,7 +131,10 @@ export async function GET(
     const editorRoles: Array<keyof typeof TRIP_ROLES> = ['ADMIN', 'EDITOR'];
 
     // Helper function to check if a role is in a list of roles
-    const hasRole = (userRole: keyof typeof TRIP_ROLES | null, allowedRoles: Array<keyof typeof TRIP_ROLES>): boolean => {
+    const hasRole = (
+      userRole: keyof typeof TRIP_ROLES | null,
+      allowedRoles: Array<keyof typeof TRIP_ROLES>
+    ): boolean => {
       return !!userRole && allowedRoles.includes(userRole);
     };
 

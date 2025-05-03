@@ -26,20 +26,20 @@ const log = {
   warn: (msg) => console.log(`[WARN] ${msg}`),
   error: (msg) => console.error(`[ERROR] ${msg}`),
   success: (msg) => console.log(`[SUCCESS] ${msg}`),
-  verbose: (msg) => VERBOSE && console.log(`[VERBOSE] ${msg}`)
+  verbose: (msg) => VERBOSE && console.log(`[VERBOSE] ${msg}`),
 };
 
 // Fix route parameter handling in a file
 function fixRouteParams(content) {
   let newContent = content;
-  
+
   // Only process files that have API route handlers
   if (
-    (content.includes('export async function GET(') || 
-     content.includes('export async function POST(') ||
-     content.includes('export async function PUT(') ||
-     content.includes('export async function DELETE(') ||
-     content.includes('export async function PATCH('))
+    content.includes('export async function GET(') ||
+    content.includes('export async function POST(') ||
+    content.includes('export async function PUT(') ||
+    content.includes('export async function DELETE(') ||
+    content.includes('export async function PATCH(')
   ) {
     // Fix non-promised route parameters (for dynamic route segments in Next.js 15)
     newContent = newContent.replace(
@@ -59,7 +59,7 @@ function fixRouteParams(content) {
       '$1 { $2 } = await params;'
     );
   }
-  
+
   return newContent;
 }
 
@@ -68,10 +68,10 @@ async function processFile(filePath) {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
     const newContent = fixRouteParams(content);
-    
+
     if (content !== newContent) {
       log.verbose(`${filePath}: Fixed route parameter handling`);
-      
+
       if (!DRY_RUN) {
         fs.writeFileSync(filePath, newContent, 'utf8');
         log.success(`Updated ${filePath}`);
@@ -92,34 +92,34 @@ async function processFile(filePath) {
 // Main function to run the script
 async function main() {
   log.info(`Starting API route parameter fix script ${DRY_RUN ? '(DRY RUN)' : ''}`);
-  
+
   // Find all API route files
   const files = await glob('**/*route.ts', { cwd: API_ROUTES_DIR, absolute: true });
-  
+
   log.info(`Found ${files.length} API route files`);
-  
+
   // Process all files
   const results = await Promise.all(files.map(processFile));
-  
+
   // Summarize results
-  const fixedFiles = results.filter(r => r.fixed);
-  const errorFiles = results.filter(r => r.error);
-  
+  const fixedFiles = results.filter((r) => r.fixed);
+  const errorFiles = results.filter((r) => r.error);
+
   log.info(`\n---- SUMMARY ----`);
   log.info(`Total files processed: ${files.length}`);
   log.success(`Files fixed: ${fixedFiles.length}`);
   log.warn(`Files with errors: ${errorFiles.length}`);
-  
+
   if (errorFiles.length > 0) {
     log.warn(`\nFiles with errors:`);
-    errorFiles.forEach(f => log.warn(`- ${f.path}: ${f.error}`));
+    errorFiles.forEach((f) => log.warn(`- ${f.path}: ${f.error}`));
   }
-  
+
   if (fixedFiles.length > 0 && VERBOSE) {
     log.info(`\nFixed files:`);
-    fixedFiles.forEach(f => log.info(`- ${f.path}`));
+    fixedFiles.forEach((f) => log.info(`- ${f.path}`));
   }
-  
+
   if (DRY_RUN) {
     log.info(`\nThis was a dry run. No actual changes were made.`);
     log.info(`Run without --dry-run to apply changes.`);
@@ -127,7 +127,7 @@ async function main() {
 }
 
 // Run main function
-main().catch(error => {
+main().catch((error) => {
   log.error(`Script failed: ${error.message}`);
   process.exit(1);
-}); 
+});

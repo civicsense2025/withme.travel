@@ -163,7 +163,7 @@ export const TransitRoute: React.FC<TransitRouteProps> = ({
                   geometry: {
                     type: 'Point',
                     coordinates: stop.coordinates,
-  },
+                  },
                 }}
               >
                 <Layer

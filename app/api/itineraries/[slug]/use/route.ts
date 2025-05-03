@@ -5,7 +5,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   const {
     data: { user },
@@ -164,9 +164,9 @@ export async function POST(
           address: item.address,
           latitude: item.latitude,
           longitude: item.longitude,
-          start_time: 
+          start_time:
             item.start_time && itemDateStr ? `${itemDateStr}T${item.start_time}` : item.start_time,
-          end_time: 
+          end_time:
             item.end_time && itemDateStr ? `${itemDateStr}T${item.end_time}` : item.end_time,
           day_number: section.day_number || 1,
           position: item.item_order || 0,

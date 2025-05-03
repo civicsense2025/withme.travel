@@ -1,8 +1,7 @@
 import { type ENUMS } from '@/utils/constants/database';
 
 // Re-export the PresenceStatus type from database constants
-export type PresenceStatus =
-  (typeof ENUMS.PRESENCE_STATUS)[keyof typeof ENUMS.PRESENCE_STATUS];
+export type PresenceStatus = (typeof ENUMS.PRESENCE_STATUS)[keyof typeof ENUMS.PRESENCE_STATUS];
 
 export interface CursorPosition {
   x: number;

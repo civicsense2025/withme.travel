@@ -12,12 +12,12 @@ const TRIP_IMAGES_TABLE = 'trip_images';
 // Define field constants locally to avoid linting issues
 const FIELDS = {
   COMMON: {
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   TRIP_MEMBERS: {
     ROLE: 'role',
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   TRIP_IMAGES: {
     TRIP_ID: 'trip_id',
@@ -25,8 +25,8 @@ const FIELDS = {
     FILE_NAME: 'file_name',
     CREATED_BY: 'created_by',
     CONTENT_TYPE: 'content_type',
-    SIZE_BYTES: 'size_bytes'
-  }
+    SIZE_BYTES: 'size_bytes',
+  },
 };
 
 // Type definition for trip member data
@@ -37,28 +37,30 @@ interface TripMember {
 
 // Helper function to check trip access
 async function checkTripAccess(
-  supabase: SupabaseClient<Database>, 
-  tripId: string, 
+  supabase: SupabaseClient<Database>,
+  tripId: string,
   roles: string[] = ['ADMIN', 'EDITOR', 'CONTRIBUTOR', 'VIEWER']
 ): Promise<{ hasAccess: boolean }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       return { hasAccess: false };
     }
-    
+
     const { data, error } = await supabase
       .from(TRIP_MEMBERS_TABLE)
       .select(FIELDS.TRIP_MEMBERS.ROLE)
       .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
       .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
       .maybeSingle();
-      
+
     if (error || !data) {
       return { hasAccess: false };
     }
-    
+
     // Safely access role with optional chaining
     const member = data as TripMember;
     const hasAccess = member.role ? roles.includes(member.role) : false;

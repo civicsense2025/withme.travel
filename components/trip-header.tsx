@@ -237,18 +237,20 @@ export function TripHeader({
   onDatesChange,
 }: TripHeaderProps) {
   const [editingDates, setEditingDates] = useState<{ start: string | null; end: string | null }>({
-    start: startDate ?? null, end: endDate ?? null });
+    start: startDate ?? null,
+    end: endDate ?? null,
+  });
 
   // Handler for date change (simulate save on close for now)
   const handleDateChange = (range: DateRange | undefined) => {
     setEditingDates({
       start: range?.from ? range.from.toISOString().split('T')[0] : null,
-      end: range?.to ? range.to.toISOString().split('T')[0] : null
+      end: range?.to ? range.to.toISOString().split('T')[0] : null,
     });
     if (onDatesChange) {
       onDatesChange({
         start: range?.from ? range.from.toISOString().split('T')[0] : null,
-        end: range?.to ? range.to.toISOString().split('T')[0] : null
+        end: range?.to ? range.to.toISOString().split('T')[0] : null,
       });
     }
     // TODO: Backend update for trip dates

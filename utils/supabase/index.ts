@@ -4,7 +4,11 @@
  * This file provides type-safe Supabase client creation for both client and server components
  * with proper cookie handling throughout your Next.js application.
  */
-import { createBrowserClient as createSupabaseBrowserClient, createServerClient, type CookieOptions } from '@supabase/ssr';
+import {
+  createBrowserClient as createSupabaseBrowserClient,
+  createServerClient,
+  type CookieOptions,
+} from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database.types';
 import { createApiClient } from './api';
@@ -30,7 +34,7 @@ export function createBrowserSupabaseClient() {
   }
 
   browserClient = createSupabaseBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
-  
+
   return browserClient;
 }
 

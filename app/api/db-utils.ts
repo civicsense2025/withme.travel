@@ -96,7 +96,7 @@ interface VoteResponse {
 
 // Trip-related functions
 export async function getTrips(): Promise<TripWithMembers[]> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trips_with_member_count');
@@ -110,7 +110,7 @@ export async function getTrips(): Promise<TripWithMembers[]> {
 }
 
 export async function getTripById(id: string): Promise<TripWithMembers | null> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   try {
     // Use SQL query to avoid TypeScript issues
@@ -140,7 +140,7 @@ export async function getTripById(id: string): Promise<TripWithMembers | null> {
 }
 
 export async function getTripMembers(tripId: string): Promise<TripMemberWithUser[]> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trip_members', { trip_id: tripId });
@@ -158,7 +158,7 @@ export async function getItineraryItems(
   tripId: string,
   userId?: string
 ): Promise<ItineraryItemWithVotes[]> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_itinerary_items_with_votes', {
@@ -178,7 +178,7 @@ export async function getItineraryItems(
  * Get the trip ID for an itinerary item
  */
 async function getItemTripId(itemId: string): Promise<string> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('get_item_trip_id', { item_id: itemId });
 
@@ -204,7 +204,7 @@ async function getItemTripId(itemId: string): Promise<string> {
  * Get the vote count for an itinerary item
  */
 async function getItemVoteCount(itemId: string): Promise<number> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('get_item_vote_count', { item_id: itemId });
 
@@ -238,7 +238,7 @@ export async function castVote(
   userId: string,
   voteType: 'up' | 'down' | null
 ): Promise<VoteResponse> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('cast_vote', {
     item_id: itemId,
@@ -262,7 +262,7 @@ export async function castVote(
  * @returns An array of expense categories with amounts
  */
 export async function getExpensesByCategory(tripId: string): Promise<ExpenseCategory[]> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('get_expenses_by_category', { trip_id: tripId });
 
@@ -290,16 +290,16 @@ export async function getExpensesByCategory(tripId: string): Promise<ExpenseCate
 }
 
 export async function getVotesForPoll(pollId: string): Promise<any[]> {
-  const supabase = await createRouteHandlerClient();
-  
+  const supabase = createRouteHandlerClient();
+
   try {
     const { data, error } = await supabase.rpc('get_poll_votes', { poll_id: pollId });
-    
+
     if (error) {
       console.error('Error fetching poll votes:', error);
       return [];
     }
-    
+
     return data || [];
   } catch (error) {
     console.error('Exception fetching poll votes:', error);
@@ -308,16 +308,16 @@ export async function getVotesForPoll(pollId: string): Promise<any[]> {
 }
 
 export async function getUserProfile(userId: string): Promise<any> {
-  const supabase = await createRouteHandlerClient();
-  
+  const supabase = createRouteHandlerClient();
+
   try {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    
+
     if (error) {
       console.error('Error fetching user profile:', error);
       return null;
     }
-    
+
     return data;
   } catch (error) {
     console.error('Exception fetching user profile:', error);

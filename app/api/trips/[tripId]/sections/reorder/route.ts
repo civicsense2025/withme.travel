@@ -9,7 +9,7 @@ const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 } as const;
 
 type ModifiableRoleKey = keyof typeof TRIP_ROLES;
@@ -61,7 +61,7 @@ export async function POST(
       );
     }
 
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
       error: authError,

@@ -84,7 +84,7 @@ export class ApiError extends Error {
         code: this.code,
         details: this.details,
         requestId: this.requestId,
-  });
+      });
     }
 
     return NextResponse.json(
@@ -94,7 +94,7 @@ export class ApiError extends Error {
           message: this.message,
           details: this.details,
           requestId: this.requestId,
-  },
+        },
       },
       { status: this.statusCode }
     );
@@ -206,7 +206,7 @@ export function withErrorHandling(
         // Prisma "Record not found" error
         return new ApiError({
           code: ApiErrorCode.NOT_FOUND,
-          message: 'The requested resource was not found'
+          message: 'The requested resource was not found',
         }).toResponse();
       }
 
@@ -222,7 +222,7 @@ export function withErrorHandling(
             : {
                 name: error.name,
                 stack: error.stack,
-  },
+              },
       });
 
       return apiError.toResponse();

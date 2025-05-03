@@ -9,7 +9,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ heading, description, children, className }: PageHeaderProps) {
   return (
-    <div 
+    <div
       className={`flex flex-col space-y-4 md:flex-row md:justify-between md:space-y-0 pb-5 ${className}`}
     >
       <div>

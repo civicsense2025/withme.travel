@@ -76,7 +76,7 @@ export function UseItineraryButton({ slug, className }: UseItineraryButtonProps)
 
       toast({
         title: 'Success!',
-        description: 'Trip created from this itinerary template. Redirecting to your new trip...'
+        description: 'Trip created from this itinerary template. Redirecting to your new trip...',
       });
 
       // Redirect to the new trip

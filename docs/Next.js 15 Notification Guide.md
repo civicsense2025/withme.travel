@@ -8,7 +8,7 @@
 4. [Database Triggers and Functions](#database-triggers-and-functions)
 5. [Implementing Realtime Features](#implementing-realtime-features)
 6. [Next.js Website Integration](#nextjs-website-integration)
-7. [Push Notification Implementation](#push-notification-implementation) 
+7. [Push Notification Implementation](#push-notification-implementation)
 8. [Notification UX Best Practices](#notification-ux-best-practices)
 9. [Performance Considerations](#performance-considerations)
 10. [Testing and Monitoring](#testing-and-monitoring)
@@ -92,7 +92,7 @@ CREATE TABLE public.device_tokens (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_used_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   is_active BOOLEAN NOT NULL DEFAULT true,
-  
+
   -- Ensure token uniqueness
   UNIQUE(token)
 );
@@ -109,29 +109,29 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.device_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Notification policies
-CREATE POLICY "Users can see their own notifications" 
-  ON public.notifications FOR SELECT 
+CREATE POLICY "Users can see their own notifications"
+  ON public.notifications FOR SELECT
   USING (auth.uid() = recipient_id);
 
-CREATE POLICY "Users can update their own notifications" 
-  ON public.notifications FOR UPDATE 
+CREATE POLICY "Users can update their own notifications"
+  ON public.notifications FOR UPDATE
   USING (auth.uid() = recipient_id);
 
 -- Device tokens policies
-CREATE POLICY "Users can see their own device tokens" 
-  ON public.device_tokens FOR SELECT 
+CREATE POLICY "Users can see their own device tokens"
+  ON public.device_tokens FOR SELECT
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own device tokens" 
-  ON public.device_tokens FOR INSERT 
+CREATE POLICY "Users can insert their own device tokens"
+  ON public.device_tokens FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own device tokens" 
-  ON public.device_tokens FOR UPDATE 
+CREATE POLICY "Users can update their own device tokens"
+  ON public.device_tokens FOR UPDATE
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own device tokens" 
-  ON public.device_tokens FOR DELETE 
+CREATE POLICY "Users can delete their own device tokens"
+  ON public.device_tokens FOR DELETE
   USING (auth.uid() = user_id);
 ```
 
@@ -143,38 +143,38 @@ WithMe.Travel should focus on these key notification categories:
 
 ### 1. Collaboration Notifications
 
-| Notification Type | Description | Priority |
-|-------------------|-------------|----------|
-| `trip_invitation` | When a user is invited to join a trip | High |
-| `member_joined` | When a new member joins a trip | Medium |
-| `member_left` | When a member leaves a trip | Medium |
-| `role_changed` | When a user's role or permissions change | Medium |
+| Notification Type | Description                              | Priority |
+| ----------------- | ---------------------------------------- | -------- |
+| `trip_invitation` | When a user is invited to join a trip    | High     |
+| `member_joined`   | When a new member joins a trip           | Medium   |
+| `member_left`     | When a member leaves a trip              | Medium   |
+| `role_changed`    | When a user's role or permissions change | Medium   |
 
 ### 2. Itinerary Update Notifications
 
-| Notification Type | Description | Priority |
-|-------------------|-------------|----------|
-| `itinerary_major_update` | Significant changes to trip plans | Medium |
-| `place_added` | When important places are added to the itinerary | Low |
-| `comment_added` | New comments on places or activities | Low |
-| `comment_mention` | When a user is @mentioned in comments | High |
-| `vote_created` | When a new vote is created | Medium |
-| `vote_completed` | When a group decision vote completes | High |
+| Notification Type        | Description                                      | Priority |
+| ------------------------ | ------------------------------------------------ | -------- |
+| `itinerary_major_update` | Significant changes to trip plans                | Medium   |
+| `place_added`            | When important places are added to the itinerary | Low      |
+| `comment_added`          | New comments on places or activities             | Low      |
+| `comment_mention`        | When a user is @mentioned in comments            | High     |
+| `vote_created`           | When a new vote is created                       | Medium   |
+| `vote_completed`         | When a group decision vote completes             | High     |
 
 ### 3. Time-sensitive Alerts
 
-| Notification Type | Description | Priority |
-|-------------------|-------------|----------|
-| `trip_reminder` | Upcoming trip alerts (7 days, 3 days, 1 day before) | High |
-| `deadline_reminder` | Important reservation or booking deadlines | High |
-| `travel_disruption` | Weather alerts or travel disruptions (if integrated) | High |
+| Notification Type   | Description                                          | Priority |
+| ------------------- | ---------------------------------------------------- | -------- |
+| `trip_reminder`     | Upcoming trip alerts (7 days, 3 days, 1 day before)  | High     |
+| `deadline_reminder` | Important reservation or booking deadlines           | High     |
+| `travel_disruption` | Weather alerts or travel disruptions (if integrated) | High     |
 
 ### 4. System Notifications
 
-| Notification Type | Description | Priority |
-|-------------------|-------------|----------|
-| `feature_announcement` | New features or improvements | Low |
-| `account_alert` | Security or account-related notifications | High |
+| Notification Type      | Description                               | Priority |
+| ---------------------- | ----------------------------------------- | -------- |
+| `feature_announcement` | New features or improvements              | Low      |
+| `account_alert`        | Security or account-related notifications | High     |
 
 ---
 
@@ -198,10 +198,10 @@ BEGIN
 
   -- Create notification
   INSERT INTO public.notifications (
-    trip_id, 
-    recipient_id, 
-    actor_id, 
-    notification_type, 
+    trip_id,
+    recipient_id,
+    actor_id,
+    notification_type,
     content,
     metadata,
     action_url
@@ -218,7 +218,7 @@ BEGIN
     ),
     '/trips/' || NEW.trip_id
   );
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -236,7 +236,7 @@ CREATE OR REPLACE FUNCTION create_member_joined_notification()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Get user name and trip details
-  DECLARE 
+  DECLARE
     user_name TEXT;
     trip_name TEXT;
     trip_owner_id UUID;
@@ -244,13 +244,13 @@ BEGIN
   BEGIN
     -- Get the user's name
     SELECT full_name INTO user_name FROM profiles WHERE id = NEW.user_id;
-    
+
     -- Get trip details
     SELECT name, owner_id INTO trip_name, trip_owner_id FROM trips WHERE id = NEW.trip_id;
-    
+
     -- Get trip members (excluding the new member)
-    SELECT array_agg(user_id) INTO trip_members 
-    FROM trip_members 
+    SELECT array_agg(user_id) INTO trip_members
+    FROM trip_members
     WHERE trip_id = NEW.trip_id AND user_id != NEW.user_id;
   END;
 
@@ -262,13 +262,13 @@ BEGIN
       DECLARE member_prefs JSONB;
       BEGIN
         SELECT notification_preferences INTO member_prefs FROM profiles WHERE id = member_id;
-        
+
         IF member_prefs->>'member_changes' = 'true' THEN
           INSERT INTO public.notifications (
-            trip_id, 
-            recipient_id, 
-            actor_id, 
-            notification_type, 
+            trip_id,
+            recipient_id,
+            actor_id,
+            notification_type,
             content,
             metadata,
             action_url
@@ -289,7 +289,7 @@ BEGIN
       END;
     END LOOP;
   END IF;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -308,7 +308,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   -- Only notify on significant changes
   IF TG_OP = 'UPDATE' AND (
-    OLD.title = NEW.title AND 
+    OLD.title = NEW.title AND
     OLD.description = NEW.description AND
     OLD.start_date = NEW.start_date AND
     OLD.end_date = NEW.end_date
@@ -318,19 +318,19 @@ BEGIN
   END IF;
 
   -- Get trip details
-  DECLARE 
+  DECLARE
     trip_name TEXT;
     trip_members UUID[];
     actor_name TEXT;
   BEGIN
     -- Get the trip name
     SELECT name INTO trip_name FROM trips WHERE id = NEW.trip_id;
-    
+
     -- Get trip members (excluding the actor)
-    SELECT array_agg(user_id) INTO trip_members 
-    FROM trip_members 
+    SELECT array_agg(user_id) INTO trip_members
+    FROM trip_members
     WHERE trip_id = NEW.trip_id AND user_id != auth.uid();
-    
+
     -- Get actor name
     SELECT full_name INTO actor_name FROM profiles WHERE id = auth.uid();
   END;
@@ -343,13 +343,13 @@ BEGIN
       DECLARE member_prefs JSONB;
       BEGIN
         SELECT notification_preferences INTO member_prefs FROM profiles WHERE id = member_id;
-        
+
         IF member_prefs->>'itinerary_updates' = 'true' THEN
           INSERT INTO public.notifications (
-            trip_id, 
-            recipient_id, 
-            actor_id, 
-            notification_type, 
+            trip_id,
+            recipient_id,
+            actor_id,
+            notification_type,
             content,
             metadata,
             action_url
@@ -372,7 +372,7 @@ BEGIN
       END;
     END LOOP;
   END IF;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -393,7 +393,7 @@ BEGIN
   -- Delete notifications older than 6 months
   DELETE FROM public.notifications
   WHERE created_at < now() - interval '180 days';
-  
+
   -- Or archive older notifications if you want to keep history
   -- UPDATE public.notifications
   -- SET is_archived = true
@@ -444,15 +444,15 @@ export function useNotifications() {
   const [loading, setLoading] = useState<boolean>(true);
   const supabase = useSupabaseClient();
   const user = useUser();
-  
+
   // Fetch initial notifications
   useEffect(() => {
     if (!user) return;
-    
+
     async function fetchNotifications() {
       try {
         setLoading(true);
-        
+
         // Fetch recent notifications (last 30 days)
         const { data, error } = await supabase
           .from('notifications')
@@ -461,27 +461,27 @@ export function useNotifications() {
           .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
           .order('created_at', { ascending: false })
           .limit(50);
-          
+
         if (error) throw error;
-        
+
         setNotifications(data || []);
-        setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+        setUnreadCount(data?.filter((n) => !n.is_read).length || 0);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       } finally {
         setLoading(false);
       }
     }
-    
+
     fetchNotifications();
   }, [user, supabase]);
-  
+
   // Subscribe to realtime notifications
   useEffect(() => {
     if (!user) return;
-    
+
     let channel: RealtimeChannel;
-    
+
     const setupRealtimeSubscription = async () => {
       // Create and subscribe to the channel
       channel = supabase
@@ -492,14 +492,14 @@ export function useNotifications() {
             event: 'INSERT',
             schema: 'public',
             table: 'notifications',
-            filter: `recipient_id=eq.${user.id}`
+            filter: `recipient_id=eq.${user.id}`,
           },
           (payload) => {
             // Add new notification to state
             const newNotification = payload.new as Notification;
-            setNotifications(current => [newNotification, ...current]);
-            setUnreadCount(current => current + 1);
-            
+            setNotifications((current) => [newNotification, ...current]);
+            setUnreadCount((current) => current + 1);
+
             // Optional: Play sound or show toast notification
             playNotificationSound();
             showToast(newNotification);
@@ -511,24 +511,24 @@ export function useNotifications() {
             event: 'UPDATE',
             schema: 'public',
             table: 'notifications',
-            filter: `recipient_id=eq.${user.id}`
+            filter: `recipient_id=eq.${user.id}`,
           },
           (payload) => {
             // Update notification in state
             const updatedNotification = payload.new as Notification;
-            setNotifications(current => 
-              current.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+            setNotifications((current) =>
+              current.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
             );
-            
+
             // Update unread count
             calculateUnreadCount();
           }
         )
         .subscribe();
     };
-    
+
     setupRealtimeSubscription();
-    
+
     // Cleanup subscription on unmount
     return () => {
       if (channel) {
@@ -536,57 +536,55 @@ export function useNotifications() {
       }
     };
   }, [user, supabase]);
-  
+
   // Helper function to recalculate unread count
   const calculateUnreadCount = () => {
-    setUnreadCount(notifications.filter(n => !n.is_read).length);
+    setUnreadCount(notifications.filter((n) => !n.is_read).length);
   };
-  
+
   // Function to mark a notification as read
   const markAsRead = async (notificationId: string) => {
     try {
       // Update local state optimistically
-      setNotifications(current => 
-        current.map(n => 
-          n.id === notificationId 
-            ? { ...n, is_read: true, read_at: new Date().toISOString() } 
-            : n
+      setNotifications((current) =>
+        current.map((n) =>
+          n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
         )
       );
-      
+
       // Update unread count
-      setUnreadCount(current => Math.max(0, current - 1));
-      
+      setUnreadCount((current) => Math.max(0, current - 1));
+
       // Update in database
       await supabase
         .from('notifications')
-        .update({ 
-          is_read: true, 
-          read_at: new Date().toISOString() 
+        .update({
+          is_read: true,
+          read_at: new Date().toISOString(),
         })
         .eq('id', notificationId);
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
-  
+
   // Function to mark all notifications as read
   const markAllAsRead = async () => {
     try {
       // Update local state optimistically
-      setNotifications(current => 
-        current.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
+      setNotifications((current) =>
+        current.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
       );
-      
+
       // Update unread count
       setUnreadCount(0);
-      
+
       // Update in database
       await supabase
         .from('notifications')
-        .update({ 
-          is_read: true, 
-          read_at: new Date().toISOString() 
+        .update({
+          is_read: true,
+          read_at: new Date().toISOString(),
         })
         .eq('recipient_id', user!.id)
         .eq('is_read', false);
@@ -594,25 +592,25 @@ export function useNotifications() {
       console.error('Error marking all notifications as read:', error);
     }
   };
-  
+
   // Helper functions for notification feedback
   const playNotificationSound = () => {
     // Implement sound if needed
     // const audio = new Audio('/notification-sound.mp3');
     // audio.play().catch(e => console.log('Audio play error:', e));
   };
-  
+
   const showToast = (notification: Notification) => {
     // Implement toast notification if needed
     // toast.success(notification.content);
   };
-  
-  return { 
-    notifications, 
-    unreadCount, 
-    loading, 
-    markAsRead, 
-    markAllAsRead 
+
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    markAsRead,
+    markAllAsRead,
   };
 }
 ```
@@ -644,7 +642,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const notificationData = useNotifications();
-  
+
   return (
     <NotificationContext.Provider value={notificationData}>
       {children}
@@ -654,11 +652,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
 export function useNotificationContext() {
   const context = useContext(NotificationContext);
-  
+
   if (context === undefined) {
     throw new Error('useNotificationContext must be used within a NotificationProvider');
   }
-  
+
   return context;
 }
 ```
@@ -679,7 +677,7 @@ import { Bell } from 'lucide-react';
 export default function NotificationBell() {
   const { unreadCount } = useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
-  
+
   return (
     <div className="relative">
       <button
@@ -688,7 +686,7 @@ export default function NotificationBell() {
         aria-label={`Notifications ${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
       >
         <Bell size={20} className="text-gray-700" />
-        
+
         {/* Notification badge */}
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-primary-500 rounded-full">
@@ -696,11 +694,9 @@ export default function NotificationBell() {
           </span>
         )}
       </button>
-      
+
       {/* Notification popover */}
-      {isOpen && (
-        <NotificationPopover onClose={() => setIsOpen(false)} />
-      )}
+      {isOpen && <NotificationPopover onClose={() => setIsOpen(false)} />}
     </div>
   );
 }
@@ -723,10 +719,11 @@ type NotificationPopoverProps = {
 };
 
 export default function NotificationPopover({ onClose }: NotificationPopoverProps) {
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotificationContext();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } =
+    useNotificationContext();
   const popoverRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  
+
   // Close popover when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -734,27 +731,27 @@ export default function NotificationPopover({ onClose }: NotificationPopoverProp
         onClose();
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
-  
+
   // Handle notification click
   const handleNotificationClick = async (notification: any) => {
     // Mark as read
     if (!notification.is_read) {
       await markAsRead(notification.id);
     }
-    
+
     // Navigate to target page if action_url exists
     if (notification.action_url) {
       router.push(notification.action_url);
       onClose();
     }
   };
-  
+
   // Get icon based on notification type
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -776,9 +773,9 @@ export default function NotificationPopover({ onClose }: NotificationPopoverProp
         return <UserCircle className="w-5 h-5 text-gray-500" />;
     }
   };
-  
+
   return (
-    <div 
+    <div
       ref={popoverRef}
       className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-md shadow-lg border border-gray-200 z-50"
     >
@@ -794,7 +791,7 @@ export default function NotificationPopover({ onClose }: NotificationPopoverProp
           </button>
         )}
       </div>
-      
+
       {/* Notification list */}
       <div className="divide-y divide-gray-200">
         {loading ? (
@@ -815,9 +812,7 @@ export default function NotificationPopover({ onClose }: NotificationPopoverProp
                   {getNotificationIcon(notification.notification_type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">
-                    {notification.content}
-                  </p>
+                  <p className="text-sm text-gray-900">{notification.content}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                   </p>
@@ -827,13 +822,10 @@ export default function NotificationPopover({ onClose }: NotificationPopoverProp
           ))
         )}
       </div>
-      
+
       {/* Footer */}
       <div className="px-4 py-3 text-center border-t border-gray-200">
-        <button
-          onClick={onClose}
-          className="text-sm text-gray-600 hover:text-gray-900"
-        >
+        <button onClick={onClose} className="text-sm text-gray-600 hover:text-gray-900">
           Close
         </button>
       </div>
@@ -858,9 +850,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <SessionContextProvider supabaseClient={supabase}>
-      <NotificationProvider>
-        {children}
-      </NotificationProvider>
+      <NotificationProvider>{children}</NotificationProvider>
     </SessionContextProvider>
   );
 }
@@ -872,11 +862,7 @@ import { Providers } from './providers';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
@@ -927,23 +913,23 @@ export default function NotificationPreferencesPage() {
   const [saving, setSaving] = useState(false);
   const supabase = useSupabaseClient();
   const user = useUser();
-  
+
   // Fetch current preferences
   useEffect(() => {
     if (!user) return;
-    
+
     async function fetchPreferences() {
       try {
         setLoading(true);
-        
+
         const { data, error } = await supabase
           .from('profiles')
           .select('notification_preferences')
           .eq('id', user.id)
           .single();
-          
+
         if (error) throw error;
-        
+
         if (data?.notification_preferences) {
           setPreferences(data.notification_preferences as NotificationPreferences);
         }
@@ -953,34 +939,34 @@ export default function NotificationPreferencesPage() {
         setLoading(false);
       }
     }
-    
+
     fetchPreferences();
   }, [user, supabase]);
-  
+
   // Handle toggle change
   const handleToggleChange = (key: keyof NotificationPreferences) => {
-    setPreferences(prev => ({
+    setPreferences((prev) => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: !prev[key],
     }));
   };
-  
+
   // Save preferences
   const savePreferences = async () => {
     if (!user) return;
-    
+
     try {
       setSaving(true);
-      
+
       const { error } = await supabase
         .from('profiles')
         .update({
-          notification_preferences: preferences
+          notification_preferences: preferences,
         })
         .eq('id', user.id);
-        
+
       if (error) throw error;
-      
+
       toast({
         title: 'Preferences saved',
         description: 'Your notification preferences have been updated.',
@@ -997,110 +983,117 @@ export default function NotificationPreferencesPage() {
       setSaving(false);
     }
   };
-  
+
   if (loading) {
     return <div className="p-8 text-center">Loading preferences...</div>;
   }
-  
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Notification Preferences</h1>
-      
+
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-lg font-medium mb-4">Trip Notifications</h2>
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Trip Invitations</h3>
-                <p className="text-sm text-gray-500">Get notified when someone invites you to join a trip</p>
+                <p className="text-sm text-gray-500">
+                  Get notified when someone invites you to join a trip
+                </p>
               </div>
-              <Switch 
-                checked={preferences.trip_invitations} 
-                onCheckedChange={() => handleToggleChange('trip_invitations')} 
+              <Switch
+                checked={preferences.trip_invitations}
+                onCheckedChange={() => handleToggleChange('trip_invitations')}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Member Changes</h3>
-                <p className="text-sm text-gray-500">Get notified when people join or leave your trips</p>
+                <p className="text-sm text-gray-500">
+                  Get notified when people join or leave your trips
+                </p>
               </div>
-              <Switch 
-                checked={preferences.member_changes} 
-                onCheckedChange={() => handleToggleChange('member_changes')} 
+              <Switch
+                checked={preferences.member_changes}
+                onCheckedChange={() => handleToggleChange('member_changes')}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Itinerary Updates</h3>
-                <p className="text-sm text-gray-500">Get notified about important changes to trip itineraries</p>
+                <p className="text-sm text-gray-500">
+                  Get notified about important changes to trip itineraries
+                </p>
               </div>
-              <Switch 
-                checked={preferences.itinerary_updates} 
-                onCheckedChange={() => handleToggleChange('itinerary_updates')} 
+              <Switch
+                checked={preferences.itinerary_updates}
+                onCheckedChange={() => handleToggleChange('itinerary_updates')}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Comments</h3>
-                <p className="text-sm text-gray-500">Get notified about new comments and mentions</p>
+                <p className="text-sm text-gray-500">
+                  Get notified about new comments and mentions
+                </p>
               </div>
-              <Switch 
-                checked={preferences.comments} 
-                onCheckedChange={() => handleToggleChange('comments')} 
+              <Switch
+                checked={preferences.comments}
+                onCheckedChange={() => handleToggleChange('comments')}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Trip Reminders</h3>
-                <p className="text-sm text-gray-500">Get reminders about upcoming trips and deadlines</p>
+                <p className="text-sm text-gray-500">
+                  Get reminders about upcoming trips and deadlines
+                </p>
               </div>
-              <Switch 
-                checked={preferences.trip_reminders} 
-                onCheckedChange={() => handleToggleChange('trip_reminders')} 
+              <Switch
+                checked={preferences.trip_reminders}
+                onCheckedChange={() => handleToggleChange('trip_reminders')}
               />
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-lg font-medium mb-4">Notification Channels</h2>
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Email Notifications</h3>
                 <p className="text-sm text-gray-500">Receive important notifications via email</p>
               </div>
-              <Switch 
-                checked={preferences.email_notifications} 
-                onCheckedChange={() => handleToggleChange('email_notifications')} 
+              <Switch
+                checked={preferences.email_notifications}
+                onCheckedChange={() => handleToggleChange('email_notifications')}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Push Notifications</h3>
                 <p className="text-sm text-gray-500">Receive notifications on your devices</p>
               </div>
-              <Switch 
-                checked={preferences.push_notifications} 
-                onCheckedChange={() => handleToggleChange('push_notifications')} 
+              <Switch
+                checked={preferences.push_notifications}
+                onCheckedChange={() => handleToggleChange('push_notifications')}
               />
             </div>
           </div>
         </div>
-        
+
         <div className="flex justify-end">
-          <Button
-            onClick={savePreferences}
-            disabled={saving}
-          >
+          <Button onClick={savePreferences} disabled={saving}>
             {saving ? 'Saving...' : 'Save Preferences'}
           </Button>
         </div>
@@ -1120,30 +1113,26 @@ For WithMe.Travel, push notifications can be implemented in phases. Start with t
 
 ```typescript
 // public/service-worker.js
-self.addEventListener('push', function(event) {
+self.addEventListener('push', function (event) {
   const data = event.data.json();
-  
+
   const options = {
     body: data.body,
     icon: '/icons/notification-icon.png',
     badge: '/icons/badge-icon.png',
     data: {
-      url: data.url
-    }
+      url: data.url,
+    },
   };
-  
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  
+
   if (event.notification.data && event.notification.data.url) {
-    event.waitUntil(
-      clients.openWindow(event.notification.data.url)
-    );
+    event.waitUntil(clients.openWindow(event.notification.data.url));
   }
 });
 ```
@@ -1177,7 +1166,7 @@ serve(async (req) => {
   try {
     // Parse the webhook payload
     const payload: WebhookPayload = await req.json();
-    
+
     // Only process notifications table inserts
     if (payload.table !== 'notifications' || payload.type !== 'INSERT') {
       return new Response(JSON.stringify({ message: 'Ignored' }), {
@@ -1185,16 +1174,16 @@ serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     // Get user preferences and tokens
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('notification_preferences')
       .eq('id', payload.record.recipient_id)
       .single();
-      
+
     if (profileError) throw profileError;
-    
+
     // Check if user wants push notifications
     const preferences = profileData.notification_preferences || {};
     if (!preferences.push_notifications) {
@@ -1203,36 +1192,36 @@ serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     // Get user's device tokens
     const { data: deviceTokens, error: deviceError } = await supabase
       .from('device_tokens')
       .select('token, device_type')
       .eq('user_id', payload.record.recipient_id)
       .eq('is_active', true);
-      
+
     if (deviceError) throw deviceError;
-    
+
     if (!deviceTokens || deviceTokens.length === 0) {
       return new Response(JSON.stringify({ message: 'No device tokens found' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     // Send push notifications to all user devices
     const results = await Promise.all(
       deviceTokens.map(async (device) => {
         // Example using FCM (Firebase Cloud Messaging)
         if (device.device_type === 'android' || device.device_type === 'ios') {
           return await sendFCMNotification(
-            device.token, 
-            'WithMe.Travel', 
+            device.token,
+            'WithMe.Travel',
             payload.record.content,
             payload.record.action_url
           );
         }
-        
+
         // Example using Web Push
         if (device.device_type === 'web') {
           return await sendWebPushNotification(
@@ -1242,18 +1231,18 @@ serve(async (req) => {
             payload.record.action_url
           );
         }
-        
+
         return null;
       })
     );
-    
+
     return new Response(JSON.stringify({ message: 'Notifications sent', results }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error sending push notification:', error);
-    
+
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
@@ -1263,13 +1252,23 @@ serve(async (req) => {
 
 // Implementation of sendFCMNotification and sendWebPushNotification
 // would depend on your chosen push notification service
-async function sendFCMNotification(token: string, title: string, body: string, url?: string | null) {
+async function sendFCMNotification(
+  token: string,
+  title: string,
+  body: string,
+  url?: string | null
+) {
   // Implementation using Firebase Admin SDK or similar
   // This is a placeholder
   return { success: true, token };
 }
 
-async function sendWebPushNotification(subscription: string, title: string, body: string, url?: string | null) {
+async function sendWebPushNotification(
+  subscription: string,
+  title: string,
+  body: string,
+  url?: string | null
+) {
   // Implementation using web-push library or similar
   // This is a placeholder
   return { success: true, subscription };

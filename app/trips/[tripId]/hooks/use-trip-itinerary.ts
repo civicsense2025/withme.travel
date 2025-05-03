@@ -60,7 +60,7 @@ export function useTripItinerary({
     combinedItems.sort((a, b) => {
       // Both items should be defined at this point, but TypeScript doesn't know that
       if (!a || !b) return 0;
-      
+
       const dayA = a.day_number ?? Number.MAX_SAFE_INTEGER;
       const dayB = b.day_number ?? Number.MAX_SAFE_INTEGER;
       const posA = a.position ?? 0;
@@ -71,9 +71,11 @@ export function useTripItinerary({
     });
 
     // Filter out any null/undefined values before setting state
-    setAllItems(combinedItems.filter((item): item is DisplayItineraryItem => 
-      item !== null && item !== undefined
-    ));
+    setAllItems(
+      combinedItems.filter(
+        (item): item is DisplayItineraryItem => item !== null && item !== undefined
+      )
+    );
   }, [sections, unscheduledItems]);
 
   // Calculate derived itinerary duration
@@ -145,7 +147,7 @@ export function useTripItinerary({
 
       // Then update in sections or unscheduled items based on section
       const itemToUpdate = allItems.find((item) => item.id === itemId);
-      
+
       if (!itemToUpdate) {
         console.error(`Item with ID ${itemId} not found for update`);
         return;
@@ -407,7 +409,7 @@ export function useTripItinerary({
 
       // Also remove from sections or unscheduled items
       const itemToDelete = allItems.find((item) => item.id === itemId);
-      
+
       if (!itemToDelete) {
         console.warn(`Item with ID ${itemId} not found for deletion`);
         return;
@@ -415,7 +417,7 @@ export function useTripItinerary({
 
       // Safe check for day_number
       const dayNumber = itemToDelete.day_number;
-      
+
       if (dayNumber === null || dayNumber === undefined) {
         setUnscheduledItems((prev) => prev.filter((item) => item.id !== itemId));
       } else {
@@ -424,9 +426,7 @@ export function useTripItinerary({
             if (section.day_number === dayNumber) {
               return {
                 ...section,
-                items: section.items ? 
-                  section.items.filter((item) => item.id !== itemId) : 
-                  [],
+                items: section.items ? section.items.filter((item) => item.id !== itemId) : [],
               };
             }
             return section;

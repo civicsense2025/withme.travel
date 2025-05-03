@@ -8,22 +8,22 @@ const FIELDS = {
   COMMON: {
     ID: 'id',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   TRIP_VOTES: {
     POLL_ID: 'poll_id',
     OPTION_ID: 'option_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   TRIP_VOTE_POLLS: {
     TITLE: 'title',
-    IS_ACTIVE: 'is_active'
+    IS_ACTIVE: 'is_active',
   },
   TRIP_VOTE_OPTIONS: {
     TITLE: 'title',
     DESCRIPTION: 'description',
-    IMAGE_URL: 'image_url'
-  }
+    IMAGE_URL: 'image_url',
+  },
 };
 
 // Schema for vote submission validation
@@ -61,9 +61,12 @@ export async function POST(
     const { optionId } = validationResult.data;
 
     // Get authenticated user
-    const supabase = await createRouteHandlerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const supabase = createRouteHandlerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -130,7 +133,7 @@ export async function POST(
         .eq('id', existingVote.id);
 
       if (updateError) {
-console.error('Error updating vote:', updateError);
+        console.error('Error updating vote:', updateError);
         return NextResponse.json({ error: 'Failed to update your vote' }, { status: 500 });
       }
 
@@ -149,7 +152,7 @@ console.error('Error updating vote:', updateError);
     });
 
     if (insertError) {
-console.error('Error creating vote:', insertError);
+      console.error('Error creating vote:', insertError);
       return NextResponse.json({ error: 'Failed to cast your vote' }, { status: 500 });
     }
 
@@ -158,7 +161,7 @@ console.error('Error creating vote:', insertError);
       optionId,
     });
   } catch (error) {
-console.error('Error processing vote:', error);
+    console.error('Error processing vote:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

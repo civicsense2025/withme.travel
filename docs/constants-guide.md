@@ -69,6 +69,7 @@ function updateItem(item, status: ItemStatus) {
 ### 2. Route Constants (`utils/constants/routes.ts`)
 
 Defines constants for API endpoints and page navigation paths:
+
 - `API_ROUTES`: Backend API endpoints for client-server communication
 - `PAGE_ROUTES`: Frontend page paths for navigation and linking
 - `ROUTE_HELPERS`: Utility functions for route construction and validation
@@ -88,15 +89,16 @@ async function fetchTripData(tripId: string) {
 // <Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)}>View Trip</Link>
 
 // Add query parameters to a route
-const searchUrl = ROUTE_HELPERS.addQueryParams(
-  API_ROUTES.DESTINATION_SEARCH('paris'), 
-  { limit: '10', sort: 'popularity' }
-);
+const searchUrl = ROUTE_HELPERS.addQueryParams(API_ROUTES.DESTINATION_SEARCH('paris'), {
+  limit: '10',
+  sort: 'popularity',
+});
 ```
 
 ### 3. Status Constants (`utils/constants/status.ts`)
 
 Contains all status-related constants and their TypeScript types:
+
 - `TRIP_ROLES`: User roles within a trip (admin, editor, contributor, viewer)
 - `PERMISSION_STATUSES`: Permission request statuses
 - `ITINERARY_CATEGORIES`: Categories for itinerary items
@@ -109,14 +111,14 @@ Contains all status-related constants and their TypeScript types:
 **Correct Usage:**
 
 ```typescript
-import { 
+import {
   TRIP_ROLES, // Keep importing values from status.ts if needed elsewhere
-  ITEM_STATUSES, 
+  ITEM_STATUSES,
   NOTIFICATION_TYPES,
 } from '@/utils/constants/status';
 
 // Import the TYPE from database.ts
-import type { TripRole } from '@/utils/constants/database'; 
+import type { TripRole } from '@/utils/constants/database';
 
 // Check user permissions
 if (member.role === TRIP_ROLES.ADMIN || member.role === TRIP_ROLES.EDITOR) {
@@ -134,6 +136,7 @@ function updateItemStatus(item, status: ItemStatus) {
 ### 4. UI Constants (`utils/constants/ui.ts`)
 
 Defines UI-related constants for consistent presentation and formatting:
+
 - `THEME`: Theme colors and properties
 - `LIMITS`: Form field character limits
 - `TIME_FORMATS`: Date and time display formats
@@ -144,9 +147,9 @@ Defines UI-related constants for consistent presentation and formatting:
 **Correct Usage:**
 
 ```typescript
-import { 
-  TIME_FORMATS, 
-  INPUT_LIMITS, 
+import {
+  TIME_FORMATS,
+  INPUT_LIMITS,
   CATEGORY_DISPLAY,
   ITEM_STATUS_DISPLAY
 } from '@/utils/constants/ui';
@@ -167,6 +170,7 @@ const categoryInfo = CATEGORY_DISPLAY[item.category] || DEFAULT_CATEGORY_DISPLAY
 ### 5. API Constants (`utils/constants/api.ts`)
 
 Contains API-related configuration and query helpers:
+
 - `API_ROUTES`: Defined API endpoints (similar to routes.ts but more detailed)
 - `UNSPLASH_CONFIG`: Configuration for Unsplash API integration
 - `DB_QUERIES`: Common database query patterns
@@ -176,11 +180,7 @@ Contains API-related configuration and query helpers:
 **Correct Usage:**
 
 ```typescript
-import { 
-  UNSPLASH_CONFIG, 
-  DB_QUERIES,
-  QUERY_SNIPPETS 
-} from '@/utils/constants/api';
+import { UNSPLASH_CONFIG, DB_QUERIES, QUERY_SNIPPETS } from '@/utils/constants/api';
 
 // Fetch image from Unsplash
 async function getRandomImage(query) {
@@ -193,7 +193,8 @@ async function getRandomImage(query) {
 }
 
 // Use predefined query pattern
-const { data } = await supabase.from(TABLES.TRIPS)
+const { data } = await supabase
+  .from(TABLES.TRIPS)
   .select(QUERY_SNIPPETS.TRIP_WITH_CREATOR)
   .eq('id', tripId);
 ```
@@ -201,6 +202,7 @@ const { data } = await supabase.from(TABLES.TRIPS)
 ### 6. Validation Constants (`utils/constants/validation.ts`)
 
 Contains validation-related constants and Zod schemas:
+
 - `LIMITS`: Form field length/count limits
 - Various status enums (`ITEM_STATUSES`, `TRIP_STATUSES`, etc.)
 - `VALIDATION_PATTERNS`: Regular expressions for validation
@@ -209,10 +211,10 @@ Contains validation-related constants and Zod schemas:
 **Correct Usage:**
 
 ```typescript
-import { 
-  VALIDATION_PATTERNS, 
+import {
+  VALIDATION_PATTERNS,
   LIMITS,
-  ZOD_SCHEMAS 
+  ZOD_SCHEMAS
 } from '@/utils/constants/validation';
 
 // Validate username format
@@ -231,6 +233,7 @@ const itemSchema = z.object({
 ### 7. Colors Constants (`utils/constants/colors.ts`)
 
 Contains color-related constants for UI styling:
+
 - `EXPENSE_CATEGORY_COLORS`: Colors for expense categories
 - `BUDGET_CATEGORY_COLORS`: Type-safe mapping of budget categories to colors
 - `STATUS_COLORS`: Standard colors for different statuses (success, error, etc.)
@@ -238,22 +241,24 @@ Contains color-related constants for UI styling:
 **Correct Usage:**
 
 ```typescript
-import { 
+import {
   EXPENSE_CATEGORY_COLORS,
   BUDGET_CATEGORY_COLORS,
-  STATUS_COLORS 
+  STATUS_COLORS,
 } from '@/utils/constants/colors';
 
 // Use in charts
 const pieChartData = {
-  datasets: [{
-    data: [300, 150, 200],
-    backgroundColor: [
-      EXPENSE_CATEGORY_COLORS.accommodation,
-      EXPENSE_CATEGORY_COLORS.food,
-      EXPENSE_CATEGORY_COLORS.transportation,
-    ],
-  }]
+  datasets: [
+    {
+      data: [300, 150, 200],
+      backgroundColor: [
+        EXPENSE_CATEGORY_COLORS.accommodation,
+        EXPENSE_CATEGORY_COLORS.food,
+        EXPENSE_CATEGORY_COLORS.transportation,
+      ],
+    },
+  ],
 };
 
 // Type-safe color selection based on budget category

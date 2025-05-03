@@ -27,24 +27,13 @@ export function ClientFocusMode({ tripId, children }: ClientFocusModeProps) {
   };
 
   // Use the real hook or fall back to the mock implementation
-  const {
-    session,
-    isLoading,
-    startSession,
-    pauseSession,
-    resumeSession,
-    endSession,
-  } = useFocusSession() || defaultFocusSession;
+  const { session, isLoading, startSession, pauseSession, resumeSession, endSession } =
+    useFocusSession() || defaultFocusSession;
 
   const renderControls = () => {
     if (!session) {
       return (
-        <Button 
-          onClick={() => startSession()} 
-          disabled={isLoading}
-          size="sm"
-          className="gap-2"
-        >
+        <Button onClick={() => startSession()} disabled={isLoading} size="sm" className="gap-2">
           <Play size={16} />
           Start Focus Session
         </Button>
@@ -106,12 +95,7 @@ export function ClientFocusMode({ tripId, children }: ClientFocusModeProps) {
 
       case 'completed':
         return (
-          <Button
-            onClick={() => startSession()}
-            disabled={isLoading}
-            size="sm"
-            className="gap-1"
-          >
+          <Button onClick={() => startSession()} disabled={isLoading} size="sm" className="gap-1">
             <Play size={14} />
             Start New Session
           </Button>
@@ -148,7 +132,7 @@ export function ClientFocusMode({ tripId, children }: ClientFocusModeProps) {
             </Badge>
           )}
         </div>
-        
+
         {session && session.status !== 'idle' && (
           <div className="flex items-center gap-2 text-sm">
             <Clock size={16} />
@@ -163,15 +147,13 @@ export function ClientFocusMode({ tripId, children }: ClientFocusModeProps) {
           <span className="text-sm text-muted-foreground">
             {session?.activeParticipants.length || 0} participants
           </span>
-          
+
           <PresenceIndicator size="sm" className="ml-2" />
         </div>
-        
-        <div className="flex justify-end">
-          {renderControls()}
-        </div>
+
+        <div className="flex justify-end">{renderControls()}</div>
       </div>
-      
+
       {children}
     </div>
   );

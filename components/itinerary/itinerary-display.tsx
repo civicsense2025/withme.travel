@@ -4,7 +4,21 @@ import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThumbsUp, ThumbsDown, Clock, MapPin, User, CheckCircle2, XCircle, AlertCircle, Check, Ban, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  ThumbsUp,
+  ThumbsDown,
+  Clock,
+  MapPin,
+  User,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Check,
+  Ban,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Profile } from '@/types/profile';
 import { DisplayItineraryItem } from '@/types/itinerary';
@@ -12,7 +26,7 @@ import { getInitials, cn } from '@/utils/lib-utils';
 import { Badge } from '@/components/ui/badge';
 import { PERMISSION_STATUSES } from '@/utils/constants/status';
 
-'use client';
+('use client');
 
 // Define a type alias for profile information in votes
 type ProfileBasic = Profile;
@@ -44,8 +58,8 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
             voteType === 'up' ? newUpVotes-- : newDownVotes--;
             return {
               ...item,
-              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: null }
-  };
+              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: null },
+            };
           } else {
             // New vote or changing vote
             if (currentUserVote === 'up') newUpVotes--;
@@ -53,7 +67,7 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
             voteType === 'up' ? newUpVotes++ : newDownVotes++;
             return {
               ...item,
-              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: voteType }
+              votes: { ...item.votes, up: newUpVotes, down: newDownVotes, userVote: voteType },
             };
           }
         }
@@ -95,14 +109,17 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
     }
   };
 
-  const handleStatusUpdate = async (itemId: string, newStatus: typeof PERMISSION_STATUSES.APPROVED | typeof PERMISSION_STATUSES.REJECTED) => {
+  const handleStatusUpdate = async (
+    itemId: string,
+    newStatus: typeof PERMISSION_STATUSES.APPROVED | typeof PERMISSION_STATUSES.REJECTED
+  ) => {
     setUpdatingStatusItemId(itemId); // Indicate loading state for this item
     const originalItems = [...items];
 
     // Optimistic UI Update
     setItems((currentItems) =>
-      currentItems.map((item) => 
-        item.id === itemId 
+      currentItems.map((item) =>
+        item.id === itemId
           ? { ...item, status: newStatus as any } // Type casting needed here
           : item
       )
@@ -208,7 +225,10 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
       {items.map((item) => {
         const isExpanded = expandedVoteItemId === item.id;
         return (
-          <Card key={item.id} className={cn((item.status as string) === PERMISSION_STATUSES.REJECTED && 'opacity-60')}>
+          <Card
+            key={item.id}
+            className={cn((item.status as string) === PERMISSION_STATUSES.REJECTED && 'opacity-60')}
+          >
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
@@ -274,41 +294,43 @@ export function ItineraryDisplay({ initialItems, tripId, canEdit }: ItineraryDis
                   )}
                 </button>
                 {/* Expanded Actions (only render if expanded) */}
-                {isExpanded && canEdit && (item.status as string) === PERMISSION_STATUSES.PENDING && (
-                  <div className="flex items-center gap-2">
-                    {/* Approve/Reject Buttons */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-auto p-1.5 text-green-600 border-green-600/40 hover:bg-green-500/10"
-                      onClick={() => handleStatusUpdate(item.id, PERMISSION_STATUSES.APPROVED)}
-                      disabled={updatingStatusItemId === item.id}
-                    >
-                      {updatingStatusItemId === item.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="h-4 w-4" />
-                      )}
-                      <span className="ml-1 hidden sm:inline">Approve</span>{' '}
-                      {/* Hide text on small screens */}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-auto p-1.5 text-red-600 border-red-600/40 hover:bg-red-500/10"
-                      onClick={() => handleStatusUpdate(item.id, PERMISSION_STATUSES.REJECTED)}
-                      disabled={updatingStatusItemId === item.id}
-                    >
-                      {updatingStatusItemId === item.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Ban className="h-4 w-4" />
-                      )}
-                      <span className="ml-1 hidden sm:inline">Reject</span>{' '}
-                      {/* Hide text on small screens */}
-                    </Button>
-                  </div>
-                )}
+                {isExpanded &&
+                  canEdit &&
+                  (item.status as string) === PERMISSION_STATUSES.PENDING && (
+                    <div className="flex items-center gap-2">
+                      {/* Approve/Reject Buttons */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-auto p-1.5 text-green-600 border-green-600/40 hover:bg-green-500/10"
+                        onClick={() => handleStatusUpdate(item.id, PERMISSION_STATUSES.APPROVED)}
+                        disabled={updatingStatusItemId === item.id}
+                      >
+                        {updatingStatusItemId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                        <span className="ml-1 hidden sm:inline">Approve</span>{' '}
+                        {/* Hide text on small screens */}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-auto p-1.5 text-red-600 border-red-600/40 hover:bg-red-500/10"
+                        onClick={() => handleStatusUpdate(item.id, PERMISSION_STATUSES.REJECTED)}
+                        disabled={updatingStatusItemId === item.id}
+                      >
+                        {updatingStatusItemId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Ban className="h-4 w-4" />
+                        )}
+                        <span className="ml-1 hidden sm:inline">Reject</span>{' '}
+                        {/* Hide text on small screens */}
+                      </Button>
+                    </div>
+                  )}
               </div>
             </CardContent>
           </Card>

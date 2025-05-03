@@ -30,7 +30,7 @@ export const ITEM_STATUSES = {
   APPROVED: 'approved',
 } as const;
 
-export type ItemStatus = typeof ITEM_STATUSES[keyof typeof ITEM_STATUSES];
+export type ItemStatus = (typeof ITEM_STATUSES)[keyof typeof ITEM_STATUSES];
 
 export const TRIP_STATUSES = {
   PLANNING: 'planning',
@@ -40,14 +40,14 @@ export const TRIP_STATUSES = {
   CANCELLED: 'cancelled',
 } as const;
 
-export type TripStatus = typeof TRIP_STATUSES[keyof typeof TRIP_STATUSES];
+export type TripStatus = (typeof TRIP_STATUSES)[keyof typeof TRIP_STATUSES];
 
 export const VOTE_TYPES = {
   UP: 'up',
   DOWN: 'down',
 } as const;
 
-export type VoteType = typeof VOTE_TYPES[keyof typeof VOTE_TYPES];
+export type VoteType = (typeof VOTE_TYPES)[keyof typeof VOTE_TYPES];
 
 // Split Types for Budget Items
 export const SPLIT_TYPES = {
@@ -56,7 +56,7 @@ export const SPLIT_TYPES = {
   INDIVIDUAL: 'individual',
 } as const;
 
-export type SplitType = typeof SPLIT_TYPES[keyof typeof SPLIT_TYPES];
+export type SplitType = (typeof SPLIT_TYPES)[keyof typeof SPLIT_TYPES];
 
 // Trip Types
 export const TRIP_TYPES = {
@@ -68,7 +68,7 @@ export const TRIP_TYPES = {
   OTHER: 'other',
 } as const;
 
-export type TripType = typeof TRIP_TYPES[keyof typeof TRIP_TYPES];
+export type TripType = (typeof TRIP_TYPES)[keyof typeof TRIP_TYPES];
 
 // Invitation statuses
 export const INVITATION_STATUSES = {
@@ -78,7 +78,7 @@ export const INVITATION_STATUSES = {
   EXPIRED: 'expired',
 } as const;
 
-export type InvitationStatus = typeof INVITATION_STATUSES[keyof typeof INVITATION_STATUSES];
+export type InvitationStatus = (typeof INVITATION_STATUSES)[keyof typeof INVITATION_STATUSES];
 
 // Template Categories
 export const TEMPLATE_CATEGORIES = {
@@ -92,7 +92,7 @@ export const TEMPLATE_CATEGORIES = {
   OTHER: 'other',
 } as const;
 
-export type TemplateCategory = typeof TEMPLATE_CATEGORIES[keyof typeof TEMPLATE_CATEGORIES];
+export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[keyof typeof TEMPLATE_CATEGORIES];
 
 // Budget Categories
 export const BUDGET_CATEGORIES = {
@@ -104,7 +104,7 @@ export const BUDGET_CATEGORIES = {
   OTHER: 'other',
 } as const;
 
-export type BudgetCategory = typeof BUDGET_CATEGORIES[keyof typeof BUDGET_CATEGORIES];
+export type BudgetCategory = (typeof BUDGET_CATEGORIES)[keyof typeof BUDGET_CATEGORIES];
 
 // Regular expressions for validation
 export const VALIDATION_PATTERNS = {

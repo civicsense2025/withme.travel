@@ -11,7 +11,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ results: [] });
     }
 
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     let destinations = [];
     let trips = [];

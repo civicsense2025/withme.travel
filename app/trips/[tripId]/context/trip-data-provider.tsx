@@ -56,7 +56,7 @@ export interface TripContextType {
   ) => Promise<void>;
 }
 
-// Create the context 
+// Create the context
 const TripContext = createContext<TripContextType | null>(null);
 
 // Custom fetcher that handles error responses and includes credentials

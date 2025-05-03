@@ -13,28 +13,28 @@ const TABLES = {
   ITINERARY_TEMPLATES: 'itinerary_templates',
   ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
   ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items',
-  ITINERARY_SECTIONS: 'itinerary_sections'
+  ITINERARY_SECTIONS: 'itinerary_sections',
 };
 
 const FIELDS = {
   COMMON: {
-    ID: 'id'
+    ID: 'id',
   },
   TRIP_MEMBERS: {
     ROLE: 'role',
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   ITINERARY_ITEMS: {
     DAY_NUMBER: 'day_number',
     TRIP_ID: 'trip_id',
-    SECTION_ID: 'section_id'
+    SECTION_ID: 'section_id',
   },
   ITINERARY_TEMPLATE_ITEMS: {
     TEMPLATE_ID: 'template_id',
     DAY: 'day',
-    ITEM_ORDER: 'item_order'
-  }
+    ITEM_ORDER: 'item_order',
+  },
 };
 
 // Type definitions for template data
@@ -94,7 +94,7 @@ export async function POST(
   { params }: { params: { tripId: string; templateId: string } }
 ): Promise<NextResponse> {
   const { tripId, templateId } = params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !templateId) {
     return NextResponse.json({ error: 'Trip ID and Template ID are required' }, { status: 400 });
@@ -135,9 +135,11 @@ export async function POST(
 
     // Calculate the day offset - if trip has items, start after the last day, otherwise start at day 1
     // Use a safer type assertion with unknown as an intermediate step
-    const typedExistingItems = (existingItems as unknown) as DayNumberItem[] | null;
+    const typedExistingItems = existingItems as unknown as DayNumberItem[] | null;
     const dayOffset =
-      typedExistingItems && typedExistingItems.length > 0 && typedExistingItems[0]?.day_number != null
+      typedExistingItems &&
+      typedExistingItems.length > 0 &&
+      typedExistingItems[0]?.day_number != null
         ? typedExistingItems[0].day_number + 1
         : 1;
 
@@ -146,7 +148,8 @@ export async function POST(
     // 2. Fetch the template details (sections and activities)
     const { data: templateData, error: templateError } = await supabase
       .from(TABLES.ITINERARY_TEMPLATES)
-      .select(`
+      .select(
+        `
         id,
         title,
         duration_days,
@@ -155,7 +158,8 @@ export async function POST(
           *,
           ${TABLES.ITINERARY_TEMPLATE_ITEMS} (*)
         )
-      `)
+      `
+      )
       .eq(FIELDS.COMMON.ID, templateId)
       .single();
 
@@ -188,48 +192,54 @@ export async function POST(
       }
 
       // First cast to unknown then to our expected type for safety
-      const typedTemplateData = (templateData as unknown) as TemplateDataWithSections;
-      
+      const typedTemplateData = templateData as unknown as TemplateDataWithSections;
+
       // Make sure field access is by string key to avoid 'never' type issues - TypeScript won't complain about string indexing
       const templateSectionKey = 'itinerary_template_sections';
-      
-      if (typedTemplateData && 
-          typeof typedTemplateData === 'object' && 
-          templateSectionKey in typedTemplateData &&
-          Array.isArray(typedTemplateData[templateSectionKey]) && 
-          typedTemplateData[templateSectionKey].length > 0) {
-            
+
+      if (
+        typedTemplateData &&
+        typeof typedTemplateData === 'object' &&
+        templateSectionKey in typedTemplateData &&
+        Array.isArray(typedTemplateData[templateSectionKey]) &&
+        typedTemplateData[templateSectionKey].length > 0
+      ) {
         // Create properly typed sections
-        templateSections = typedTemplateData[templateSectionKey].map((section: any): TemplateSection => {
-          // Safe extraction of section properties with defaults
-          const id = section?.id || `section-${Math.random().toString(36).substring(2, 9)}`;
-          const dayNumber = typeof section?.day_number === 'number' ? section.day_number : 1;
-          const title = section?.title || `Day ${dayNumber}`;
-          
-          // Safe extraction of items with defaults
-          const items = Array.isArray(section?.itinerary_template_items) 
-            ? section.itinerary_template_items.map((item: any): TemplateItem => ({
-                id: item?.id || '',
-                title: item?.title || 'Untitled Item',
-                description: item?.description || null,
-                location: item?.location || null,
-                duration_minutes: typeof item?.duration_minutes === 'number' ? item.duration_minutes : null,
-                start_time: item?.start_time || null,
-                end_time: item?.end_time || null,
-                position: typeof item?.position === 'number' ? item.position : null,
-                item_order: typeof item?.item_order === 'number' ? item.item_order : null,
-                category: item?.category || null,
-                day: typeof item?.day === 'number' ? item.day : null
-              }))
-            : [];
-            
-          return {
-            id,
-            day_number: dayNumber,
-            title,
-            itinerary_template_items: items
-          };
-        });
+        templateSections = typedTemplateData[templateSectionKey].map(
+          (section: any): TemplateSection => {
+            // Safe extraction of section properties with defaults
+            const id = section?.id || `section-${Math.random().toString(36).substring(2, 9)}`;
+            const dayNumber = typeof section?.day_number === 'number' ? section.day_number : 1;
+            const title = section?.title || `Day ${dayNumber}`;
+
+            // Safe extraction of items with defaults
+            const items = Array.isArray(section?.itinerary_template_items)
+              ? section.itinerary_template_items.map(
+                  (item: any): TemplateItem => ({
+                    id: item?.id || '',
+                    title: item?.title || 'Untitled Item',
+                    description: item?.description || null,
+                    location: item?.location || null,
+                    duration_minutes:
+                      typeof item?.duration_minutes === 'number' ? item.duration_minutes : null,
+                    start_time: item?.start_time || null,
+                    end_time: item?.end_time || null,
+                    position: typeof item?.position === 'number' ? item.position : null,
+                    item_order: typeof item?.item_order === 'number' ? item.item_order : null,
+                    category: item?.category || null,
+                    day: typeof item?.day === 'number' ? item.day : null,
+                  })
+                )
+              : [];
+
+            return {
+              id,
+              day_number: dayNumber,
+              title,
+              itinerary_template_items: items,
+            };
+          }
+        );
       } else {
         console.log('[DEBUG] No sections found, fetching items directly');
         const { data: templateItems, error: templateItemsError } = await supabase
@@ -247,10 +257,12 @@ export async function POST(
         if (templateItems && templateItems.length > 0) {
           // Group items by day with proper typing
           const itemsByDay: Record<string, TemplateItem[]> = {};
-          
+
           // Use type assertion to ensure proper handling
-          const typedTemplateItems = (templateItems as unknown) as Array<Partial<TemplateItem> & { day?: number | null }>;
-          
+          const typedTemplateItems = templateItems as unknown as Array<
+            Partial<TemplateItem> & { day?: number | null }
+          >;
+
           for (const item of typedTemplateItems) {
             const day = item.day?.toString() || '1';
             if (!itemsByDay[day]) {
@@ -262,13 +274,14 @@ export async function POST(
               title: item.title || 'Untitled Item',
               description: item.description || null,
               location: item.location || null,
-              duration_minutes: typeof item.duration_minutes === 'number' ? item.duration_minutes : null,
+              duration_minutes:
+                typeof item.duration_minutes === 'number' ? item.duration_minutes : null,
               start_time: item.start_time || null,
               end_time: item.end_time || null,
               position: typeof item.position === 'number' ? item.position : null,
               item_order: typeof item.item_order === 'number' ? item.item_order : null,
               category: item.category || null,
-              day: typeof item.day === 'number' ? item.day : null
+              day: typeof item.day === 'number' ? item.day : null,
             });
           }
 
@@ -301,7 +314,7 @@ export async function POST(
       category?: string | null;
       status: string;
     }
-    
+
     const itemsToInsert: NewItineraryItem[] = [];
     const sectionsToCreate = new Set<number>(); // Track unique day numbers to create sections for
 
@@ -372,7 +385,7 @@ export async function POST(
       .order('position', { ascending: false })
       .limit(1);
 
-    const maxPosition = maxPosData && maxPosData.length > 0 ? (maxPosData[0].position || 0) : 0;
+    const maxPosition = maxPosData && maxPosData.length > 0 ? maxPosData[0].position || 0 : 0;
 
     // Prepare sections to create
     const sectionsToInsert = Array.from(sectionsToCreate).map((dayNumber, index) => ({
@@ -403,8 +416,11 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error applying template:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      },
+      { status: 500 }
+    );
   }
 }

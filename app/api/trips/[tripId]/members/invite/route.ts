@@ -12,7 +12,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   try {
     const { email } = await request.json();

@@ -82,7 +82,7 @@ export const TABLES = {
   DESTINATION_REVIEWS: 'destination_reviews',
   DESTINATION_IMAGES: 'destination_images',
   SETTINGS: 'user_settings',
-  } as const;
+} as const;
 
 export const FIELDS = {
   COMMON: {
@@ -1126,20 +1126,23 @@ export const RELATIONSHIPS = {
 } as const;
 
 // Export type definitions for enum values to ensure type safety
-export type TripRole = typeof ENUMS.TRIP_ROLES[keyof typeof ENUMS.TRIP_ROLES];
-export type ItemStatus = typeof ENUMS.ITEM_STATUS[keyof typeof ENUMS.ITEM_STATUS];
-export type TripStatus = typeof ENUMS.TRIP_STATUS[keyof typeof ENUMS.TRIP_STATUS];
-export type PermissionStatus = typeof ENUMS.PERMISSION_STATUS[keyof typeof ENUMS.PERMISSION_STATUS];
-export type ImageType = typeof ENUMS.IMAGE_TYPE[keyof typeof ENUMS.IMAGE_TYPE];
-export type ContentType = typeof ENUMS.CONTENT_TYPE[keyof typeof ENUMS.CONTENT_TYPE];
-export type QuestionType = typeof ENUMS.QUESTION_TYPE[keyof typeof ENUMS.QUESTION_TYPE];
-export type FormStatus = typeof ENUMS.FORM_STATUS[keyof typeof ENUMS.FORM_STATUS];
-export type FormVisibility = typeof ENUMS.FORM_VISIBILITY[keyof typeof ENUMS.FORM_VISIBILITY];
-export type ItineraryCategory = typeof ENUMS.ITINERARY_CATEGORY[keyof typeof ENUMS.ITINERARY_CATEGORY];
+export type TripRole = (typeof ENUMS.TRIP_ROLES)[keyof typeof ENUMS.TRIP_ROLES];
+export type ItemStatus = (typeof ENUMS.ITEM_STATUS)[keyof typeof ENUMS.ITEM_STATUS];
+export type TripStatus = (typeof ENUMS.TRIP_STATUS)[keyof typeof ENUMS.TRIP_STATUS];
+export type PermissionStatus =
+  (typeof ENUMS.PERMISSION_STATUS)[keyof typeof ENUMS.PERMISSION_STATUS];
+export type ImageType = (typeof ENUMS.IMAGE_TYPE)[keyof typeof ENUMS.IMAGE_TYPE];
+export type ContentType = (typeof ENUMS.CONTENT_TYPE)[keyof typeof ENUMS.CONTENT_TYPE];
+export type QuestionType = (typeof ENUMS.QUESTION_TYPE)[keyof typeof ENUMS.QUESTION_TYPE];
+export type FormStatus = (typeof ENUMS.FORM_STATUS)[keyof typeof ENUMS.FORM_STATUS];
+export type FormVisibility = (typeof ENUMS.FORM_VISIBILITY)[keyof typeof ENUMS.FORM_VISIBILITY];
+export type ItineraryCategory =
+  (typeof ENUMS.ITINERARY_CATEGORY)[keyof typeof ENUMS.ITINERARY_CATEGORY];
 
 // Table-related type definitions
-export type TableNames = typeof TABLES[keyof typeof TABLES];
-export type TableFields<T extends keyof typeof FIELDS> = typeof FIELDS[T][keyof typeof FIELDS[T]];
+export type TableNames = (typeof TABLES)[keyof typeof TABLES];
+export type TableFields<T extends keyof typeof FIELDS> =
+  (typeof FIELDS)[T][keyof (typeof FIELDS)[T]];
 
 // Legacy exports for backward compatibility (deprecated, use direct exports instead)
 export const DB_TABLES = TABLES;

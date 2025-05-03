@@ -29,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
 
     // Create Supabase client
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Send password reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -49,13 +49,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
       await EmailService.sendEmail({
         to: email,
-        subject: "Reset your password",
+        subject: 'Reset your password',
         html: `
           <h1>Reset your password</h1>
           <p>Click the link below to reset your password:</p>
           <p><a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password">Reset Password</a></p>
           <p>This link will expire in 24 hours.</p>
-        `
+        `,
       });
     } catch (emailError) {
       console.error('Failed to send custom password reset email:', emailError);

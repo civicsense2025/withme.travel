@@ -66,7 +66,7 @@ export function TripSidebarContent({
 }: TripSidebarContentProps) {
   // Check if user is admin or owner to manage access requests
   const isAdmin = userRole === 'admin';
-  
+
   // Format privacy setting for display
   const formatPrivacy = (setting: TripPrivacySetting | null): string => {
     if (!setting) return 'Private';

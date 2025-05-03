@@ -7,7 +7,7 @@ import { Database } from '@/types/database.types';
 const TRIP_MEMBERS_TABLE = 'trip_members';
 const TRIP_MEMBERS_FIELDS = {
   TRIP_ID: 'trip_id',
-  USER_ID: 'user_id'
+  USER_ID: 'user_id',
 };
 
 // Schema for validating the incoming vote submission
@@ -38,11 +38,14 @@ export async function POST(
 
     const { pollId, optionId } = validation.data;
     // Create Supabase client
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Verify the user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

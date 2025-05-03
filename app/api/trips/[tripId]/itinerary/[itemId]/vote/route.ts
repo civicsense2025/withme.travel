@@ -23,29 +23,29 @@ function isTripMember(obj: any): obj is TripMember {
 // Define local constants
 const VOTE_TYPES = {
   UP: 'up',
-  DOWN: 'down'
+  DOWN: 'down',
 };
 
-type VoteType = typeof VOTE_TYPES[keyof typeof VOTE_TYPES];
+type VoteType = (typeof VOTE_TYPES)[keyof typeof VOTE_TYPES];
 
 // Define fields for database access
 const FIELDS = {
   COMMON: {
-    ID: 'id'
+    ID: 'id',
   },
   TRIP_MEMBERS: {
     ROLE: 'role',
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   ITINERARY_ITEMS: {
-    TRIP_ID: 'trip_id'
+    TRIP_ID: 'trip_id',
   },
   ITINERARY_ITEM_VOTES: {
     ITEM_ID: 'item_id',
     USER_ID: 'user_id',
-    VOTE_TYPE: 'vote_type'
-  }
+    VOTE_TYPE: 'vote_type',
+  },
 };
 
 // Helper function to check user membership and role
@@ -57,7 +57,7 @@ async function checkTripAccess(
     TRIP_ROLES.ADMIN,
     TRIP_ROLES.EDITOR,
     TRIP_ROLES.CONTRIBUTOR,
-    TRIP_ROLES.VIEWER
+    TRIP_ROLES.VIEWER,
   ]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
@@ -123,7 +123,7 @@ export async function POST(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     if (!tripId || !itemId) {
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
@@ -165,18 +165,16 @@ export async function POST(
     }
 
     // Upsert the vote: If the user already voted on this item, update the vote. Otherwise, insert a new vote.
-    const { error: upsertError } = await supabase
-      .from(ITINERARY_ITEM_VOTES_TABLE)
-      .upsert(
-        {
-          [FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID]: itemId,
-          [FIELDS.ITINERARY_ITEM_VOTES.USER_ID]: userId,
-          [FIELDS.ITINERARY_ITEM_VOTES.VOTE_TYPE]: voteType,
-        },
-        {
-          onConflict: `${FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID},${FIELDS.ITINERARY_ITEM_VOTES.USER_ID}`,
-        }
-      );
+    const { error: upsertError } = await supabase.from(ITINERARY_ITEM_VOTES_TABLE).upsert(
+      {
+        [FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID]: itemId,
+        [FIELDS.ITINERARY_ITEM_VOTES.USER_ID]: userId,
+        [FIELDS.ITINERARY_ITEM_VOTES.VOTE_TYPE]: voteType,
+      },
+      {
+        onConflict: `${FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID},${FIELDS.ITINERARY_ITEM_VOTES.USER_ID}`,
+      }
+    );
 
     if (upsertError) {
       console.error('Error upserting vote:', upsertError);

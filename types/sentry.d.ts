@@ -4,7 +4,7 @@ declare module '@sentry/nextjs' {
   namespace Sentry {
     /**
      * Start a new transaction for tracking.
-     * 
+     *
      * @param options Transaction options including name, op, and data
      * @returns The created transaction object
      */

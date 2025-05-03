@@ -28,7 +28,7 @@ interface ItineraryFiltersProps {
 export function ItineraryFilters({ destinations }: ItineraryFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [search, setSearch] = useState(searchParams?.get('search') || '');
   const [destination, setDestination] = useState(searchParams?.get('destination') || '');
   const [duration, setDuration] = useState(searchParams?.get('duration') || '');

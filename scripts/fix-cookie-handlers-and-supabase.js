@@ -36,7 +36,8 @@ function fixFile(filePath) {
     // Fix 2: Fix async cookie handlers
     if (updated.includes('cookieStore')) {
       // Add async to set() method if it uses await
-      const setCookieRegex = /(set\(name: string, value: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await)/g;
+      const setCookieRegex =
+        /(set\(name: string, value: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await)/g;
       if (setCookieRegex.test(updated)) {
         updated = updated.replace(
           setCookieRegex,
@@ -46,7 +47,8 @@ function fixFile(filePath) {
       }
 
       // Add async to remove() method if it uses await
-      const removeCookieRegex = /(remove\(name: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await)/g;
+      const removeCookieRegex =
+        /(remove\(name: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await)/g;
       if (removeCookieRegex.test(updated)) {
         updated = updated.replace(
           removeCookieRegex,
@@ -60,7 +62,7 @@ function fixFile(filePath) {
     if (updated.includes('@supabase/auth-helpers-nextjs')) {
       updated = updated.replace(
         /import\s+{([^}]*?)}\s+from\s+['"]@\/supabase\/auth-helpers-nextjs['"]/g,
-        'import {$1} from \'@supabase/ssr\''
+        "import {$1} from '@supabase/ssr'"
       );
       hasChanges = true;
     }
@@ -75,11 +77,13 @@ function fixFile(filePath) {
     }
 
     // Fix 5: Fix createServerComponentClient imports in app pages
-    if (updated.includes('createServerComponentClient') && 
-        updated.includes('@/utils/supabase/unified')) {
+    if (
+      updated.includes('createServerComponentClient') &&
+      updated.includes('@/utils/supabase/unified')
+    ) {
       updated = updated.replace(
         /import\s+{\s*createServerComponentClient\s*}\s+from\s+['"]@\/utils\/supabase\/unified['"]/g,
-        'import { createServerComponentClient } from \'@supabase/ssr\''
+        "import { createServerComponentClient } from '@supabase/ssr'"
       );
       hasChanges = true;
     }
@@ -101,32 +105,32 @@ async function main() {
   // Find all API route files and key Supabase files
   const apiRoutes = await glob('app/api/**/*.ts', { cwd: ROOT_DIR });
   const supabaseFiles = await glob('utils/supabase/**/*.ts', { cwd: ROOT_DIR });
-  const appPages = await glob('app/**/*.{ts,tsx}', { 
+  const appPages = await glob('app/**/*.{ts,tsx}', {
     cwd: ROOT_DIR,
-    ignore: ['app/api/**/*']
+    ignore: ['app/api/**/*'],
   });
-  
+
   let fixedCount = 0;
-  
+
   // Fix API routes first (most likely to have cookie issues)
   for (const file of apiRoutes) {
     const fixed = fixFile(path.join(ROOT_DIR, file));
     if (fixed) fixedCount++;
   }
-  
+
   // Fix Supabase utility files
   for (const file of supabaseFiles) {
     const fixed = fixFile(path.join(ROOT_DIR, file));
     if (fixed) fixedCount++;
   }
-  
+
   // Fix app pages with Supabase imports
   for (const file of appPages) {
     const fixed = fixFile(path.join(ROOT_DIR, file));
     if (fixed) fixedCount++;
   }
-  
+
   console.log(`\n🎉 Done! Fixed ${fixedCount} files.`);
 }
 
-main().catch(console.error); 
+main().catch(console.error);

@@ -7,7 +7,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 /**
  * Validate a CSRF token from the request
  * For server-side API routes
- * 
+ *
  * NOTE: CSRF protection has been removed from this application.
  * This function remains for backward compatibility.
  *

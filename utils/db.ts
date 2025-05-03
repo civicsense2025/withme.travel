@@ -7,7 +7,6 @@ import { cache } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { TABLES } from '@/utils/constants/database';
 
-
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
   TRIP_MEMBERS: string;
@@ -43,7 +42,7 @@ interface Trip {
   created_at?: string;
   updated_at?: string;
   deleted?: boolean;
-  trip_members?: Array<{user_id: string; role?: string}>;
+  trip_members?: Array<{ user_id: string; role?: string }>;
   [key: string]: any;
 }
 
@@ -107,7 +106,7 @@ export async function executeQuery<T>(params: DbQueryParams): Promise<ApiRespons
     if (params.order) {
       query = query.order(params.order.field, {
         ascending: params.order.ascending,
-  });
+      });
     }
 
     // Apply pagination if provided
@@ -127,7 +126,7 @@ export async function executeQuery<T>(params: DbQueryParams): Promise<ApiRespons
         error: {
           message: error.message,
           details: error.details,
-  },
+        },
         status: error.code === 'PGRST116' ? 404 : 500,
       };
     }
@@ -135,7 +134,7 @@ export async function executeQuery<T>(params: DbQueryParams): Promise<ApiRespons
     return {
       data: data as T,
       meta: {
-        count: count || data?.length || 0
+        count: count || data?.length || 0,
       },
       status: 200,
     };
@@ -144,7 +143,7 @@ export async function executeQuery<T>(params: DbQueryParams): Promise<ApiRespons
       error: {
         message: error.message || 'Unknown error occurred',
         details: error.stack,
-  },
+      },
       status: 500,
     };
   }
@@ -164,14 +163,16 @@ export async function createRecord<T>(
     };
   }
   try {
-    const {data: { result, error }} = await supabaseAdmin.from(table).insert(data).select().single();
+    const {
+      data: { result, error },
+    } = await supabaseAdmin.from(table).insert(data).select().single();
 
     if (error) {
       return {
         error: {
           message: error.message,
           details: error.details,
-  },
+        },
         status: 500,
       };
     }
@@ -179,13 +180,13 @@ export async function createRecord<T>(
     return {
       data: result as T,
       status: 201,
-  };
+    };
   } catch (error: any) {
     return {
       error: {
         message: error.message || 'Unknown error occurred',
         details: error.stack,
-  },
+      },
       status: 500,
     };
   }
@@ -207,19 +208,16 @@ export async function updateRecord<T>(
     };
   }
   try {
-    const {data: { result, error }} = await supabaseAdmin
-      .from(table)
-      .update(data)
-      .eq(idField, id)
-      .select()
-      .single();
+    const {
+      data: { result, error },
+    } = await supabaseAdmin.from(table).update(data).eq(idField, id).select().single();
 
     if (error) {
       return {
         error: {
           message: error.message,
           details: error.details,
-  },
+        },
         status: error.code === 'PGRST116' ? 404 : 500,
       };
     }
@@ -227,13 +225,13 @@ export async function updateRecord<T>(
     return {
       data: result as T,
       status: 200,
-  };
+    };
   } catch (error: any) {
     return {
       error: {
         message: error.message || 'Unknown error occurred',
         details: error.stack,
-  },
+      },
       status: 500,
     };
   }
@@ -261,7 +259,7 @@ export async function deleteRecord(
         error: {
           message: error.message,
           details: error.details,
-  },
+        },
         status: error.code === 'PGRST116' ? 404 : 500,
       };
     }
@@ -269,13 +267,13 @@ export async function deleteRecord(
     return {
       data: null,
       status: 204,
-  };
+    };
   } catch (error: any) {
     return {
       error: {
         message: error.message || 'Unknown error occurred',
         details: error.stack,
-  },
+      },
       status: 500,
     };
   }
@@ -318,7 +316,8 @@ export async function getRecentTripsDB(userId: string, limit: number = 3): Promi
     // Fetch trips
     const { data: trips, error: tripsError } = await supabase
       .from(Tables.TRIPS)
-      .select(`
+      .select(
+        `
         id,
         name,
         destination_id,
@@ -330,7 +329,8 @@ export async function getRecentTripsDB(userId: string, limit: number = 3): Promi
         updated_at,
         is_public,
         slug
-      `)
+      `
+      )
       .in('id', tripIds)
       .order('updated_at', { ascending: false })
       .limit(limit);
@@ -342,7 +342,6 @@ export async function getRecentTripsDB(userId: string, limit: number = 3): Promi
 
     console.log(`[db] Found ${trips?.length || 0} recent trips for user ${userId}`);
     return (trips as Trip[]) || []; // Cast to Trip[]
-
   } catch (error) {
     console.error('[db] Error in getRecentTripsDB:', error);
     // Re-throw to allow higher-level error handling (e.g., in Server Action)
@@ -379,7 +378,6 @@ export async function getTripCountDB(userId: string): Promise<number> {
 
     console.log(`[db] User ${userId} has ${count} trips.`);
     return count || 0;
-
   } catch (error) {
     console.error('[db] Error in getTripCountDB:', error);
     return 0;

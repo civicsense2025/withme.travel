@@ -31,7 +31,7 @@ export async function GET(
   const limit = parseInt(url.searchParams?.get('limit') || '5');
   const offset = parseInt(url.searchParams?.get('offset') || '0');
 
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
   const {
     data: { user },
     error: authError,
@@ -212,7 +212,7 @@ export async function GET(
     return NextResponse.json({
       data: transformedData,
       count: count || 0,
-      hasMore: (offset + limit) < (count || 0),
+      hasMore: offset + limit < (count || 0),
       nextOffset: offset + limit,
     });
   } catch (error: any) {

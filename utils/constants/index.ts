@@ -38,7 +38,7 @@ export {
   TRIP_TYPES,
   BUDGET_CATEGORIES,
   TEMPLATE_CATEGORIES,
-  TEMPLATE_TYPES
+  TEMPLATE_TYPES,
 } from './status';
 
 export type {
@@ -50,7 +50,7 @@ export type {
   TripType,
   BudgetCategory,
   TemplateCategory,
-  TemplateType
+  TemplateType,
 } from './status';
 
 // Re-export UI constants

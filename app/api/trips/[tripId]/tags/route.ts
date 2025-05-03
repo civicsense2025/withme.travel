@@ -8,7 +8,7 @@ const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 } as const;
 
 // Helper function to generate a simple slug
@@ -60,7 +60,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
@@ -70,14 +70,14 @@ export async function GET(
       .from('trip_tags')
       .select('tags(*)')
       .eq('trip_id', tripId);
-      
+
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     // Extract tags from the join result
-    const tags = data?.map(item => item.tags) || [];
-    
+    const tags = data?.map((item) => item.tags) || [];
+
     return NextResponse.json({ tags });
   } catch (error) {
     console.error('Error fetching tags:', error);
@@ -97,7 +97,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
 
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   // 1. Get authenticated user
   console.log('Tag Sync: Attempting to get user...');

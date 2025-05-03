@@ -10,7 +10,9 @@ try {
 } catch (e) {
   // Sentry is not available
   Sentry = {
-    captureException: (error: Error) => { return console.warn('Sentry not available, error not reported:', error.message); }
+    captureException: (error: Error) => {
+      return console.warn('Sentry not available, error not reported:', error.message);
+    },
   };
 }
 
@@ -74,10 +76,12 @@ export class GlobalErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-  });
+    });
   };
 
-  private handleGoHome = () => { return window.location.href = '/'; };
+  private handleGoHome = () => {
+    return (window.location.href = '/');
+  };
 
   public render(): ReactNode {
     if (this.state.hasError) {
@@ -185,5 +189,7 @@ export function withErrorBoundary<P extends object>(
  * A hook to programmatically throw errors to be caught by the nearest error boundary.
  */
 export function useErrorBoundary(): (error: Error) => void {
-  return (error: Error) => { throw error; };
+  return (error: Error) => {
+    throw error;
+  };
 }

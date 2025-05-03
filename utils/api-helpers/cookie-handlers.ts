@@ -1,6 +1,6 @@
 /**
  * Cookie handling utilities for API routes in Next.js 15
- * 
+ *
  * This provides a consistent pattern for handling cookies in API routes
  * with the Promise-based cookies() API introduced in Next.js 15.
  */
@@ -19,7 +19,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
  */
 export async function createApiCookieHandlers() {
   const cookieStore = await cookies();
-  
+
   return {
     get(name: string) {
       return cookieStore.get(name)?.value;
@@ -39,7 +39,7 @@ export async function createApiCookieHandlers() {
         // Cannot remove cookies in some contexts
         console.warn('Failed to remove cookie:', e);
       }
-    }
+    },
   };
 }
 
@@ -48,11 +48,7 @@ export async function createApiCookieHandlers() {
  * Handles cookies properly with the Promise-based cookies() API in Next.js 15
  */
 export async function createApiRouteClient() {
-  return createServerClient<Database>(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: await createApiCookieHandlers()
-    }
-  );
-} 
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: await createApiCookieHandlers(),
+  });
+}

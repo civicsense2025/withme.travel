@@ -66,14 +66,14 @@ const containerVariants = {
       staggerChildren: 0.1,
       delayChildren: 0.3,
     },
-  }
-  };
+  },
+};
 
 // Animation variants for items
 const itemVariants = {
   hidden: { y: 50, opacity: 0 },
-  visible: { y: 0, opacity: 1 }
-  };
+  visible: { y: 0, opacity: 1 },
+};
 
 export default function CountriesPage() {
   return (
@@ -136,4 +136,4 @@ export default function CountriesPage() {
       </motion.div>
     </div>
   );
-} 
+}

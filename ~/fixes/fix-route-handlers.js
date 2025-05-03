@@ -11,32 +11,32 @@ const patterns = [
   // Fix 1: Fix the params Promise syntax issue with extra parentheses and braces
   {
     pattern: /\{ params \}: \{ params: Promise<\{ ([a-zA-Z0-9_]+): string \}> \} \)/g,
-    replacement: '{ params }: { params: Promise<{ $1: string }> }'
+    replacement: '{ params }: { params: Promise<{ $1: string }> }',
   },
   // Fix 2: Fix any additional braces after function declarations
   {
     pattern: /\) {[\s\r\n]+}/g,
-    replacement: ') {'
+    replacement: ') {',
   },
   // Fix 3: Remove unnecessary braces at the start of functions
   {
     pattern: /(export async function [A-Z]+ \([^)]*\) {)[\s\r\n]+{/g,
-    replacement: '$1'
+    replacement: '$1',
   },
   // Fix 4: Remove unnecessary standalone braces
   {
     pattern: /^[\s\r\n]*}[\s\r\n]*{[\s\r\n]*/gm,
-    replacement: ''
+    replacement: '',
   },
   // Fix 5: Fix indentation issues
   {
     pattern: /^}[\s\r\n]+(try|const|let|var|if|for|while|switch|return|console)/gm,
-    replacement: '  $1'
+    replacement: '  $1',
   },
   // Fix 6: Fix double closing braces
   {
     pattern: /}[\s\r\n]+}[\s\r\n]+(return|if|try|console)/gm,
-    replacement: '  }\n  $1'
+    replacement: '  }\n  $1',
   },
   // Fix 7: Replace database table constants with direct strings
   {
@@ -45,7 +45,7 @@ const patterns = [
       // Convert the table name to lowercase and snake case
       const tableName = table.toLowerCase().replace(/_/g, '_');
       return `${func}('${tableName}')`;
-    }
+    },
   },
   // Fix 8: Replace database field constants with direct strings
   {
@@ -54,11 +54,12 @@ const patterns = [
       // Convert the field name to lowercase and snake case
       const fieldName = field.toLowerCase().replace(/_/g, '_');
       return `.eq('${fieldName}', `;
-    }
+    },
   },
   // Fix 9: Remove type imports for database constants
   {
-    pattern: /import \{ (?:type )?([A-Z_]+(?:, (?:type )?[A-Z_]+)*) \} from '@\/utils\/constants\/database';/g,
+    pattern:
+      /import \{ (?:type )?([A-Z_]+(?:, (?:type )?[A-Z_]+)*) \} from '@\/utils\/constants\/database';/g,
     replacement: (match, imports) => {
       // If we're importing anything other than types, leave the import
       if (imports.includes('TABLES') || imports.includes('FIELDS') || imports.includes('ENUMS')) {
@@ -66,8 +67,8 @@ const patterns = [
       } else {
         return match; // Leave other imports alone
       }
-    }
-  }
+    },
+  },
 ];
 
 console.log(`Processing ${files.length} files...`);
@@ -75,7 +76,7 @@ console.log(`Processing ${files.length} files...`);
 let fixedFiles = 0;
 let processedFiles = 0;
 
-files.forEach(file => {
+files.forEach((file) => {
   try {
     processedFiles++;
     if (!fs.existsSync(file)) {
@@ -102,4 +103,4 @@ files.forEach(file => {
   }
 });
 
-console.log(`\nCompleted processing ${processedFiles} files. Fixed ${fixedFiles} files.`); 
+console.log(`\nCompleted processing ${processedFiles} files. Fixed ${fixedFiles} files.`);

@@ -27,30 +27,31 @@ function writeFile(filePath, content) {
 // Fix old-style DB_TABLES, DB_FIELDS, etc. imports and update them to the new format
 function fixDatabaseConstantsImports(fileContent) {
   let updatedContent = fileContent;
-  
+
   // Pattern 1: Fix old-style imports like import { DB_TABLES } from '@/utils/constants';
   updatedContent = updatedContent.replace(
     /import\s+{\s*(?:(?:DB_TABLES|DB_FIELDS|DB_ENUMS|DB_RELATIONSHIPS)(?:\s*,\s*)?)+\s*}\s*from\s+['"]@\/utils\/constants(?:\/index)?['"];?/g,
-    'import { TABLES, FIELDS, ENUMS, RELATIONSHIPS } from \'@/utils/constants/database\';'
+    "import { TABLES, FIELDS, ENUMS, RELATIONSHIPS } from '@/utils/constants/database';"
   );
 
   // Pattern 2: Fix import { DB_TABLES as TABLES } variations
   updatedContent = updatedContent.replace(
     /import\s+{\s*(?:DB_TABLES\s+as\s+TABLES|DB_FIELDS\s+as\s+FIELDS|DB_ENUMS\s+as\s+ENUMS|DB_RELATIONSHIPS\s+as\s+RELATIONSHIPS)(?:\s*,\s*)*\s*}\s*from\s+['"]@\/utils\/constants(?:\/index)?['"];?/g,
-    'import { TABLES, FIELDS, ENUMS, RELATIONSHIPS } from \'@/utils/constants/database\';'
+    "import { TABLES, FIELDS, ENUMS, RELATIONSHIPS } from '@/utils/constants/database';"
   );
 
   // Pattern 3: Fix combined imports where some come from database.ts and some from other files
   updatedContent = updatedContent.replace(
     /import\s+{\s*(?:(TABLES|FIELDS|ENUMS|RELATIONSHIPS)(?:\s*,\s*)?)+\s*}\s*from\s+['"]@\/utils\/constants(?:\/[^d][^a][^t][^a][^b][^a][^s][^e][^\.][^t][^s])?['"];?/g,
-    'import { $1 } from \'@/utils/constants/database\';'
+    "import { $1 } from '@/utils/constants/database';"
   );
 
   // Pattern 4: Add missing type imports when using TripRole, ItemStatus, etc.
   if (
     (updatedContent.includes('TripRole') && !updatedContent.includes('type TripRole')) ||
     (updatedContent.includes('ItemStatus') && !updatedContent.includes('type ItemStatus')) ||
-    (updatedContent.includes('PermissionStatus') && !updatedContent.includes('type PermissionStatus'))
+    (updatedContent.includes('PermissionStatus') &&
+      !updatedContent.includes('type PermissionStatus'))
   ) {
     // Check if we already have a database import
     if (updatedContent.includes("from '@/utils/constants/database'")) {
@@ -59,49 +60,52 @@ function fixDatabaseConstantsImports(fileContent) {
         /import\s+{([^}]*)}\s+from\s+['"]@\/utils\/constants\/database['"];?/g,
         (match, imports) => {
           let newImports = imports;
-          
+
           if (updatedContent.includes('TripRole') && !imports.includes('TripRole')) {
             newImports += ', type TripRole';
           }
-          
+
           if (updatedContent.includes('ItemStatus') && !imports.includes('ItemStatus')) {
             newImports += ', type ItemStatus';
           }
-          
-          if (updatedContent.includes('PermissionStatus') && !imports.includes('PermissionStatus')) {
+
+          if (
+            updatedContent.includes('PermissionStatus') &&
+            !imports.includes('PermissionStatus')
+          ) {
             newImports += ', type PermissionStatus';
           }
-          
+
           return `import {${newImports}} from '@/utils/constants/database';`;
         }
       );
     } else {
       // Add new type imports
       const typeImports = [];
-      
+
       if (updatedContent.includes('TripRole')) {
         typeImports.push('TripRole');
       }
-      
+
       if (updatedContent.includes('ItemStatus')) {
         typeImports.push('ItemStatus');
       }
-      
+
       if (updatedContent.includes('PermissionStatus')) {
         typeImports.push('PermissionStatus');
       }
-      
+
       if (typeImports.length > 0) {
         const importLine = `import { type ${typeImports.join(', type ')} } from '@/utils/constants/database';\n`;
-        
+
         // Add after the last import
         const lastImportIndex = updatedContent.lastIndexOf('import ');
         if (lastImportIndex !== -1) {
           const endOfImportIndex = updatedContent.indexOf('\n', lastImportIndex);
           if (endOfImportIndex !== -1) {
-            updatedContent = 
-              updatedContent.substring(0, endOfImportIndex + 1) + 
-              importLine + 
+            updatedContent =
+              updatedContent.substring(0, endOfImportIndex + 1) +
+              importLine +
               updatedContent.substring(endOfImportIndex + 1);
           }
         }
@@ -132,12 +136,12 @@ function processFile(filePath) {
     }
 
     const content = readFile(filePath);
-    
+
     // Only process files that reference database constants
     if (
-      !content.includes('DB_TABLES') && 
-      !content.includes('DB_FIELDS') && 
-      !content.includes('DB_ENUMS') && 
+      !content.includes('DB_TABLES') &&
+      !content.includes('DB_FIELDS') &&
+      !content.includes('DB_ENUMS') &&
       !content.includes('TABLES') &&
       !content.includes('FIELDS') &&
       !content.includes('ENUMS') &&
@@ -146,9 +150,9 @@ function processFile(filePath) {
     ) {
       return false;
     }
-    
+
     const updatedContent = fixDatabaseConstantsImports(content);
-    
+
     // Only write the file if changes were made
     if (content !== updatedContent) {
       writeFile(filePath, updatedContent);
@@ -175,4 +179,4 @@ for (const file of tsFiles) {
   if (fixed) fixedCount++;
 }
 
-console.log(`\n🎉 Done! Fixed ${fixedCount} files.`); 
+console.log(`\n🎉 Done! Fixed ${fixedCount} files.`);

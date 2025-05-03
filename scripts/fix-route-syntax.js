@@ -34,7 +34,8 @@ function fixRouteSyntax(content, filePath) {
   // Fix 2: Fix broken export function declarations
   // Pattern: export async function POST(request: NextRequest) {
   //          : Promise<NextResponse> {
-  const brokenExportPattern = /(export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\([^)]*\)\s*)\{\s*:\s*Promise<[^>]*>\s*\{/g;
+  const brokenExportPattern =
+    /(export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\([^)]*\)\s*)\{\s*:\s*Promise<[^>]*>\s*\{/g;
   if (brokenExportPattern.test(updated)) {
     updated = updated.replace(brokenExportPattern, (match, p1, p2) => {
       return `${p1}: Promise<NextResponse> {`;
@@ -43,7 +44,8 @@ function fixRouteSyntax(content, filePath) {
   }
 
   // Fix 3: Fix route handler function declarations with missing return type
-  const missingReturnType = /(export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\([^)]*\)\s*)\{/g;
+  const missingReturnType =
+    /(export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\([^)]*\)\s*)\{/g;
   updated = updated.replace(missingReturnType, (match, p1, p2) => {
     // Only replace if not already fixed
     if (!match.includes('Promise<NextResponse>')) {
@@ -56,7 +58,7 @@ function fixRouteSyntax(content, filePath) {
   const propertyPattern = /(\n\s+)([a-zA-Z0-9_]+)(\s*:)([^,;{}]*?)(\n\s+[a-zA-Z0-9_]+\s*:)/g;
   updated = updated.replace(propertyPattern, '$1$2$3$4,$5');
 
-  // Fix 5: Fix missing object property values 
+  // Fix 5: Fix missing object property values
   const missingValuePattern = /(\n\s+)([a-zA-Z0-9_]+)(\s*:)(\s*)(\n)/g;
   updated = updated.replace(missingValuePattern, '$1$2$3 null,$5');
 
@@ -108,7 +110,7 @@ async function processRouteFiles() {
 }
 
 // Run the script
-processRouteFiles().catch(err => {
+processRouteFiles().catch((err) => {
   console.error('❌ Script execution failed:', err);
   process.exit(1);
-}); 
+});

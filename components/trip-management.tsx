@@ -32,7 +32,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getInitials } from '@/utils/lib-utils';
 import { format } from 'date-fns';
@@ -45,8 +52,8 @@ const FIELDS = {
     TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
     ROLE: 'role',
-    STATUS: 'status'
-  }
+    STATUS: 'status',
+  },
 };
 
 // Define proper type for trip members
@@ -170,12 +177,12 @@ export function TripManagement({ tripId }: TripManagementProps) {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        
+
         if (user) {
           const currentUserMember = data?.find((m: TripMember) => m.user_id === user.id);
           setIsAdmin(
             currentUserMember?.role === TRIP_ROLES.ADMIN ||
-            currentUserMember?.role === TRIP_ROLES.EDITOR
+              currentUserMember?.role === TRIP_ROLES.EDITOR
           );
         }
       } catch (error) {
@@ -337,7 +344,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
       toast({
         title: 'Member removed',
-        description: 'Member has been removed from the trip'
+        description: 'Member has been removed from the trip',
       });
     } catch (error) {
       console.error('Error removing member:', error);
@@ -354,7 +361,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
     navigator.clipboard.writeText(publicLink);
     toast({
       title: 'Link copied',
-      description: 'Public link copied to clipboard'
+      description: 'Public link copied to clipboard',
     });
   };
 
@@ -375,7 +382,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
       toast({
         title: 'Trip updated',
-        description: 'Trip details have been updated'
+        description: 'Trip details have been updated',
       });
     } catch (error) {
       console.error('Error updating trip:', error);
@@ -553,7 +560,7 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
                           toast({
                             title: 'Trip deleted',
-                            description: 'Trip has been permanently deleted'
+                            description: 'Trip has been permanently deleted',
                           });
 
                           router.push('/trips');
@@ -625,7 +632,9 @@ export function TripManagement({ tripId }: TripManagementProps) {
                             onClick={() =>
                               updateMemberRole(
                                 member.id,
-                                member.role === TRIP_ROLES.ADMIN ? TRIP_ROLES.VIEWER : TRIP_ROLES.ADMIN
+                                member.role === TRIP_ROLES.ADMIN
+                                  ? TRIP_ROLES.VIEWER
+                                  : TRIP_ROLES.ADMIN
                               )
                             }
                           >

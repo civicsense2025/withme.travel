@@ -52,14 +52,19 @@ export function ImageSearchSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  
+
   // Preview mode state
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [currentPosition, setCurrentPosition] = useState(50);
 
   const searchImages = useCallback(
-    async (provider: 'unsplash' | 'pexels', page: number, query: string, append: boolean = false) => {
+    async (
+      provider: 'unsplash' | 'pexels',
+      page: number,
+      query: string,
+      append: boolean = false
+    ) => {
       if (!query) return;
       setIsLoading(true);
       setError(null);
@@ -400,7 +405,9 @@ export function ImageSearchSelector({
               Back to Select
             </Button>
           ) : (
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
           )}
 
           <Button onClick={handleConfirm} disabled={!isPreviewing || !previewImageUrl || isLoading}>

@@ -37,10 +37,10 @@ export default function ResetPasswordPage() {
         title: 'Missing Token',
         description: 'No reset token found. Please request a new password reset link.',
         variant: 'destructive',
-  });
+      });
       setFormState({
         status: 'error',
-        message: 'No reset token found. Please request a new password reset link.'
+        message: 'No reset token found. Please request a new password reset link.',
       });
     } else {
       setToken(token);
@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
     if (password !== confirmPassword) {
       setFormState({
         status: 'error',
-        message: 'Passwords do not match'
+        message: 'Passwords do not match',
       });
       return;
     }
@@ -65,7 +65,7 @@ export default function ResetPasswordPage() {
     if (password.length < 8) {
       setFormState({
         status: 'error',
-        message: 'Password must be at least 8 characters'
+        message: 'Password must be at least 8 characters',
       });
       return;
     }
@@ -107,7 +107,7 @@ export default function ResetPasswordPage() {
       // Show success message
       setFormState({
         status: 'success',
-        message: 'Your password has been successfully reset'
+        message: 'Your password has been successfully reset',
       });
 
       setPassword('');
@@ -115,24 +115,26 @@ export default function ResetPasswordPage() {
 
       toast({
         title: 'Password Reset',
-        description: 'Your password has been successfully reset.'
+        description: 'Your password has been successfully reset.',
       });
 
       // Redirect to login after 3 seconds
-      setTimeout(() => { return router.push('/login'); }, 2000);
+      setTimeout(() => {
+        return router.push('/login');
+      }, 2000);
     } catch (error: any) {
       console.error('Reset password error:', error);
 
       setFormState({
         status: 'error',
-        message: error.message || 'Failed to reset password'
+        message: error.message || 'Failed to reset password',
       });
 
       toast({
         title: 'Reset Failed',
         description: error.message || 'Failed to reset password. Please try again.',
         variant: 'destructive',
-  });
+      });
     }
   };
 

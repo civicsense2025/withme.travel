@@ -13,7 +13,7 @@ export function instrumentApiCall<T>(
   metadata: Record<string, unknown> = {}
 ): Promise<T> {
   const apiCallStart = Date.now();
-  
+
   return fn()
     .then((result) => {
       // No transaction, just return the result
@@ -22,13 +22,13 @@ export function instrumentApiCall<T>(
     .catch((error) => {
       // Calculate duration for the failed call
       const duration = Date.now() - apiCallStart;
-      
+
       // Extract tags safely with proper typing
-      const tags: Record<string, string> = { 
+      const tags: Record<string, string> = {
         apiCall: name,
-        duration: String(duration)
+        duration: String(duration),
       };
-      
+
       // Add any string tags from metadata
       if (metadata.tags && typeof metadata.tags === 'object' && metadata.tags !== null) {
         Object.entries(metadata.tags as Record<string, unknown>).forEach(([key, value]) => {
@@ -37,16 +37,16 @@ export function instrumentApiCall<T>(
           }
         });
       }
-      
+
       // Capture the exception with Sentry
       Sentry.captureException(error, {
         tags,
         extra: {
           ...metadata,
-          duration
+          duration,
         },
       });
-      
+
       // Rethrow the error
       throw error;
     });

@@ -7,46 +7,63 @@ const ITINERARY_TABLES = {
   ITINERARY_TEMPLATES: 'itinerary_templates',
   ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
   ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items',
-  DESTINATIONS: 'destinations'
+  DESTINATIONS: 'destinations',
+  PROFILES: 'profiles',
 };
 
 const FIELDS = {
   ITINERARY_TEMPLATES: {
     IS_PUBLISHED: 'is_published',
     CREATED_AT: 'created_at',
-  }
+    CREATED_BY: 'created_by',
+  },
+  PROFILES: {
+    ID: 'id',
+  },
 };
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
-  // Get user for authorization (but don't require it for public templates)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    // Get user for authorization (but don't require it for public templates)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  // Get published itineraries
-  const { data, error } = await supabase
-    .from(ITINERARY_TABLES.ITINERARY_TEMPLATES)
-    .select(
+    console.log('Fetching itineraries...');
+
+    // Get published itineraries - fixed query to use proper join
+    const { data, error } = await supabase
+      .from(ITINERARY_TABLES.ITINERARY_TEMPLATES)
+      .select(
+        `
+        *,
+        ${ITINERARY_TABLES.DESTINATIONS}(*),
+        profiles:${ITINERARY_TABLES.PROFILES}!${FIELDS.ITINERARY_TEMPLATES.CREATED_BY}(id, name, avatar_url)
       `
-      *,
-      ${ITINERARY_TABLES.DESTINATIONS}(*)
-    `
-    )
-    .eq(FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
-    .order(FIELDS.ITINERARY_TEMPLATES.CREATED_AT, { ascending: false });
+      )
+      .eq(FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
+      .order(FIELDS.ITINERARY_TEMPLATES.CREATED_AT, { ascending: false });
 
-  if (error) {
+    if (error) {
+      console.error('Error fetching itineraries:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    console.log(`Found ${data?.length || 0} itineraries`);
+    return NextResponse.json({ data });
+  } catch (error) {
     console.error('Error fetching itineraries:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ data });
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   // Get user for authorization
   const {
@@ -85,6 +102,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         is_published: itineraryData.is_published || false,
         tags: itineraryData.tags || [],
         metadata: itineraryData.metadata || {},
+        category: itineraryData.category || 'Other',
       })
       .select()
       .single();

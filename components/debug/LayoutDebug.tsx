@@ -16,9 +16,9 @@ interface LayoutDebugProps {
 export function LayoutDebug({ children, title, className = '' }: LayoutDebugProps) {
   const [showOutline, setShowOutline] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
-  
+
   const outlineClass = showOutline ? 'debug-outline' : '';
-  
+
   return (
     <div className={`relative ${outlineClass} ${className}`}>
       {/* Debug Controls */}
@@ -77,13 +77,13 @@ export function DebugBoundary({
   color?: 'red' | 'blue' | 'green' | 'purple' | 'yellow';
 }) {
   const [visible, setVisible] = useState(true);
-  
+
   const colorClasses = {
     red: 'border-red-400 bg-red-50 text-red-800',
     blue: 'border-blue-400 bg-blue-50 text-blue-800',
     green: 'border-green-400 bg-green-50 text-green-800',
     purple: 'border-purple-400 bg-purple-50 text-purple-800',
-    yellow: 'border-yellow-400 bg-yellow-50 text-yellow-800'
+    yellow: 'border-yellow-400 bg-yellow-50 text-yellow-800',
   };
 
   if (!visible) return <>{children}</>;

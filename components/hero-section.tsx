@@ -16,18 +16,21 @@ const CityBubbles = lazy(() =>
 export function HeroSection() {
   const router = useRouter();
   const { user } = useAuth() as AuthContextType;
-  
+
   // Define planning types for animation
-  const planningTypes = useMemo(() => [
-    'group travel planning',
-    'friend trip coordination',
-    'family vacation organizing',
-    'travel spreadsheets',
-    'messaging app chaos',
-  ], []);
-  
+  const planningTypes = useMemo(
+    () => [
+      'group travel planning',
+      'friend trip coordination',
+      'family vacation organizing',
+      'travel spreadsheets',
+      'messaging app chaos',
+    ],
+    []
+  );
+
   const [currentPlanningTypeIndex, setCurrentPlanningTypeIndex] = useState(0);
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPlanningTypeIndex((current) => (current + 1) % planningTypes.length);
@@ -67,7 +70,7 @@ export function HeroSection() {
       '@type': 'SearchAction',
       target: 'https://withme.travel/destinations/{destination}',
       'query-input': 'required name=destination',
-    }
+    },
   };
 
   return (
@@ -107,7 +110,7 @@ export function HeroSection() {
                   transition={{
                     duration: 0.4,
                     ease: 'easeInOut',
-  }}
+                  }}
                 >
                   {planningTypes[currentPlanningTypeIndex]}
                 </motion.span>

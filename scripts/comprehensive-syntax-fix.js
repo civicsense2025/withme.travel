@@ -32,7 +32,8 @@ function fixSyntaxIssues(content, filePath) {
   }
 
   // Fix 2: Fix duplicate type imports by removing them
-  const redundantTypeImportPattern = /(import\s+(?:type\s+)?\{\s*[A-Za-z0-9_]+(?:\s+as\s+[A-Za-z0-9_]+)?(?:\s*,\s*[A-Za-z0-9_]+(?:\s+as\s+[A-Za-z0-9_]+)?)* *\}\s+from\s+['"][^'"]+['"];?\s*)\1/g;
+  const redundantTypeImportPattern =
+    /(import\s+(?:type\s+)?\{\s*[A-Za-z0-9_]+(?:\s+as\s+[A-Za-z0-9_]+)?(?:\s*,\s*[A-Za-z0-9_]+(?:\s+as\s+[A-Za-z0-9_]+)?)* *\}\s+from\s+['"][^'"]+['"];?\s*)\1/g;
   if (redundantTypeImportPattern.test(updated)) {
     updated = updated.replace(redundantTypeImportPattern, '$1');
     hasChanges = true;
@@ -41,34 +42,40 @@ function fixSyntaxIssues(content, filePath) {
   // Fix 3: Fix missing brackets in API route handler functions
   if (filePath.includes('api') && filePath.includes('route.ts')) {
     // First, look for route handler functions with missing closing brackets in parameter declarations
-    const routeHandlerPattern = /export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\(\s*([^)]*)\s*\)/g;
+    const routeHandlerPattern =
+      /export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\(\s*([^)]*)\s*\)/g;
     let match;
-    
+
     while ((match = routeHandlerPattern.exec(updated)) !== null) {
       const [fullMatch, methodName, params] = match;
-      
+
       // Check if params include { params: { without closing brace
-      if (params.includes('{ params:') && !params.includes('{ params: {') && !params.includes('{ params }')) {
+      if (
+        params.includes('{ params:') &&
+        !params.includes('{ params: {') &&
+        !params.includes('{ params }')
+      ) {
         // Missing closing brace for destructured params
         const fixedParams = params.replace(/{ params:\s*(?!\{)/, '{ params: { ') + ' }';
         const newMatch = fullMatch.replace(params, fixedParams);
         updated = updated.replace(fullMatch, newMatch);
         hasChanges = true;
       }
-      
+
       // Now check if the function is missing its opening brace
       const position = match.index + fullMatch.length;
       const nextChar = updated.substring(position, position + 1).trim();
-      
+
       if (nextChar !== '{') {
         // Missing opening brace for function body
         updated = updated.substring(0, position) + ' {\n' + updated.substring(position);
         hasChanges = true;
       }
     }
-    
+
     // Fix completely broken function declarations for route handlers
-    const brokenRouteHandlerPattern = /export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\(\s*request:[^,]+,\s*\{\s*params\s*\}:[^)]+\s*(?!\))/g;
+    const brokenRouteHandlerPattern =
+      /export\s+async\s+function\s+(GET|POST|PUT|DELETE|PATCH)\s*\(\s*request:[^,]+,\s*\{\s*params\s*\}:[^)]+\s*(?!\))/g;
     while ((match = brokenRouteHandlerPattern.exec(updated)) !== null) {
       const fullMatch = match[0];
       const fixedDeclaration = fullMatch + ' )';
@@ -84,7 +91,7 @@ function fixSyntaxIssues(content, filePath) {
     const startPos = funcMatch.index + funcMatch[0].length;
     let openBraces = 1;
     let closePos = startPos;
-    
+
     // Scan forward to find matching closing brace
     while (openBraces > 0 && closePos < updated.length) {
       const char = updated[closePos];
@@ -92,7 +99,7 @@ function fixSyntaxIssues(content, filePath) {
       if (char === '}') openBraces--;
       closePos++;
     }
-    
+
     // If we reach the end without matching braces, add closing brace
     if (openBraces > 0) {
       updated = updated.substring(0, updated.length) + '\n}'.repeat(openBraces);
@@ -104,16 +111,16 @@ function fixSyntaxIssues(content, filePath) {
   const interfaces = [];
   const interfaceStartPattern = /interface\s+([A-Za-z0-9_]+)\s*{/g;
   let interfaceMatch;
-  
+
   while ((interfaceMatch = interfaceStartPattern.exec(updated)) !== null) {
     const interfaceName = interfaceMatch[1];
     const startPos = interfaceMatch.index;
     const openBracePos = updated.indexOf('{', startPos);
-    
+
     if (openBracePos !== -1) {
       let openBraces = 1;
       let closePos = openBracePos + 1;
-      
+
       // Scan forward to find matching closing brace
       while (openBraces > 0 && closePos < updated.length) {
         const char = updated[closePos];
@@ -121,28 +128,31 @@ function fixSyntaxIssues(content, filePath) {
         if (char === '}') openBraces--;
         closePos++;
       }
-      
+
       // If we didn't find a matching closing brace
       if (openBraces > 0) {
         interfaces.push({
           name: interfaceName,
           position: updated.length,
-          missingBraces: openBraces
+          missingBraces: openBraces,
         });
       }
     }
   }
-  
+
   // Add missing closing braces to interfaces
   for (const iface of interfaces) {
-    updated = updated.substring(0, iface.position) + '\n}'.repeat(iface.missingBraces) + updated.substring(iface.position);
+    updated =
+      updated.substring(0, iface.position) +
+      '\n}'.repeat(iface.missingBraces) +
+      updated.substring(iface.position);
     hasChanges = true;
   }
 
   // Fix 6: Fix broken import statements with unnecessary semicolons
   const brokenImportPattern = /import\s*{[^}]*}\s*from\s*['"][^'"]+['"];\s*;/g;
   if (brokenImportPattern.test(updated)) {
-    updated = updated.replace(brokenImportPattern, match => match.replace(';;', ';'));
+    updated = updated.replace(brokenImportPattern, (match) => match.replace(';;', ';'));
     hasChanges = true;
   }
 
@@ -156,7 +166,8 @@ function fixSyntaxIssues(content, filePath) {
   }
 
   // Fix 8: Remove duplicate type imports from database.ts
-  const duplicateDbImportsPattern = /(import\s*{\s*[^}]*,\s*type\s+(?:TripRole|ItemStatus|TripStatus|PermissionStatus)[^}]*}\s*from\s*['"]@\/utils\/constants\/database['"][^;]*;)/g;
+  const duplicateDbImportsPattern =
+    /(import\s*{\s*[^}]*,\s*type\s+(?:TripRole|ItemStatus|TripStatus|PermissionStatus)[^}]*}\s*from\s*['"]@\/utils\/constants\/database['"][^;]*;)/g;
   if (duplicateDbImportsPattern.test(updated)) {
     // Get all matches to find duplicates
     const matches = [...updated.matchAll(duplicateDbImportsPattern)];
@@ -185,19 +196,16 @@ async function processAllFiles() {
     });
 
     console.log(`Found ${apiRouteFiles.length} API route files to process...`);
-    
+
     // Then process all remaining TypeScript files
     const allTsFiles = await glob('**/*.{ts,tsx}', {
       cwd: ROOT_DIR,
       ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**'],
       absolute: true,
     });
-    
+
     // Combine the files, processing API routes first
-    const files = [
-      ...apiRouteFiles,
-      ...allTsFiles.filter(file => !apiRouteFiles.includes(file))
-    ];
+    const files = [...apiRouteFiles, ...allTsFiles.filter((file) => !apiRouteFiles.includes(file))];
 
     console.log(`Total of ${files.length} TypeScript files to process...`);
 
@@ -228,7 +236,7 @@ async function processAllFiles() {
 }
 
 // Run the script
-processAllFiles().catch(err => {
+processAllFiles().catch((err) => {
   console.error('❌ Script execution failed:', err);
   process.exit(1);
-}); 
+});

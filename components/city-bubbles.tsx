@@ -62,8 +62,8 @@ const BubbleItem = React.memo(function BubbleItem({
         delay: bubble.delay,
         duration: 0.5,
         ease: 'easeOut',
-  },
-    }
+      },
+    },
   };
 
   return (
@@ -78,7 +78,7 @@ const BubbleItem = React.memo(function BubbleItem({
         style={{
           left: bubble.x,
           top: bubble.y,
-  }}
+        }}
         initial="hidden"
         animate={isInView ? 'visible' : 'hidden'}
         variants={animations}

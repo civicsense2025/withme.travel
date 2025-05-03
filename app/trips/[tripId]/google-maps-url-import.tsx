@@ -38,8 +38,8 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
 
   const fetchPlaces = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!url || !url.includes('maps.app.goo.gl') && !url.includes('google.com/maps')) {
+
+    if (!url || (!url.includes('maps.app.goo.gl') && !url.includes('google.com/maps'))) {
       setError('Please enter a valid Google Maps URL');
       return;
     }
@@ -54,83 +54,86 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
         // For the test URL, use our mock data
         const mockPlaces = [
           {
-            title: "La Whiskeria",
-            item_type: "Nightlife",
-            notes: "Cocktail bar with rating 4.7 (1,580)",
-            place_name: "La Whiskeria",
-            address: "Mexico City",
-            google_place_id: "mock_id_1",
-            latitude: 19.4270,
+            title: 'La Whiskeria',
+            item_type: 'Nightlife',
+            notes: 'Cocktail bar with rating 4.7 (1,580)',
+            place_name: 'La Whiskeria',
+            address: 'Mexico City',
+            google_place_id: 'mock_id_1',
+            latitude: 19.427,
             longitude: -99.1676,
             day_number: null,
-            selected: true
+            selected: true,
           },
           {
-            title: "Le Tachinomi Desu",
-            item_type: "Food & Drink",
-            notes: "Japanese whiskey bar with eats. Rating 4.6 (304)",
-            place_name: "Le Tachinomi Desu",
-            address: "Rio Panuco 132-1a, Cuauhtémoc, 06500 Ciudad de México, CDMX, Mexico",
-            google_place_id: "mock_id_2",
+            title: 'Le Tachinomi Desu',
+            item_type: 'Food & Drink',
+            notes: 'Japanese whiskey bar with eats. Rating 4.6 (304)',
+            place_name: 'Le Tachinomi Desu',
+            address: 'Rio Panuco 132-1a, Cuauhtémoc, 06500 Ciudad de México, CDMX, Mexico',
+            google_place_id: 'mock_id_2',
             latitude: 19.4271,
             longitude: -99.1677,
             day_number: null,
-            selected: true
+            selected: true,
           },
           {
-            title: "Bar Mauro",
-            item_type: "Nightlife",
-            notes: "Cocktail bar with rating 4.8 (150)",
-            place_name: "Bar Mauro",
-            address: "Mexico City",
-            google_place_id: "mock_id_3",
+            title: 'Bar Mauro',
+            item_type: 'Nightlife',
+            notes: 'Cocktail bar with rating 4.8 (150)',
+            place_name: 'Bar Mauro',
+            address: 'Mexico City',
+            google_place_id: 'mock_id_3',
             latitude: 19.4272,
             longitude: -99.1678,
             day_number: null,
-            selected: true
+            selected: true,
           },
           {
-            title: "Dr Liceaga 180",
-            item_type: "Food & Drink",
-            notes: "Bar in Cuauhtémoc, Doctores",
-            place_name: "Dr Liceaga 180",
-            address: "Dr. José María Vertiz 171, Doctores, Cuauhtémoc, 06720 Ciudad de México, CDMX, Mexico",
-            google_place_id: "mock_id_4", 
+            title: 'Dr Liceaga 180',
+            item_type: 'Food & Drink',
+            notes: 'Bar in Cuauhtémoc, Doctores',
+            place_name: 'Dr Liceaga 180',
+            address:
+              'Dr. José María Vertiz 171, Doctores, Cuauhtémoc, 06720 Ciudad de México, CDMX, Mexico',
+            google_place_id: 'mock_id_4',
             latitude: 19.4273,
             longitude: -99.1679,
             day_number: null,
-            selected: true
-          }
+            selected: true,
+          },
         ];
-        
+
         setPlaces(mockPlaces);
         setStep('preview');
       } else {
         // For other URLs, we could fetch from an API endpoint
         // For now, just show an example place
-        setPlaces([{
-          title: "Example Place",
-          item_type: "Local Secrets",
-          notes: "Imported from Google Maps.",
-          place_name: "Example Place",
-          address: "Example Address",
-          google_place_id: "example_id",
-          latitude: 0,
-          longitude: 0,
-          day_number: null,
-          selected: true
-        }]);
+        setPlaces([
+          {
+            title: 'Example Place',
+            item_type: 'Local Secrets',
+            notes: 'Imported from Google Maps.',
+            place_name: 'Example Place',
+            address: 'Example Address',
+            google_place_id: 'example_id',
+            latitude: 0,
+            longitude: 0,
+            day_number: null,
+            selected: true,
+          },
+        ]);
         setStep('preview');
       }
     } catch (error: any) {
       console.error('Preview error:', error);
       setError(error.message || 'Failed to fetch places from Google Maps');
-      
+
       toast({
         title: 'Preview failed',
         description: error.message || 'Could not preview places from the provided URL',
         variant: 'destructive',
-        duration: 5000
+        duration: 5000,
       });
     } finally {
       setIsLoading(false);
@@ -143,26 +146,26 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
 
     try {
       // Filter only selected places
-      const selectedPlaces = places.filter(place => place.selected);
-      
+      const selectedPlaces = places.filter((place) => place.selected);
+
       if (selectedPlaces.length === 0) {
         throw new Error('Please select at least one place to import');
       }
-      
+
       // Call our API to import the selected places
       const response = await fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           type: 'google_maps_import',
-          items: selectedPlaces
-        })
+          items: selectedPlaces,
+        }),
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to import places');
       }
@@ -171,19 +174,19 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
       toast({
         title: 'Places imported successfully',
         description: `${selectedPlaces.length} places were added to your trip.`,
-        duration: 5000
+        duration: 5000,
       });
-      
+
       onClose();
     } catch (error: any) {
       console.error('Import error:', error);
       setError(error.message || 'Failed to import places from Google Maps');
-      
+
       toast({
         title: 'Import failed',
         description: error.message || 'Could not import places from the provided URL',
         variant: 'destructive',
-        duration: 5000
+        duration: 5000,
       });
     } finally {
       setIsLoading(false);
@@ -191,23 +194,19 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
   };
 
   const togglePlace = (index: number) => {
-    setPlaces(prevPlaces => 
-      prevPlaces.map((place, i) => 
-        i === index ? { ...place, selected: !place.selected } : place
-      )
+    setPlaces((prevPlaces) =>
+      prevPlaces.map((place, i) => (i === index ? { ...place, selected: !place.selected } : place))
     );
   };
 
   const toggleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
-    setPlaces(prevPlaces => 
-      prevPlaces.map(place => ({ ...place, selected: newSelectAll }))
-    );
+    setPlaces((prevPlaces) => prevPlaces.map((place) => ({ ...place, selected: newSelectAll })));
   };
 
   // Count selected places
-  const selectedCount = places.filter(place => place.selected).length;
+  const selectedCount = places.filter((place) => place.selected).length;
 
   if (step === 'preview') {
     return (
@@ -215,24 +214,20 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium">Select Places to Import</h3>
           <div className="flex items-center gap-2">
-            <Checkbox 
-              id="select-all" 
-              checked={selectAll} 
-              onCheckedChange={toggleSelectAll}
-            />
+            <Checkbox id="select-all" checked={selectAll} onCheckedChange={toggleSelectAll} />
             <Label htmlFor="select-all" className="text-sm">
               Select All ({selectedCount}/{places.length})
             </Label>
           </div>
         </div>
-        
+
         <div className="border rounded-md overflow-hidden divide-y max-h-[400px] overflow-y-auto">
           {places.map((place, index) => (
-            <div 
-              key={place.google_place_id || index} 
+            <div
+              key={place.google_place_id || index}
               className={`p-3 flex gap-3 ${place.selected ? 'bg-primary/5' : ''}`}
             >
-              <Checkbox 
+              <Checkbox
                 id={`place-${index}`}
                 checked={place.selected}
                 onCheckedChange={() => togglePlace(index)}
@@ -256,10 +251,8 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
             </div>
           ))}
         </div>
-        
-        {error && (
-          <div className="text-sm text-destructive">{error}</div>
-        )}
+
+        {error && <div className="text-sm text-destructive">{error}</div>}
 
         <div className="flex justify-between pt-4">
           <Button
@@ -270,11 +263,7 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
           >
             Back
           </Button>
-          <Button
-            type="button"
-            onClick={handleImport}
-            disabled={isLoading || selectedCount === 0}
-          >
+          <Button type="button" onClick={handleImport} disabled={isLoading || selectedCount === 0}>
             {isLoading ? 'Importing...' : `Import ${selectedCount} Places`}
           </Button>
         </div>
@@ -311,27 +300,17 @@ export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlIm
           </div>
         </div>
 
-        {error && (
-          <div className="text-sm text-destructive">{error}</div>
-        )}
+        {error && <div className="text-sm text-destructive">{error}</div>}
 
         <div className="flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-          >
+          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={isLoading || !url}
-          >
+          <Button type="submit" disabled={isLoading || !url}>
             {isLoading ? 'Fetching...' : 'Preview Places'}
           </Button>
         </div>
       </form>
     </div>
   );
-} 
+}

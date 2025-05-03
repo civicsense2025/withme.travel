@@ -16,7 +16,14 @@ import { MembersTab, TripMemberFromSSR } from '@/components/members-tab';
 import { DisplayItineraryItem, ItinerarySection, ItemStatus } from '@/types/itinerary';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -77,15 +84,15 @@ export function TripOverviewTab({
   const [isSaving, setIsSaving] = useState(false);
 
   const [itineraryItems, setItineraryItems] = useState<DisplayItineraryItem[]>(() => {
-    const scheduled = initialSections.flatMap((section) => 
-      (section.items || []) as DisplayItineraryItem[]
+    const scheduled = initialSections.flatMap(
+      (section) => (section.items || []) as DisplayItineraryItem[]
     );
     return [...scheduled, ...initialUnscheduledItems];
   });
 
   useEffect(() => {
-    const scheduled = initialSections.flatMap((section) => 
-      (section.items || []) as DisplayItineraryItem[]
+    const scheduled = initialSections.flatMap(
+      (section) => (section.items || []) as DisplayItineraryItem[]
     );
     setItineraryItems([...scheduled, ...initialUnscheduledItems]);
   }, [initialSections, initialUnscheduledItems]);
@@ -94,14 +101,14 @@ export function TripOverviewTab({
     resolver: zodResolver(overviewFormSchema),
     defaultValues: {
       name: tripName || '',
-      description: tripDescription || ''
+      description: tripDescription || '',
     },
   });
 
   useEffect(() => {
     form.reset({
       name: tripName || '',
-      description: tripDescription || ''
+      description: tripDescription || '',
     });
   }, [tripName, tripDescription, form, isEditing]);
 

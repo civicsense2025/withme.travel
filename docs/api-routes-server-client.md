@@ -98,10 +98,10 @@ export async function GET(
   try {
     // Access params directly - NO await needed
     const { tripId } = params;
-    
+
     // Create client - NO await needed
     const supabase = createRouteHandlerClient();
-    
+
     // Get authentication status
     const {
       data: { session },
@@ -112,11 +112,7 @@ export async function GET(
     }
 
     // Fetch data
-    const { data, error } = await supabase
-      .from(TABLES.TRIPS)
-      .select('*')
-      .eq('id', tripId)
-      .single();
+    const { data, error } = await supabase.from(TABLES.TRIPS).select('*').eq('id', tripId).single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -201,7 +197,7 @@ export default async function TripPage({ params }: { params: { tripId: string } 
 
   // 2. Check authentication
   const { data: { session } } = await getServerSession();
-  
+
   if (!session) {
     redirect(`/login?redirectTo=/trips/${tripId}`);
   }

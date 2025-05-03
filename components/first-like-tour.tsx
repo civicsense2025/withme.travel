@@ -13,7 +13,7 @@ interface FirstLikeTourProps {
 export function FirstLikeTour({ onClose }: FirstLikeTourProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  
+
   useEffect(() => {
     if (step === 1) {
       const timer = setTimeout(() => {

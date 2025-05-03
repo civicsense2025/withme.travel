@@ -11,6 +11,7 @@ Hey there! Welcome to your comprehensive guide to Git - the tool that's going to
 Before diving into commands, let's make sure Git is properly set up on your machine:
 
 1. **Install Git**:
+
    - **macOS**: `brew install git` (using Homebrew) or download from [git-scm.com](https://git-scm.com)
    - **Windows**: Download from [git-scm.com](https://git-scm.com)
    - **Linux**: `sudo apt install git` (Ubuntu/Debian) or `sudo yum install git` (Fedora)
@@ -38,6 +39,7 @@ A repository is essentially a project folder that Git tracks. It contains all yo
 ### Working Directory, Staging Area, and Repository
 
 Git has three main areas:
+
 - **Working Directory**: Where you actually work on your files
 - **Staging Area (Index)**: A middle ground where you prepare changes for committing
 - **Repository**: Where Git permanently stores changes as commits
@@ -47,6 +49,7 @@ Git has three main areas:
 ### Commits
 
 A commit is a snapshot of your project at a specific point in time. Each commit has:
+
 - A unique identifier (hash)
 - A message describing what changed
 - Author information
@@ -64,6 +67,7 @@ Now let's get into the actual commands you'll use daily:
 ### Creating & Cloning Repositories
 
 **Creating a new repository**:
+
 ```bash
 # Initialize a new repo in your current directory
 git init
@@ -74,6 +78,7 @@ cd my-new-project
 ```
 
 **Cloning an existing repository**:
+
 ```bash
 # Clone a repo from GitHub/GitLab/etc.
 git clone https://github.com/username/repository.git
@@ -166,6 +171,7 @@ git commit
 ```
 
 Conflicts in files will be marked like this:
+
 ```
 <<<<<<< HEAD
 Your changes
@@ -247,6 +253,7 @@ For design files and assets:
 3. **Commit exported assets** (PNG, SVG, etc.) along with source files for easy reference
 
 Example `.gitignore` for design work:
+
 ```
 # Design software files
 *.psd
@@ -270,24 +277,27 @@ build/
 A common workflow for implementing designs:
 
 1. Create a feature branch from main/development
+
    ```bash
    git checkout -b feature/button-redesign
    ```
 
 2. Implement design changes in small, logical commits
+
    ```bash
    git add src/components/Button.jsx src/styles/button.css
    git commit -m "Update button border radius and shadow"
    ```
 
 3. Regularly push your branch to share progress
+
    ```bash
    git push origin feature/button-redesign
    ```
 
 4. When ready, create a pull request and request review
-   
 5. Address feedback with additional commits
+
    ```bash
    git add src/styles/button.css
    git commit -m "Adjust button hover state per feedback"
@@ -305,6 +315,7 @@ A common workflow for implementing designs:
 - **Present tense**: Write commit messages in present tense ("Add feature" not "Added feature")
 
 Example of a good commit message:
+
 ```
 Add hover states to primary buttons
 
@@ -338,6 +349,7 @@ A pull request is a way to propose changes from your branch to another branch (u
 ### Creating a Pull Request
 
 **On GitHub**:
+
 1. Push your branch to the remote repository:
    ```bash
    git push origin your-feature-branch
@@ -349,6 +361,7 @@ A pull request is a way to propose changes from your branch to another branch (u
 6. Click "Create pull request"
 
 **From the command line** (using GitHub CLI):
+
 ```bash
 # Install GitHub CLI first if you haven't
 # Then:
@@ -361,6 +374,7 @@ A well-structured PR includes:
 
 1. **Clear title**: Concise summary of the change
 2. **Detailed description**:
+
    - What the PR does
    - Why it's needed
    - How to test it
@@ -368,22 +382,28 @@ A well-structured PR includes:
    - Links to related issues, designs, or specs
 
 3. **PR Template sections**:
+
    ```markdown
    ## Description
+
    This PR adds hover and focus states to primary buttons.
 
    ## Design Reference
+
    [Figma Link](https://figma.com/file/...)
 
    ## Testing Instructions
+
    1. Go to /components page
    2. Hover over primary buttons to see effect
    3. Tab to buttons to check focus state
 
    ## Screenshots
+
    ![Button hover state](link-to-image.png)
 
    ## Related Issues
+
    Closes #123
    ```
 
@@ -401,6 +421,7 @@ A well-structured PR includes:
 ### Pull Request Reviews
 
 **Receiving reviews**:
+
 - Be open to feedback
 - Respond to all comments
 - Explain your decisions when needed
@@ -408,6 +429,7 @@ A well-structured PR includes:
 - Use "Resolve conversation" once addressed
 
 **Giving reviews**:
+
 - Be constructive and specific
 - Explain the "why" behind suggestions
 - Ask questions rather than make demands
@@ -504,6 +526,7 @@ git rebase -i HEAD~3  # Interactive rebase of last 3 commits
 ```
 
 This opens an editor where you can:
+
 - `pick`: Keep the commit as is
 - `reword`: Change the commit message
 - `edit`: Pause to amend the commit
@@ -588,6 +611,7 @@ Understanding GitHub's ecosystem beyond just Git commands is crucial for effecti
 ### Repository Structure & Special Files
 
 **Key Special Files**:
+
 - **README.md**: The landing page of your repository that explains what the project is, how to use it, and how to contribute
 - **.gitignore**: Tells Git which files to ignore (build artifacts, dependencies, etc.)
 - **LICENSE**: Defines how others can use your code
@@ -610,6 +634,7 @@ Issues are GitHub's ticket system for tracking work:
 - **Linking**: Reference other issues or PRs with #123
 
 **Issue Templates** help standardize how work is requested:
+
 ```yaml
 # .github/ISSUE_TEMPLATE/design_request.yml
 name: Design Request
@@ -637,6 +662,7 @@ body:
 GitHub Actions automate workflows like testing, building, and deploying:
 
 **Workflow file example** (.github/workflows/ci.yml):
+
 ```yaml
 name: CI
 on: [push, pull_request]
@@ -654,6 +680,7 @@ jobs:
 ```
 
 **Common design-engineering workflows**:
+
 - Automatically generate and deploy Storybook documentation
 - Run visual regression tests on UI components
 - Lint CSS and check for accessibility issues
@@ -679,6 +706,7 @@ Configure in repository settings which branch to use for GitHub Pages.
 ### Discussions & Team Communication
 
 **GitHub Discussions**: A forum-like feature for:
+
 - Design critiques
 - Architecture discussions
 - Q&A that doesn't fit in issues
@@ -689,16 +717,19 @@ Configure in repository settings which branch to use for GitHub Pages.
 ### Advanced GitHub Features
 
 **GitHub Codespaces**: Cloud development environments
+
 - Work in a consistent environment with pre-installed tools
 - Great for onboarding new team members
 - Configure with .devcontainer files
 
 **GitHub Copilot**: AI pair programming
+
 - Suggests code as you type
 - Helps with boilerplate and repetitive tasks
 - Particularly useful for translating design intentions to code
 
 **Dependency Management**:
+
 - Dependabot alerts for security vulnerabilities
 - Automatic version updates via pull requests
 - Security policy (.github/SECURITY.md)
@@ -706,6 +737,7 @@ Configure in repository settings which branch to use for GitHub Pages.
 ### GitHub CLI & API
 
 **GitHub CLI** for common operations:
+
 ```bash
 # Create an issue
 gh issue create --title "Update button hover states" --body "The hover state needs to match the design system"
@@ -721,6 +753,7 @@ gh repo view --web
 ```
 
 **GitHub API** for custom tooling and integrations:
+
 - Create custom design review tools
 - Automate release notes from PR descriptions
 - Build dashboards for design and development progress
@@ -728,6 +761,7 @@ gh repo view --web
 ### Repository Insights & Analytics
 
 **GitHub Insights** provide valuable metrics:
+
 - Contribution activity
 - Code frequency
 - Dependency graph
@@ -799,11 +833,13 @@ Happy coding (and designing)!
 ## Additional Resources
 
 ### Learning Resources
+
 - [Git Documentation](https://git-scm.com/doc)
 - [Learn Git Branching](https://learngitbranching.js.org/)
 - [Oh Shit, Git!?!](https://ohshitgit.com/) - Solutions to common Git mistakes
 - [GitHub Skills](https://skills.github.com/) - Interactive GitHub tutorials
 
 ### Cheat Sheets
+
 - [Git Cheat Sheet](https://education.github.com/git-cheat-sheet-education.pdf) by GitHub Education
 - [Atlassian Git Cheat Sheet](https://www.atlassian.com/git/tutorials/atlassian-git-cheatsheet)

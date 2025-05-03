@@ -3,12 +3,25 @@ import { ItineraryTab } from '@/components/itinerary/itinerary-tab';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { DisplayItineraryItem } from '@/types/itinerary';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useToast } from '@/hooks/use-toast';
 import { Suspense } from 'react';
@@ -319,17 +332,13 @@ export function ItineraryTabContent({
       {/* Add action buttons row above the itinerary */}
       {userRole && (userRole === 'admin' || userRole === 'editor') && (
         <div className="flex flex-wrap gap-2 items-center mb-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleAddItem(null)}
-          >
+          <Button variant="outline" size="sm" onClick={() => handleAddItem(null)}>
             Add Unscheduled Item
           </Button>
           <ImportPlacesButton />
         </div>
       )}
-      
+
       <ItineraryTab
         tripId={tripId}
         itineraryItems={itineraryItems}

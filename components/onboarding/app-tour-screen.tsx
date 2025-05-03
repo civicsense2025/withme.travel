@@ -15,7 +15,7 @@ export function AppTourScreen({ tourStep, onNext, onSkip }: AppTourScreenProps) 
     {
       icon: <ClipboardList className="h-12 w-12 text-primary" />,
       title: 'create & share trip ideas',
-      description: 'invite friends to collaborate on your dream getaways'
+      description: 'invite friends to collaborate on your dream getaways',
     },
     {
       icon: <Users className="h-12 w-12 text-primary" />,

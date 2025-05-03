@@ -84,12 +84,12 @@ export async function getServerSession() {
   try {
     const supabase = await getServerComponentClient();
     const { data, error } = await supabase.auth.getSession();
-    
+
     if (error) {
       console.error('Get session error:', error.message);
       return { data: { session: null } };
     }
-    
+
     return { data: { session: data.session } };
   } catch (error) {
     console.error('Error getting server session:', error);
@@ -230,36 +230,42 @@ export async function GET(
 
 ### 2. Supabase Client Initialization
 
-The `createRouteHandlerClient` and similar functions are not async and should not be awaited:
+Our Supabase client helper functions are now async and must be awaited:
 
 ```tsx
-// INCORRECT - awaiting a non-async function
+// CORRECT - await the async function
 const supabase = await createRouteHandlerClient();
+const supabase = await createServerComponentClient();
 
-// CORRECT - direct assignment
+// INCORRECT - not awaiting the async function
 const supabase = createRouteHandlerClient();
 ```
 
-If you need TypeScript type assertions:
-
-```tsx
-import { createRouteHandlerClient, TypedSupabaseClient } from '@/utils/supabase/server';
-
-const supabase = createRouteHandlerClient() as TypedSupabaseClient;
-```
+This is necessary because the underlying cookies() and headers() functions in Next.js 15 are asynchronous.
 
 ### 3. Cookie Handling
 
-Next.js 15 has improved cookie handling through the cookies() API:
+Next.js 15 has updated the cookies() and headers() APIs to be asynchronous:
 
 ```tsx
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 export async function GET() {
-  const cookieStore = cookies(); // No longer needs to be awaited
-  // Use cookieStore to get auth cookies
+  // CORRECT - await the async functions
+  const cookieStore = await cookies();
+  const headersList = await headers();
+  
+  // Use cookieStore and headersList
+  const cookieValue = cookieStore.get('my-cookie')?.value;
+  const userAgent = headersList.get('user-agent');
+  
+  // INCORRECT - not awaiting (will cause TypeScript errors)
+  const badCookieStore = cookies();
+  const badHeadersList = headers();
 }
 ```
+
+This change affects our authentication utilities, which have been updated to handle these asynchronous calls properly.
 
 ### 4. Session Management in API Routes
 

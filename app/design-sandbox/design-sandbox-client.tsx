@@ -2,7 +2,14 @@
 // Comment out the missing import until it's available
 // import { FocusSession } from '@/components/presence/focus-session';
 import { PresenceProvider } from '@/components/presence/presence-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { FocusSessionProvider } from '@/contexts/focus-session-context';
 import { Todo } from '@/components/Todo';
@@ -14,11 +21,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { AlertCircle, CheckCircle, Info, X, Grid2X2, Box, LayoutGrid, SquareStack, MapPin } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle,
+  Info,
+  X,
+  Grid2X2,
+  Box,
+  LayoutGrid,
+  SquareStack,
+  MapPin,
+} from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';

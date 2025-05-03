@@ -19,13 +19,13 @@
 ### Fixed
 
 - Resolved numerous TypeScript errors across various components (`related-itineraries-widget`, `error-boundary`, `error-fallbacks`, `export-calendar-dialog`, `focus-session-provider`, `footer`, `google-places-autocomplete`, `hero-section`, `image-search-selector`, `itinerary-template-card`, `destination-reviews`, etc.) including:
-    - Missing `useState`/`useRef`/`useEffect` hook declarations and initializations.
-    - Incorrect `useEffect` dependency arrays and cleanup function syntax (e.g., `ref.current` usage).
-    - Improper function/component structure (missing return statements, incorrect destructuring).
-    - Incorrect `useCallback` dependencies.
-    - Syntax errors in function return types (e.g., `return throw error`).
-    - Incorrect usage of template literals in JSX attributes and strings.
-    - Missing or incomplete `try...catch` blocks in async functions.
+  - Missing `useState`/`useRef`/`useEffect` hook declarations and initializations.
+  - Incorrect `useEffect` dependency arrays and cleanup function syntax (e.g., `ref.current` usage).
+  - Improper function/component structure (missing return statements, incorrect destructuring).
+  - Incorrect `useCallback` dependencies.
+  - Syntax errors in function return types (e.g., `return throw error`).
+  - Incorrect usage of template literals in JSX attributes and strings.
+  - Missing or incomplete `try...catch` blocks in async functions.
 - Resolved authentication refresh issues on concurrent requests
 - Fixed loading state display on slow connections
 - Improved error recovery for failed API requests

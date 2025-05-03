@@ -17,15 +17,15 @@ interface ItineraryItemCoords {
 // Define field constants for queries
 const FIELDS = {
   COMMON: {
-    ID: 'id'
+    ID: 'id',
   },
   ITINERARY_ITEMS: {
     DAY_NUMBER: 'day_number',
     LATITUDE: 'latitude',
     LONGITUDE: 'longitude',
     POSITION: 'position',
-    START_TIME: 'start_time'
-  }
+    START_TIME: 'start_time',
+  },
 };
 
 export async function GET(
@@ -76,16 +76,16 @@ export async function GET(
     return NextResponse.json(travelTimes);
   } catch (error) {
     console.error('Unexpected error in travel times API:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'An unexpected server error occurred' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : 'An unexpected server error occurred',
+      },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { tripId: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { tripId: string } }) {
   const { tripId } = params;
   const supabase = createRouteHandlerClient();
   // ... rest of POST handler ...

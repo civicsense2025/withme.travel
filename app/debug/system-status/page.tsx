@@ -163,7 +163,7 @@ export default function SystemStatusPage() {
         devicePixelRatio: window.devicePixelRatio,
         innerWidth: window.innerWidth,
         innerHeight: window.innerHeight,
-      }
+      },
     };
 
     // Collect all public environment variables

@@ -12,7 +12,7 @@ const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 } as const;
 
 // Define database field constants to avoid linting issues
@@ -20,8 +20,8 @@ const FIELDS = {
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
-    ROLE: 'role'
-  }
+    ROLE: 'role',
+  },
 };
 
 type AllowedRoleKey = keyof typeof TRIP_ROLES;
@@ -41,11 +41,7 @@ async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  allowedRoles: AllowedRoleKey[] = [
-    'ADMIN',
-    'EDITOR',
-    'CONTRIBUTOR',
-  ]
+  allowedRoles: AllowedRoleKey[] = ['ADMIN', 'EDITOR', 'CONTRIBUTOR']
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
@@ -104,7 +100,7 @@ export async function POST(
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -120,7 +116,7 @@ export async function POST(
       'EDITOR',
       'CONTRIBUTOR',
     ]);
-    
+
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status || 403 });
     }

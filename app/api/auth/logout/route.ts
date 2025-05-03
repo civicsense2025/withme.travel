@@ -6,7 +6,7 @@ import { captureException } from '@sentry/nextjs';
  * POST /api/auth/logout
  * Handles server-side session cleanup during sign out
  */
-export async function POST(request: NextRequest) : Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const responseHeaders = new Headers({
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) : Promise<NextResponse> {
 
   try {
     // Create Supabase client for signing out using our utility
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Get user ID *before* signing out
     try {

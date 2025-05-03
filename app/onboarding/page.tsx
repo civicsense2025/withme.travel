@@ -57,8 +57,8 @@ const PERSONALITY_SUGGESTED_INTERESTS: Record<string, Record<string, number>> = 
     'art-galleries': 70,
     'traditional-events': 80,
     'language-learning': 60,
-  }
-  };
+  },
+};
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
@@ -95,7 +95,9 @@ export default function OnboardingPage() {
     setStep(step + 1);
   };
 
-  const handleBack = () => { return setStep(Math.max(1, step - 1)); };
+  const handleBack = () => {
+    return setStep(Math.max(1, step - 1));
+  };
 
   const handleSkip = () => {
     // Skip to next step for optional screens
@@ -112,7 +114,9 @@ export default function OnboardingPage() {
     setUserData({ ...userData, [field]: value });
   };
 
-  const handleSkipTour = () => { return router.push('/trips/new'); };
+  const handleSkipTour = () => {
+    return router.push('/trips/new');
+  };
 
   const handleNextTour = () => {
     if (userData.tourStep < 3) {
@@ -122,9 +126,13 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleCreateTrip = () => { return router.push('/trips/new'); };
+  const handleCreateTrip = () => {
+    return router.push('/trips/new');
+  };
 
-  const handleExplore = () => { return router.push('/explore'); };
+  const handleExplore = () => {
+    return router.push('/explore');
+  };
 
   // Don't render anything while checking auth
   if (isLoading) {

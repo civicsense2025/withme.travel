@@ -56,4 +56,4 @@ try {
   console.error('❌ Failed to run next clean:', error);
 }
 
-console.log('Build cache clearing completed.'); 
+console.log('Build cache clearing completed.');

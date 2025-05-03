@@ -60,13 +60,13 @@ function processFile(filePath) {
   try {
     const content = readFile(filePath);
     let updatedContent = content;
-    
+
     // First fix API route parameters
     updatedContent = fixApiRouteParams(updatedContent);
-    
+
     // Then fix cookie handlers
     updatedContent = fixCookieHandlers(updatedContent);
-    
+
     // Only write the file if changes were made
     if (content !== updatedContent) {
       writeFile(filePath, updatedContent);
@@ -94,4 +94,4 @@ for (const file of apiRouteFiles) {
   if (fixed) fixedCount++;
 }
 
-console.log(`\n🎉 Done! Fixed ${fixedCount} files.`); 
+console.log(`\n🎉 Done! Fixed ${fixedCount} files.`);

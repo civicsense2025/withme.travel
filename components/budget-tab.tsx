@@ -108,7 +108,7 @@ export function BudgetTab({
       const payer = members.find((m) => m.user_id === exp.paid_by);
       // Safely access profile name with fallback
       const payerName = payer?.profiles?.name || 'Unknown';
-      
+
       return {
         id: exp.id,
         title: exp.title,
@@ -140,7 +140,7 @@ export function BudgetTab({
       .map((member) => ({
         id: member.user_id,
         name: member.profiles?.name || 'Unknown User',
-        totalPaid: totals[member.user_id] || 0
+        totalPaid: totals[member.user_id] || 0,
       }))
       .sort((a, b) => b.totalPaid - a.totalPaid);
   }, [manualExpenses, members]);
@@ -155,7 +155,7 @@ export function BudgetTab({
       const payer = members.find((m) => m.user_id === exp.paid_by);
       // Safely access profile name with fallback
       const payerName = payer?.profiles?.name || 'Unknown';
-      
+
       return {
         id: exp.id,
         title: exp.title,
@@ -303,20 +303,24 @@ export function BudgetTab({
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-0.5">
                                     <span>{expense.category || 'Uncategorized'}</span>
-                                    
+
                                     {/* Handle null dates and formatting separately */}
                                     <span>
                                       {expense.date ? (
-                                        <> • {(() => {
-                                          try {
-                                            return format(new Date(expense.date), 'MMM d, yyyy');
-                                          } catch {
-                                            return 'Invalid date';
-                                          }
-                                        })()}</>
+                                        <>
+                                          {' '}
+                                          •{' '}
+                                          {(() => {
+                                            try {
+                                              return format(new Date(expense.date), 'MMM d, yyyy');
+                                            } catch {
+                                              return 'Invalid date';
+                                            }
+                                          })()}
+                                        </>
                                       ) : null}
                                     </span>
-                                    
+
                                     {expense.source === 'manual' && expense.paidBy && (
                                       <>
                                         <span> • </span>

@@ -15,4 +15,4 @@ export default function CountriesLoading() {
       </div>
     </div>
   );
-} 
+}

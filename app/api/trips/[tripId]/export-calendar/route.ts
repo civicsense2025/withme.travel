@@ -7,7 +7,7 @@ import type { Database } from '@/types/database.types';
 const TABLES = {
   TRIPS: 'trips',
   TRIP_MEMBERS: 'trip_members',
-  ITINERARY_ITEMS: 'itinerary_items'
+  ITINERARY_ITEMS: 'itinerary_items',
 };
 
 // Define local field constants since they're not all available in central constants
@@ -27,7 +27,7 @@ const FIELDS = {
   ITINERARY_ITEMS: {
     TRIP_ID: 'trip_id',
     DATE: 'date',
-  }
+  },
 };
 
 // Define item type for proper handling
@@ -137,68 +137,73 @@ export async function POST(
     }
 
     // Format items for Google Calendar
-    const calendarEvents = items && Array.isArray(items) && items.length > 0
-      ? items.map((item: any) => {
-          // Default to all day event if no times specified
-          const hasStartTime = !!item.start_time;
-          const hasEndTime = !!item.end_time;
+    const calendarEvents =
+      items && Array.isArray(items) && items.length > 0
+        ? items
+            .map((item: any) => {
+              // Default to all day event if no times specified
+              const hasStartTime = !!item.start_time;
+              const hasEndTime = !!item.end_time;
 
-          // Format date and times with proper null checking
-          if (!item.date) {
-            return null; // Skip items without a date
-          }
+              // Format date and times with proper null checking
+              if (!item.date) {
+                return null; // Skip items without a date
+              }
 
-          // Safely create date objects with fallbacks
-          let itemDate: Date;
-          try {
-            itemDate = new Date(item.date);
-            // Check if date is valid
-            if (isNaN(itemDate.getTime())) {
-              return null; // Skip items with invalid dates
-            }
-          } catch (error) {
-            return null; // Skip items with invalid dates
-          }
+              // Safely create date objects with fallbacks
+              let itemDate: Date;
+              try {
+                itemDate = new Date(item.date);
+                // Check if date is valid
+                if (isNaN(itemDate.getTime())) {
+                  return null; // Skip items with invalid dates
+                }
+              } catch (error) {
+                return null; // Skip items with invalid dates
+              }
 
-          let startDateTime: Date;
-          let endDateTime: Date;
+              let startDateTime: Date;
+              let endDateTime: Date;
 
-          try {
-            startDateTime = hasStartTime && item.start_time
-              ? new Date(`${item.date}T${item.start_time}`)
-              : new Date(itemDate.setHours(9, 0, 0));
+              try {
+                startDateTime =
+                  hasStartTime && item.start_time
+                    ? new Date(`${item.date}T${item.start_time}`)
+                    : new Date(itemDate.setHours(9, 0, 0));
 
-            endDateTime = hasEndTime && item.end_time
-              ? new Date(`${item.date}T${item.end_time}`)
-              : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default to 1 hour later
+                endDateTime =
+                  hasEndTime && item.end_time
+                    ? new Date(`${item.date}T${item.end_time}`)
+                    : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default to 1 hour later
 
-            // Validate date objects
-            if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-              // Fallback to all-day event
-              startDateTime = new Date(itemDate.setHours(9, 0, 0));
-              endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
-            }
-          } catch (error) {
-            // Fallback to all-day event
-            startDateTime = new Date(itemDate.setHours(9, 0, 0));
-            endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
-          }
+                // Validate date objects
+                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                  // Fallback to all-day event
+                  startDateTime = new Date(itemDate.setHours(9, 0, 0));
+                  endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+                }
+              } catch (error) {
+                // Fallback to all-day event
+                startDateTime = new Date(itemDate.setHours(9, 0, 0));
+                endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+              }
 
-          return {
-            summary: item.title || 'Untitled Event',
-            description: item.notes || `Part of your trip with withme.travel`,
-            location: item.location || undefined,
-            start: {
-              dateTime: startDateTime.toISOString(),
-              timeZone: 'UTC',
-            },
-            end: {
-              dateTime: endDateTime.toISOString(),
-              timeZone: 'UTC',
-            },
-          };
-        }).filter(Boolean) // Remove null entries
-      : [];
+              return {
+                summary: item.title || 'Untitled Event',
+                description: item.notes || `Part of your trip with withme.travel`,
+                location: item.location || undefined,
+                start: {
+                  dateTime: startDateTime.toISOString(),
+                  timeZone: 'UTC',
+                },
+                end: {
+                  dateTime: endDateTime.toISOString(),
+                  timeZone: 'UTC',
+                },
+              };
+            })
+            .filter(Boolean) // Remove null entries
+        : [];
 
     // In a real implementation, we would use the Google Calendar API to create events
     // For now, we'll just return success with the events that would be created
@@ -223,7 +228,7 @@ export async function GET(
   try {
     const { tripId } = params;
     const supabase = createRouteHandlerClient();
-    
+
     // Check if user is authenticated
     const {
       data: { session },
@@ -232,7 +237,7 @@ export async function GET(
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     // Placeholder for GET endpoint implementation
     return NextResponse.json({ message: 'GET endpoint not implemented' }, { status: 501 });
   } catch (error: any) {

@@ -56,7 +56,7 @@ const seasonEmoji: Record<string, string> = {
   summer: '☀️',
   fall: '🍂',
   winter: '❄️',
-  };
+};
 
 const travelTypeEmoji: Record<string, string> = {
   solo: '🚶',
@@ -64,7 +64,7 @@ const travelTypeEmoji: Record<string, string> = {
   family: '👨‍👩‍👧‍👦',
   friends: '👥',
   business: '💼',
-  };
+};
 
 export function DestinationReviews({ destinationId, destinationName }: DestinationReviewsProps) {
   const router = useRouter();

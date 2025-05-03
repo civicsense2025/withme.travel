@@ -35,17 +35,17 @@ if (hasTables && hasFields && hasEnums && hasTypes) {
     const startMarker = `export const ${name} = {`;
     const startIdx = content.indexOf(startMarker);
     if (startIdx === -1) return null;
-    
+
     let braceCount = 1;
     let endIdx = startIdx + startMarker.length;
-    
+
     while (braceCount > 0 && endIdx < content.length) {
       const char = content[endIdx];
       if (char === '{') braceCount++;
       if (char === '}') braceCount--;
       endIdx++;
     }
-    
+
     return content.substring(startIdx, endIdx) + ' as const;';
   };
 
@@ -83,7 +83,8 @@ if (hasTables && hasFields && hasEnums && hasTypes) {
   }
 
   // Add RELATIONSHIPS section
-  const relationshipsSection = extractSection('RELATIONSHIPS') || extractSection('DB_RELATIONSHIPS');
+  const relationshipsSection =
+    extractSection('RELATIONSHIPS') || extractSection('DB_RELATIONSHIPS');
   if (relationshipsSection) {
     newContent += relationshipsSection.replace('DB_RELATIONSHIPS', 'RELATIONSHIPS') + '\n\n';
   }
@@ -117,4 +118,4 @@ export const DB_RELATIONSHIPS = RELATIONSHIPS;
   console.log('✅ Fixed database.ts exports');
 }
 
-console.log('🎉 Done!'); 
+console.log('🎉 Done!');

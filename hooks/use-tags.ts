@@ -55,7 +55,7 @@ export function useTags() {
           title: 'Error',
           description: 'Failed to load tags',
           variant: 'destructive',
-  });
+        });
         return [];
       } finally {
         setIsLoading(false);
@@ -105,13 +105,13 @@ export function useTags() {
         const { error: suggestionError } = await supabase.from('user_suggested_tags').insert({
           tag_id: tagId,
           destination_id: destinationId,
-  });
+        });
 
         if (suggestionError) throw suggestionError;
 
         toast({
           title: 'Success',
-          description: 'Tag suggestion submitted for review'
+          description: 'Tag suggestion submitted for review',
         });
 
         return true;
@@ -121,7 +121,7 @@ export function useTags() {
           title: 'Error',
           description: 'Failed to suggest tag',
           variant: 'destructive',
-  });
+        });
         return false;
       } finally {
         setIsLoading(false);
@@ -161,7 +161,7 @@ export function useTags() {
           title: 'Error',
           description: 'Failed to record vote',
           variant: 'destructive',
-  });
+        });
         return false;
       } finally {
         setIsLoading(false);
@@ -195,7 +195,7 @@ export function useTags() {
         title: 'Error',
         description: 'Failed to load interests',
         variant: 'destructive',
-  });
+      });
       return [];
     } finally {
       setIsLoading(false);
@@ -225,7 +225,7 @@ export function useTags() {
           title: 'Error',
           description: 'Failed to update interest',
           variant: 'destructive',
-  });
+        });
         return false;
       } finally {
         setIsLoading(false);
@@ -254,7 +254,7 @@ export function useTags() {
         title: 'Error',
         description: 'Failed to load tags',
         variant: 'destructive',
-  });
+      });
       return [];
     } finally {
       setIsLoading(false);
@@ -299,7 +299,7 @@ export function useTags() {
           title: 'Error',
           description: 'Failed to create tag',
           variant: 'destructive',
-  });
+        });
         return null;
       } finally {
         setIsLoading(false);
@@ -320,7 +320,7 @@ export function useTags() {
         const { error } = await supabase.from('destination_tags').insert({
           destination_id: tripId,
           tag_id: tagId,
-  });
+        });
 
         if (error) throw error;
 
@@ -331,7 +331,7 @@ export function useTags() {
           title: 'Error',
           description: 'Failed to add tag to trip',
           variant: 'destructive',
-  });
+        });
         return false;
       } finally {
         setIsLoading(false);
@@ -364,7 +364,7 @@ export function useTags() {
           title: 'Error',
           description: 'Failed to remove tag from trip',
           variant: 'destructive',
-  });
+        });
         return false;
       } finally {
         setIsLoading(false);

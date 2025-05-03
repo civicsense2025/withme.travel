@@ -50,7 +50,7 @@ export function PermissionRequest({ tripId, tripName }: PermissionRequestProps) 
       setIsRequested(true);
       toast({
         title: 'Request submitted',
-        description: 'Trip organizers have been notified of your request'
+        description: 'Trip organizers have been notified of your request',
       });
 
       // Close dialog after a short delay

@@ -61,12 +61,14 @@ const supabase = createRouteHandlerClient() as TypedSupabaseClient;
 ### Step 1: Update Imports
 
 Replace:
+
 ```typescript
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 ```
 
 With:
+
 ```typescript
 import { createApiRouteClient } from '@/utils/api-helpers/cookie-handlers';
 ```
@@ -74,6 +76,7 @@ import { createApiRouteClient } from '@/utils/api-helpers/cookie-handlers';
 ### Step 2: Replace Supabase Client Creation
 
 Replace:
+
 ```typescript
 const cookieStore = await cookies();
 const supabase = createServerClient<Database>(
@@ -104,6 +107,7 @@ const supabase = createServerClient<Database>(
 ```
 
 With:
+
 ```typescript
 const supabase = createRouteHandlerClient();
 ```
@@ -111,6 +115,7 @@ const supabase = createRouteHandlerClient();
 ### Step 3: Explicit Type Casting for Database Results
 
 If you see errors like:
+
 ```
 Type '{ error: true; } & String' is missing the following properties from type 'Trip': ...
 ```
@@ -128,7 +133,7 @@ interface YourDataType {
 const { data: results } = await supabase.from(TABLES.YOUR_TABLE).select('*');
 
 // Type cast the results
-const typedResults = (results as YourDataType[]).map(item => {
+const typedResults = (results as YourDataType[]).map((item) => {
   // Process data...
   return {
     ...item,
@@ -153,36 +158,33 @@ interface UserProfile {
 }
 
 export async function GET(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: { userId: string } }
 ): Promise<NextResponse> {
   try {
     // Get params directly, no await needed
     const { userId } = params;
-    
+
     // Create client without awaiting
     const supabase = createRouteHandlerClient();
-    
+
     // Make queries
     const { data: profile, error } = await supabase
       .from(TABLES.PROFILES)
       .select('*')
       .eq('id', userId)
       .single();
-    
+
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     // Process with proper type casting
     const typedProfile = profile as UserProfile;
-    
+
     return NextResponse.json({ data: typedProfile });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -202,13 +204,13 @@ await EmailService.sendPasswordResetEmail({
 // CORRECT - Using properly defined methods
 await EmailService.sendEmail({
   to: email,
-  subject: "Reset your password",
+  subject: 'Reset your password',
   html: `
     <h1>Reset your password</h1>
     <p>Click the link below to reset your password:</p>
     <p><a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password">Reset Password</a></p>
     <p>This link will expire in 24 hours.</p>
-  `
+  `,
 });
 ```
 
@@ -230,4 +232,4 @@ Use these utilities for proper type checking and consistency.
 4. **Error handling**: Always include proper error handling in your API routes
 5. **Don't await `params`**: Remember that route parameters are not Promises in Next.js 15 anymore
 
-By following these patterns, you should be able to fix the TypeScript errors in your API routes. 
+By following these patterns, you should be able to fix the TypeScript errors in your API routes.

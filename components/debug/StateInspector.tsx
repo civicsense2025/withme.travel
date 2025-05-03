@@ -25,7 +25,7 @@ export function StateInspector({
   const [isExpanded, setIsExpanded] = useState(expanded);
   // State for visibility
   const [isVisible, setIsVisible] = useState(true);
-  
+
   // If hidden, show just a button to reveal the inspector
   if (!isVisible) {
     return (

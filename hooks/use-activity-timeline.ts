@@ -57,7 +57,7 @@ export function useActivityTimeline(
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: offset.toString(),
-  });
+        });
 
         const response = await fetch(`/api/trips/${tripId}/activity?${params.toString()}`);
 
@@ -81,7 +81,7 @@ export function useActivityTimeline(
           total: data.pagination.total || 0,
           offset: data.pagination.offset || 0,
           limit: data.pagination.limit || limit,
-          hasMore: data.pagination.offset + newActivities.length < data.pagination.total
+          hasMore: data.pagination.offset + newActivities.length < data.pagination.total,
         });
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));
@@ -94,12 +94,16 @@ export function useActivityTimeline(
   );
 
   // Function to refresh the timeline
-  const refreshTimeline = useCallback(async () => { return await fetchTimeline(0, false); }, [fetchTimeline]);
+  const refreshTimeline = useCallback(async () => {
+    return await fetchTimeline(0, false);
+  }, [fetchTimeline]);
 
   // Function to load more items
-  const loadMore = useCallback(async () => { if (loading || !pagination.hasMore) return;
+  const loadMore = useCallback(async () => {
+    if (loading || !pagination.hasMore) return;
 
-    await fetchTimeline(pagination.offset + pagination.limit, true); }, [fetchTimeline, loading, pagination]);
+    await fetchTimeline(pagination.offset + pagination.limit, true);
+  }, [fetchTimeline, loading, pagination]);
 
   // Initial data fetch
   useEffect(() => {
@@ -112,7 +116,9 @@ export function useActivityTimeline(
   useEffect(() => {
     if (!tripId || !autoRefresh || !pollingInterval) return;
 
-    const interval = setInterval(() => { return refreshTimeline(); }, pollingInterval);
+    const interval = setInterval(() => {
+      return refreshTimeline();
+    }, pollingInterval);
 
     return () => clearInterval(interval);
   }, [tripId, refreshTimeline, autoRefresh, pollingInterval]);

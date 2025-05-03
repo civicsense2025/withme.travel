@@ -10,7 +10,7 @@ export async function DELETE(
 ) {
   try {
     const { tripId, memberId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Check if user is authenticated
     const {
@@ -47,10 +47,7 @@ export async function DELETE(
     }
 
     // Delete member
-    const { error } = await supabase
-      .from('trip_members')
-      .delete()
-      .eq('id', memberId);
+    const { error } = await supabase.from('trip_members').delete().eq('id', memberId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -68,7 +65,7 @@ export async function PATCH(
 ) {
   try {
     const { tripId, memberId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Check if user is authenticated
     const {
@@ -96,7 +93,12 @@ export async function PATCH(
     const { role } = await request.json();
 
     // Validate role using allowed values
-    const validRoles = [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER];
+    const validRoles = [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+      TRIP_ROLES.CONTRIBUTOR,
+      TRIP_ROLES.VIEWER,
+    ];
     if (!role || !validRoles.includes(role)) {
       return NextResponse.json({ error: 'Invalid role specified' }, { status: 400 });
     }
@@ -132,10 +134,7 @@ export async function PATCH(
     }
 
     // Update member role
-    const { data, error } = await supabase
-      .from('trip_members')
-      .update({ role })
-      .eq('id', memberId)
+    const { data, error } = await supabase.from('trip_members').update({ role }).eq('id', memberId)
       .select(`
         *,
         user:user_id(id, name, email, avatar_url)

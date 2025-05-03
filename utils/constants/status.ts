@@ -16,10 +16,10 @@ export const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 } as const;
 
-export type TripRole = typeof TRIP_ROLES[keyof typeof TRIP_ROLES];
+export type TripRole = (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
 
 // ======= ITEM STATUSES =======
 export const ITEM_STATUSES = {
@@ -27,10 +27,10 @@ export const ITEM_STATUSES = {
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
   SUGGESTED: 'suggested',
-  CONFIRMED: 'confirmed'
+  CONFIRMED: 'confirmed',
 } as const;
 
-export type ItemStatus = typeof ITEM_STATUSES[keyof typeof ITEM_STATUSES];
+export type ItemStatus = (typeof ITEM_STATUSES)[keyof typeof ITEM_STATUSES];
 
 // ======= ITINERARY CATEGORIES =======
 export const ITINERARY_CATEGORIES = {
@@ -42,10 +42,10 @@ export const ITINERARY_CATEGORIES = {
   ACTIVITY: 'activity',
   CUSTOM: 'custom',
   FLEXIBLE_OPTIONS: 'flexible_options',
-  OTHER: 'other'
+  OTHER: 'other',
 } as const;
 
-export type ItineraryCategory = typeof ITINERARY_CATEGORIES[keyof typeof ITINERARY_CATEGORIES];
+export type ItineraryCategory = (typeof ITINERARY_CATEGORIES)[keyof typeof ITINERARY_CATEGORIES];
 
 // ======= TRIP STATUSES =======
 export const TRIP_STATUSES = {
@@ -53,28 +53,28 @@ export const TRIP_STATUSES = {
   BOOKED: 'booked',
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
-  CANCELLED: 'cancelled'
+  CANCELLED: 'cancelled',
 } as const;
 
-export type TripStatus = typeof TRIP_STATUSES[keyof typeof TRIP_STATUSES];
+export type TripStatus = (typeof TRIP_STATUSES)[keyof typeof TRIP_STATUSES];
 
 // ======= PERMISSION STATUSES =======
 export const PERMISSION_STATUSES = {
   PENDING: 'pending',
   APPROVED: 'approved',
-  REJECTED: 'rejected'
+  REJECTED: 'rejected',
 } as const;
 
-export type PermissionStatus = typeof PERMISSION_STATUSES[keyof typeof PERMISSION_STATUSES];
+export type PermissionStatus = (typeof PERMISSION_STATUSES)[keyof typeof PERMISSION_STATUSES];
 
 // ======= PRESENCE STATUSES =======
 export const PRESENCE_STATUSES = {
   ONLINE: 'online',
   OFFLINE: 'offline',
-  AWAY: 'away'
+  AWAY: 'away',
 } as const;
 
-export type PresenceStatus = typeof PRESENCE_STATUSES[keyof typeof PRESENCE_STATUSES];
+export type PresenceStatus = (typeof PRESENCE_STATUSES)[keyof typeof PRESENCE_STATUSES];
 
 // ======= NOTIFICATION TYPES =======
 export const NOTIFICATION_TYPES = {
@@ -82,19 +82,19 @@ export const NOTIFICATION_TYPES = {
   TRIP_UPDATE: 'trip_update',
   NEW_COMMENT: 'new_comment',
   MENTION: 'mention',
-  ACCESS_REQUEST: 'access_request'
+  ACCESS_REQUEST: 'access_request',
 } as const;
 
-export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
+export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
 
 // ======= SPLIT TYPES =======
 export const SPLIT_TYPES = {
   EQUAL: 'equal',
   PERCENTAGE: 'percentage',
-  CUSTOM: 'custom'
+  CUSTOM: 'custom',
 } as const;
 
-export type SplitType = typeof SPLIT_TYPES[keyof typeof SPLIT_TYPES];
+export type SplitType = (typeof SPLIT_TYPES)[keyof typeof SPLIT_TYPES];
 
 // Trip types
 export const TRIP_TYPES = {

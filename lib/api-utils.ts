@@ -25,7 +25,7 @@ export function formatErrorResponse(error: any, defaultStatus = 500) {
     return NextResponse.json(
       {
         error: error.message,
-        details: error.details || undefined
+        details: error.details || undefined,
       },
       { status: error.status }
     );
@@ -52,7 +52,7 @@ export function errorResponse(message: string, status = 400, details?: any) {
   return NextResponse.json(
     {
       error: message,
-      details: details || undefined
+      details: details || undefined,
     },
     { status }
   );

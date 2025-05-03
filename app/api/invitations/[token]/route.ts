@@ -7,7 +7,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { token } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     const { data: invitation, error } = await supabase
       .from('invitations')

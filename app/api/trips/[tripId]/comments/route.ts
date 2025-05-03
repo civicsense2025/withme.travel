@@ -26,23 +26,23 @@ const FIELDS = {
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
     TRIP_ID: 'trip_id',
-    ITEM_ID: 'item_id'
+    ITEM_ID: 'item_id',
   },
   COMMON: {
     ID: 'id',
-    CREATED_AT: 'created_at'
+    CREATED_AT: 'created_at',
   },
   PROFILES: {
     NAME: 'name',
-    AVATAR_URL: 'avatar_url'
+    AVATAR_URL: 'avatar_url',
   },
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   TRIP_COMMENT_LIKES: {
-    USER_ID: 'user_id'
-  }
+    USER_ID: 'user_id',
+  },
 };
 import type { Database } from '@/types/database.types';
 

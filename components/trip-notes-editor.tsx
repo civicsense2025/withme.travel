@@ -59,7 +59,7 @@ export function TripNotesEditor({
         allowBase64: true,
         inline: false,
         HTMLAttributes: {
-          class: 'rounded-md max-w-full h-auto my-4'
+          class: 'rounded-md max-w-full h-auto my-4',
         },
       }),
       Link.configure({
@@ -74,7 +74,7 @@ export function TripNotesEditor({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose focus:outline-none max-w-none p-4 min-h-[200px]'
+        class: 'prose prose-sm sm:prose focus:outline-none max-w-none p-4 min-h-[200px]',
       },
     },
     onUpdate: ({ editor }) => {
@@ -94,7 +94,7 @@ export function TripNotesEditor({
         title: 'Cannot Save',
         description: 'No note selected to save to.',
         variant: 'destructive',
-  });
+      });
       return;
     }
 
@@ -117,7 +117,7 @@ export function TripNotesEditor({
 
       toast({
         title: 'Note Saved!',
-        description: 'Your changes have been saved.'
+        description: 'Your changes have been saved.',
       });
     } catch (error) {
       console.error('Failed to save notes:', error);
@@ -125,7 +125,7 @@ export function TripNotesEditor({
         title: 'Failed to save note',
         description: formatError(error),
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsSaving(false);
     }
@@ -140,7 +140,7 @@ export function TripNotesEditor({
         title: 'Invalid file type',
         description: 'Please upload an image file',
         variant: 'destructive',
-  });
+      });
       return;
     }
 
@@ -149,7 +149,7 @@ export function TripNotesEditor({
         title: 'File too large',
         description: 'Image must be smaller than 5MB',
         variant: 'destructive',
-  });
+      });
       return;
     }
 
@@ -205,7 +205,7 @@ export function TripNotesEditor({
 
         toast({
           title: 'Image uploaded',
-          description: 'Image has been added to your notes'
+          description: 'Image has been added to your notes',
         });
       }
     } catch (error) {
@@ -214,7 +214,7 @@ export function TripNotesEditor({
         title: 'Failed to upload image',
         description: 'Please try again later',
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

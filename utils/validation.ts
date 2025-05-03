@@ -18,7 +18,7 @@ export const signupSchema = z.object({
 
 // Password reset validation schemas
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address')
+  email: z.string().email('Invalid email address'),
 });
 
 export const resetPasswordSchema = z.object({
@@ -49,8 +49,8 @@ export function validateRequestBody<T extends z.ZodTypeAny>(
         error: {
           message: error.issues.map((issue) => issue.message).join(', '),
           issues: error.issues,
-        }
-  };
+        },
+      };
     }
 
     // For non-Zod errors, return a generic error message
@@ -59,8 +59,8 @@ export function validateRequestBody<T extends z.ZodTypeAny>(
       error: {
         message: 'Invalid request data',
         issues: [],
-  }
-  };
+      },
+    };
   }
 }
 
@@ -87,7 +87,7 @@ export function validateRequestMiddleware<T extends z.ZodTypeAny>(
             {
               error: validation.error.message,
               issues: validation.error.issues,
-  },
+            },
             { status: 400 }
           );
         }

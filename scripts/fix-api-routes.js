@@ -30,7 +30,7 @@ const log = {
   warn: (msg) => console.log(`[WARN] ${msg}`),
   error: (msg) => console.error(`[ERROR] ${msg}`),
   success: (msg) => console.log(`[SUCCESS] ${msg}`),
-  verbose: (msg) => VERBOSE && console.log(`[VERBOSE] ${msg}`)
+  verbose: (msg) => VERBOSE && console.log(`[VERBOSE] ${msg}`),
 };
 
 // Helper to count occurrences in a file
@@ -95,13 +95,13 @@ function fixImports(content) {
     /(?:await\s+)?getRouteHandlerClient\s*\(\s*(?:request)?\s*\)/g,
     'await createRouteHandlerClient(request)'
   );
-  
+
   // Replace direct createClient calls with createRouteHandlerClient
   newContent = newContent.replace(
     /const\s+supabase\s*=\s*createClient\s*\((.*?)\)/g,
     'const supabase = await createRouteHandlerClient(request)'
   );
-  
+
   // Replace getServerSession() destructuring pattern
   newContent = newContent.replace(
     /const\s+\{\s*session\s*\}\s*=\s*(?:await\s+)?getServerSession\(\)/g,
@@ -122,25 +122,30 @@ async function processFile(filePath) {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
     const newContent = fixImports(content);
-    
+
     if (content !== newContent) {
       const changes = {
-        supabaseImports: countOccurrences(content, '@supabase\\/auth-helpers-nextjs') - 
-                          countOccurrences(newContent, '@supabase\\/auth-helpers-nextjs'),
-        unifiedImports: countOccurrences(content, '@\\/utils\\/supabase\\/unified') - 
-                         countOccurrences(newContent, '@\\/utils\\/supabase\\/unified'),
-        routeHandlerCalls: countOccurrences(content, 'getRouteHandlerClient') - 
-                            countOccurrences(newContent, 'getRouteHandlerClient'),
-        sessionCalls: countOccurrences(content, 'getServerSession') - 
-                       countOccurrences(newContent, 'getServerSession'),
-        paramTypes: countOccurrences(newContent, 'params: Promise<') - 
-                    countOccurrences(content, 'params: Promise<')
+        supabaseImports:
+          countOccurrences(content, '@supabase\\/auth-helpers-nextjs') -
+          countOccurrences(newContent, '@supabase\\/auth-helpers-nextjs'),
+        unifiedImports:
+          countOccurrences(content, '@\\/utils\\/supabase\\/unified') -
+          countOccurrences(newContent, '@\\/utils\\/supabase\\/unified'),
+        routeHandlerCalls:
+          countOccurrences(content, 'getRouteHandlerClient') -
+          countOccurrences(newContent, 'getRouteHandlerClient'),
+        sessionCalls:
+          countOccurrences(content, 'getServerSession') -
+          countOccurrences(newContent, 'getServerSession'),
+        paramTypes:
+          countOccurrences(newContent, 'params: Promise<') -
+          countOccurrences(content, 'params: Promise<'),
       };
-      
+
       const totalChanges = Object.values(changes).reduce((sum, val) => sum + Math.abs(val), 0);
-      
+
       log.verbose(`Changes for ${filePath}: ${JSON.stringify(changes)}`);
-      
+
       if (totalChanges > 0) {
         if (!DRY_RUN) {
           fs.writeFileSync(filePath, newContent, 'utf8');
@@ -166,29 +171,29 @@ async function processFile(filePath) {
 // Main function to run the script
 async function main() {
   log.info(`Starting API routes fix script ${DRY_RUN ? '(DRY RUN)' : ''}`);
-  
+
   // Find all API route files
   const files = await glob('**/*.ts', { cwd: API_ROUTES_DIR, absolute: true });
-  
+
   log.info(`Found ${files.length} API route files`);
-  
+
   // Process all files
   const results = await Promise.all(files.map(processFile));
-  
+
   // Summarize results
-  const fixedFiles = results.filter(r => r.fixed);
-  const errorFiles = results.filter(r => r.error);
-  
+  const fixedFiles = results.filter((r) => r.fixed);
+  const errorFiles = results.filter((r) => r.error);
+
   log.info(`\n---- SUMMARY ----`);
   log.info(`Total files processed: ${files.length}`);
   log.success(`Files fixed: ${fixedFiles.length}`);
   log.warn(`Files with errors: ${errorFiles.length}`);
-  
+
   if (errorFiles.length > 0) {
     log.warn(`\nFiles with errors:`);
-    errorFiles.forEach(f => log.warn(`- ${f.path}: ${f.error}`));
+    errorFiles.forEach((f) => log.warn(`- ${f.path}: ${f.error}`));
   }
-  
+
   if (DRY_RUN) {
     log.info(`\nThis was a dry run. No actual changes were made.`);
     log.info(`Run without --dry-run to apply changes.`);
@@ -196,7 +201,7 @@ async function main() {
 }
 
 // Run main function
-main().catch(error => {
+main().catch((error) => {
   log.error(`Script failed: ${error.message}`);
   process.exit(1);
 });
@@ -275,11 +280,11 @@ async function createUtilityFile() {
     } catch (err) {
       if (err.code !== 'EEXIST') throw err;
     }
-    
+
     // Write the utility file
     await writeFile(COOKIE_UTILITY_PATH, COOKIE_UTILITY_CONTENT);
     console.log(`✅ Created cookie handling utility at ${COOKIE_UTILITY_PATH}`);
-    
+
     // Log usage instructions
     console.log(`
 🔧 How to fix API routes:
@@ -323,4 +328,4 @@ This will fix all API routes consistently with proper cookie handling.
 }
 
 // Run the script
-createUtilityFile(); 
+createUtilityFile();

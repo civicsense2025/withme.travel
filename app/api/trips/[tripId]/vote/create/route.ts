@@ -33,7 +33,7 @@ export async function POST(
   }
 
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Parse request body
     const body = await request.json();

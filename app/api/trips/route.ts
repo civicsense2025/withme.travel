@@ -8,7 +8,7 @@ import { TRIP_ROLES } from '@/utils/constants/status';
 // Define table and field constants
 const TABLES = {
   TRIPS: 'trips',
-  TRIP_MEMBERS: 'trip_members'
+  TRIP_MEMBERS: 'trip_members',
 };
 
 const FIELDS = {
@@ -17,13 +17,13 @@ const FIELDS = {
     NAME: 'name',
     TITLE: 'title',
     DESCRIPTION: 'description',
-    CREATED_BY: 'created_by'
+    CREATED_BY: 'created_by',
   },
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
-    ROLE: 'role'
-  }
+    ROLE: 'role',
+  },
 };
 
 // Define TripRole type locally if not exported
@@ -56,17 +56,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const includeParam = searchParams?.get('include');
   const sortParam = searchParams?.get('sort') || 'updated_at';
   const orderParam = searchParams?.get('order') || 'desc';
-  
+
   // Parse query params
   const limit = limitParam ? parseInt(limitParam, 10) : 100;
   const skip = skipParam ? parseInt(skipParam, 10) : 0;
-  
+
   // Parse includes
   const includes: string[] = [];
   if (includeParam) {
     includes.push(...includeParam.split(','));
   }
-  
+
   // Choose what to include in the response
   let select = '*';
   if (includes.length > 0) {
@@ -74,47 +74,50 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (includes.includes('members')) {
       select += ', members:trip_members(*)';
     }
-    
+
     if (includes.includes('destination')) {
       select += ', destination:destinations(*)';
     }
   }
-  
+
   try {
     // Create Supabase client
     const supabase = await createApiRouteClient();
-    
+
     // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError) {
       console.error('Authentication error:', authError);
       return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
     }
-    
+
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-    
+
     // Get all trips where the user is a member
     const { data: memberships, error: membershipError } = await supabase
       .from(TABLES.TRIP_MEMBERS)
       .select('trip_id, role')
       .eq('user_id', user.id);
-    
+
     if (membershipError) {
       console.error('Error fetching memberships:', membershipError);
       return NextResponse.json({ error: 'Failed to fetch memberships' }, { status: 500 });
     }
-    
+
     // If no memberships, return empty array
     if (!memberships || memberships.length === 0) {
       return NextResponse.json({ data: [] });
     }
-    
+
     // Extract trip IDs from memberships
     const tripIds = memberships.map((m: any) => m.trip_id);
-    
+
     // Fetch all trips that user is a member of
     let query = supabase
       .from(TABLES.TRIPS)
@@ -122,30 +125,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .in('id', tripIds)
       .order(sortParam, { ascending: orderParam === 'asc' })
       .range(skip, skip + limit - 1);
-    
+
     const { data: trips, error: tripsError } = await query;
-    
+
     if (tripsError) {
       console.error('Error fetching trips:', tripsError);
       return NextResponse.json({ error: 'Failed to fetch trips' }, { status: 500 });
     }
-    
+
     // Add role from membership to each trip
     const tripsWithRole = (trips as any[]).map((trip: any) => {
       const membership = (memberships as any[]).find((m: any) => m.trip_id === trip.id);
       return {
         ...trip,
-        userRole: membership?.role
+        userRole: membership?.role,
       };
     });
-    
+
     return NextResponse.json({ data: tripsWithRole });
   } catch (error) {
     console.error('Error in GET /api/trips:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

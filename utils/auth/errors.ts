@@ -85,7 +85,7 @@ export class AuthError extends Error {
         status: error.status,
         name: error.name,
         code: error.code,
-  },
+      },
     });
   }
 
@@ -93,7 +93,7 @@ export class AuthError extends Error {
     return new AuthError(error.message, {
       code: 'auth/unknown',
       message: error.message,
-  });
+    });
   }
 }
 
@@ -197,7 +197,7 @@ export function handleAuthError(error: unknown): AuthError {
   }
   return new AuthError('An unknown error occurred', {
     code: 'auth/unknown',
-    message: 'An unknown error occurred'
+    message: 'An unknown error occurred',
   });
 }
 
@@ -218,7 +218,7 @@ export function createNetworkError(originalError?: unknown): AuthError {
 export function createSessionExpiredError(): AuthError {
   return createAuthError({
     code: 'auth/session-expired',
-    message: 'Session has expired'
+    message: 'Session has expired',
   });
 }
 
@@ -228,7 +228,7 @@ export function createSessionExpiredError(): AuthError {
 export function createInvalidCredentialsError(): AuthError {
   return createAuthError({
     code: 'auth/invalid-credential',
-    message: 'Invalid credentials provided'
+    message: 'Invalid credentials provided',
   });
 }
 

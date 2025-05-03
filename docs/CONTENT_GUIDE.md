@@ -74,6 +74,7 @@ WithMe.Travel is a collaborative platform for planning and organizing group trip
 #### Primary Colors
 
 - **Travel Purple** (hsl(260 100% 82%))
+
   - Foreground: hsl(260 100% 20%)
   - Used for primary buttons and key UI elements
 
@@ -84,12 +85,15 @@ WithMe.Travel is a collaborative platform for planning and organizing group trip
 #### Supporting Colors
 
 - **Travel Pink** (hsl(348 100% 86%))
+
   - Foreground: hsl(348 100% 20%)
 
 - **Travel Yellow** (hsl(48 100% 75%))
+
   - Foreground: hsl(48 100% 18%)
 
 - **Travel Mint** (hsl(160 100% 82%))
+
   - Foreground: hsl(160 100% 18%)
 
 - **Travel Peach** (hsl(30 100% 82%))
@@ -152,6 +156,7 @@ WithMe.Travel is a collaborative platform for planning and organizing group trip
 #### Spacing
 
 Following a 4px grid system:
+
 - 1: 4px
 - 2: 8px
 - 3: 12px

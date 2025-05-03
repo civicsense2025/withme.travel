@@ -27,7 +27,7 @@ export function TripPresence({ className = '', showActivityLabel = true }: TripP
   }
 
   const { activeUsers, connectionState, error, recoverPresence } = context;
-  
+
   // Ensure recoverPresence is safe to call, providing a no-op function if it doesn't exist
   const handleRecover = () => {
     if (typeof recoverPresence === 'function') {
@@ -46,12 +46,7 @@ export function TripPresence({ className = '', showActivityLabel = true }: TripP
       <div className={`flex items-center text-xs text-red-500 ${className}`}>
         <AlertTriangle className="h-3 w-3 mr-1" />
         <span>Connection error</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 ml-2 px-2"
-          onClick={handleRecover}
-        >
+        <Button variant="ghost" size="sm" className="h-6 ml-2 px-2" onClick={handleRecover}>
           <RefreshCw className="h-3 w-3 mr-1" />
           Reconnect
         </Button>
@@ -93,31 +88,37 @@ export function TripPresence({ className = '', showActivityLabel = true }: TripP
       <div className="flex -space-x-2">
         {onlineUsers.slice(0, 5).map((user) => (
           <div key={user.user_id} className="relative">
-            <div className={`h-6 w-6 rounded-full bg-muted flex items-center justify-center border-2 border-background ${
-              user.status === 'editing' ? 'ring-2 ring-primary' : ''
-            }`}>
+            <div
+              className={`h-6 w-6 rounded-full bg-muted flex items-center justify-center border-2 border-background ${
+                user.status === 'editing' ? 'ring-2 ring-primary' : ''
+              }`}
+            >
               {user.avatar_url ? (
-                <img 
-                  src={user.avatar_url} 
-                  alt={user.name || 'User'} 
+                <img
+                  src={user.avatar_url}
+                  alt={user.name || 'User'}
                   className="h-full w-full rounded-full object-cover"
                 />
               ) : (
-                <span className="text-xs">
-                  {(user.name || user.email || 'U').substring(0, 2)}
-                </span>
+                <span className="text-xs">{(user.name || user.email || 'U').substring(0, 2)}</span>
               )}
             </div>
-            
+
             {/* Status indicator */}
-            <div className={`absolute bottom-0 right-0 h-2 w-2 rounded-full ${
-              user.status === 'online' ? 'bg-green-500' : 
-              user.status === 'away' ? 'bg-yellow-500' : 
-              user.status === 'editing' ? 'bg-blue-500' : 'bg-gray-500'
-            }`} />
+            <div
+              className={`absolute bottom-0 right-0 h-2 w-2 rounded-full ${
+                user.status === 'online'
+                  ? 'bg-green-500'
+                  : user.status === 'away'
+                    ? 'bg-yellow-500'
+                    : user.status === 'editing'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-500'
+              }`}
+            />
           </div>
         ))}
-        
+
         {onlineUsers.length > 5 && (
           <div className="h-6 w-6 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-xs">
             +{onlineUsers.length - 5}

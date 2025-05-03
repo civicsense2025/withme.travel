@@ -16,11 +16,11 @@ const criticalFiles = [
   '.npmrc',
   'vercel.json',
   'next.config.mjs',
-  'tsconfig.json'
+  'tsconfig.json',
 ];
 
 console.log('\n====== CRITICAL FILES ======');
-criticalFiles.forEach(file => {
+criticalFiles.forEach((file) => {
   const exists = fs.existsSync(path.join(process.cwd(), file));
   console.log(`${file}: ${exists ? 'EXISTS' : 'MISSING'}`);
 });
@@ -49,4 +49,4 @@ if (packageJson.engines && packageJson.engines.node) {
 
 // Exit with success
 console.log('\n====== BUILD DEBUG COMPLETE ======');
-console.log('If you see this message, the debug script ran successfully.'); 
+console.log('If you see this message, the debug script ran successfully.');

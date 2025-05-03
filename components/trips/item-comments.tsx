@@ -62,7 +62,7 @@ export function ItemComments({
   const [commentText, setCommentText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  
+
   // Mock empty active users array (presence feature disabled)
   const activeUsers: {
     user_id: string;
@@ -92,7 +92,7 @@ export function ItemComments({
   useEffect(() => {
     const loadComments = async () => {
       if (!supabase) return;
-      
+
       try {
         setIsLoading(true);
 
@@ -129,7 +129,7 @@ export function ItemComments({
           likes_count: comment.likes ? comment.likes.length : 0,
           has_liked: comment.likes
             ? comment.likes.some((like: any) => like.user_id === user?.id)
-            : false
+            : false,
         }));
 
         setComments(processedComments);
@@ -203,7 +203,7 @@ export function ItemComments({
                 likes_count: comment.likes ? comment.likes.length : 0,
                 has_liked: comment.likes
                   ? comment.likes.some((like: any) => like.user_id === user?.id)
-                  : false
+                  : false,
               }));
 
               setComments(processedComments);
@@ -212,7 +212,7 @@ export function ItemComments({
       )
       .subscribe();
 
-    return () => { 
+    return () => {
       if (supabase) {
         supabase.removeChannel(subscription);
       }
@@ -306,7 +306,7 @@ export function ItemComments({
         .from('trip_item_comments')
         .update({
           content: commentText.trim(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', editingCommentId)
         .eq('user_id', user.id); // Ensure user can only edit their own comments
@@ -430,12 +430,7 @@ export function ItemComments({
                   placeholder="Edit your comment..."
                 />
                 <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={cancelEditing}
-                    disabled={isSending}
-                  >
+                  <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isSending}>
                     Cancel
                   </Button>
                   <Button

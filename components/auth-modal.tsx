@@ -13,7 +13,7 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [randomImageUrl, setRandomImageUrl] = useState<string | null>(null);
-  
+
   useEffect(() => {
     async function fetchRandomImage() {
       // Fetch only when the modal is open and we don't have an image yet
@@ -45,14 +45,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div className="grid grid-cols-1 md:grid-cols-2">
           <div className="bg-gradient-to-br from-teal-500/20 via-primary/20 to-purple-500/20 p-8">
             <h2 className="text-2xl font-bold mb-4">tired of messy group travel?</h2>
-            <p className="mb-8">we get it – coordinating trips with friends can be chaotic. let's fix that together.</p>
+            <p className="mb-8">
+              we get it – coordinating trips with friends can be chaotic. let's fix that together.
+            </p>
             <div className="space-y-6">
               <div className="flex items-start gap-3">
                 <ClipboardList className="h-6 w-6 text-primary mt-1" />
                 <div>
                   <h3 className="font-medium mb-1">no more spreadsheet chaos</h3>
                   <p className="text-sm text-muted-foreground">
-                    finally, a place to organize everything without endless excel tabs and google docs
+                    finally, a place to organize everything without endless excel tabs and google
+                    docs
                   </p>
                 </div>
               </div>

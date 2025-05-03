@@ -390,7 +390,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
                         upVoters: [],
                         downVoters: [],
                         userVote: null,
-                      }
+                      },
                     };
 
                     return (

@@ -98,7 +98,7 @@ export function TripFocusModeSection({
           }}
         >
           {isLoading ? (
-            <Skeleton className="h-12 w-full" /> 
+            <Skeleton className="h-12 w-full" />
           ) : (
             <ClientFocusMode tripId={tripId}>
               <div className="text-sm mt-2 text-muted-foreground">

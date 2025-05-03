@@ -94,7 +94,7 @@ const mockDestinations: Destination[] = [
     instagram_worthy_spots: 5,
     off_peak_appeal: 4,
     digital_nomad_friendly: 3,
-    state_province: null
+    state_province: null,
   },
   {
     id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', // Generated UUID
@@ -127,7 +127,7 @@ const mockDestinations: Destination[] = [
     instagram_worthy_spots: 5,
     off_peak_appeal: 4,
     digital_nomad_friendly: 4,
-    state_province: null
+    state_province: null,
   },
   {
     id: 'f0e9d8c7-b6a5-4321-fedc-ba9876543210', // Generated UUID
@@ -160,7 +160,7 @@ const mockDestinations: Destination[] = [
     instagram_worthy_spots: 5,
     off_peak_appeal: 4,
     digital_nomad_friendly: 3,
-    state_province: null
+    state_province: null,
   },
   {
     id: '12345678-90ab-cdef-1234-567890abcdef', // Generated UUID
@@ -193,7 +193,7 @@ const mockDestinations: Destination[] = [
     instagram_worthy_spots: 5,
     off_peak_appeal: 4,
     digital_nomad_friendly: 4,
-    state_province: 'NY' // Added state
+    state_province: 'NY', // Added state
   },
   {
     id: 'abcdef12-3456-7890-abcd-ef1234567890', // Generated UUID
@@ -226,7 +226,7 @@ const mockDestinations: Destination[] = [
     instagram_worthy_spots: 5,
     off_peak_appeal: 4,
     digital_nomad_friendly: 4,
-    state_province: null
+    state_province: null,
   },
   {
     id: 'fedcba98-7654-3210-fedc-ba9876543210', // Generated UUID
@@ -259,7 +259,7 @@ const mockDestinations: Destination[] = [
     instagram_worthy_spots: 5,
     off_peak_appeal: 4,
     digital_nomad_friendly: 4,
-    state_province: 'Catalonia'
+    state_province: 'Catalonia',
   },
   {
     id: 'aabbccdd-eeff-0011-2233-445566778899', // Generated UUID
@@ -569,15 +569,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const limit = parseInt(searchParams?.get('limit') || '10', 10);
     const page = parseInt(searchParams?.get('page') || '1', 10);
     const offset = (page - 1) * limit;
-    
+
     // Initialize variables
     let data: Destination[] = [];
     let count = 0;
-    
+
     // For demonstration, use mock data
     data = mockDestinations;
     count = data.length;
-    
+
     if (!data || data.length === 0) {
       return NextResponse.json({
         destinations: [],
@@ -585,9 +585,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           total: 0,
           page,
           limit,
-          totalPages: 0
+          totalPages: 0,
         },
-        message: 'No destinations found'
+        message: 'No destinations found',
       });
     }
 
@@ -601,13 +601,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           'North America': 6,
           'South America': 8,
           Africa: 8,
-          Oceania: 9
+          Oceania: 9,
         };
-        
+
         return {
           ...destination,
           avg_days: continentAvgDays[destination.continent] || 5,
-          travelers_count: Math.floor(destination.popularity * 50) + Math.floor(Math.random() * 500)
+          travelers_count:
+            Math.floor(destination.popularity * 50) + Math.floor(Math.random() * 500),
         };
       }
       return destination as ProcessedDestination;
@@ -619,15 +620,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         total: count || 0,
         page,
         limit,
-        totalPages: count ? Math.ceil(count / limit) : 0
-      }
+        totalPages: count ? Math.ceil(count / limit) : 0,
+      },
     });
   } catch (error: any) {
     console.error('Error in destinations API:', error);
     return NextResponse.json(
       {
         error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
       { status: 500 }
     );

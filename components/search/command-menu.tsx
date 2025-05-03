@@ -183,7 +183,7 @@ export function CommandMenu() {
           router.push('/login?redirect=/trips/create');
           toast({
             title: 'Login required',
-            description: 'Please log in to plan a trip'
+            description: 'Please log in to plan a trip',
           });
         } else {
           router.push('/trips/create');
@@ -196,7 +196,7 @@ export function CommandMenu() {
           router.push('/login?redirect=/trips');
           toast({
             title: 'Login required',
-            description: 'Please log in to view your trips'
+            description: 'Please log in to view your trips',
           });
         } else {
           router.push('/trips');

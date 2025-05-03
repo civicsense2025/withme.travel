@@ -1,5 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { ItineraryItem as DBItineraryItem, ItinerarySection as DBItinerarySection, Database } from '@/types/database.types';
+import {
+  ItineraryItem as DBItineraryItem,
+  ItinerarySection as DBItinerarySection,
+  Database,
+} from '@/types/database.types';
 import { DisplayItineraryItem, ItinerarySection } from '@/types/itinerary';
 import { ProcessedVotes } from '@/types/votes';
 import { Profile } from '@/types/profile';
@@ -122,77 +126,78 @@ async function parseGoogleMapsUrl(url: string) {
     // For testing purposes, return some mock data based on the provided Mexico City list
     // In a real implementation, this would make an HTTP request to fetch the data
     // or use Google Maps API to get details about the list
-    
+
     // Sample data for testing
     const mockMexicoCityPlaces = [
       {
-        title: "La Whiskeria",
-        item_type: "Nightlife",
-        notes: "Cocktail bar with rating 4.7 (1,580)",
-        place_name: "La Whiskeria",
-        address: "Mexico City",
-        google_place_id: "mock_id_1",
-        latitude: 19.4270,
+        title: 'La Whiskeria',
+        item_type: 'Nightlife',
+        notes: 'Cocktail bar with rating 4.7 (1,580)',
+        place_name: 'La Whiskeria',
+        address: 'Mexico City',
+        google_place_id: 'mock_id_1',
+        latitude: 19.427,
         longitude: -99.1676,
-        day_number: null
+        day_number: null,
       },
       {
-        title: "Le Tachinomi Desu",
-        item_type: "Food & Drink",
-        notes: "Japanese whiskey bar with eats. Rating 4.6 (304)",
-        place_name: "Le Tachinomi Desu",
-        address: "Rio Panuco 132-1a, Cuauhtémoc, 06500 Ciudad de México, CDMX, Mexico",
-        google_place_id: "mock_id_2",
+        title: 'Le Tachinomi Desu',
+        item_type: 'Food & Drink',
+        notes: 'Japanese whiskey bar with eats. Rating 4.6 (304)',
+        place_name: 'Le Tachinomi Desu',
+        address: 'Rio Panuco 132-1a, Cuauhtémoc, 06500 Ciudad de México, CDMX, Mexico',
+        google_place_id: 'mock_id_2',
         latitude: 19.4271,
         longitude: -99.1677,
-        day_number: null
+        day_number: null,
       },
       {
-        title: "Bar Mauro",
-        item_type: "Nightlife",
-        notes: "Cocktail bar with rating 4.8 (150)",
-        place_name: "Bar Mauro",
-        address: "Mexico City",
-        google_place_id: "mock_id_3",
+        title: 'Bar Mauro',
+        item_type: 'Nightlife',
+        notes: 'Cocktail bar with rating 4.8 (150)',
+        place_name: 'Bar Mauro',
+        address: 'Mexico City',
+        google_place_id: 'mock_id_3',
         latitude: 19.4272,
         longitude: -99.1678,
-        day_number: null
+        day_number: null,
       },
       {
-        title: "Dr Liceaga 180",
-        item_type: "Food & Drink",
-        notes: "Bar in Cuauhtémoc, Doctores",
-        place_name: "Dr Liceaga 180",
-        address: "Dr. José María Vertiz 171, Doctores, Cuauhtémoc, 06720 Ciudad de México, CDMX, Mexico",
-        google_place_id: "mock_id_4", 
+        title: 'Dr Liceaga 180',
+        item_type: 'Food & Drink',
+        notes: 'Bar in Cuauhtémoc, Doctores',
+        place_name: 'Dr Liceaga 180',
+        address:
+          'Dr. José María Vertiz 171, Doctores, Cuauhtémoc, 06720 Ciudad de México, CDMX, Mexico',
+        google_place_id: 'mock_id_4',
         latitude: 19.4273,
         longitude: -99.1679,
-        day_number: null
-      }
+        day_number: null,
+      },
     ];
-    
+
     // Use the sample data for the Mexico City test URL
     if (url.includes('FTVCvZ2Xm4PMvRQa8')) {
       return mockMexicoCityPlaces;
     }
-    
+
     // For any other URL, return a smaller default set
     return [
       {
-        title: "Example Place",
-        item_type: "Local Secrets",
-        notes: "Imported from Google Maps.",
-        place_name: "Example Place",
-        address: "Example Address",
-        google_place_id: "example_id",
+        title: 'Example Place',
+        item_type: 'Local Secrets',
+        notes: 'Imported from Google Maps.',
+        place_name: 'Example Place',
+        address: 'Example Address',
+        google_place_id: 'example_id',
         latitude: 0,
         longitude: 0,
-        day_number: null
-      }
+        day_number: null,
+      },
     ];
   } catch (error) {
-    console.error("Failed to parse Google Maps URL:", error);
-    throw new Error("Could not import places from the provided URL");
+    console.error('Failed to parse Google Maps URL:', error);
+    throw new Error('Could not import places from the provided URL');
   }
 }
 
@@ -203,7 +208,7 @@ export async function GET(
 ) {
   const { tripId } = await params;
   console.log(`[API Itinerary GET /trips/${tripId}] Received request`);
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   try {
     // UUID validation
@@ -292,7 +297,7 @@ export async function POST(
 ) {
   const { tripId } = await params;
   console.log(`[API Itinerary POST /trips/${tripId}] Received request`);
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   try {
     // Get the current user
@@ -300,7 +305,7 @@ export async function POST(
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       return formatErrorResponse(new ApiError('User not authenticated', 401));
     }
@@ -344,7 +349,7 @@ export async function POST(
       }
 
       return NextResponse.json({ data: newItem });
-    } 
+    }
     // Handle section creation
     else if (type === 'section') {
       const validatedData = createItinerarySectionSchema.parse(payload);
@@ -382,25 +387,26 @@ export async function POST(
     else if (type === 'google_maps_import') {
       // Check if we have items directly or need to parse a URL
       let itemsToProcess = [];
-      
+
       if (payload.items && Array.isArray(payload.items)) {
         // Direct import with provided items
         itemsToProcess = payload.items;
-      } 
-      else if (payload.url) {
+      } else if (payload.url) {
         // URL-based import - parse the URL to get places
         console.log(`Parsing Google Maps URL: ${payload.url}`);
         itemsToProcess = await parseGoogleMapsUrl(payload.url);
+      } else {
+        throw new ApiError(
+          'Either items array or URL must be provided for Google Maps import',
+          400
+        );
       }
-      else {
-        throw new ApiError('Either items array or URL must be provided for Google Maps import', 400);
-      }
-      
+
       // Validate the processed items
       if (!itemsToProcess.length) {
         throw new ApiError('No valid items found to import', 400);
       }
-      
+
       // Get the highest existing position for unscheduled items
       const { data: maxPositionData, error: positionError } = await supabase
         .from('itinerary_items')
@@ -410,31 +416,31 @@ export async function POST(
         .order('position', { ascending: false })
         .limit(1)
         .maybeSingle();
-      
+
       if (positionError) {
         throw new ApiError('Failed to determine item positions', 500, positionError);
       }
-      
+
       let nextPosition = (maxPositionData?.position ?? -1) + 1;
-      
+
       // Process and prepare items for insertion - handling both formats (old and new)
       const itemsToInsert = itemsToProcess.map((item: any, index: number) => {
         // Handle both title and name fields
         const title = item.title || item.name || 'Unnamed Place';
-        
-        // Handle both item_type and category fields 
+
+        // Handle both item_type and category fields
         const category = item.item_type || item.category || 'Local Secrets';
-        
+
         // Handle both notes and description fields
         const description = item.notes || item.description || `Imported from Google Maps`;
-        
+
         // Extract location data from either format
         let address = item.address;
         let latitude = item.latitude;
         let longitude = item.longitude;
         let placeId = item.google_place_id || item.place_id;
         let placeName = item.place_name;
-        
+
         // Also try to access location as a nested object
         if (item.location) {
           if (!address && item.location.address) address = item.location.address;
@@ -444,7 +450,7 @@ export async function POST(
           if (!longitude && item.location.lng) longitude = item.location.lng;
           if (!placeId && item.location.place_id) placeId = item.location.place_id;
         }
-        
+
         return {
           title: title,
           notes: description,
@@ -460,34 +466,39 @@ export async function POST(
           place_name: placeName || title,
           google_place_id: placeId,
           // Record creator
-          created_by: user.id
+          created_by: user.id,
         };
       });
-      
+
       console.log(`Inserting ${itemsToInsert.length} items from Google Maps import`);
-      
+
       // Insert all items
       const { data: insertedItems, error: insertError } = await supabase
         .from('itinerary_items')
         .insert(itemsToInsert)
         .select();
-      
+
       if (insertError) {
         console.error('Error inserting items:', insertError);
         throw new ApiError('Failed to create itinerary items from Google Maps', 500, insertError);
       }
-      
+
       // Return the inserted items
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
         message: `Successfully imported ${insertedItems.length} places`,
         data: insertedItems,
-        importedCount: insertedItems.length
+        importedCount: insertedItems.length,
       });
-    } 
+    }
     // Handle unknown type
     else {
-      return formatErrorResponse(new ApiError('Invalid type specified. Must be "item", "section", or "google_maps_import"', 400));
+      return formatErrorResponse(
+        new ApiError(
+          'Invalid type specified. Must be "item", "section", or "google_maps_import"',
+          400
+        )
+      );
     }
   } catch (error: any) {
     console.error('POST /api/trips/[tripId]/itinerary error:', error);

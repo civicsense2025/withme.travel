@@ -14,16 +14,16 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function getInitials(name: string): string {
   if (!name) return '';
-  
+
   const parts = name.trim().split(/\s+/);
-  
+
   if (parts.length === 0) return '';
-  
+
   // For single words, return first letter
   if (parts.length === 1) {
     return parts[0].charAt(0).toUpperCase();
   }
-  
+
   // For multiple words, return first letter of first and last words
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
@@ -75,14 +75,14 @@ export function getColorClassFromId(id: string): string {
     'bg-indigo-100 text-indigo-800',
     'bg-gray-100 text-gray-800',
   ];
-  
+
   // Simple hash function to generate a number from the ID
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash) + id.charCodeAt(i);
+    hash = (hash << 5) - hash + id.charCodeAt(i);
     hash = hash & hash; // Convert to 32bit integer
   }
-  
+
   // Get positive value and select a color
   const index = Math.abs(hash) % colorClasses.length;
   return colorClasses[index];
@@ -103,7 +103,7 @@ export function safeJsonParse<T>(json: string, fallback: T): T {
  * Wait for a specified number of milliseconds
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -118,7 +118,9 @@ export function truncateText(text: string, maxLength: number): string {
  * Generate a random string ID
  */
 export function generateId(length = 8): string {
-  return Math.random().toString(36).substring(2, 2 + length);
+  return Math.random()
+    .toString(36)
+    .substring(2, 2 + length);
 }
 
 /**
@@ -189,14 +191,14 @@ export function slugify(text: string): string {
  */
 export function formatUrl(url: string): string {
   if (!url) return '';
-  
+
   try {
     // Remove protocol
     const withoutProtocol = url.replace(/^https?:\/\//, '');
-    
+
     // Remove www if present
     const withoutWww = withoutProtocol.replace(/^www\./, '');
-    
+
     // Truncate if too long
     return truncateString(withoutWww, 30);
   } catch (e) {
@@ -208,7 +210,12 @@ export function formatUrl(url: string): string {
  * Creates a random hexadecimal color
  */
 export function randomColor(): string {
-  return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+  return (
+    '#' +
+    Math.floor(Math.random() * 16777215)
+      .toString(16)
+      .padStart(6, '0')
+  );
 }
 
 export default {

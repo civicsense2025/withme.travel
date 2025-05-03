@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string; pollId: string }> }
 ) {
   const { tripId, pollId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   // Validate IDs
   if (!tripId || !/^\d+$/.test(tripId)) {
@@ -155,6 +155,6 @@ export async function DELETE(
   { params }: { params: Promise<{ tripId: string; pollId: string }> }
 ) {
   const { tripId, pollId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
   // ... rest of DELETE handler ...
 }

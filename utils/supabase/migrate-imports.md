@@ -15,6 +15,7 @@ We've updated our authentication system to be compatible with both App Router an
 ### 1. Client Components (browser environment)
 
 **Before:**
+
 ```tsx
 import { getBrowserClient } from '@/utils/supabase/unified';
 // or
@@ -26,6 +27,7 @@ const supabase = createClient();
 ```
 
 **After:**
+
 ```tsx
 import { getBrowserClient } from '@/utils/supabase/unified';
 
@@ -35,6 +37,7 @@ const supabase = getBrowserClient();
 ### 2. Server Components (App Router)
 
 **Before:**
+
 ```tsx
 import { createServerComponentClient } from '@/utils/supabase/server';
 // or
@@ -44,6 +47,7 @@ const supabase = createServerComponentClient();
 ```
 
 **After:**
+
 ```tsx
 import { createServerComponentClient } from '@/utils/supabase/unified';
 
@@ -53,6 +57,7 @@ const supabase = createServerComponentClient();
 ### 3. API Routes (App Router)
 
 **Before:**
+
 ```tsx
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 
@@ -60,6 +65,7 @@ const supabase = createRouteHandlerClient();
 ```
 
 **After:**
+
 ```tsx
 import { createServerComponentClient } from '@/utils/supabase/unified';
 
@@ -70,6 +76,7 @@ const supabase = createServerComponentClient();
 ### 4. getServerSideProps (Pages Router)
 
 **Before:**
+
 ```tsx
 import { getSupabaseServerClient } from '@/utils/supabase/server';
 
@@ -80,6 +87,7 @@ export const getServerSideProps = async ({ req, res }) => {
 ```
 
 **After:**
+
 ```tsx
 import { getPagesServerClient } from '@/utils/supabase/unified';
 
@@ -92,6 +100,7 @@ export const getServerSideProps = async ({ req, res }) => {
 ### 5. Middleware
 
 **Before:**
+
 ```tsx
 import { createMiddlewareClient } from '@/utils/supabase/server';
 
@@ -99,6 +108,7 @@ const supabase = createMiddlewareClient(req);
 ```
 
 **After:**
+
 ```tsx
 import { getMiddlewareClient } from '@/utils/supabase/unified';
 
@@ -108,17 +118,23 @@ const supabase = getMiddlewareClient(req);
 ### 6. Getting Session Data
 
 **Before:**
+
 ```tsx
 import { getServerSession } from '@/utils/supabase/server';
 
-const { data: { session } } = await getServerSession();
+const {
+  data: { session },
+} = await getServerSession();
 ```
 
 **After:**
+
 ```tsx
 import { getServerSession } from '@/utils/supabase/unified';
 
-const { data: { session } } = await getServerSession();
+const {
+  data: { session },
+} = await getServerSession();
 ```
 
 ## Important Notes
@@ -140,4 +156,4 @@ This can happen when cookie access is not properly set up. Ensure you're using t
 
 ### Other Issues
 
-If you encounter any other issues during migration, please refer to the authentication documentation or open an issue on our internal tracker. 
+If you encounter any other issues during migration, please refer to the authentication documentation or open an issue on our internal tracker.

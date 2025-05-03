@@ -7,7 +7,7 @@ export async function register() {
     Sentry.init({
       dsn: 'https://efb9aa4872bbee4986ef082f4e83352a@o4509229605126144.ingest.us.sentry.io/4509229605912576',
       tracesSampleRate: 1,
-      debug: false
+      debug: false,
     });
   }
 
@@ -16,7 +16,7 @@ export async function register() {
     Sentry.init({
       dsn: 'https://efb9aa4872bbee4986ef082f4e83352a@o4509229605126144.ingest.us.sentry.io/4509229605912576',
       tracesSampleRate: 1,
-      debug: false
+      debug: false,
     });
   }
 

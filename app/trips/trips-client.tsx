@@ -81,7 +81,7 @@ export default function TripsClientPage({
       privacy_setting: trip.privacy_setting ?? undefined,
       description: trip.description ?? undefined,
       role: role as TripRole | null,
-      memberSince: joined_at ?? undefined
+      memberSince: joined_at ?? undefined,
     }));
 
     // Type the array
@@ -117,10 +117,7 @@ export default function TripsClientPage({
         fallback={
           <div className="my-8 text-center">
             <p className="text-destructive">Failed to load trips.</p>
-            <Button
-              className="mt-4"
-              onClick={() => setRefreshKey((k) => k + 1)}
-            >
+            <Button className="mt-4" onClick={() => setRefreshKey((k) => k + 1)}>
               Refresh
             </Button>
           </div>

@@ -158,10 +158,10 @@ function random(min: number, max: number): number {
 function getRandomKeyword(excludeList: string[] = []): string {
   // Combine all keyword categories
   const allKeywords = [...TRAVEL_KEYWORDS, ...LANDMARK_KEYWORDS, ...NATURE_KEYWORDS];
-  
+
   // Filter out any keywords in the exclude list
   const availableKeywords = allKeywords.filter((keyword) => !excludeList.includes(keyword));
-  
+
   // Select a random keyword
   const randomIndex = random(0, availableKeywords.length - 1);
   return availableKeywords[randomIndex];
@@ -227,20 +227,20 @@ export async function findCityImage(city: string, country: string) {
     // Try each query in order until we find a good image
     for (const query of queries) {
       logger.log(`Attempting Pexels search with query: "${query}"`);
-      
+
       try {
         const { photos, success } = await searchPexels(query, 5);
-        
+
         if (!success || !photos || photos.length === 0) {
           logger.warning(`No results for: ${query}`);
           continue;
         }
-        
+
         // Get a random photo from the results
         const randomIndex = Math.floor(Math.random() * photos.length);
         const photo = photos[randomIndex];
         logger.success(`Found Pexels image using query: "${query}"`);
-        
+
         return {
           url: photo.src.large,
           success: true,
@@ -249,7 +249,7 @@ export async function findCityImage(city: string, country: string) {
         logger.warning(`Error: ${(error as Error).message}`);
       }
     }
-    
+
     // If all queries fail, return null
     logger.warning(`No Pexels results for query: "${city}"`);
     return { url: null, success: false, error: 'No images found' };
@@ -305,12 +305,12 @@ export async function getRandomDestinationImage(
       if (photos.length > 0) {
         const randomIndex = random(0, Math.min(photos.length - 1, 9)); // Pick from top 10 results
         logger.success(`Found Pexels image using query: "${query}"`);
-        
+
         const photo = photos[randomIndex];
-        
+
         // Create the proper attribution HTML
         const attributionHtml = `Photo by <a href="${photo.photographer_url}" target="_blank" rel="noopener noreferrer">${photo.photographer}</a> on <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a>`;
-        
+
         return {
           success: true,
           image: {
@@ -327,16 +327,15 @@ export async function getRandomDestinationImage(
           },
         };
       }
-      
+
       logger.warning(`No Pexels results for query: "${query}"`);
     }
-    
+
     // If we get here, we didn't find any images with any of our queries
     return {
       success: false,
-      error: `Could not find any suitable Pexels image for ${city}, ${country} after trying multiple random queries.`
+      error: `Could not find any suitable Pexels image for ${city}, ${country} after trying multiple random queries.`,
     };
-    
   } catch (error) {
     return {
       success: false,

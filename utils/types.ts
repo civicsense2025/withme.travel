@@ -2,10 +2,10 @@
 // TODO: Once the imports from database.ts and status.ts are fixed, switch back to importing them
 export type TripRole = 'admin' | 'editor' | 'contributor' | 'viewer';
 export type ItemStatus = 'suggested' | 'confirmed' | 'canceled' | 'flexible' | 'rejected';
-export type ItineraryCategory = 
-  | 'Iconic Landmarks' 
-  | 'Local Secrets' 
-  | 'Cultural Experiences' 
+export type ItineraryCategory =
+  | 'Iconic Landmarks'
+  | 'Local Secrets'
+  | 'Cultural Experiences'
   | 'Outdoor Adventures'
   | 'Food & Drink'
   | 'Nightlife'

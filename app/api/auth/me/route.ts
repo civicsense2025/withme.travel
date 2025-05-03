@@ -11,7 +11,7 @@ import type { Database } from '@/types/database.types';
  *
  * Returns the current authenticated user with profile data
  */
-export async function GET(request: NextRequest) : Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const responseHeaders = new Headers({
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) : Promise<NextResponse> {
   try {
     // Create Supabase client using the unified helper
     // const cookieStore = await cookies();
-    const supabase = await createRouteHandlerClient(); // Simplified client creation
+    const supabase = createRouteHandlerClient(); // Simplified client creation
 
     // Fetch user data
     const {

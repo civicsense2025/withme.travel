@@ -38,15 +38,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       'user_session',
       'is_authenticated',
     ];
-    
+
     // Create response for cookie clearing
-    const response = NextResponse.json({
-      success: true,
-      message: "You're now logged out. Your session has been cleared.",
-      details: {
-        cookies_cleared: cookiesToClear
-      }
-    }, { status: 200 });
+    const response = NextResponse.json(
+      {
+        success: true,
+        message: "You're now logged out. Your session has been cleared.",
+        details: {
+          cookies_cleared: cookiesToClear,
+        },
+      },
+      { status: 200 }
+    );
 
     // Set headers to prevent caching
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -67,9 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     });
 
-    console.log(
-      `API Clear Cookies: Cleared ${cookiesToClear.length} cookies`
-    );
+    console.log(`API Clear Cookies: Cleared ${cookiesToClear.length} cookies`);
 
     return response;
   } catch (error) {

@@ -182,7 +182,7 @@ export function useTripMutations(tripId: string) {
       if (!tripData?.sections) {
         throw new Error('Trip sections data is not available');
       }
-      
+
       const sectionIndex = tripData.sections.findIndex((s) => s.id === sectionId);
       if (sectionIndex === -1) {
         throw new Error('Section not found');
@@ -260,7 +260,7 @@ export function useTripMutations(tripId: string) {
       if (!tripData?.sections) {
         throw new Error('Trip sections data is not available');
       }
-      
+
       const sectionIndex = tripData.sections.findIndex((s) => s.id === sectionId);
       if (sectionIndex === -1) {
         throw new Error('Section not found');
@@ -401,7 +401,7 @@ export function useTripMutations(tripId: string) {
       if (!tripData) {
         throw new Error('Trip data not available');
       }
-      
+
       const itemIndex = tripData.items.findIndex((i) => i.id === itemId);
       if (itemIndex === -1) {
         throw new Error('Item not found');
@@ -481,7 +481,7 @@ export function useTripMutations(tripId: string) {
       if (!tripData) {
         throw new Error('Trip data not available');
       }
-      
+
       const itemIndex = tripData.items.findIndex((i) => i.id === itemId);
       if (itemIndex === -1) {
         throw new Error('Item not found');

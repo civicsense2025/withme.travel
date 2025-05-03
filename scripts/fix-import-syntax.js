@@ -27,7 +27,7 @@ const FILES_WITH_ISSUES = [
   'components/Todo.tsx',
   'components/trip-overview-tab.tsx',
   'types/itinerary.ts',
-  'types/trip.ts'
+  'types/trip.ts',
 ];
 
 // Fix import statement in a file
@@ -44,7 +44,8 @@ function fixImportSyntax(filePath) {
     }
 
     // Fix 2: Malformed imports with type keywords
-    const typeImportRegex = /import\s+{\s*type\s+(\w+)(?:\s*,\s*type\s+(\w+))*\s*}\s+from\s+['"][^'"]*['"]/g;
+    const typeImportRegex =
+      /import\s+{\s*type\s+(\w+)(?:\s*,\s*type\s+(\w+))*\s*}\s+from\s+['"][^'"]*['"]/g;
     let match;
     while ((match = typeImportRegex.exec(content)) !== null) {
       // This could be a valid import, no need to fix
@@ -52,39 +53,43 @@ function fixImportSyntax(filePath) {
 
     // Fix 3: Fix broken imports with multiple statements
     if (updated.match(/import\s+{\s*[^}]*\s*}\s*\n\s*}\s+from/)) {
-      updated = updated.replace(/import\s+{\s*([^}]*)\s*}\s*\n\s*}\s+from\s+['"]([^'"]*)['"]/g, (match, importList, source) => {
-        // Find the matching opening bracket
-        const openingBracketIndex = match.lastIndexOf('{', match.indexOf('}'));
-        if (openingBracketIndex !== -1) {
-          // Reconstruct the import statement
-          return `import { ${importList} } from "${source}"`;
+      updated = updated.replace(
+        /import\s+{\s*([^}]*)\s*}\s*\n\s*}\s+from\s+['"]([^'"]*)['"]/g,
+        (match, importList, source) => {
+          // Find the matching opening bracket
+          const openingBracketIndex = match.lastIndexOf('{', match.indexOf('}'));
+          if (openingBracketIndex !== -1) {
+            // Reconstruct the import statement
+            return `import { ${importList} } from "${source}"`;
+          }
+          return match; // If we can't find it, leave as is
         }
-        return match; // If we can't find it, leave as is
-      });
+      );
       hasChanges = true;
     }
 
     // Fix 4: Fix doubled import statements
     const importRegex = /import\s+{([^}]*)}\s+from\s+['"]([^'"]*)['"]/g;
     const imports = {};
-    
+
     let importMatch;
     while ((importMatch = importRegex.exec(updated)) !== null) {
       const importList = importMatch[1].trim();
       const source = importMatch[2];
-      
+
       if (!imports[source]) {
         imports[source] = [];
       }
-      
+
       // Split and clean the import list
-      const items = importList.split(',')
-        .map(i => i.trim())
-        .filter(i => i && i !== ',');
-      
+      const items = importList
+        .split(',')
+        .map((i) => i.trim())
+        .filter((i) => i && i !== ',');
+
       imports[source].push(...items);
     }
-    
+
     // If we have multiple imports from the same source, combine them
     let combinedImports = '';
     for (const source in imports) {
@@ -92,17 +97,17 @@ function fixImportSyntax(filePath) {
       const uniqueImports = [...new Set(imports[source])];
       combinedImports += `import { ${uniqueImports.join(', ')} } from '${source}';\n`;
     }
-    
+
     // Replace all imports with our combined version
     if (Object.keys(imports).length > 0) {
       // Remove all existing imports
       updated = updated.replace(/import\s+{([^}]*)}\s+from\s+['"]([^'"]*)['"]/g, '');
-      
+
       // Add our cleaned combined imports at the top
       updated = combinedImports + updated;
       hasChanges = true;
     }
-    
+
     // Remove duplicate lines
     const lines = updated.split('\n');
     const uniqueLines = [];
@@ -131,7 +136,7 @@ function fixImportSyntax(filePath) {
 // Main function
 async function main() {
   let fixedCount = 0;
-  
+
   // Fix known files with issues first
   for (const filePath of FILES_WITH_ISSUES) {
     const fullPath = path.join(ROOT_DIR, filePath);
@@ -142,7 +147,7 @@ async function main() {
       console.warn(`⚠️ File not found: ${filePath}`);
     }
   }
-  
+
   // Also scan all TypeScript/TSX files for similar issues
   const tsFiles = await glob('**/*.{ts,tsx}', {
     cwd: ROOT_DIR,
@@ -152,25 +157,27 @@ async function main() {
       'build/**',
       '.next/**',
       'scripts/**',
-      ...FILES_WITH_ISSUES // Skip already fixed files
-    ]
+      ...FILES_WITH_ISSUES, // Skip already fixed files
+    ],
   });
-  
+
   for (const file of tsFiles) {
     const fullPath = path.join(ROOT_DIR, file);
     const content = fs.readFileSync(fullPath, 'utf8');
-    
+
     // Only process files that might have import issues
-    if (content.includes('import { , }') || 
-        content.match(/import\s+{\s*[^}]*\s*}\s*\n\s*}\s+from/) ||
-        content.includes('type TripRole') ||
-        content.includes('type ItemStatus')) {
+    if (
+      content.includes('import { , }') ||
+      content.match(/import\s+{\s*[^}]*\s*}\s*\n\s*}\s+from/) ||
+      content.includes('type TripRole') ||
+      content.includes('type ItemStatus')
+    ) {
       const fixed = fixImportSyntax(fullPath);
       if (fixed) fixedCount++;
     }
   }
-  
+
   console.log(`\n🎉 Done! Fixed import syntax in ${fixedCount} files.`);
 }
 
-main().catch(console.error); 
+main().catch(console.error);

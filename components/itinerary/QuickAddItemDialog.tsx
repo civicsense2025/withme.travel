@@ -103,7 +103,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
       category: defaultCategory || '',
       url: '',
       location: '',
-  },
+    },
   });
 
   // Update form values when defaultCategory changes
@@ -123,7 +123,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
         category: defaultCategory || form.getValues('category') || '',
         url: '',
         location: '',
-  });
+      });
     }
   }, [isOpen, form, defaultCategory]);
 
@@ -143,7 +143,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
         title: 'Missing Info',
         description: 'Please select an item type.',
         variant: 'destructive',
-  });
+      });
       return;
     }
 
@@ -163,7 +163,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
             mapbox_id: geocoderResult.id,
             latitude: geocoderResult.geometry?.coordinates[1],
             longitude: geocoderResult.geometry?.coordinates[0],
-  }
+          }
         : {}),
       day_number: null, // Unscheduled item
     };
@@ -208,7 +208,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
         title: 'Failed to Add',
         description: typeof error === 'string' ? error : error.message || 'An error occurred',
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsLoading(false);
     }
@@ -322,7 +322,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
                 options={{
                   placeholder: 'Search for a place...',
                   marker: false,
-  }}
+                }}
               />
             </Suspense>
           </div>

@@ -105,7 +105,7 @@ export function EventUrlInput({ tripId, userId, onEventAdded, dayNumber }: Event
         cover_image_url: scrapedData.imageUrl || null,
         day_number: dayNumber || null,
         canonical_url: scrapedData.scrapedUrl,
-  };
+      };
 
       // Send request to add item to itinerary
       const response = await fetch(`/api/trips/${tripId}/itinerary`, {
@@ -133,7 +133,7 @@ export function EventUrlInput({ tripId, userId, onEventAdded, dayNumber }: Event
       // Show success message
       toast({
         title: 'Event Added',
-        description: 'The event has been added to your itinerary.'
+        description: 'The event has been added to your itinerary.',
       });
     } catch (err) {
       console.error('Error adding event:', err);
@@ -143,7 +143,7 @@ export function EventUrlInput({ tripId, userId, onEventAdded, dayNumber }: Event
         title: 'Error Adding Event',
         description: err instanceof Error ? err.message : 'Failed to add event to itinerary',
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsSaving(false);
     }

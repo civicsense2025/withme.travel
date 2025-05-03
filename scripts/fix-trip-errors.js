@@ -3,7 +3,7 @@
 /**
  * Comprehensive script to fix TypeScript errors in trip API routes:
  * 1. Fix database constants imports (TABLES, FIELDS, ENUMS)
- * 2. Fix async cookie handlers 
+ * 2. Fix async cookie handlers
  * 3. Fix route parameter handling for Next.js 15
  */
 
@@ -28,11 +28,11 @@ function writeFile(filePath, content) {
 // Fix database constants imports
 function fixDatabaseImports(fileContent) {
   let updatedContent = fileContent;
-  
+
   // First find the existing imports
-  const hasDbTablesImport = updatedContent.includes("import { DB_TABLES");
-  const hasTablesImport = updatedContent.includes("import { TABLES");
-  
+  const hasDbTablesImport = updatedContent.includes('import { DB_TABLES');
+  const hasTablesImport = updatedContent.includes('import { TABLES');
+
   // If neither is imported, add the import
   if (!hasDbTablesImport && !hasTablesImport) {
     // Add import after the last import statement
@@ -40,32 +40,32 @@ function fixDatabaseImports(fileContent) {
     if (lastImportIndex !== -1) {
       const endOfImportIndex = updatedContent.indexOf('\n', lastImportIndex);
       if (endOfImportIndex !== -1) {
-        updatedContent = 
-          updatedContent.substring(0, endOfImportIndex + 1) + 
-          "import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';\n" + 
+        updatedContent =
+          updatedContent.substring(0, endOfImportIndex + 1) +
+          "import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';\n" +
           updatedContent.substring(endOfImportIndex + 1);
       }
     }
   }
-  
+
   // Replace DB_ constants with regular ones
   updatedContent = updatedContent.replace(/DB_TABLES/g, 'TABLES');
   updatedContent = updatedContent.replace(/DB_FIELDS/g, 'FIELDS');
   updatedContent = updatedContent.replace(/DB_ENUMS/g, 'ENUMS');
-  
+
   // Fix import statements
   updatedContent = updatedContent.replace(
     /import\s+{\s*(?:(?:DB_TABLES|DB_FIELDS|DB_ENUMS|DB_RELATIONSHIPS)(?:\s*,\s*)?)+\s*}\s*from\s+['"]@\/utils\/constants(?:\/database)?['"];?/g,
     "import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';"
   );
-  
+
   // Add CookieOptions import if needed
   if (updatedContent.includes('CookieOptions') && !updatedContent.includes('type CookieOptions')) {
     updatedContent = updatedContent.replace(
       /import\s+{\s*createServerClient(?:\s*,\s*)?(?:type\s+CookieOptions)?(?:\s*,\s*)?}\s*from\s+['"]@\/supabase\/ssr['"];?/g,
       "import { createServerClient, type CookieOptions } from '@supabase/ssr';"
     );
-    
+
     // If the import wasn't replaced, add it
     if (!updatedContent.includes('type CookieOptions')) {
       updatedContent = updatedContent.replace(
@@ -74,20 +74,20 @@ function fixDatabaseImports(fileContent) {
       );
     }
   }
-  
+
   // Add date-fns imports if needed
   if (
-    (updatedContent.includes('parseISO') || 
-     updatedContent.includes('isBefore') || 
-     updatedContent.includes('differenceInCalendarDays')) && 
-    !updatedContent.includes("import { isBefore, parseISO")
+    (updatedContent.includes('parseISO') ||
+      updatedContent.includes('isBefore') ||
+      updatedContent.includes('differenceInCalendarDays')) &&
+    !updatedContent.includes('import { isBefore, parseISO')
   ) {
     updatedContent = updatedContent.replace(
       /import\s+{\s*z\s*}/g,
       "import { z } from 'zod';\nimport { isBefore, parseISO, differenceInCalendarDays } from 'date-fns'"
     );
   }
-  
+
   return updatedContent;
 }
 
@@ -98,16 +98,16 @@ function fixAsyncCookieHandlers(fileContent) {
     /set\(name: string, value: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await/g,
     'async set(name: string, value: string, options: CookieOptions) {\n            try {\n              await'
   );
-  
+
   // Remove duplicate async keywords
   updatedContent = updatedContent.replace(/async\s+async\s+/g, 'async ');
-  
+
   // Add async to remove() cookie handlers if they contain await
   updatedContent = updatedContent.replace(
     /remove\(name: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await/g,
     'async remove(name: string, options: CookieOptions) {\n            try {\n              await'
   );
-  
+
   return updatedContent;
 }
 
@@ -115,16 +115,16 @@ function fixAsyncCookieHandlers(fileContent) {
 function fixRouteParams(fileContent) {
   // Fix parameter types in exports
   let updatedContent = fileContent.replace(
-    /export\s+async\s+function\s+(GET|POST|PUT|PATCH|DELETE)\s*\(\s*([^,)]+)\s*,\s*\{\s*params\s*\}\s*:\s*\{\s*params\s*:\s*(?!Promise<)(\{[^}]*\})\s*\}\s*\)/g, 
+    /export\s+async\s+function\s+(GET|POST|PUT|PATCH|DELETE)\s*\(\s*([^,)]+)\s*,\s*\{\s*params\s*\}\s*:\s*\{\s*params\s*:\s*(?!Promise<)(\{[^}]*\})\s*\}\s*\)/g,
     'export async function $1($2, { params }: { params: Promise<$3> })'
   );
-  
+
   // Fix parameter access to use await
   updatedContent = updatedContent.replace(
     /const\s+\{([^}]+)\}\s*=\s*params;(?!\s*\/\/\s*already\s*awaited)/g,
     'const {$1} = await params; // Ensure params are awaited'
   );
-  
+
   return updatedContent;
 }
 
@@ -134,12 +134,12 @@ function processFile(filePath) {
     console.log(`Processing ${filePath}...`);
     let content = readFile(filePath);
     let updatedContent = content;
-    
+
     // Apply fixes in sequence
     updatedContent = fixDatabaseImports(updatedContent);
     updatedContent = fixAsyncCookieHandlers(updatedContent);
     updatedContent = fixRouteParams(updatedContent);
-    
+
     // Only write the file if changes were made
     if (content !== updatedContent) {
       writeFile(filePath, updatedContent);
@@ -167,4 +167,4 @@ for (const file of tripApiRoutes) {
   if (fixed) fixedCount++;
 }
 
-console.log(`\n🎉 Done! Fixed ${fixedCount} trip API route files.`); 
+console.log(`\n🎉 Done! Fixed ${fixedCount} trip API route files.`);

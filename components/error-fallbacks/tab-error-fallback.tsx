@@ -26,11 +26,11 @@ export function TabErrorFallback({
   useEffect(() => {
     // Report error to Sentry
     Sentry.captureException(error, {
-    tags: {
-      section,
-      tripId,
-    },
-  });
+      tags: {
+        section,
+        tripId,
+      },
+    });
   }, [error, section, tripId]);
 
   return (

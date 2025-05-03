@@ -30,43 +30,43 @@ export async function parseGoogleMapsList(url: string): Promise<ParsedGoogleMaps
   try {
     // This is a mock implementation
     // In a real implementation, we would make a request to the URL and parse the HTML
-    
+
     // For now, return a success with mock data
     return {
       success: true,
-      listTitle: "Sample Google Maps List",
+      listTitle: 'Sample Google Maps List',
       places: [
         {
-          title: "Example Restaurant",
-          address: "123 Main St, City, Country",
+          title: 'Example Restaurant',
+          address: '123 Main St, City, Country',
           rating: 4.5,
           reviews: 100,
-          category: "Restaurant",
-          description: "A great place to eat",
-          website: "https://example.com",
-          phone: "+1 123-456-7890",
-          placeId: "ChIJN1t_tDeuEmsRUsoyG83frY4",
+          category: 'Restaurant',
+          description: 'A great place to eat',
+          website: 'https://example.com',
+          phone: '+1 123-456-7890',
+          placeId: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
           latitude: 37.7749,
-          longitude: -122.4194
+          longitude: -122.4194,
         },
         {
-          title: "Example Attraction",
-          address: "456 Park Ave, City, Country",
+          title: 'Example Attraction',
+          address: '456 Park Ave, City, Country',
           rating: 4.8,
           reviews: 250,
-          category: "Tourist Attraction",
-          description: "A must-see attraction",
-          placeId: "ChIJP3Sa8ziYEmsRUKgyFmh9AQM",
+          category: 'Tourist Attraction',
+          description: 'A must-see attraction',
+          placeId: 'ChIJP3Sa8ziYEmsRUKgyFmh9AQM',
           latitude: 37.7694,
-          longitude: -122.4862
-        }
-      ]
+          longitude: -122.4862,
+        },
+      ],
     };
   } catch (error: any) {
     return {
       success: false,
       places: [],
-      error: `Failed to parse Google Maps list: ${error.message}`
+      error: `Failed to parse Google Maps list: ${error.message}`,
     };
   }
 }
@@ -87,7 +87,10 @@ function extractPlacesFromHtml(html: string): PlaceData[] {
 /**
  * Converts place data to itinerary items format
  */
-export function convertToItineraryItems(places: PlaceData[], tripId: string): Partial<ItineraryItem>[] {
+export function convertToItineraryItems(
+  places: PlaceData[],
+  tripId: string
+): Partial<ItineraryItem>[] {
   return places.map((place, index) => {
     return {
       title: place.title,
@@ -95,10 +98,12 @@ export function convertToItineraryItems(places: PlaceData[], tripId: string): Pa
       location: place.address,
       latitude: place.latitude || undefined,
       longitude: place.longitude || undefined,
-      url: place.placeId ? `https://www.google.com/maps/place/?q=place_id:${place.placeId}` : undefined,
+      url: place.placeId
+        ? `https://www.google.com/maps/place/?q=place_id:${place.placeId}`
+        : undefined,
       category: getCategoryFromPlace(place),
       position: index,
-      trip_id: tripId
+      trip_id: tripId,
     };
   });
 }
@@ -109,28 +114,41 @@ export function convertToItineraryItems(places: PlaceData[], tripId: string): Pa
  */
 function getCategoryFromPlace(place: PlaceData): string {
   if (!place.category) return 'attraction';
-  
+
   const category = place.category.toLowerCase();
-  
-  if (category.includes('restaurant') || category.includes('café') || 
-      category.includes('cafe') || category.includes('food')) {
+
+  if (
+    category.includes('restaurant') ||
+    category.includes('café') ||
+    category.includes('cafe') ||
+    category.includes('food')
+  ) {
     return 'restaurant';
   }
-  
-  if (category.includes('hotel') || category.includes('lodging') || 
-      category.includes('accommodation')) {
+
+  if (
+    category.includes('hotel') ||
+    category.includes('lodging') ||
+    category.includes('accommodation')
+  ) {
     return 'accommodation';
   }
-  
-  if (category.includes('airport') || category.includes('station') || 
-      category.includes('transportation')) {
+
+  if (
+    category.includes('airport') ||
+    category.includes('station') ||
+    category.includes('transportation')
+  ) {
     return 'transportation';
   }
-  
-  if (category.includes('museum') || category.includes('attraction') || 
-      category.includes('landmark')) {
+
+  if (
+    category.includes('museum') ||
+    category.includes('attraction') ||
+    category.includes('landmark')
+  ) {
     return 'attraction';
   }
-  
+
   return 'activity';
-} 
+}

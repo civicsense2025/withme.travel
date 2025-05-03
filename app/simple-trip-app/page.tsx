@@ -39,7 +39,7 @@ export default function SimpleTripsPage() {
 
         // Get current user
         const { data: userData, error: userError } = await supabase.auth.getUser();
-        
+
         if (userError || !userData.user) {
           throw new Error('You must be logged in to view your trips');
         }
@@ -137,4 +137,4 @@ export default function SimpleTripsPage() {
       )}
     </div>
   );
-} 
+}

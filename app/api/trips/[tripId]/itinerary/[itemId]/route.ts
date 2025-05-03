@@ -34,14 +34,14 @@ const FIELDS = {
   TRIP_MEMBERS: {
     ROLE: 'role',
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   TRIPS: {
-    PRIVACY_SETTING: 'privacy_setting'
+    PRIVACY_SETTING: 'privacy_setting',
   },
   COMMON: {
-    ID: 'id'
-  }
+    ID: 'id',
+  },
 };
 
 // Helper function to check user membership and role
@@ -49,7 +49,12 @@ async function checkTripAccess(
   supabase: SupabaseClient<Database>,
   tripId: string,
   userId: string,
-  allowedRoles: string[] = [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER]
+  allowedRoles: string[] = [
+    TRIP_ROLES.ADMIN,
+    TRIP_ROLES.EDITOR,
+    TRIP_ROLES.CONTRIBUTOR,
+    TRIP_ROLES.VIEWER,
+  ]
 ): Promise<{ allowed: boolean; error?: string; status?: number; role?: string }> {
   const { data: member, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
@@ -113,7 +118,7 @@ export async function DELETE(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     if (!tripId || !itemId) {
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
@@ -127,7 +132,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const accessCheck = await checkTripAccess(supabase, tripId, user.id, [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]);
+    const accessCheck = await checkTripAccess(supabase, tripId, user.id, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+    ]);
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status || 403 });
     }
@@ -157,7 +165,7 @@ export async function GET(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -222,7 +230,7 @@ export async function PUT(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -236,7 +244,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
     }
 
-    const accessCheck = await checkTripAccess(supabase, tripId, user.id, [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]);
+    const accessCheck = await checkTripAccess(supabase, tripId, user.id, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+    ]);
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status || 403 });
     }

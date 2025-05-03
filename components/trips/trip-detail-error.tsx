@@ -64,7 +64,7 @@ export function TripDetailError({
     navigator.clipboard.writeText(tripId);
     toast({
       title: 'Trip ID copied',
-      description: 'The trip ID has been copied to your clipboard'
+      description: 'The trip ID has been copied to your clipboard',
     });
   };
 

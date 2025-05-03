@@ -8,14 +8,14 @@ import { checkTripAccess } from '@/lib/trip-access';
 // Define local field constants for database access
 const FIELDS = {
   COMMON: {
-    ID: 'id'
+    ID: 'id',
   },
   ITINERARY_ITEMS: {
     ORDER: 'order',
     TRIP_ID: 'trip_id',
     SECTION_ID: 'section_id',
-    DAY: 'day'
-  }
+    DAY: 'day',
+  },
 };
 
 // Schema for validating input
@@ -48,7 +48,10 @@ export async function POST(
     }
 
     // Check if the user has edit access to this trip
-    const accessResult = await checkTripAccess(user.id, tripId, [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]);
+    const accessResult = await checkTripAccess(user.id, tripId, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+    ]);
     if (!accessResult.allowed) {
       return NextResponse.json(
         { error: accessResult.error || 'You do not have permission to reorder items' },
@@ -71,11 +74,11 @@ export async function POST(
 
     // Update each item's order in a transaction
     const { error: updateError } = await supabase.rpc('reorder_itinerary_items', {
-      items_data: requestData.items.map(item => ({
+      items_data: requestData.items.map((item) => ({
         item_id: item.id,
-        new_order: item.order
+        new_order: item.order,
       })),
-      trip_id: tripId
+      trip_id: tripId,
     });
 
     if (updateError) {

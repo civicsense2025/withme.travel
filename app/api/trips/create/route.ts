@@ -172,7 +172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log(chalk.dim(`${LOG_PREFIX} Has auth cookie: ${hasAuthCookie}`));
   }
 
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
   console.log(chalk.dim(`${LOG_PREFIX} Created route handler client`));
 
   // Admin client using service role key (ensure env vars are set)
@@ -275,7 +275,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: null,
-          message: 'Missing required fields for full trip creation (destination_id, start_date, end_date)',
+          message:
+            'Missing required fields for full trip creation (destination_id, start_date, end_date)',
         },
         { status: 400 }
       );

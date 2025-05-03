@@ -65,14 +65,14 @@ export function FocusSessionProvider({ children }: { children: React.ReactNode }
   // Initialize focus session for a trip
   const initializeFocusSession = useCallback((tripId: string) => {
     setIsLoading(true);
-    
+
     // Simulating API call
     setTimeout(() => {
       setIsLoading(false);
       // Comment out for stub implementation
       // setActiveFocusSession(mockFocusSession);
     }, 500);
-    
+
     // Return cleanup function
     return () => {
       // Cleanup subscription

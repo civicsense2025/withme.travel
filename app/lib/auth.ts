@@ -10,7 +10,7 @@ export async function createToken(user: { id: string; email: string }) {
 
 export async function verifyUser(email: string, password: string) {
   const user = await fakeUserLookup(email);
-  if (user && await bcrypt.compare(password, user.password)) {
+  if (user && (await bcrypt.compare(password, user.password))) {
     return user;
   }
   return null;

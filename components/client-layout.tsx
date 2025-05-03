@@ -15,7 +15,7 @@ import { AuthErrorBoundary } from '@/components/auth-error-boundary';
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const showNavbar = !pathname?.startsWith('/auth/');
-  
+
   return (
     <ThemeProvider>
       <AuthErrorBoundary>

@@ -119,7 +119,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
               title: 'Note not found',
               description: 'Maybe it was deleted? Refreshing list...',
               variant: 'destructive',
-  });
+            });
             // TODO: Implement list refresh
             setSelectedNoteId(null);
             return;
@@ -137,7 +137,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
           const fetchedTags: Tag[] = (tagsData.tags || []).map((tag: any) => ({
             id: tag.id,
             name: tag.name,
-  }));
+          }));
           setCurrentNoteTags(fetchedTags);
         } else {
           console.error('Failed to fetch tags for note:', selectedNoteId, tagsResponse.status);
@@ -162,7 +162,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         title: 'Title required',
         description: 'Please enter a title for your new note.',
         variant: 'destructive',
-  });
+      });
       return;
     }
     setIsLoadingNote(true); // Use note loading state for creation action
@@ -190,7 +190,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         title: 'Error Creating Note',
         description: formatError(err),
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsLoadingNote(false);
     }
@@ -204,7 +204,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
     try {
       const response = await fetch(`${API_ROUTES.COLLABORATIVE_NOTES(tripId)}/${noteIdToDelete}`, {
         method: 'DELETE',
-  });
+      });
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.error || `Failed to delete note (status ${response.status})`);
@@ -226,7 +226,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
         title: 'Error Deleting Note',
         description: formatError(err),
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsLoadingNote(false);
     }
@@ -292,7 +292,7 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
       const finalTags: Tag[] = (data.tags || []).map((tag: any) => ({
         id: tag.id,
         name: tag.name,
-  }));
+      }));
       setCurrentNoteTags(finalTags);
     } catch (err) {
       console.error('Error saving tags:', err);
@@ -416,8 +416,10 @@ export function CollaborativeNotes({ tripId, readOnly = false }: CollaborativeNo
                                 Cancel
                               </AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={(e) => { return e.stopPropagation();
-                                  confirmDeleteNote(note.id); }}
+                                onClick={(e) => {
+                                  return e.stopPropagation();
+                                  confirmDeleteNote(note.id);
+                                }}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
                                 Delete

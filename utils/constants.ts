@@ -2,7 +2,7 @@
 // DEPRECATED: This file is being gradually migrated to more specific modules.
 //
 // PLEASE USE THE FOLLOWING IMPORTS INSTEAD:
-//  - Database tables/fields:   
+//  - Database tables/fields:
 
 //  - Route constants:          import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 //  - Status/enums:             import { TRIP_ROLES, ITEM_STATUSES } from '@/utils/constants/status';
@@ -41,7 +41,7 @@ export const FORM_LIMITS = {
   TITLE_MAX: 100,
   DESCRIPTION_MAX: 500,
   MEMBERS_MAX: 20,
-  } as const;
+} as const;
 
 // Supabase foreign key relationship names
 // @deprecated - Not typically needed directly in frontend code
@@ -54,7 +54,7 @@ export const FOREIGN_KEYS = {
   ITINERARY_ITEMS_CREATED_BY: 'itinerary_items_created_by_fkey',
   BUDGET_ITEMS_CREATED_BY: 'budget_items_created_by_fkey',
   BUDGET_ITEMS_PAID_BY: 'budget_items_paid_by_fkey',
-  } as const;
+} as const;
 
 // Supabase query snippets for commonly used joins
 // @deprecated - Build joins directly in queries for clarity
@@ -132,7 +132,7 @@ export const IMAGE_TYPES = {
   TRIP_COVER: 'trip_cover',
   USER_AVATAR: 'user_avatar',
   TEMPLATE_COVER: 'template_cover',
-  } as const;
+} as const;
 
 export type ImageType = (typeof IMAGE_TYPES)[keyof typeof IMAGE_TYPES];
 
@@ -142,7 +142,7 @@ export const INVITATION_STATUSES = {
   ACCEPTED: 'accepted',
   DECLINED: 'declined',
   EXPIRED: 'expired',
-  } as const;
+} as const;
 
 export type InvitationStatus = (typeof INVITATION_STATUSES)[keyof typeof INVITATION_STATUSES];
 
@@ -150,6 +150,6 @@ export type InvitationStatus = (typeof INVITATION_STATUSES)[keyof typeof INVITAT
 export const VOTE_TYPES = {
   UP: 'up',
   DOWN: 'down',
-  } as const;
+} as const;
 
 export type VoteType = (typeof VOTE_TYPES)[keyof typeof VOTE_TYPES];

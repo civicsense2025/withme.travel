@@ -17,7 +17,7 @@ const loginRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
 });
 
-export async function POST(request: NextRequest) : Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const responseHeaders = new Headers({
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

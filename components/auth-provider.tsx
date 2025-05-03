@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient, User, Session } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
-
 // Ensure environment variables are available
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -47,9 +46,7 @@ export const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [supabase] = useState(() => 
-    createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
-  );
+  const [supabase] = useState(() => createBrowserClient<Database>(supabaseUrl, supabaseAnonKey));
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,12 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         // Get the current session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session: currentSession },
+        } = await supabase.auth.getSession();
+
         if (currentSession) {
           setSession(currentSession);
           setUser(currentSession.user as ExtendedUser);
-          
+
           // Fetch user profile data if session exists
           try {
             const { data: profile } = await supabase
@@ -73,16 +72,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select('*')
               .eq('id', currentSession.user.id)
               .single();
-              
+
             if (profile) {
-              setUser(prev => prev ? { 
-                ...prev, 
-                profile: {
-                  name: profile.name || profile.full_name || '',
-                  avatar_url: profile.avatar_url,
-                  username: profile.username,
-  } 
-              } : null);
+              setUser((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      profile: {
+                        name: profile.name || profile.full_name || '',
+                        avatar_url: profile.avatar_url,
+                        username: profile.username,
+                      },
+                    }
+                  : null
+              );
             }
           } catch (profileError) {
             console.error('Error fetching user profile:', profileError);
@@ -100,11 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state change listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('Auth state changed:', event);
-      
+
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setSession(newSession);
-        setUser(newSession?.user as ExtendedUser || null);
-        
+        setUser((newSession?.user as ExtendedUser) || null);
+
         // Fetch user profile on sign in
         if (newSession?.user) {
           try {
@@ -113,16 +116,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select('*')
               .eq('id', newSession.user.id)
               .single();
-              
+
             if (profile) {
-              setUser(prev => prev ? { 
-                ...prev, 
-                profile: {
-                  name: profile.name || profile.full_name || '',
-                  avatar_url: profile.avatar_url,
-                  username: profile.username,
-  } 
-              } : null);
+              setUser((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      profile: {
+                        name: profile.name || profile.full_name || '',
+                        avatar_url: profile.avatar_url,
+                        username: profile.username,
+                      },
+                    }
+                  : null
+              );
             }
           } catch (profileError) {
             console.error('Error fetching user profile:', profileError);
@@ -134,8 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => { 
-      authListener.subscription.unsubscribe(); 
+    return () => {
+      authListener.subscription.unsubscribe();
     };
   }, [supabase]);
 
@@ -151,24 +158,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, metadata?: any) => {
-    const { error } = await supabase.auth.signUp({ 
-      email, 
-      password, 
-      options: { data: metadata } 
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: metadata },
     });
     if (error) throw error;
   };
 
   const refreshSession = async () => {
     if (isRefreshing) return;
-    
+
     try {
       setIsRefreshing(true);
       const { data, error } = await supabase.auth.refreshSession();
       if (error) throw error;
-      
+
       setSession(data.session);
-      setUser(data.session?.user as ExtendedUser || null);
+      setUser((data.session?.user as ExtendedUser) || null);
     } catch (error) {
       console.error('Error refreshing session:', error);
     } finally {

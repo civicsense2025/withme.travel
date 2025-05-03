@@ -20,7 +20,7 @@ interface FocusModeDemoProps {
 
 export function FocusModeDemo({ tripId }: FocusModeDemoProps) {
   const [showFocusMode, setShowFocusMode] = useState(false);
-  
+
   return (
     <div className="space-y-4">
       <Card>
@@ -40,7 +40,7 @@ export function FocusModeDemo({ tripId }: FocusModeDemoProps) {
           </Alert>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button 
+          <Button
             variant={showFocusMode ? 'secondary' : 'outline'}
             onClick={() => setShowFocusMode(!showFocusMode)}
           >

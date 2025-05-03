@@ -9,7 +9,7 @@ import { TRIP_ROLES } from '@/utils/constants/status';
 const ITINERARY_ITEMS_TABLE = 'itinerary_items';
 
 const notesSchema = z.object({
-  content: z.string().max(10000).optional() // Allow optional for update
+  content: z.string().max(10000).optional(), // Allow optional for update
 });
 
 // --- GET Handler --- //
@@ -32,14 +32,18 @@ export async function GET(
     }
 
     // Check access (Viewer allowed)
-    const access = await checkTripAccess(
-      user.id,
-      tripId,
-      [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER] as TripRole[]
-    );
-    
+    const access = await checkTripAccess(user.id, tripId, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+      TRIP_ROLES.CONTRIBUTOR,
+      TRIP_ROLES.VIEWER,
+    ] as TripRole[]);
+
     if (!access.allowed) {
-      return NextResponse.json({ error: access.error?.message || 'Forbidden' }, { status: access.error?.status || 403 });
+      return NextResponse.json(
+        { error: access.error?.message || 'Forbidden' },
+        { status: access.error?.status || 403 }
+      );
     }
 
     // Fetch the specific itinerary item to get notes
@@ -86,14 +90,16 @@ export async function POST(
     }
 
     // Check access (editor or admin)
-    const access = await checkTripAccess(
-      user.id,
-      tripId,
-      [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR] as TripRole[]
-    );
-    
+    const access = await checkTripAccess(user.id, tripId, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+    ] as TripRole[]);
+
     if (!access.allowed) {
-      return NextResponse.json({ error: access.error?.message || 'Forbidden' }, { status: access.error?.status || 403 });
+      return NextResponse.json(
+        { error: access.error?.message || 'Forbidden' },
+        { status: access.error?.status || 403 }
+      );
     }
 
     const body = await request.json();

@@ -15,7 +15,7 @@ export default async function Home() {
   const sessionResult = await getServerSession(); // Get the raw result first
 
   // Safely check if session exists
-  if (sessionResult) {
+  if (sessionResult?.data?.session) {
     redirect('/dashboard');
   }
 

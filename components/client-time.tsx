@@ -67,10 +67,10 @@ export function ClientTimeExpiry({ expiryTime }: { expiryTime: number }) {
       else if (minutes > 0) setTimeLeft(`In ${minutes}m ${seconds % 60}s`);
       else setTimeLeft(`In ${seconds}s`);
     };
-    
+
     updateTimeLeft();
     const interval = setInterval(updateTimeLeft, 1000);
-    
+
     return () => clearInterval(interval);
   }, [expiryTime]);
 
@@ -83,7 +83,7 @@ export function ClientTimeExpiry({ expiryTime }: { expiryTime: number }) {
  */
 export function ClientOnly({ children }: { children: React.ReactNode }) {
   const [hasMounted, setHasMounted] = useState(false);
-  
+
   useEffect(() => {
     setHasMounted(true);
     return () => {

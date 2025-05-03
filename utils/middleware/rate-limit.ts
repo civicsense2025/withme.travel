@@ -39,7 +39,7 @@ export interface RateLimitOptions {
 export function rateLimit(options: RateLimitOptions) {
   return async function rateLimitMiddleware(req: NextRequest) {
     const { limit, windowMs } = options;
-    
+
     // Get a unique identifier for the requester (IP by default)
     const identifier = options.identifierFn ? options.identifierFn(req) : getIpAddress(req);
 
@@ -50,7 +50,7 @@ export function rateLimit(options: RateLimitOptions) {
     if (!store[key] || store[key].resetTime < now) {
       store[key] = {
         count: 1,
-        resetTime: now + windowMs * 1000
+        resetTime: now + windowMs * 1000,
       };
     } else {
       store[key].count += 1;
@@ -74,7 +74,7 @@ export function rateLimit(options: RateLimitOptions) {
       return new NextResponse(
         JSON.stringify({
           error: 'Too many requests',
-          message: 'Rate limit exceeded. Please try again later.'
+          message: 'Rate limit exceeded. Please try again later.',
         }),
         {
           status: 429,

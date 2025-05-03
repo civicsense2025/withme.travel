@@ -21,8 +21,8 @@ export function BasicInfoScreen({ userData, onInputChange, onNext, onBack }: Bas
     <Card className="border-0 shadow-lg">
       <CardContent className="pt-6 pb-8 px-6">
         <h1 className="text-3xl font-bold mb-6">Create your account</h1>
-        
-        <form 
+
+        <form
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();

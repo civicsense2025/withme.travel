@@ -41,7 +41,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   if (!tripId) {
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
@@ -108,7 +108,7 @@ export async function POST(
           // Attempt to mimic a browser to avoid simple blocks
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept':
+          Accept:
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
         },
@@ -149,11 +149,11 @@ export async function POST(
     // 4. Extract Metadata (using basic string matching)
     const scrapedData = {
       title: extractMetaContent(htmlContent, 'og:title') || extractTitle(htmlContent),
-      description: 
+      description:
         extractMetaContent(htmlContent, 'og:description') ||
         extractMetaContent(htmlContent, 'description'),
       imageUrl: extractMetaContent(htmlContent, 'og:image'),
-      scrapedUrl: 
+      scrapedUrl:
         extractCanonicalUrl(htmlContent) ||
         extractMetaContent(htmlContent, 'og:url') ||
         urlToScrape,

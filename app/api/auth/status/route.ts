@@ -45,7 +45,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Get cookie information (without exposing sensitive data)
     const cookieInfo = {
-      has_auth_cookies: 
+      has_auth_cookies:
         request.cookies.has('sb-access-token') ||
         request.cookies.has('sb-refresh-token') ||
         request.cookies.has('supabase-auth-token'),
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       timestamp: new Date().toISOString(),
       auth_state: {
         has_session: !!session,
-        session_expires_at: 
+        session_expires_at:
           session && session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
         has_user: !!userData,
         has_profile: !!profileData,

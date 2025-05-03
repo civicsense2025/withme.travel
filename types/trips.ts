@@ -1,5 +1,5 @@
 // Since we now know FIELDS has export issues, let's import it differently or comment it out
-// 
+//
 import { Tag } from '@/types/tags';
 
 /**

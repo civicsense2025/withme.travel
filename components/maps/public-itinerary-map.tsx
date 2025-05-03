@@ -48,7 +48,9 @@ export default function PublicItineraryMap({ locations, mapboxToken }: PublicIti
 
       // Use Mapbox LngLatBounds for fitting
       const bounds = new mapboxgl.LngLatBounds();
-      locations.forEach((loc) => { return bounds.extend([loc.longitude, loc.latitude]); });
+      locations.forEach((loc) => {
+        return bounds.extend([loc.longitude, loc.latitude]);
+      });
 
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, {

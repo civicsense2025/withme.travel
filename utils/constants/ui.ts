@@ -18,8 +18,8 @@ export const THEME = {
     PURPLE: 'travel-purple',
     MINT: 'travel-mint',
     PEACH: 'travel-peach',
-  }
-  };
+  },
+};
 
 // Form Field Limits
 export const LIMITS = {
@@ -104,7 +104,7 @@ export const CATEGORY_DISPLAY = {
     emoji: '📌',
     label: 'Other',
     color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-  }
+  },
 };
 
 // Default category for items with no category
@@ -135,8 +135,8 @@ export const ITEM_TYPE_DISPLAY = {
     emoji: '🍽️',
     label: 'Food & Dining',
     color: 'bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400',
-  }
-  };
+  },
+};
 
 // Default type display
 export const DEFAULT_TYPE_DISPLAY = {
@@ -171,5 +171,5 @@ export const ITEM_STATUS_DISPLAY = {
     emoji: '🏆',
     label: 'Completed',
     color: 'bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400',
-  }
-  };
+  },
+};

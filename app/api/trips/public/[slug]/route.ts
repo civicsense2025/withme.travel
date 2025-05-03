@@ -13,8 +13,8 @@ const FIELDS = {
     START_DATE: 'start_date',
     END_DATE: 'end_date',
     COVER_IMAGE_URL: 'cover_image_url',
-    CREATED_BY: 'created_by'
-  }
+    CREATED_BY: 'created_by',
+  },
 };
 
 // Define privacy setting type locally
@@ -114,7 +114,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
   const { slug } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
   if (!slug) {
     return NextResponse.json({ error: 'Missing slug parameter' }, { status: 400 });
   }
@@ -218,9 +218,10 @@ export async function GET(
         latitude: item.latitude,
         longitude: item.longitude,
         day: item.day_number,
-        cost: typeof item.estimated_cost === 'string'
-          ? parseFloat(item.estimated_cost)
-          : item.estimated_cost,
+        cost:
+          typeof item.estimated_cost === 'string'
+            ? parseFloat(item.estimated_cost)
+            : item.estimated_cost,
         currency: item.currency,
         notes: item.notes,
         category: item.category,

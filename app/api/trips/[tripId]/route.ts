@@ -23,13 +23,13 @@ const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 } as const;
 
 const TRIP_PRIVACY_SETTING = {
   PRIVATE: 'private',
   SHARED_WITH_LINK: 'shared_with_link',
-  PUBLIC: 'public'
+  PUBLIC: 'public',
 } as const;
 
 // Determine if running in development mode
@@ -306,7 +306,7 @@ async function createCookieHandlers() {
       } catch (e) {
         /* ignore */
       }
-    }
+    },
   };
 }
 

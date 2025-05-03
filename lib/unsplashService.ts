@@ -111,10 +111,10 @@ const NATURE_KEYWORDS = [
 function getRandomKeyword(excludeList: string[] = []): string {
   // Combine all keyword categories
   const allKeywords = [...TRAVEL_KEYWORDS, ...LANDMARK_KEYWORDS, ...NATURE_KEYWORDS];
-  
+
   // Filter out any keywords in the exclude list
   const availableKeywords = allKeywords.filter((keyword) => !excludeList.includes(keyword));
-  
+
   // Select a random keyword
   const randomIndex = random(0, availableKeywords.length - 1);
   return availableKeywords[randomIndex];
@@ -123,17 +123,20 @@ function getRandomKeyword(excludeList: string[] = []): string {
 /**
  * Search Unsplash for images matching the given query
  */
-export async function searchUnsplash(query: string, options: {
-  page?: number;
-  perPage?: number;
-  orderBy?: 'latest' | 'relevant';
-  orientation?: 'landscape' | 'portrait' | 'squarish';
-} = {}) {
+export async function searchUnsplash(
+  query: string,
+  options: {
+    page?: number;
+    perPage?: number;
+    orderBy?: 'latest' | 'relevant';
+    orientation?: 'landscape' | 'portrait' | 'squarish';
+  } = {}
+) {
   if (!unsplashApi) {
     console.error('Unsplash API key not configured');
-    return { 
-      error: 'Unsplash API key not configured', 
-      results: [] 
+    return {
+      error: 'Unsplash API key not configured',
+      results: [],
     };
   }
 
@@ -141,12 +144,7 @@ export async function searchUnsplash(query: string, options: {
 
   try {
     // Default options
-    const { 
-      page = 1, 
-      perPage = 30,
-      orderBy = 'relevant',
-      orientation = 'landscape',
-    } = options;
+    const { page = 1, perPage = 30, orderBy = 'relevant', orientation = 'landscape' } = options;
 
     // Make the API request
     const result = await unsplashApi.search.getPhotos({
@@ -237,10 +235,10 @@ export async function getRandomDestinationImage(
       error: `No images found for ${city}, ${country}`,
     };
   } catch (error) {
-    spinner.fail({ 
-      text: `Error during Unsplash search for "${city}": ${(error as Error).message}`
+    spinner.fail({
+      text: `Error during Unsplash search for "${city}": ${(error as Error).message}`,
     });
-    
+
     return {
       success: false,
       error: (error as Error).message,

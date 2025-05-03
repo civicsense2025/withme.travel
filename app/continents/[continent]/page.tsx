@@ -171,8 +171,8 @@ const CONTINENT_DATA = {
       area: '8.53 million km²',
       population: '44 million',
     },
-  }
-  };
+  },
+};
 
 // Animation variants
 const containerVariants = {
@@ -180,13 +180,13 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: { staggerChildren: 0.1 },
-  }
-  };
+  },
+};
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1 }
-  };
+  visible: { y: 0, opacity: 1 },
+};
 
 export default function ContinentPage() {
   const params = useParams();
@@ -203,7 +203,7 @@ export default function ContinentPage() {
     coverImage: '/images/continents/default.jpg',
     accentColor: 'travel-blue',
     highlights: [],
-    stats: { countries: 0, languages: '0', area: '0', population: '0' }
+    stats: { countries: 0, languages: '0', area: '0', population: '0' },
   };
 
   useEffect(() => {

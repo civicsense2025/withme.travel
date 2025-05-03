@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { tripId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -84,7 +84,7 @@ export async function POST(
 ) {
   try {
     const { tripId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
       error: authError,

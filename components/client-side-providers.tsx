@@ -14,7 +14,7 @@ export function ClientSideProviders({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     setIsMounted(true);
-    
+
     try {
       // initializeErrorLogging();
       initPerformanceMonitoring();

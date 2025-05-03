@@ -10,14 +10,14 @@ const __dirname = path.dirname(__filename);
 const getAllRouteHandlers = (dir, fileList = []) => {
   const files = fs.readdirSync(dir);
 
-  files.forEach(file => {
+  files.forEach((file) => {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
-    
+
     if (stat.isDirectory()) {
       getAllRouteHandlers(filePath, fileList);
     } else if (
-      filePath.endsWith('route.ts') && 
+      filePath.endsWith('route.ts') &&
       !filePath.includes('node_modules') &&
       !filePath.includes('.next')
     ) {
@@ -75,7 +75,7 @@ const fixParamsAccess = (filePath) => {
       console.log(`✅ Fixed params access in ${filePath}`);
       return true;
     }
-    
+
     return false;
   } catch (error) {
     console.error(`Error processing ${filePath}:`, error);
@@ -90,11 +90,13 @@ const appDir = path.join(__dirname, '..', 'app');
 const files = getAllRouteHandlers(appDir);
 
 let fixedCount = 0;
-files.forEach(file => {
+files.forEach((file) => {
   if (fixParamsAccess(file)) {
     fixedCount++;
   }
 });
 
-console.log(`\nFixed params access in ${fixedCount} files out of ${files.length} total route handlers.`);
-console.log('Next step: Run Next.js build to see if errors are resolved'); 
+console.log(
+  `\nFixed params access in ${fixedCount} files out of ${files.length} total route handlers.`
+);
+console.log('Next step: Run Next.js build to see if errors are resolved');

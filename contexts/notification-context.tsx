@@ -67,7 +67,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: '0',
-          unread_only: unreadOnly.toString()
+          unread_only: unreadOnly.toString(),
         });
 
         const response = await fetch(`/api/notifications?${params.toString()}`);
@@ -123,7 +123,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
             member_activity: true,
             comments: true,
             votes: true,
-            focus_events: true
+            focus_events: true,
           })
           .select()
           .single();
@@ -138,7 +138,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   }, [supabase, user]);
 
   // Refresh notifications
-  const refreshNotifications = useCallback(async () => { return await fetchNotifications(); }, [fetchNotifications]);
+  const refreshNotifications = useCallback(async () => {
+    return await fetchNotifications();
+  }, [fetchNotifications]);
 
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
@@ -150,7 +152,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         },
         body: JSON.stringify({
           notificationIds: [notificationId],
-          read: true
+          read: true,
         }),
       });
 
@@ -190,7 +192,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         },
         body: JSON.stringify({
           notificationIds: unreadNotificationIds,
-          read: true
+          read: true,
         }),
       });
 
@@ -243,7 +245,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   useEffect(() => {
     if (!user) return;
 
-    const interval = setInterval(() => { return fetchNotifications(); }, pollingInterval);
+    const interval = setInterval(() => {
+      return fetchNotifications();
+    }, pollingInterval);
 
     return () => clearInterval(interval);
   }, [user, fetchNotifications, pollingInterval]);
@@ -262,15 +266,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload: RealtimePostgresChangesPayload<Notification>) => { 
+        (payload: RealtimePostgresChangesPayload<Notification>) => {
           // New notification arrived
           setNotifications((prev) => [payload.new as Notification, ...prev]);
-          setUnreadCount((prev) => prev + 1); 
+          setUnreadCount((prev) => prev + 1);
         }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [supabase, user]);
 
   const value = {

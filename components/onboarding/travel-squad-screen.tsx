@@ -30,7 +30,7 @@ export function TravelSquadScreen({
       id: 'coworkers',
       label: 'coworkers',
       icon: Briefcase,
-      description: 'Mixing business & pleasure'
+      description: 'Mixing business & pleasure',
     },
     {
       id: 'mixed',

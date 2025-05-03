@@ -24,17 +24,17 @@ function isTripMember(obj: any): obj is TripMember {
 const FIELDS = {
   COMMON: {
     ID: 'id',
-    UPDATED_AT: 'updated_at'
+    UPDATED_AT: 'updated_at',
   },
   TRIP_MEMBERS: {
     ROLE: 'role',
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   ITINERARY_ITEMS: {
     STATUS: 'status',
-    TRIP_ID: 'trip_id'
-  }
+    TRIP_ID: 'trip_id',
+  },
 };
 
 // Helper function for checking trip access
@@ -91,7 +91,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
     }
 
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -102,7 +102,10 @@ export async function PATCH(
     }
 
     // Access Check: Only admins and editors can change status
-    const access = await checkTripAccess(supabase, tripId, user.id, [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR]);
+    const access = await checkTripAccess(supabase, tripId, user.id, [
+      TRIP_ROLES.ADMIN,
+      TRIP_ROLES.EDITOR,
+    ]);
     if (!access.allowed) {
       return NextResponse.json({ error: access.error }, { status: access.status });
     }
@@ -131,7 +134,7 @@ export async function PATCH(
       console.error('Error checking item existence:', itemCheckError);
       return NextResponse.json({ error: 'Failed to verify item.' }, { status: 500 });
     }
-    
+
     if (!itemCheck) {
       return NextResponse.json(
         { error: 'Itinerary item not found or does not belong to this trip.' },

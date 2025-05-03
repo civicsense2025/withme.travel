@@ -95,7 +95,7 @@ export function GooglePlacesAutocomplete({
           latitude: place.geometry.location?.lat() ?? null,
           longitude: place.geometry.location?.lng() ?? null,
           googlePlaceId: place.place_id,
-  };
+        };
         setInputValue(place.formatted_address); // Update input with formatted address
         onPlaceSelect(result);
       } else {

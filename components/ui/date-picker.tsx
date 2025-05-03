@@ -33,7 +33,9 @@ export function DatePicker({
   }, [date]);
 
   // Custom handler to adapt the Calendar's type to our expected types
-  const handleSelect = (day: Date | undefined) => { return setDate(day || null); };
+  const handleSelect = (day: Date | undefined) => {
+    return setDate(day || null);
+  };
 
   return (
     <Popover>

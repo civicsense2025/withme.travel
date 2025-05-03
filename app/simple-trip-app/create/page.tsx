@@ -19,11 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +32,7 @@ export default function CreateTripPage() {
     name: '',
     description: '',
     startDate: undefined as Date | undefined,
-    endDate: undefined as Date | undefined
+    endDate: undefined as Date | undefined,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,7 +47,7 @@ export default function CreateTripPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!supabase) {
       toast({
         title: 'Error',
@@ -89,7 +85,7 @@ export default function CreateTripPage() {
           start_date: formData.startDate ? formData.startDate.toISOString() : null,
           end_date: formData.endDate ? formData.endDate.toISOString() : null,
           created_by: userData.user.id,
-          privacy_setting: 'private'
+          privacy_setting: 'private',
         })
         .select('id')
         .single();
@@ -102,7 +98,7 @@ export default function CreateTripPage() {
       await supabase.from('trip_members').insert({
         trip_id: data.id,
         user_id: userData.user.id,
-        role: 'admin'
+        role: 'admin',
       });
 
       toast({
@@ -129,9 +125,7 @@ export default function CreateTripPage() {
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Create a New Trip</CardTitle>
-          <CardDescription>
-            Fill in the details to start planning your trip
-          </CardDescription>
+          <CardDescription>Fill in the details to start planning your trip</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -146,7 +140,7 @@ export default function CreateTripPage() {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
@@ -158,7 +152,7 @@ export default function CreateTripPage() {
                 rows={4}
               />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate">Start Date (Optional)</Label>
@@ -168,12 +162,12 @@ export default function CreateTripPage() {
                       id="startDate"
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.startDate && "text-muted-foreground"
+                        'w-full justify-start text-left font-normal',
+                        !formData.startDate && 'text-muted-foreground'
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.startDate ? format(formData.startDate, "PPP") : "Select date"}
+                      {formData.startDate ? format(formData.startDate, 'PPP') : 'Select date'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -186,7 +180,7 @@ export default function CreateTripPage() {
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="endDate">End Date (Optional)</Label>
                 <Popover>
@@ -195,12 +189,12 @@ export default function CreateTripPage() {
                       id="endDate"
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.endDate && "text-muted-foreground"
+                        'w-full justify-start text-left font-normal',
+                        !formData.endDate && 'text-muted-foreground'
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.endDate ? format(formData.endDate, "PPP") : "Select date"}
+                      {formData.endDate ? format(formData.endDate, 'PPP') : 'Select date'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -215,11 +209,11 @@ export default function CreateTripPage() {
               </div>
             </div>
           </CardContent>
-          
+
           <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => router.push('/simple-trip-app')}
               disabled={isSubmitting}
             >
@@ -240,4 +234,4 @@ export default function CreateTripPage() {
       </Card>
     </div>
   );
-} 
+}

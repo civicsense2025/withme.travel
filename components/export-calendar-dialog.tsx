@@ -29,7 +29,7 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
     try {
       const response = await fetch(`/api/trips/${tripId}/export-calendar`, {
         method: 'POST',
-  });
+      });
 
       if (!response.ok) {
         throw new Error('Failed to export calendar');
@@ -42,7 +42,7 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
 
       toast({
         title: 'calendar exported!',
-        description: 'your trip has been added to google calendar'
+        description: 'your trip has been added to google calendar',
       });
 
       setOpen(false);
@@ -52,7 +52,7 @@ export function ExportCalendarDialog({ tripId, tripName }: ExportCalendarDialogP
         title: 'export failed',
         description: 'there was an error exporting to google calendar',
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsExporting(false);
     }

@@ -16,7 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export function EmptyTrips() {
   const router = useRouter();
-  
+
   const quickStartDestinations = [
     {
       name: 'beach getaway',

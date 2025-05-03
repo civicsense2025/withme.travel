@@ -9,14 +9,14 @@ import type { Database } from '@/types/database.types';
 // Define hasMinimumRole locally
 function hasMinimumRole(userRole: string | null, requiredRole: string): boolean {
   if (!userRole) return false;
-  
-  const roleValues: {[key: string]: number} = {
+
+  const roleValues: { [key: string]: number } = {
     [TRIP_ROLES.ADMIN]: 4,
     [TRIP_ROLES.EDITOR]: 3,
     [TRIP_ROLES.CONTRIBUTOR]: 2,
-    [TRIP_ROLES.VIEWER]: 1
+    [TRIP_ROLES.VIEWER]: 1,
   };
-  
+
   return (roleValues[userRole] || 0) >= (roleValues[requiredRole] || 0);
 }
 
@@ -29,8 +29,8 @@ const FIELDS = {
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
-    ROLE: 'role'
-  }
+    ROLE: 'role',
+  },
 };
 
 // POST /api/trips/[tripId]/members/import
@@ -116,15 +116,13 @@ export async function POST(
           const role = invitation.role || TRIP_ROLES.CONTRIBUTOR;
 
           // Insert invitation record
-          const { error: inviteError } = await supabase
-            .from(TRIP_INVITATIONS_TABLE)
-            .insert({
-              trip_id: tripId,
-              email: invitation.email.toLowerCase(),
-              role,
-              invited_by: data.user.id,
-              created_at: new Date().toISOString(),
-            });
+          const { error: inviteError } = await supabase.from(TRIP_INVITATIONS_TABLE).insert({
+            trip_id: tripId,
+            email: invitation.email.toLowerCase(),
+            role,
+            invited_by: data.user.id,
+            created_at: new Date().toISOString(),
+          });
 
           if (inviteError) {
             console.error(`Error creating invitation for ${invitation.email}:`, inviteError);
@@ -201,7 +199,7 @@ export async function POST(
         }
       }
     }
-    
+
     return NextResponse.json({
       results,
       success: results.invitations.sent > 0 || results.members.added > 0,

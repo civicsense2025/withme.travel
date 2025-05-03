@@ -247,7 +247,7 @@ export function formatTime(timeStr?: string): string {
         hour: '2-digit',
         minute: '2-digit',
         hour12: true,
-  }
+      }
     );
   } catch (e) {
     return timeStr;
@@ -309,19 +309,19 @@ export function formatError(
   // Handle Supabase-style errors with data.error or error property
   if (typeof error === 'object') {
     const errorObj = error as Record<string, any>;
-    
+
     // Check for data.error pattern
     if (errorObj.data && errorObj.data.error) {
       return errorObj.data.error;
     }
-    
+
     // Check for error or message property
     if (errorObj.error) {
-      return typeof errorObj.error === 'string' 
-        ? errorObj.error 
+      return typeof errorObj.error === 'string'
+        ? errorObj.error
         : errorObj.error.message || fallback;
     }
-    
+
     if (errorObj.message) {
       return errorObj.message;
     }
@@ -339,10 +339,10 @@ export function getInitials(name?: string | null): string {
   if (!name) return '?';
 
   const parts = name.trim().split(/\s+/);
-  
+
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  
+
   // Get first letter of first name and first letter of last name
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
@@ -383,13 +383,10 @@ export function limitItems<T>(
  */
 export function getColorClassFromId(id?: string): string {
   if (!id) return 'bg-gray-200';
-  
+
   // Use a simple hash function to convert the ID to a number
-  const hash = Array.from(id).reduce(
-    (acc, char) => acc + char.charCodeAt(0),
-    0
-  );
-  
+  const hash = Array.from(id).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
   // List of color classes to choose from
   const colorClasses = [
     'bg-blue-100',
@@ -403,7 +400,7 @@ export function getColorClassFromId(id?: string): string {
     'bg-teal-100',
     'bg-cyan-100',
   ];
-  
+
   // Use the hash to pick a color class
   return colorClasses[hash % colorClasses.length];
 }

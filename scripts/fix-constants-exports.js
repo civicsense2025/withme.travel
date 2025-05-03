@@ -45,36 +45,37 @@ if (missingExports.length === 0) {
   // Add type export statements if needed
   let typeExports = '';
   if (missingExports.includes('TripRole')) {
-    typeExports += 'export type TripRole = typeof ENUMS.TRIP_ROLES[keyof typeof ENUMS.TRIP_ROLES];\n';
+    typeExports +=
+      'export type TripRole = typeof ENUMS.TRIP_ROLES[keyof typeof ENUMS.TRIP_ROLES];\n';
   }
   if (missingExports.includes('ItemStatus')) {
-    typeExports += 'export type ItemStatus = typeof ENUMS.ITEM_STATUS[keyof typeof ENUMS.ITEM_STATUS];\n';
+    typeExports +=
+      'export type ItemStatus = typeof ENUMS.ITEM_STATUS[keyof typeof ENUMS.ITEM_STATUS];\n';
   }
   if (missingExports.includes('TripStatus')) {
-    typeExports += 'export type TripStatus = typeof ENUMS.TRIP_STATUS[keyof typeof ENUMS.TRIP_STATUS];\n';
+    typeExports +=
+      'export type TripStatus = typeof ENUMS.TRIP_STATUS[keyof typeof ENUMS.TRIP_STATUS];\n';
   }
   if (missingExports.includes('PermissionStatus')) {
-    typeExports += 'export type PermissionStatus = typeof ENUMS.PERMISSION_STATUS[keyof typeof ENUMS.PERMISSION_STATUS];\n';
+    typeExports +=
+      'export type PermissionStatus = typeof ENUMS.PERMISSION_STATUS[keyof typeof ENUMS.PERMISSION_STATUS];\n';
   }
 
   // Find the right place to insert the exports
   // First look for existing type exports to add alongside
   let insertPoint = content.indexOf('export type ');
-  
+
   // If none found, look for legacy exports
   if (insertPoint === -1) {
     insertPoint = content.indexOf('export const DB_TABLES');
   }
-  
+
   // If still not found, just append to end
   if (insertPoint === -1) {
     content += '\n\n// Type exports\n' + typeExports;
   } else {
     // Otherwise insert at the found position
-    content = 
-      content.substring(0, insertPoint) + 
-      typeExports + 
-      content.substring(insertPoint);
+    content = content.substring(0, insertPoint) + typeExports + content.substring(insertPoint);
   }
 
   // Write the updated content back to the file
@@ -99,10 +100,10 @@ if (missingConstants.length === 0) {
   console.log('✅ All required constant exports already exist in database.ts');
 } else {
   console.log(`⚠️ Missing constant exports in database.ts: ${missingConstants.join(', ')}`);
-  
+
   // Add legacy exports to proper exports if needed
   let updates = content;
-  
+
   if (missingConstants.includes('TABLES') && content.includes('export const DB_TABLES')) {
     updates = updates.replace('export const DB_TABLES', 'export const TABLES');
     // Also add a line to maintain backward compatibility
@@ -110,7 +111,7 @@ if (missingConstants.length === 0) {
       updates += '\nexport const DB_TABLES = TABLES;\n';
     }
   }
-  
+
   if (missingConstants.includes('FIELDS') && content.includes('export const DB_FIELDS')) {
     updates = updates.replace('export const DB_FIELDS', 'export const FIELDS');
     // Also add a line to maintain backward compatibility
@@ -118,7 +119,7 @@ if (missingConstants.length === 0) {
       updates += '\nexport const DB_FIELDS = FIELDS;\n';
     }
   }
-  
+
   if (missingConstants.includes('ENUMS') && content.includes('export const DB_ENUMS')) {
     updates = updates.replace('export const DB_ENUMS', 'export const ENUMS');
     // Also add a line to maintain backward compatibility
@@ -126,10 +127,10 @@ if (missingConstants.length === 0) {
       updates += '\nexport const DB_ENUMS = ENUMS;\n';
     }
   }
-  
+
   // Write the updated content back to the file
   fs.writeFileSync(DB_CONSTANTS_PATH, updates);
   console.log('✅ Added missing constant exports to database.ts');
 }
 
-console.log('🎉 Done!'); 
+console.log('🎉 Done!');

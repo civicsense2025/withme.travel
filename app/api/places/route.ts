@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return new NextResponse('Destination ID is required', { status: 400 });
     }
 
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     let placesQuery = supabase
       .from(PLACES_TABLE)
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 // POST /api/places - Add a new place suggestion
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // 1. Check user authentication
     const {

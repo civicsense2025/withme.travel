@@ -26,7 +26,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 const pollSchema = z.object({
   title: z.string().min(3, {
-    message: 'Title must be at least 3 characters.'
+    message: 'Title must be at least 3 characters.',
   }),
   description: z.string().optional(),
   options: z
@@ -103,7 +103,7 @@ export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormPr
       }
 
       toast({
-        description: 'Poll created successfully'
+        description: 'Poll created successfully',
       });
 
       if (onSuccess) {

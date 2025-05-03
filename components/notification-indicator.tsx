@@ -15,14 +15,8 @@ import { useRouter } from 'next/navigation';
 export function NotificationIndicator() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const { 
-    notifications, 
-    loading, 
-    unreadCount, 
-    refreshNotifications, 
-    markAsRead, 
-    markAllAsRead 
-  } = useNotifications();
+  const { notifications, loading, unreadCount, refreshNotifications, markAsRead, markAllAsRead } =
+    useNotifications();
 
   useEffect(() => {
     if (open) {

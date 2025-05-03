@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function TripsPage() {
   // Use the correct client creation function
-  const supabase = await getServerComponentClient();
+  const supabase = getServerComponentClient();
   // Get user directly instead of session for better security
   const {
     data: { user },

@@ -12,8 +12,8 @@ export function ThemeToggle() {
   const [mounted, setMounted] = React.useState(false);
 
   // Mounted state to handle SSR
-  React.useEffect(() => { 
-    setMounted(true); 
+  React.useEffect(() => {
+    setMounted(true);
   }, []);
 
   if (!mounted) {

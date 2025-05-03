@@ -29,7 +29,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { slug } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     console.log(`[Template API] Fetching template with slug: "${slug}"`);
 
@@ -137,7 +137,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const { slug } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Authenticate the user
     const {
@@ -172,7 +172,7 @@ export async function PUT(
         userError
       );
     }
-    
+
     if (!userData?.is_admin) {
       return createForbiddenResponse('Only administrators can modify itinerary templates');
     }

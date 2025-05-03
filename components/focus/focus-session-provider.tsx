@@ -58,51 +58,51 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
       setIsLoading(false);
     }
   };
-  
+
   const pauseSession = async () => {
     if (!session) return;
-    
+
     setIsLoading(true);
     try {
       // Stub: Update session status
       setSession({
         ...session,
         status: 'paused',
-  });
+      });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to pause session'));
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const resumeSession = async () => {
     if (!session) return;
-    
+
     setIsLoading(true);
     try {
       // Stub: Update session status
       setSession({
         ...session,
         status: 'active',
-  });
+      });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to resume session'));
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const endSession = async () => {
     if (!session) return;
-    
+
     setIsLoading(true);
     try {
       // Stub: End the session
       setSession({
         ...session,
         status: 'completed',
-        endedAt: new Date()
+        endedAt: new Date(),
       });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to end session'));
@@ -110,17 +110,17 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
       setIsLoading(false);
     }
   };
-  
+
   const joinSession = async () => {
     if (!session) return;
-    
+
     setIsLoading(true);
     try {
       // Stub: Join an existing session
       // In real implementation, would add user to activeParticipants
       setSession({
         ...session,
-        activeParticipants: [...session.activeParticipants, 'current-user-id']
+        activeParticipants: [...session.activeParticipants, 'current-user-id'],
       });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to join session'));
@@ -128,17 +128,17 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
       setIsLoading(false);
     }
   };
-  
+
   const leaveSession = async () => {
     if (!session) return;
-    
+
     setIsLoading(true);
     try {
       // Stub: Leave a session
       // In real implementation, would remove user from activeParticipants
       setSession({
         ...session,
-        activeParticipants: session.activeParticipants.filter(id => id !== 'current-user-id')
+        activeParticipants: session.activeParticipants.filter((id) => id !== 'current-user-id'),
       });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to leave session'));
@@ -146,7 +146,7 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
       setIsLoading(false);
     }
   };
-  
+
   // Create context value
   const value: FocusSessionContextType = {
     session,
@@ -159,12 +159,8 @@ export function FocusSessionProvider({ children, tripId }: FocusSessionProviderP
     joinSession,
     leaveSession,
   };
-  
-  return (
-    <FocusSessionContext.Provider value={value}>
-      {children}
-    </FocusSessionContext.Provider>
-  );
+
+  return <FocusSessionContext.Provider value={value}>{children}</FocusSessionContext.Provider>;
 }
 
 export function useFocusSession() {
@@ -172,6 +168,6 @@ export function useFocusSession() {
   if (!context) {
     throw new Error('useFocusSession must be used within a FocusSessionProvider');
   }
-  
+
   return context;
 }

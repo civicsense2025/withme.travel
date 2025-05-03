@@ -72,9 +72,15 @@ export default function AuthStatusPage() {
       });
     } catch (error) {
       console.error('Error refreshing auth state:', error);
-      setAuthState({ session: null, user: null, error, loading: false, apiTestResult: authState.apiTestResult });
+      setAuthState({
+        session: null,
+        user: null,
+        error,
+        loading: false,
+        apiTestResult: authState.apiTestResult,
+      });
     }
-  }, []);
+  }, [authState.apiTestResult]);
 
   const refreshStorageInfo = useCallback(() => {
     // Fetch cookies

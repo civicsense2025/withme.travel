@@ -98,7 +98,7 @@ export const getSafeLogger = (Sentry: any) => {
       } catch (e) {
         console.error('Failed to log message to Sentry:', e);
       }
-    }
+    },
   };
 };
 

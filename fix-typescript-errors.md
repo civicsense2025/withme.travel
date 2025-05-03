@@ -5,6 +5,7 @@
 We identified and fixed several key issues causing TypeScript errors after updating the middleware file and constants structure:
 
 1. **Inconsistent ItemStatus Type Imports**: Fixed files importing ItemStatus from different locations:
+
    - In `app/trips/[tripId]/hooks/use-trip-itinerary.ts`: Now imports both `ITEM_STATUSES` and `ItemStatus` from '@/utils/constants/status'
    - In `app/design-sandbox/design-sandbox-client.tsx`: Updated to import `ItemStatus` from '@/utils/constants/status'
 
@@ -17,6 +18,7 @@ The TypeScript errors stemmed from a few underlying issues:
 1. **Constants Refactoring**: Moving constants from a single file to separate modules created inconsistencies in imports and type definitions.
 
 2. **Conflicting Type Definitions**: Several files define the same types differently:
+
    - `ItemStatus` is defined in multiple places with different values:
      - In `status.ts`: As 'suggested' | 'confirmed' | 'canceled' | 'flexible'
      - In `database.ts`: As 'pending' | 'confirmed' | 'cancelled' | 'completed'
@@ -88,6 +90,7 @@ import { type ItemStatus } from '@/utils/constants/status';
 Run the following tools to fix common issues:
 
 1. Use the existing script to migrate constants:
+
    ```bash
    node scripts/migrate-constants.js --fix
    ```
@@ -106,4 +109,3 @@ Run the following tools to fix common issues:
 3. **Documentation**: Document the import patterns to avoid introducing new inconsistencies.
 
 Remember that fixing TypeScript errors is an iterative process. Fix the most critical errors first, then work through the remaining ones systematically.
-

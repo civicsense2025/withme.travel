@@ -67,7 +67,7 @@ export function PermissionRequests({ tripId }: PermissionRequestsProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: approve ? 'approved' : 'rejected'
+          status: approve ? 'approved' : 'rejected',
         }),
       });
 
@@ -80,7 +80,7 @@ export function PermissionRequests({ tripId }: PermissionRequestsProps) {
 
       toast({
         title: approve ? 'Request approved' : 'Request rejected',
-        description: approve ? 'User now has edit access' : 'Request has been rejected'
+        description: approve ? 'User now has edit access' : 'Request has been rejected',
       });
     } catch (error: any) {
       console.error('Error handling permission request:', error);

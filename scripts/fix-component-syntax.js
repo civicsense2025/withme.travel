@@ -30,7 +30,7 @@ function fixComponentSyntax(content, filePath) {
     const useClientMatch = updated.match(/(.*?)('use client';)(.*)/s);
     if (useClientMatch) {
       const [_, beforeUseClient, useClientDirective, afterUseClient] = useClientMatch;
-      
+
       // Move the 'use client' directive to the top
       updated = `${useClientDirective}\n${beforeUseClient}${afterUseClient}`;
       hasChanges = true;
@@ -48,16 +48,16 @@ function fixComponentSyntax(content, filePath) {
   const interfaces = [];
   const interfaceStart = /interface\s+([A-Za-z0-9_]+)\s*{/g;
   let interfaceMatch;
-  
+
   while ((interfaceMatch = interfaceStart.exec(updated)) !== null) {
     const interfaceName = interfaceMatch[1];
     const startIndex = interfaceMatch.index;
     const openBracePos = updated.indexOf('{', startIndex);
-    
+
     if (openBracePos !== -1) {
       let openBraces = 1;
       let closePos = openBracePos + 1;
-      
+
       // Scan forward to find matching closing brace
       while (openBraces > 0 && closePos < updated.length) {
         const char = updated[closePos];
@@ -65,13 +65,13 @@ function fixComponentSyntax(content, filePath) {
         if (char === '}') openBraces--;
         closePos++;
       }
-      
+
       // If we didn't find a matching closing brace
       if (openBraces > 0) {
         interfaces.push({
           name: interfaceName,
           position: updated.length,
-          missingBraces: openBraces
+          missingBraces: openBraces,
         });
       }
     }
@@ -79,23 +79,27 @@ function fixComponentSyntax(content, filePath) {
 
   // Add missing closing braces to interfaces
   for (const iface of interfaces) {
-    updated = updated.substring(0, iface.position) + '\n}'.repeat(iface.missingBraces) + updated.substring(iface.position);
+    updated =
+      updated.substring(0, iface.position) +
+      '\n}'.repeat(iface.missingBraces) +
+      updated.substring(iface.position);
     hasChanges = true;
   }
 
   // Fix 4: Fix unclosed components/functions
-  const componentPattern = /(export\s+(?:default\s+)?(?:function|const)\s+[A-Za-z0-9_]+\s*(?:=\s*(?:\([^)]*\)|)\s*=>|)?\s*\{)/g;
+  const componentPattern =
+    /(export\s+(?:default\s+)?(?:function|const)\s+[A-Za-z0-9_]+\s*(?:=\s*(?:\([^)]*\)|)\s*=>|)?\s*\{)/g;
   let componentMatch;
   let components = [];
-  
+
   while ((componentMatch = componentPattern.exec(updated)) !== null) {
     const startIndex = componentMatch.index;
     const openBracePos = updated.indexOf('{', startIndex);
-    
+
     if (openBracePos !== -1) {
       let openBraces = 1;
       let closePos = openBracePos + 1;
-      
+
       // Scan forward to find matching closing brace
       while (openBraces > 0 && closePos < updated.length) {
         const char = updated[closePos];
@@ -103,12 +107,12 @@ function fixComponentSyntax(content, filePath) {
         if (char === '}') openBraces--;
         closePos++;
       }
-      
+
       // If we didn't find a matching closing brace
       if (openBraces > 0) {
         components.push({
           position: updated.length,
-          missingBraces: openBraces
+          missingBraces: openBraces,
         });
       }
     }
@@ -116,7 +120,10 @@ function fixComponentSyntax(content, filePath) {
 
   // Add missing closing braces to components
   for (const component of components) {
-    updated = updated.substring(0, component.position) + '\n}'.repeat(component.missingBraces) + updated.substring(component.position);
+    updated =
+      updated.substring(0, component.position) +
+      '\n}'.repeat(component.missingBraces) +
+      updated.substring(component.position);
     hasChanges = true;
   }
 
@@ -131,7 +138,7 @@ function fixComponentSyntax(content, filePath) {
   // Fix 6: Fix incomplete import statements
   const incompleteImportPattern = /import\s+{[^}]*}\s+from\s+['"][^'"]*['"](?!;)/g;
   if (incompleteImportPattern.test(updated)) {
-    updated = updated.replace(incompleteImportPattern, match => match + ';');
+    updated = updated.replace(incompleteImportPattern, (match) => match + ';');
     hasChanges = true;
   }
 
@@ -193,7 +200,7 @@ async function processComponentFiles() {
 }
 
 // Run the script
-processComponentFiles().catch(err => {
+processComponentFiles().catch((err) => {
   console.error('❌ Script execution failed:', err);
   process.exit(1);
-}); 
+});

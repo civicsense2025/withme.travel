@@ -15,23 +15,23 @@ type MapContextType = {
 const MapContext = createContext<MapContextType>({
   isLoaded: false,
   loadError: undefined,
-  hasApiKey: false
+  hasApiKey: false,
 });
 
 export const useMapContext = () => useContext(MapContext);
 
 export function MapProvider({ children }: { children: ReactNode }) {
   const [hasApiKey, setHasApiKey] = useState(false);
-  
+
   useEffect(() => {
     // Check if API key is available
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     setHasApiKey(!!apiKey && apiKey.length > 0);
   }, []);
-  
+
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
-    libraries
+    libraries,
   });
 
   // If API key is missing or invalid, show a specialized error message
@@ -61,4 +61,4 @@ export function MapProvider({ children }: { children: ReactNode }) {
       )}
     </MapContext.Provider>
   );
-} 
+}

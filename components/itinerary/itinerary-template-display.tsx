@@ -107,11 +107,13 @@ const ItemDisplay = ({ item, index }: { item: ItineraryTemplateItem; index: numb
 export function ItineraryTemplateDisplay({ template, sections }: ItineraryTemplateDisplayProps) {
   // Sort sections by day_number for sequential display
   const sortedSections = [...sections].sort((a, b) => a.day_number - b.day_number);
-  
+
   // Set the first section's ID as the default tab value, or empty string if no sections
   const defaultTabValue = sortedSections.length > 0 ? sortedSections[0].id : '';
-  
-  console.log(`[DEBUG] ItineraryTemplateDisplay - Template ID: ${template.id}, title: ${template.title}`);
+
+  console.log(
+    `[DEBUG] ItineraryTemplateDisplay - Template ID: ${template.id}, title: ${template.title}`
+  );
   console.log(`[DEBUG] ItineraryTemplateDisplay - Received ${sections.length} sections`);
 
   if (sections.length === 0) {
@@ -228,7 +230,7 @@ function formatDate(dateString: string): string {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-  });
+    });
   } catch (error) {
     console.error('Error formatting date:', error);
     return dateString;

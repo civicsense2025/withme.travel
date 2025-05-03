@@ -1,10 +1,23 @@
 'use client';
-import { AlertCircle, CheckCircle2, Clock, ThumbsDown, ThumbsUp, Trash2, XCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  ThumbsDown,
+  ThumbsUp,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
 import { LoaderCircle } from '@/components/ui/loader-circle';
 import { cn } from '@/lib/utils';
@@ -111,10 +124,8 @@ export function Todo({ initialItems, canEdit = false, onItemDelete }: TodoProps)
   const handleStatusUpdate = async (itemId: string, newStatus: ItemStatus) => {
     setUpdatingStatusItemId(itemId);
     const originalItems = [...items];
-    
-    setItems(items.map(item => 
-      item.id === itemId ? { ...item, status: newStatus } : item
-    ));
+
+    setItems(items.map((item) => (item.id === itemId ? { ...item, status: newStatus } : item)));
 
     try {
       // Simulate API call
@@ -134,11 +145,11 @@ export function Todo({ initialItems, canEdit = false, onItemDelete }: TodoProps)
 
   const handleDelete = async (itemId: string) => {
     if (!onItemDelete) return;
-    
+
     setDeletingItemId(itemId);
     const originalItems = [...items];
-    
-    setItems(items.filter(item => item.id !== itemId));
+
+    setItems(items.filter((item) => item.id !== itemId));
 
     try {
       // Simulate API call
@@ -210,7 +221,7 @@ export function Todo({ initialItems, canEdit = false, onItemDelete }: TodoProps)
               </div>
               <div className="flex items-center space-x-2">
                 {getStatusBadge(item.status)}
-                
+
                 {canEdit && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -225,20 +236,24 @@ export function Todo({ initialItems, canEdit = false, onItemDelete }: TodoProps)
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.CONFIRMED)}>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.CONFIRMED)}
+                      >
                         Mark as confirmed
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.CANCELLED)}>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.CANCELLED)}
+                      >
                         Mark as canceled
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-                
+
                 {canEdit && onItemDelete && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDelete(item.id)}
                     disabled={deletingItemId === item.id}
                   >
@@ -257,22 +272,32 @@ export function Todo({ initialItems, canEdit = false, onItemDelete }: TodoProps)
           <CardContent>
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center space-x-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="flex items-center space-x-1"
                   onClick={() => handleVote(item.id, 'up')}
                 >
-                  <ThumbsUp className={cn("h-4 w-4", item.votes.userVote === 'up' && "text-green-500 fill-green-500")} />
+                  <ThumbsUp
+                    className={cn(
+                      'h-4 w-4',
+                      item.votes.userVote === 'up' && 'text-green-500 fill-green-500'
+                    )}
+                  />
                   <span>{item.votes.up}</span>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="flex items-center space-x-1"
                   onClick={() => handleVote(item.id, 'down')}
                 >
-                  <ThumbsDown className={cn("h-4 w-4", item.votes.userVote === 'down' && "text-red-500 fill-red-500")} />
+                  <ThumbsDown
+                    className={cn(
+                      'h-4 w-4',
+                      item.votes.userVote === 'down' && 'text-red-500 fill-red-500'
+                    )}
+                  />
                   <span>{item.votes.down}</span>
                 </Button>
               </div>

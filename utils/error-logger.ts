@@ -66,7 +66,6 @@ export function logError(
   // Use safe Sentry methods that won't throw errors
   try {
     // captureExceptionSafely(error);
-
     // Add additional context using the safe wrapper
     /* configureScopeIfAvailable((scope) => {
       scope.setTag('category', category);
@@ -91,7 +90,9 @@ export function logError(
         body: JSON.stringify(errorLog),
         // Use keepalive to ensure the request completes even during page unloads
         keepalive: true,
-      }).catch((e) => { return console.error('Failed to send error log to API:', e); });
+      }).catch((e) => {
+        return console.error('Failed to send error log to API:', e);
+      });
     } catch (e) {
       // Don't let logging errors cause additional issues
       console.error('Failed to log error to API:', e);
@@ -149,7 +150,7 @@ export function initializeErrorLogging(): void {
           lineno: event.lineno,
           colno: event.colno,
           timestamp: event.timeStamp,
-  }
+        }
       );
     });
 
@@ -160,7 +161,7 @@ export function initializeErrorLogging(): void {
       logError(error, ErrorCategory.UNKNOWN, 'promise', {
         timestamp: event.timeStamp,
         reason: String(event.reason),
-  });
+      });
     });
 
     // Optionally intercept fetch requests to log network errors
@@ -182,3 +183,28 @@ export function initializeErrorLogging(): void {
     };
   }
 }
+
+// Server-side logger for API routes
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogContext = 'auth' | 'api' | 'navigation' | 'ui' | 'middleware' | 'supabase' | 'general';
+
+export const logger = {
+  debug: (message: string, context: LogContext = 'general', data?: any) => {
+    if (process.env.NODE_ENV !== 'development') return;
+    console.debug(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
+  },
+
+  info: (message: string, context: LogContext = 'general', data?: any) => {
+    console.info(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
+  },
+
+  warn: (message: string, context: LogContext = 'general', data?: any) => {
+    console.warn(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
+  },
+
+  error: (message: string, context: LogContext = 'general', data?: any) => {
+    console.error(`[WithMe:${context}] ${message}`, data !== undefined ? data : '');
+  }
+};
+
+export default logger;

@@ -16,7 +16,7 @@ interface EmailResult {
   error?: string;
 }
 
-export async function POST(request: NextRequest) : Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   // Set security headers for all responses
   const headers = new Headers({
     'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) : Promise<NextResponse> {
 
   try {
     // Create Supabase client using our utility
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     // Get current session (the user should be authenticated with the recovery link)
     const {
@@ -96,7 +96,10 @@ export async function POST(request: NextRequest) : Promise<NextResponse> {
     }
 
     // Update user's password
-    const { data: { user: userData }, error } = await supabase.auth.updateUser({
+    const {
+      data: { user: userData },
+      error,
+    } = await supabase.auth.updateUser({
       password: password,
     });
 

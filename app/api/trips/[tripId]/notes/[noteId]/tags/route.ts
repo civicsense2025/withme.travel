@@ -9,24 +9,24 @@ const TRIP_ROLES = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer'
+  VIEWER: 'viewer',
 } as const;
 
 // Define field constants
 const FIELDS = {
   TAGS: {
     ID: 'id',
-    NAME: 'name'
+    NAME: 'name',
   },
   NOTE_TAGS: {
     NOTE_ID: 'note_id',
-    TAG_ID: 'tag_id'
+    TAG_ID: 'tag_id',
   },
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
-    ROLE: 'role'
-  }
+    ROLE: 'role',
+  },
 };
 
 // Helper function - Assume is_trip_member_with_role exists from previous migration
@@ -41,16 +41,16 @@ async function checkTripMembershipAndRole(
     console.error('Invalid arguments passed to checkTripMembershipAndRole');
     throw new Error('Internal server error checking permissions.');
   }
-  
+
   // Map role keys to their values for the check
   const roleValues = roles.map((roleKey) => TRIP_ROLES[roleKey]);
 
   const { data, error } = await supabase.rpc('is_trip_member_with_role', {
     _trip_id: tripId,
     _user_id: userId,
-    _roles: roleValues // Pass actual role values
+    _roles: roleValues, // Pass actual role values
   });
-  
+
   if (error) {
     console.error(
       `Error checking trip membership/role for user ${userId} on trip ${tripId}:`,
@@ -67,7 +67,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
   const { tripId, noteId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
@@ -133,7 +133,7 @@ export async function PUT(
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
   const { tripId, noteId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
@@ -207,10 +207,7 @@ export async function PUT(
 
     // 3. Synchronize note_tags table
     // Delete existing associations
-    const { error: deleteError } = await supabase
-      .from('note_tags')
-      .delete()
-      .eq('note_id', noteId);
+    const { error: deleteError } = await supabase.from('note_tags').delete().eq('note_id', noteId);
 
     if (deleteError) {
       console.error(`[Note Tags API PUT ${noteId}] Error deleting old tags:`, deleteError);
@@ -226,9 +223,7 @@ export async function PUT(
         note_id: noteId,
         tag_id: tagId,
       }));
-      const { error: insertNoteTagsError } = await supabase
-        .from('note_tags')
-        .insert(newNoteTags);
+      const { error: insertNoteTagsError } = await supabase.from('note_tags').insert(newNoteTags);
 
       if (insertNoteTagsError) {
         console.error(

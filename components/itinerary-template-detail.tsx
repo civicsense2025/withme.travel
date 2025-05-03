@@ -74,7 +74,7 @@ export function ItineraryTemplateDetail({
   const handleLike = async () => {
     try {
       const response = await fetch(`/api/itineraries/${template.slug}/like`, {
-        method: liked ? 'DELETE' : 'POST'
+        method: liked ? 'DELETE' : 'POST',
       });
 
       if (response.ok) {
@@ -116,7 +116,7 @@ export function ItineraryTemplateDetail({
       if (response.ok) {
         toast({
           title: 'Success!',
-          description: 'Your trip has been created from this template.'
+          description: 'Your trip has been created from this template.',
         });
         setIsUseDialogOpen(false);
         router.push(`/trips/${data.trip_id}`);
@@ -139,7 +139,7 @@ export function ItineraryTemplateDetail({
     navigator.clipboard.writeText(url);
     toast({
       title: 'Link copied!',
-      description: 'The link to this template has been copied to your clipboard.'
+      description: 'The link to this template has been copied to your clipboard.',
     });
     setIsShareDialogOpen(false);
   };

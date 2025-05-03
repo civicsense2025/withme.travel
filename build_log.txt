@@ -1,0 +1,320 @@
+
+> my-v0-project@0.1.0 build /Users/tanho/Projects/withme.travel-main
+> node build-debug.js && next build
+
+====== BUILD DEBUG INFO ======
+Node version: v20.19.1
+Working directory: /Users/tanho/Projects/withme.travel-main
+Environment: not set
+
+====== CRITICAL FILES ======
+package.json: EXISTS
+pnpm-lock.yaml: EXISTS
+.npmrc: EXISTS
+vercel.json: EXISTS
+next.config.mjs: EXISTS
+tsconfig.json: EXISTS
+
+====== DEPENDENCY INFO ======
+PNPM Dependencies:
+Legend: production dependency, optional only, dev only
+
+my-v0-project@0.1.0 /Users/tanho/Projects/withme.travel-main (PRIVATE)
+
+dependencies:
+@dnd-kit/core 6.3.1
+@dnd-kit/sortable 10.0.0
+@dnd-kit/utilities 3.2.2
+@emotion/is-prop-valid 1.3.1
+@hello-pangea/dnd 18.0.1
+@hookform/resolvers 3.10.0
+@mapbox/mapbox-gl-geocoder 5.0.3
+@plunk/node 3.0.3
+@prisma/client 6.6.0
+@radix-ui/react-accordion 1.2.2
+@radix-ui/react-alert-dialog 1.1.4
+@radix-ui/react-aspect-ratio 1.1.1
+@radix-ui/react-avatar 1.1.2
+@radix-ui/react-checkbox 1.1.3
+@radix-ui/react-collapsible 1.1.2
+@radix-ui/react-context-menu 2.2.4
+@radix-ui/react-dialog 1.1.4
+@radix-ui/react-dropdown-menu 2.1.4
+@radix-ui/react-hover-card 1.1.4
+@radix-ui/react-icons 1.3.2
+@radix-ui/react-label 2.1.1
+@radix-ui/react-menubar 1.1.4
+@radix-ui/react-navigation-menu 1.2.3
+@radix-ui/react-popover 1.1.4
+@radix-ui/react-progress 1.1.1
+@radix-ui/react-radio-group 1.2.2
+@radix-ui/react-scroll-area 1.2.2
+@radix-ui/react-select 2.1.4
+@radix-ui/react-separator 1.1.1
+@radix-ui/react-slider 1.2.2
+@radix-ui/react-slot 1.1.1
+@radix-ui/react-switch 1.1.2
+@radix-ui/react-tabs 1.1.2
+@radix-ui/react-toast 1.2.4
+@radix-ui/react-toggle 1.1.1
+@radix-ui/react-toggle-group 1.1.1
+@radix-ui/react-tooltip 1.1.6
+@radix-ui/react-visually-hidden 1.2.0
+@react-google-maps/api 2.20.6
+@sentry/nextjs 9.14.0
+@supabase/ssr 0.6.1
+@supabase/supabase-js 2.49.4
+@tanstack/react-query 5.74.7
+@tanstack/react-table 8.21.3
+@tiptap/core 2.11.9
+@tiptap/extension-collaboration 2.11.7
+@tiptap/extension-collaboration-cursor 2.11.7
+@tiptap/extension-image 2.11.7
+@tiptap/extension-link 2.11.7
+@tiptap/extension-placeholder 2.11.7
+@tiptap/pm 2.11.9
+@tiptap/react 2.11.7
+@tiptap/starter-kit 2.11.7
+@types/bcryptjs 2.4.6
+@types/jsonwebtoken 9.0.9
+@types/node-fetch 2.6.12
+@upstash/ratelimit 2.0.5
+@upstash/redis 1.34.8
+@vercel/analytics 1.5.0
+@vercel/speed-insights 1.2.0
+@vis.gl/react-google-maps 1.5.2
+autoprefixer 10.4.21
+bcryptjs 3.0.2
+chalk 5.4.1
+class-variance-authority 0.7.1
+clsx 2.1.1
+cmdk 1.0.4
+commander 13.1.0
+date-fns 3.6.0
+dayjs 1.11.13
+embla-carousel-autoplay 8.6.0
+embla-carousel-react 8.5.1
+fast-deep-equal 3.1.3
+forwarded-parse 2.1.2
+framer-motion 11.18.2
+import-in-the-middle 1.13.1
+input-otp 1.4.1
+js-cookie 3.0.5
+jsonwebtoken 9.0.2
+lodash 4.17.21
+lucide-react 0.454.0
+mapbox-gl 3.11.1
+nanospinner 1.2.2
+next 15.3.1
+next-themes 0.4.6
+pexels 1.4.0
+react 18.2.0
+react-day-picker 8.10.1
+react-dom 18.2.0
+react-error-boundary 5.0.0
+react-hook-form 7.56.1
+react-hot-toast 2.5.2
+react-map-gl 8.0.4
+react-resizable-panels 2.1.9
+recharts 2.15.0
+require-in-the-middle 7.5.2
+sonner 1.7.4
+swr 2.3.3
+tailwind-merge 2.6.0
+tailwindcss-animate 1.0.7
+ua-parser-js 2.0.3
+unsplash-js 7.0.19
+uuid 11.1.0
+vaul 0.9.9
+web-vitals 4.2.4
+y-prosemirror 1.3.4
+y-webrtc 10.3.0
+y-websocket 3.0.0
+yjs 13.6.26
+zod 3.24.3
+
+devDependencies:
+@babel/preset-env 7.26.9
+@babel/preset-react 7.26.3
+@babel/preset-typescript 7.27.0
+@next/bundle-analyzer 15.3.1
+@playwright/test 1.52.0
+@testing-library/jest-dom 6.6.3
+@testing-library/react 16.3.0
+@testing-library/user-event 14.6.1
+@types/geojson 7946.0.16
+@types/jest 29.5.14
+@types/js-cookie 3.0.6
+@types/lodash 4.17.16
+@types/mapbox-gl 3.4.1
+@types/mapbox__mapbox-gl-geocoder 5.0.0
+@types/node 20.17.32
+@types/react 18.3.20
+@types/react-dom 18.3.6
+@types/react-map-gl 6.1.7
+babel-jest 29.7.0
+dotenv 16.5.0
+eslint 8.57.1
+eslint-config-next 15.3.1
+eslint-config-prettier 10.1.2
+eslint-plugin-prettier 5.2.6
+glob 11.0.2
+globby 14.1.0
+jest-environment-jsdom 29.7.0
+mini-css-extract-plugin 2.9.2
+msw 2.7.5
+node-fetch 2.7.0
+open 10.1.1
+postcss 8.5.3
+prettier 3.5.3
+tailwindcss 3.4.17
+ts-jest 29.3.2
+ts-node 10.9.2
+typescript 5.8.3
+
+
+====== CHECKING FOR COMMON ISSUES ======
+Checking Node.js version compatibility...
+Required Node.js version: >=18.0.0
+
+====== BUILD DEBUG COMPLETE ======
+If you see this message, the debug script ran successfully.
+[Headers Function] Applying headers (CSP permanently disabled in this version)
+   ▲ Next.js 15.3.1
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 12.0s
+   Skipping validation of types
+   Linting ...
+
+Failed to compile.
+
+./app/countries/[country]/page.tsx
+215:1  Warning: Prevent client components from being async functions. See: https://nextjs.org/docs/messages/no-async-client-component  @next/next/no-async-client-component
+217:37  Error: React Hook "useState" cannot be called in an async function.  react-hooks/rules-of-hooks
+218:43  Error: React Hook "useState" cannot be called in an async function.  react-hooks/rules-of-hooks
+219:41  Error: React Hook "useState" cannot be called in an async function.  react-hooks/rules-of-hooks
+220:37  Error: React Hook "useState" cannot be called in an async function.  react-hooks/rules-of-hooks
+241:3  Error: React Hook "useEffect" cannot be called in an async function.  react-hooks/rules-of-hooks
+
+./app/debug/auth-status/page.tsx
+83:6  Warning: React Hook useCallback has a missing dependency: 'authState.apiTestResult'. Either include it or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setAuthState' needs the current value of 'authState.apiTestResult'.  react-hooks/exhaustive-deps
+
+./app/design-sandbox/design-sandbox-client.tsx
+5:9  Warning: Replace `·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle,·CardFooter·` with `⏎··Card,⏎··CardContent,⏎··CardDescription,⏎··CardHeader,⏎··CardTitle,⏎··CardFooter,⏎`  prettier/prettier
+17:9  Warning: Replace `·Select,·SelectContent,·SelectItem,·SelectTrigger,·SelectValue·` with `⏎··Select,⏎··SelectContent,⏎··SelectItem,⏎··SelectTrigger,⏎··SelectValue,⏎`  prettier/prettier
+21:9  Warning: Replace `·AlertCircle,·CheckCircle,·Info,·X,·Grid2X2,·Box,·LayoutGrid,·SquareStack,·MapPin·` with `⏎··AlertCircle,⏎··CheckCircle,⏎··Info,⏎··X,⏎··Grid2X2,⏎··Box,⏎··LayoutGrid,⏎··SquareStack,⏎··MapPin,⏎`  prettier/prettier
+23:9  Warning: Replace `·Table,·TableBody,·TableCaption,·TableCell,·TableHead,·TableHeader,·TableRow·` with `⏎··Table,⏎··TableBody,⏎··TableCaption,⏎··TableCell,⏎··TableHead,⏎··TableHeader,⏎··TableRow,⏎`  prettier/prettier
+24:9  Warning: Replace `·Accordion,·AccordionContent,·AccordionItem,·AccordionTrigger·` with `⏎··Accordion,⏎··AccordionContent,⏎··AccordionItem,⏎··AccordionTrigger,⏎`  prettier/prettier
+25:9  Warning: Replace `·Dialog,·DialogContent,·DialogDescription,·DialogFooter,·DialogHeader,·DialogTitle,·DialogTrigger·` with `⏎··Dialog,⏎··DialogContent,⏎··DialogDescription,⏎··DialogFooter,⏎··DialogHeader,⏎··DialogTitle,⏎··DialogTrigger,⏎`  prettier/prettier
+38:9  Warning: Replace `·TRIP_ROLES,·ITEM_STATUSES,·type·ItemStatus,·PERMISSION_STATUSES·` with `⏎··TRIP_ROLES,⏎··ITEM_STATUSES,⏎··type·ItemStatus,⏎··PERMISSION_STATUSES,⏎`  prettier/prettier
+152:2  Warning: Insert `;`  prettier/prettier
+
+./app/forms_backup/components/FormRenderer.tsx
+234:9  Warning: The 'getNextQuestionIndex' function makes the dependencies of useCallback Hook (at line 345) change on every render. Move it inside the useCallback callback. Alternatively, wrap the definition of 'getNextQuestionIndex' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+258:9  Warning: The 'handleFormSubmit' function makes the dependencies of useCallback Hook (at line 345) change on every render. Move it inside the useCallback callback. Alternatively, wrap the definition of 'handleFormSubmit' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+
+./app/trips/[tripId]/components/TripPresence.tsx
+97:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/trips/create/components/CreateTripForm.tsx
+751:37  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./components/presence/cursor-tracker.tsx
+22:1  Warning: Delete `····`  prettier/prettier
+25:1  Warning: Delete `····`  prettier/prettier
+29:1  Warning: Delete `······`  prettier/prettier
+34:1  Warning: Delete `······`  prettier/prettier
+39:1  Warning: Delete `····`  prettier/prettier
+42:1  Warning: Delete `····`  prettier/prettier
+48:1  Warning: Delete `··`  prettier/prettier
+54:1  Warning: Delete `········`  prettier/prettier
+66:17  Warning: Replace `·width="24"·height="24"·viewBox="0·0·24·24"·fill="none"·xmlns="http://www.w3.org/2000/svg"` with `⏎··············width="24"⏎··············height="24"⏎··············viewBox="0·0·24·24"⏎··············fill="none"⏎··············xmlns="http://www.w3.org/2000/svg"⏎············`  prettier/prettier
+75:1  Warning: Delete `············`  prettier/prettier
+90:30  Warning: Insert `⏎`  prettier/prettier
+
+./components/presence/presence-context.tsx
+6:9  Warning: Delete `·`  prettier/prettier
+7:21  Warning: Delete `·`  prettier/prettier
+8:29  Warning: Delete `·`  prettier/prettier
+10:23  Warning: Replace `·` with `,`  prettier/prettier
+36:16  Warning: Replace `·data:·{·user·}` with `⏎··········data:·{·user·},⏎·······`  prettier/prettier
+37:1  Warning: Delete `········`  prettier/prettier
+42:1  Warning: Delete `········`  prettier/prettier
+45:1  Warning: Delete `········`  prettier/prettier
+58:1  Warning: Delete `········`  prettier/prettier
+60:1  Warning: Delete `········`  prettier/prettier
+66:1  Warning: Delete `············`  prettier/prettier
+68:67  Warning: Replace `UserPresence·|·ExtendedUserPresence` with `⏎··············|·UserPresence⏎··············|·ExtendedUserPresence⏎············`  prettier/prettier
+72:15  Warning: Replace `'presence',·{·event:·'join'·},` with `⏎············'presence',⏎············{·event:·'join'·},⏎···········`  prettier/prettier
+73:1  Warning: Insert `··`  prettier/prettier
+74:13  Warning: Replace `setActiveUsers(prev` with `··setActiveUsers((prev)`  prettier/prettier
+75:11  Warning: Replace `}` with `··}⏎··········`  prettier/prettier
+76:15  Warning: Replace `'presence',·{·event:·'leave'·},` with `⏎············'presence',⏎············{·event:·'leave'·},⏎···········`  prettier/prettier
+77:13  Warning: Insert `··`  prettier/prettier
+78:1  Warning: Replace `············const·leftIds·=·leftPresences.map(p` with `··············const·leftIds·=·leftPresences.map((p)`  prettier/prettier
+79:13  Warning: Replace `setActiveUsers(prev·=>·prev.filter(p` with `··setActiveUsers((prev)·=>·prev.filter((p)`  prettier/prettier
+80:11  Warning: Replace `}` with `··}⏎··········`  prettier/prettier
+86:1  Warning: Delete `············`  prettier/prettier
+97:1  Warning: Delete `····`  prettier/prettier
+99:1  Warning: Delete `····`  prettier/prettier
+107:1  Warning: Delete `··`  prettier/prettier
+113:1  Warning: Delete `······`  prettier/prettier
+115:14  Warning: Replace `·data:·{·user·}` with `⏎········data:·{·user·},⏎·····`  prettier/prettier
+116:1  Warning: Delete `······`  prettier/prettier
+120:1  Warning: Delete `······`  prettier/prettier
+123:1  Warning: Delete `······`  prettier/prettier
+129:1  Warning: Delete `······`  prettier/prettier
+132:1  Warning: Delete `······`  prettier/prettier
+140:1  Warning: Delete `··`  prettier/prettier
+148:1  Warning: Delete `··`  prettier/prettier
+149:10  Warning: Replace `(⏎····<PresenceContext.Provider·value={value}>⏎······{children}⏎····</PresenceContext.Provider>⏎··)` with `<PresenceContext.Provider·value={value}>{children}</PresenceContext.Provider>`  prettier/prettier
+158:2  Warning: Insert `⏎`  prettier/prettier
+
+./components/presence/presence-indicator.tsx
+7:10  Warning: Replace `⏎··Tooltip,⏎··TooltipContent,⏎··TooltipProvider,⏎··TooltipTrigger,⏎` with `Tooltip,·TooltipContent,·TooltipProvider,·TooltipTrigger·`  prettier/prettier
+38:1  Warning: Delete `··`  prettier/prettier
+42:1  Warning: Delete `··`  prettier/prettier
+44:1  Warning: Delete `··`  prettier/prettier
+45:22  Warning: Replace `·activeUsers?.filter((user:·UserPresence)·=>·⏎····` with `⏎····activeUsers?.filter(⏎······(user:·UserPresence)·=>·`  prettier/prettier
+47:3  Warning: Insert `··`  prettier/prettier
+48:1  Warning: Delete `··`  prettier/prettier
+54:61  Warning: Replace `⏎····?·onlineUsers.length·-·maxDisplayed·⏎···` with `?·onlineUsers.length·-·maxDisplayed`  prettier/prettier
+61:30  Warning: Insert `,`  prettier/prettier
+91:1  Warning: Delete `········`  prettier/prettier
+101:20  Warning: Replace `{additionalUsers}·more·{additionalUsers·===·1·?·'person'·:·'people'}·online` with `⏎··················{additionalUsers}·more·{additionalUsers·===·1·?·'person'·:·'people'}·online⏎················`  prettier/prettier
+109:2  Warning: Replace `·` with `⏎`  prettier/prettier
+
+./components/trips/activity-timeline.tsx
+134:16  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./components/trips/trip-presence-indicator.tsx
+29:9  Warning: Delete `·`  prettier/prettier
+30:19  Warning: Delete `·`  prettier/prettier
+31:24  Warning: Delete `·`  prettier/prettier
+32:24  Warning: Delete `·`  prettier/prettier
+34:21  Warning: Insert `,`  prettier/prettier
+136:10  Warning: Replace `(⏎····'cursor_position'·in·user·||·⏎····'editing_item_id'·in·user·||·⏎····'page_path'·in·user⏎··)` with `'cursor_position'·in·user·||·'editing_item_id'·in·user·||·'page_path'·in·user`  prettier/prettier
+167:1  Warning: Delete `··`  prettier/prettier
+176:19  Warning: Delete `·`  prettier/prettier
+177:50  Warning: Delete `·`  prettier/prettier
+198:20  Warning: Delete `·`  prettier/prettier
+199:35  Warning: Delete `·`  prettier/prettier
+204:49  Warning: Delete `·`  prettier/prettier
+205:64  Warning: Delete `·`  prettier/prettier
+214:19  Warning: Delete `·`  prettier/prettier
+216:50  Warning: Delete `·`  prettier/prettier
+298:79  Warning: Insert `,`  prettier/prettier
+313:1  Warning: Delete `····`  prettier/prettier
+372:42  Warning: Delete `·`  prettier/prettier
+376:15  Warning: Replace `(user)·=>·` with `⏎········(user)·=>`  prettier/prettier
+377:9  Warning: Replace `isExtendedUserPresence(user)·&&·⏎········user.cursor_position·&&·⏎········user.status·!==·'offline'·&&·⏎` with `··isExtendedUserPresence(user)·&&⏎··········user.cursor_position·&&⏎··········user.status·!==·'offline'·&&⏎··`  prettier/prettier
+383:67  Warning: Delete `·`  prettier/prettier
+391:84  Warning: Insert `,`  prettier/prettier
+457:27  Warning: Replace `user` with `(user)`  prettier/prettier
+462:29  Warning: Replace `⏎················'h-6·text-xs·px-2·py-0',⏎················showCursors·?·'bg-muted'·:·'bg-transparent'⏎··············` with `'h-6·text-xs·px-2·py-0',·showCursors·?·'bg-muted'·:·'bg-transparent'`  prettier/prettier
+608:38  Warning: Insert `⏎`  prettier/prettier
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+ ELIFECYCLE  Command failed with exit code 1.

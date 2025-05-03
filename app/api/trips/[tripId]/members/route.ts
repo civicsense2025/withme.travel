@@ -10,8 +10,8 @@ const FIELDS = {
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
-    ROLE: 'role'
-  }
+    ROLE: 'role',
+  },
 };
 
 export async function GET(
@@ -28,8 +28,15 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid trip ID format' }, { status: 400 });
     }
 
-    // Explicitly use getRouteHandlerClient
-    const supabase = await createRouteHandlerClient();
+    // Create Supabase client without await (it's not an async function)
+    const supabase = createRouteHandlerClient();
+
+    // Get the auth session cookie directly
+    const cookieHeader = request.headers.get('cookie') || '';
+    if (!cookieHeader.includes('sb-') && !cookieHeader.includes('supabase-auth')) {
+      console.error('Missing auth cookies in request:', cookieHeader.substring(0, 100)); // Log first 100 chars
+      return NextResponse.json({ error: 'Auth session missing in cookies' }, { status: 401 });
+    }
 
     // Use getUser() for a more secure auth check
     const {
@@ -38,8 +45,40 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.error('Auth error in members route:', authError);
+      console.error('Auth error in members route:', authError || 'No user found');
+      console.log('Request headers:', Object.fromEntries(request.headers.entries()));
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if this user is a member of the trip (for authorization)
+    const { data: userMembership, error: membershipError } = await supabase
+      .from(TRIP_MEMBERS_TABLE)
+      .select('role')
+      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Error checking membership:', membershipError);
+    }
+
+    // If not a member, check if trip is public
+    if (!userMembership) {
+      const { data: tripData, error: tripError } = await supabase
+        .from('trips')
+        .select('is_public, privacy_setting')
+        .eq('id', tripId)
+        .single();
+
+      if (tripError) {
+        console.error('Error checking trip privacy:', tripError);
+        return NextResponse.json({ error: 'Failed to verify trip access' }, { status: 500 });
+      }
+
+      // Only allow viewing members if trip is public
+      if (!tripData?.is_public && tripData?.privacy_setting !== 'public') {
+        return NextResponse.json({ error: 'Not authorized to view this trip' }, { status: 403 });
+      }
     }
 
     // Fetch trip members

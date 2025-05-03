@@ -83,8 +83,10 @@ export const CoreTravelItemsSection: React.FC<CoreTravelItemsSectionProps> = ({
                     variant="outline"
                     size="sm"
                     className="h-7 text-xs gap-1 border-dashed border-muted-foreground/50 hover:border-muted-foreground"
-                    onClick={(e) => { return e.stopPropagation();
-                      onAddItem(ITINERARY_CATEGORIES.ACCOMMODATION); }}
+                    onClick={(e) => {
+                      return e.stopPropagation();
+                      onAddItem(ITINERARY_CATEGORIES.ACCOMMODATION);
+                    }}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Accommodation
@@ -147,8 +149,10 @@ export const CoreTravelItemsSection: React.FC<CoreTravelItemsSectionProps> = ({
                     variant="outline"
                     size="sm"
                     className="h-7 text-xs gap-1 border-dashed border-muted-foreground/50 hover:border-muted-foreground"
-                    onClick={(e) => { return e.stopPropagation();
-                      onAddItem(ITINERARY_CATEGORIES.TRANSPORTATION); }}
+                    onClick={(e) => {
+                      return e.stopPropagation();
+                      onAddItem(ITINERARY_CATEGORIES.TRANSPORTATION);
+                    }}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Transportation

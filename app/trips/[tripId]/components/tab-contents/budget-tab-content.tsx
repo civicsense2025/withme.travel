@@ -4,7 +4,6 @@ import { BudgetTab } from '@/components/budget-tab';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 import * as Sentry from '@sentry/nextjs';
 
 // Explicitly define TripRole type here to avoid import issues

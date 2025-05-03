@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 // import { ImageDebug } from "@/components/debug/ImageDebug"; // Import the debug component
 import { Heart, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -106,18 +107,11 @@ export function DestinationCard({
 }: DestinationCardProps) {
   const [showSneak, setShowSneak] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+  const router = useRouter();
+
   // Destructure destination properties
-  const { 
-    city, 
-    country, 
-    image_url, 
-    emoji, 
-    image_metadata, 
-    highlights,
-    byline
-  } = destination;
-  
+  const { city, country, image_url, emoji, image_metadata, highlights, byline } = destination;
+
   // Render rating stars helper function
   const renderRating = (rating: number, max: number) => {
     if (rating === null || rating === undefined) return 'N/A';
@@ -135,13 +129,25 @@ export function DestinationCard({
   // Fallback for href if not provided
   const cardHref = href || `/destinations/${city.toLowerCase().replace(/\s+/g, '-')}`;
 
-  // Fallback for image if not available
-  const imageUrl =
-    image_url || `/placeholder.svg?height=600&width=400&query=${encodeURIComponent(city)}`;
+  // Improved fallback for image if not available
+  const imageUrl = (() => {
+    if (image_url) {
+      // If image_url is provided, ensure it starts with a slash
+      return image_url.startsWith('/') ? image_url : `/${image_url}`;
+    }
+    
+    // Handle city names with spaces and special characters for filename
+    const citySlug = city.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+    
+    // Default to jpg extension - we can't check if files exist client-side
+    return `/destinations/${citySlug}.jpg`;
+  })();
 
   // Handle mouse enter
   const handleMouseEnter = () => {
-    const timeout = setTimeout(() => { return setShowSneak(true); }, 3000);
+    const timeout = setTimeout(() => {
+      return setShowSneak(true);
+    }, 3000);
     setHoverTimeout(timeout);
   };
 
@@ -210,9 +216,9 @@ export function DestinationCard({
   const attributionText = createAttributionText(image_metadata);
 
   // Handle like button click
-  const handleLikeClick = (e: React.MouseEvent) => { 
+  const handleLikeClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation(); 
+    e.stopPropagation();
   };
 
   // Use the highlights prop directly (or an empty array)
@@ -259,11 +265,16 @@ export function DestinationCard({
               )}
               {city}
             </h3>
-            <Link href={`/countries/${country?.toLowerCase().replace(/\s+/g, '-')}`} 
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-white/80 text-sm font-medium group-hover:translate-y-[-2px] transition-transform duration-300 delay-75 hover:text-white hover:underline">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push(`/countries/${country?.toLowerCase().replace(/\s+/g, '-')}`);
+              }}
+              className="text-white/80 text-sm font-medium group-hover:translate-y-[-2px] transition-transform duration-300 delay-75 hover:text-white hover:underline bg-transparent border-0 p-0 cursor-pointer"
+            >
               {country}
-            </Link>
+            </button>
           </div>
           {/* Like button */}
           <div className="absolute top-4 right-4 z-20" onClick={handleLikeClick}>
@@ -284,9 +295,9 @@ export function DestinationCard({
                   <TooltipTrigger asChild>
                     <button
                       className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
-                      onClick={(e) => { 
+                      onClick={(e) => {
                         e.preventDefault();
-                        e.stopPropagation(); 
+                        e.stopPropagation();
                       }}
                       aria-label="Image attribution information"
                     >

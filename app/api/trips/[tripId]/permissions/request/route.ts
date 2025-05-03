@@ -20,7 +20,7 @@ export async function POST(
 ) {
   try {
     const { tripId } = await params;
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     // Type the parsed body
     const { message, requestedRole }: RequestBody = await request.json();
 

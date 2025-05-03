@@ -155,7 +155,7 @@ export class EmailService {
           // Use type assertion for unknown error type
           const errorObj = error as unknown;
           let errorMessage: string;
-          
+
           if (errorObj instanceof Error) {
             errorMessage = errorObj.message;
           } else if (typeof errorObj === 'object' && errorObj !== null) {
@@ -163,7 +163,7 @@ export class EmailService {
           } else {
             errorMessage = String(errorObj);
           }
-          
+
           throw new Error(`Resend error: ${errorMessage}`);
         }
 

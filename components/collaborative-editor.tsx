@@ -43,7 +43,7 @@ export function CollaborativeEditor({
     // This is just for demonstration purposes
     const webrtcProvider = new WebrtcProvider(roomName, doc, {
       signaling: ['wss://signaling.yjs.dev'],
-  });
+    });
 
     setYdoc(doc);
     setProvider(webrtcProvider);
@@ -68,7 +68,7 @@ export function CollaborativeEditor({
         StarterKit,
         Collaboration.configure({
           document: ydoc,
-  }),
+        }),
         CollaborationCursor.configure({
           provider: provider,
           user: {
@@ -83,7 +83,7 @@ export function CollaborativeEditor({
       content: '',
       editorProps: {
         attributes: {
-          class: 'prose prose-sm focus:outline-none min-h-[100px] p-4'
+          class: 'prose prose-sm focus:outline-none min-h-[100px] p-4',
         },
       },
     },
@@ -105,7 +105,7 @@ export function CollaborativeEditor({
         title: 'Error',
         description: 'Failed to save content',
         variant: 'destructive',
-  });
+      });
     } finally {
       setIsSaving(false);
     }

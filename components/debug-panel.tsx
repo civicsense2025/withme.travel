@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
  *
  * To use: Add {process.env.NODE_ENV === 'development' && <DebugPanel />} to your layout
  */
-export function DebugPanel() { 
+export function DebugPanel() {
   const [loggingEnabled, setLoggingEnabled] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const { user, session, isLoading } = useAuth();
@@ -39,7 +39,9 @@ export function DebugPanel() {
   };
 
   // Refresh the page
-  const refreshPage = () => { return window.location.reload(); };
+  const refreshPage = () => {
+    return window.location.reload();
+  };
 
   // Extract key info from session
   const isAuthenticated = !!session;

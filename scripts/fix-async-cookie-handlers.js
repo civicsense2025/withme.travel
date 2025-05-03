@@ -30,13 +30,13 @@ function fixAsyncCookieHandlers(fileContent) {
     /set\(name: string, value: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await/g,
     'async set(name: string, value: string, options: CookieOptions) {\n            try {\n              await'
   );
-  
+
   // Add async to remove() cookie handlers if they use await
   updatedContent = updatedContent.replace(
     /remove\(name: string, options: CookieOptions\)\s*\{[\s\n]*try\s*\{[\s\n]*await/g,
     'async remove(name: string, options: CookieOptions) {\n            try {\n              await'
   );
-  
+
   return updatedContent;
 }
 
@@ -44,14 +44,14 @@ function fixAsyncCookieHandlers(fileContent) {
 function processFile(filePath) {
   try {
     const content = readFile(filePath);
-    
+
     // Only process files that use cookieStore
     if (!content.includes('cookieStore')) {
       return false;
     }
-    
+
     const updatedContent = fixAsyncCookieHandlers(content);
-    
+
     // Only write the file if changes were made
     if (content !== updatedContent) {
       writeFile(filePath, updatedContent);
@@ -78,4 +78,4 @@ for (const file of apiRouteFiles) {
   if (fixed) fixedCount++;
 }
 
-console.log(`\n🎉 Done! Fixed ${fixedCount} files.`); 
+console.log(`\n🎉 Done! Fixed ${fixedCount} files.`);

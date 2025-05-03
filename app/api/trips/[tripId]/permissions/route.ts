@@ -41,15 +41,7 @@ export interface PermissionCheck {
 
 // Use ENUMS directly
 const permissionRequestSchema = z.object({
-  role: z
-    .enum([
-      'admin',
-      'editor',
-      'contributor',
-      'viewer'
-    ])
-    .optional()
-    .default('editor'),
+  role: z.enum(['admin', 'editor', 'contributor', 'viewer']).optional().default('editor'),
   message: z.string().optional(),
 });
 
@@ -73,14 +65,11 @@ export async function GET(
     const { tripId } = await params;
     if (!tripId) return errorResponse('Trip ID is required', 400);
 
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     return await withAuth(async (user) => {
       try {
-        const accessResponse = await ensureTripAccess(user.id, tripId, [
-          'admin',
-          'editor'
-        ]);
+        const accessResponse = await ensureTripAccess(user.id, tripId, ['admin', 'editor']);
         if (accessResponse) return accessResponse;
 
         const { data: requests, error } = await supabase
@@ -129,14 +118,11 @@ export async function POST(
       return errorResponse('Trip ID is required', 400);
     }
 
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
 
     return await withAuth(async (user) => {
       try {
-        const accessResponse = await ensureTripAccess(user.id, tripId, [
-          'admin',
-          'editor'
-        ]);
+        const accessResponse = await ensureTripAccess(user.id, tripId, ['admin', 'editor']);
         if (accessResponse) return accessResponse;
 
         const { data: existingMember, error: checkError } = await supabase
@@ -211,7 +197,7 @@ export async function PATCH(
     }
 
     // Implementation for PATCH method
-    return successResponse({ message: "Permission updated successfully" });
+    return successResponse({ message: 'Permission updated successfully' });
   } catch (error) {
     console.error(`[Permissions PATCH Top-Level Error]:`, error);
     return errorResponse('An unexpected error occurred', 500);

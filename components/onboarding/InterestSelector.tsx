@@ -66,7 +66,7 @@ export function InterestSelector({
       await Promise.all(promises);
       toast({
         title: 'Success',
-        description: 'Your interests have been saved!'
+        description: 'Your interests have been saved!',
       });
       onComplete();
     } catch (error) {

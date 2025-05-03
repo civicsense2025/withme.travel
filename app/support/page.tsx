@@ -92,7 +92,7 @@ export default function SupportPage() {
         email: '',
         subject: '',
         message: '',
-  });
+      });
     } catch (error) {
       console.error('Error submitting form:', error);
       setMessageStatus('error');

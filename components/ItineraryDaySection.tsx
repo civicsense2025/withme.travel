@@ -89,7 +89,10 @@ export function ItineraryDaySection({
               onClick={() => canEdit && onEdit?.(item as DisplayItineraryItem)}
               className={cn(canEdit && 'cursor-pointer')}
             >
-              <ItineraryItemCard item={item as DisplayItineraryItem} dayNumber={section.day_number ?? undefined} />
+              <ItineraryItemCard
+                item={item as DisplayItineraryItem}
+                dayNumber={section.day_number ?? undefined}
+              />
             </div>
             {editingItemId === item.id && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
@@ -98,8 +101,10 @@ export function ItineraryDaySection({
                   value={inlineEditValue}
                   onChange={(e) => handleInlineEditChange?.(e.target.value)}
                   className="w-full p-2 border rounded"
-                  onKeyDown={(e) => { if (e.key === 'Enter') onSaveEdit?.();
-                    if (e.key === 'Escape') onCancelEdit?.(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onSaveEdit?.();
+                    if (e.key === 'Escape') onCancelEdit?.();
+                  }}
                   autoFocus
                 />
               </div>

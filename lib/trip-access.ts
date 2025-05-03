@@ -17,7 +17,7 @@ type ExtendedTables = {
   ITINERARY_ITEMS: string;
   ITINERARY_SECTIONS: string;
   [key: string]: string;
-}
+};
 
 // Use the extended type with the existing TABLES constant
 const Tables = TABLES as unknown as ExtendedTables;
@@ -27,14 +27,14 @@ const FIELDS = {
   TRIP_MEMBERS: {
     ROLE: 'role',
     TRIP_ID: 'trip_id',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
   },
   TRIPS: {
     ID: 'id',
     CREATED_BY: 'created_by',
     IS_PUBLIC: 'is_public',
-    PRIVACY_SETTING: 'privacy_setting'
-  }
+    PRIVACY_SETTING: 'privacy_setting',
+  },
 };
 
 const ENUMS = {
@@ -42,8 +42,8 @@ const ENUMS = {
     ADMIN: 'admin' as TripRole,
     EDITOR: 'editor' as TripRole,
     CONTRIBUTOR: 'contributor' as TripRole,
-    VIEWER: 'viewer' as TripRole
-  }
+    VIEWER: 'viewer' as TripRole,
+  },
 };
 
 // Ensure environment variables are available
@@ -99,14 +99,18 @@ export async function checkTripAccess(
   if (memberError) {
     return {
       allowed: false,
-      error: { message: `Error checking membership: ${memberError.message}`, status: 500 }
+      error: { message: `Error checking membership: ${memberError.message}`, status: 500 },
     };
   }
 
   // Define the expected member type
   type MemberData = { role: string };
-  
-  if (member && 'role' in member && allowedRoles.includes((member as MemberData).role as TripRole)) {
+
+  if (
+    member &&
+    'role' in member &&
+    allowedRoles.includes((member as MemberData).role as TripRole)
+  ) {
     return { allowed: true, role: (member as MemberData).role as TripRole };
   }
 
@@ -125,7 +129,7 @@ export async function checkTripAccess(
       }
       return {
         allowed: false,
-        error: { message: `Error checking trip privacy: ${tripError.message}`, status: 500 }
+        error: { message: `Error checking trip privacy: ${tripError.message}`, status: 500 },
       };
     }
 
@@ -141,7 +145,7 @@ export async function checkTripAccess(
 
   return {
     allowed: false,
-    error: { message: "You don't have sufficient permissions for this action", status: 403 }
+    error: { message: "You don't have sufficient permissions for this action", status: 403 },
   };
 }
 
@@ -225,8 +229,8 @@ export async function getTripPermissions(userId: string, tripId: string) {
 
   // Define the expected member type
   type MemberData = { role: string };
-  
-  const role = member && 'role' in member ? (member as MemberData).role as TripRole : null;
+
+  const role = member && 'role' in member ? ((member as MemberData).role as TripRole) : null;
   const isCreator = trip.created_by === userId;
   const isPublic =
     trip.is_public ||
@@ -296,22 +300,21 @@ export async function ensureTripAccess(
 ): Promise<NextResponse | null> {
   try {
     const accessResult = await checkTripAccess(userId, tripId, allowedRoles);
-    
+
     if (!accessResult.allowed) {
-      const { message, status } = accessResult.error || { 
-        message: 'Access denied', 
-        status: 403 
+      const { message, status } = accessResult.error || {
+        message: 'Access denied',
+        status: 403,
       };
       return NextResponse.json({ error: message }, { status });
     }
-    
+
     return null; // No error, access is allowed
   } catch (error) {
-    console.error(`[ensureTripAccess] Error checking access: ${error instanceof Error ? error.message : String(error)}`);
-    return NextResponse.json(
-      { error: 'An error occurred while checking access' },
-      { status: 500 }
+    console.error(
+      `[ensureTripAccess] Error checking access: ${error instanceof Error ? error.message : String(error)}`
     );
+    return NextResponse.json({ error: 'An error occurred while checking access' }, { status: 500 });
   }
 }
 
@@ -342,8 +345,8 @@ export async function getUserTripRole(userId: string, tripId: string): Promise<T
 
     // Define the expected data type
     type MemberData = { role: string };
-    
-    return data && 'role' in data ? (data as MemberData).role as TripRole : null;
+
+    return data && 'role' in data ? ((data as MemberData).role as TripRole) : null;
   } catch (error) {
     console.error('[getUserTripRole] Unexpected error:', error);
     return null;
@@ -358,15 +361,13 @@ export async function getUserTripRole(userId: string, tripId: string): Promise<T
  */
 export async function canUserEditTrip(userId: string, tripId: string): Promise<boolean> {
   const role = await getUserTripRole(userId, tripId);
-  
+
   if (!role) {
     return false;
   }
-  
+
   // Users with these roles can edit the trip
-  return [
-    ENUMS.TRIP_ROLES.ADMIN,
-    ENUMS.TRIP_ROLES.EDITOR,
-    ENUMS.TRIP_ROLES.CONTRIBUTOR,
-  ].includes(role);
+  return [ENUMS.TRIP_ROLES.ADMIN, ENUMS.TRIP_ROLES.EDITOR, ENUMS.TRIP_ROLES.CONTRIBUTOR].includes(
+    role
+  );
 }

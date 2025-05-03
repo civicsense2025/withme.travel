@@ -76,7 +76,9 @@ export default async function EditTripPage({ params }: PageProps) {
 
   try {
     // Check if user is logged in using the getServerSession helper
-    const { data: { session } } = await getServerSession();
+    const {
+      data: { session },
+    } = await getServerSession();
     if (!session) {
       console.log('No session found for edit trip page, redirecting to login');
       redirect(`${PAGE_ROUTES.LOGIN}?redirectTo=${encodeURIComponent(`/trips/${tripId}/edit`)}`);

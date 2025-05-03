@@ -70,7 +70,7 @@ const Sparkle = ({ size, color, top, left, delay }: SparkleProps) => (
       delay: delay,
       repeat: Infinity,
       repeatDelay: 3,
-  }}
+    }}
   />
 );
 

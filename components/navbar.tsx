@@ -25,7 +25,9 @@ import { ErrorBoundary } from '@sentry/nextjs';
 function ClientOnlyTooltip({ children, text }: { children: React.ReactNode; text: string }) {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { return setMounted(true); }, []);
+  useEffect(() => {
+    return setMounted(true);
+  }, []);
 
   if (!mounted) {
     return <>{children}</>;
@@ -141,7 +143,7 @@ export function Navbar() {
   const [hasMounted, setHasMounted] = useState(false);
   const { user, isLoading, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  
+
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -197,8 +199,10 @@ export function Navbar() {
     document.addEventListener('click', handleClickOutside);
     document.addEventListener('keydown', handleEscapeKey);
 
-    return () => { return document.removeEventListener('click', handleClickOutside);
-      document.removeEventListener('keydown', handleEscapeKey); };
+    return () => {
+      return document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
   }, [isMenuOpen]);
 
   // State to track how long loading has been active
@@ -237,14 +241,18 @@ export function Navbar() {
 
     if (isLoading) {
       // Start a timer when loading begins
-      timer = setInterval(() => { return setLoadingDuration((prev) => prev + 500); }, 500);
+      timer = setInterval(() => {
+        return setLoadingDuration((prev) => prev + 500);
+      }, 500);
     } else {
       // Reset when loading completes
       setLoadingDuration(0);
     }
 
     // Clean up timer
-    return () => { if (timer) clearInterval(timer); };
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [isLoading]);
 
   // Show a retry button if loading takes too long
@@ -261,13 +269,21 @@ export function Navbar() {
     }
   }, []);
 
-  const handleSignOut = async () => { return await signOut(); };
+  const handleSignOut = async () => {
+    return await signOut();
+  };
 
-  const toggleMenu = () => { return setIsMenuOpen((prevState) => !prevState); };
+  const toggleMenu = () => {
+    return setIsMenuOpen((prevState) => !prevState);
+  };
 
-  const closeMenu = () => { return setIsMenuOpen(false); };
+  const closeMenu = () => {
+    return setIsMenuOpen(false);
+  };
 
-  const toggleTheme = () => { return setTheme(theme === 'dark' ? 'light' : 'dark'); };
+  const toggleTheme = () => {
+    return setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -457,8 +473,10 @@ export function Navbar() {
                 <Button
                   variant="outline"
                   size="default"
-                  onClick={() => { return openSearch();
-                    closeMenu(); }}
+                  onClick={() => {
+                    return openSearch();
+                    closeMenu();
+                  }}
                   className={cn('mb-6 w-full justify-start')}
                 >
                   <Search className="h-4 w-4 mr-2" />
@@ -555,12 +573,12 @@ export function Navbar() {
                               src={user.user_metadata?.avatar_url || ''}
                               alt={user?.email || 'User'}
                             />
-                            <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                            <AvatarFallback>
+                              {user?.email?.charAt(0).toUpperCase() || 'U'}
+                            </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col text-sm">
-                            <span className="font-medium truncate">
-                              {user?.email}
-                            </span>
+                            <span className="font-medium truncate">{user?.email}</span>
                             <span className="text-muted-foreground">view account</span>
                           </div>
                         </Link>
@@ -573,8 +591,10 @@ export function Navbar() {
                       <Button
                         variant="ghost"
                         className="w-full justify-start text-sm font-medium text-destructive lowercase p-2 hover:bg-destructive/10 focus:bg-destructive/10"
-                        onClick={() => { return handleSignOut();
-                          closeMenu(); }}
+                        onClick={() => {
+                          return handleSignOut();
+                          closeMenu();
+                        }}
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         log out

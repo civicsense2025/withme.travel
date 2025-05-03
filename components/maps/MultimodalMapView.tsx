@@ -1,13 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import Map, {
-  Source,
-  Layer,
-  Marker,
-  NavigationControl,
-  GeolocateControl,
-} from 'react-map-gl';
+import Map, { Source, Layer, Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
 import type { LngLatBoundsLike, LngLatLike } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { TransitRoute } from './TransitRoute'; // Import the transit component
@@ -93,7 +87,7 @@ export const MultimodalMapView: React.FC<MultimodalMapViewProps> = ({
           setRouteInfo({
             duration: route.duration,
             distance: route.distance,
-  });
+          });
         } else {
           throw new Error('No route found.');
         }

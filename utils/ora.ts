@@ -20,7 +20,7 @@ interface Spinner {
  */
 export default function ora(options: string | { text: string }): Spinner {
   const text = typeof options === 'string' ? options : options.text;
-  
+
   const spinner: Spinner = {
     text,
     start: () => {
@@ -70,8 +70,8 @@ export default function ora(options: string | { text: string }): Spinner {
       }
       console.log(`🔴 ${message}`);
       return spinner;
-    }
+    },
   };
-  
+
   return spinner;
-} 
+}

@@ -8,14 +8,14 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const city = params.city || '';
-    
+
     if (!city) {
       return NextResponse.json({ error: 'City parameter is required' }, { status: 400 });
     }
 
     const sanitizedCity = sanitizeString(decodeURIComponent(city));
-    const supabase = await createRouteHandlerClient();
-    
+    const supabase = createRouteHandlerClient();
+
     const { data, error } = await supabase
       .from('destinations')
       .select('*')

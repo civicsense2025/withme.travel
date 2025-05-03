@@ -37,7 +37,7 @@ export const PERFORMANCE_THRESHOLDS = {
   INP: {
     GOOD: 200, // Good: <= 200ms
     POOR: 500, // Poor: > 500ms
-  }
+  },
 };
 
 // Type definition for Web Vitals metrics
@@ -84,14 +84,14 @@ export function getConnectionInfo(): {
     effectiveType: connection.effectiveType || 'unknown',
     saveData: !!connection.saveData,
     rtt: connection.rtt || 0,
-    downlink: connection.downlink || 0
+    downlink: connection.downlink || 0,
   };
 }
 
 // Collect browser and device information
 export function getDeviceInfo() {
   if (typeof window === 'undefined') return null;
-  
+
   return {
     viewport: {
       width: window.innerWidth,
@@ -150,7 +150,9 @@ export function trackWebVitals({
         }),
         // Use keepalive to ensure the request completes even during page unloads
         keepalive: true,
-      }).catch((error) => { return console.error('Failed to send Web Vitals:', error); });
+      }).catch((error) => {
+        return console.error('Failed to send Web Vitals:', error);
+      });
     }
 
     // Additionally, report poor metrics for monitoring
@@ -187,34 +189,34 @@ export function initPerformanceMonitoring(): void {
         // @ts-ignore - web-vitals may not be installed yet
         const webVitals = await import('web-vitals');
 
-        webVitals.onCLS((metric: WebVitalsMetric) => { 
+        webVitals.onCLS((metric: WebVitalsMetric) => {
           console.log('CLS:', metric.value);
-          trackCustomMetric('CLS', metric.value); 
+          trackCustomMetric('CLS', metric.value);
         });
 
-        webVitals.onFID((metric: WebVitalsMetric) => { 
+        webVitals.onFID((metric: WebVitalsMetric) => {
           console.log('FID:', metric.value);
-          trackCustomMetric('FID', metric.value); 
+          trackCustomMetric('FID', metric.value);
         });
 
-        webVitals.onLCP((metric: WebVitalsMetric) => { 
+        webVitals.onLCP((metric: WebVitalsMetric) => {
           console.log('LCP:', metric.value);
-          trackCustomMetric('LCP', metric.value); 
+          trackCustomMetric('LCP', metric.value);
         });
 
-        webVitals.onTTFB((metric: WebVitalsMetric) => { 
+        webVitals.onTTFB((metric: WebVitalsMetric) => {
           console.log('TTFB:', metric.value);
-          trackCustomMetric('TTFB', metric.value); 
+          trackCustomMetric('TTFB', metric.value);
         });
 
-        webVitals.onFCP((metric: WebVitalsMetric) => { 
+        webVitals.onFCP((metric: WebVitalsMetric) => {
           console.log('FCP:', metric.value);
-          trackCustomMetric('FCP', metric.value); 
+          trackCustomMetric('FCP', metric.value);
         });
 
-        webVitals.onINP((metric: WebVitalsMetric) => { 
+        webVitals.onINP((metric: WebVitalsMetric) => {
           console.log('INP:', metric.value);
-          trackCustomMetric('INP', metric.value); 
+          trackCustomMetric('INP', metric.value);
         });
       } catch (error) {
         console.warn('Web Vitals library not available:', error);
@@ -258,8 +260,8 @@ export function trackCustomMetric(name: string, value: number): void {
           timestamp: Date.now(),
         }),
         keepalive: true,
-      }).catch((error) => { 
-        console.error('Failed to send custom metric:', error); 
+      }).catch((error) => {
+        console.error('Failed to send custom metric:', error);
       });
     }
   } catch (error) {

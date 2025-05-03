@@ -14,7 +14,7 @@ interface ShareTripButtonProps {
 export function ShareTripButton({ slug, privacySetting, className = '' }: ShareTripButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  
+
   if (!slug || privacySetting === 'private') {
     return null;
   }

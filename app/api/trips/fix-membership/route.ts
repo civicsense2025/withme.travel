@@ -12,7 +12,7 @@ const TRIP_ROLES = {
   EDITOR: 'editor' as TripRole,
   CONTRIBUTOR: 'contributor' as TripRole,
   VIEWER: 'viewer' as TripRole,
-  OWNER: 'owner' as TripRole
+  OWNER: 'owner' as TripRole,
 };
 
 // Define table names as string literals
@@ -23,18 +23,18 @@ const TRIP_MEMBERS_TABLE = 'trip_members';
 const FIELDS = {
   TRIPS: {
     ID: 'id',
-    CREATED_BY: 'created_by'
+    CREATED_BY: 'created_by',
   },
   TRIP_MEMBERS: {
     TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
-    ROLE: 'role'
-  }
+    ROLE: 'role',
+  },
 };
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = createRouteHandlerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -101,7 +101,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({
       fixed: fixedCount,
-      message: fixedCount > 0
+      message:
+        fixedCount > 0
           ? `Fixed ${fixedCount} trips with missing membership records`
           : 'No trips needed fixing',
     });
@@ -114,19 +115,25 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 // --- POST Handler --- //
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
-    
+    const supabase = createRouteHandlerClient();
+
     // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     // Implementation for POST handler would go here
-    return NextResponse.json({ 
-      message: 'POST endpoint not fully implemented yet' 
-    }, { status: 501 });
+    return NextResponse.json(
+      {
+        message: 'POST endpoint not fully implemented yet',
+      },
+      { status: 501 }
+    );
   } catch (error) {
     console.error('[fix-membership] Unexpected error in POST:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

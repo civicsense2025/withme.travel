@@ -10,7 +10,7 @@ const TABLES = {
   TRIP_MEMBERS: 'trip_members',
   USERS: 'users',
   ITINERARY_ITEMS: 'itinerary_items',
-  ITINERARY_SECTIONS: 'itinerary_sections'
+  ITINERARY_SECTIONS: 'itinerary_sections',
 };
 
 const LOG_PREFIX = '[Trip Create API]';

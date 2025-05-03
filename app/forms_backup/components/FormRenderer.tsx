@@ -534,7 +534,9 @@ export function FormRenderer({
       case QuestionType.RATING:
         return (
           <div className="flex flex-col items-center space-y-2">
-            <div className="text-center text-lg font-medium">{question.description || question.title}</div>
+            <div className="text-center text-lg font-medium">
+              {question.description || question.title}
+            </div>
             <Rating
               value={formMethods.getValues(fieldName) || 0}
               onChange={(value) => setValue(fieldName, value)}

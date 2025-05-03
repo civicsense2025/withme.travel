@@ -126,7 +126,7 @@ export function ItineraryItemForm({
       currency: initialData?.currency || null,
       notes: typeof initialData?.notes === 'string' ? initialData.notes : '',
       latitude: initialData?.latitude || null,
-      longitude: initialData?.longitude || null
+      longitude: initialData?.longitude || null,
     },
   });
 
@@ -162,7 +162,7 @@ export function ItineraryItemForm({
       currency: initialData?.currency || null,
       notes: typeof initialData?.notes === 'string' ? initialData.notes : '',
       latitude: initialData?.latitude || null,
-      longitude: initialData?.longitude || null
+      longitude: initialData?.longitude || null,
     });
   }, [initialData, form]);
 
@@ -233,7 +233,8 @@ export function ItineraryItemForm({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error || `Failed to ${isEditing ? 'update' : 'add'} item: \`${response.status}\``
+          errorData.error ||
+            `Failed to ${isEditing ? 'update' : 'add'} item: \`${response.status}\``
         );
       }
 

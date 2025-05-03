@@ -89,7 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           {/* Add Navbar here */}
           <Navbar />
-          
+
           {/* Main content always rendered for SSR */}
           <div
             id="main-content"
@@ -98,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             {children}
           </div>
-          
+
           {/* Add Footer here */}
           <Footer />
 

@@ -28,19 +28,19 @@ function writeFile(filePath, content) {
 // Fix route parameter typing
 function fixRouteParamTypes(fileContent) {
   let updatedContent = fileContent;
-  
+
   // Fix parameter types in exports
   updatedContent = updatedContent.replace(
-    /export\s+async\s+function\s+(GET|POST|PUT|PATCH|DELETE)\s*\(\s*([^,)]+)\s*,\s*\{\s*params\s*\}\s*:\s*\{\s*params\s*:\s*(?!Promise<)(\{[^}]*\})\s*\}\s*\)/g, 
+    /export\s+async\s+function\s+(GET|POST|PUT|PATCH|DELETE)\s*\(\s*([^,)]+)\s*,\s*\{\s*params\s*\}\s*:\s*\{\s*params\s*:\s*(?!Promise<)(\{[^}]*\})\s*\}\s*\)/g,
     'export async function $1($2, { params }: { params: Promise<$3> })'
   );
-  
+
   // Fix parameter access to use await
   updatedContent = updatedContent.replace(
     /const\s+\{([^}]+)\}\s*=\s*params;(?!\s*\/\/\s*already\s*awaited)/g,
     'const {$1} = await params; // Ensure params are awaited'
   );
-  
+
   return updatedContent;
 }
 
@@ -49,7 +49,7 @@ function processFile(filePath) {
   try {
     const content = readFile(filePath);
     const updatedContent = fixRouteParamTypes(content);
-    
+
     if (content !== updatedContent) {
       writeFile(filePath, updatedContent);
       console.log(`✅ Fixed: ${filePath}`);
@@ -75,4 +75,4 @@ for (const file of tripApiRoutes) {
   if (fixed) fixedCount++;
 }
 
-console.log(`\n🎉 Done! Fixed ${fixedCount} trip API route files.`); 
+console.log(`\n🎉 Done! Fixed ${fixedCount} trip API route files.`);

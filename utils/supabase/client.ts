@@ -25,7 +25,7 @@ export function createClient() {
   if (clientSingleton) {
     return clientSingleton;
   }
-  
+
   // Use non-null assertions since we've already checked the values
   clientSingleton = createSupabaseClient<Database>(supabaseUrl!, supabaseAnonKey!);
   return clientSingleton;

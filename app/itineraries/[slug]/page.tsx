@@ -122,8 +122,8 @@ export async function generateMetadata({ params }: ItineraryPageProps): Promise<
       description: template.description || 'View this trip itinerary template',
       openGraph: {
         images: template.destinations?.image_url ? [template.destinations.image_url] : [],
-      }
-  };
+      },
+    };
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {

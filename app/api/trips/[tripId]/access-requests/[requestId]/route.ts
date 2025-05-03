@@ -24,7 +24,7 @@ export async function PATCH(
   { params }: { params: Promise<{ tripId: string; requestId: string }> }
 ): Promise<NextResponse> {
   const { tripId, requestId } = await params;
-  const supabase = await createRouteHandlerClient();
+  const supabase = createRouteHandlerClient();
 
   try {
     const { status } = await request.json();

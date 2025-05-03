@@ -75,6 +75,7 @@ Based on the latest TypeScript errors report, several key issues remain:
 ### 3. Presence System Interface Issues (High Priority)
 
 Several type errors in `trip-presence-indicator.tsx` reveal missing properties and interfaces:
+
 - Missing properties on `ExtendedUserPresence` type: `editing_item_id`, `page_path`
 - Missing properties on `PresenceContextType`: `activeUsers`, `myPresence`, `connectionState`, `error`, `recoverPresence`
 - Parameters with implicit 'any' types in filter functions
@@ -107,18 +108,20 @@ Several type errors in `trip-presence-indicator.tsx` reveal missing properties a
 ### 1. Fix Database Constants Exports
 
 - Update `utils/constants/database.ts` to ensure all required exports are present:
+
   ```typescript
   // Add missing exports
   export const FIELDS = {
     // All field constants here
   };
-  
+
   export const ENUMS = {
     // All enum constants here
   };
-  
-  export type TripRole = typeof ENUMS.TRIP_ROLES[keyof typeof ENUMS.TRIP_ROLES];
+
+  export type TripRole = (typeof ENUMS.TRIP_ROLES)[keyof typeof ENUMS.TRIP_ROLES];
   ```
+
 - Run the fix-database-constants script again to update any missed imports
 
 ### 2. Fix Supabase Cookie Handling
@@ -133,13 +136,14 @@ Several type errors in `trip-presence-indicator.tsx` reveal missing properties a
 ### 3. Update Presence System Interfaces
 
 - Create or update interface definitions:
+
   ```typescript
   export interface ExtendedUserPresence extends UserPresence {
     editing_item_id?: string;
     page_path?: string;
     // Other missing properties
   }
-  
+
   export interface PresenceContextType {
     activeUsers: UserPresence[];
     myPresence: UserPresence | null;
@@ -149,6 +153,7 @@ Several type errors in `trip-presence-indicator.tsx` reveal missing properties a
     // Other missing properties
   }
   ```
+
 - Fix implicit any parameters by adding proper type annotations
 
 ### 4. Update Focus Session Types
@@ -173,10 +178,12 @@ Several type errors in `trip-presence-indicator.tsx` reveal missing properties a
 ## Automated Fixes Needed
 
 1. **Database Constants Fix Script Enhancement**:
+
    - Update to check and fix any remaining database constant import issues
    - Validate that database.ts exports all necessary constants and types
 
 2. **Type Enhancement Script**:
+
    - Create a script to detect and add explicit type annotations for implicit any parameters
    - Focus on presence components and other high-traffic areas
 
@@ -188,7 +195,7 @@ These scripts can be run as needed to maintain consistency and fix issues that m
 
 ## Conclusion
 
-While we've made substantial progress, several key TypeScript errors remain that need systematic fixes. The issues are now well-categorized and understood, which allows for targeted fixes. With continued focused effort on these specific areas, we can eliminate the remaining TypeScript errors and strengthen the codebase's type safety and reliability. 
+While we've made substantial progress, several key TypeScript errors remain that need systematic fixes. The issues are now well-categorized and understood, which allows for targeted fixes. With continued focused effort on these specific areas, we can eliminate the remaining TypeScript errors and strengthen the codebase's type safety and reliability.
 
 ## Update: Trip TypeScript Errors Fixed
 
@@ -237,23 +244,26 @@ We've made significant progress in fixing TypeScript errors across the codebase,
 ### Key Scripts Created
 
 1. **scripts/fix-supabase-cookies.js**: Fixes cookie handling in API routes by ensuring async/await usage is properly implemented
-2. **scripts/fix-database-constants.js**: Standardizes database constants imports and updates legacy references 
+2. **scripts/fix-database-constants.js**: Standardizes database constants imports and updates legacy references
 3. **scripts/fix-async-cookie-handlers.js**: Adds missing async keywords to functions using await
 4. **scripts/fix-trip-errors.js**: Comprehensive script combining multiple fixes for trip API routes
 
 ### Critical Fixes Implemented
 
 1. **Database Constants Export Fixes**
+
    - Updated `utils/constants/database.ts` to properly export TABLES, FIELDS, ENUMS
    - Added proper type exports for TripRole, ItemStatus, etc.
    - Fixed imports across the codebase to use the correct exports
 
 2. **Next.js 15 Route Parameter Handling**
+
    - Updated API route handlers to type parameters as `Promise<{ param: string }>`
    - Added proper await for dynamic parameters access
    - Fixed parameter extraction patterns
 
 3. **Async/Await Cookie Handlers**
+
    - Added async keyword to cookie handler functions using await
    - Fixed async cookie operations in Supabase client initialization
    - Removed duplicate async modifiers
@@ -286,4 +296,4 @@ While we've made significant progress, some issues remain that require additiona
 2. Create a comprehensive script that addresses all common TypeScript errors in one pass
 3. Implement automated tests to prevent regression of fixed issues
 
-These improvements have significantly reduced the number of TypeScript errors, making the codebase more robust and maintainable. The scripts created will continue to be valuable for ongoing maintenance and future updates. 
+These improvements have significantly reduced the number of TypeScript errors, making the codebase more robust and maintainable. The scripts created will continue to be valuable for ongoing maintenance and future updates.
