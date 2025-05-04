@@ -1,6 +1,6 @@
 import type { ItineraryItem } from '@/types/database.types';
 
-interface PlaceData {
+export interface PlaceData {
   title: string;
   address: string;
   rating?: number | null;
@@ -15,7 +15,7 @@ interface PlaceData {
   longitude?: number | null;
 }
 
-interface ParsedGoogleMapsResult {
+export interface ParsedGoogleMapsResult {
   success: boolean;
   places: PlaceData[];
   listTitle?: string;
@@ -23,64 +23,79 @@ interface ParsedGoogleMapsResult {
 }
 
 /**
- * Parses a Google Maps list URL to extract places data
- * This is a mock implementation, as we can't actually scrape Google Maps here
+ * Fetches and parses a public Google Maps "List" URL.
  */
-export async function parseGoogleMapsList(url: string): Promise<ParsedGoogleMapsResult> {
+export async function parseGoogleMapsList(
+  url: string
+): Promise<ParsedGoogleMapsResult> {
   try {
-    // This is a mock implementation
-    // In a real implementation, we would make a request to the URL and parse the HTML
+    // 1. Expand short-link / follow redirects
+    const expandRes = await fetch(url, { redirect: 'follow' });
+    const finalUrl = expandRes.url;
+    const params = new URL(finalUrl).searchParams;
+    const listId = params.get('mid') || params.get('list_cid');
+    
+    if (!listId) {
+      throw new Error('Could not find a list ID (mid) in that URL');
+    }
 
-    // For now, return a success with mock data
-    return {
-      success: true,
-      listTitle: 'Sample Google Maps List',
-      places: [
-        {
-          title: 'Example Restaurant',
-          address: '123 Main St, City, Country',
-          rating: 4.5,
-          reviews: 100,
-          category: 'Restaurant',
-          description: 'A great place to eat',
-          website: 'https://example.com',
-          phone: '+1 123-456-7890',
-          placeId: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
-          latitude: 37.7749,
-          longitude: -122.4194,
+    // 2. Construct the RPC payload
+    const rpcPayload = JSON.stringify([
+      ['ListRPCService.GetListById', [listId, 'en'], null, 'generic']
+    ]);
+
+    // 3. Call Google's internal list RPC endpoint
+    const rpcRes = await fetch(
+      'https://www.google.com/maps/preview/list',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         },
-        {
-          title: 'Example Attraction',
-          address: '456 Park Ave, City, Country',
-          rating: 4.8,
-          reviews: 250,
-          category: 'Tourist Attraction',
-          description: 'A must-see attraction',
-          placeId: 'ChIJP3Sa8ziYEmsRUKgyFmh9AQM',
-          latitude: 37.7694,
-          longitude: -122.4862,
-        },
-      ],
-    };
-  } catch (error: any) {
+        body: `f.req=${encodeURIComponent(rpcPayload)}`
+      }
+    );
+    
+    if (!rpcRes.ok) {
+      throw new Error(`RPC returned ${rpcRes.status}`);
+    }
+
+    // 4. Strip anti-XSSI prefix and parse
+    let text = await rpcRes.text();
+    if (text.startsWith(")]}'")) text = text.slice(4);
+    const rpcJson = JSON.parse(text);
+
+    // 5. Locate list data
+    const listBlock = rpcJson[0][2][0];
+    const listTitle = listBlock[0] as string;
+    const rawItems = listBlock[2] as any[];
+
+    // 6. Map to our shape
+    const places: PlaceData[] = rawItems.map((item) => {
+      const title = item[0] as string;
+      const detail = item[1];
+      return {
+        title,
+        address: detail[1] as string,
+        placeId: detail[0] as string,
+        latitude: (detail[8] && detail[8][0]) as number,
+        longitude: (detail[8] && detail[8][1]) as number,
+        category: (detail[3] as string) || null,
+        description: (detail[6] as string) || null,
+        rating: detail[4] ? parseFloat(detail[4]) : null,
+        reviews: detail[5] ? parseInt(detail[5]) : null,
+        phone: (detail[9] as string) || null,
+        website: (detail[7] as string) || null
+      };
+    });
+
+    return { success: true, listTitle, places };
+  } catch (err: any) {
     return {
       success: false,
       places: [],
-      error: `Failed to parse Google Maps list: ${error.message}`,
+      error: err.message || 'Unknown error parsing list'
     };
-  }
-}
-
-/**
- * Extract places information from Google Maps HTML
- */
-function extractPlacesFromHtml(html: string): PlaceData[] {
-  try {
-    // Implementation removed as we're not using cheerio
-    return [];
-  } catch (error) {
-    console.error('Error extracting places:', error);
-    return [];
   }
 }
 
@@ -121,7 +136,9 @@ function getCategoryFromPlace(place: PlaceData): string {
     category.includes('restaurant') ||
     category.includes('café') ||
     category.includes('cafe') ||
-    category.includes('food')
+    category.includes('food') ||
+    category.includes('bar') ||
+    category.includes('dining')
   ) {
     return 'restaurant';
   }
@@ -129,7 +146,9 @@ function getCategoryFromPlace(place: PlaceData): string {
   if (
     category.includes('hotel') ||
     category.includes('lodging') ||
-    category.includes('accommodation')
+    category.includes('accommodation') ||
+    category.includes('resort') ||
+    category.includes('motel')
   ) {
     return 'accommodation';
   }
@@ -137,7 +156,9 @@ function getCategoryFromPlace(place: PlaceData): string {
   if (
     category.includes('airport') ||
     category.includes('station') ||
-    category.includes('transportation')
+    category.includes('transportation') ||
+    category.includes('transit') ||
+    category.includes('terminal')
   ) {
     return 'transportation';
   }
@@ -145,9 +166,30 @@ function getCategoryFromPlace(place: PlaceData): string {
   if (
     category.includes('museum') ||
     category.includes('attraction') ||
-    category.includes('landmark')
+    category.includes('landmark') ||
+    category.includes('monument') ||
+    category.includes('point of interest')
   ) {
     return 'attraction';
+  }
+
+  if (
+    category.includes('park') ||
+    category.includes('garden') ||
+    category.includes('trail') ||
+    category.includes('beach') ||
+    category.includes('outdoor')
+  ) {
+    return 'activity';
+  }
+
+  if (
+    category.includes('nightlife') ||
+    category.includes('club') ||
+    category.includes('theater') ||
+    category.includes('entertainment')
+  ) {
+    return 'nightlife';
   }
 
   return 'activity';

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CreateItineraryPage() {
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
 
   // Check if user is authenticated
   const {

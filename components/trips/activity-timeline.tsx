@@ -76,6 +76,7 @@ const useTripHistoryData = (tripId: string, options: { limit: number }) => {
     error,
     refreshHistory: refreshTimeline,
     loadMore,
+    pagination,
   };
 };
 
@@ -98,6 +99,7 @@ export function ActivityTimeline({
     error: historyError,
     refreshHistory,
     loadMore: loadMoreHistory,
+    pagination: historyPagination,
   } = useTripHistoryData(tripId, { limit });
 
   const displayActivities = useTripHistory ? historyItems : activities;
@@ -105,6 +107,7 @@ export function ActivityTimeline({
   const hasError = useTripHistory ? historyError : error;
   const refresh = useTripHistory ? refreshHistory : refreshTimeline;
   const loadMoreItems = useTripHistory ? loadMoreHistory : loadMore;
+  const currentPagination = useTripHistory ? (historyPagination || pagination) : pagination;
 
   const getActivityIcon = (actionType: ExtendedActionType) => {
     switch (actionType) {
@@ -451,18 +454,18 @@ export function ActivityTimeline({
         )}
 
         {/* Load more button */}
-        {!isLoading && pagination.hasMore && (
+        {!isLoading && currentPagination.hasMore && (
           <div className="p-4 text-center border-t">
             <Button variant="outline" size="sm" onClick={loadMoreItems} className="w-full">
-              Load More ({pagination.total - displayActivities.length} remaining)
+              Load More ({currentPagination.total - displayActivities.length} remaining)
             </Button>
           </div>
         )}
 
         {/* Pagination summary */}
-        {!isLoading && !pagination.hasMore && displayActivities.length > 0 && (
+        {!isLoading && !currentPagination.hasMore && displayActivities.length > 0 && (
           <div className="p-3 text-center text-xs text-muted-foreground border-t">
-            Showing all {displayActivities.length} of {pagination.total} activities
+            Showing all {displayActivities.length} of {currentPagination.total} activities
           </div>
         )}
       </ScrollArea>

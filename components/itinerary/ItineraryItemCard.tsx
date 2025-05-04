@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Heart, Pencil } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { DisplayItineraryItem } from '@/types/itinerary';
@@ -95,121 +95,130 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
     }
   }
 
+  // Use formattedCategory if available, otherwise format snake_case to Title Case
+  const displayCategory = item.formattedCategory || item.category;
+  const displayCategoryFormatted = displayCategory
+    ? typeof displayCategory === 'string' && displayCategory.includes('_')
+      ? displayCategory
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ')
+      : displayCategory
+    : 'Unspecified';
+
   // Additional details for tooltip
   const details = [
     { label: 'Type', value: item.type || 'Unspecified' },
-    { label: 'Category', value: item.category || 'Unspecified' },
+    { label: 'Category', value: displayCategoryFormatted },
     { label: 'Status', value: item.status || 'Unspecified' },
     { label: 'Notes', value: item.notes },
   ].filter((detail) => detail.value);
 
   return (
-    <TooltipProvider>
-      <div
-        className={cn(
-          'rounded-xl relative group transition-shadow duration-200 ease-in-out overflow-hidden',
-          'border border-border/20 dark:border-border/10 hover:shadow-md dark:hover:border-border/30',
-          bgColorClass,
-          className
-        )}
-      >
-        {/* Visual day indicator */}
-        {dayNumber && (
-          <div className="absolute -left-3 -top-3 rounded-full bg-primary text-primary-foreground w-8 h-8 flex items-center justify-center shadow-md transform -rotate-12 opacity-70">
-            <span className="text-xs font-semibold">{dayNumber}</span>
+    <div
+      className={cn(
+        'rounded-xl relative group transition-shadow duration-200 ease-in-out overflow-hidden',
+        'border border-border/20 dark:border-border/10 hover:shadow-md dark:hover:border-border/30',
+        bgColorClass,
+        className
+      )}
+    >
+      {/* Visual day indicator */}
+      {dayNumber && (
+        <div className="absolute -left-3 -top-3 rounded-full bg-primary text-primary-foreground w-8 h-8 flex items-center justify-center shadow-md transform -rotate-12 opacity-70">
+          <span className="text-xs font-semibold">{dayNumber}</span>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="p-4 relative z-10">
+        <div className="flex items-start gap-3">
+          {/* Item type/category emoji icon */}
+          <div
+            className={cn(
+              'w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center',
+              displayInfo.color
+            )}
+          >
+            <span className="text-lg" aria-hidden="true">
+              {displayInfo.emoji}
+            </span>
           </div>
-        )}
 
-        {/* Content */}
-        <div className="p-4 relative z-10">
-          <div className="flex items-start gap-3">
-            {/* Item type/category emoji icon */}
-            <div
-              className={cn(
-                'w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center',
-                displayInfo.color
-              )}
-            >
-              <span className="text-lg" aria-hidden="true">
-                {displayInfo.emoji}
-              </span>
-            </div>
-
-            {/* Main content */}
-            <div className="flex-grow min-w-0">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <h3
-                    className="font-semibold text-sm truncate cursor-help"
-                    title={item.title ?? 'Untitled'}
-                  >
-                    {item.title || 'Untitled Item'}
-                  </h3>
-                </TooltipTrigger>
-                <TooltipContent className="w-64">
-                  <div className="space-y-2 p-1">
-                    <p className="font-semibold">{item.title || 'Untitled Item'}</p>
-                    {details.map(
-                      (detail, i) =>
-                        detail.value && (
-                          <div key={i} className="text-xs">
-                            <span className="font-medium">{detail.label}:</span> {detail.value}
-                          </div>
-                        )
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-
-              {scheduleTime && <p className="text-xs text-muted-foreground">{scheduleTime}</p>}
-
-              {address && (
-                <p
-                  className="text-xs text-muted-foreground flex items-center gap-1 mt-1"
-                  title={address}
+          {/* Main content */}
+          <div className="flex-grow min-w-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3
+                  className="font-semibold text-sm truncate cursor-help"
+                  title={item.title ?? 'Untitled'}
                 >
-                  <MapPin className="w-3 h-3 flex-shrink-0 opacity-70" />
-                  <span className="truncate">{address}</span>
-                </p>
-              )}
-            </div>
+                  {item.title || 'Untitled Item'}
+                </h3>
+              </TooltipTrigger>
+              <TooltipContent className="bg-popover border border-border shadow-md w-64">
+                <div className="space-y-2 p-1">
+                  <p className="font-semibold">{item.title || 'Untitled Item'}</p>
+                  {details.map(
+                    (detail, i) =>
+                      detail.value && (
+                        <div key={i} className="text-xs">
+                          <span className="font-medium">{detail.label}:</span> {detail.value}
+                        </div>
+                      )
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
 
-            {/* Actions */}
-            <div className="flex items-center space-x-1">
-              {/* Only show edit button if not in drag overlay */}
-              {!isOverlay && onEdit && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleEditClick}
-                  className="rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Pencil className="w-4 h-4" />
-                  <span className="sr-only">Edit item</span>
-                </Button>
-              )}
+            {scheduleTime && <p className="text-xs text-muted-foreground">{scheduleTime}</p>}
 
+            {address && (
+              <p
+                className="text-xs text-muted-foreground flex items-center gap-1 mt-1"
+                title={address}
+              >
+                <MapPin className="w-3 h-3 flex-shrink-0 opacity-70" />
+                <span className="truncate">{address}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center space-x-1">
+            {/* Only show edit button if not in drag overlay */}
+            {!isOverlay && onEdit && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleLikeClick}
-                className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8 flex-shrink-0"
+                onClick={handleEditClick}
+                className="rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                <Heart
-                  className={cn(
-                    'w-4 h-4 transition-all',
-                    isLiked ? 'fill-destructive text-destructive' : 'fill-none'
-                  )}
-                />
-                <span className="sr-only">{isLiked ? 'Unlike' : 'Like'} item</span>
+                <Pencil className="w-4 h-4" />
+                <span className="sr-only">Edit item</span>
               </Button>
-            </div>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLikeClick}
+              className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8 flex-shrink-0"
+            >
+              <Heart
+                className={cn(
+                  'w-4 h-4 transition-all',
+                  isLiked ? 'fill-destructive text-destructive' : 'fill-none'
+                )}
+              />
+              <span className="sr-only">{isLiked ? 'Unlike' : 'Like'} item</span>
+            </Button>
           </div>
         </div>
-
-        {/* Color accent based on category/type */}
-        <div className={cn('absolute top-0 bottom-0 left-0 w-[3px]', displayInfo.color)}></div>
       </div>
-    </TooltipProvider>
+
+      {/* Color accent based on category/type */}
+      <div className={cn('absolute top-0 bottom-0 left-0 w-[3px]', displayInfo.color)}></div>
+    </div>
   );
 };

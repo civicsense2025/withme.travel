@@ -100,7 +100,7 @@ export async function POST(
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -129,6 +129,7 @@ export async function POST(
       p_position: newPosition,
     });
 
+    // Execute the update without transaction
     const { error: rpcError } = await supabase.rpc('update_itinerary_item_position', {
       p_item_id: itemId,
       p_trip_id: tripId,

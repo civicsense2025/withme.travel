@@ -60,7 +60,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
@@ -97,7 +97,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
   }
 
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // 1. Get authenticated user
   console.log('Tag Sync: Attempting to get user...');

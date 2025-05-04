@@ -10,7 +10,7 @@ export async function DELETE(
 ) {
   try {
     const { tripId, memberId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const {
@@ -65,7 +65,7 @@ export async function PATCH(
 ) {
   try {
     const { tripId, memberId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const {

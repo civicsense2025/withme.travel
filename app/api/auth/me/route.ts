@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     // Create Supabase client using the unified helper
     // const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient(); // Simplified client creation
+    const supabase = await createRouteHandlerClient(); // Simplified client creation
 
     // Fetch user data
     const {

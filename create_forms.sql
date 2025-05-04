@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS public.forms (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',
+    visibility TEXT NOT NULL DEFAULT 'private',
+    form_type TEXT NOT NULL,
+    allow_anonymous BOOLEAN DEFAULT false,
+    expires_at TIMESTAMPTZ,
+    metadata JSONB,
+    trip_id UUID REFERENCES public.trips(id) ON DELETE CASCADE,
+    parent_form_id UUID REFERENCES public.forms(id) ON DELETE SET NULL,
+    template_id UUID REFERENCES public.form_templates(id) ON DELETE SET NULL,
+    is_template BOOLEAN DEFAULT false,
+    settings JSONB,
+    custom_theme JSONB,
+    logo_url TEXT,
+    progress_save_duration INTEGER DEFAULT 72,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+); 

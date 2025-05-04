@@ -23,7 +23,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const { tripId, expenseId } = params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     const {
       data: { user },
@@ -50,7 +50,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     const { tripId, expenseId } = params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     const {
       data: { user },

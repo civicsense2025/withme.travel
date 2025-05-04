@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyTrips } from '@/components/empty-trips';
 import { TripCard } from '@/components/trip-card';
 import { ClassErrorBoundary } from '@/components/error-boundary';
+import Image from 'next/image';
 
 import Link from 'next/link';
 import type { TripRole } from '@/types/trip';
@@ -127,7 +128,12 @@ export default function TripsClientPage({
           {trips.length === 0 ? (
             <EmptyTrips />
           ) : (
-            trips.map((trip) => <TripCard key={trip.id} trip={trip} />)
+            trips.map((trip, index) => (
+              <TripCard 
+                key={trip.id} 
+                trip={trip} 
+              />
+            ))
           )}
         </div>
       </ClassErrorBoundary>

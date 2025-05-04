@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -32,9 +32,21 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
   description,
   tripPrivacy,
 }) => {
-  // Filter items by category
-  const accommodations = items.filter(
-    (item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATION
+  // Get accommodation items
+  const accommodations = useMemo(
+    () => 
+      items.filter(
+        (item) => item.category === ITINERARY_CATEGORIES.ACCOMMODATIONS
+      ).sort((a, b) => {
+        // Sort by day_number, then by position
+        if (a.day_number !== b.day_number) {
+          if (a.day_number === null) return 1;
+          if (b.day_number === null) return -1;
+          return a.day_number - b.day_number;
+        }
+        return (a.position ?? 0) - (b.position ?? 0);
+      }),
+    [items]
   );
 
   const transportation = items.filter(
@@ -61,7 +73,7 @@ export const TripDetailsSection: React.FC<TripDetailsSectionProps> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-lg" aria-hidden="true">
-                {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATION].emoji}
+                {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji}
               </span>
               <h3 className="font-medium">Accommodations</h3>
             </div>

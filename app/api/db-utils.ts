@@ -96,7 +96,7 @@ interface VoteResponse {
 
 // Trip-related functions
 export async function getTrips(): Promise<TripWithMembers[]> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trips_with_member_count');
@@ -110,7 +110,7 @@ export async function getTrips(): Promise<TripWithMembers[]> {
 }
 
 export async function getTripById(id: string): Promise<TripWithMembers | null> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     // Use SQL query to avoid TypeScript issues
@@ -140,7 +140,7 @@ export async function getTripById(id: string): Promise<TripWithMembers | null> {
 }
 
 export async function getTripMembers(tripId: string): Promise<TripMemberWithUser[]> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_trip_members', { trip_id: tripId });
@@ -158,7 +158,7 @@ export async function getItineraryItems(
   tripId: string,
   userId?: string
 ): Promise<ItineraryItemWithVotes[]> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // Use SQL query to avoid TypeScript issues
   const { data, error } = await supabase.rpc('get_itinerary_items_with_votes', {
@@ -178,7 +178,7 @@ export async function getItineraryItems(
  * Get the trip ID for an itinerary item
  */
 async function getItemTripId(itemId: string): Promise<string> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('get_item_trip_id', { item_id: itemId });
 
@@ -204,7 +204,7 @@ async function getItemTripId(itemId: string): Promise<string> {
  * Get the vote count for an itinerary item
  */
 async function getItemVoteCount(itemId: string): Promise<number> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('get_item_vote_count', { item_id: itemId });
 
@@ -238,7 +238,7 @@ export async function castVote(
   userId: string,
   voteType: 'up' | 'down' | null
 ): Promise<VoteResponse> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('cast_vote', {
     item_id: itemId,
@@ -251,18 +251,16 @@ export async function castVote(
     throw new Error('Failed to cast vote');
   }
 
-  // Get the updated vote count
-  const newVoteCount = await getItemVoteCount(itemId);
-  return { newVoteCount };
+  // Ensure we return a properly formatted response
+  const voteCount = typeof data === 'number' ? data : 0;
+  return { newVoteCount: voteCount };
 }
 
 /**
- * Get the expenses by category for a trip
- * @param tripId - The ID of the trip
- * @returns An array of expense categories with amounts
+ * Get expenses for a trip, grouped by category with computed colors
  */
 export async function getExpensesByCategory(tripId: string): Promise<ExpenseCategory[]> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   const { data, error } = await supabase.rpc('get_expenses_by_category', { trip_id: tripId });
 
@@ -271,26 +269,16 @@ export async function getExpensesByCategory(tripId: string): Promise<ExpenseCate
     return [];
   }
 
-  // Define category colors
-  const categoryColors: Record<string, string> = {
-    accommodation: '#4f46e5', // indigo
-    food: '#16a34a', // green
-    transportation: '#f59e0b', // amber
-    activities: '#06b6d4', // cyan
-    shopping: '#ec4899', // pink
-    other: '#6b7280', // gray
-  };
-
-  // Add colors to the categories
-  return (Array.isArray(data) ? data : []).map((category: any) => ({
-    name: category.name || 'other',
-    amount: Number(category.amount) || 0,
-    color: categoryColors[category.name || 'other'] || '#6b7280', // default to gray if no color defined
-  }));
+  return (data || []) as ExpenseCategory[];
 }
 
+/**
+ * Get votes for a poll
+ * @param pollId - The ID of the poll
+ * @returns Array of vote objects
+ */
 export async function getVotesForPoll(pollId: string): Promise<any[]> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     const { data, error } = await supabase.rpc('get_poll_votes', { poll_id: pollId });
@@ -301,14 +289,14 @@ export async function getVotesForPoll(pollId: string): Promise<any[]> {
     }
 
     return data || [];
-  } catch (error) {
-    console.error('Exception fetching poll votes:', error);
+  } catch (e) {
+    console.error('Exception fetching poll votes:', e);
     return [];
   }
 }
 
 export async function getUserProfile(userId: string): Promise<any> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
@@ -319,8 +307,8 @@ export async function getUserProfile(userId: string): Promise<any> {
     }
 
     return data;
-  } catch (error) {
-    console.error('Exception fetching user profile:', error);
+  } catch (e) {
+    console.error('Exception fetching user profile:', e);
     return null;
   }
 }

@@ -7,9 +7,14 @@
  * This script finds and fixes all occurrences of these functions being used without await.
  */
 
-const fs = require('fs/promises');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
+
+// Get current directory in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Define patterns to search for
 const PATTERNS = [
@@ -90,8 +95,9 @@ async function main() {
   console.log('🔍 Searching for API route files...');
   
   // Find API route files
+  const projectRoot = path.resolve(process.cwd());
   const apiRouteFiles = await findFiles(
-    path.join(process.cwd(), 'app'), 
+    path.join(projectRoot, 'app'), 
     /route\.(js|ts)$/
   );
   

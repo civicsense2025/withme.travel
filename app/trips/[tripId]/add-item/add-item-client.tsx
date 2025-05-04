@@ -35,6 +35,8 @@ import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FormControl, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import GoogleMapsUrlImport from '../google-maps-url-import';
 
 // Define a local formatError function since it's not available in utils
 function formatError(error: any): string {
@@ -166,8 +168,12 @@ export function AddItineraryItemClient({
     setSelectedPlace(result);
   };
 
+  const handleGoogleMapsImport = (place: any) => {
+    // Implementation of handleGoogleMapsImport
+  };
+
   return (
-    <div className="container py-8">
+    <div className="container max-w-screen-md py-8">
       <div className="mb-6">
         <Link href={`/trips/${tripId}?tab=itinerary`}>
           <Button variant="ghost" size="sm" className="gap-1">
@@ -177,126 +183,154 @@ export function AddItineraryItemClient({
         </Link>
       </div>
 
-      <Card className="max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Add Itinerary Item</CardTitle>
-            <CardDescription>
-              Add a new activity, accommodation, or transportation to your trip
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {errorMessage && (
-              <Alert variant="destructive">
-                <AlertDescription>{errorMessage}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" placeholder="Visit Sagrada Familia" required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
-              <Select name="type" required>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="activity">Activity</SelectItem>
-                  <SelectItem value="accommodation">Accommodation</SelectItem>
-                  <SelectItem value="transportation">Transportation</SelectItem>
-                  <SelectItem value="food">Food & Dining</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : 'Select date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time</Label>
-                <div className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <Input id="startTime" name="startTime" type="time" />
+      <Tabs defaultValue="quickAdd" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="quickAdd">Quick Add</TabsTrigger>
+          <TabsTrigger value="googleMaps">Google Maps URL</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="quickAdd" className="py-6">
+          <Card className="max-w-2xl mx-auto">
+            <form onSubmit={handleSubmit}>
+              <CardHeader>
+                <CardTitle>Add Itinerary Item</CardTitle>
+                <CardDescription>
+                  Add a new activity, accommodation, or transportation to your trip
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                {errorMessage && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{errorMessage}</AlertDescription>
+                  </Alert>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input id="title" name="title" placeholder="Visit Sagrada Familia" required />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="endTime">End Time</Label>
-                <div className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <Input id="endTime" name="endTime" type="time" />
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Select name="type" required>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="activity">Activity</SelectItem>
+                      <SelectItem value="accommodation">Accommodation</SelectItem>
+                      <SelectItem value="transportation">Transportation</SelectItem>
+                      <SelectItem value="food">Food & Dining</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Location</Label>
-              <MapboxGeocoderComponent
-                onResult={handleGeocoderResult}
-                options={
-                  {
-                    proximity: proximityValue,
-                    // types: 'poi,address,place',
-                  } as any
-                }
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !date && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, 'PPP') : 'Select date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <div className="flex items-center">
+                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <Input id="startTime" name="startTime" type="time" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endTime">End Time</Label>
+                    <div className="flex items-center">
+                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <Input id="endTime" name="endTime" type="time" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <MapboxGeocoderComponent
+                    onResult={handleGeocoderResult}
+                    options={
+                      {
+                        proximity: proximityValue,
+                        // types: 'poi,address,place',
+                      } as any
+                    }
+                  />
+                  {selectedPlace && (
+                    <div className="flex items-center gap-2 mt-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {selectedPlace.text || selectedPlace.place_name || 'Selected Location'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cost">Estimated Cost (per person)</Label>
+                  <Input id="cost" name="cost" type="number" min="0" step="0.01" placeholder="25.00" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    placeholder="Any additional details about this item"
+                    className="min-h-24"
+                  />
+                </div>
+              </CardContent>
+              
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" type="button" onClick={() => router.back()}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add to Itinerary'}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="googleMaps" className="py-6">
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle>Import from Google Maps</CardTitle>
+              <CardDescription>
+                Paste a Google Maps URL to import places to your trip
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GoogleMapsUrlImport 
+                tripId={tripId} 
+                onSuccess={() => router.push(`/trips/${tripId}?tab=itinerary`)}
               />
-              {selectedPlace && (
-                <div className="flex items-center gap-2 mt-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {selectedPlace.text || selectedPlace.place_name || 'Selected Location'}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cost">Estimated Cost (per person)</Label>
-              <Input id="cost" name="cost" type="number" min="0" step="0.01" placeholder="25.00" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                name="notes"
-                placeholder="Any additional details about this item"
-                className="min-h-24"
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add to Itinerary'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

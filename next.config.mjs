@@ -13,6 +13,7 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
   images: {
     unoptimized: false,
+    domains: ['localhost'],
     formats: ['image/webp'],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

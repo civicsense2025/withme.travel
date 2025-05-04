@@ -29,7 +29,7 @@ export async function GET(
     }
 
     // Create Supabase client without await (it's not an async function)
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get the auth session cookie directly
     const cookieHeader = request.headers.get('cookie') || '';

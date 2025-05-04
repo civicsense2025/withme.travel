@@ -39,7 +39,7 @@ async function signupHandler(request: NextRequest): Promise<NextResponse> {
     }
 
     // Create Supabase client
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Sign up with Supabase Auth
     const { data, error } = await supabase.auth.signUp({

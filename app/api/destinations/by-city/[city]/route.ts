@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { sanitizeString } from '@/utils/sanitize';
+import { TABLES } from '@/utils/constants/database';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { city: string } }
+  { params }: { params: Promise<{ city: string }> }
 ): Promise<NextResponse> {
   try {
-    const city = params.city || '';
+    // Must await params in Next.js 15 before using them
+    const { city } = await params;
 
     if (!city) {
       return NextResponse.json({ error: 'City parameter is required' }, { status: 400 });
     }
 
     const sanitizedCity = sanitizeString(decodeURIComponent(city));
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     const { data, error } = await supabase
-      .from('destinations')
+      .from(TABLES.DESTINATIONS)
       .select('*')
       .ilike('city', `%${sanitizedCity}%`)
       .limit(10);

@@ -73,6 +73,9 @@ import {
   LogOut,
   Settings,
   Heart,
+  DivideIcon,
+  PercentIcon,
+  SplitIcon,
 } from 'lucide-react';
 import { User, RealtimeChannel } from '@supabase/supabase-js';
 import { type DisplayItineraryItem, type ItineraryCategory } from '@/types/itinerary';
@@ -139,7 +142,8 @@ import {
 } from '@/types/trip';
 import { ProcessedVotes } from '@/types/votes';
 
-import { ActivityTabContent } from '@/app/trips/[tripId]/components/tab-contents/activity-tab-content';
+import { HistoryTabContent } from '@/app/trips/[tripId]/components/tab-contents/history-tab-content';
+import LogisticsTabContent from './components/tab-contents/LogisticsTabContent';
 
 // React imports
 
@@ -334,7 +338,7 @@ const mapApiItemToDisplay = (item: any): DisplayItineraryItem => {
   // Explicitly handle the category mapping
   const mappedCategory = isValidCategory(item.category)
     ? item.category
-    : ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS; // Use FLEXIBLE_OPTIONS as fallback
+    : ITINERARY_CATEGORIES.OTHER; // Use OTHER as fallback
 
   return {
     ...item,
@@ -1348,6 +1352,28 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         ),
       },
       {
+        value: 'logistics',
+        label: 'Logistics',
+        content: (
+          <ErrorBoundary
+            FallbackComponent={(props) => (
+              <TabErrorFallback
+                {...props}
+                tripId={tripId}
+                section="logistics"
+                refetchFn={refetchTrip}
+              />
+            )}
+            onReset={() => refetchTrip()}
+          >
+            <LogisticsTabContent
+              tripId={tripId}
+              canEdit={canEdit}
+            />
+          </ErrorBoundary>
+        ),
+      },
+      {
         value: 'budget',
         label: 'Budget',
         content: (
@@ -1375,43 +1401,49 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         ),
       },
       {
-        value: 'activity',
-        label: 'Activity',
+        value: 'notes',
+        label: 'Notes',
         content: (
           <ErrorBoundary
             FallbackComponent={(props) => (
               <TabErrorFallback
                 {...props}
                 tripId={tripId}
-                section="activity"
-                refetchFn={refetchTrip} // Or a dedicated activity refetch
+                section="notes"
+                refetchFn={refetchTrip}
               />
             )}
-            onReset={() => refetchTrip()} // Or a dedicated activity refetch
+            onReset={() => refetchTrip()}
           >
-            <ActivityTabContent tripId={tripId} />
+            <NotesTabContent
+              tripId={tripId}
+              canEdit={canEdit}
+              destinationName={tripData?.trip?.destination_name || ''}
+              destinationDescription={tripData?.trip?.description || ''}
+              destinationHighlights={[]}
+            />
           </ErrorBoundary>
         ),
       },
-      /* Commenting out Notes Tab for now due to 403 error
       {
-        value: 'notes',
-        label: 'Notes',
+        value: 'history',
+        label: 'History',
         content: (
           <ErrorBoundary
             FallbackComponent={(props) => (
-              <TabErrorFallback {...props} tripId={tripId} section="notes" />
+              <TabErrorFallback
+                {...props}
+                tripId={tripId}
+                section="history"
+                refetchFn={refetchTrip}
+              />
             )}
-            onReset={() => {
-              // Force reload collaborative document data
-              window.location.reload();
-            }}
+            onReset={() => refetchTrip()}
           >
-            <NotesTabContent tripId={tripId} canEdit={canEdit} />
+            <HistoryTabContent tripId={tripId} />
           </ErrorBoundary>
         ),
       },
-      */
     ];
 
     // Remove manage tab entirely
@@ -1547,6 +1579,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
                 canEdit={canEdit}
                 userRole={userRole}
                 accessRequests={accessRequests}
+                members={tripData.members ? adaptMembersToWithProfile(tripData.members) : []}
                 onEdit={() => setIsEditTripSheetOpen(true)}
                 onManageAccessRequest={handleManageAccessRequest}
               />
@@ -1706,20 +1739,182 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
         </Dialog>
 
         <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md lg:max-w-xl overflow-y-auto max-h-[95vh]">
             <DialogHeader>
               <DialogTitle>Add Expense</DialogTitle>
-              <DialogDescription>Add a new expense to this trip.</DialogDescription>
+              <DialogDescription>
+                Log a new expense and split it among trip members
+              </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              {/* TODO: Implement Expense Form */}
-              <p>Expense form not yet implemented</p>
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-amount">Amount</Label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                        $
+                      </span>
+                      <Input
+                        id="expense-amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="pl-7"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-date">Date</Label>
+                    <Input
+                      id="expense-date"
+                      type="date"
+                      defaultValue={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expense-description">Description</Label>
+                  <Input
+                    id="expense-description"
+                    placeholder="What was this expense for?"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-category">Category</Label>
+                    <Select>
+                      <SelectTrigger id="expense-category">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="accommodation">Accommodation</SelectItem>
+                        <SelectItem value="food">Food & Drinks</SelectItem>
+                        <SelectItem value="transportation">Transportation</SelectItem>
+                        <SelectItem value="activities">Activities</SelectItem>
+                        <SelectItem value="shopping">Shopping</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="paid-by">Paid by</Label>
+                    <Select>
+                      <SelectTrigger id="paid-by">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tripData.members.map(member => {
+                          const profile = member.profile;
+                          const name = profile?.name || profile?.email || 'User';
+                          return (
+                            <SelectItem key={member.user_id} value={member.user_id}>
+                              {name}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Split Method</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 px-2">
+                            <Info className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            Equal: Split evenly among members<br/>
+                            Percentage: Split by custom percentages<br/>
+                            Unequal: Enter custom amounts for each person
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      className="flex-1 border-2 bg-muted/30"
+                      onClick={() => {}}
+                    >
+                      <DivideIcon className="h-4 w-4 mr-2" />
+                      Equal
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      className="flex-1" 
+                      onClick={() => {}}
+                    >
+                      <PercentIcon className="h-4 w-4 mr-2" />
+                      Percentage
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      className="flex-1" 
+                      onClick={() => {}}
+                    >
+                      <SplitIcon className="h-4 w-4 mr-2" />
+                      Unequal
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border rounded-md p-4 bg-muted/30">
+                  <h4 className="text-sm font-medium mb-3">Split equally among all members</h4>
+                  <div className="space-y-3">
+                    {tripData.members.slice(0, 5).map(member => {
+                      const profile = member.profile;
+                      const name = profile?.name || profile?.email || 'User';
+                      
+                      return (
+                        <div key={member.user_id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={profile?.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {getInitials(name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{name}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium">$0.00</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    
+                    {tripData.members.length > 5 && (
+                      <Button variant="link" className="text-xs p-0 h-auto">
+                        +{tripData.members.length - 5} more members
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </form>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsAddExpenseOpen(false)}>
                 Cancel
               </Button>
-              <Button type="button">Add Expense</Button>
+              <Button type="button">Save Expense</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

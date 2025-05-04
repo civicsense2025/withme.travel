@@ -68,22 +68,24 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface QuickAddItemDialogProps {
   tripId: string;
-  isOpen: boolean;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
   onItemAdded: () => void;
   defaultCategory?: string | null;
   dialogTitle?: string;
   dialogDescription?: string;
+  dayNumber?: number | null;
 }
 
 export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
   tripId,
-  isOpen,
+  open,
   onOpenChange,
   onItemAdded,
   defaultCategory = null,
   dialogTitle = 'Add Unscheduled Item',
   dialogDescription = 'Add another item to your unscheduled items list.',
+  dayNumber = null,
 }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -115,7 +117,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
 
   // Reset form when dialog opens/closes
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       // Only reset specific fields, keep category if it's set
       form.reset({
         title: '',
@@ -125,7 +127,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
         location: '',
       });
     }
-  }, [isOpen, form, defaultCategory]);
+  }, [open, form, defaultCategory]);
 
   const handleGeocoderResult = (result: GeocoderResult | null) => {
     setGeocoderResult(result);
@@ -152,7 +154,8 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
 
     const newItemData = {
       title: title || 'Untitled Itinerary Item',
-      type: category,
+      category: category,
+      type: 'item',
       description: description,
       location: location,
       // Location details - only include if a place was selected
@@ -165,7 +168,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
             longitude: geocoderResult.geometry?.coordinates[0],
           }
         : {}),
-      day_number: null, // Unscheduled item
+      day_number: dayNumber,
     };
 
     try {
@@ -185,7 +188,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
       const itemName = newItemData.title;
       toast({
         title: 'Item Added!',
-        description: `${itemName} added to unscheduled items.${!geocoderResult ? ` Remember to set a location later.` : ''}`,
+        description: getSuccessMessage(itemName),
       });
 
       onItemAdded(); // Refresh the itinerary items
@@ -216,7 +219,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
 
   // Get appropriate title and description based on the selected category
   const getCategorySpecificTitle = () => {
-    if (category === ITINERARY_CATEGORIES.ACCOMMODATION) {
+    if (category === ITINERARY_CATEGORIES.ACCOMMODATIONS) {
       return 'Add Accommodation';
     } else if (category === ITINERARY_CATEGORIES.TRANSPORTATION) {
       return 'Add Transportation';
@@ -225,7 +228,7 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
   };
 
   const getCategorySpecificDescription = () => {
-    if (category === ITINERARY_CATEGORIES.ACCOMMODATION) {
+    if (category === ITINERARY_CATEGORIES.ACCOMMODATIONS) {
       return "Add where you'll be staying during your trip.";
     } else if (category === ITINERARY_CATEGORIES.TRANSPORTATION) {
       return "Add how you'll be getting around during your trip.";
@@ -233,8 +236,16 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
     return dialogDescription;
   };
 
+  const getSuccessMessage = (itemName: string) => {
+    if (dayNumber === null) {
+      return `${itemName} added to unscheduled items.${!geocoderResult ? ` Remember to set a location later.` : ''}`;
+    } else {
+      return `${itemName} added to Day ${dayNumber}.${!geocoderResult ? ` Remember to set a location later.` : ''}`;
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{getCategorySpecificTitle()}</DialogTitle>
@@ -264,33 +275,61 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ITINERARY_CATEGORIES.ACCOMMODATION}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATION].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATION].label}
+                <SelectItem value={ITINERARY_CATEGORIES.ACCOMMODATIONS}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.TRANSPORTATION}>
                   {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].emoji}{' '}
                   {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.RESTAURANT}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RESTAURANT].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RESTAURANT].label}
+                <SelectItem value={ITINERARY_CATEGORIES.FOOD_AND_DRINK}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_AND_DRINK].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_AND_DRINK].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.ATTRACTION}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ATTRACTION].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ATTRACTION].label}
+                <SelectItem value={ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.CUSTOM}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CUSTOM].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CUSTOM].label}
+                <SelectItem value={ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.ACTIVITY}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACTIVITY].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACTIVITY].label}
+                <SelectItem value={ITINERARY_CATEGORIES.ICONIC_LANDMARKS}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].label}
                 </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.FLIGHT}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLIGHT].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLIGHT].label}
+                <SelectItem value={ITINERARY_CATEGORIES.LOCAL_SECRETS}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].label}
+                </SelectItem>
+                <SelectItem value={ITINERARY_CATEGORIES.NIGHTLIFE}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].label}
+                </SelectItem>
+                <SelectItem value={ITINERARY_CATEGORIES.RELAXATION}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].label}
+                </SelectItem>
+                <SelectItem value={ITINERARY_CATEGORIES.SHOPPING}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].label}
+                </SelectItem>
+                <SelectItem value={ITINERARY_CATEGORIES.ENTERTAINMENT}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ENTERTAINMENT].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ENTERTAINMENT].label}
+                </SelectItem>
+                <SelectItem value={ITINERARY_CATEGORIES.HEALTH_AND_WELLNESS}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.HEALTH_AND_WELLNESS].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.HEALTH_AND_WELLNESS].label}
+                </SelectItem>
+                <SelectItem value={ITINERARY_CATEGORIES.EDUCATIONAL}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.EDUCATIONAL].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.EDUCATIONAL].label}
+                </SelectItem>
+                <SelectItem value={ITINERARY_CATEGORIES.PHOTOGRAPHY}>
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.PHOTOGRAPHY].emoji}{' '}
+                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.PHOTOGRAPHY].label}
                 </SelectItem>
                 <SelectItem value={ITINERARY_CATEGORIES.OTHER}>
                   {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OTHER].emoji}{' '}

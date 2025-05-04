@@ -150,7 +150,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     const {

@@ -26,7 +26,7 @@ export default async function AddItineraryItemPage({
   const { tripId } = await params;
 
   // Get the supabase client using the project's standard approach
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
 
   let initialDestination: DestinationInfo | null = null;
   try {

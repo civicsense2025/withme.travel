@@ -67,7 +67,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
   const { tripId, noteId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });
@@ -133,7 +133,7 @@ export async function PUT(
   { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
   const { tripId, noteId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId || !noteId)
     return NextResponse.json({ error: 'Trip ID and Note ID are required' }, { status: 400 });

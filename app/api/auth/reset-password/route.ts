@@ -78,7 +78,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     // Create Supabase client using our utility
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get current session (the user should be authenticated with the recovery link)
     const {

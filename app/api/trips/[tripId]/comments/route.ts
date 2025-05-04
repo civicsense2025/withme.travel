@@ -59,7 +59,7 @@ export async function GET(
       return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
     }
 
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,
@@ -109,7 +109,7 @@ export async function POST(
       return NextResponse.json({ error: 'Item ID and content are required' }, { status: 400 });
     }
 
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,

@@ -44,7 +44,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
@@ -89,7 +89,7 @@ export async function GET(
         id,
         title,
         updated_at,
-        profiles:updated_by (
+        profiles!trip_notes_updated_by_fkey (
           id,
           name,
           avatar_url
@@ -126,7 +126,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
 
@@ -204,7 +204,7 @@ export async function POST(
         title,
         content,
         updated_at,
-        profiles:updated_by (
+        profiles!trip_notes_updated_by_fkey (
           id,
           name,
           avatar_url

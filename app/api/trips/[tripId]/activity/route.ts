@@ -31,7 +31,7 @@ export async function GET(
   const limit = parseInt(url.searchParams?.get('limit') || '5');
   const offset = parseInt(url.searchParams?.get('offset') || '0');
 
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   const {
     data: { user },
     error: authError,

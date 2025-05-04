@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
-// Removed CSS import as it might not be exported or needed
-// import { CSS } from '@dnd-kit/utilities';
+import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -30,21 +29,21 @@ export const SortableItem: React.FC<SortableItemProps> = ({
       },
     });
 
-  // DEBUGGING: Log applied props and listeners
-  console.log(
-    `[SortableItem ${id}] Disabled: ${disabled}, Listeners: ${!!listeners}, Attrs: ${!!attributes}`
-  );
-
-  // Style for transform/transition during drag
-  const style = {
-    // Use transform object directly to create translate3d string
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    transition: transition || undefined,
+  // Improved style for transform/transition during drag with hardware acceleration
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    zIndex: isDragging ? 999 : 'auto', // Higher z-index during drag
+    opacity: isDragging ? 0.5 : 1,
+    position: isDragging ? 'relative' as const : undefined,
+    pointerEvents: isDragging ? 'none' as const : undefined,
+    transformOrigin: '0 0',
+    willChange: isDragging ? 'transform' : undefined,
   };
 
   // Create conditional classes for hover/active states
   const hoverClasses = !disabled
-    ? 'group-hover:bg-muted/10 hover:shadow-md hover:scale-[1.01] transition-all duration-150 ease-out active:bg-muted/20'
+    ? 'group-hover:bg-muted/10 hover:shadow-md hover:scale-[1.01] transition-all duration-150 ease-out active:bg-muted/20 cursor-grab active:cursor-grabbing'
     : 'cursor-default';
 
   return (
@@ -55,7 +54,7 @@ export const SortableItem: React.FC<SortableItemProps> = ({
       {...attributes} // Apply attributes here (like role, aria-properties)
       className={cn(
         'relative touch-none select-none', // Base styles
-        isDragging && 'opacity-50 z-50 shadow-lg', // Dragging styles
+        isDragging && 'z-10 shadow-lg', // Dragging styles
         isSorting && 'transition-transform', // Sorting transition
         hoverClasses // Apply conditional classes
       )}

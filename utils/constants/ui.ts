@@ -49,60 +49,86 @@ export const INPUT_LIMITS = {
   NOTE_CONTENT: 5000,
 };
 
-// Itinerary category emojis and colors
+// Category emojis, labels and colors
 export const CATEGORY_DISPLAY = {
-  // Accommodation
-  [ITINERARY_CATEGORIES.ACCOMMODATION]: {
-    emoji: '🏨',
-    label: 'Accommodations',
-    color: 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400',
-  },
-  // Transportation
-  [ITINERARY_CATEGORIES.TRANSPORTATION]: {
-    emoji: '✈️',
-    label: 'Transportation',
-    color: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400',
-  },
-  // Restaurant (replaced FOOD_DRINK)
-  [ITINERARY_CATEGORIES.RESTAURANT]: {
-    emoji: '🍽️',
-    label: 'Food & Drink',
-    color: 'bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400',
-  },
-  // Attraction (replaced ICONIC_LANDMARKS)
-  [ITINERARY_CATEGORIES.ATTRACTION]: {
+  'Iconic Landmarks': {
     emoji: '🏛️',
-    label: 'Landmark',
+    label: 'Iconic Landmarks',
     color: 'bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400',
   },
-  // Custom (replaced LOCAL_SECRETS)
-  [ITINERARY_CATEGORIES.CUSTOM]: {
-    emoji: '🗝️',
-    label: 'Local Secret',
+  'Local Secrets': {
+    emoji: '🔍',
+    label: 'Local Secrets',
+    color: 'bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400',
+  },
+  'Cultural Experiences': {
+    emoji: '🎭',
+    label: 'Cultural Experiences',
     color: 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400',
   },
-  // Activity (replaced CULTURAL_EXPERIENCES)
-  [ITINERARY_CATEGORIES.ACTIVITY]: {
-    emoji: '🎭',
-    label: 'Cultural',
-    color: 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400',
+  'Outdoor Adventures': {
+    emoji: '🏔️',
+    label: 'Outdoor Adventures',
+    color: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400',
   },
-  // Flight
-  [ITINERARY_CATEGORIES.FLIGHT]: {
-    emoji: '✈️',
-    label: 'Flight',
+  'Food & Drink': {
+    emoji: '🍴',
+    label: 'Food & Drink',
+    color: 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400',
+  },
+  'Nightlife': {
+    emoji: '🌙',
+    label: 'Nightlife',
+    color: 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400',
+  },
+  'Relaxation': {
+    emoji: '🧘',
+    label: 'Relaxation',
+    color: 'bg-teal-100 dark:bg-teal-950 text-teal-600 dark:text-teal-400',
+  },
+  'Shopping': {
+    emoji: '🛍️',
+    label: 'Shopping',
+    color: 'bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400',
+  },
+  'Entertainment': {
+    emoji: '🎬',
+    label: 'Entertainment',
+    color: 'bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400',
+  },
+  'Health & Wellness': {
+    emoji: '💆',
+    label: 'Health & Wellness',
+    color: 'bg-lime-100 dark:bg-lime-950 text-lime-600 dark:text-lime-400',
+  },
+  'Educational': {
+    emoji: '📚',
+    label: 'Educational',
     color: 'bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400',
   },
-  // Flexible options
-  [ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS]: {
-    emoji: '🔄',
-    label: 'Flexible',
-    color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+  'Photography': {
+    emoji: '📸',
+    label: 'Photography',
+    color: 'bg-fuchsia-100 dark:bg-fuchsia-950 text-fuchsia-600 dark:text-fuchsia-400',
   },
-  // Other
-  [ITINERARY_CATEGORIES.OTHER]: {
+  'Accommodations': {
+    emoji: '🏨',
+    label: 'Accommodations',
+    color: 'bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400',
+  },
+  'Transportation': {
+    emoji: '🚆',
+    label: 'Transportation',
+    color: 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400',
+  },
+  'Other': {
     emoji: '📌',
     label: 'Other',
+    color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+  },
+  'Flexible Options': {
+    emoji: '🔄',
+    label: 'Flexible Options',
     color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
   },
 };
@@ -147,29 +173,19 @@ export const DEFAULT_TYPE_DISPLAY = {
 
 // Item status emojis and colors
 export const ITEM_STATUS_DISPLAY = {
+  suggested: {
+    emoji: '💡',
+    label: 'Suggested',
+    color: 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400',
+  },
   confirmed: {
     emoji: '✅',
     label: 'Confirmed',
     color: 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400',
   },
-  booked: {
-    emoji: '🎫',
-    label: 'Booked',
-    color: 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400',
-  },
-  pending: {
-    emoji: '⏳',
-    label: 'Pending',
-    color: 'bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400',
-  },
-  cancelled: {
+  rejected: {
     emoji: '❌',
-    label: 'Cancelled',
+    label: 'Rejected',
     color: 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400',
-  },
-  completed: {
-    emoji: '🏆',
-    label: 'Completed',
-    color: 'bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400',
   },
 };

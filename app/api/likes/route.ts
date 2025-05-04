@@ -6,7 +6,7 @@ import { logger } from '@/utils/error-logger';
 // Gets all likes for the current user, optionally filtered by type
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get authenticated user - use getUser instead of getSession
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 // Creates a new like for the current user
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get authenticated user - use getUser instead of getSession
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 // Deletes a like for the current user
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get authenticated user - use getUser instead of getSession
     const { data: userData, error: userError } = await supabase.auth.getUser();

@@ -5,7 +5,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   const {
     data: { user },

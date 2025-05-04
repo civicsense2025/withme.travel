@@ -35,17 +35,22 @@ interface Itinerary {
     name: string | null;
     avatar_url: string | null;
   } | null;
+  author?: {
+    id: string;
+    name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 // Fetch itineraries from the database
-async function getItineraries() {
-  const supabase = createServerComponentClient();
+async function getItineraries(): Promise<Itinerary[]> {
+  const supabase = await createServerComponentClient();
 
   try {
-    // Get all published templates
+    // Get all published templates with proper join syntax for auth.users
     const { data, error } = await supabase
       .from('itinerary_templates')
-      .select('*, destinations(*), creator:created_by(id, name, avatar_url)')
+      .select('*, destinations(*), creator:created_by(id, email, raw_user_meta_data)')
       .eq('is_published', true)
       .order('created_at', { ascending: false });
 
@@ -54,14 +59,16 @@ async function getItineraries() {
       return [];
     }
 
-    // Map data to ensure consistency
-    return (data || []).map((item) => ({
+    // Map data to ensure consistency and transform creator data
+    return (data || []).map((item: any) => ({
       ...item,
       author: item.creator
         ? {
             id: item.creator.id,
-            name: item.creator.name,
-            avatar_url: item.creator.avatar_url,
+            name: item.creator.raw_user_meta_data?.name || 
+                  item.creator.email?.split('@')[0] || 
+                  'Unknown User',
+            avatar_url: item.creator.raw_user_meta_data?.avatar_url || null,
           }
         : null,
     }));
@@ -80,7 +87,7 @@ export default async function ItinerariesPage() {
   console.log(`Found ${displayItineraries.length} itineraries`);
 
   // Transform itineraries into a format compatible with the client component
-  const formattedItineraries = displayItineraries.map((itinerary) => ({
+  const formattedItineraries = displayItineraries.map((itinerary: Itinerary) => ({
     id: itinerary.id,
     title: itinerary.title,
     description: itinerary.description,

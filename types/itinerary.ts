@@ -64,6 +64,7 @@ export interface DisplayItineraryItem extends FetchedItineraryItemData {
   user_vote?: 'up' | 'down' | null; // Optional duplication for easier access
   creatorProfile: Profile | null; // Ensure creator profile is properly typed
   place?: Place | null; // Optional associated place details
+  formattedCategory?: string; // Formatted category name for display
 }
 
 export interface OrganizedItinerary {

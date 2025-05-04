@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient() as TypedSupabaseClient;
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication status
     const {

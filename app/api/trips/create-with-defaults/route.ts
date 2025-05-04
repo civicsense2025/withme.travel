@@ -18,7 +18,7 @@ const LOG_PREFIX = '[Trip Create API]';
 export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log(chalk.blue(`${LOG_PREFIX} Processing request...`));
 
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   console.log(chalk.dim(`${LOG_PREFIX} Created route handler client`));
 
   // Admin client using service role key (ensure env vars are set)
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         title: 'Add your accommodation',
         day_number: null, // Unscheduled
         position: 0,
-        category: ITINERARY_CATEGORIES.ACCOMMODATION,
+        category: ITINERARY_CATEGORIES.ACCOMMODATIONS,
         description: 'Where will you be staying?',
         status: null,
       },

@@ -7,6 +7,7 @@ import { TripPageError } from '@/components/trips/trip-page-error';
 import { TripDataProvider } from './context/trip-data-provider';
 import { useRouter } from 'next/navigation';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Define the type for TripData
 interface TripData {
@@ -54,6 +55,8 @@ export default function TripPageClientWrapper({
   canEdit: boolean;
 }) {
   const [hydrated, setHydrated] = useState(false);
+  // Create a QueryClient instance
+  const [queryClient] = useState(() => new QueryClient());
 
   // Ensure we're hydrated on the client
   useEffect(() => {
@@ -67,9 +70,11 @@ export default function TripPageClientWrapper({
 
   return (
     <ClassErrorBoundary fallback={<TripPageError tripId={tripId} />} section="trip-page-client">
-      <TripDataProvider tripId={tripId}>
-        <TripPageClient tripId={tripId} canEdit={canEdit} />
-      </TripDataProvider>
+      <QueryClientProvider client={queryClient}>
+        <TripDataProvider tripId={tripId}>
+          <TripPageClient tripId={tripId} canEdit={canEdit} />
+        </TripDataProvider>
+      </QueryClientProvider>
     </ClassErrorBoundary>
   );
 }

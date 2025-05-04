@@ -1,96 +1,170 @@
-# Forms Feature Documentation
+# WithMe Forms
 
-## Overview
+Travel planning involves more than just deciding where to go. It's about bringing friends together, making shared decisions, and creating experiences everyone will love. Our forms feature makes collecting opinions, preferences, and feedback a breeze—no more scrolling through endless group chats to find out who's vegetarian or who wants that sunset sailing trip.
 
-The Forms feature provides a dynamic system for creating, managing, and rendering **conversational, one-question-at-a-time forms** within the withme.travel application, similar in style to platforms like Typeform. It allows users (admins or specific roles) to build engaging custom forms with various question types, enabling end-users to fill them out seamlessly in a mobile-optimized, chat-like interface. This feature is built with flexibility in mind, allowing for future integration with trips, user preferences, and collaborative planning.
+## What Makes Our Forms Special
 
-## Core Components
+Unlike typical form builders, WithMe forms are designed specifically for group travel planning. They're conversational, mobile-optimized, and feel like chatting with a friend rather than filling out paperwork. One question at a time keeps focus high and form fatigue low.
 
-The feature is primarily composed of the following key components located in `app/forms/`:
+### Key Features
 
-1.  **`FormBuilder.tsx` (`app/forms/components/FormBuilder.tsx`)**
+- **Pre-populated Trip Forms**: Automatically create forms for common travel planning needs like dietary restrictions, budget preferences, and activity interests.
+- **Rich Question Types**: Go beyond basic text inputs with visual selectors, sliders, interactive elements, and specialized trip planning inputs.
+- **Smart Conditional Logic**: Show or hide questions based on previous answers to create personalized paths through the form.
+- **Analytics & Insights**: Get valuable data on participation rates, response trends, and traveler preferences.
+- **Templates Library**: Start with our pre-built templates or save your own custom forms for reuse.
+- **Privacy Controls**: Let responders decide what personal details they're comfortable sharing with the group.
 
-    - **Purpose:** Enables users to create new forms or edit existing ones through a user-friendly interface.
-    - **Features:**
-      - **Step-by-Step Creation:** Guides users through defining form details (title, description, emoji), adding questions, and configuring settings.
-      - **Question Management:** Allows adding, removing, reordering, and editing various question types.
-      - **Styling & Theming:** Provides options for basic customization like theme colors and font families.
-      - **Settings:** Configures form visibility, response options (anonymous, progress bar, question numbers).
-      - **Templates:** Includes predefined templates (e.g., Customer Feedback, Event Registration, Travel Preferences) to kickstart form creation.
-      - **Local Persistence:** Saves draft forms in the browser's local storage to prevent data loss during creation.
-      - **Preview:** (Planned) Allows builders to see how the form will look to respondents.
+## Question Types
 
-2.  **`FormRenderer.tsx` (`app/forms/components/FormRenderer.tsx`)**
+Our form system includes a comprehensive set of question types to collect different kinds of feedback and preferences:
 
-    - **Purpose:** Renders a published form for end-users to view and submit responses, focusing on a **one-question-at-a-time, conversational flow**.
-    - **Features:**
-      - **Conversational Rendering:** Displays questions individually, adapting the input component based on the question type (Short Text, Long Text, Single Choice, Multiple Choice, Yes/No, Rating, Date, Email, Number, Statement).
-      - **Conditional Logic:** (Basic implementation) Shows or hides the _next_ question based on answers to the current question, enhancing the conversational flow.
-      - **Validation:** Uses the Zod schemas defined in `FormTypes.ts` to validate user input in real-time and on submission.
-      - **Progress Tracking:** Optionally displays a progress bar and question numbers, crucial for longer conversational forms.
-      - **Navigation:** Provides "Next" and "Previous" buttons for navigating through questions.
-      - **Submission:** Handles the final submission process, including sending data (currently conceptual, needs backend integration) and displaying a customizable completion screen (Thank You type).
-      - **Response Timing:** Tracks time spent per question and total completion time.
+### Text Questions
+- **Short Text**: For quick, single-line responses
+- **Long Text**: For detailed explanations or open-ended feedback
+- **Email**: With proper validation for collecting contact information
 
-3.  **`FormTypes.ts` (`app/forms/FormTypes.ts`)**
-    - **Purpose:** Acts as the single source of truth for data structures related to the forms feature.
-    - **Contents:**
-      - **TypeScript Enums:** Defines standard values for `QuestionType` (including `WELCOME` and `THANK_YOU` screen types), `FormVisibility`, `FormStatus`, etc.
-      - **Database Types (`Db*`)**: Represents the expected structure of data stored in the Supabase database.
-      - **Application Types:** Defines the shapes of objects used within the React components (e.g., `Form`, `Question`, `ResponseSession`).
-      - **Zod Schemas:** Provides runtime validation schemas (`createFormSchema`, `createQuestionSchema`, etc.).
-      - **Mapping Functions:** Includes helper functions (`mapDbFormToForm`, `mapDbQuestionToQuestion`, etc.).
+### Choice Questions
+- **Single Choice**: Traditional radio button selection
+- **Multiple Choice**: Checkbox options for "select all that apply" scenarios
+- **Yes/No**: Simple binary choice questions
 
-## Key Features Implemented
+### Rating Questions
+- **Star Rating**: 1-5 star rating system
+- **NPS (Net Promoter Score)**: 0-10 rating scale for satisfaction/recommendation
+- **Numeric Scale**: Customizable numeric range (1-10, 1-7, etc.)
 
-- **Form Creation & Editing:** A multi-step builder interface.
-- **Conversational Form Rendering:** Displays questions one at a time.
-- **Variety of Question Types:** Support for common inputs, plus Welcome/Statement/Thank You screens.
-- **Client-Side Validation:** Robust input validation using Zod.
-- **Basic Styling Options:** Theme color and font family.
-- **Draft Persistence:** Builder progress saved locally.
-- **Basic Conditional Logic:** Show/hide next question.
+### Visual Selectors
+- **Image Choice**: Select from a grid of image options
+- **Color Picker**: Choose colors that represent mood or preferences
+- **Emoji Reaction**: Quick, emotional response with emoji selectors
 
-## Future Expansion Ideas for a Typeform-like Experience
+### Specialized Inputs
+- **Date Picker**: Select dates or date ranges for availability
+- **Budget Slider**: Set price ranges for accommodation, activities, etc.
+- **Location Picker**: Select destinations from a map interface
 
-To further enhance the conversational nature and feature set:
+### Interactive Elements
+- **Drag-to-Rank**: Prioritize options by dragging items in order of preference
+- **Budget Allocator**: Distribute a fixed budget across different categories
+- **Matrix Rating**: Rate multiple aspects on the same scale
 
-1.  **Database Integration:**
-    - Fully implement saving/loading forms (`forms`, `questions`) and responses (`responses`, `response_sessions`) to Supabase.
-    - Implement `form_templates` table for reusable, shared templates.
-2.  **Layout & Rendering Options:**
-    - **Explicit Layout Toggle:** Add a setting in `FormBuilder` and `forms` table to explicitly choose between "One Question at a Time" vs. traditional multi-question page layouts.
-    - **Enhanced Styling:** Allow custom background images/videos, more font choices, button style customization (store in `forms.theme_options JSONB`?).
-    - **Welcome & Thank You Screens:** Fully implement the `WELCOME` and `THANK_YOU` question types in the `FormRenderer` with customizable text, images, and button links.
-3.  **Advanced Conversational Features:**
-    - **Answer Piping:** Modify `FormRenderer` to inject answers from previous questions into the text of later questions (e.g., "Okay {name}, what's your main goal for this trip?").
-    - **Advanced Conditional Logic:** Implement full branching stored in the `question_branching` table, allowing jumps to non-sequential questions.
-    - **Hidden Fields:** Allow passing pre-filled data (e.g., user ID, trip ID) into the form submission without showing it to the user.
-4.  **Trip & User Integration:**
-    - Link forms to trips (`forms.trip_id` or junction table).
-    - Use forms for:
-      - **Pre-Trip Surveys:** Gather preferences (dietary needs, budget, activity interests, travel style).
-      - **Post-Trip Feedback / Reviews:** Collect feedback on the trip experience or specific activities/accommodations.
-      - **Bug Reports / Feature Requests:** Allow users to submit feedback about the application itself.
-      - **Waivers/Agreements:** Handle simple waivers or agreements.
-      - **RSVPs:** Manage RSVPs for specific trip events or activities.
-    - Pre-fill fields from `profiles`.
-    - Link responses to `user_id` (`response_sessions.respondent_id`).
-    - (Optional) Save specific answers back to `user_preferences`.
-5.  **Collaboration & Permissions:**
-    - Implement `form_collaborators` table and logic for multi-user editing.
-    - Refine RLS policies for secure access based on roles and form visibility.
-6.  **Enhanced Features:**
-    - **Response Analysis:** Dashboard view for aggregated/individual responses.
-    - **File Uploads:** Implement `FILE_UPLOAD` question type with Supabase Storage.
-    - **Location Question Type:** Integrate map input.
-    - **Template Library:** Build rich, shareable travel `form_templates`.
-    - **Notifications:** Use `notifications` table for response alerts.
-    - **Integrations:** Connect to other tools (Slack, Google Sheets, etc.) via Supabase Functions or webhooks triggered on form submission.
-    - **Embedding:** Provide easy options (iframe, script) to embed forms on external sites or within the app.
+### Trip-Specific Questions
+- **Activity Interest**: Rate interest levels for different activities
+- **Accommodation Style**: Select preferred lodging types with images
+- **Dining Preferences**: Special dietary needs and restaurant preferences
 
-## Database Schema
+### Group Questions
+- **Availability Matcher**: Find dates that work for everyone
+- **Group Decision**: Anonymous voting on trip options
+- **Responsibility Assignment**: Volunteer for trip planning tasks
 
-The corresponding SQL schema definitions required to support this feature in the Supabase database are provided in the `forms_schema.sql` file. This schema includes tables for forms, questions, responses, sessions, collaborators, and templates.
+### Information Screens
+- **Welcome Screen**: Introduce the form's purpose and set expectations
+- **Instructions**: Provide context or guide users on how to complete a section
+- **Thank You**: Confirmation screen after form completion
 
-_(For more information on Markdown syntax, see the [Markdown Guide](https://www.markdownguide.org/getting-started/))_
+## Templates & Pre-populated Forms
+
+### Trip Planning Templates
+- **Pre-trip Preferences**: Gather initial preferences before planning starts
+- **Destination Voting**: Help the group decide where to go
+- **Accommodation Survey**: Find out what kind of place everyone wants to stay in
+- **Activity Interest**: Gauge interest in various activities and attractions
+- **Budget Alignment**: Ensure everyone's on the same page about costs
+- **Dietary Needs**: Collect food restrictions and preferences
+- **Travel Style**: Understand pace and style preferences (early riser vs. night owl, etc.)
+
+### Usage Scenarios
+
+- **Before Planning**: Send a form to collect initial preferences and constraints
+- **During Planning**: Use forms to make group decisions on specific aspects
+- **During the Trip**: Gather real-time feedback and preferences as plans evolve
+- **Post-Trip**: Collect memories, highlights, and feedback for future trips
+
+## Analytics & Insights
+
+### For Trip Organizers
+- **Response Dashboard**: See who has responded and who still needs to
+- **Preference Visualization**: Visual charts showing the group's collective preferences
+- **Compatibility Analysis**: Identify areas of agreement and potential conflicts
+- **Popular Options**: See which options received the most votes or highest ratings
+- **Export Options**: Download response data for offline analysis
+
+### For Admins
+- **Form Performance**: Track completion rates, drop-off points, and time spent
+- **Question Analysis**: Identify confusing or problematic questions
+- **Usage Statistics**: Monitor form creation and submission metrics
+- **Device Analytics**: See what devices people use to complete forms
+- **Feature Adoption**: Track which question types and templates are most popular
+
+## Implementation
+
+Forms are built using React components with a modular architecture that supports:
+
+- Progressive loading for fast initial display
+- Keyboard navigation for accessibility
+- Responsive design that works on all devices
+- Offline support for completing forms without connectivity
+- Real-time validation to catch errors early
+
+### Adding Forms to Your Trip
+
+```tsx
+import { TripPreferenceForm } from '@/components/feedback/templates';
+
+// In your trip component
+function TripPage({ tripId, tripName }) {
+  return (
+    <div>
+      <h1>{tripName}</h1>
+      
+      {/* Add a preference form */}
+      <TripPreferenceForm 
+        tripId={tripId}
+        tripName={tripName}
+        onSubmit={handlePreferencesSubmit}
+      />
+      
+      {/* Rest of your trip page */}
+    </div>
+  );
+}
+```
+
+### Viewing Form Analytics
+
+```tsx
+import { UserResponseSummary } from '@/components/feedback/analytics';
+
+// In your trip dashboard
+function TripPreferenceSummary({ tripId, questions, responses, members }) {
+  return (
+    <div>
+      <h2>Group Preferences</h2>
+      
+      <UserResponseSummary
+        tripId={tripId}
+        tripName="Summer Getaway"
+        formTitle="Trip Preferences"
+        questions={questions}
+        responses={responses}
+        sessions={sessions}
+        memberCount={members.length}
+      />
+    </div>
+  );
+}
+```
+
+## Integration with Other Features
+
+- **Itinerary Builder**: Use form responses to auto-suggest itinerary items
+- **Budget Planner**: Incorporate budget preferences into trip cost estimates
+- **Destination Recommendations**: Suggest destinations based on group preferences
+- **Trip Roles**: Assign planning responsibilities based on form responses
+- **Custom Trip Homepage**: Personalize trip views based on traveler preferences
+
+---
+
+The forms system provides a foundation for collecting structured information throughout the trip planning process while maintaining the casual, conversational feel that makes WithMe unique.

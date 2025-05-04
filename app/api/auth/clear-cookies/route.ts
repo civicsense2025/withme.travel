@@ -5,7 +5,7 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 // Changed from GET to POST for better security (state-changing operations should use POST)
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Try to sign out from Supabase first (if there's an active session)
     try {
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // 2. Also try to sign out via API client to clear server-side session
     try {
-      const supabase = createRouteHandlerClient();
+      const supabase = await createRouteHandlerClient();
       await supabase.auth.signOut({ scope: 'global' });
       console.log('[Auth] Signed out via Supabase API');
     } catch (error) {

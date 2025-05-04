@@ -76,12 +76,18 @@ export function useActivityTimeline(
           setActivities(newActivities);
         }
 
-        // Update pagination state
+        // Check if pagination data exists and has the expected structure
+        const paginationData = data.pagination || {};
+        const total = typeof paginationData.total === 'number' ? paginationData.total : 0;
+        const newOffset = typeof paginationData.offset === 'number' ? paginationData.offset : 0;
+        const newLimit = typeof paginationData.limit === 'number' ? paginationData.limit : limit;
+        
+        // Update pagination state with safe values
         setPagination({
-          total: data.pagination.total || 0,
-          offset: data.pagination.offset || 0,
-          limit: data.pagination.limit || limit,
-          hasMore: data.pagination.offset + newActivities.length < data.pagination.total,
+          total,
+          offset: newOffset,
+          limit: newLimit,
+          hasMore: newOffset + newActivities.length < total,
         });
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));

@@ -22,7 +22,7 @@ export async function GET(
   if (!tripId || !/^\d+$/.test(tripId)) {
     return NextResponse.json({ error: 'Invalid trip ID' }, { status: 400 });
   }
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     // Get authenticated user
@@ -83,7 +83,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // For now, return a "not implemented" message
   // This can be expanded later to support creating polls

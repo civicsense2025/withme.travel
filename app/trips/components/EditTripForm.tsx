@@ -202,6 +202,19 @@ export function EditTripForm({
     }
   };
 
+  // Define expected API response type for better type safety
+  interface DestinationApiResponse {
+    destination: {
+      id: string;
+      name?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      [key: string]: any;
+    };
+    error?: string; // Add this to handle error responses
+  }
+
   // Define the core async logic separately
   const performDestinationLookup = async (result: GeocoderResult | null) => {
     setLookupError(null);
@@ -225,20 +238,40 @@ export function EditTripForm({
       // Use the literal string for the API route
       const response = await fetch('/api/destinations/lookup-or-create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          // Include credentials to ensure auth cookies are sent
+          credentials: 'include'
+        },
         body: JSON.stringify(payload),
       });
-      const destData = await response.json();
+      
+      const destData: DestinationApiResponse = await response.json();
+      
+      // Check for specific API errors
       if (!response.ok) {
-        throw new Error(destData.error || 'Failed to lookup/create destination');
+        const errorMessage = destData.error || 
+          `API error: ${response.status} ${response.statusText}`;
+        throw new Error(errorMessage);
       }
-      if (destData?.destination?.id) {
-        setValue('destination_id', destData.destination.id);
-        setDestinationId(destData.destination.id);
-      } else {
-        console.error('API response missing destination.id:', destData);
+      
+      // Validate the response shape with type guards
+      if (!destData || typeof destData !== 'object') {
+        throw new Error('Invalid API response: Expected an object');
+      }
+      
+      if (!destData.destination) {
+        throw new Error('Invalid API response: Missing destination property');
+      }
+      
+      if (!destData.destination.id || typeof destData.destination.id !== 'string') {
+        console.error('API response missing valid destination.id:', destData);
         throw new Error('Could not retrieve destination ID from API response.');
       }
+      
+      // If we've passed all validations, set the ID
+      setValue('destination_id', destData.destination.id);
+      setDestinationId(destData.destination.id);
     } catch (error: any) {
       console.error('Error looking up/creating destination:', error);
       setLookupError(error.message);

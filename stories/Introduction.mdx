@@ -1,0 +1,56 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Introduction" />
+
+# WithMe.travel Component Library
+
+This is the component library for WithMe.travel, a collaborative trip planning platform.
+
+## Component Organization
+
+Our components are organized into the following categories:
+
+- **Layout Components**: Basic layout structure such as Navbar, Footer, Container
+- **Trip Components**: Components for displaying and managing trips
+- **Destination Components**: Components for displaying destinations
+- **User Components**: User interaction components like buttons, forms, and auth
+- **Feedback Components**: Notification and feedback UI elements
+- **Error Components**: Error boundaries and error displays
+- **UI Components**: Generic UI building blocks
+
+## Component Standards
+
+Each component should:
+
+1. **Be well-typed**: Use TypeScript interfaces for props
+2. **Support theming**: Work with both light and dark mode
+3. **Be accessible**: Follow WCAG guidelines
+4. **Be responsive**: Work on all screen sizes
+5. **Be documented**: Include Storybook stories with examples
+
+## Using This Storybook
+
+This Storybook helps you:
+
+- **Browse components**: Explore available components
+- **View variants**: See different versions of each component
+- **Check props**: Understand the API of each component
+- **Test interactions**: See how components behave
+- **Copy code**: Get code samples to use in your application
+
+## Naming Conventions
+
+- Component files use kebab-case: `component-name.tsx`
+- Component functions use PascalCase: `export function ComponentName()`
+- Props interfaces use PascalCase with Props suffix: `interface ComponentNameProps`
+- Story files use PascalCase with Stories suffix: `ComponentName.stories.tsx`
+
+## Adding New Components
+
+When adding new components:
+
+1. Create the component in the appropriate directory
+2. Export it in the `components/index.ts` file
+3. Create a story file in the `stories` directory
+4. Document the component's props and usage
+5. Add examples of different variants and states 

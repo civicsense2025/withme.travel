@@ -274,6 +274,36 @@ function getCategoryColor(category) {
 
 These files exist primarily for backward compatibility or historical reasons. **Do not import constants from these index files.** Always import directly from the specific file (e.g., `utils/constants/database.ts`, `utils/constants/routes.ts`). This makes dependencies clearer and avoids potential bundling or type issues.
 
+## User-Related Constants Clarification
+
+When working with user data, it's important to understand the distinction between these two tables:
+
+1. **USERS (auth.users)** - Represents the authentication data stored in the `auth.users` table.
+   - References the `users` table managed by Supabase Auth.
+   - Contains sensitive authentication information.
+   - Use `TABLES.USERS` when you need to reference auth users.
+
+2. **PROFILES (public.profiles)** - Represents user profile data stored in the `public.profiles` table.
+   - Contains public-facing user information (name, avatar, bio, etc.)
+   - Each profile has a foreign key relationship to an auth user.
+   - Use `TABLES.PROFILES` when you need to reference user profiles.
+
+Example of correct usage:
+
+```typescript
+// For authentication-related operations
+const { data: auth_user, error } = await supabase.auth.getUser();
+
+// For profile data operations
+const { data: profile } = await supabase
+  .from(TABLES.PROFILES)
+  .select('name, avatar_url, bio')
+  .eq('id', auth_user.id)
+  .single();
+```
+
+Note that in most cases when joining with other tables like trips or comments, you'll use the user's ID with the PROFILES table, not the USERS table.
+
 ## Summary
 
 - Use `utils/constants/` as the central location.
@@ -281,3 +311,4 @@ These files exist primarily for backward compatibility or historical reasons. **
 - Use `TABLES`, `FIELDS`, `ENUMS` from `database.ts` (avoid `DB_*` prefixes).
 - Leverage the exported types (like `TripRole`, `ItemStatus`, `ImageType`, etc.) derived directly from the `ENUMS` object in `database.ts` for type safety.
 - **Never** import constants or types from `utils/constants.ts` or `utils/constants/index.ts`.
+- Remember the distinction between `TABLES.USERS` (auth.users) and `TABLES.PROFILES` (public.profiles) when working with user data.

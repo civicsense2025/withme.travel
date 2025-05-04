@@ -9,7 +9,7 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const { token } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const {

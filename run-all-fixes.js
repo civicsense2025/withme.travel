@@ -59,6 +59,10 @@ const steps = [
     name: 'Fixing middleware.ts',
     script: 'fix-middleware.js',
   },
+  {
+    name: 'Fixing async Supabase client calls',
+    script: 'fix-async-supabase.js',
+  },
 ];
 
 // Run each step

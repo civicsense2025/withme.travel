@@ -39,7 +39,7 @@ export async function GET(
   }
 
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // 1. Fetch itinerary items required for calculation using FIELDS
     const { data: items, error: itemsError } = await supabase
@@ -87,7 +87,7 @@ export async function GET(
 
 export async function POST(request: NextRequest, { params }: { params: { tripId: string } }) {
   const { tripId } = params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   // ... rest of POST handler ...
   return NextResponse.json({ error: 'POST method not implemented' }, { status: 405 });
 }

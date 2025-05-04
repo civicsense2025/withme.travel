@@ -114,7 +114,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
   const { slug } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   if (!slug) {
     return NextResponse.json({ error: 'Missing slug parameter' }, { status: 400 });
   }

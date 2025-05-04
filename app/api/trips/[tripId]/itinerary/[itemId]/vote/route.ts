@@ -123,7 +123,7 @@ export async function POST(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     if (!tripId || !itemId) {
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });

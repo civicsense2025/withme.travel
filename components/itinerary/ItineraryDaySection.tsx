@@ -17,10 +17,10 @@ import React, { useState } from 'react';
 
 // Color palette from city-bubbles.tsx
 const dayColors = [
-  'bg-travel-blue text-blue-900 dark:text-blue-100',
-  'bg-travel-pink text-pink-900 dark:text-pink-100',
-  'bg-travel-yellow text-amber-900 dark:text-amber-100',
-  'bg-travel-purple text-purple-900 dark:text-purple-100',
+  'bg-travel-blue text-blue-950 dark:text-blue-50',
+  'bg-travel-pink text-pink-950 dark:text-pink-50',
+  'bg-travel-yellow text-amber-950 dark:text-amber-50',
+  'bg-travel-purple text-purple-950 dark:text-purple-50',
 ];
 
 // Function to get a color based on day number
@@ -104,18 +104,23 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
     }
   }
 
+  // Setup droppable area for items with the correct container ID
   const { setNodeRef, isOver } = useDroppable({
     id: containerId,
     data: {
-      type: 'container',
+      type: 'day-section',
       dayNumber: dayNumber,
+      id: containerId,
     },
   });
 
   return (
     <div
       ref={setNodeRef}
-      className={`space-y-4 pt-4 ${isOver ? 'bg-muted/50 ring-2 ring-primary rounded-md p-2' : ''}`}
+      className={cn(
+        'space-y-4 pt-4 relative',
+        isOver && 'bg-muted/50 ring-2 ring-primary rounded-md p-2'
+      )}
     >
       {/* Section header with title on left and date on right */}
       <div className="flex items-center justify-between mb-2">
@@ -125,7 +130,7 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
               <Input
                 value={sectionTitle}
                 onChange={(e) => setSectionTitle(e.target.value)}
-                className="text-2xl font-semibold h-10 py-0 px-1 w-48 focus-visible:ring-offset-0"
+                className="text-2xl font-semibold h-10 py-0 px-2 w-48 focus-visible:ring-offset-0"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -142,7 +147,7 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
             </div>
           ) : (
             <h2
-              className={`text-2xl font-semibold tracking-tight capitalize ${canEdit ? 'cursor-pointer border-b border-dashed border-muted-foreground/50 hover:border-primary/70' : ''}`}
+              className={`text-2xl font-bold tracking-tight capitalize ${canEdit ? 'cursor-pointer border-b border-dashed border-muted-foreground/50 hover:border-primary/70' : ''}`}
               onClick={() => {
                 if (canEdit) {
                   setIsEditingTitle(true);
@@ -157,8 +162,8 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
         {/* Date badge aligned to the right */}
         {formattedDate && (
           <Badge
-            variant="outline"
-            className={cn('font-medium text-sm py-1 px-2.5', getDayColor(dayNumber))}
+            variant="secondary"
+            className={cn('font-medium text-sm py-1 px-2.5 border-0', getDayColor(dayNumber))}
           >
             {formattedDate}
           </Badge>
@@ -172,18 +177,36 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
           strategy={verticalListSortingStrategy}
           id={containerId}
         >
-          {items.map((item) => (
-            <SortableItem key={item.id} id={item.id} disabled={!canEdit} containerId={containerId}>
-              <ItineraryItemCard item={item} onEdit={() => onEditItem(item)} />
-            </SortableItem>
-          ))}
+          {items.length === 0 ? (
+            <div className="min-h-[80px] border border-dashed rounded-md flex items-center justify-center text-muted-foreground">
+              No items scheduled for this day yet
+            </div>
+          ) : (
+            items.map((item) => (
+              <SortableItem 
+                key={item.id} 
+                id={item.id} 
+                disabled={!canEdit} 
+                containerId={containerId}
+              >
+                <ItineraryItemCard 
+                  item={item} 
+                  onDelete={() => onDelete(item.id)}
+                  onEdit={() => onEditItem(item)}
+                  onVote={(type: 'up' | 'down') => onVote(item.id, item.day_number, type)}
+                  onStatusChange={(status: ItemStatus | null) => onStatusChange(item.id, status)}
+                  editable={canEdit}
+                />
+              </SortableItem>
+            ))
+          )}
         </SortableContext>
 
         {canEdit && (
           <Button
             variant="outline"
             className="w-full border-dashed border-2 hover:border-solid hover:bg-muted/50 py-6 flex items-center justify-center text-muted-foreground"
-            onClick={onAddItemToDay}
+            onClick={() => onAddItemToDay()}
           >
             <PlusCircle className="w-5 h-5 mr-2" />
             Add Item to {sectionTitle}

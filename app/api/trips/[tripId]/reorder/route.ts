@@ -35,7 +35,7 @@ export async function POST(
 ) {
   try {
     const { tripId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Authenticate the user
     const {

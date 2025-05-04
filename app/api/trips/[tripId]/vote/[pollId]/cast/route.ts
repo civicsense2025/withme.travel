@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string; pollId: string }> }
 ) {
   const { tripId, pollId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // Validate trip ID and poll ID
   if (!tripId || !/^\d+$/.test(tripId)) {

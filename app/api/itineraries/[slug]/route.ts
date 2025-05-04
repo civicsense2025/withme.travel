@@ -29,7 +29,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { slug } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     console.log(`[Template API] Fetching template with slug: "${slug}"`);
 
@@ -137,7 +137,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const { slug } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Authenticate the user
     const {

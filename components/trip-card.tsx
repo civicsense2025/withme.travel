@@ -16,9 +16,9 @@ interface TripCardProps {
 export function TripCard({ trip }: TripCardProps) {
   // Compute display values
   const displayTitle = trip.name || 'Untitled Trip';
-  const location = trip.location || '';
-  const membersCount = Array.isArray(trip.members) ? trip.members.length : 0;
-  const imageUrl = trip.cover_image || '/images/default-trip-image.jpg';
+  const location = trip.location || trip.destination_name || '';
+  const membersCount = typeof trip.members === 'number' ? trip.members : 0;
+  const imageUrl = trip.cover_image || trip.cover_image_url || '/images/default-trip-image.jpg';
 
   return (
     <Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)} className="block group">

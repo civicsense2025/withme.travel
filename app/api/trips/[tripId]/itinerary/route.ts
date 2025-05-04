@@ -208,7 +208,7 @@ export async function GET(
 ) {
   const { tripId } = await params;
   console.log(`[API Itinerary GET /trips/${tripId}] Received request`);
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     // UUID validation
@@ -297,7 +297,7 @@ export async function POST(
 ) {
   const { tripId } = await params;
   console.log(`[API Itinerary POST /trips/${tripId}] Received request`);
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     // Get the current user
@@ -464,7 +464,7 @@ export async function POST(
           latitude,
           longitude,
           place_name: placeName || title,
-          google_place_id: placeId,
+          place_id: placeId, // Store as place_id instead of google_place_id
           // Record creator
           created_by: user.id,
         };

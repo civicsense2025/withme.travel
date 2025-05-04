@@ -65,7 +65,7 @@ export async function GET(
     const { tripId } = await params;
     if (!tripId) return errorResponse('Trip ID is required', 400);
 
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     return await withAuth(async (user) => {
       try {
@@ -118,7 +118,7 @@ export async function POST(
       return errorResponse('Trip ID is required', 400);
     }
 
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     return await withAuth(async (user) => {
       try {

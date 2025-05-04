@@ -23,7 +23,7 @@ const FIELDS = {
 };
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   try {
     // Get user for authorization (but don't require it for public templates)
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         `
         *,
         ${ITINERARY_TABLES.DESTINATIONS}(*),
-        profiles:${ITINERARY_TABLES.PROFILES}!${FIELDS.ITINERARY_TEMPLATES.CREATED_BY}(id, name, avatar_url)
+        creator:${FIELDS.ITINERARY_TEMPLATES.CREATED_BY}(id, email, raw_user_meta_data)
       `
       )
       .eq(FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
@@ -52,6 +52,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     console.log(`Found ${data?.length || 0} itineraries`);
+
+    if (data && Array.isArray(data)) {
+      // Transform creator data to match the expected format
+      // Use type assertion to handle the data structure
+      (data as any[]).forEach(item => {
+        if (item.creator && item.creator.raw_user_meta_data) {
+          item.creator = {
+            id: item.creator.id,
+            name: item.creator.raw_user_meta_data.name || item.creator.email?.split('@')[0] || 'Unknown User',
+            avatar_url: item.creator.raw_user_meta_data.avatar_url || null
+          };
+        }
+      });
+    }
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Error fetching itineraries:', error);
@@ -63,7 +78,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // Get user for authorization
   const {

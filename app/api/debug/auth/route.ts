@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get session info
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

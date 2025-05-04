@@ -1,5 +1,6 @@
+'use client';
 import { API_ROUTES } from '@/utils/constants/routes';
-('use client');
+
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';

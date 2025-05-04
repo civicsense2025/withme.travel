@@ -172,7 +172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log(chalk.dim(`${LOG_PREFIX} Has auth cookie: ${hasAuthCookie}`));
   }
 
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   console.log(chalk.dim(`${LOG_PREFIX} Created route handler client`));
 
   // Admin client using service role key (ensure env vars are set)
@@ -392,7 +392,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       title: `Visit ${title}`,
       day_number: 1,
       position: 1,
-      category: ITINERARY_CATEGORIES.ATTRACTION,
+      category: ITINERARY_CATEGORIES.ICONIC_LANDMARKS,
       description: description,
       status: ITEM_STATUSES.SUGGESTED,
     };

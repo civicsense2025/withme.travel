@@ -7,7 +7,6 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: false }); /
 
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
-import path from 'path';
 import https from 'https';
 import { createApi } from 'unsplash-js';
 import nodeFetch from 'node-fetch'; // Use node-fetch for Unsplash API
@@ -23,16 +22,16 @@ const destinationImageMap: Record<string, string> = {
   Tokyo: '/destinations/tokyo-skyline-night.png',
   Paris: '/destinations/paris-eiffel-tower.png',
   'New York': '/destinations/new-york-manhattan-skyline.png',
-  London: '/destinations/london-big-ben.jpg',
-  Rome: '/destinations/rome-colosseum.jpg',
-  Bangkok: '/destinations/bangkok-grand-palace.jpg',
-  Sydney: '/destinations/sydney-opera-house.jpg',
-  Amsterdam: '/destinations/amsterdam-canals.jpg',
-  Kyoto: '/destinations/kyoto-bamboo-forest.jpg',
+  London: '/destinations/london.jpg',
+  Rome: '/destinations/rome.jpg',
+  Bangkok: '/destinations/bangkok.jpg',
+  Sydney: '/destinations/sydney.jpg',
+  Amsterdam: '/destinations/amsterdam.jpg',
+  Kyoto: '/destinations/kyoto.jpg',
   Istanbul: '/destinations/istanbul-blue-mosque.jpg',
   Venice: '/destinations/venice-grand-canal.jpg',
-  'San Francisco': '/destinations/san-francisco-golden-gate.jpg',
-  Dubai: '/destinations/dubai-skyline.jpg',
+  'San Francisco': '/destinations/san-francisco.jpg',
+  Dubai: '/destinations/dubai.jpg',
   Prague: '/destinations/prague-old-town.jpg',
   'Rio de Janeiro': '/destinations/rio-christ-redeemer.jpg',
   Berlin: '/destinations/berlin-brandenburg-gate.jpg',

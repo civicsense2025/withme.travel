@@ -118,7 +118,7 @@ export async function DELETE(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     if (!tripId || !itemId) {
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
@@ -165,7 +165,7 @@ export async function GET(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -230,7 +230,7 @@ export async function PUT(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,

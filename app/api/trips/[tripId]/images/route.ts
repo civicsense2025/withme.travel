@@ -77,7 +77,7 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const { tripId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const {
@@ -192,7 +192,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tripId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check access
     const access = await checkTripAccess(supabase, tripId);

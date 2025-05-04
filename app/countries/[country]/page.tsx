@@ -1,138 +1,25 @@
-import { createClient } from '@/utils/supabase/client';
+import { createServerComponentClient } from '@/utils/supabase/server';
 import CountryPageClient from './CountryPageClient';
+import { cookies } from 'next/headers';
 
 // Force dynamic rendering for this page since it uses data fetching
 export const dynamic = 'force-dynamic';
 
-// Define country-specific data - this is placeholder data
-const COUNTRY_DATA = {
-  france: {
-    name: 'France',
-    description:
-      'A country of rich history, stunning architecture, and world-renowned cuisine. From the romantic streets of Paris to the lavender fields of Provence and the glamorous beaches of the French Riviera.',
-    coverImage: '/images/destinations/paris-eiffel-tower.jpg',
-    accentColor: 'travel-blue',
-    highlights: [
-      'World-class museums and galleries in Paris',
-      'Exceptional food and wine culture throughout the country',
-      'Iconic architectural landmarks from châteaux to cathedrals',
-      'Stunning diverse landscapes from Alps to Mediterranean coast',
-      'Charming villages and historic towns rich in heritage',
-    ],
-    stats: {
-      population: '67 million',
-      capital: 'Paris',
-      languages: 'French',
-      currency: 'Euro (€)',
-      timezone: 'CET/CEST',
-    },
-  },
-  japan: {
-    name: 'Japan',
-    description:
-      'A fascinating blend of ancient traditions and cutting-edge modernity. Explore serene temples, futuristic cities, stunning natural landscapes, and a culinary scene celebrated worldwide.',
-    coverImage: '/images/destinations/kyoto-bamboo-forest.jpg',
-    accentColor: 'travel-red',
-    highlights: [
-      'Ancient temples and shrines in Kyoto',
-      'Vibrant urban landscape of Tokyo',
-      'Beautiful sakura (cherry blossom) season in spring',
-      'World-renowned cuisine from sushi to ramen',
-      'Stunning natural scenery including Mount Fuji',
-    ],
-    stats: {
-      population: '126 million',
-      capital: 'Tokyo',
-      languages: 'Japanese',
-      currency: 'Yen (¥)',
-      timezone: 'JST',
-    },
-  },
-  italy: {
-    name: 'Italy',
-    description:
-      'The cradle of European civilization, home to the greatest number of UNESCO World Heritage Sites, and renowned for its cuisine, art, fashion, and beautiful coastlines.',
-    coverImage: '/images/destinations/rome-colosseum.jpg',
-    accentColor: 'travel-green',
-    highlights: [
-      'Ancient ruins and history in Rome',
-      'Renaissance art and architecture in Florence',
-      'Romantic canals of Venice',
-      'Spectacular Amalfi Coast',
-      'World-famous cuisine and wine regions',
-    ],
-    stats: {
-      population: '60 million',
-      capital: 'Rome',
-      languages: 'Italian',
-      currency: 'Euro (€)',
-      timezone: 'CET/CEST',
-    },
-  },
-  australia: {
-    name: 'Australia',
-    description:
-      'A vast country of stunning natural beauty, from the Great Barrier Reef to the Outback. Experience unique wildlife, vibrant cities, and relaxed coastal culture.',
-    coverImage: '/images/destinations/sydney-opera-house.jpg',
-    accentColor: 'travel-yellow',
-    highlights: [
-      'Iconic Sydney Opera House and Harbour Bridge',
-      'The Great Barrier Reef marine experience',
-      'Aboriginal cultural heritage',
-      'Unique wildlife found nowhere else on Earth',
-      'Beautiful beaches and coastal lifestyle',
-    ],
-    stats: {
-      population: '25 million',
-      capital: 'Canberra',
-      languages: 'English',
-      currency: 'Australian Dollar (A$)',
-      timezone: 'Various (AEST/ACST/AWST)',
-    },
-  },
-  'united-states': {
-    name: 'United States',
-    description:
-      'A vast and diverse country offering everything from bustling megacities to breathtaking national parks, with cultural influences from around the world.',
-    coverImage: '/images/destinations/los-angeles-united-states.jpg',
-    accentColor: 'travel-purple',
-    highlights: [
-      'Diverse and vibrant cities like New York and San Francisco',
-      'Stunning national parks including Yellowstone and Grand Canyon',
-      'Cultural institutions and museums in Washington DC',
-      'Entertainment capital of Los Angeles and Hollywood',
-      'Diverse food scene reflecting multicultural influences',
-    ],
-    stats: {
-      population: '331 million',
-      capital: 'Washington, D.C.',
-      languages: 'English (primarily)',
-      currency: 'US Dollar ($)',
-      timezone: 'Multiple time zones',
-    },
-  },
-  thailand: {
-    name: 'Thailand',
-    description:
-      'Known as the "Land of Smiles," Thailand offers a perfect mix of vibrant city life, ancient temples, and paradise-like beaches with warm tropical climate.',
-    coverImage: '/images/destinations/bangkok-grand-palace.jpg',
-    accentColor: 'travel-mint',
-    highlights: [
-      'Ornate temples and palaces in Bangkok',
-      'Pristine beaches and islands in the south',
-      'Rich cultural heritage and traditions',
-      'World-famous street food and cuisine',
-      'Friendly locals and warm hospitality',
-    ],
-    stats: {
-      population: '69 million',
-      capital: 'Bangkok',
-      languages: 'Thai',
-      currency: 'Thai Baht (฿)',
-      timezone: 'ICT',
-    },
-  },
-};
+// Define the country data type
+interface CountryData {
+  name: string;
+  description: string;
+  coverImage: string;
+  accentColor: string;
+  highlights: string[];
+  stats: {
+    population: string;
+    capital: string;
+    languages: string;
+    currency: string;
+    timezone: string;
+  };
+}
 
 // Type definition for destination
 interface Destination {
@@ -182,12 +69,18 @@ export default async function CountryPage({ params }: { params: { country: strin
   // Params are no longer Promises in latest Next.js versions
   const { country } = params;
   const countrySlug = country.toLowerCase();
+  
+  // Create country name from slug
+  const countryName = countrySlug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
-  // Safely access country data
-  const countryData = COUNTRY_DATA[countrySlug as keyof typeof COUNTRY_DATA] || {
-    name: countrySlug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-    description: 'Explore the wonders of this beautiful country.',
-    coverImage: '/images/destinations/default.jpg',
+  // Initialize country data
+  let countryData: CountryData = {
+    name: countryName,
+    description: `Explore the wonders of ${countryName}.`,
+    coverImage: `/destinations/${countrySlug}.jpg`,
     accentColor: 'travel-blue',
     highlights: [],
     stats: {
@@ -205,13 +98,13 @@ export default async function CountryPage({ params }: { params: { country: strin
   let fetchError: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createServerComponentClient();
     
-    // Fetch destinations
+    // Fetch destinations for this country
     const { data: destData, error: destError } = await supabase
       .from('destinations')
       .select('*')
-      .eq('country', countryData.name)
+      .ilike('country', countryName)
       .limit(12);
 
     if (destError) {
@@ -219,6 +112,46 @@ export default async function CountryPage({ params }: { params: { country: strin
       fetchError = 'Failed to load destinations.';
     } else {
       initialDestinations = destData || [];
+      
+      // If we have destinations, use the first one to populate country data
+      if (initialDestinations.length > 0) {
+        const dest = initialDestinations[0];
+        
+        // Get a representative image for the country
+        const representativeImage = initialDestinations.find(d => d.image_url)?.image_url || countryData.coverImage;
+        
+        // Generate country description from destinations
+        const cityNames = initialDestinations
+          .slice(0, 3)
+          .map(d => d.city)
+          .filter(Boolean)
+          .join(', ');
+          
+        const description = cityNames 
+          ? `Explore the beauty of ${countryName}, featuring destinations like ${cityNames} and more.` 
+          : countryData.description;
+        
+        // Build highlights from top destinations
+        const highlights: string[] = initialDestinations
+          .slice(0, 5)
+          .map(d => `Visit ${d.city}${d.description ? ` - ${d.description.split('.')[0]}` : ''}`)
+          .filter(Boolean);
+          
+        // Update country data
+        countryData = {
+          ...countryData,
+          description,
+          coverImage: representativeImage,
+          highlights: highlights,
+          // Apply accent color based on continent if available
+          accentColor: dest.continent === 'Europe' ? 'travel-blue' :
+                      dest.continent === 'Asia' ? 'travel-red' :
+                      dest.continent === 'North America' ? 'travel-purple' :
+                      dest.continent === 'South America' ? 'travel-green' :
+                      dest.continent === 'Africa' ? 'travel-yellow' :
+                      dest.continent === 'Oceania' ? 'travel-mint' : 'travel-blue'
+        };
+      }
     }
 
     // Fetch itineraries

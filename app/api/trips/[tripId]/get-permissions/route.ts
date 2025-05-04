@@ -48,7 +48,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tripId } = params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // First, get the current user
     const {

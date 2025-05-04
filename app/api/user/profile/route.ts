@@ -17,7 +17,7 @@ const Tables = TABLES as unknown as ExtendedTables;
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated
     const { data: userData, error: userError } = await supabase.auth.getUser();

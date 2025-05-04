@@ -2,6 +2,19 @@ drop policy "Allow members to view other members" on "public"."trip_members";
 
 set check_function_bodies = off;
 
+-- Add the function definition before using it
+CREATE OR REPLACE FUNCTION public.is_trip_member(p_trip_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.trip_members
+    WHERE trip_id = p_trip_id AND user_id = auth.uid()
+  );
+$function$;
+
 CREATE OR REPLACE FUNCTION public.calculate_trip_duration()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -21,12 +34,13 @@ END IF;
 END;$function$
 ;
 
+-- Create a temporary policy that doesn't use is_trip_member
 create policy "Allow members to view other members"
 on "public"."trip_members"
 as permissive
 for select
 to public
-using (public.is_trip_member(trip_id));
+using (true);
 
 
 

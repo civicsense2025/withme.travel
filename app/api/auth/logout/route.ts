@@ -17,7 +17,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     // Create Supabase client for signing out using our utility
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get user ID *before* signing out
     try {

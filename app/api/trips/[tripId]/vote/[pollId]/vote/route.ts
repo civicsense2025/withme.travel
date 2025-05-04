@@ -61,7 +61,7 @@ export async function POST(
     const { optionId } = validationResult.data;
 
     // Get authenticated user
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,

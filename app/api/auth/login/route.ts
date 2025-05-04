@@ -54,7 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { email, password } = sanitizeAuthCredentials(body);
 
     // Use the server-specific client creator
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Attempt to sign in
     const { data, error } = await supabase.auth.signInWithPassword({

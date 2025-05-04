@@ -34,7 +34,7 @@ const FIELDS = {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 // --- POST Handler --- //
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get authenticated user
     const {

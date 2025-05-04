@@ -38,7 +38,7 @@ export async function POST(
 
     const { pollId, optionId } = validation.data;
     // Create Supabase client
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Verify the user is authenticated
     const {

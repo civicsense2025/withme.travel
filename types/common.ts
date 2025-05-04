@@ -7,4 +7,4 @@
  * Status types for itinerary items
  * This unified definition ensures consistency across the application
  */
-export type ItemStatus = 'pending' | 'approved' | 'rejected' | 'suggested' | null;
+export type ItemStatus = 'suggested' | 'confirmed' | 'rejected' | null;

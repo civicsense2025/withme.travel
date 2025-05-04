@@ -230,11 +230,11 @@ The project now includes extensive real-time collaboration features including pr
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## 🤝 Contributing
+## \U0001F91D Contributing
 
 Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-## 📄 License
+## \U0001F4C4 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -245,6 +245,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Next.js Best Practices](docs/BEST-PRACTICES.md) - Technical guidelines for working with Next.js
 - [Next.js 15 Migration Guide](docs/nextjs15-migration.md) - Guide for upgrading to Next.js 15
 - [API Documentation](docs/API.md) - API endpoints and usage examples
+- [Debugging Common Issues](docs/debugging.md) - Solutions for common issues like button nesting and authentication
 
 ## 📝 Content Quality & Style Guide Summary
 

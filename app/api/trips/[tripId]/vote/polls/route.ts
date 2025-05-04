@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
 
   // Validate trip ID
   if (!tripId || !/^\d+$/.test(tripId)) {

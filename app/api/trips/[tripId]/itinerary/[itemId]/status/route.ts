@@ -91,7 +91,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Trip ID and Item ID are required' }, { status: 400 });
     }
 
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
     const {
       data: { user },
       error: authError,

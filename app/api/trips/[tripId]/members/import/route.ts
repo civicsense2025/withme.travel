@@ -40,7 +40,7 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   const { data, error: authError } = await supabase.auth.getUser();
 
   if (authError || !data.user) {

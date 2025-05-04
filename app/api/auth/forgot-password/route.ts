@@ -29,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
 
     // Create Supabase client
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Send password reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {

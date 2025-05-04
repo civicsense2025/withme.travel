@@ -19,7 +19,7 @@ const Tables = TABLES as unknown as ExtendedTables;
 export async function GET(request: Request): Promise<NextResponse> {
   try {
     // Use the route handler client from unified.ts
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Query tags
     const { data, error } = await supabase

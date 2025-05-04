@@ -1098,7 +1098,7 @@ export default function DesignSandboxClient() {
                     </CardHeader>
                     <CardContent className="flex justify-center">
                       <div className="p-4 bg-muted rounded-md inline-flex">
-                        <ShareTripButton slug="demo-trip" privacySetting="shared_with_link" />
+                        <ShareTripButton slug="demo-trip" privacySetting="shared_with_link" tripId="demo-trip-id" />
                       </div>
                     </CardContent>
                   </Card>

@@ -24,13 +24,23 @@ import {
 } from '@/components/ui/select';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useToast } from '@/hooks/use-toast';
-import { Suspense } from 'react';
-import { type ItemStatus } from '@/utils/constants/status';
+import { Suspense, useRef, useEffect } from 'react';
+import { type ItemStatus, ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import { useRouter } from 'next/navigation';
 import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
-import { ImportPlacesButton } from '../TripItinerary/ImportPlacesButton';
+import { VerticalStepper } from '@/components/itinerary/VerticalStepper';
+import { PlusCircle, MapPin, CalendarPlus, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import ImportMapButton from '../../import-map-button';
+import { TripsFeedbackButton } from '@/app/trips/TripsFeedbackButton';
 
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import dynamic from 'next/dynamic';
 import type { GeocoderOptions } from '@mapbox/mapbox-gl-geocoder';
@@ -77,6 +87,27 @@ interface ItineraryTabContentProps {
   handleSectionReorder: (orderedDayNumbers: (number | null)[]) => Promise<void>;
 }
 
+// Helper function to format category display names
+const formatCategoryName = (category: string): string => {
+  if (!category) return '';
+  
+  // Check if it matches an itinerary category constant
+  const matchedCategory = Object.values(ITINERARY_CATEGORIES).find(
+    cat => cat.toLowerCase() === category.toLowerCase()
+  );
+  
+  if (matchedCategory) {
+    // Convert snake_case to Title Case
+    return matchedCategory
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  
+  // Otherwise, just return the original with first letter capitalized
+  return category.charAt(0).toUpperCase() + category.slice(1);
+};
+
 export function ItineraryTabContent({
   tripId,
   allItineraryItems,
@@ -111,6 +142,33 @@ export function ItineraryTabContent({
   const [selectedPlace, setSelectedPlace] = useState<GeocoderResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref for importMapButton to avoid nesting buttons
+  const importMapButtonRef = useRef<HTMLDivElement>(null);
+
+  // Generate sections for vertical stepper
+  const sections = useMemo(() => {
+    const result = [];
+    
+    // Add unscheduled items section if there are any
+    const unscheduledItems = itineraryItems.filter(item => item.day_number === null);
+    if (unscheduledItems.length > 0) {
+      result.push({
+        id: 'unscheduled',
+        title: 'Unscheduled Items',
+      });
+    }
+    
+    // Add a section for each day
+    for (let day = 1; day <= durationDays; day++) {
+      result.push({
+        id: `day-${day}`,
+        title: `Day ${day}`,
+      });
+    }
+    
+    return result;
+  }, [itineraryItems, durationDays]);
 
   // Wrapper for setting items
   const setItemsWrapper = useCallback(
@@ -158,11 +216,10 @@ export function ItineraryTabContent({
   // Handle add item - open dialog instead of navigating
   const handleAddItem = useCallback(
     (dayNumber: number | null) => {
-      setSelectedDayNumber(dayNumber);
-      resetAddItemForm();
-      setIsAddItemDialogOpen(true);
+      const dayParam = dayNumber === null ? 'unscheduled' : dayNumber;
+      router.push(`/trips/${tripId}/add-item?day=${dayParam}`);
     },
-    [resetAddItemForm]
+    [router, tripId]
   );
 
   // Handle geocoder result
@@ -327,23 +384,84 @@ export function ItineraryTabContent({
     [tripId, toast, setAllItineraryItems, allItineraryItems]
   );
 
-  return (
-    <div className="w-full space-y-6">
-      {/* Add action buttons row above the itinerary */}
-      {userRole && (userRole === 'admin' || userRole === 'editor') && (
-        <div className="flex flex-wrap gap-2 items-center mb-2">
-          <Button variant="outline" size="sm" onClick={() => handleAddItem(null)}>
-            Add Unscheduled Item
-          </Button>
-          <ImportPlacesButton />
-        </div>
-      )}
+  // Modified render function inside ItineraryTab
+  const renderAddItemButton = useCallback(
+    (dayNumber: number | null) => {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <PlusCircle className="h-4 w-4" />
+              Add Item
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleAddItem(dayNumber)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add New Item
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`/trips/${tripId}/add-item?day=${dayNumber || 'unscheduled'}`)}>
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              Detailed Item Editor
+            </DropdownMenuItem>
+            {/* Fix the nested button issue by using a div with onClick instead */}
+            <div 
+              className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+              onClick={() => {
+                // Programmatically trigger the ImportMapButton
+                if (importMapButtonRef.current) {
+                  const button = importMapButtonRef.current.querySelector('button');
+                  if (button) button.click();
+                }
+              }}
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Import from Map
+              <div ref={importMapButtonRef} className="hidden">
+                <ImportMapButton tripId={tripId} canEdit={userRole === 'admin' || userRole === 'editor'} />
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+    [handleAddItem, router, tripId, userRole]
+  );
 
+  // Custom tooltip with proper styling
+  const CustomTooltip = ({ children, content }: { children: React.ReactNode, content: React.ReactNode }) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {children}
+      </TooltipTrigger>
+      <TooltipContent className="bg-popover border border-border shadow-md">
+        {content}
+      </TooltipContent>
+    </Tooltip>
+  );
+
+  // Apply the formatCategoryName function to itinerary items
+  const formattedItems = useMemo(() => {
+    return itineraryItems.map(item => {
+      if (item.category) {
+        return {
+          ...item,
+          formattedCategory: formatCategoryName(item.category)
+        };
+      }
+      return item;
+    });
+  }, [itineraryItems]);
+
+  return (
+    <div className="w-full">
       <ItineraryTab
         tripId={tripId}
         itineraryItems={itineraryItems}
         setItineraryItems={setItemsWrapper}
         userId={userId}
+        user={null}
         userRole={userRole}
         durationDays={durationDays}
         startDate={startDate}
@@ -355,6 +473,24 @@ export function ItineraryTabContent({
         onReorder={handleReorder}
         onSectionReorder={handleSectionReorder}
       />
+      
+      {/* Vertical Stepper Component to navigate between sections */}
+      <VerticalStepper sections={sections} />
+
+      {/* Add TripsFeedbackButton at the bottom of the itinerary */}
+      <div className="mt-12 mb-4">
+        <h3 className="text-xl font-semibold mb-2">Trip Feedback</h3>
+        <p className="text-muted-foreground mb-4">Share your thoughts about this trip with the organizers.</p>
+        <div className="p-4 border rounded-lg shadow-sm bg-card">
+          <div className="flex flex-col space-y-3">
+            <h4 className="font-medium">How was your experience with this trip?</h4>
+            <p className="text-muted-foreground text-sm">Your feedback helps us improve the trip planning experience for everyone.</p>
+            <TripsFeedbackButton variant="default" className="w-full justify-center py-2 mt-2">
+              Share Trip Feedback
+            </TripsFeedbackButton>
+          </div>
+        </div>
+      </div>
 
       {/* Edit Item Sheet */}
       <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
@@ -410,7 +546,7 @@ export function ItineraryTabContent({
               <Label htmlFor="itemCategory">Category*</Label>
               <Select value={itemCategory} onValueChange={setItemCategory}>
                 <SelectTrigger id="itemCategory">
-                  <SelectValue>Select category</SelectValue>
+                  <SelectValue>{itemCategory || "Select category"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Iconic Landmarks">Iconic Landmarks</SelectItem>

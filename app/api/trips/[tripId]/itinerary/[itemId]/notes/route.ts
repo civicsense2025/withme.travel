@@ -19,7 +19,7 @@ export async function GET(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get the user from auth
     const {
@@ -77,7 +77,7 @@ export async function POST(
 ) {
   try {
     const { tripId, itemId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Get the user from auth
     const {

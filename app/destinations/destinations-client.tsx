@@ -1,91 +1,198 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createBrowserClient } from '@/utils/supabase/client';
+import { LoadingState, Destination, STATES, LAYOUT, isDestination, FetchError } from './constants';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
+import { forwardRef } from 'react';
 
-// Define a type for destination
-interface Destination {
-  id: string;
-  name: string;
-  city?: string;
-  country?: string;
-  [key: string]: any; // Allow for other properties we might not be using
-}
+// Import components from the barrel export
+import { DestinationCard, SearchBar } from './components';
+import { TABLES } from '@/utils/constants/database';
 
+// Forward ref wrapper for focus management on the first card
+const WrappedDestinationCard = forwardRef<HTMLDivElement, { destination: Destination }>(
+  ({ destination }, ref) => <div ref={ref}><DestinationCard destination={destination} /></div>
+);
+
+WrappedDestinationCard.displayName = 'WrappedDestinationCard';
+
+/**
+ * Client component for the destinations page
+ * 
+ * Manages state for loading destinations and handles:
+ * - Data fetching from Supabase
+ * - Loading states
+ * - Error handling
+ * - Search filtering
+ * - Focus management
+ */
 export default function DestinationsClient() {
+  // State for destinations and loading/error states
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [state, setState] = useState<LoadingState>(STATES.IDLE);
+  const [error, setError] = useState<FetchError | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Create a stable ref for the supabase client
+  const supabaseRef = useRef(createBrowserClient());
+  
+  // Filter destinations based on search query (memoized)
+  const filteredDestinations = useMemo(() => {
+    if (!searchQuery.trim()) return destinations;
+    
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+    return destinations.filter(destination => 
+      (destination.name?.toLowerCase().includes(normalizedQuery)) || 
+      (destination.city?.toLowerCase().includes(normalizedQuery)) || 
+      (destination.country?.toLowerCase().includes(normalizedQuery)) ||
+      (destination.description?.toLowerCase().includes(normalizedQuery))
+    );
+  }, [destinations, searchQuery]);
 
-  useEffect(() => {
-    async function fetchDestinations() {
-      try {
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-        );
+  // Reference to the first card for focus management
+  const firstCardRef = useRef<HTMLDivElement>(null);
 
-        const { data, error } = await supabase
-          .from(TABLES.DESTINATIONS)
-          .select('*')
-          .order('name', { ascending: true })
-          .limit(20);
-
-        if (error) {
-          console.error('Error fetching destinations:', error);
-          throw error;
-        }
-
-        setDestinations(data || []);
-      } catch (error) {
-        console.error('Failed to load destinations:', error);
-      } finally {
-        setLoading(false);
+  /**
+   * Fetches destination data from Supabase
+   * Uses a stable callback to prevent unnecessary rerenders
+   */
+  const fetchDestinations = useCallback(async () => {
+    if (state === STATES.LOADING) return;
+    
+    setState(STATES.LOADING);
+    setError(null);
+    
+    try {
+      // Use constant for table name
+      const { data, error } = await supabaseRef.current
+        .from(TABLES.DESTINATIONS)
+        .select('*')
+        .order('name');
+        
+      if (error) {
+        console.error('Error fetching destinations:', error);
+        setState(STATES.ERROR);
+        setError({
+          type: 'api',
+          message: 'Failed to load destinations. Please try again later.',
+          details: error
+        });
+        return;
       }
+      
+      // Validate each destination with type guard
+      const validDestinations = Array.isArray(data) 
+        ? data.filter(isDestination)
+        : [];
+        
+      setDestinations(validDestinations);
+      setState(STATES.SUCCESS);
+      
+    } catch (catchError) {
+      console.error('Error in destinations fetch:', catchError);
+      setState(STATES.ERROR);
+      setError({
+        type: 'network',
+        message: 'Network error. Please check your connection and try again.',
+        details: catchError
+      });
     }
-
-    fetchDestinations();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-12">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="rounded-3xl overflow-hidden h-48 bg-muted animate-pulse" />
-        ))}
-      </div>
-    );
-  }
+  // Initial data load
+  useEffect(() => {
+    fetchDestinations();
+  }, [fetchDestinations]);
 
-  if (destinations.length === 0) {
+  // Error or empty state handling
+  if (state === STATES.ERROR && error) {
     return (
-      <div className="text-center py-12">
-        <h3 className="text-xl font-semibold mb-2">No destinations found</h3>
-        <p className="text-muted-foreground mb-6">Try again later or explore another section</p>
-        <Button onClick={() => router.push('/')}>Go home</Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-12">
-      {destinations.map((destination: any) => (
-        <div
-          key={destination.id}
-          className="rounded-3xl overflow-hidden h-48 bg-muted cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => router.push(`/destinations/${destination.id}`)}
-        >
-          <div className="h-full w-full flex items-end p-4 bg-gradient-to-t from-black/60 to-transparent">
-            <div className="text-white">
-              <h3 className="font-semibold text-lg">{destination.name}</h3>
-              {destination.country && <p className="text-sm opacity-90">{destination.country}</p>}
-            </div>
-          </div>
+      <div className={LAYOUT.CONTAINER_CLASS}>
+        <div className="max-w-md mx-auto text-center py-12">
+          <h2 className="text-xl font-semibold mb-4">Unable to Load Destinations</h2>
+          <p className="text-muted-foreground mb-6">{error.message}</p>
+          <Button onClick={fetchDestinations}>Try Again</Button>
         </div>
-      ))}
+      </div>
+    );
+  }
+
+  // Loading state
+  if (state === STATES.LOADING && destinations.length === 0) {
+    return (
+      <div className={LAYOUT.CONTAINER_CLASS}>
+        <div className="mb-6">
+          <SearchBar 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            placeholder="Search destinations by name, city, or country..."
+          />
+        </div>
+        
+        <div className={LAYOUT.GRID_CLASS}>
+          {/* Generate skeleton cards for loading state */}
+          {Array.from({ length: LAYOUT.SKELETON_COUNT }).map((_, index) => (
+            <div 
+              key={`skeleton-${index}`}
+              className={`${LAYOUT.CARD_CLASSES} ${LAYOUT.ITEM_HEIGHT} animate-pulse bg-muted/50`}
+            >
+              <div className="h-full w-full flex items-end p-4">
+                <div className="w-2/3">
+                  <div className="h-4 bg-muted-foreground/20 rounded mb-2"></div>
+                  <div className="h-3 bg-muted-foreground/20 rounded w-2/3"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Success state with destinations
+  return (
+    <div className={LAYOUT.CONTAINER_CLASS}>
+      <div className="mb-6">
+        <SearchBar 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          placeholder="Search destinations by name, city, or country..."
+        />
+      </div>
+      
+      {/* No results state */}
+      {filteredDestinations.length === 0 && searchQuery.trim() !== '' && (
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold mb-2">No destinations found</h2>
+          <p className="text-muted-foreground mb-4">
+            No destinations match your search for "{searchQuery}".
+          </p>
+          <Button variant="outline" onClick={() => setSearchQuery('')}>
+            Clear Search
+          </Button>
+        </div>
+      )}
+      
+      {/* Destinations grid */}
+      {filteredDestinations.length > 0 && (
+        <div className={LAYOUT.GRID_CLASS}>
+          {filteredDestinations.map((destination, index) => (
+            index === 0 ? (
+              <WrappedDestinationCard 
+                key={destination.id} 
+                destination={destination}
+                ref={firstCardRef}
+              />
+            ) : (
+              <DestinationCard key={destination.id} destination={destination} />
+            )
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+

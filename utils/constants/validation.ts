@@ -26,8 +26,6 @@ export const ITEM_STATUSES = {
   SUGGESTED: 'suggested',
   CONFIRMED: 'confirmed',
   REJECTED: 'rejected',
-  PENDING: 'pending',
-  APPROVED: 'approved',
 } as const;
 
 export type ItemStatus = (typeof ITEM_STATUSES)[keyof typeof ITEM_STATUSES];

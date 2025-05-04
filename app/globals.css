@@ -335,3 +335,38 @@
   background-position: 100% 50%; /* Shift gradient slightly on hover */
   opacity: 0.75; /* Increase opacity slightly */
 }
+
+/* Update the drag and drop specific styles to be more specific */
+body.dragging-active {
+  cursor: grabbing !important;
+}
+
+body.dragging-active * {
+  cursor: grabbing !important;
+}
+
+/* Only apply grab cursor to actual draggable elements */
+[data-dnd-draggable] {
+  cursor: initial;
+}
+
+.sortable-item [data-sortable-handle] {
+  cursor: grab;
+}
+
+[data-dnd-dragging] {
+  opacity: 0.5;
+  z-index: 999;
+  cursor: grabbing !important;
+  pointer-events: none;
+}
+
+[data-dnd-dragging] * {
+  pointer-events: none !important;
+}
+
+[data-dnd-dropzone].active {
+  background-color: rgba(var(--primary), 0.05);
+  outline: 2px solid rgba(var(--primary), 0.2);
+  outline-offset: -2px;
+}

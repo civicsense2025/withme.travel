@@ -5,8 +5,10 @@ import '@/app/globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+// Remove the direct imports
+// import { Analytics } from '@vercel/analytics/react';
+// import { SpeedInsights } from '@vercel/speed-insights/next';
+import { VercelAnalytics } from './vercel-analytics';
 import { OfflineNotification } from '@/components/offline-notification';
 import { UpdateNotification } from '@/components/update-notification';
 import Script from 'next/script';
@@ -106,8 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ClientSideProviders>
             <OfflineNotification />
             <UpdateNotification />
-            <Analytics />
-            <SpeedInsights />
+            <VercelAnalytics />
             {/* {process.env.NODE_ENV === 'development' && <AuthTestPanel />} */}
             {process.env.NODE_ENV === 'development' && <DebugPanel />}
           </ClientSideProviders>

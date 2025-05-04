@@ -14,7 +14,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tripId } = await params;
-    const supabase = createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient();
 
     // Check if user is authenticated using getUser
     const {

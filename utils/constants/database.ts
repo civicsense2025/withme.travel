@@ -71,7 +71,7 @@ export const TABLES = {
   USER_PRESENCE: 'user_presence',
   USER_SUGGESTED_TAGS: 'user_suggested_tags',
   USER_TRAVEL: 'user_travel',
-  USERS: 'profiles',
+  USERS: 'users',
   VALIDATION_LOGS: 'validation_logs',
   VOTES: 'votes',
   TRIP_EXPENSES: 'trip_expenses',
@@ -874,14 +874,13 @@ export const ENUMS = {
     VIEWER: 'viewer',
   },
   ITEM_STATUS: {
-    PENDING: 'pending',
+    SUGGESTED: 'suggested',
     CONFIRMED: 'confirmed',
-    CANCELLED: 'cancelled',
-    COMPLETED: 'completed',
+    REJECTED: 'rejected',
   },
   TRIP_STATUS: {
     PLANNING: 'planning',
-    BOOKED: 'booked',
+    UPCOMING: 'upcoming',
     IN_PROGRESS: 'in_progress',
     COMPLETED: 'completed',
     CANCELLED: 'cancelled',
@@ -892,16 +891,17 @@ export const ENUMS = {
     DENIED: 'denied',
   },
   IMAGE_TYPE: {
-    USER_UPLOAD: 'user_upload',
-    UNSPLASH: 'unsplash',
-    PEXELS: 'pexels',
-    AI_GENERATED: 'ai_generated',
+    DESTINATION: 'destination',
+    TRIP_COVER: 'trip_cover',
+    USER_AVATAR: 'user_avatar',
+    TEMPLATE_COVER: 'template_cover',
   },
   CONTENT_TYPE: {
     TRIP: 'trip',
     ITINERARY_ITEM: 'itinerary_item',
     DESTINATION: 'destination',
-    NOTE: 'note',
+    COLLECTION: 'collection',
+    TEMPLATE: 'template',
   },
   QUESTION_TYPE: {
     TEXT: 'text',
@@ -922,11 +922,151 @@ export const ENUMS = {
     SHARED: 'shared',
   },
   ITINERARY_CATEGORY: {
+    ICONIC_LANDMARKS: 'Iconic Landmarks',
+    LOCAL_SECRETS: 'Local Secrets',
+    CULTURAL_EXPERIENCES: 'Cultural Experiences',
+    OUTDOOR_ADVENTURES: 'Outdoor Adventures',
+    FOOD_AND_DRINK: 'Food & Drink',
+    NIGHTLIFE: 'Nightlife',
+    RELAXATION: 'Relaxation',
+    SHOPPING: 'Shopping',
+    GROUP_ACTIVITIES: 'Group Activities',
+    DAY_EXCURSIONS: 'Day Excursions',
+    ACCOMMODATIONS: 'Accommodations',
+    TRANSPORTATION: 'Transportation',
+    FLEXIBLE_OPTIONS: 'Flexible Options',
+    SPECIAL_OCCASIONS: 'Special Occasions',
+    OTHER: 'Other',
+  },
+  ITINERARY_ITEM_STATUS: {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+  },
+  INVITATION_STATUS: {
+    PENDING: 'pending',
+    ACCEPTED: 'accepted',
+    DECLINED: 'declined',
+    EXPIRED: 'expired',
+  },
+  PRIVACY_SETTING: {
+    PRIVATE: 'private',
+    SHARED_WITH_LINK: 'shared_with_link',
+    PUBLIC: 'public',
+  },
+  TRIP_PRIVACY_SETTING: {
+    PRIVATE: 'private',
+    SHARED_WITH_LINK: 'shared_with_link',
+    PUBLIC: 'public',
+  },
+  PLACE_CATEGORY: {
+    ATTRACTION: 'attraction',
+    RESTAURANT: 'restaurant',
+    CAFE: 'cafe',
+    HOTEL: 'hotel',
+    LANDMARK: 'landmark',
+    SHOPPING: 'shopping',
+    TRANSPORT: 'transport',
+    OTHER: 'other',
+  },
+  TAG_STATUS: {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+  },
+  TRAVEL_PACE: {
+    VERY_SLOW: 'very_slow',
+    SLOW: 'slow',
+    MODERATE: 'moderate',
+    FAST: 'fast',
+    VERY_FAST: 'very_fast',
+  },
+  TRAVEL_PERSONALITY_TYPE: {
+    PLANNER: 'planner',
+    ADVENTURER: 'adventurer',
+    FOODIE: 'foodie',
+    SIGHTSEER: 'sightseer',
+    RELAXER: 'relaxer',
+    CULTURE: 'culture',
+  },
+  TRAVEL_SQUAD_TYPE: {
+    FRIENDS: 'friends',
+    FAMILY: 'family',
+    PARTNER: 'partner',
+    SOLO: 'solo',
+    COWORKERS: 'coworkers',
+    MIXED: 'mixed',
+  },
+  TRAVEL_STYLE: {
+    ADVENTUROUS: 'adventurous',
+    RELAXED: 'relaxed',
+    CULTURAL: 'cultural',
+    LUXURY: 'luxury',
+    BUDGET: 'budget',
+    FAMILY: 'family',
+    SOLO: 'solo',
+    NIGHTLIFE: 'nightlife',
+    NATURE: 'nature',
+    FOOD_FOCUSED: 'food_focused',
+  },
+  BUDGET_CATEGORY: {
     ACCOMMODATION: 'accommodation',
     TRANSPORTATION: 'transportation',
-    ACTIVITY: 'activity',
     FOOD: 'food',
+    ACTIVITIES: 'activities',
+    SHOPPING: 'shopping',
     OTHER: 'other',
+  },
+  TRIP_TYPE: {
+    LEISURE: 'leisure',
+    BUSINESS: 'business',
+    FAMILY: 'family',
+    SOLO: 'solo',
+    GROUP: 'group',
+    OTHER: 'other',
+  },
+  VOTE_TYPE: {
+    UP: 'up',
+    DOWN: 'down',
+  },
+  INTERACTION_TYPE: {
+    LIKE: 'like',
+    VISIT: 'visit',
+    BOOKMARK: 'bookmark',
+    TAG: 'tag',
+  },
+  URL_FORMAT: {
+    CANONICAL: 'canonical',
+    SHORT: 'short',
+    SOCIAL: 'social',
+    TRACKING: 'tracking',
+  },
+  TRIP_ACTION_TYPE: {
+    TRIP_CREATED: 'TRIP_CREATED',
+    TRIP_UPDATED: 'TRIP_UPDATED',
+    ITINERARY_ITEM_ADDED: 'ITINERARY_ITEM_ADDED',
+    ITINERARY_ITEM_UPDATED: 'ITINERARY_ITEM_UPDATED',
+    ITINERARY_ITEM_DELETED: 'ITINERARY_ITEM_DELETED',
+    MEMBER_ADDED: 'MEMBER_ADDED',
+    MEMBER_REMOVED: 'MEMBER_REMOVED',
+    MEMBER_ROLE_UPDATED: 'MEMBER_ROLE_UPDATED',
+    INVITATION_SENT: 'INVITATION_SENT',
+    ACCESS_REQUEST_SENT: 'ACCESS_REQUEST_SENT',
+    ACCESS_REQUEST_UPDATED: 'ACCESS_REQUEST_UPDATED',
+    NOTE_CREATED: 'NOTE_CREATED',
+    NOTE_UPDATED: 'NOTE_UPDATED',
+    NOTE_DELETED: 'NOTE_DELETED',
+    IMAGE_UPLOADED: 'IMAGE_UPLOADED',
+    TAG_ADDED: 'TAG_ADDED',
+    TAG_REMOVED: 'TAG_REMOVED',
+    SPLITWISE_GROUP_LINKED: 'SPLITWISE_GROUP_LINKED',
+    SPLITWISE_GROUP_UNLINKED: 'SPLITWISE_GROUP_UNLINKED',
+    SPLITWISE_GROUP_CREATED_AND_LINKED: 'SPLITWISE_GROUP_CREATED_AND_LINKED',
+    COMMENT_ADDED: 'COMMENT_ADDED',
+    COMMENT_UPDATED: 'COMMENT_UPDATED',
+    COMMENT_DELETED: 'COMMENT_DELETED',
+    VOTE_CAST: 'VOTE_CAST',
+    FOCUS_INITIATED: 'FOCUS_INITIATED',
   },
 } as const;
 
@@ -1138,6 +1278,22 @@ export type FormStatus = (typeof ENUMS.FORM_STATUS)[keyof typeof ENUMS.FORM_STAT
 export type FormVisibility = (typeof ENUMS.FORM_VISIBILITY)[keyof typeof ENUMS.FORM_VISIBILITY];
 export type ItineraryCategory =
   (typeof ENUMS.ITINERARY_CATEGORY)[keyof typeof ENUMS.ITINERARY_CATEGORY];
+export type ItineraryItemStatus = (typeof ENUMS.ITINERARY_ITEM_STATUS)[keyof typeof ENUMS.ITINERARY_ITEM_STATUS];
+export type InvitationStatus = (typeof ENUMS.INVITATION_STATUS)[keyof typeof ENUMS.INVITATION_STATUS];
+export type PrivacySetting = (typeof ENUMS.PRIVACY_SETTING)[keyof typeof ENUMS.PRIVACY_SETTING];
+export type TripPrivacySetting = (typeof ENUMS.TRIP_PRIVACY_SETTING)[keyof typeof ENUMS.TRIP_PRIVACY_SETTING];
+export type PlaceCategory = (typeof ENUMS.PLACE_CATEGORY)[keyof typeof ENUMS.PLACE_CATEGORY];
+export type TagStatus = (typeof ENUMS.TAG_STATUS)[keyof typeof ENUMS.TAG_STATUS];
+export type TravelPace = (typeof ENUMS.TRAVEL_PACE)[keyof typeof ENUMS.TRAVEL_PACE];
+export type TravelPersonalityType = (typeof ENUMS.TRAVEL_PERSONALITY_TYPE)[keyof typeof ENUMS.TRAVEL_PERSONALITY_TYPE];
+export type TravelSquadType = (typeof ENUMS.TRAVEL_SQUAD_TYPE)[keyof typeof ENUMS.TRAVEL_SQUAD_TYPE];
+export type TravelStyle = (typeof ENUMS.TRAVEL_STYLE)[keyof typeof ENUMS.TRAVEL_STYLE];
+export type BudgetCategory = (typeof ENUMS.BUDGET_CATEGORY)[keyof typeof ENUMS.BUDGET_CATEGORY];
+export type TripType = (typeof ENUMS.TRIP_TYPE)[keyof typeof ENUMS.TRIP_TYPE];
+export type VoteType = (typeof ENUMS.VOTE_TYPE)[keyof typeof ENUMS.VOTE_TYPE];
+export type InteractionType = (typeof ENUMS.INTERACTION_TYPE)[keyof typeof ENUMS.INTERACTION_TYPE];
+export type UrlFormat = (typeof ENUMS.URL_FORMAT)[keyof typeof ENUMS.URL_FORMAT];
+export type TripActionType = (typeof ENUMS.TRIP_ACTION_TYPE)[keyof typeof ENUMS.TRIP_ACTION_TYPE];
 
 // Table-related type definitions
 export type TableNames = (typeof TABLES)[keyof typeof TABLES];

@@ -20,6 +20,7 @@ import { useSearch } from '@/contexts/search-context';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { UserNav } from '@/components/layout/user-nav';
 import { ErrorBoundary } from '@sentry/nextjs';
+import { debugAuth, clearAuthData } from '@/lib/hooks/auth-debug';
 
 // Create a client-only wrapper for the tooltip component
 function ClientOnlyTooltip({ children, text }: { children: React.ReactNode; text: string }) {
@@ -141,7 +142,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
-  const { user, isLoading, signOut } = useAuth();
+  const { user, isLoading, signOut, refreshSession } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -392,11 +393,34 @@ export function Navbar() {
             {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
 
-          {/* User dropdown - hidden on mobile, now using UserNav component */}
           {/* User dropdown - hidden on mobile, now using UserNav component with error boundary */}
           <div className="hidden md:flex items-center gap-4">
             <ErrorBoundary fallback={<AuthErrorFallback />}>
-              {isLoadingState ? <LoadingUserAvatarPlaceholder /> : user ? <UserNav /> : null}
+              {isLoadingState ? (
+                <div className="flex items-center gap-2">
+                  <LoadingUserAvatarPlaceholder />
+                  {loadingDuration > 2000 && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => {
+                        // Call refreshSession from auth provider
+                        refreshSession();
+                        // Force a page reload if refresh fails after 1 second
+                        setTimeout(() => {
+                          if (isLoading) {
+                            window.location.reload();
+                          }
+                        }, 1000);
+                      }}
+                      className="h-6 w-6 rounded-full animate-pulse"
+                      title="Refresh authentication"
+                    >
+                      <div className="h-4 w-4">↻</div>
+                    </Button>
+                  )}
+                </div>
+              ) : user ? <UserNav /> : null}
             </ErrorBoundary>
           </div>
         </div>
@@ -409,6 +433,31 @@ export function Navbar() {
               <button onClick={handleForceRefresh} className="underline ml-2 font-medium">
                 Refresh now
               </button>
+              {process.env.NODE_ENV === 'development' && (
+                <>
+                  <span className="mx-2">|</span>
+                  <button 
+                    onClick={() => {
+                      debugAuth();
+                    }} 
+                    className="underline font-medium"
+                  >
+                    Debug
+                  </button>
+                  <span className="mx-2">|</span>
+                  <button 
+                    onClick={() => {
+                      if (confirm('This will clear all auth data and reload the page. Continue?')) {
+                        clearAuthData();
+                        setTimeout(() => window.location.reload(), 500);
+                      }
+                    }} 
+                    className="underline font-medium text-red-700 dark:text-red-400"
+                  >
+                    Reset Auth
+                  </button>
+                </>
+              )}
             </p>
           </div>
         )}

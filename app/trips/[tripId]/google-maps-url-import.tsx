@@ -7,310 +7,261 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 type GoogleMapsUrlImportProps = {
   tripId: string;
-  onClose: () => void;
+  onSuccess?: () => void;
+  onClose?: () => void;
 };
 
 // Define a type for place data
 type Place = {
   title: string;
-  item_type: string;
-  notes: string;
-  place_name: string;
   address: string;
-  google_place_id: string;
-  latitude: number;
-  longitude: number;
-  day_number: null;
-  selected?: boolean;
+  category: string | null;
+  description: string | null;
+  placeId: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  rating?: number | null;
+  reviews?: number | null;
+  selected: boolean;
 };
 
-export default function GoogleMapsUrlImport({ tripId, onClose }: GoogleMapsUrlImportProps) {
+export default function GoogleMapsUrlImport({
+  tripId,
+  onSuccess,
+  onClose,
+}: GoogleMapsUrlImportProps) {
   const [url, setUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'input' | 'preview'>('input');
   const [places, setPlaces] = useState<Place[]>([]);
-  const [selectAll, setSelectAll] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [listTitle, setListTitle] = useState<string | null>(null);
 
-  const fetchPlaces = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Computed property for select all checkbox
+  const allSelected = places.length > 0 && places.every((place) => place.selected);
+  
+  // Determines if the URL input is valid
+  const isValidUrl = url.trim().length > 0 && (
+    url.includes('goo.gl/maps') || 
+    url.includes('google.com/maps') || 
+    url.includes('maps.app.goo.gl')
+  );
 
-    if (!url || (!url.includes('maps.app.goo.gl') && !url.includes('google.com/maps'))) {
-      setError('Please enter a valid Google Maps URL');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Simulate the fetch from our API - in a real implementation, we'd make a GET request
-      // to a new API endpoint that fetches and parses the URL without creating items
-      if (url.includes('FTVCvZ2Xm4PMvRQa8')) {
-        // For the test URL, use our mock data
-        const mockPlaces = [
-          {
-            title: 'La Whiskeria',
-            item_type: 'Nightlife',
-            notes: 'Cocktail bar with rating 4.7 (1,580)',
-            place_name: 'La Whiskeria',
-            address: 'Mexico City',
-            google_place_id: 'mock_id_1',
-            latitude: 19.427,
-            longitude: -99.1676,
-            day_number: null,
-            selected: true,
-          },
-          {
-            title: 'Le Tachinomi Desu',
-            item_type: 'Food & Drink',
-            notes: 'Japanese whiskey bar with eats. Rating 4.6 (304)',
-            place_name: 'Le Tachinomi Desu',
-            address: 'Rio Panuco 132-1a, Cuauhtémoc, 06500 Ciudad de México, CDMX, Mexico',
-            google_place_id: 'mock_id_2',
-            latitude: 19.4271,
-            longitude: -99.1677,
-            day_number: null,
-            selected: true,
-          },
-          {
-            title: 'Bar Mauro',
-            item_type: 'Nightlife',
-            notes: 'Cocktail bar with rating 4.8 (150)',
-            place_name: 'Bar Mauro',
-            address: 'Mexico City',
-            google_place_id: 'mock_id_3',
-            latitude: 19.4272,
-            longitude: -99.1678,
-            day_number: null,
-            selected: true,
-          },
-          {
-            title: 'Dr Liceaga 180',
-            item_type: 'Food & Drink',
-            notes: 'Bar in Cuauhtémoc, Doctores',
-            place_name: 'Dr Liceaga 180',
-            address:
-              'Dr. José María Vertiz 171, Doctores, Cuauhtémoc, 06720 Ciudad de México, CDMX, Mexico',
-            google_place_id: 'mock_id_4',
-            latitude: 19.4273,
-            longitude: -99.1679,
-            day_number: null,
-            selected: true,
-          },
-        ];
-
-        setPlaces(mockPlaces);
-        setStep('preview');
-      } else {
-        // For other URLs, we could fetch from an API endpoint
-        // For now, just show an example place
-        setPlaces([
-          {
-            title: 'Example Place',
-            item_type: 'Local Secrets',
-            notes: 'Imported from Google Maps.',
-            place_name: 'Example Place',
-            address: 'Example Address',
-            google_place_id: 'example_id',
-            latitude: 0,
-            longitude: 0,
-            day_number: null,
-            selected: true,
-          },
-        ]);
-        setStep('preview');
-      }
-    } catch (error: any) {
-      console.error('Preview error:', error);
-      setError(error.message || 'Failed to fetch places from Google Maps');
-
-      toast({
-        title: 'Preview failed',
-        description: error.message || 'Could not preview places from the provided URL',
-        variant: 'destructive',
-        duration: 5000,
-      });
-    } finally {
-      setIsLoading(false);
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUrl(e.target.value);
+    // Clear preview if URL changes
+    if (previewMode) {
+      setPreviewMode(false);
+      setPlaces([]);
+      setListTitle(null);
     }
   };
 
-  const handleImport = async () => {
-    setIsLoading(true);
-    setError(null);
+  const handlePreview = async () => {
+    if (!isValidUrl) {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid Google Maps URL",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    setLoading(true);
     try {
-      // Filter only selected places
-      const selectedPlaces = places.filter((place) => place.selected);
+      const response = await fetch(`/api/google-maps/parse?url=${encodeURIComponent(url)}`);
+      const data = await response.json();
 
-      if (selectedPlaces.length === 0) {
-        throw new Error('Please select at least one place to import');
+      if (!data.success) {
+        throw new Error(data.error || 'Could not parse Google Maps list');
       }
 
-      // Call our API to import the selected places
-      const response = await fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
+      // Initialize places with selected flag
+      setPlaces(
+        data.places.map((place: Omit<Place, 'selected'>) => ({
+          ...place,
+          selected: true,
+        }))
+      );
+      setListTitle(data.listTitle || null);
+      setPreviewMode(true);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to parse Google Maps list",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    setPlaces(
+      places.map((place) => ({
+        ...place,
+        selected: !allSelected,
+      }))
+    );
+  };
+
+  const handleTogglePlace = (index: number) => {
+    setPlaces(
+      places.map((place, i) =>
+        i === index ? { ...place, selected: !place.selected } : place
+      )
+    );
+  };
+
+  const handleImport = async () => {
+    const selectedPlaces = places.filter((place) => place.selected);
+    
+    if (selectedPlaces.length === 0) {
+      toast({
+        title: "No places selected",
+        description: "Please select at least one place to import",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      // Use the direct import endpoint instead of manually adding items
+      const response = await fetch(`/api/trips/${tripId}/import-google-maps`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          type: 'google_maps_import',
-          items: selectedPlaces,
-        }),
+        body: JSON.stringify({ url }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!data.success) {
         throw new Error(data.error || 'Failed to import places');
       }
 
-      // Show success message with count of imported places
       toast({
-        title: 'Places imported successfully',
-        description: `${selectedPlaces.length} places were added to your trip.`,
-        duration: 5000,
+        title: "Success",
+        description: data.message || `Added ${selectedPlaces.length} places to your trip`,
       });
 
-      onClose();
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
-      console.error('Import error:', error);
-      setError(error.message || 'Failed to import places from Google Maps');
-
       toast({
-        title: 'Import failed',
-        description: error.message || 'Could not import places from the provided URL',
-        variant: 'destructive',
-        duration: 5000,
+        title: "Import Failed",
+        description: error.message || "Failed to import places to your trip",
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setImportLoading(false);
     }
   };
 
-  const togglePlace = (index: number) => {
-    setPlaces((prevPlaces) =>
-      prevPlaces.map((place, i) => (i === index ? { ...place, selected: !place.selected } : place))
-    );
-  };
-
-  const toggleSelectAll = () => {
-    const newSelectAll = !selectAll;
-    setSelectAll(newSelectAll);
-    setPlaces((prevPlaces) => prevPlaces.map((place) => ({ ...place, selected: newSelectAll })));
-  };
-
-  // Count selected places
-  const selectedCount = places.filter((place) => place.selected).length;
-
-  if (step === 'preview') {
-    return (
-      <div className="space-y-4 p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Select Places to Import</h3>
-          <div className="flex items-center gap-2">
-            <Checkbox id="select-all" checked={selectAll} onCheckedChange={toggleSelectAll} />
-            <Label htmlFor="select-all" className="text-sm">
-              Select All ({selectedCount}/{places.length})
-            </Label>
-          </div>
-        </div>
-
-        <div className="border rounded-md overflow-hidden divide-y max-h-[400px] overflow-y-auto">
-          {places.map((place, index) => (
-            <div
-              key={place.google_place_id || index}
-              className={`p-3 flex gap-3 ${place.selected ? 'bg-primary/5' : ''}`}
-            >
-              <Checkbox
-                id={`place-${index}`}
-                checked={place.selected}
-                onCheckedChange={() => togglePlace(index)}
-                className="mt-1"
-              />
-              <div className="space-y-1 flex-1">
-                <div className="flex items-start justify-between">
-                  <Label htmlFor={`place-${index}`} className="font-medium cursor-pointer">
-                    {place.title}
-                  </Label>
-                  <span className="text-xs bg-primary-foreground/10 px-2 py-0.5 rounded-full">
-                    {place.item_type}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">{place.notes}</p>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
-                  <span className="truncate">{place.address}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {error && <div className="text-sm text-destructive">{error}</div>}
-
-        <div className="flex justify-between pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setStep('input')}
-            disabled={isLoading}
-          >
-            Back
-          </Button>
-          <Button type="button" onClick={handleImport} disabled={isLoading || selectedCount === 0}>
-            {isLoading ? 'Importing...' : `Import ${selectedCount} Places`}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4 p-4">
-      <form onSubmit={fetchPlaces} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="google-maps-url">Google Maps List URL</Label>
-          <p className="text-xs text-muted-foreground mb-2">
-            Paste a Google Maps list URL to import places into your trip's unscheduled items.
-          </p>
+    <div className="flex flex-col gap-4 p-1">
+      <div>
+        <Label htmlFor="google-maps-url">Google Maps List URL</Label>
+        <div className="flex gap-2 mt-1">
           <Input
             id="google-maps-url"
-            placeholder="https://maps.app.goo.gl/..."
+            placeholder="https://goo.gl/maps/example123"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="w-full"
+            onChange={handleUrlChange}
+            disabled={loading || importLoading}
           />
-          <div className="border rounded-md p-3 mt-2 bg-muted/20">
-            <h3 className="text-sm font-medium mb-1">Testing Information</h3>
-            <p className="text-xs text-muted-foreground">
-              For testing, you can use this sample URL that contains Mexico City places:
-            </p>
-            <code className="text-xs block p-2 mt-1 bg-background border rounded break-all">
-              https://maps.app.goo.gl/FTVCvZ2Xm4PMvRQa8
-            </code>
-            <p className="text-xs mt-2">
-              This will import: La Whiskeria, Le Tachinomi Desu, Bar Mauro, and Dr Liceaga 180.
-            </p>
+          <Button 
+            onClick={handlePreview} 
+            disabled={loading || !isValidUrl}
+            variant="secondary"
+          >
+            {loading ? "Loading..." : "Preview"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Paste a Google Maps list URL to import places to your trip
+        </p>
+      </div>
+
+      {previewMode && places.length > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-lg">
+              {listTitle ? `"${listTitle}"` : "Places from Google Maps"}
+            </h3>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="select-all" 
+                checked={allSelected}
+                onCheckedChange={handleSelectAll}
+              />
+              <Label htmlFor="select-all" className="cursor-pointer">
+                Select All
+              </Label>
+            </div>
           </div>
-        </div>
 
-        {error && <div className="text-sm text-destructive">{error}</div>}
+          <div className="border rounded-md max-h-[300px] overflow-y-auto">
+            <ul className="divide-y">
+              {places.map((place, index) => (
+                <li 
+                  key={place.placeId || index} 
+                  className="p-3 hover:bg-muted flex items-start gap-3"
+                >
+                  <Checkbox
+                    id={`place-${index}`}
+                    checked={place.selected}
+                    onCheckedChange={() => handleTogglePlace(index)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">{place.title}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {place.address}
+                    </div>
+                    {place.category && (
+                      <div className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full inline-block mt-1">
+                        {place.category}
+                      </div>
+                    )}
+                    {place.rating && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        ★ {place.rating} {place.reviews && `(${place.reviews})`}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading || !url}>
-            {isLoading ? 'Fetching...' : 'Preview Places'}
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button 
+              variant="outline" 
+              onClick={onClose}
+              disabled={importLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleImport} 
+              disabled={importLoading || places.filter(p => p.selected).length === 0}
+            >
+              {importLoading 
+                ? "Importing..." 
+                : `Import ${places.filter(p => p.selected).length} Places`}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
