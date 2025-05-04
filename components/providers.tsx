@@ -1,19 +1,26 @@
 'use client';
 
 import React from 'react';
+import type { ReactNode } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import { AuthProvider } from '@/components/auth-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { SearchProvider } from '@/contexts/search-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Create a client
 const queryClient = new QueryClient();
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  initialSession,
+  children,
+}: {
+  initialSession: Session | null;
+  children: ReactNode;
+}) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <AuthProvider>
+      <AuthProvider initialSession={initialSession}>
         <QueryClientProvider client={queryClient}>
           <SearchProvider>
             {children}

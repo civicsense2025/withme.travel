@@ -6,17 +6,40 @@ The authentication system in withme.travel uses Supabase Auth with secure cookie
 
 The core architecture consists of:
 
-- **Auth Provider**: A centralized React context that manages auth state
+- **Auth Provider**: A centralized React context that manages auth state (now using `supabase.auth.getUser()` for robust, SSR/client-safe user state)
 - **Server Utilities**: Helper functions for authentication in server components and API routes
 - **Client Hooks**: Easy-to-use hooks for authentication in client components
 - **Profile Integration**: Automatic connection between auth users and profile data
 - **Error Handling**: Graceful error recovery for authentication failures
+
+## Recent Updates (May 3-4, 2024)
+
+### Unified Navigation & Robust Auth State
+
+- The navigation bar is now a single, unified, fully responsive component for both desktop and mobile. All navigation logic and links are managed in one place, eliminating duplicate code and reducing bugs.
+- The user menu has been rebuilt from scratch. It now:
+  - Handles all authentication states: loading (shows skeleton/avatar), logged out (shows sign-in), and logged in (shows user info and menu)
+  - Uses emoji-based icons for a friendlier, more accessible UI
+  - Is type-safe and robust, with defensive programming to prevent infinite loading or UI bugs
+- The `AuthProvider` now uses `supabase.auth.getUser()` (not `getSession()`) for initialization and auth state changes. This ensures the user state is always up-to-date and avoids SSR/client mismatches that can cause infinite loading or stale UI.
+- Debug logging has been added to the AuthProvider to help diagnose issues with auth state, Supabase client initialization, and user profile loading.
+
+### Troubleshooting Infinite Loading Avatars/User Menus
+
+- If you see an infinite loading avatar or user menu after a hard refresh, check that your `AuthProvider` is using `supabase.auth.getUser()` for initialization and state changes. Using `getSession()` can cause stale or missing user state in Next.js App Router, especially after navigation or SSR hydration.
+- Switching to `getUser()` resolves these issues and ensures the UI always reflects the correct authentication state.
 
 ## Key Components and Best Practices
 
 ### 1. Auth Provider (`./components/auth-provider.tsx`)
 
 The Auth Provider is the heart of our authentication system. It manages user sessions, handles state, and provides authentication methods to client components.
+
+**Key best practices:**
+- Always use `supabase.auth.getUser()` for client-side user state (never `getSession()`)
+- Handle all possible states: loading, logged out, logged in, and error
+- Use a single provider for all auth state and actions
+- Add debug logging for initialization, errors, and state changes
 
 ```tsx
 // In layout.tsx
@@ -33,14 +56,35 @@ export default function RootLayout({ children }) {
 }
 ```
 
-**Best Practices**:
+---
 
-- The provider should handle session refreshes automatically
-- User state should include profile data when available
-- Error handling should be consistent and user-friendly
-- Use a simple, maintainable implementation without complex state management
+### 2. Unified Navigation & User Menu
 
-### 2. Server Authentication
+- The navigation bar and user menu are now managed in a single, type-safe component that adapts responsively for desktop and mobile.
+- The user menu uses emoji icons and robustly handles all auth states, including loading (shows a skeleton/avatar), logged out (shows sign-in), and logged in (shows user info and menu).
+- All navigation and auth state logic is centralized, making it easier to maintain and debug.
+
+---
+
+### 3. Troubleshooting & Debugging
+
+- If you encounter infinite loading in the avatar or user menu, ensure your AuthProvider uses `supabase.auth.getUser()` for all user state logic.
+- Use debug logs to trace initialization, errors, and state changes in the auth flow.
+- Defensive programming in the provider ensures `isLoading` is always set correctly, preventing UI from getting stuck in a loading state.
+
+---
+
+## Recent Learnings (May 2024)
+
+- **SSR/Client Auth Mismatch:** Using `supabase.auth.getSession()` can cause stale or missing user state in Next.js App Router. `supabase.auth.getUser()` is the recommended approach for client-side auth.
+- **Centralized Auth & Navigation:** Managing all auth and navigation state in a single provider and component reduces bugs and makes the UI more reliable.
+- **Defensive State Management:** Always handle all possible states (loading, error, null, valid) and ensure state transitions are robust.
+- **Debug Logging:** Adding clear debug logs for all critical auth and navigation state changes speeds up troubleshooting and helps catch subtle bugs.
+- **UI/UX:** Consistent, accessible, and delightful navigation and user menu improve user trust and experience.
+
+---
+
+### 4. Server Authentication
 
 Server-side authentication in Next.js 15 requires proper cookie handling and session management. We provide utility functions that make this easy:
 
@@ -109,7 +153,7 @@ export async function getServerSession() {
 - Handle errors gracefully with proper status codes and messages
 - Use constants from `utils/constants/database.ts` for table and field names
 
-### 3. Client Authentication Hook
+### 5. Client Authentication Hook
 
 The `useAuth` hook provides simple access to authentication state and methods in client components:
 
@@ -143,7 +187,7 @@ export default function ProfileButton() {
 - Provide clear error messages for authentication failures
 - Extract complex auth logic into separate functions
 
-### 4. Route Protection in Next.js 15
+### 6. Route Protection in Next.js 15
 
 In Next.js 15, protecting routes requires special handling, especially with dynamic routes:
 
@@ -174,7 +218,7 @@ export default async function ProtectedPage({ params }: { params: Promise<{ id: 
 - Create reusable auth check functions
 - Add detailed logging for debugging auth issues
 
-### 5. Database Access with Constants
+### 7. Database Access with Constants
 
 Always use the constants from `utils/constants/database.ts` when accessing database tables and fields:
 

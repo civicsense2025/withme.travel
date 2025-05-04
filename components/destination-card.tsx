@@ -127,7 +127,8 @@ export function DestinationCard({
   };
 
   // Fallback for href if not provided
-  const cardHref = href || `/destinations/${city.toLowerCase().replace(/\s+/g, '-')}`;
+  const citySlug = city ? city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : null;
+  const cardHref = href || (citySlug ? `/destinations/${citySlug}` : `/destinations/${destination.id}`);
 
   // Improved fallback for image if not available
   const imageUrl = (() => {

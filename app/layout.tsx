@@ -15,6 +15,8 @@ import Script from 'next/script';
 import { ClientSideProviders } from '@/components/client-side-providers';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/footer';
+import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 
 // Define font but don't export it
 const fontSans = FontSans({
@@ -29,7 +31,13 @@ export const metadata = {
     'The easiest way to plan group trips. Organize travel with friends, family, or coworkers. Vote on activities, manage itineraries, and share expenses.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // SSR: fetch session once
+  const supabase = await createRouteHandlerClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -88,11 +96,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
 
-        <Providers>
-          {/* Add Navbar here */}
+        {/* Pass initialSession to Providers for SSR hydration */}
+        <Providers initialSession={session}>
           <Navbar />
 
-          {/* Main content always rendered for SSR */}
           <div
             id="main-content"
             className="min-h-[calc(100vh-4rem-4rem)] max-w-4xl mx-auto px-4 sm:px-6 md:px-8"
@@ -101,10 +108,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
 
-          {/* Add Footer here */}
           <Footer />
 
-          {/* Client-side only components wrapped in ClientSideProviders */}
           <ClientSideProviders>
             <OfflineNotification />
             <UpdateNotification />

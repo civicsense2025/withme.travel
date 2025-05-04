@@ -45,8 +45,12 @@ const DestinationCard = memo(({ destination }: DestinationCardProps) => {
    * Navigates to the destination detail page when card is clicked
    */
   const handleNavigate = useCallback((): void => {
-    router.push(`/destinations/${destination.id}`);
-  }, [router, destination.id]);
+    // Use city name for the slug, falling back to ID if not available
+    const slug = destination.city 
+      ? destination.city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      : destination.id;
+    router.push(`/destinations/${slug}`);
+  }, [router, destination.city, destination.id]);
   
   /**
    * Keyboard handler - memoized for performance
@@ -56,9 +60,13 @@ const DestinationCard = memo(({ destination }: DestinationCardProps) => {
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>): void => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      router.push(`/destinations/${destination.id}`);
+      // Use city name for the slug, falling back to ID if not available
+      const slug = destination.city 
+        ? destination.city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : destination.id;
+      router.push(`/destinations/${slug}`);
     }
-  }, [router, destination.id]);
+  }, [router, destination.city, destination.id]);
   
   // Generate accessible label for the destination
   const ariaLabel = `View ${destination.name || destination.city}${destination.country ? ` in ${destination.country}` : ''}`;
