@@ -2,82 +2,56 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/hooks/use-auth';
-import { NavbarSearch } from './navbar-search';
-import { MobileNav } from './mobile-nav';
-import { UserMenu } from './user-menu';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { PlusCircle } from 'lucide-react';
+import { useState } from 'react';
+import { PlusCircle, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import UserMenu from './user-menu';
+import { NavbarSearch } from './navbar-search';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/hooks/use-auth';
+
+interface NavLink {
+  href: string;
+  label: string;
+}
+
+const navLinks: NavLink[] = [
+  { href: '/trips', label: 'My Trips' },
+  { href: '/destinations', label: 'Destinations' },
+  { href: '/itineraries', label: 'Itineraries' },
+];
 
 export function Navbar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isLoading } = useAuth();
 
   const isActive = (path: string) => pathname === path;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="mr-4 hidden md:flex">
-          <Link href="/" className="font-bold text-xl">
-            withme.travel
-          </Link>
-        </div>
-        <div className="hidden md:flex flex-1 items-center space-x-4 lg:space-x-6">
-          <nav className="flex items-center space-x-4 lg:space-x-6">
-            <Link
-              href="/trips"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                !isActive('/trips') && 'text-muted-foreground'
-              )}
-            >
-              My Trips
-            </Link>
-            <Link
-              href="/destinations"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                !isActive('/destinations') && 'text-muted-foreground'
-              )}
-            >
-              Destinations
-            </Link>
-            <Link
-              href="/itineraries"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                !isActive('/itineraries') && 'text-muted-foreground'
-              )}
-            >
-              Itineraries
-            </Link>
-          </nav>
-        </div>
+      <div className="container flex h-14 items-center justify-between">
+        <Link href="/" className="font-bold text-xl">
+          withme.travel
+        </Link>
 
-        <div className="flex md:hidden flex-1 items-center justify-between">
-          <div className="flex">
-            <Link href="/" className="font-bold text-lg">
-              withme.travel
+        <nav className="hidden md:flex items-center space-x-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                !isActive(link.href) && 'text-muted-foreground'
+              )}
+            >
+              {link.label}
             </Link>
-          </div>
-          <div className="flex items-center space-x-2">
-            {!isLoading && (
-              <Link href={user ? '/trips/create' : '/login?redirect=/trips/create'}>
-                <Button size="sm" className="rounded-full h-8">
-                  <PlusCircle className="h-4 w-4" />
-                  <span className="sr-only">{user ? 'New Trip' : 'Sign In'}</span>
-                </Button>
-              </Link>
-            )}
-            <UserMenu />
-            <MobileNav />
-          </div>
-        </div>
+          ))}
+        </nav>
 
-        <div className="ml-auto hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-4">
           <NavbarSearch />
           <ThemeToggle />
           {!isLoading && (
@@ -90,7 +64,70 @@ export function Navbar() {
           )}
           <UserMenu />
         </div>
+
+        <div className="md:hidden flex items-center gap-2">
+          {!isLoading && (
+            <Link href={user ? '/trips/create' : '/login?redirect=/trips/create'}>
+              <Button size="sm" className="rounded-full h-8">
+                <PlusCircle className="h-4 w-4" />
+                <span className="sr-only">{user ? 'New Trip' : 'Sign In'}</span>
+              </Button>
+            </Link>
+          )}
+          <Button
+            variant="ghost"
+            className="p-2"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[9999] flex">
+          {/* Overlay (solid background) */}
+          <div className="absolute inset-0 bg-background" onClick={() => setMobileOpen(false)} />
+          {/* Fullscreen Sheet */}
+          <div className="relative w-full h-full flex flex-col p-4 z-10">
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-bold text-lg">Menu</span>
+              <Button
+                variant="ghost"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+              >
+                <X />
+              </Button>
+            </div>
+            <nav className="flex flex-col gap-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    'py-2 px-2 rounded hover:bg-muted',
+                    isActive(link.href) && 'bg-muted'
+                  )}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-4">
+              <NavbarSearch mobileView onSearch={() => setMobileOpen(false)} />
+            </div>
+            <div className="mt-4">
+              <ThemeToggle emojiOnly />
+            </div>
+            <div className="mt-auto pt-4 border-t border-muted">
+              <UserMenu />
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

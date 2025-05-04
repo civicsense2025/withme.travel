@@ -19,7 +19,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <AuthErrorBoundary>
-        <AuthProvider>
+        <AuthProvider initialSession={null}>
           <SearchProvider>
             <CommandMenu />
             <Suspense fallback={null}>{showNavbar && <Navbar />}</Suspense>

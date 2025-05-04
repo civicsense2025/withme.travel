@@ -342,3 +342,43 @@ _(Reflecting focus on core Trip Building & Management)_
 - **Documentation:** Created `docs/constants-guide.md` detailing the new structure and usage rules. Updated `README.md`, `docs/authentication.md`, `docs/nextjs-best-practices.md`, `docs/nextjs15-migration.md`, and `docs/DOCUMENTATION.md` to reflect current project status, stable authentication using `@supabase/ssr`, and the new constants guidelines.
 
 ## [2025-04-30] - Trip Hooks Restructuring
+
+## [2024-05-04] - Navigation & Auth Refactor, Infinite Loading Fix
+
+### Added
+- Unified, fully responsive navigation bar for both desktop and mobile (single source of truth for links and actions)
+- Rebuilt user menu with emoji icons, robust auth state handling, and strict type safety
+- ThemeToggle now supports emoji (🌞/🌙) for theme switching
+- Improved debug logging and error handling in AuthProvider for easier troubleshooting
+
+### Changed
+- Navigation logic is now centralized in a single component, removing all legacy/duplicate nav files
+- User menu now handles all auth states (loading, logged out, logged in) and is accessible and robust
+- Mobile navigation is now a full-width, solid background modal for better UX
+
+### Fixed
+- Resolved infinite loading avatar/user menu by switching AuthProvider to use supabase.auth.getUser() instead of getSession()
+- Fixed SSR/client auth mismatch issues in Next.js App Router
+- Improved error handling and state management in authentication flows
+
+## [2024-05-03] - TypeScript & UI Consistency Improvements
+
+### Added
+- Type-safe patterns for all navigation and user menu logic
+- Defensive programming in AuthProvider to ensure isLoading is always set correctly
+- Debug logging for Supabase client initialization and auth state changes
+
+### Changed
+- Cleaned up legacy/duplicate navigation files and components
+- Updated all navigation and user menu components to use consistent, modern TypeScript best practices
+
+### Fixed
+- Addressed hydration and SSR/client state mismatch issues in navigation and auth flows
+- Improved fallback and error UI for user menu and navigation
+
+## Learned
+- **SSR/Client Auth Mismatch:** Using supabase.auth.getSession() can cause stale or missing user state in Next.js App Router; supabase.auth.getUser() is the recommended approach for client-side auth.
+- **Next.js App Router Best Practices:** Centralize auth logic in a client-only provider, always handle all loading/error/null states, and avoid duplicating navigation logic.
+- **TypeScript Patterns:** Use strict types, single source of truth for types/constants, and defensive state management to prevent UI bugs and infinite loading.
+- **Debugging:** Add clear debug logs for all critical auth and navigation state changes to speed up troubleshooting.
+- **UI/UX:** Consistent, accessible, and delightful navigation and user menu improve user trust and experience.

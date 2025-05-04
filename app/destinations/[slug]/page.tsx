@@ -93,33 +93,20 @@ interface Profile {
   // Add other profile fields as needed
 }
 
-export default function CityPage() {
+export default function DestinationPage() {
   const router = useRouter();
-  const params = useParams<{ city: string }>();
+  const params = useParams<{ slug: string }>();
   const { toast } = useToast();
   const { user } = useAuth() as AuthContextType;
   const [destination, setDestination] = useState<Destination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const cityParam = params?.city;
+  const slugParam = params?.slug;
 
   useEffect(() => {
-    if (!cityParam) {
-      setError('No city specified');
-      setIsLoading(false);
-      return;
-    }
-
-    let decodedCityName = '';
-    try {
-      if (typeof cityParam !== 'string') {
-        throw new Error('Invalid city parameter type');
-      }
-      decodedCityName = decodeURIComponent(cityParam.replace(/-/g, ' '));
-    } catch (e) {
-      console.error('Error decoding city name from params:', e);
-      setError('Invalid city name in URL');
+    if (!slugParam) {
+      setError('No destination specified');
       setIsLoading(false);
       return;
     }
@@ -130,12 +117,12 @@ export default function CityPage() {
         setError(null);
 
         const response = await fetch(
-          `/api/destinations/by-city/${encodeURIComponent(decodedCityName)}`
+          `/api/destinations/by-slug/${encodeURIComponent(slugParam as string)}`
         );
 
         if (!response.ok) {
           if (response.status === 404) {
-            setError(`Destination '${decodedCityName}' not found`);
+            setError(`Destination '${slugParam}' not found`);
             return;
           }
           throw new Error(`Failed to fetch destination: ${response.status}`);
@@ -157,7 +144,7 @@ export default function CityPage() {
     }
 
     fetchDestination();
-  }, [cityParam, toast]);
+  }, [slugParam, toast]);
 
   // Helper function to create the attribution string with links
   const createAttributionText = (metadata: Destination['image_metadata']) => {
@@ -235,9 +222,9 @@ export default function CityPage() {
     };
   };
 
-  if (!cityParam) {
+  if (!slugParam) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-6 text-center">Loading city information...</div>
+      <div className="mx-auto max-w-6xl px-4 py-6 text-center">Loading destination information...</div>
     );
   }
 
@@ -261,9 +248,9 @@ export default function CityPage() {
   }
 
   if (error || !destination) {
-    const decodedCityForError = cityParam
-      ? decodeURIComponent(cityParam.replace(/-/g, ' '))
-      : 'the requested city';
+    const decodedCityForError = slugParam
+      ? slugParam
+      : 'the requested destination';
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">

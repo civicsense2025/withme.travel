@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { SEO, LAYOUT } from './constants';
 import DestinationsClient from './destinations-client';
+import { createServerComponentClient } from '@/utils/supabase/server';
+import { TABLES, FIELDS } from '@/utils/constants/database';
 
 // Mark as a dynamic route for fresh data
 export const dynamic = 'force-dynamic';
@@ -34,12 +36,61 @@ export const metadata: Metadata = {
 };
 
 /**
+ * Fetch all destinations from Supabase, selecting only the fields we need.
+ */
+async function fetchAllDestinations() {
+  const supabase = await createServerComponentClient();
+  const { data, error } = await supabase
+    .from(TABLES.DESTINATIONS)
+    .select([
+      FIELDS.DESTINATIONS.ID,
+      FIELDS.DESTINATIONS.CONTINENT,
+      FIELDS.DESTINATIONS.COUNTRY,
+      FIELDS.DESTINATIONS.CITY,
+      FIELDS.DESTINATIONS.NAME,
+      FIELDS.DESTINATIONS.IMAGE_URL,
+      FIELDS.DESTINATIONS.DESCRIPTION,
+      FIELDS.DESTINATIONS.EMOJI,
+      FIELDS.DESTINATIONS.POPULARITY,
+      FIELDS.DESTINATIONS.BYLINE,
+      FIELDS.DESTINATIONS.HIGHLIGHTS,
+      FIELDS.DESTINATIONS.LATITUDE,
+      FIELDS.DESTINATIONS.LONGITUDE,
+      FIELDS.DESTINATIONS.AVG_DAYS,
+      FIELDS.DESTINATIONS.LIKES_COUNT,
+      FIELDS.DESTINATIONS.UPDATED_AT,
+    ].join(','))
+    .order(FIELDS.DESTINATIONS.CONTINENT, { ascending: true })
+    .order(FIELDS.DESTINATIONS.COUNTRY, { ascending: true })
+    .order(FIELDS.DESTINATIONS.NAME, { ascending: true });
+
+  if (error) {
+    // In production, you might want to log this
+    return [];
+  }
+  
+  // Filter out any possible error objects in the results
+  const validDestinations = Array.isArray(data) 
+    ? data.filter(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        !('error' in item) &&
+        'id' in item &&
+        'name' in item
+      ) 
+    : [];
+    
+  return validDestinations;
+}
+
+/**
  * Destinations Page
  * 
  * Server component that renders the destinations page.
  * Uses a client component for the interactive elements.
  */
-export default function DestinationsPage() {
+export default async function DestinationsPage() {
+  const destinations = await fetchAllDestinations();
   return (
     <main>
       <PageHeader
@@ -48,7 +99,7 @@ export default function DestinationsPage() {
       />
 
       <Suspense fallback={<LoadingFallback />}>
-        <DestinationsClient />
+        <DestinationsClient destinations={destinations} />
       </Suspense>
     </main>
   );

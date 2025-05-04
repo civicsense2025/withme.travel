@@ -7,7 +7,7 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-export function ThemeToggle() {
+export function ThemeToggle({ emojiOnly }: { emojiOnly?: boolean } = {}) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
@@ -18,6 +18,20 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return <Button variant="ghost" size="icon" className="w-9 px-0 opacity-0" />;
+  }
+
+  if (emojiOnly) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        className="w-8 h-8 rounded-full transition-colors hover:bg-muted text-xl"
+        aria-label="Toggle theme"
+      >
+        {theme === 'dark' ? '🌞' : '🌙'}
+      </Button>
+    );
   }
 
   return (

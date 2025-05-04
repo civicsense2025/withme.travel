@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -18,55 +18,40 @@ export function useLikes() {
   const [likes, setLikes] = useState<Like[]>([]);
   const [likedItemIds, setLikedItemIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const hasFetched = useRef<string | null>(null); // store user id
 
-  // Fetch likes when user changes
-  useEffect(() => {
-    if (!isAuthLoading) {
-      if (user) {
-        fetchLikes();
-      } else {
-        // Clear likes if user logs out
-        setLikes([]);
-        setLikedItemIds(new Set());
-      }
-    }
-  }, [user, isAuthLoading]);
-
-  // Fetch all likes for current user
-  const fetchLikes = async () => {
-    // Don't make API call if user isn't logged in
+  // Memoized fetchLikes
+  const fetchLikes = useCallback(async () => {
     if (!user) {
       setLikes([]);
       setLikedItemIds(new Set());
+      hasFetched.current = null;
       return;
     }
-
+    // Only fetch if we haven't already for this user
+    if (hasFetched.current === user.id) return;
+    hasFetched.current = user.id;
     try {
       setIsLoading(true);
       const response = await fetch('/api/likes', {
         credentials: 'include',
       });
-
       if (response.status === 401) {
-        // Clear likes if unauthorized
         setLikes([]);
         setLikedItemIds(new Set());
         return;
       }
-
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to fetch likes');
       }
-
       const responseData = await response.json();
-      // Access the data property from the API response
       const likesData = responseData.data || [];
       setLikes(likesData);
       setLikedItemIds(new Set(likesData.map((like: Like) => like.item_id)));
     } catch (error) {
       console.error('Error fetching likes:', error);
-      // Only show error toast if user is logged in to avoid unnecessary errors
       if (user) {
         toast({
           title: 'Error',
@@ -77,7 +62,32 @@ export function useLikes() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  // Only fetch likes when user ID changes, with debounce
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    if (!isAuthLoading && user) {
+      // Reset hasFetched if user changes
+      if (hasFetched.current !== user.id) {
+        hasFetched.current = null;
+      }
+      debounceRef.current = setTimeout(() => {
+        fetchLikes();
+      }, 300);
+    } else if (!user && !isAuthLoading) {
+      setLikes([]);
+      setLikedItemIds(new Set());
+      hasFetched.current = null;
+    }
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [user?.id, isAuthLoading, fetchLikes]);
 
   // Check if an item is liked
   const isLiked = (itemId: string) => {
