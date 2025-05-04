@@ -78,3 +78,6 @@ export type SupabaseBrowserClient = ReturnType<typeof createSupabaseClient<Datab
  * Alias for resetBrowserClient for backward compatibility
  */
 export const resetAuthState = resetBrowserClient;
+
+// DEPRECATED: Use getBrowserClient from utils/supabase/browser-client instead.
+export { getBrowserClient } from './browser-client';

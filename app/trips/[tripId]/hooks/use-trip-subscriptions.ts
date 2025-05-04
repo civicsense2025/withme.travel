@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { createBrowserClient } from '@/utils/supabase/client';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/nextjs';
 
@@ -23,7 +23,7 @@ export function useTripSubscriptions({
   onMembersUpdate,
   enabled = true,
 }: UseTripSubscriptionsProps) {
-  const supabase = createBrowserClient();
+  const supabase = getBrowserClient();
 
   // Use refs to store subscription channels for cleanup
   const tripSubscriptionRef = useRef<RealtimeChannel | null>(null);

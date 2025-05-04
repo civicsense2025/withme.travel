@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import ImportMapButton from '@/app/trips/[tripId]/import-map-button';
 import { QuickAddItemForm } from '@/app/trips/components/QuickAddItemForm';
 import GoogleMapsUrlImport from '@/app/trips/[tripId]/google-maps-url-import';
+import { AnimatePresence } from 'framer-motion';
 
 // Simple error boundary component
 interface ErrorBoundaryProps {
@@ -144,25 +145,27 @@ export const UnscheduledItemsSection: React.FC<UnscheduledItemsSectionProps> = (
             strategy={verticalListSortingStrategy}
             id={containerId}
           >
-            {items.map((item) => (
-              <ErrorBoundary
-                key={item.id}
-                fallback={
-                  <Card className="p-2 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/30">
-                    <p className="text-sm text-red-600 dark:text-red-400">Error displaying item</p>
-                  </Card>
-                }
-              >
-                <SortableItem key={item.id} id={item.id} disabled={!canEdit} containerId={containerId}>
-                  <ItineraryItemCard
-                    key={item.id}
-                    item={item}
-                    onEdit={() => onEditItem(item)}
-                    editable={canEdit}
-                  />
-                </SortableItem>
-              </ErrorBoundary>
-            ))}
+            <AnimatePresence initial={false}>
+              {items.map((item) => (
+                <ErrorBoundary
+                  key={item.id}
+                  fallback={
+                    <Card className="p-2 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/30">
+                      <p className="text-sm text-red-600 dark:text-red-400">Error displaying item</p>
+                    </Card>
+                  }
+                >
+                  <SortableItem key={item.id} id={item.id} disabled={!canEdit} containerId={containerId}>
+                    <ItineraryItemCard
+                      key={item.id}
+                      item={item}
+                      onEdit={() => onEditItem(item)}
+                      editable={canEdit}
+                    />
+                  </SortableItem>
+                </ErrorBoundary>
+              ))}
+            </AnimatePresence>
           </SortableContext>
         )}
       </div>

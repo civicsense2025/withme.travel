@@ -22,18 +22,21 @@ export function UserMenu() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Get user initials for avatar
-  const getInitials = () => {
-    if (!user) return 'U';
-    if (user.profile?.name) {
-      return user.profile.name
+  function getProfileInitials(user: any): string {
+    const name = user?.profile?.name;
+    if (name && typeof name === 'string') {
+      return name
         .split(' ')
-        .map((part) => part.charAt(0))
+        .map((part: string) => part.charAt(0))
         .join('')
         .toUpperCase()
         .substring(0, 2);
     }
-    return user.email?.charAt(0).toUpperCase() || 'U';
-  };
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  }
 
   // Handle logout with loading state
   const handleLogout = async () => {
@@ -52,16 +55,22 @@ export function UserMenu() {
     return null;
   }
 
+  const displayName = user.profile?.name ?? user.email ?? 'User';
+  const avatarUrl = user.profile?.avatar_url ?? null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage
-              src={user.profile?.avatar_url || user.user_metadata?.avatar_url || ''}
-              alt={user.profile?.name || user.email || 'User'}
-            />
-            <AvatarFallback>{getInitials()}</AvatarFallback>
+            {avatarUrl ? (
+              <AvatarImage
+                src={avatarUrl}
+                alt={displayName}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : null}
+            <AvatarFallback>{getProfileInitials(user)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -69,7 +78,7 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none truncate">
-              {user.profile?.name || user.email}
+              {displayName}
             </p>
             {user.profile?.name && (
               <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>

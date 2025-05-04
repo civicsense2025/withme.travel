@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { createBrowserClient } from '@/utils/supabase/client';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 import { LoadingState, Destination, STATES, LAYOUT, isDestination, FetchError } from './constants';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ export default function DestinationsClient() {
   const [searchQuery, setSearchQuery] = useState('');
   
   // Create a stable ref for the supabase client
-  const supabaseRef = useRef(createBrowserClient());
+  const supabaseRef = useRef(getBrowserClient());
   
   // Filter destinations based on search query (memoized)
   const filteredDestinations = useMemo(() => {

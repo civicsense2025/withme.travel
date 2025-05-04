@@ -21,14 +21,15 @@ declare module '@/utils/constants' {
   // Add other constants as needed
 }
 
-declare module '@/utils/constants/database' {
-  export const TABLES: {
-    USERS: string;
-    TRIPS: string;
-    DESTINATIONS: string;
-    // Add other tables as needed
-  };
-}
+// REMOVE or comment out this block to avoid type conflicts with the real TABLES object
+// declare module '@/utils/constants/database' {
+//   export const TABLES: {
+//     USERS: string;
+//     TRIPS: string;
+//     DESTINATIONS: string;
+//     // Add other tables as needed
+//   };
+// }
 
 // Define fallback modules for other imports
 declare module '@/lib/*' {

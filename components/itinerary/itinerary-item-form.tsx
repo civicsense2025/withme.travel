@@ -437,7 +437,7 @@ export function ItineraryItemForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.values(ITINERARY_CATEGORIES).map((cat) => (
+                        {Array.from(new Set(Object.values(ITINERARY_CATEGORIES))).map((cat) => (
                           <SelectItem key={cat} value={cat} className="capitalize">
                             {cat.replace('_', ' ')}
                           </SelectItem>

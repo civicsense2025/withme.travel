@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/page-header';
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@/utils/supabase/client';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 import { TABLES } from '@/utils/constants/database';
 
 // Define types for country data
@@ -43,7 +43,7 @@ export default function CountriesPage() {
   useEffect(() => {
     async function fetchCountries() {
       try {
-        const supabase = createBrowserClient();
+        const supabase = getBrowserClient();
 
         // Get unique countries with aggregated data
         const { data, error } = await supabase

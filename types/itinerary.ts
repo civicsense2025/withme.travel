@@ -2,6 +2,7 @@ import { Place } from './places';
 import { Profile } from './profile';
 import { ProcessedVotes, Vote } from './votes';
 import { type ItemStatus } from '@/utils/constants/status';
+import type { ItineraryItemReaction } from './database.types';
 
 // --- Base Itinerary Item Interfaces ---
 
@@ -129,6 +130,7 @@ export interface ItineraryItem {
   user_vote?: 'up' | 'down' | null;
   creatorProfile: Profile | null;
   place?: Place | null;
+  reactions?: ItineraryItemReaction[]; // All emoji reactions for this item
 }
 
 /**

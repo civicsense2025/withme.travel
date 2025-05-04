@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { motion } from 'framer-motion';
 
 interface SortableItemProps {
   id: string;
@@ -10,6 +11,7 @@ interface SortableItemProps {
   disabled?: boolean;
   // Pass containerId to identify the list in drag events
   containerId: string | number;
+  layoutId?: string; // Only set on overlay
 }
 
 export const SortableItem: React.FC<SortableItemProps> = ({
@@ -17,6 +19,7 @@ export const SortableItem: React.FC<SortableItemProps> = ({
   children,
   disabled,
   containerId,
+  layoutId,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, isSorting } =
     useSortable({
@@ -39,25 +42,34 @@ export const SortableItem: React.FC<SortableItemProps> = ({
     pointerEvents: isDragging ? 'none' as const : undefined,
     transformOrigin: '0 0',
     willChange: isDragging ? 'transform' : undefined,
+    // Hide the original item when dragging (so only overlay is visible)
+    visibility: isDragging ? 'hidden' : undefined,
   };
 
-  // Create conditional classes for hover/active states
-  const hoverClasses = !disabled
-    ? 'group-hover:bg-muted/10 hover:shadow-md hover:scale-[1.01] transition-all duration-150 ease-out active:bg-muted/20 cursor-grab active:cursor-grabbing'
-    : 'cursor-default';
+  // Always show grab cursor on the whole card
+  const rootCursor = !disabled ? 'cursor-grab active:cursor-grabbing' : 'cursor-default';
 
   return (
-    // Root div for positioning and attributes
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
       {...attributes} // Apply attributes here (like role, aria-properties)
       className={cn(
         'relative touch-none select-none', // Base styles
-        isDragging && 'z-10 shadow-lg', // Dragging styles
+        isDragging && 'z-10', // Dragging styles
         isSorting && 'transition-transform', // Sorting transition
-        hoverClasses // Apply conditional classes
+        rootCursor // Apply conditional classes
       )}
+      layout
+      // Only set layoutId if provided (for overlay)
+      {...(layoutId ? { layoutId } : {})}
+      animate={{
+        scale: isDragging ? 1.04 : 1,
+        boxShadow: isDragging
+          ? '0 8px 32px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.10)'
+          : '0 1px 3px rgba(0,0,0,0.08)',
+      }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.5 }}
     >
       {/* Inner div for attaching drag listeners with tooltip */}
       {!disabled ? (
@@ -66,7 +78,7 @@ export const SortableItem: React.FC<SortableItemProps> = ({
             <TooltipTrigger asChild>
               <div
                 {...listeners} // Apply listeners HERE
-                className="cursor-grab active:cursor-grabbing"
+                // Remove cursor classes here, handled by root
               >
                 {/* Render children directly inside the listener div */}
                 {children}
@@ -80,6 +92,6 @@ export const SortableItem: React.FC<SortableItemProps> = ({
       ) : (
         <div className="cursor-default">{children}</div>
       )}
-    </div>
+    </motion.div>
   );
 };

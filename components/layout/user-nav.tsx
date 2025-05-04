@@ -21,16 +21,19 @@ import { ErrorBoundary } from '@sentry/nextjs';
 
 // Get profile initials - shared function to ensure consistency
 function getProfileInitials(user: any): string {
-  if (user?.profile?.name) {
-    // Get first letters of each word in the name
-    return user.profile.name
+  const name = user?.profile?.name;
+  if (name && typeof name === 'string') {
+    return name
       .split(' ')
       .map((part: string) => part.charAt(0))
       .join('')
       .toUpperCase()
       .substring(0, 2);
   }
-  return user?.email?.charAt(0).toUpperCase() || 'U';
+  if (user?.email) {
+    return user.email.charAt(0).toUpperCase();
+  }
+  return 'U';
 }
 
 function UserNavContent() {
@@ -47,16 +50,21 @@ function UserNavContent() {
     return null;
   }
 
+  const displayName = user.profile?.name ?? user.email ?? 'User';
+  const avatarUrl = user.profile?.avatar_url ?? null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
           <Avatar className="h-8 w-8">
-            {/* Use profile avatar first, fallback to user metadata, then initial */}
-            <AvatarImage
-              src={user.profile?.avatar_url || user.user_metadata?.avatar_url || ''}
-              alt={user.profile?.name || user.email || 'User'}
-            />
+            {avatarUrl ? (
+              <AvatarImage
+                src={avatarUrl}
+                alt={displayName}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : null}
             <AvatarFallback>{getProfileInitials(user)}</AvatarFallback>
           </Avatar>
         </Button>
@@ -65,7 +73,7 @@ function UserNavContent() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none truncate">
-              {user.profile?.name || user.email}
+              {displayName}
             </p>
             {user.profile?.name && (
               <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>

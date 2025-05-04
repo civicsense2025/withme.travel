@@ -1,9 +1,10 @@
 // Server-side database functions that use the Supabase server client
 // These should only be used in API routes or server components
 
-import { TABLES } from '@/utils/constants/database';
+import { TABLES, FIELDS } from '@/utils/constants/database';
 import { captureException } from '@sentry/nextjs';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
+import type { ItineraryItemReaction } from '@/types/database.types';
 
 // ----- NOTE ON TYPE HANDLING -----
 // This file uses an untyped Supabase client to work around complex TypeScript issues.
@@ -311,4 +312,28 @@ export async function getUserProfile(userId: string): Promise<any> {
     console.error('Exception fetching user profile:', e);
     return null;
   }
+}
+
+/**
+ * Fetches all emoji reactions for a set of itinerary item IDs.
+ * @param supabase Supabase client
+ * @param itemIds Array of itinerary_item_id
+ * @returns Map of itinerary_item_id to array of reactions
+ */
+export async function getItineraryItemReactions(supabase: any, itemIds: string[]): Promise<Record<string, ItineraryItemReaction[]>> {
+  if (!itemIds.length) return {};
+  const { data, error } = await supabase
+    .from(TABLES.ITINERARY_ITEM_REACTIONS)
+    .select('*')
+    .in(FIELDS.ITINERARY_ITEM_REACTIONS.ITINERARY_ITEM_ID, itemIds);
+  if (error) {
+    console.error('Error fetching reactions:', error);
+    return {};
+  }
+  const map: Record<string, ItineraryItemReaction[]> = {};
+  for (const reaction of data as ItineraryItemReaction[]) {
+    if (!map[reaction.itinerary_item_id]) map[reaction.itinerary_item_id] = [];
+    map[reaction.itinerary_item_id].push(reaction);
+  }
+  return map;
 }

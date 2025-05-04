@@ -82,6 +82,7 @@ export const TABLES = {
   DESTINATION_REVIEWS: 'destination_reviews',
   DESTINATION_IMAGES: 'destination_images',
   SETTINGS: 'user_settings',
+  ITINERARY_ITEM_REACTIONS: 'itinerary_item_reactions',
 } as const;
 
 export const FIELDS = {
@@ -319,9 +320,8 @@ export const FIELDS = {
     ID: 'id',
     ITINERARY_ITEM_ID: 'itinerary_item_id',
     USER_ID: 'user_id',
-    VOTE: 'vote',
+    VOTE_TYPE: 'vote_type',
     CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
   },
   ITINERARY_ITEMS: {
     ID: 'id',
@@ -637,8 +637,8 @@ export const FIELDS = {
   },
   TRIP_ITEM_COMMENTS: {
     ID: 'id',
-    TRIP_ID: 'trip_id',
     ITEM_ID: 'item_id',
+    TRIP_ID: 'trip_id',
     USER_ID: 'user_id',
     CONTENT: 'content',
     CREATED_AT: 'created_at',
@@ -863,6 +863,13 @@ export const FIELDS = {
     DESCRIPTION: 'description',
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
+  },
+  ITINERARY_ITEM_REACTIONS: {
+    ID: 'id',
+    ITINERARY_ITEM_ID: 'itinerary_item_id',
+    USER_ID: 'user_id',
+    EMOJI: 'emoji',
+    CREATED_AT: 'created_at',
   },
 } as const;
 

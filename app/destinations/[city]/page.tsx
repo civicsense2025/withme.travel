@@ -290,7 +290,7 @@ export default function CityPage() {
   const imageData = getDestinationImageData(destination);
 
   // Use user.profile.name and fallback to 'My' if name is not available
-  const profileName = user?.profile?.name?.split(' ')[0] || 'My';
+  const profileName = user?.profile?.name ?? 'My';
   const defaultTripName = `${profileName}s trip to ${destination.city}`;
 
   return (

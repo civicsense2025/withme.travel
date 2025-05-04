@@ -20,12 +20,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // --- Type Definitions ---
 export type TypedSupabaseClient = SupabaseClient<Database>;
 
-/**
- * Create a Supabase client for use in browser environments
- */
-export function getBrowserClient(): TypedSupabaseClient {
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
-}
+// Canonical browser client accessor:
+export { getBrowserClient } from './browser-client';
 
 /**
  * Create a Supabase client for server components without requiring dynamic imports

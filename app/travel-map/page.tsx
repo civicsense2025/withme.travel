@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createBrowserClient } from '@/utils/supabase/client';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,7 +41,7 @@ export default function TravelMapPage() {
 
       try {
         // Initialize the Supabase client only on the client side
-        const supabase = createBrowserClient();
+        const supabase = getBrowserClient();
 
         // Fetch visited destinations
         const { data: visitedData, error: visitedError } = await supabase
@@ -136,11 +136,6 @@ export default function TravelMapPage() {
                       {isHovered && (
                         <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-background px-2 py-1 text-xs shadow-lg border">
                           {`${destination.city}, ${destination.country}`}
-                          <span
-                            className={`ml-1 font-medium ${isVisited ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}
-                          >
-                            {isVisited ? '(Visited)' : '(Not Visited)'}
-                          </span>
                         </div>
                       )}
                     </div>
@@ -151,9 +146,6 @@ export default function TravelMapPage() {
           </APIProvider>
         )}
       </div>
-      <p className="text-sm text-muted-foreground mt-4 text-center">
-        {visited.length} destinations visited out of {destinations.length} trackable locations.
-      </p>
     </div>
   );
 }

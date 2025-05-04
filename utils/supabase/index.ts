@@ -21,22 +21,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase URL or Anon Key');
 }
 
-// Keep a singleton for the browser client
-let browserClient: ReturnType<typeof createSupabaseBrowserClient<Database>> | null = null;
-
-/**
- * Creates a Supabase client configured for browser use.
- * In browser environments, we want a singleton client to avoid cookie conflicts.
- */
-export function createBrowserSupabaseClient() {
-  if (browserClient) {
-    return browserClient;
-  }
-
-  browserClient = createSupabaseBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
-
-  return browserClient;
-}
+// Canonical browser client accessor:
+export { getBrowserClient } from './browser-client';
 
 // Export the API client to make imports consistent
 export { createApiClient };

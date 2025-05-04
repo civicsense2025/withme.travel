@@ -25,18 +25,21 @@ export function MobileNav() {
   const isAdmin = user?.user_metadata?.is_admin === true;
 
   // Get user initials for avatar
-  const getInitials = () => {
-    if (!user) return 'U';
-    if (user.profile?.name) {
-      return user.profile.name
+  function getProfileInitials(user: any): string {
+    const name = user?.profile?.name;
+    if (name && typeof name === 'string') {
+      return name
         .split(' ')
-        .map((part) => part.charAt(0))
+        .map((part: string) => part.charAt(0))
         .join('')
         .toUpperCase()
         .substring(0, 2);
     }
-    return user.email?.charAt(0).toUpperCase() || 'U';
-  };
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  }
 
   // Handle logout with loading state
   const handleLogout = async () => {
@@ -45,6 +48,16 @@ export function MobileNav() {
     setIsOpen(false);
     // No need to reset isLoggingOut as the page will refresh
   };
+
+  if (!user) {
+    return (
+      <Avatar className="h-8 w-8">
+        <AvatarFallback>U</AvatarFallback>
+      </Avatar>
+    );
+  }
+  const displayName = user.profile?.name ?? user.email ?? 'User';
+  const avatarUrl = user.profile?.avatar_url ?? null;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -191,20 +204,20 @@ export function MobileNav() {
           {!isLoading && user && (
             <div className="border-t border-muted p-4 bg-muted/30">
               <div className="flex items-center space-x-3 mb-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage
-                    src={user.profile?.avatar_url || user.user_metadata?.avatar_url || ''}
-                    alt={user.profile?.name || user.email || 'User'}
-                  />
-                  <AvatarFallback>{getInitials()}</AvatarFallback>
+                <Avatar className="h-8 w-8">
+                  {avatarUrl ? (
+                    <AvatarImage
+                      src={avatarUrl}
+                      alt={displayName}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : null}
+                  <AvatarFallback>{getProfileInitials(user)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col overflow-hidden">
                   <span className="text-sm font-medium truncate">
-                    {user.profile?.name || user.email}
+                    {displayName}
                   </span>
-                  {user.profile?.name && (
-                    <span className="text-xs text-muted-foreground truncate">{user.email}</span>
-                  )}
                 </div>
               </div>
 

@@ -21,6 +21,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { UserNav } from '@/components/layout/user-nav';
 import { ErrorBoundary } from '@sentry/nextjs';
 import { debugAuth, clearAuthData } from '@/lib/hooks/auth-debug';
+import { clearAndRefreshAuthCookies } from '@/utils/auth/session';
 
 // Create a client-only wrapper for the tooltip component
 function ClientOnlyTooltip({ children, text }: { children: React.ReactNode; text: string }) {
@@ -95,9 +96,62 @@ function LoadingUserNavPlaceholder() {
 }
 
 function LoadingUserAvatarPlaceholder() {
+  const { refreshSession } = useAuth();
+  const [showRefresh, setShowRefresh] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  
+  // Show refresh button after 2 seconds of loading, reset button after 5 seconds
+  useEffect(() => {
+    const refreshTimer = setTimeout(() => {
+      setShowRefresh(true);
+    }, 2000);
+    
+    const resetTimer = setTimeout(() => {
+      setShowReset(true);
+    }, 5000);
+    
+    return () => {
+      clearTimeout(refreshTimer);
+      clearTimeout(resetTimer);
+    };
+  }, []);
+  
   return (
-    <div className="h-8 w-8">
-      <ClientSkeleton className="h-full w-full rounded-full" />
+    <div className="flex items-center gap-2">
+      <div className="h-8 w-8">
+        <Skeleton className="h-full w-full rounded-full animate-pulse" />
+      </div>
+      {showRefresh && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => {
+            refreshSession();
+            // Force a page reload after a slight delay if needed
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
+          }}
+          className="h-6 w-6 rounded-full animate-pulse"
+          title="Refresh authentication"
+        >
+          <div className="h-4 w-4">↻</div>
+        </Button>
+      )}
+      {showReset && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => {
+            // Call our cookie cleanup function
+            clearAndRefreshAuthCookies();
+          }}
+          className="h-6 w-6 rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400"
+          title="Reset auth cookies (use if login stuck)"
+        >
+          <div className="h-4 w-4">🔄</div>
+        </Button>
+      )}
     </div>
   );
 }
@@ -397,29 +451,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             <ErrorBoundary fallback={<AuthErrorFallback />}>
               {isLoadingState ? (
-                <div className="flex items-center gap-2">
-                  <LoadingUserAvatarPlaceholder />
-                  {loadingDuration > 2000 && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => {
-                        // Call refreshSession from auth provider
-                        refreshSession();
-                        // Force a page reload if refresh fails after 1 second
-                        setTimeout(() => {
-                          if (isLoading) {
-                            window.location.reload();
-                          }
-                        }, 1000);
-                      }}
-                      className="h-6 w-6 rounded-full animate-pulse"
-                      title="Refresh authentication"
-                    >
-                      <div className="h-4 w-4">↻</div>
-                    </Button>
-                  )}
-                </div>
+                <LoadingUserAvatarPlaceholder />
               ) : user ? <UserNav /> : null}
             </ErrorBoundary>
           </div>

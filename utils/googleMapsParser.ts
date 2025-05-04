@@ -32,11 +32,50 @@ export async function parseGoogleMapsList(
     // 1. Expand short-link / follow redirects
     const expandRes = await fetch(url, { redirect: 'follow' });
     const finalUrl = expandRes.url;
-    const params = new URL(finalUrl).searchParams;
-    const listId = params.get('mid') || params.get('list_cid');
+    console.log('Expanded URL:', finalUrl);
+    
+    // Try to extract listId from various URL formats
+    let listId = null;
+    const parsedUrl = new URL(finalUrl);
+    const params = parsedUrl.searchParams;
+    
+    // Check for mid parameter (traditional lists)
+    listId = params.get('mid') || params.get('list_cid');
+    
+    // Check for data parameter (newer format)
+    if (!listId) {
+      const dataParam = params.get('data');
+      if (dataParam) {
+        // Extract list ID from data parameter which might be in format "!1m4!1m3!1m2!1slistId!2stitle"
+        const match = dataParam.match(/!1m2!1s([^!]+)!/);
+        if (match && match[1]) {
+          listId = match[1];
+        }
+      }
+    }
+    
+    // Check for list ID in path structure (maps.app.goo.gl URLs)
+    if (!listId && finalUrl.includes('maps.app.goo.gl')) {
+      // For maps.app URLs, we need to fetch the content and extract list IDs
+      const pageContent = await fetch(finalUrl).then(res => res.text());
+      
+      // Look for list IDs in the HTML content
+      const midMatch = pageContent.match(/listId":"([^"]+)"/);
+      if (midMatch && midMatch[1]) {
+        listId = midMatch[1];
+      }
+      
+      // Alternative pattern
+      if (!listId) {
+        const altMatch = pageContent.match(/2s([0-9a-zA-Z_-]+)/);
+        if (altMatch && altMatch[1]) {
+          listId = altMatch[1];
+        }
+      }
+    }
     
     if (!listId) {
-      throw new Error('Could not find a list ID (mid) in that URL');
+      throw new Error('Could not find a list ID (mid) in that URL. Please try a different Google Maps list URL format.');
     }
 
     // 2. Construct the RPC payload
@@ -91,6 +130,7 @@ export async function parseGoogleMapsList(
 
     return { success: true, listTitle, places };
   } catch (err: any) {
+    console.error('Google Maps parsing error:', err);
     return {
       success: false,
       places: [],

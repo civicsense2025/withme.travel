@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient, User, Session } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import { TABLES, FIELDS } from '../utils/constants/database';
 
 // Ensure environment variables are available
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -12,10 +13,24 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 // Type for the extended user that includes profile data
 export interface ExtendedUser extends User {
   profile?: {
-    name: string;
+    name: string | null;
     avatar_url: string | null;
     username: string | null;
+    email?: string | null;
   };
+}
+
+// Type for the user profile from the database
+export interface UserProfile {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  username: string | null;
+  email: string | null;
+}
+
+function getProfileName(profile: UserProfile | null, fallback: string): string {
+  return profile?.name || fallback;
 }
 
 // Auth context interface
@@ -64,22 +79,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [initializationError, setInitializationError] = useState<Error | null>(null);
 
   // Function to fetch user profile
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
+      const { data, error } = await supabase
+        .from(TABLES.PROFILES)
+        .select([
+          FIELDS.PROFILES.ID,
+          FIELDS.PROFILES.NAME,
+          FIELDS.PROFILES.AVATAR_URL,
+          FIELDS.PROFILES.USERNAME,
+          FIELDS.PROFILES.EMAIL,
+        ].join(','))
+        .eq(FIELDS.PROFILES.ID, userId)
+        .maybeSingle();
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('[Auth] Error fetching profile:', error);
         return null;
       }
-
-      return profile;
+      if (!data || typeof data !== 'object' || typeof (data as any).id !== 'string') {
+        return null;
+      }
+      return data as unknown as UserProfile;
     } catch (err) {
-      console.error('Exception fetching profile:', err);
+      console.error('[Auth] Exception fetching profile:', err);
       return null;
     }
   };
@@ -89,47 +111,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         console.log('[Auth] Initializing auth state...');
-        
-        // Make sure supabase client is valid
-        if (!supabase.auth) {
-          throw new Error('Supabase client not properly initialized');
-        }
-
-        // Get the current session
+        if (!supabase.auth) throw new Error('Supabase client not properly initialized');
         const {
           data: { session: currentSession },
           error: sessionError,
         } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          throw sessionError;
-        }
-
+        if (sessionError) throw sessionError;
         if (currentSession) {
-          console.log('[Auth] Session found, user ID:', currentSession.user.id);
           setSession(currentSession);
-          setUser(currentSession.user as ExtendedUser);
-
-          // Fetch user profile data if session exists
-          const profile = await fetchUserProfile(currentSession.user.id);
-          
-          if (profile) {
-            console.log('[Auth] Profile found for user');
-            setUser((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    profile: {
-                      name: profile.name || profile.full_name || '',
-                      avatar_url: profile.avatar_url,
-                      username: profile.username,
-                    },
-                  }
-                : null
-            );
-          } else {
-            console.log('[Auth] No profile found for user');
-          }
+          setUser({
+            ...currentSession.user,
+            profile: await fetchUserProfile(currentSession.user.id) || {
+              id: currentSession.user.id,
+              name: null,
+              avatar_url: null,
+              username: null,
+              email: currentSession.user.email ?? null,
+            },
+          });
+          setIsLoading(false);
+          return;
         } else {
           console.log('[Auth] No active session found');
         }
@@ -137,12 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('[Auth] Error initializing auth:', error);
         setInitializationError(error instanceof Error ? error : new Error('Unknown auth error'));
       } finally {
-        console.log('[Auth] Auth initialization complete');
         setIsLoading(false);
       }
     };
-
-    // Only run initialization if supabase client is valid
     if (supabase.auth) {
       initializeAuth();
     } else {
@@ -174,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   ? {
                       ...prev,
                       profile: {
-                        name: profile.name || profile.full_name || '',
+                        name: getProfileName(profile, prev.email || 'User'),
                         avatar_url: profile.avatar_url,
                         username: profile.username,
                       },
@@ -240,18 +238,151 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsRefreshing(true);
       console.log('[Auth] Refreshing session...');
       
+      // First attempt - standard refresh
       const { data, error } = await supabase.auth.refreshSession();
-      if (error) throw error;
-
-      setSession(data.session);
-      setUser((data.session?.user as ExtendedUser) || null);
-      console.log('[Auth] Session refreshed successfully');
+      
+      if (error) {
+        console.error('[Auth] Error refreshing session:', error);
+        
+        // Second attempt - get session directly
+        console.log('[Auth] Attempting to get session directly...');
+        const sessionResult = await supabase.auth.getSession();
+        
+        if (sessionResult.error) {
+          console.error('[Auth] Failed to get session directly:', sessionResult.error);
+          throw new Error('Session refresh failed after multiple attempts');
+        }
+        
+        if (sessionResult.data.session) {
+          console.log('[Auth] Successfully retrieved session');
+          setSession(sessionResult.data.session);
+          setUser((sessionResult.data.session?.user as ExtendedUser) || null);
+          
+          // Get user profile data
+          if (sessionResult.data.session?.user) {
+            const profile = await fetchUserProfile(sessionResult.data.session.user.id);
+            if (profile) {
+              setUser((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      profile: {
+                        name: getProfileName(profile, prev.email || 'User'),
+                        avatar_url: profile.avatar_url,
+                        username: profile.username,
+                      },
+                    }
+                  : null
+              );
+            }
+          }
+          return;
+        }
+      } else {
+        // Successful refresh
+        setSession(data.session);
+        setUser((data.session?.user as ExtendedUser) || null);
+        
+        // Get user profile data on successful refresh
+        if (data.session?.user) {
+          const profile = await fetchUserProfile(data.session.user.id);
+          if (profile) {
+            setUser((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    profile: {
+                      name: getProfileName(profile, prev.email || 'User'),
+                      avatar_url: profile.avatar_url,
+                      username: profile.username,
+                    },
+                  }
+                : null
+            );
+          }
+        }
+        
+        console.log('[Auth] Session refreshed successfully');
+        return;
+      }
+      
+      // If we reach here, both attempts failed but didn't throw errors
+      throw new Error('Failed to refresh session');
+      
     } catch (error) {
-      console.error('[Auth] Error refreshing session:', error);
+      console.error('[Auth] Critical error refreshing session:', error);
+      
+      // Clear session state to avoid showing stale data
+      setSession(null);
+      setUser(null);
+      
+      // Force page reload as a last resort (browser will try to recover cookies)
+      setTimeout(() => {
+        console.log('[Auth] Forcing page reload to recover session');
+        window.location.reload();
+      }, 500);
     } finally {
       setIsRefreshing(false);
     }
   };
+
+  // Add the periodic session check effect here, after refreshSession is defined
+  // Set up a periodic session check to detect and fix stale sessions
+  useEffect(() => {
+    if (!supabase.auth) return;
+    
+    // Function to check session health
+    const checkSessionHealth = async () => {
+      try {
+        // Skip if already refreshing or we don't have a session
+        if (isRefreshing || !session) return;
+        
+        // Check if our session is still valid
+        const {
+          data: { session: currentSession },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('[Auth] Error checking session health:', sessionError);
+          // Session check failed - force a refresh
+          refreshSession();
+          return;
+        }
+        
+        // If we think we have a session but the server says no, trigger a refresh
+        if (session && !currentSession) {
+          console.log('[Auth] Session mismatch detected - local session exists but server has none');
+          refreshSession();
+          return;
+        }
+        
+        // If token expiry is coming up (less than 5 minutes away), refresh proactively
+        if (currentSession) {
+          const expiresAt = new Date((currentSession.expires_at || 0) * 1000);
+          const now = new Date();
+          const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+          
+          if (timeUntilExpiry < 5 * 60 * 1000) { // Less than 5 minutes
+            console.log('[Auth] Session expiring soon, refreshing proactively');
+            refreshSession();
+          }
+        }
+      } catch (error) {
+        console.error('[Auth] Session health check failed:', error);
+      }
+    };
+    
+    // Check immediately after the component mounts
+    checkSessionHealth();
+    
+    // Set up recurring checks (every 2 minutes)
+    const intervalId = setInterval(checkSessionHealth, 2 * 60 * 1000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [supabase, session, isRefreshing, refreshSession]);
 
   return (
     <AuthContext.Provider

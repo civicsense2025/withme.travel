@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Heart, Pencil } from 'lucide-react';
+import { MapPin, Heart, Pencil, ThumbsUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -12,6 +12,11 @@ import {
   DEFAULT_TYPE_DISPLAY,
 } from '@/utils/constants/ui';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
+import { motion } from 'framer-motion';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/lib/hooks/use-auth';
+import type { ItineraryItemReaction } from '@/types/database.types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export interface ItineraryItemCardProps {
   item: DisplayItineraryItem;
@@ -23,6 +28,12 @@ export interface ItineraryItemCardProps {
   [key: string]: any;
 }
 
+const ALLOWED_EMOJIS = ['👍', '❤️', '😂', '😮', '👎'];
+
+/**
+ * Emoji reaction bar for itinerary items.
+ * Shows allowed emojis, highlights user's reaction, and displays avatars for each emoji.
+ */
 export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
   item,
   className,
@@ -30,8 +41,70 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
   onEdit,
   isOverlay = false,
   isCoreItem = false,
+  ...props
 }) => {
   const [isLiked, setIsLiked] = useState(false);
+  const { user } = useAuth();
+  const [reactions, setReactions] = useState<ItineraryItemReaction[]>((item as any).reactions ?? []);
+  const [loadingEmoji, setLoadingEmoji] = useState<string | null>(null);
+  const [reactionPopoverOpen, setReactionPopoverOpen] = useState(false);
+
+  // Group reactions by emoji
+  const reactionsByEmoji = ALLOWED_EMOJIS.reduce((acc, emoji) => {
+    acc[emoji] = reactions.filter((r: ItineraryItemReaction) => r.emoji === emoji);
+    return acc;
+  }, {} as Record<string, ItineraryItemReaction[]>);
+
+  // Check if current user has reacted with each emoji
+  const userEmoji = ALLOWED_EMOJIS.find((emoji) =>
+    reactionsByEmoji[emoji]?.some((r: ItineraryItemReaction) => r.user_id === user?.id)
+  );
+
+  // Fetch latest reactions on mount or when item.id changes
+  React.useEffect(() => {
+    setReactions((item as any).reactions ?? []);
+    // Optionally, fetch from API for freshest data
+    // (uncomment if you want to always fetch)
+    // fetchReactions();
+  }, [item.id, (item as any).reactions]);
+
+  /**
+   * Fetch reactions for this item from the API
+   */
+  const fetchReactions = async () => {
+    try {
+      const res = await fetch(`/api/trips/${item.trip_id}/itinerary/${item.id}/reactions`);
+      if (res.ok) {
+        const data = await res.json();
+        setReactions(data.reactions || []);
+      }
+    } catch (e) {
+      // Ignore errors for now
+    }
+  };
+
+  /**
+   * Handle clicking an emoji: toggles reaction for current user
+   * Closes the popover after selection
+   */
+  const handleEmojiClick = async (emoji: string) => {
+    if (!user) return;
+    setLoadingEmoji(emoji);
+    try {
+      const res = await fetch(`/api/trips/${item.trip_id}/itinerary/${item.id}/reactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReactions(data.reactions || []);
+      }
+      setReactionPopoverOpen(false); // Close popover after reaction
+    } finally {
+      setLoadingEmoji(null);
+    }
+  };
 
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -114,14 +187,31 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
     { label: 'Notes', value: item.notes },
   ].filter((detail) => detail.value);
 
+  // Filter out custom props that shouldn't go on DOM
+  const {
+    editable,
+    onDelete,
+    onVote,
+    onStatusChange,
+    ...restProps
+  } = props;
+
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      layout
+      transition={{ type: 'spring', stiffness: 600, damping: 22, mass: 0.5 }}
       className={cn(
         'rounded-xl relative group transition-shadow duration-200 ease-in-out overflow-hidden',
         'border border-border/20 dark:border-border/10 hover:shadow-md dark:hover:border-border/30',
         bgColorClass,
         className
       )}
+      {...restProps}
+      tabIndex={isOverlay ? -1 : undefined}
+      aria-hidden={isOverlay ? true : undefined}
     >
       {/* Visual day indicator */}
       {dayNumber && (
@@ -198,27 +288,76 @@ export const ItineraryItemCard: React.FC<ItineraryItemCardProps> = ({
                 <span className="sr-only">Edit item</span>
               </Button>
             )}
-
+            {/* Vote Icon with Popover */}
+            <Popover open={reactionPopoverOpen} onOpenChange={setReactionPopoverOpen}>
+              <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleLikeClick}
-              className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8 flex-shrink-0"
-            >
-              <Heart
-                className={cn(
-                  'w-4 h-4 transition-all',
-                  isLiked ? 'fill-destructive text-destructive' : 'fill-none'
-                )}
-              />
-              <span className="sr-only">{isLiked ? 'Unlike' : 'Like'} item</span>
+                  className="rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary h-8 w-8 flex-shrink-0"
+                  aria-label="Vote or react"
+                >
+                  <ThumbsUp className="w-4 h-4 text-muted-foreground opacity-70" />
             </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="p-2 w-auto min-w-[180px]">
+                <div className="flex gap-1 items-center">
+          {ALLOWED_EMOJIS.map((emoji) => {
+            const emojiReactions = reactionsByEmoji[emoji] || [];
+            const userHasReacted = emojiReactions.some((r: ItineraryItemReaction) => r.user_id === user?.id);
+            return (
+                <button
+                        key={emoji}
+                  type="button"
+                  className={cn(
+                          'rounded-full px-1.5 py-0.5 text-lg border border-border bg-muted hover:bg-primary/10 transition',
+                    userHasReacted && 'bg-primary/20 border-primary text-primary',
+                          loadingEmoji === emoji && 'opacity-50 pointer-events-none',
+                          'h-8 w-8 flex items-center justify-center'
+                  )}
+                  onClick={() => handleEmojiClick(emoji)}
+                  disabled={loadingEmoji !== null}
+                  aria-label={`React with ${emoji}`}
+                        style={{ fontSize: '1.15rem' }}
+                >
+                  {emoji}
+                  {emojiReactions.length > 0 && (
+                          <span className="ml-0.5 text-xs font-semibold align-top">{emojiReactions.length}</span>
+                  )}
+                </button>
+                    );
+                  })}
+                </div>
+                {/* Avatars for users who reacted with each emoji (compact) */}
+                <div className="flex gap-2 mt-2">
+                  {ALLOWED_EMOJIS.map((emoji) => {
+                    const emojiReactions = reactionsByEmoji[emoji] || [];
+                    if (emojiReactions.length === 0) return null;
+                    return (
+                      <div key={emoji} className="flex flex-col items-center">
+                        <span className="text-xs">{emoji}</span>
+                        <div className="flex -space-x-2 mt-0.5">
+                          {emojiReactions.slice(0, 3).map((r: ItineraryItemReaction) => (
+                            <Avatar key={r.user_id} className="w-5 h-5 border-2 border-background">
+                              <AvatarFallback className="text-[10px]">{r.user_id.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  ))}
+                          {emojiReactions.length > 3 && (
+                            <span className="text-[10px] ml-1">+{emojiReactions.length - 3}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
 
       {/* Color accent based on category/type */}
       <div className={cn('absolute top-0 bottom-0 left-0 w-[3px]', displayInfo.color)}></div>
-    </div>
+    </motion.div>
   );
 };

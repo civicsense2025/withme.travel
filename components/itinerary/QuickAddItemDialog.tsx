@@ -275,70 +275,29 @@ export const QuickAddItemDialog: React.FC<QuickAddItemDialogProps> = ({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ITINERARY_CATEGORIES.ACCOMMODATIONS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ACCOMMODATIONS].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.TRANSPORTATION}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.TRANSPORTATION].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.FOOD_AND_DRINK}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_AND_DRINK].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FOOD_AND_DRINK].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.ICONIC_LANDMARKS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ICONIC_LANDMARKS].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.LOCAL_SECRETS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.LOCAL_SECRETS].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.NIGHTLIFE}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.NIGHTLIFE].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.RELAXATION}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.RELAXATION].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.SHOPPING}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.SHOPPING].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.ENTERTAINMENT}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ENTERTAINMENT].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.ENTERTAINMENT].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.HEALTH_AND_WELLNESS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.HEALTH_AND_WELLNESS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.HEALTH_AND_WELLNESS].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.EDUCATIONAL}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.EDUCATIONAL].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.EDUCATIONAL].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.PHOTOGRAPHY}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.PHOTOGRAPHY].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.PHOTOGRAPHY].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.OTHER}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OTHER].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.OTHER].label}
-                </SelectItem>
-                <SelectItem value={ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS}>
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS].emoji}{' '}
-                  {CATEGORY_DISPLAY[ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS].label}
-                </SelectItem>
+                {Array.from(new Set([
+                  ITINERARY_CATEGORIES.ACCOMMODATIONS,
+                  ITINERARY_CATEGORIES.TRANSPORTATION,
+                  ITINERARY_CATEGORIES.FOOD_AND_DRINK,
+                  ITINERARY_CATEGORIES.CULTURAL_EXPERIENCES,
+                  ITINERARY_CATEGORIES.OUTDOOR_ADVENTURES,
+                  ITINERARY_CATEGORIES.ICONIC_LANDMARKS,
+                  ITINERARY_CATEGORIES.LOCAL_SECRETS,
+                  ITINERARY_CATEGORIES.NIGHTLIFE,
+                  ITINERARY_CATEGORIES.RELAXATION,
+                  ITINERARY_CATEGORIES.SHOPPING,
+                  ITINERARY_CATEGORIES.ENTERTAINMENT,
+                  ITINERARY_CATEGORIES.HEALTH_AND_WELLNESS,
+                  ITINERARY_CATEGORIES.EDUCATIONAL,
+                  ITINERARY_CATEGORIES.PHOTOGRAPHY,
+                  ITINERARY_CATEGORIES.OTHER,
+                  ITINERARY_CATEGORIES.FLEXIBLE_OPTIONS,
+                ])).map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {CATEGORY_DISPLAY[cat as keyof typeof CATEGORY_DISPLAY]?.emoji}{' '}
+                    {CATEGORY_DISPLAY[cat as keyof typeof CATEGORY_DISPLAY]?.label || cat}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

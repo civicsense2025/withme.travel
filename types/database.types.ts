@@ -328,3 +328,80 @@ export interface Database {
     };
   };
 }
+
+// --- FIELD USAGE CLARIFICATION ---
+// For votes/itinerary_item_votes, use itinerary_item_id as the foreign key to itinerary_items
+// For trip_item_comments, content_customizations, content_quality_metrics, user_activity_history, content_sharing_history, use item_id as the foreign key to itinerary_items
+
+// Example for trip_item_comments:
+export interface TripItemComment {
+  id: string;
+  trip_id: string;
+  item_id: string; // Foreign key to itinerary_items
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Example for content_customizations:
+export interface ContentCustomization {
+  id: string;
+  item_id: string; // Foreign key to itinerary_items
+  user_id: string;
+  customization_type: string;
+  original_value: any;
+  customized_value: any;
+  is_private: boolean;
+  created_at: string;
+  updated_at: string;
+  metadata: any;
+}
+
+// Example for content_quality_metrics:
+export interface ContentQualityMetric {
+  id: string;
+  item_id: string; // Foreign key to itinerary_items
+  trip_id: string;
+  quality_score: number;
+  engagement_score: number;
+  popularity_score: number;
+  usage_count: number;
+  last_used_at: string;
+  created_at: string;
+  updated_at: string;
+  metadata: any;
+}
+
+// Example for user_activity_history:
+export interface UserActivityHistory {
+  id: string;
+  user_id: string;
+  item_id: string; // Foreign key to itinerary_items
+  interaction_type: string;
+  interaction_data: any;
+  created_at: string;
+  metadata: any;
+}
+
+// Example for content_sharing_history:
+export interface ContentSharingHistory {
+  id: string;
+  item_id: string; // Foreign key to itinerary_items
+  source_trip_id: string;
+  target_trip_id: string;
+  shared_by: string;
+  shared_at: string;
+  customizations: any;
+  metadata: any;
+}
+
+// --- ITINERARY ITEM REACTIONS ---
+// Allowed emojis: 👍, ❤️, 😂, 😮, 👎
+export interface ItineraryItemReaction {
+  id: string;
+  itinerary_item_id: string; // Foreign key to itinerary_items
+  user_id: string;
+  emoji: string; // One of allowed set
+  created_at: string; // ISO timestamp
+}

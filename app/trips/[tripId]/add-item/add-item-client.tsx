@@ -185,135 +185,84 @@ export function AddItineraryItemClient({
 
       <Tabs defaultValue="quickAdd" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="quickAdd">Quick Add</TabsTrigger>
+          <TabsTrigger value="quickAdd">Bulk Add Places</TabsTrigger>
           <TabsTrigger value="googleMaps">Google Maps URL</TabsTrigger>
         </TabsList>
         
         <TabsContent value="quickAdd" className="py-6">
           <Card className="max-w-2xl mx-auto">
-            <form onSubmit={handleSubmit}>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSubmitting(true);
+                setErrorMessage(null);
+                const formData = new FormData(e.currentTarget);
+                const rawInput = formData.get('bulkPlaces') as string;
+                const lines = rawInput
+                  .split('\n')
+                  .map((line) => line.trim())
+                  .filter((line) => line.length > 0);
+                if (lines.length === 0) {
+                  setErrorMessage('Please enter at least one place name.');
+                  setIsSubmitting(false);
+                  return;
+                }
+                // Call backend API to resolve all names (implement this route)
+                try {
+                  const response = await fetch(`/api/trips/${tripId}/bulk-places-search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ names: lines }),
+                  });
+                  const data = await response.json();
+                  if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to search places.');
+                  }
+                  // TODO: Show confirmation UI for user to select which places to import
+                  // For now, just show a toast and reset
+                  toast({
+                    title: 'Places Found',
+                    description: `Found ${data.places.length} places. (Confirmation UI coming soon)`
+                  });
+                  setIsSubmitting(false);
+                  e.currentTarget.reset();
+                } catch (err: any) {
+                  setErrorMessage(formatError(err));
+                  setIsSubmitting(false);
+                }
+              }}
+            >
               <CardHeader>
-                <CardTitle>Add Itinerary Item</CardTitle>
+                <CardTitle>Bulk Add Places</CardTitle>
                 <CardDescription>
-                  Add a new activity, accommodation, or transportation to your trip
+                  Paste or type multiple place names (one per line) to search and import them in bulk.
                 </CardDescription>
               </CardHeader>
-              
               <CardContent className="space-y-6">
                 {errorMessage && (
                   <Alert variant="destructive">
                     <AlertDescription>{errorMessage}</AlertDescription>
                   </Alert>
                 )}
-                
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input id="title" name="title" placeholder="Visit Sagrada Familia" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select name="type" required>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="activity">Activity</SelectItem>
-                      <SelectItem value="accommodation">Accommodation</SelectItem>
-                      <SelectItem value="transportation">Transportation</SelectItem>
-                      <SelectItem value="food">Food & Dining</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !date && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, 'PPP') : 'Select date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <Input id="startTime" name="startTime" type="time" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <Input id="endTime" name="endTime" type="time" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Location</Label>
-                  <MapboxGeocoderComponent
-                    onResult={handleGeocoderResult}
-                    options={
-                      {
-                        proximity: proximityValue,
-                        // types: 'poi,address,place',
-                      } as any
-                    }
-                  />
-                  {selectedPlace && (
-                    <div className="flex items-center gap-2 mt-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {selectedPlace.text || selectedPlace.place_name || 'Selected Location'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cost">Estimated Cost (per person)</Label>
-                  <Input id="cost" name="cost" type="number" min="0" step="0.01" placeholder="25.00" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="bulkPlaces">Place Names</Label>
                   <Textarea
-                    id="notes"
-                    name="notes"
-                    placeholder="Any additional details about this item"
-                    className="min-h-24"
+                    id="bulkPlaces"
+                    name="bulkPlaces"
+                    placeholder="E.g. Eiffel Tower\nLouvre Museum\nNotre Dame Cathedral"
+                    rows={8}
+                    required
                   />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="submit" size="sm" disabled={isSubmitting}>
+                    {isSubmitting ? 'Searching...' : 'Search & Import'}
+                  </Button>
                 </div>
               </CardContent>
-              
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" type="button" onClick={() => router.back()}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Adding...' : 'Add to Itinerary'}
-                </Button>
-              </CardFooter>
             </form>
           </Card>
         </TabsContent>
-        
         <TabsContent value="googleMaps" className="py-6">
           <Card className="max-w-2xl mx-auto">
             <CardHeader>

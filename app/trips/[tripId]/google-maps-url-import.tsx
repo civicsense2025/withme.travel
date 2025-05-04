@@ -72,12 +72,25 @@ export default function GoogleMapsUrlImport({
     }
 
     setLoading(true);
+    setPreviewMode(false);
+    setPlaces([]);
+    setListTitle(null);
+    
     try {
+      toast({
+        title: "Fetching Places",
+        description: "This might take a moment...",
+      });
+      
       const response = await fetch(`/api/google-maps/parse?url=${encodeURIComponent(url)}`);
       const data = await response.json();
 
       if (!data.success) {
         throw new Error(data.error || 'Could not parse Google Maps list');
+      }
+
+      if (!data.places || data.places.length === 0) {
+        throw new Error('No places found in this Google Maps list');
       }
 
       // Initialize places with selected flag
@@ -89,12 +102,20 @@ export default function GoogleMapsUrlImport({
       );
       setListTitle(data.listTitle || null);
       setPreviewMode(true);
+      
+      toast({
+        title: "Found Places",
+        description: `Successfully loaded ${data.places.length} places from "${data.listTitle || 'Google Maps'}"`,
+      });
     } catch (error: any) {
+      setLoading(false);
+      setPreviewMode(false);
       toast({
         title: "Error",
         description: error.message || "Failed to parse Google Maps list",
         variant: "destructive",
       });
+      console.error("Google Maps parsing error:", error);
     } finally {
       setLoading(false);
     }
@@ -131,13 +152,21 @@ export default function GoogleMapsUrlImport({
 
     setImportLoading(true);
     try {
+      toast({
+        title: "Importing Places",
+        description: "Adding selected places to your trip...",
+      });
+
       // Use the direct import endpoint instead of manually adding items
       const response = await fetch(`/api/trips/${tripId}/import-google-maps`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ 
+          url,
+          selectedPlaceIds: selectedPlaces.map(place => place.placeId).filter(Boolean)
+        }),
       });
 
       const data = await response.json();
@@ -154,12 +183,17 @@ export default function GoogleMapsUrlImport({
       if (onSuccess) {
         onSuccess();
       }
+      
+      if (onClose) {
+        onClose();
+      }
     } catch (error: any) {
       toast({
         title: "Import Failed",
         description: error.message || "Failed to import places to your trip",
         variant: "destructive",
       });
+      console.error("Import error:", error);
     } finally {
       setImportLoading(false);
     }

@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/types/supabase';
-import { createBrowserClient } from '@/utils/supabase/client';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 
 export type Tag = {
   id: string;
@@ -26,7 +26,7 @@ export type TagSuggestion = {
 export function useTags() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createBrowserClient();
+  const supabase = getBrowserClient();
 
   const getDestinationTags = useCallback(
     async (destinationId: string) => {

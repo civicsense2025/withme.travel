@@ -275,8 +275,8 @@ export function MembersTab({
           joined_at: updatedRequest.new_member.joined_at || new Date().toISOString(),
           profiles: {
             id: updatedRequest.new_member.user_id, // Assuming profile ID is user ID
-            name: updatedRequest.user_profile?.name || 'Unknown',
-            avatar_url: updatedRequest.user_profile?.avatar_url || null,
+            name: updatedRequest.user_profile?.name ?? 'Unknown',
+            avatar_url: updatedRequest.user_profile?.avatar_url ?? null,
           },
         };
         setMembers((prev) => [...prev, newMemberSSR]);

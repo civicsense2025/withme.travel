@@ -168,3 +168,52 @@ export function validateSession(session: Session | null): AuthError | null {
 
   return null;
 }
+
+/**
+ * Clears all auth cookies and performs a clean session refresh
+ * Used to recover from corrupted cookie states
+ */
+export async function clearAndRefreshAuthCookies(): Promise<void> {
+  try {
+    console.log('[Auth] Clearing and refreshing auth cookies');
+    
+    // First, try clearing specific cookies that might be causing issues
+    const cookiesToClear = [
+      'sb-access-token',
+      'sb-refresh-token',
+      'supabase-auth-token',
+      '__session',
+      'withme.auth.token'
+    ];
+    
+    // Clear each cookie by setting to empty and expiring
+    cookiesToClear.forEach(cookieName => {
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+      // Also try with domain attribute
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname};`;
+    });
+    
+    // Make a request to the API endpoint that will force new cookies to be set
+    const response = await fetch('/api/auth/clear-cookies', {
+      method: 'POST',
+      credentials: 'include', // Important for cookie operations
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    // Check if the request was successful
+    if (!response.ok) {
+      throw new Error(`Failed to clear cookies: ${response.status} ${response.statusText}`);
+    }
+    
+    console.log('[Auth] Cookies cleared and refreshed successfully');
+    
+    // After clearing cookies, reload the page to get a fresh session
+    window.location.reload();
+  } catch (error) {
+    console.error('[Auth] Error clearing and refreshing cookies:', error);
+    // Force a page reload anyway as a last resort
+    window.location.reload();
+  }
+}

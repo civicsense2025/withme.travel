@@ -3,7 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/types/supabase';
 import { Tag } from '@/hooks/use-tags';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { createBrowserClient } from '@/utils/supabase/client';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 
 export interface UserInterest {
   id: string;
@@ -16,7 +16,7 @@ export function useInterests() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const supabase = createBrowserClient();
+  const supabase = getBrowserClient();
 
   const getUserInterests = useCallback(async () => {
     if (!supabase) {

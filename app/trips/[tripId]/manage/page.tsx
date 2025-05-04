@@ -89,7 +89,7 @@ export default function ManageTripPage() {
 
   const checkAuth = useCallback(async () => {
     try {
-      const response = await fetch(API_ROUTES.AUTH_CHECK);
+      const response = await fetch(API_ROUTES.AUTH_ME);
       const data = await response.json();
 
       if (!data.user) {

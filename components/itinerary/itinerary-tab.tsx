@@ -494,95 +494,109 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
           const isSameDay = targetDayNumber === activeItemData.day_number;
           const isSamePosition = targetPosition === activeItemData.position;
           
-          if (!isSameDay || !isSamePosition) {
-            // Find the target container ID for renormalizing positions
-            const targetContainerId = targetDayNumber === null ? 'unscheduled' : `day-${targetDayNumber}`;
-            
-            // First, update the day_number of the dragged item
-            const newItems = itineraryItems.map((item) => {
+          if (!over || (!overData && !isSameDay && !isSamePosition)) {
+            // Defensive: if no valid drop target, just reset
+            setActiveId(null);
+            setActiveType(null);
+            setActiveItem(null);
+            return;
+          }
+
+          // If dropped in the same slot, do nothing
+          if (isSameDay && isSamePosition) {
+            setActiveId(null);
+            setActiveType(null);
+            setActiveItem(null);
+            return;
+          }
+
+          // Find the target container ID for renormalizing positions
+          const targetContainerId = targetDayNumber === null ? 'unscheduled' : `day-${targetDayNumber}`;
+          
+          // First, update the day_number of the dragged item
+          const newItems = itineraryItems.map((item) => {
+            if (item.id === activeId) {
+              return { ...item, day_number: targetDayNumber };
+            }
+            return item;
+          });
+          
+          // Then, adjust all positions of items in the target container
+          const itemsInTargetContainer = newItems.filter((item) => item.day_number === targetDayNumber);
+          
+          // When dropping at a specific position, we need to shift items accordingly
+          let adjustedItems = [...newItems];
+          
+          // Make space for the item at targetPosition by incrementing position of all items at or after targetPosition
+          if (!isSameDay || (isSameDay && targetPosition !== activeItemData.position)) {
+            adjustedItems = adjustedItems.map((item) => {
               if (item.id === activeId) {
-                return { ...item, day_number: targetDayNumber };
-              }
-              return item;
-            });
-            
-            // Then, adjust all positions of items in the target container
-            const itemsInTargetContainer = newItems.filter((item) => item.day_number === targetDayNumber);
-            
-            // When dropping at a specific position, we need to shift items accordingly
-            let adjustedItems = [...newItems];
-            
-            // Make space for the item at targetPosition by incrementing position of all items at or after targetPosition
-            if (!isSameDay || (isSameDay && targetPosition !== activeItemData.position)) {
-              adjustedItems = adjustedItems.map((item) => {
-                if (item.id === activeId) {
-                  // The dragged item gets the target position
-                  return { ...item, day_number: targetDayNumber, position: targetPosition };
-                } else if (item.day_number === targetDayNumber) {
-                  const itemPos = item.position || 0;
-                  const activeItemPos = activeItemData.position ?? 0;
-                  
-                  if (isSameDay) {
-                    // Special handling for same-day reordering
-                    if (targetPosition > activeItemPos) {
-                      // Moving down: Decrement positions for items between old and new position
-                      if (itemPos > activeItemPos && itemPos <= targetPosition) {
-                        return { ...item, position: itemPos - 1 };
-                      }
-                    } else if (targetPosition < activeItemPos) {
-                      // Moving up: Increment positions for items between new and old position
-                      if (itemPos >= targetPosition && itemPos < activeItemPos) {
-                        return { ...item, position: itemPos + 1 };
-                      }
+                // The dragged item gets the target position
+                return { ...item, day_number: targetDayNumber, position: targetPosition };
+              } else if (item.day_number === targetDayNumber) {
+                const itemPos = item.position || 0;
+                const activeItemPos = activeItemData.position ?? 0;
+                
+                if (isSameDay) {
+                  // Special handling for same-day reordering
+                  if (targetPosition > activeItemPos) {
+                    // Moving down: Decrement positions for items between old and new position
+                    if (itemPos > activeItemPos && itemPos <= targetPosition) {
+                      return { ...item, position: itemPos - 1 };
                     }
-                  } else {
-                    // For items moving to a new day
-                    // Increment positions for items at or after the target position
-                    if (itemPos >= targetPosition) {
+                  } else if (targetPosition < activeItemPos) {
+                    // Moving up: Increment positions for items between new and old position
+                    if (itemPos >= targetPosition && itemPos < activeItemPos) {
                       return { ...item, position: itemPos + 1 };
                     }
                   }
-                } else if (item.day_number === activeItemData.day_number && item.id !== activeId) {
-                  // For items in the original day (if different from target day)
-                  // Decrement positions for items after the original position of the moved item
-                  const itemPos = item.position || 0;
-                  const activeItemPos = activeItemData.position ?? 0;
-                  
-                  if (itemPos > activeItemPos) {
-                    return { ...item, position: itemPos - 1 };
+                } else {
+                  // For items moving to a new day
+                  // Increment positions for items at or after the target position
+                  if (itemPos >= targetPosition) {
+                    return { ...item, position: itemPos + 1 };
                   }
                 }
-                return item;
-              });
-            }
-            
-            // Use renormalizePositions to clean up any gaps in positioning
-            const finalItems = renormalizePositions(adjustedItems, targetContainerId);
-            setItineraryItems(finalItems);
-            
-            // Send update to backend
-            await onReorder({
-              itemId: activeId,
-              newDayNumber: targetDayNumber,
-              newPosition: targetPosition,
+              } else if (item.day_number === activeItemData.day_number && item.id !== activeId) {
+                // For items in the original day (if different from target day)
+                // Decrement positions for items after the original position of the moved item
+                const itemPos = item.position || 0;
+                const activeItemPos = activeItemData.position ?? 0;
+                
+                if (itemPos > activeItemPos) {
+                  return { ...item, position: itemPos - 1 };
+                }
+              }
+              return item;
             });
-            
-            // Show appropriate toast message
-            if (!isSameDay) {
-              toast({
-                title: 'Item moved',
-                description: targetDayNumber === null 
-                  ? 'Item moved to unscheduled items' 
-                  : `Item moved to Day ${targetDayNumber}`,
-                duration: 2000,
-              });
-            } else {
-              toast({
-                title: 'Order updated',
-                description: 'Item position saved',
-                duration: 2000,
-              });
-            }
+          }
+          
+          // Use renormalizePositions to clean up any gaps in positioning
+          const finalItems = renormalizePositions(adjustedItems, targetContainerId);
+          setItineraryItems(finalItems);
+          
+          // Send update to backend
+          await onReorder({
+            itemId: activeId,
+            newDayNumber: targetDayNumber,
+            newPosition: targetPosition,
+          });
+          
+          // Show appropriate toast message
+          if (!isSameDay) {
+            toast({
+              title: 'Item moved',
+              description: targetDayNumber === null 
+                ? 'Item moved to unscheduled items' 
+                : `Item moved to Day ${targetDayNumber}`,
+              duration: 2000,
+            });
+          } else {
+            toast({
+              title: 'Order updated',
+              description: 'Item position saved',
+              duration: 2000,
+            });
           }
         }
         // CASE 2: Section being dragged
@@ -797,22 +811,24 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
               return (
                 <div key={sectionId} id={sectionId} className="scroll-mt-16">
                   <SortableSection id={sectionId} disabled={!canEdit}>
-                    <ItineraryDaySection
-                      startDate={startDate}
-                      dayNumber={dayNumber as number}
-                      items={itemsForSection}
-                      onVote={onVote}
-                      onStatusChange={onItemStatusChange}
-                      onDelete={onDeleteItem}
-                      canEdit={canEdit}
-                      onEditItem={onEditItem}
-                      onAddItemToDay={() => handleAddItemToDay(dayNumber)}
-                      onMoveItem={(itemId, targetDay) => {
-                        return; // Handle move item logic if needed
-                      }}
-                      durationDays={durationDays}
-                      containerId={sectionId}
-                    />
+                    <SortableItem key={dayNumber} id={String(dayNumber)} containerId={sectionId} disabled={!canEdit}>
+                      <ItineraryDaySection
+                        startDate={startDate}
+                        dayNumber={dayNumber as number}
+                        items={itemsForSection}
+                        onVote={onVote}
+                        onStatusChange={onItemStatusChange}
+                        onDelete={onDeleteItem}
+                        canEdit={canEdit}
+                        onEditItem={onEditItem}
+                        onAddItemToDay={() => handleAddItemToDay(dayNumber)}
+                        onMoveItem={(itemId, targetDay) => {
+                          return; // Handle move item logic if needed
+                        }}
+                        durationDays={durationDays}
+                        containerId={sectionId}
+                      />
+                    </SortableItem>
                   </SortableSection>
                 </div>
               );
@@ -825,7 +841,14 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
           activeItem &&
           createPortal(
             <DragOverlay adjustScale={false} dropAnimation={dropAnimation}>
-              <ItineraryItemCard item={activeItem} isOverlay={true} />
+              <SortableItem
+                id={activeItem.id}
+                containerId={activeItem.day_number ?? 'unscheduled'}
+                layoutId={`sortable-item-${activeItem.id}`}
+                disabled={true}
+              >
+                <ItineraryItemCard item={activeItem} isOverlay={true} />
+              </SortableItem>
             </DragOverlay>,
             document.body
           )}

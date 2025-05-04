@@ -1,64 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 // This endpoint clears all authentication cookies and local storage, to help resolve issues with corrupted auth data
 // Changed from GET to POST for better security (state-changing operations should use POST)
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
-
-    // Try to sign out from Supabase first (if there's an active session)
-    try {
-      await supabase.auth.signOut({ scope: 'global' });
-      console.log('API Clear Cookies: Successfully signed out active session');
-    } catch (signOutError) {
-      console.warn('API Clear Cookies: Could not sign out active session', signOutError);
-      // Continue with cookie clearing even if sign out fails
-    }
-
-    // Clear all Supabase auth-related cookies (expanded list)
-    const cookiesToClear = [
-      // Original cookies
-      'supabase-auth-token',
-      'sb-refresh-token',
+    console.log('[API] Clearing authentication cookies');
+    
+    // List of common auth-related cookies that might need clearing
+    const authCookies = [
       'sb-access-token',
-      '__supabase_session_id',
-
-      // Additional cookies used by newer versions
-      '__supabase_auth_token',
-      'supabase-auth-refresh-token',
-      'sb-provider-token',
-      'sb-callback',
-
-      // App-specific cookies that might store auth state
-      'auth_redirect',
-      'auth_state',
-      'user_session',
-      'auth_state',
-      'user_session',
-      'is_authenticated',
+      'sb-refresh-token',
+      'supabase-auth-token',
+      '__session',
+      'withme.auth.token'
     ];
-
-    // Create response for cookie clearing
+    
+    // Create a Supabase client that will automatically set the correct cookies when signing out
+    const supabase = await createRouteHandlerClient();
+    
+    // Sign out to ensure all auth state is cleared
+    await supabase.auth.signOut();
+    
+    // Create response with cleared cookies
     const response = NextResponse.json(
-      {
-        success: true,
-        message: "You're now logged out. Your session has been cleared.",
-        details: {
-          cookies_cleared: cookiesToClear,
-        },
-      },
+      { success: true, message: 'Authentication cookies cleared successfully' },
       { status: 200 }
     );
-
-    // Set headers to prevent caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    response.headers.set('Pragma', 'no-cache');
-    response.headers.set('Expires', '0');
-
-    // Set expired cookies to clear them
-    cookiesToClear.forEach((cookieName) => {
-      console.log(`API Clear Cookies: Clearing cookie: ${cookieName}`);
+    
+    // Explicitly set all cookies to expired in the response
+    for (const cookieName of authCookies) {
       response.cookies.set({
         name: cookieName,
         value: '',
@@ -66,20 +36,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         path: '/',
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
       });
-    });
-
-    console.log(`API Clear Cookies: Cleared ${cookiesToClear.length} cookies`);
-
+    }
+    
     return response;
   } catch (error) {
-    console.error('Error clearing auth cookies:', error);
+    console.error('[API] Error clearing cookies:', error);
+    
+    // Return error response
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to clear authentication cookies',
-      },
+      { success: false, message: 'Failed to clear authentication cookies' },
       { status: 500 }
     );
   }

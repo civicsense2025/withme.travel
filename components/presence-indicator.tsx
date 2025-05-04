@@ -13,6 +13,22 @@ type User = {
   last_active: number;
 };
 
+function getProfileInitials(user: any): string {
+  const name = user?.profile?.name;
+  if (name && typeof name === 'string') {
+    return name
+      .split(' ')
+      .map((part: string) => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  }
+  if (user?.email) {
+    return user.email.charAt(0).toUpperCase();
+  }
+  return 'U';
+}
+
 export function PresenceIndicator() {
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const params = useParams();
@@ -120,12 +136,15 @@ export function PresenceIndicator() {
           <TooltipProvider key={user.id}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Avatar className="h-6 w-6 border-2 border-background">
-                  <AvatarImage
-                    src={user.avatar_url || `/api/avatar?name=${encodeURIComponent(user.name)}`}
-                    alt={user.name}
-                  />
-                  <AvatarFallback>{(user.name || '').substring(0, 2).toUpperCase()}</AvatarFallback>
+                <Avatar className="h-8 w-8">
+                  {user.avatar_url ? (
+                    <AvatarImage
+                      src={user.avatar_url}
+                      alt={user.name}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : null}
+                  <AvatarFallback>{getProfileInitials(user)}</AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent side="bottom">{user.name}</TooltipContent>
@@ -136,7 +155,7 @@ export function PresenceIndicator() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Avatar className="h-6 w-6 border-2 border-background">
+                <Avatar className="h-8 w-8">
                   <AvatarFallback>+{recentlyActiveUsers.length - 5}</AvatarFallback>
                 </Avatar>
               </TooltipTrigger>

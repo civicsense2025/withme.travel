@@ -14,7 +14,7 @@ export async function POST(
 
   // Extract the Google Maps URL from the request body
   try {
-    const { url } = await request.json();
+    const { url, selectedPlaceIds = [] } = await request.json();
 
     if (!url) {
       return NextResponse.json(
@@ -59,11 +59,26 @@ export async function POST(
       );
     }
 
+    // Filter places to only include those selected by the user (if specified)
+    let placesToImport = result.places;
+    if (selectedPlaceIds.length > 0) {
+      placesToImport = result.places.filter(place => 
+        place.placeId && selectedPlaceIds.includes(place.placeId)
+      );
+    }
+    
+    if (placesToImport.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No valid places selected to import' },
+        { status: 400 }
+      );
+    }
+
     // Process the places and add them to our database
-    await processAndStorePlaces(supabase, result.places, session.user.id);
+    await processAndStorePlaces(supabase, placesToImport, session.user.id);
 
     // Convert places to itinerary items
-    const itineraryItems = convertToItineraryItems(result.places, tripId);
+    const itineraryItems = convertToItineraryItems(placesToImport, tripId);
 
     // Insert the itinerary items into the trip
     const { data: insertedItems, error: insertError } = await supabase
