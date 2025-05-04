@@ -9,13 +9,22 @@
 
 # production
 /build
-/components/presence/*
+/components/presence/
 /components/trips/trip-presence-indicator.tsx
-/mobile/*
-/utils/testing/*
-/__tests__/*
-/__mocks__/*
+/mobile/
+/utils/testing/
+/__tests__/
+/__mocks__/
 /app/design-sandbox
+/migrations
+/supabase
+/schema
+/scripts
+/__tests__/
+/tmp
+/_disabled_features
+/fixes
+/docs
 
 # debug
 npm-debug.log*
@@ -38,3 +47,15 @@ next-env.d.ts
 .env.sentry-build-plugin
 
 *storybook.log
+
+# Test/coverage outputs
+/coverage
+/playwright-report
+/test-results
+
+# System files
+.DS_Store
+
+# Editor/IDE settings
+.vscode
+.idea
