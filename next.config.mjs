@@ -130,7 +130,7 @@ const nextConfig = {
     return config;
   },
   // Exclude specific directories from build process
-  distDir: 'build',
+  //distDir: 'build',
   // Explicitly specify which directories to exclude from build process
   onDemandEntries: {
     maxInactiveAge: 60 * 1000,
