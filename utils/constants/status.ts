@@ -21,6 +21,34 @@ export const TRIP_ROLES = {
 
 export type TripRole = (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
 
+// ======= GROUP MEMBER ROLES =======
+export const GROUP_MEMBER_ROLES = {
+  OWNER: 'owner',
+  ADMIN: 'admin',
+  MEMBER: 'member',
+} as const;
+
+export type GroupMemberRole = (typeof GROUP_MEMBER_ROLES)[keyof typeof GROUP_MEMBER_ROLES];
+
+// ======= GROUP MEMBER STATUSES =======
+export const GROUP_MEMBER_STATUSES = {
+  INVITED: 'invited',
+  ACTIVE: 'active',
+  LEFT: 'left',
+  REMOVED: 'removed',
+} as const;
+
+export type GroupMemberStatus = (typeof GROUP_MEMBER_STATUSES)[keyof typeof GROUP_MEMBER_STATUSES];
+
+// ======= GROUP VISIBILITY =======
+export const GROUP_VISIBILITY = {
+  PRIVATE: 'private',
+  SHARED_WITH_LINK: 'shared_with_link',
+  PUBLIC: 'public',
+} as const;
+
+export type GroupVisibility = (typeof GROUP_VISIBILITY)[keyof typeof GROUP_VISIBILITY];
+
 // ======= ITEM STATUSES =======
 export const ITEM_STATUSES = {
   SUGGESTED: 'suggested',

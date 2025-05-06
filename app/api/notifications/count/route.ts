@@ -1,25 +1,35 @@
-import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TABLES, FIELDS } from '@/utils/constants/database';
 
+/**
+ * GET route handler for fetching notification counts
+ */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const supabase = await createRouteHandlerClient();
-  const { data, error: authError } = await supabase.auth.getSession();
-
-  if (authError || !data.session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   try {
-    // Use the stored function to get unread count
-    const { data: countData, error } = await supabase.rpc('get_unread_notification_count', {
-      user_id_param: data.session.user.id,
-    });
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (error) throw error;
+    // Get count of unread notifications
+    const { count, error } = await supabase
+      .from(TABLES.NOTIFICATIONS)
+      .select('*', { count: 'exact', head: true })
+      .eq(FIELDS.NOTIFICATIONS.USER_ID, user.id)
+      .eq(FIELDS.NOTIFICATIONS.READ, false);
 
-    return NextResponse.json({ count: countData });
+    if (error) {
+      console.error('Error fetching notification count:', error);
+      return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
+    }
+
+    return NextResponse.json({ count: count || 0 });
   } catch (error) {
-    console.error('Error fetching notification count:', error);
-    return NextResponse.json({ error: 'Failed to fetch notification count' }, { status: 500 });
+    console.error('Unexpected error in notifications/count:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database';
+import { TABLES, FIELDS } from '@/utils/constants/database';
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
   TRIP_MEMBERS: string;
@@ -65,17 +65,31 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     // Ensure interests is an array
     const interests = Array.isArray(updateData.interests) ? updateData.interests : [];
 
+    // Build update object
+    const updateObj: Record<string, any> = {
+      name: updateData.name,
+      bio: updateData.bio,
+      location: updateData.location,
+      avatar_url: updateData.avatar_url,
+      interests: interests,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Add onboarding fields if present
+    if (typeof updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED] !== 'undefined') {
+      updateObj[FIELDS.PROFILES.ONBOARDING_COMPLETED] = updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED];
+    }
+    if (typeof updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED_AT] !== 'undefined') {
+      updateObj[FIELDS.PROFILES.ONBOARDING_COMPLETED_AT] = updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED_AT];
+    }
+    if (typeof updateData[FIELDS.PROFILES.ONBOARDING_STEP] !== 'undefined') {
+      updateObj[FIELDS.PROFILES.ONBOARDING_STEP] = updateData[FIELDS.PROFILES.ONBOARDING_STEP];
+    }
+
     // Update user profile
     const { data, error } = await supabase
       .from(Tables.PROFILES)
-      .update({
-        name: updateData.name,
-        bio: updateData.bio,
-        location: updateData.location,
-        avatar_url: updateData.avatar_url,
-        interests: interests,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateObj)
       .eq('id', userData.user.id)
       .select();
 

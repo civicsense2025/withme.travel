@@ -19,17 +19,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Create Supabase client for signing out using our utility
     const supabase = await createRouteHandlerClient();
 
-    // Get user ID *before* signing out
+    // Get user ID *before* signing out (use getUser for safety)
     try {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        userId = session.user.id;
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+      }
+      if (userError) {
+        console.warn('[Auth] Failed to get user before logout:', userError);
       }
       console.log(`[Auth] Attempting logout for user: ${userId}`);
-    } catch (sessionError) {
-      console.warn('[Auth] Failed to get session before logout:', sessionError);
+    } catch (getUserError) {
+      console.warn('[Auth] Unexpected error getting user before logout:', getUserError);
     }
 
     // Attempt to sign out

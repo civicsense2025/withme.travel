@@ -382,3 +382,32 @@ _(Reflecting focus on core Trip Building & Management)_
 - **TypeScript Patterns:** Use strict types, single source of truth for types/constants, and defensive state management to prevent UI bugs and infinite loading.
 - **Debugging:** Add clear debug logs for all critical auth and navigation state changes to speed up troubleshooting.
 - **UI/UX:** Consistent, accessible, and delightful navigation and user menu improve user trust and experience.
+
+## [2025-05-04] - Groups Landing Page & Invite Flow Overhaul
+
+### Added
+- `/groups` is now a public landing page for logged-out users, with a friendly hero, "How it works" steps, testimonials, and a demo of the invite flow.
+- **InviteLinkBox** supports one-tap invites via SMS, WhatsApp, Instagram DM (opens Direct inbox), Email, and Copy Link. All options are mobile-first and resilient, with clear microcopy for desktop users and Instagram's limitations.
+- **Split experience:**
+  - Logged-in users see their groups dashboard as before.
+  - Visitors see the new landing page and can start the group creation flow without signing up.
+- Defensive, accessible, and modern UX for all invite flows.
+- **Onboarding & Invite Flow Improvements:**
+  - Added Instagram DM (`instagram://direct-inbox`) as a new invite option, allowing users to quickly open Instagram Direct and paste the invite link to friends.
+  - Updated onboarding flow for new users: visitors can now start group creation and invite friends before signing up, reducing friction and making the experience more viral and social.
+  - Improved microcopy and tooltips to guide users through sharing on Instagram, WhatsApp, SMS, and Email.
+
+### Changed
+- `/groups/page.tsx` no longer redirects unauthenticated users; it checks session and renders the appropriate view.
+- `GroupsLandingPage` and `InviteLinkBox` are now used for both demo and real invite flows.
+- Onboarding is now more seamless for new users, with a focus on quick group creation and sharing before authentication.
+
+### Rationale
+- Dramatically lowers friction for new users to start planning and inviting friends.
+- Emphasizes mobile-first, viral group formation and sharing, including Instagram DM as a key channel for Gen Z and Millennial users.
+- Sets the stage for even faster onboarding and group creation in future updates.
+
+### Next Steps
+- Wire up "Create a Group" CTA for logged-out users to the quick group creation modal/flow.
+- Add more testimonials, visuals, and polish to the landing page.
+- Add analytics for invite method usage and onboarding completion.

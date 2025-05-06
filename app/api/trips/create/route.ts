@@ -10,6 +10,7 @@ import { randomBytes } from 'crypto';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import { cookies } from 'next/headers';
 import { ITEM_STATUSES } from '@/utils/constants/status';
+import crypto from 'crypto';
 
 // Constants for logging prefixes
 const LOG_PREFIX = '[Trip Create API]';
@@ -301,8 +302,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const tagIds = await processTags(supabaseAdmin, tags);
 
     // --- Handle Trip Creation --- START
-    const tripData = {
-      name: title,
+    const tripData: Record<string, any> = {
+      name,
       description,
       start_date,
       end_date,
@@ -495,6 +496,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       trip_tags: createdTagIds,
       itinerary: itineraryResponse,
     };
+
+    // We need to generate a guest token for non-authenticated users
+    if (!user) {
+      const cookieStore = await cookies();
+      const existingGuestToken = cookieStore.get('guest_trip_token')?.value;
+      const guestToken = existingGuestToken || crypto.randomBytes(32).toString('hex');
+      
+      // Add guest token to trip data
+      tripData.guest_token = guestToken;
+      tripData.guest_ip = (request.headers.get('x-forwarded-for') || '').split(',')[0] || request.headers.get('x-real-ip') || null;
+      
+      // Set cookie with the guest token
+      const response = NextResponse.json(tripResponse, { status: 200 });
+      response.cookies.set('guest_trip_token', guestToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: '/',
+      });
+      
+      return response;
+    }
 
     return NextResponse.json(tripResponse, { status: 200 });
   } catch (error) {

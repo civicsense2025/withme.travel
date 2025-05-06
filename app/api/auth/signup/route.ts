@@ -3,6 +3,7 @@ import { rateLimit, withRateLimit } from '@/utils/middleware/rate-limit';
 import { sanitizeAuthCredentials, sanitizeString } from '@/utils/sanitize';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
+import plunk from '@/app/lib/plunk';
 
 // Validate email format with a better regex
 const isValidEmail = (email: string): boolean => {
@@ -93,6 +94,23 @@ async function signupHandler(request: NextRequest): Promise<NextResponse> {
     }
 
     // Return success response
+    if (newUserId) {
+      try {
+        if (typeof newUserEmail === 'string') {
+          // Send Plunk event for signup
+          await plunk.events.track({
+            event: 'user_signup_initiated',
+            email: newUserEmail,
+            data: {
+              name: username || newUserEmail.split('@')[0] || 'New User',
+              verification_link: `${request.nextUrl.origin}/auth/callback`,
+            },
+          });
+        }
+      } catch (plunkError) {
+        console.error('Failed to trigger Plunk signup event:', plunkError);
+      }
+    }
     return NextResponse.json(
       {
         success: true,

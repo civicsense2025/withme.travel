@@ -1,17 +1,9 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database';
+import { TABLES, FIELDS as DB_FIELDS } from '@/utils/constants/database';
 
 // Define constants for tables/fields not in the imported constants
-const ITINERARY_TABLES = {
-  ITINERARY_TEMPLATES: 'itinerary_templates',
-  ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
-  ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items',
-  DESTINATIONS: 'destinations',
-  PROFILES: 'profiles',
-};
-
-const FIELDS = {
+const ITINERARY_FIELDS = {
   ITINERARY_TEMPLATES: {
     IS_PUBLISHED: 'is_published',
     CREATED_AT: 'created_at',
@@ -20,56 +12,154 @@ const FIELDS = {
   PROFILES: {
     ID: 'id',
   },
+  COMMON: {
+    CREATED_AT: 'created_at',
+  },
 };
+
+/**
+ * Check if a user is an admin
+ */
+async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
+  if (!userId) return false;
+  
+  try {
+    const { data, error } = await supabase
+      .from(TABLES.PROFILES)
+      .select('is_admin')
+      .eq('id', userId)
+      .single();
+    
+    if (error || !data) {
+      console.error('[API] Error checking admin status:', error);
+      return false;
+    }
+    
+    return !!data.is_admin;
+  } catch (error) {
+    console.error('[API] Error checking admin status:', error);
+    return false;
+  }
+}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const supabase = await createRouteHandlerClient();
+  console.log('[API] GET /api/itineraries - Starting request');
 
   try {
-    // Get user for authorization (but don't require it for public templates)
+    // Get user for authorization 
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    
+    console.log('[API] Fetching itinerary templates...');
+    console.log(`[API] User authenticated: ${!!user}`);
 
-    console.log('Fetching itineraries...');
+    // DEBUG: Print the table name being queried
+    console.log(`[API] Querying table: ${TABLES.ITINERARY_TEMPLATES}`);
 
-    // Get published itineraries - fixed query to use proper join
-    const { data, error } = await supabase
-      .from(ITINERARY_TABLES.ITINERARY_TEMPLATES)
-      .select(
-        `
+    // Initialize the query to select templates with destinations
+    let query = supabase
+      .from(TABLES.ITINERARY_TEMPLATES)
+      .select(`
         *,
-        ${ITINERARY_TABLES.DESTINATIONS}(*),
-        creator:${FIELDS.ITINERARY_TEMPLATES.CREATED_BY}(id, email, raw_user_meta_data)
-      `
-      )
-      .eq(FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true)
-      .order(FIELDS.ITINERARY_TEMPLATES.CREATED_AT, { ascending: false });
+        ${TABLES.DESTINATIONS}(*)
+      `)
+      .order(DB_FIELDS.COMMON.CREATED_AT, { ascending: false });
 
-    if (error) {
-      console.error('Error fetching itineraries:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Apply filters based on authentication status and admin status
+    let data;
+    let templatesError;
+
+    if (user) {
+      // Check if the user is an admin
+      const isAdmin = await isAdminUser(supabase, user.id);
+      console.log(`[API] User ${user.id} is admin: ${isAdmin}`);
+      
+      if (isAdmin) {
+        // Admin users can see all templates
+        console.log('[API] Admin user - fetching all templates');
+        const result = await query;
+        data = result.data;
+        templatesError = result.error;
+      } else {
+        // Regular authenticated users: show published templates + their drafts
+        console.log(`[API] Regular user ${user.id} - fetching published templates and user's drafts`);
+        const result = await query.or(
+          `${DB_FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED}.eq.true,${DB_FIELDS.ITINERARY_TEMPLATES.CREATED_BY}.eq.${user.id}`
+        );
+        data = result.data;
+        templatesError = result.error;
+      }
+    } else {
+      // For unauthenticated users: only show published templates
+      console.log('[API] Unauthenticated request, fetching only published templates');
+      const result = await query.eq(DB_FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true);
+      data = result.data;
+      templatesError = result.error;
+    }
+    
+    // Use let for templatesData so we can modify it later
+    let templatesData = data;
+
+    if (templatesError) {
+      console.error('[API] Error fetching itineraries:', templatesError);
+      return NextResponse.json({ error: templatesError.message }, { status: 500 });
     }
 
-    console.log(`Found ${data?.length || 0} itineraries`);
-
-    if (data && Array.isArray(data)) {
-      // Transform creator data to match the expected format
-      // Use type assertion to handle the data structure
-      (data as any[]).forEach(item => {
-        if (item.creator && item.creator.raw_user_meta_data) {
-          item.creator = {
-            id: item.creator.id,
-            name: item.creator.raw_user_meta_data.name || item.creator.email?.split('@')[0] || 'Unknown User',
-            avatar_url: item.creator.raw_user_meta_data.avatar_url || null
-          };
-        }
+    console.log(`[API] Found ${templatesData?.length || 0} itinerary templates`);
+    
+    // Debug ALL templates to understand the differences
+    if (templatesData && templatesData.length > 0) {
+      console.log(`[API] First template - Title: ${templatesData[0].title}, ID: ${templatesData[0].id}, Published: ${templatesData[0].is_published}`);
+      
+      // Log a summary of all templates
+      console.log('[API] Template summary:');
+      templatesData.forEach((template, index) => {
+        console.log(`[API] - #${index + 1}: ID: ${template.id}, Title: ${template.title}, Published: ${template.is_published}, Created by: ${template.created_by}`);
       });
+
+      if (user) {
+        // Log the breakdown between published and user's drafts
+        const publishedTemplates = templatesData.filter(t => t.is_published);
+        const userDrafts = templatesData.filter(t => !t.is_published && t.created_by === user.id);
+        const otherDrafts = templatesData.filter(t => !t.is_published && t.created_by !== user.id);
+        console.log(`[API] Template breakdown: ${publishedTemplates.length} published, ${userDrafts.length} user drafts, ${otherDrafts.length} other drafts`);
+      }
     }
 
-    return NextResponse.json({ data });
+    // Get profiles for template creators in a separate query
+    if (templatesData && templatesData.length > 0) {
+      const creatorIds = Array.from(new Set(templatesData.map(t => t.created_by)));
+      console.log(`[API] Found ${creatorIds.length} unique creator IDs: ${JSON.stringify(creatorIds)}`);
+      
+      if (creatorIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from(TABLES.PROFILES)
+          .select('id, name, avatar_url')
+          .in('id', creatorIds);
+        
+        if (!profilesError && profilesData) {
+          console.log(`[API] Retrieved ${profilesData.length} user profiles`);
+          console.log(`[API] Profile IDs: ${profilesData.map(p => p.id).join(', ')}`);
+          
+          // Create a map for quick profile lookup
+          const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+          
+          // Merge profiles with templates
+          templatesData = templatesData.map(template => ({
+            ...template,
+            profile: profilesMap.get(template.created_by) || null
+          }));
+        } else {
+          console.error('[API] Error fetching profiles:', profilesError);
+        }
+      }
+    }
+
+    return NextResponse.json({ data: templatesData });
   } catch (error) {
-    console.error('Error fetching itineraries:', error);
+    console.error('[API] Error in itineraries endpoint:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -79,17 +169,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const supabase = await createRouteHandlerClient();
+  console.log('[API] POST /api/itineraries - Starting request');
 
   // Get user for authorization
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  
   if (!user) {
+    console.log('[API] POST /api/itineraries - Unauthorized request');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const itineraryData = await request.json();
+    console.log('[API] Creating new itinerary template:', itineraryData.title);
 
     // Validate required fields
     if (
@@ -98,6 +192,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       !itineraryData.duration_days ||
       !Array.isArray(itineraryData.sections)
     ) {
+      console.log('[API] Missing required fields in itinerary creation request');
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -106,7 +201,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 1. Insert the itinerary template
     const { data: template, error: templateError } = await supabase
-      .from(ITINERARY_TABLES.ITINERARY_TEMPLATES)
+      .from(TABLES.ITINERARY_TEMPLATES)
       .insert({
         title: itineraryData.title,
         slug: slug,
@@ -123,9 +218,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (templateError) {
-      console.error('Error creating itinerary template:', templateError);
+      console.error('[API] Error creating itinerary template:', templateError);
       return NextResponse.json({ error: templateError.message }, { status: 500 });
     }
+
+    console.log(`[API] Created template with ID: ${template.id}`);
 
     // 2. Insert sections
     const sectionPromises = itineraryData.sections.map(
@@ -136,7 +233,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
 
         const { data: sectionData, error: sectionError } = await supabase
-          .from(ITINERARY_TABLES.ITINERARY_TEMPLATE_SECTIONS)
+          .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
           .insert({
             template_id: template.id,
             day_number: section.day_number,
@@ -165,7 +262,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }));
 
           const { data: itemsData, error: itemsError } = await supabase
-            .from(ITINERARY_TABLES.ITINERARY_TEMPLATE_ITEMS)
+            .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
             .insert(items)
             .select();
 
@@ -188,6 +285,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Wait for all section and item insertions to complete
     const sections = await Promise.all(sectionPromises);
+    console.log(`[API] Created ${sections.length} sections for template ${template.id}`);
 
     return NextResponse.json({
       data: {
@@ -196,7 +294,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     });
   } catch (error: any) {
-    console.error('Error processing itinerary creation:', error);
+    console.error('[API] Error processing itinerary creation:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create itinerary' },
       { status: 500 }

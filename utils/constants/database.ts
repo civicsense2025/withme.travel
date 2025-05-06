@@ -15,10 +15,18 @@ export const TABLES = {
   DESTINATION_TAGS: 'destination_tags',
   DESTINATIONS: 'destinations',
   EXPENSES: 'expenses',
+  FEEDBACK: 'feedback',
   FOCUS_SESSIONS: 'focus_sessions',
   FORM_COLLABORATORS: 'form_collaborators',
   FORM_TEMPLATES: 'form_templates',
   FORMS: 'forms',
+  GROUPS: 'groups',
+  GROUP_ACTIVITIES: 'group_activities',
+  GROUP_IDEAS: 'group_ideas',
+  GROUP_IDEA_NOTES: 'group_idea_notes',
+  GROUP_IDEA_VOTES: 'group_idea_votes',
+  GROUP_MEMBERS: 'group_members',
+  GROUP_TRIPS: 'group_trips',
   IMAGE_METADATA: 'image_metadata',
   INVITATIONS: 'invitations',
   ITEM_POPULARITY_METRICS: 'item_popularity_metrics',
@@ -33,7 +41,11 @@ export const TABLES = {
   NOTE_TAGS: 'note_tags',
   NOTIFICATION_PREFERENCES: 'notification_preferences',
   NOTIFICATIONS: 'notifications',
+  ONBOARDING_EVENTS: 'onboarding_events',
+  ONBOARDING_TOUR_COMPLETIONS: 'onboarding_tour_completions',
+  ONBOARDING_PREFERENCES: 'onboarding_preferences',
   PERMISSION_REQUESTS: 'permission_requests',
+  PERFORMANCE_METRICS: 'performance_metrics',
   PLACES: 'places',
   PREFERENCE_WEIGHTS: 'preference_weights',
   PROFILES: 'profiles',
@@ -63,7 +75,8 @@ export const TABLES = {
   TRIP_VOTE_POLLS: 'trip_vote_polls',
   TRIP_VOTES: 'trip_votes',
   TRIPS: 'trips',
-  USER_ACTIVITY_HISTORY: 'user_activity_history',
+  USER_ACTIVITY: 'user_activity',
+  USER_ACTIVITY_DAILY: 'user_activity_daily',
   USER_INTERACTIONS: 'user_interactions',
   USER_INTERESTS: 'user_interests',
   USER_LOGIN_HISTORY: 'user_login_history',
@@ -83,6 +96,21 @@ export const TABLES = {
   DESTINATION_IMAGES: 'destination_images',
   SETTINGS: 'user_settings',
   ITINERARY_ITEM_REACTIONS: 'itinerary_item_reactions',
+  FEATURE_USAGE: 'feature_usage',
+  ERROR_LOGS: 'error_logs',
+  GROUP_PLANNING_SESSIONS: 'group_planning_sessions',
+  PLANNING_READINESS: 'planning_readiness',
+  PLANNING_POLLS: 'planning_polls',
+  PLANNING_POLL_OPTIONS: 'planning_poll_options',
+  PLANNING_POLL_VOTES: 'planning_poll_votes',
+  COMMENTS: 'comments',
+  COMMENT_REACTIONS: 'comment_reactions',
+  REPORTED_CONTENT: 'reported_content',
+  MODERATION_LOGS: 'moderation_logs',
+  MODERATION_RULES: 'moderation_rules',
+  CONTENT_FLAGS: 'content_flags',
+  GROUP_IDEA_COMMENTS: 'group_idea_comments',
+  GROUP_IDEA_REACTIONS: 'group_idea_reactions',
 } as const;
 
 export const FIELDS = {
@@ -202,49 +230,38 @@ export const FIELDS = {
   },
   DESTINATIONS: {
     ID: 'id',
-    CREATED_AT: 'created_at',
-    CITY: 'city',
-    STATE_PROVINCE: 'state_province',
-    COUNTRY: 'country',
-    POPULARITY: 'popularity',
-    LGBTQ_FRIENDLINESS: 'lgbtq_friendliness',
-    ACCESSIBILITY: 'accessibility',
-    CONTINENT: 'continent',
-    BEST_SEASON: 'best_season',
-    AVG_COST_PER_DAY: 'avg_cost_per_day',
-    LOCAL_LANGUAGE: 'local_language',
-    TIME_ZONE: 'time_zone',
-    CUISINE_RATING: 'cuisine_rating',
-    CULTURAL_ATTRACTIONS: 'cultural_attractions',
-    NIGHTLIFE_RATING: 'nightlife_rating',
-    FAMILY_FRIENDLY: 'family_friendly',
-    OUTDOOR_ACTIVITIES: 'outdoor_activities',
-    BEACH_QUALITY: 'beach_quality',
-    SHOPPING_RATING: 'shopping_rating',
-    SAFETY_RATING: 'safety_rating',
-    WIFI_CONNECTIVITY: 'wifi_connectivity',
-    PUBLIC_TRANSPORTATION: 'public_transportation',
-    ECO_FRIENDLY_OPTIONS: 'eco_friendly_options',
-    WALKABILITY: 'walkability',
-    INSTAGRAM_WORTHY_SPOTS: 'instagram_worthy_spots',
-    OFF_PEAK_APPEAL: 'off_peak_appeal',
-    DIGITAL_NOMAD_FRIENDLY: 'digital_nomad_friendly',
     NAME: 'name',
+    SLUG: 'slug',
     DESCRIPTION: 'description',
-    IMAGE_URL: 'image_url',
-    UPDATED_AT: 'updated_at',
-    EMOJI: 'emoji',
-    VISA_REQUIRED: 'visa_required',
-    IMAGE_METADATA: 'image_metadata',
-    BYLINE: 'byline',
-    HIGHLIGHTS: 'highlights',
-    PERFECT_FOR: 'perfect_for',
-    LIKES_COUNT: 'likes_count',
-    LATITUDE: 'latitude',
+    COUNTRY: 'country',
+    REGION: 'region',
+    CITY: 'city',
     LONGITUDE: 'longitude',
-    AVG_DAYS: 'avg_days',
-    ADDRESS: 'address',
-    MAPBOX_ID: 'mapbox_id',
+    LATITUDE: 'latitude',
+    TIMEZONE: 'timezone',
+    IMAGE_URL: 'image_url',
+    POPULATION: 'population',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    SHORT_DESCRIPTION: 'short_description',
+    IS_PUBLISHED: 'is_published',
+    CONTINENT: 'continent',
+    LOCATION_HIERARCHY: 'location_hierarchy',
+    KNOWN_FOR: 'known_for',
+    CLIMATE: 'climate',
+    BEST_TIMES_TO_VISIT: 'best_times_to_visit',
+    LANGUAGES: 'languages',
+    TOP_ATTRACTIONS: 'top_attractions',
+    LOCAL_TIPS: 'local_tips',
+    FUN_FACTS: 'fun_facts',
+    CURRENCY: 'currency',
+    SAFETY_INFO: 'safety_info',
+    GETTING_AROUND: 'getting_around',
+    TAGS: 'tags',
+    METADATA: 'metadata',
+    CREATED_BY: 'created_by',
+    CONTENT_STATUS: 'content_status',
+    COVER_IMAGE_URL: 'cover_image_url',
   },
   EXPENSES: {
     ID: 'id',
@@ -464,18 +481,15 @@ export const FIELDS = {
   NOTIFICATIONS: {
     ID: 'id',
     USER_ID: 'user_id',
-    TRIP_ID: 'trip_id',
-    SENDER_ID: 'sender_id',
+    TYPE: 'type',
     TITLE: 'title',
     CONTENT: 'content',
-    NOTIFICATION_TYPE: 'notification_type',
-    PRIORITY: 'priority',
     READ: 'read',
-    ACTION_URL: 'action_url',
-    REFERENCE_ID: 'reference_id',
-    REFERENCE_TYPE: 'reference_type',
+    ACTOR_ID: 'actor_id',
+    RESOURCE_TYPE: 'resource_type',
+    RESOURCE_ID: 'resource_id',
     CREATED_AT: 'created_at',
-    EXPIRES_AT: 'expires_at',
+    UPDATED_AT: 'updated_at'
   },
   PERMISSION_REQUESTS: {
     ID: 'id',
@@ -719,15 +733,32 @@ export const FIELDS = {
     STATUS: 'status',
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
+    PLANNING_SESSION_ID: 'planning_session_id',
+    FROM_PLANNING: 'from_planning',
+    TOUR_COMPLETED: 'tour_completed',
   },
-  USER_ACTIVITY_HISTORY: {
+  USER_ACTIVITY: {
     ID: 'id',
     USER_ID: 'user_id',
-    ITEM_ID: 'item_id',
-    INTERACTION_TYPE: 'interaction_type',
-    INTERACTION_DATA: 'interaction_data',
-    CREATED_AT: 'created_at',
+    SESSION_ID: 'session_id',
+    EVENT_TYPE: 'event_type',
+    ENTITY_TYPE: 'entity_type',
+    ENTITY_ID: 'entity_id',
+    ACTION: 'action',
+    IP_ADDRESS: 'ip_address',
+    USER_AGENT: 'user_agent',
+    REFERRER: 'referrer',
+    PATH: 'path',
     METADATA: 'metadata',
+    CREATED_AT: 'created_at',
+  },
+  USER_ACTIVITY_DAILY: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    DATE: 'date',
+    ACTIVITY_COUNT: 'activity_count',
+    METADATA: 'metadata',
+    CREATED_AT: 'created_at',
   },
   USER_INTERACTIONS: {
     ID: 'id',
@@ -871,6 +902,255 @@ export const FIELDS = {
     EMOJI: 'emoji',
     CREATED_AT: 'created_at',
   },
+  GROUPS: {
+    ID: 'id',
+    NAME: 'name',
+    SLUG: 'slug',
+    EMOJI: 'emoji',
+    DESCRIPTION: 'description',
+    CREATED_BY: 'created_by',
+    VISIBILITY: 'visibility',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+  GROUP_MEMBERS: {
+    GROUP_ID: 'group_id',
+    USER_ID: 'user_id',
+    ROLE: 'role',
+    STATUS: 'status',
+    INVITATION_EMAIL: 'invitation_email',
+    INVITATION_TOKEN: 'invitation_token',
+    INVITATION_EXPIRES_AT: 'invitation_expires_at',
+    JOINED_AT: 'joined_at',
+    UPDATED_AT: 'updated_at',
+  },
+  GROUP_TRIPS: {
+    GROUP_ID: 'group_id',
+    TRIP_ID: 'trip_id',
+    ADDED_BY: 'added_by',
+    NOTES: 'notes',
+    IS_FEATURED: 'is_featured',
+    DISPLAY_ORDER: 'display_order',
+    ADDED_AT: 'added_at',
+    UPDATED_AT: 'updated_at',
+  },
+  GROUP_ACTIVITIES: {
+    ID: 'id',
+    GROUP_ID: 'group_id',
+    USER_ID: 'user_id',
+    ACTIVITY_TYPE: 'activity_type',
+    TRIP_ID: 'trip_id',
+    DETAILS: 'details',
+    CREATED_AT: 'created_at',
+  },
+  ONBOARDING_EVENTS: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    EVENT_TYPE: 'event_type',
+    TOUR_ID: 'tour_id',
+    STEP_ID: 'step_id',
+    EVENT_DATA: 'event_data',
+    SESSION_ID: 'session_id',
+    CREATED_AT: 'created_at',
+  },
+  ONBOARDING_TOUR_COMPLETIONS: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    TOUR_ID: 'tour_id',
+    COMPLETED_AT: 'completed_at',
+    IS_SKIPPED: 'is_skipped',
+    TIME_SPENT: 'time_spent',
+    STEPS_VIEWED: 'steps_viewed',
+  },
+  ONBOARDING_PREFERENCES: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    FEATURE_ID: 'feature_id',
+    IS_ENABLED: 'is_enabled',
+    SHOW_TOURS: 'show_tours',
+    NOTIFICATION_LEVEL: 'notification_level',
+    PREFERENCES: 'preferences',
+    UPDATED_AT: 'updated_at',
+  },
+  FEATURE_USAGE: {
+    ID: 'id',
+    FEATURE_ID: 'feature_id',
+    USER_ID: 'user_id',
+    ENTITY_ID: 'entity_id',
+    ACTION: 'action',
+    VALUE: 'value',
+    CONTEXT: 'context',
+    METADATA: 'metadata',
+    CREATED_AT: 'created_at',
+  },
+  ERROR_LOGS: {
+    ID: 'id',
+    USER_ID: 'user_id',
+    SESSION_ID: 'session_id',
+    ERROR_TYPE: 'error_type',
+    ERROR_MESSAGE: 'error_message',
+    ERROR_STACK: 'error_stack',
+    URL: 'url',
+    PATH: 'path',
+    COMPONENT: 'component',
+    SEVERITY: 'severity',
+    BROWSER: 'browser',
+    OS: 'os',
+    DEVICE: 'device',
+    METADATA: 'metadata',
+    CREATED_AT: 'created_at',
+  },
+  GROUP_IDEAS: {
+    ID: 'id',
+    GROUP_ID: 'group_id',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    TYPE: 'type',
+    CREATED_BY: 'created_by',
+    GUEST_TOKEN: 'guest_token',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    VOTES_UP: 'votes_up',
+    VOTES_DOWN: 'votes_down',
+    POSITION: 'position',
+    SELECTED: 'selected',
+    META: 'meta',
+  },
+  GROUP_IDEA_NOTES: {
+    ID: 'id',
+    IDEA_ID: 'idea_id',
+    CONTENT: 'content',
+    CREATED_BY: 'created_by',
+    GUEST_TOKEN: 'guest_token',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+  GROUP_IDEA_VOTES: {
+    ID: 'id',
+    IDEA_ID: 'idea_id',
+    USER_ID: 'user_id',
+    GUEST_TOKEN: 'guest_token',
+    VOTE_TYPE: 'vote_type',
+    CREATED_AT: 'created_at',
+  },
+  GROUP_PLANNING_SESSIONS: {
+    ID: 'id',
+    GROUP_ID: 'group_id',
+    NAME: 'name',
+    STATUS: 'status',
+    DESTINATION: 'destination',
+    DATE_RANGE: 'date_range',
+    BUDGET: 'budget',
+    ACTIVITIES: 'activities',
+    TRIP_ID: 'trip_id',
+    CREATED_BY: 'created_by',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    COMPLETED_AT: 'completed_at',
+    EXPORTED_AT: 'exported_at',
+  },
+  PLANNING_READINESS: {
+    ID: 'id',
+    SESSION_ID: 'session_id',
+    USER_ID: 'user_id',
+    GUEST_TOKEN: 'guest_token',
+    IS_READY: 'is_ready',
+    READY_AT: 'ready_at',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+  },
+  PLANNING_POLLS: {
+    ID: 'id',
+    SESSION_ID: 'session_id',
+    QUESTION: 'question',
+    TYPE: 'type',
+    MULTI_SELECT: 'multi_select',
+    CREATED_AT: 'created_at',
+  },
+  PLANNING_POLL_OPTIONS: {
+    ID: 'id',
+    POLL_ID: 'poll_id',
+    TEXT: 'text',
+    IDEA_ID: 'idea_id',
+    CREATED_AT: 'created_at',
+  },
+  PLANNING_POLL_VOTES: {
+    ID: 'id',
+    OPTION_ID: 'option_id',
+    USER_ID: 'user_id',
+    GUEST_TOKEN: 'guest_token',
+    CREATED_AT: 'created_at',
+  },
+  COMMENTS: {
+    ID: 'id',
+    CONTENT: 'content',
+    USER_ID: 'user_id',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    PARENT_ID: 'parent_id',
+    CONTENT_TYPE: 'content_type',
+    CONTENT_ID: 'content_id',
+    IS_EDITED: 'is_edited',
+    IS_DELETED: 'is_deleted',
+    REACTIONS_COUNT: 'reactions_count',
+    REPLIES_COUNT: 'replies_count',
+    ATTACHMENT_URL: 'attachment_url',
+    ATTACHMENT_TYPE: 'attachment_type',
+    METADATA: 'metadata',
+  },
+  COMMENT_REACTIONS: {
+    ID: 'id',
+    COMMENT_ID: 'comment_id',
+    USER_ID: 'user_id',
+    EMOJI: 'emoji',
+    CREATED_AT: 'created_at',
+  },
+  REPORTED_CONTENT: {
+    ID: 'id',
+    CONTENT_TYPE: 'content_type',
+    CONTENT_ID: 'content_id',
+    REPORTER_ID: 'reporter_id',
+    REASON: 'reason',
+    STATUS: 'status',
+    CREATED_AT: 'created_at',
+    RESOLVED_AT: 'resolved_at',
+    RESOLVER_ID: 'resolver_id',
+    RESOLUTION_NOTES: 'resolution_notes',
+    ENCRYPTED_CONTENT_SNAPSHOT: 'encrypted_content_snapshot'
+  },
+  MODERATION_LOGS: {
+    ID: 'id',
+    MODERATOR_ID: 'moderator_id',
+    ACTION: 'action',
+    TARGET_TYPE: 'target_type',
+    TARGET_ID: 'target_id',
+    NOTES: 'notes',
+    CREATED_AT: 'created_at'
+  },
+  GROUP_IDEA_COMMENTS: {
+    ID: 'id',
+    IDEA_ID: 'idea_id',
+    USER_ID: 'user_id',
+    CONTENT: 'content',
+    PARENT_ID: 'parent_id',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    IS_EDITED: 'is_edited',
+    IS_DELETED: 'is_deleted',
+    REACTIONS_COUNT: 'reactions_count',
+    REPLIES_COUNT: 'replies_count',
+    ATTACHMENT_URL: 'attachment_url',
+    ATTACHMENT_TYPE: 'attachment_type',
+    METADATA: 'metadata',
+  },
+  GROUP_IDEA_REACTIONS: {
+    ID: 'id',
+    IDEA_ID: 'idea_id',
+    USER_ID: 'user_id',
+    COMMENT_ID: 'comment_id',
+    EMOJI: 'emoji',
+    CREATED_AT: 'created_at',
+  },
 } as const;
 
 export const ENUMS = {
@@ -879,6 +1159,26 @@ export const ENUMS = {
     EDITOR: 'editor',
     CONTRIBUTOR: 'contributor',
     VIEWER: 'viewer',
+  },
+  GROUP_ROLES: {
+    OWNER: 'owner',
+    ADMIN: 'admin',
+    MEMBER: 'member',
+  },
+  GROUP_MEMBER_STATUS: {
+    INVITED: 'invited',
+    ACTIVE: 'active',
+    LEFT: 'left',
+    REMOVED: 'removed',
+  },
+  GROUP_ACTIVITY_TYPE: {
+    TRIP_ADDED: 'trip_added',
+    TRIP_REMOVED: 'trip_removed',
+    MEMBER_JOINED: 'joined_group',
+    MEMBER_LEFT: 'left_group',
+    INVITE_SENT: 'invite_sent',
+    OWNERSHIP_TRANSFERRED: 'ownership_transferred',
+    GROUP_UPDATED: 'group_updated',
   },
   ITEM_STATUS: {
     SUGGESTED: 'suggested',
@@ -902,6 +1202,7 @@ export const ENUMS = {
     TRIP_COVER: 'trip_cover',
     USER_AVATAR: 'user_avatar',
     TEMPLATE_COVER: 'template_cover',
+    GROUP_COVER: 'group_cover',
   },
   CONTENT_TYPE: {
     TRIP: 'trip',
@@ -909,6 +1210,10 @@ export const ENUMS = {
     DESTINATION: 'destination',
     COLLECTION: 'collection',
     TEMPLATE: 'template',
+    GROUP: 'group',
+    COMMENT: 'comment',
+    PROFILE: 'profile',
+    TRIP_DESCRIPTION: 'trip_description'
   },
   QUESTION_TYPE: {
     TEXT: 'text',
@@ -1035,6 +1340,10 @@ export const ENUMS = {
   VOTE_TYPE: {
     UP: 'up',
     DOWN: 'down',
+    THUMBS_UP: '👍',
+    THUMBS_DOWN: '👎',
+    HEART: '❤️',
+    QUESTION: '❓',
   },
   INTERACTION_TYPE: {
     LIKE: 'like',
@@ -1045,246 +1354,101 @@ export const ENUMS = {
   URL_FORMAT: {
     CANONICAL: 'canonical',
     SHORT: 'short',
-    SOCIAL: 'social',
-    TRACKING: 'tracking',
   },
   TRIP_ACTION_TYPE: {
-    TRIP_CREATED: 'TRIP_CREATED',
-    TRIP_UPDATED: 'TRIP_UPDATED',
-    ITINERARY_ITEM_ADDED: 'ITINERARY_ITEM_ADDED',
-    ITINERARY_ITEM_UPDATED: 'ITINERARY_ITEM_UPDATED',
-    ITINERARY_ITEM_DELETED: 'ITINERARY_ITEM_DELETED',
-    MEMBER_ADDED: 'MEMBER_ADDED',
-    MEMBER_REMOVED: 'MEMBER_REMOVED',
-    MEMBER_ROLE_UPDATED: 'MEMBER_ROLE_UPDATED',
-    INVITATION_SENT: 'INVITATION_SENT',
-    ACCESS_REQUEST_SENT: 'ACCESS_REQUEST_SENT',
-    ACCESS_REQUEST_UPDATED: 'ACCESS_REQUEST_UPDATED',
-    NOTE_CREATED: 'NOTE_CREATED',
-    NOTE_UPDATED: 'NOTE_UPDATED',
-    NOTE_DELETED: 'NOTE_DELETED',
-    IMAGE_UPLOADED: 'IMAGE_UPLOADED',
-    TAG_ADDED: 'TAG_ADDED',
-    TAG_REMOVED: 'TAG_REMOVED',
-    SPLITWISE_GROUP_LINKED: 'SPLITWISE_GROUP_LINKED',
-    SPLITWISE_GROUP_UNLINKED: 'SPLITWISE_GROUP_UNLINKED',
-    SPLITWISE_GROUP_CREATED_AND_LINKED: 'SPLITWISE_GROUP_CREATED_AND_LINKED',
-    COMMENT_ADDED: 'COMMENT_ADDED',
-    COMMENT_UPDATED: 'COMMENT_UPDATED',
-    COMMENT_DELETED: 'COMMENT_DELETED',
-    VOTE_CAST: 'VOTE_CAST',
-    FOCUS_INITIATED: 'FOCUS_INITIATED',
+    CREATED: 'created',
+    UPDATED_DETAILS: 'updated_details',
+    ADDED_MEMBER: 'added_member',
+    REMOVED_MEMBER: 'removed_member',
+    ADDED_TRIP_ITEM: 'added_trip_item',
+    REMOVED_TRIP_ITEM: 'removed_trip_item',
+    UPDATED_TRIP_ITEM: 'updated_trip_item',
+    SHARED: 'shared',
+    UNSHARED: 'unshared',
   },
+  ERROR_SEVERITY: {
+    INFO: 'info',
+    WARNING: 'warning',
+    ERROR: 'error',
+    CRITICAL: 'critical',
+  },
+  ONBOARDING_EVENT_TYPE: {
+    TOUR_STARTED: 'tour_started',
+    TOUR_COMPLETED: 'tour_completed',
+    TOUR_SKIPPED: 'tour_skipped',
+    STEP_VIEWED: 'step_viewed',
+    STEP_COMPLETED: 'step_completed',
+    ONBOARDING_COMPLETED: 'onboarding_completed',
+    STEP_CHANGED: 'step_changed',
+  },
+  IDEA_TYPES: {
+    DESTINATION: 'destination',
+    DATE: 'date',
+    ACTIVITY: 'activity',
+    BUDGET: 'budget',
+    OTHER: 'other',
+  },
+  PLANNING_SESSION_STATUSES: {
+    DRAFT: 'draft',
+    IN_PROGRESS: 'in_progress',
+    VOTING: 'voting',
+    COMPLETED: 'completed',
+    CONVERTED: 'converted',
+  },
+  CONTENT_TYPES: {
+    DESTINATION: 'destination',
+    GROUP_IDEA: 'group_idea',
+    ITINERARY_ITEM: 'itinerary_item',
+    TRIP: 'trip',
+    IMAGE: 'image',
+    NOTE: 'note',
+  },
+  NOTIFICATION_TYPES: {
+    COMMENT: 'comment',
+    MENTION: 'mention',
+    TRIP_INVITE: 'trip_invite',
+    TRIP_UPDATE: 'trip_update',
+    NEW_MEMBER: 'new_member',
+    ITINERARY_CHANGE: 'itinerary_change',
+    SYSTEM_MESSAGE: 'system_message'
+  },
+  MODERATION_STATUS: {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected', 
+    ESCALATED: 'escalated'
+  }
 } as const;
 
-// Foreign Key Relationships
-export const RELATIONSHIPS = {
-  ACCESS_REQUESTS: [
-    { column: 'approved_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  ALBUMS: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
-  COLLABORATIVE_NOTES: [
-    { column: 'created_by', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'last_edited_by', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  COLLABORATIVE_SESSIONS: [{ column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }],
-  FORM_COLLABORATORS: [
-    { column: 'form_id', referencesTable: 'forms', referencesColumn: 'id' },
-    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'users', referencesColumn: 'id' },
-  ],
-  FORMS: [{ column: 'created_by', referencesTable: 'users', referencesColumn: 'id' }],
-  INTERACTIONS: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
-  ITINERARY_ITEM_VOTES: [
-    { column: 'itinerary_item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  ITINERARY_ITEMS: [
-    { column: 'place_id', referencesTable: 'places', referencesColumn: 'id' },
-    { column: 'section_id', referencesTable: 'itinerary_sections', referencesColumn: 'id' },
-    { column: 'suggested_by', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  ITINERARY_SECTIONS: [{ column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }],
-  ITINERARY_TEMPLATE_ITEMS: [
-    { column: 'place_id', referencesTable: 'places', referencesColumn: 'id' },
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-  ],
-  ITINERARY_TEMPLATE_SECTIONS: [
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-  ],
-  ITINERARY_TEMPLATES: [
-    { column: 'created_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'source_trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  ITEM_POPULARITY_METRICS: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-  ],
-  LIKES: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
-  LOCATIONS: [{ column: 'parent_id', referencesTable: 'locations', referencesColumn: 'id' }],
-  NOTE_TAGS: [
-    { column: 'note_id', referencesTable: 'trip_notes', referencesColumn: 'id' },
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
-  ],
-  NOTIFICATION_PREFERENCES: [
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  NOTIFICATIONS: [
-    { column: 'recipient_id', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'sender_id', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  PERMISSION_REQUESTS: [
-    { column: 'requestor_id', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  PLACES: [
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'suggested_by', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  PREFERENCE_WEIGHTS: [
-    { column: 'preference_id', referencesTable: 'user_preferences', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  PROFILES: [{ column: 'id', referencesTable: 'auth.users', referencesColumn: 'id' }],
-  QUESTION_BRANCHING: [
-    { column: 'question_id', referencesTable: 'questions', referencesColumn: 'id' },
-    { column: 'target_question_id', referencesTable: 'questions', referencesColumn: 'id' },
-  ],
-  QUESTIONS: [{ column: 'form_id', referencesTable: 'forms', referencesColumn: 'id' }],
-  REFERRALS: [
-    { column: 'referrer_id', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'referred_id', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  RESPONSES: [
-    { column: 'question_id', referencesTable: 'questions', referencesColumn: 'id' },
-    { column: 'session_id', referencesTable: 'response_sessions', referencesColumn: 'id' },
-  ],
-  RESPONSE_SESSIONS: [
-    { column: 'form_id', referencesTable: 'forms', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  SURVEY_RESPONSES: [
-    { column: 'question_id', referencesTable: 'questions', referencesColumn: 'id' },
-    { column: 'session_id', referencesTable: 'response_sessions', referencesColumn: 'id' },
-  ],
-  TEMPLATE_APPLICATIONS: [
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  TEMPLATE_TAGS: [
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-  ],
-  TEAM_INVITATIONS: [
-    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'team_id', referencesTable: 'teams', referencesColumn: 'id' },
-  ],
-  TEAM_MEMBERS: [
-    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'team_id', referencesTable: 'teams', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'users', referencesColumn: 'id' },
-  ],
-  TRIP_COMMENT_LIKES: [
-    { column: 'comment_id', referencesTable: 'trip_item_comments', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  TRIP_ITEM_COMMENTS: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  TRIP_ITEM_VOTES: [
-    { column: 'itinerary_item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  TRIP_MEMBERS: [
-    { column: 'invited_by', referencesTable: 'users', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  TRIP_NOTES: [
-    { column: 'album_id', referencesTable: 'albums', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'updated_by', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  TRIP_SETTINGS: [{ column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' }],
-  TRIP_TAGS: [
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  TRIP_TEMPLATE_USES: [
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  TRIP_VOTE_OPTIONS: [
-    { column: 'poll_id', referencesTable: 'trip_vote_polls', referencesColumn: 'id' },
-  ],
-  TRIP_VOTE_POLLS: [
-    { column: 'created_by', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  TRIP_VOTES: [
-    { column: 'option_id', referencesTable: 'trip_vote_options', referencesColumn: 'id' },
-    { column: 'poll_id', referencesTable: 'trip_vote_polls', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  TRIPS: [
-    { column: 'created_by', referencesTable: 'profiles', referencesColumn: 'id' },
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'updated_by', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  USER_ACTIVITY_HISTORY: [
-    { column: 'item_id', referencesTable: 'itinerary_items', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  USER_INTERACTIONS: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
-  USER_INTERESTS: [
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  USER_LOGIN_HISTORY: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
-  USER_PREFERENCES: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
-  USER_PRESENCE: [
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  USER_SUGGESTED_TAGS: [
-    { column: 'tag_id', referencesTable: 'tags', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  USER_TRAVEL: [
-    { column: 'destination_id', referencesTable: 'destinations', referencesColumn: 'id' },
-    { column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' },
-  ],
-  VALIDATION_LOGS: [
-    { column: 'template_id', referencesTable: 'itinerary_templates', referencesColumn: 'id' },
-    { column: 'trip_id', referencesTable: 'trips', referencesColumn: 'id' },
-  ],
-  VOTES: [{ column: 'user_id', referencesTable: 'profiles', referencesColumn: 'id' }],
-} as const;
+// Add a new export type for GroupRole from the ENUMS object
+export type GroupRole = (typeof ENUMS.GROUP_ROLES)[keyof typeof ENUMS.GROUP_ROLES];
 
-// Export type definitions for enum values to ensure type safety
+// Add a new export type for GroupMemberStatus from the ENUMS object
+export type GroupMemberStatus = (typeof ENUMS.GROUP_MEMBER_STATUS)[keyof typeof ENUMS.GROUP_MEMBER_STATUS];
+
+// Add a new export type for GroupActivityType from the ENUMS object
+export type GroupActivityType = (typeof ENUMS.GROUP_ACTIVITY_TYPE)[keyof typeof ENUMS.GROUP_ACTIVITY_TYPE];
+
+// Add a new export type for OnboardingEventType from the ENUMS object
+export type OnboardingEventType = (typeof ENUMS.ONBOARDING_EVENT_TYPE)[keyof typeof ENUMS.ONBOARDING_EVENT_TYPE];
+
+// Add a new export type for ErrorSeverity from the ENUMS object
+export type ErrorSeverity = (typeof ENUMS.ERROR_SEVERITY)[keyof typeof ENUMS.ERROR_SEVERITY];
+
 export type TripRole = (typeof ENUMS.TRIP_ROLES)[keyof typeof ENUMS.TRIP_ROLES];
 export type ItemStatus = (typeof ENUMS.ITEM_STATUS)[keyof typeof ENUMS.ITEM_STATUS];
 export type TripStatus = (typeof ENUMS.TRIP_STATUS)[keyof typeof ENUMS.TRIP_STATUS];
 export type PermissionStatus =
   (typeof ENUMS.PERMISSION_STATUS)[keyof typeof ENUMS.PERMISSION_STATUS];
+
 export type ImageType = (typeof ENUMS.IMAGE_TYPE)[keyof typeof ENUMS.IMAGE_TYPE];
-export type ContentType = (typeof ENUMS.CONTENT_TYPE)[keyof typeof ENUMS.CONTENT_TYPE];
+export type ContentItemType = (typeof ENUMS.CONTENT_TYPE)[keyof typeof ENUMS.CONTENT_TYPE];
 export type QuestionType = (typeof ENUMS.QUESTION_TYPE)[keyof typeof ENUMS.QUESTION_TYPE];
 export type FormStatus = (typeof ENUMS.FORM_STATUS)[keyof typeof ENUMS.FORM_STATUS];
 export type FormVisibility = (typeof ENUMS.FORM_VISIBILITY)[keyof typeof ENUMS.FORM_VISIBILITY];
 export type ItineraryCategory =
   (typeof ENUMS.ITINERARY_CATEGORY)[keyof typeof ENUMS.ITINERARY_CATEGORY];
+
 export type ItineraryItemStatus = (typeof ENUMS.ITINERARY_ITEM_STATUS)[keyof typeof ENUMS.ITINERARY_ITEM_STATUS];
 export type InvitationStatus = (typeof ENUMS.INVITATION_STATUS)[keyof typeof ENUMS.INVITATION_STATUS];
 export type PrivacySetting = (typeof ENUMS.PRIVACY_SETTING)[keyof typeof ENUMS.PRIVACY_SETTING];
@@ -1301,14 +1465,40 @@ export type VoteType = (typeof ENUMS.VOTE_TYPE)[keyof typeof ENUMS.VOTE_TYPE];
 export type InteractionType = (typeof ENUMS.INTERACTION_TYPE)[keyof typeof ENUMS.INTERACTION_TYPE];
 export type UrlFormat = (typeof ENUMS.URL_FORMAT)[keyof typeof ENUMS.URL_FORMAT];
 export type TripActionType = (typeof ENUMS.TRIP_ACTION_TYPE)[keyof typeof ENUMS.TRIP_ACTION_TYPE];
+export type IdeaType = (typeof ENUMS.IDEA_TYPES)[keyof typeof ENUMS.IDEA_TYPES];
+export type PlanningSessionStatus = (typeof ENUMS.PLANNING_SESSION_STATUSES)[keyof typeof ENUMS.PLANNING_SESSION_STATUSES];
 
-// Table-related type definitions
 export type TableNames = (typeof TABLES)[keyof typeof TABLES];
 export type TableFields<T extends keyof typeof FIELDS> =
   (typeof FIELDS)[T][keyof (typeof FIELDS)[T]];
 
-// Legacy exports for backward compatibility (deprecated, use direct exports instead)
-export const DB_TABLES = TABLES;
-export const DB_FIELDS = FIELDS;
-export const DB_ENUMS = ENUMS;
-export const DB_RELATIONSHIPS = RELATIONSHIPS;
+const ITINERARY_TEMPLATE_METADATA_FIELDS = {
+  PACE: 'pace',
+  BEST_FOR: 'best_for',
+  LANGUAGES: 'languages',
+  HIGHLIGHTS: 'highlights',
+  LOCAL_TIPS: 'local_tips',
+  BEST_SEASONS: 'best_seasons',
+  AVOID_SEASONS: 'avoid_seasons',
+  MORNING_START: 'morning_start',
+  ACCESSIBILITY_LEVEL: 'accessibility_level',
+  SUSTAINABILITY_ASPECTS: 'sustainability_aspects',
+  ESTIMATED_BUDGET_USD_PER_DAY: 'estimated_budget_usd_per_day',
+};
+
+export type ItineraryTemplateMetadata = {
+  pace: string;
+  best_for: string[];
+  languages: string[];
+  highlights: string[];
+  local_tips: string[];
+  best_seasons: string[];
+  avoid_seasons: string[];
+  morning_start: string;
+  accessibility_level: string;
+  sustainability_aspects: string[];
+  estimated_budget_usd_per_day: number;
+};
+
+// Change our new type to CommentableContentType
+export type CommentableContentType = (typeof ENUMS.CONTENT_TYPES)[keyof typeof ENUMS.CONTENT_TYPES];

@@ -7,6 +7,8 @@ import {
   type TripRole,
   type ItemStatus,
 } from '@/utils/constants/status';
+import { VerticalStepper } from '@/components/itinerary/VerticalStepper';
+import { MobileStepper } from '@/components/itinerary/MobileStepper';
 import { TABLES } from '@/utils/constants/database';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -183,6 +185,8 @@ import type { TripMember } from './context/trip-data-provider';
 // --- Import Extracted Components ---
 import BudgetSnapshotSidebar from '@/components/trips/budget-snapshot-sidebar';
 import TripSidebarContent from '@/components/trips/trip-sidebar-content';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
+import { AuthModal } from '@/components/auth-modal';
 // Types
 
 // Local utility functions to avoid import issues
@@ -274,6 +278,7 @@ interface LocalTripMemberFromSSR {
 export interface TripPageClientProps {
   tripId: string;
   canEdit: boolean;
+  isGuestCreator?: boolean;
 }
 
 // --- Utility Functions --- //
@@ -376,17 +381,16 @@ const compareItemArrays = (arr1: DisplayItineraryItem[], arr2: DisplayItineraryI
 };
 
 // --- Main Client Component --- //
-export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
-  // --- Debugging --- //
-  console.log('[TripPageClient] Rendering with props:', { tripId, canEdit });
-  // --- End Debugging --- //
-
+export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: TripPageClientProps) {
+  // --- All hooks must be called at the top, before any return ---
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname(); // Defined using hook
   const searchParams = useSearchParams();
   const supabase = createClient();
   const { user } = useAuth(); // AppUser type from AuthProvider
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Get data from context
   const contextData = useTripData();
@@ -503,6 +507,38 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
       0
     );
   }, [manualExpenses]);
+
+  // Stepper sections: use tripData.sections if available, else fallback
+  const itinerarySections = useMemo(() => {
+    if (Array.isArray(tripData?.sections) && tripData.sections.length > 0) {
+      return tripData.sections.map((section: any, idx: number) => ({
+        id: section.id || `section-${idx}`,
+        title: section.title || `Section ${idx + 1}`,
+      }));
+    }
+    // Fallback: use default tabs
+    return [
+      { id: 'overview', title: 'Overview' },
+      { id: 'logistics', title: 'Logistics' },
+      { id: 'budget', title: 'Budget' },
+      { id: 'notes', title: 'Notes' },
+      { id: 'history', title: 'History' },
+    ];
+  }, [tripData?.sections]);
+
+  const [activeSection, setActiveSection] = useState(itinerarySections[0]?.id || 'overview');
+  const currentIndex = itinerarySections.findIndex(s => s.id === activeSection);
+
+  const goToPrevSection = () => {
+    if (currentIndex > 0) setActiveSection(itinerarySections[currentIndex - 1].id);
+  };
+  const goToNextSection = () => {
+    if (currentIndex < itinerarySections.length - 1) setActiveSection(itinerarySections[currentIndex + 1].id);
+  };
+  const handleSectionClick = (id: string) => setActiveSection(id);
+
+  // Optionally, implement scroll-to-section and showScrollToTop logic
+  const showScrollToTop = false;
 
   // --- Effects --- //
 
@@ -1529,6 +1565,36 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
   }
 
   // --- Main JSX --- //
+  const handleTabClick = (idx: number, tabValue: string) => {
+    setActiveTab(tabValue);
+    if (tabRefs.current[idx]) {
+      tabRefs.current[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  };
+
+  // Show auth prompt for guest creators who aren't logged in
+  const handleGuestAction = useCallback(() => {
+    if (isGuestCreator && !user) {
+      setShowAuthModal(true);
+      return true; // Action was blocked
+    }
+    return false; // Action can proceed
+  }, [isGuestCreator, user]);
+
+  const handleEditTripClick = () => {
+    // Check if this is a guest user who needs to login first
+    if (handleGuestAction()) return;
+    
+    setIsEditTripSheetOpen(true);
+  };
+
+  const handleCoverImageClick = () => {
+    // Check if this is a guest user who needs to login first
+    if (handleGuestAction()) return;
+    
+    setIsImageSelectorOpen(true);
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen flex flex-col bg-background container mx-auto px-4">
@@ -1539,8 +1605,8 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
           endDate={tripData.trip.end_date}
           coverImageUrl={coverImageUrl}
           canEdit={canEdit}
-          onEdit={() => setIsEditTripSheetOpen(true)}
-          onChangeCover={() => setIsImageSelectorOpen(true)}
+          onEdit={handleEditTripClick}
+          onChangeCover={handleCoverImageClick}
           onMembers={() => setActiveTab('manage')}
           isSaving={isSavingCover}
           privacySetting={privacySetting}
@@ -1560,139 +1626,62 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
           <div className="flex flex-col md:flex-row gap-6 relative">
             {/* Sidebar - Make it sticky */}
             <div className="w-full md:w-[300px] flex-shrink-0 space-y-6 md:sticky md:top-24 self-start">
-              <BudgetSnapshotSidebar
-                targetBudget={tripBudget}
-                totalPlanned={totalPlannedExpenses}
-                totalSpent={totalSpent}
-                canEdit={canEdit}
-                isEditing={isEditingBudget}
-                onEditToggle={setIsEditingBudget}
-                onSave={handleSaveBudget}
-                onLogExpenseClick={() => setIsAddExpenseOpen(true)}
-              />
-              <TripSidebarContent
-                description={tripDescription}
-                privacySetting={privacySetting}
-                startDate={tripData.trip.start_date}
-                endDate={tripData.trip.end_date}
-                tags={tripTags}
-                canEdit={canEdit}
-                userRole={userRole}
-                accessRequests={accessRequests}
-                members={tripData.members ? adaptMembersToWithProfile(tripData.members) : []}
-                onEdit={() => setIsEditTripSheetOpen(true)}
-                onManageAccessRequest={handleManageAccessRequest}
-              />
-              {/* Commenting out Playlist Card for now to address CSP errors */}
-              {/*
-              <Card className="overflow-hidden">
-                <CardHeader className="p-4 pb-2">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-green-500"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <circle cx="12" cy="12" r="4" />
-                        <path d="M12 6v2" />
-                        <path d="M12 16v2" />
-                        <path d="M6 12h2" />
-                        <path d="M16 12h2" />
-                      </svg>
-                      Trip Playlist
-                    </CardTitle>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // Set the input field value when starting edit
-                          setEditedPlaylistUrl(playlistUrl);
-                          // Potentially open a dialog here instead of inline edit
-                        }}
-                      >
-                        <Pencil className="h-4 w-4 mr-1" />
-                        {playlistUrl ? 'Change' : 'Add'}
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-2">
-                  {playlistUrl ? (
-                    <div className="space-y-2">
-                      <div className="relative overflow-hidden pt-[56.25%] rounded-md">
-                        <iframe
-                          src={playlistUrl}
-                          className="absolute top-0 left-0 w-full h-full border-0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
-                      </div>
-                      <div className="text-xs text-muted-foreground text-center">
-                        <span>
-                          <a
-                            href={playlistUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline hover:text-primary/80"
-                          >
-                            Open in Spotify <ExternalLink className="h-3 w-3 inline" />
-                          </a>
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center p-4 text-muted-foreground text-sm">
-                      {canEdit ? (
-                        <div className="space-y-2">
-                          <p>Add a Spotify playlist to set the mood for your trip!</p>
-                          <div className="flex flex-col space-y-2">
-                            <Input
-                              placeholder="Paste Spotify embed URL"
-                              value={editedPlaylistUrl || ''} // Use state for input value
-                              onChange={(e) => setEditedPlaylistUrl(e.target.value)} // Update state on change
-                            />
-                            <Button
-                              disabled={!editedPlaylistUrl || editedPlaylistUrl.trim() === ''}
-                              onClick={handleSavePlaylistUrl}
-                              className="w-full"
-                            >
-                              {isSavingPlaylistUrl ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Saving...
-                                </>
-                              ) : (
-                                'Save Playlist'
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p>No playlist has been added to this trip yet.</p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              */}
+              {/* Budget Snapshot Collapsible: single wrapper, toggle only on mobile */}
+              <CollapsibleSection
+                title="Budget Snapshot"
+                defaultOpen={true}
+                hideToggleOnDesktop
+                className="mb-4"
+              >
+                <BudgetSnapshotSidebar
+                  targetBudget={tripBudget}
+                  totalPlanned={totalPlannedExpenses}
+                  totalSpent={totalSpent}
+                  canEdit={canEdit}
+                  isEditing={isEditingBudget}
+                  onEditToggle={setIsEditingBudget}
+                  onSave={handleSaveBudget}
+                  onLogExpenseClick={() => setIsAddExpenseOpen(true)}
+                  noCardWrapper={true}
+                />
+              </CollapsibleSection>
+
+              {/* Trip Details Collapsible: single wrapper, toggle only on mobile */}
+              <CollapsibleSection
+                title="Trip Details"
+                defaultOpen={true}
+                hideToggleOnDesktop
+                className="mb-4"
+              >
+                <TripSidebarContent
+                  description={tripDescription}
+                  privacySetting={privacySetting}
+                  startDate={tripData.trip.start_date}
+                  endDate={tripData.trip.end_date}
+                  tags={tripTags}
+                  canEdit={canEdit}
+                  userRole={userRole}
+                  accessRequests={accessRequests}
+                  members={tripData.members ? adaptMembersToWithProfile(tripData.members) : []}
+                  onEdit={handleEditTripClick}
+                  onManageAccessRequest={handleManageAccessRequest}
+                  noCardWrapper={true}
+                />
+              </CollapsibleSection>
             </div>
 
             {/* Main Content Area - Flex-grow to take remaining space */}
             <div className="flex-grow">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="mb-4 w-full justify-start">
-                  {tabs.map((tab) => (
-                    <TabsTrigger key={tab.value} value={tab.value}>
+                <TabsList className="mb-4 w-full justify-start overflow-x-auto whitespace-nowrap scroll-snap-x px-1">
+                  {tabs.map((tab, idx) => (
+                    <TabsTrigger
+                      key={tab.value}
+                      value={tab.value}
+                      ref={el => { tabRefs.current[idx] = el; }}
+                      onClick={() => handleTabClick(idx, tab.value)}
+                      className="scroll-snap-align-center"
+                    >
                       {tab.label}
                     </TabsTrigger>
                   ))}
@@ -1729,10 +1718,7 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
                 initialDestinationName={tripData.trip.destination_name || null}
                 onSave={handleSaveTripDetails}
                 onClose={() => setIsEditTripSheetOpen(false)}
-                onChangeCover={() => {
-                  setIsEditTripSheetOpen(false); // Close edit dialog
-                  setIsImageSelectorOpen(true); // Open image sheet
-                }}
+                onChangeCover={handleCoverImageClick}
               />
             </div>
           </DialogContent>
@@ -1941,6 +1927,22 @@ export function TripPageClient({ tripId, canEdit }: TripPageClientProps) {
             </div>
           </DialogContent>
         </Dialog>
+
+        <MobileStepper
+          sections={itinerarySections}
+          currentSection={activeSection}
+          currentIndex={currentIndex}
+          showScrollToTop={showScrollToTop}
+          goToPrevSection={goToPrevSection}
+          goToNextSection={goToNextSection}
+          handleSectionClick={handleSectionClick}
+          handleScrollToTop={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        />
+
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
       </div>
     </TooltipProvider>
   );

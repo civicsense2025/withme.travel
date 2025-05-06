@@ -30,11 +30,17 @@ export async function validateCsrfToken(token: string): Promise<string | null> {
 export async function getCurrentUserId(supabase: SupabaseClient): Promise<string | null> {
   try {
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    return session?.user?.id || null;
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting current user ID:', userError);
+      return null;
+    }
+    return user?.id || null;
   } catch (error) {
-    console.error('Error getting current user ID:', error);
+    console.error('Unexpected error getting current user ID:', error);
     return null;
   }
 }

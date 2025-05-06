@@ -17,6 +17,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { createBrowserClient } from '@supabase/ssr';
 import type { Session } from '@supabase/supabase-js';
+import { LogOut } from 'lucide-react';
 
 enum MenuStatus {
   LOADING = 'LOADING',
@@ -38,12 +39,18 @@ function getInitials(name?: string | null, email?: string | null): string {
   return 'U';
 }
 
-export default function UserMenu({ serverSession = null }: { serverSession?: Session | null }) {
+interface UserMenuProps {
+  serverSession?: Session | null;
+  topPosition?: boolean; // New prop for mobile positioning
+}
+
+export default function UserMenu({ serverSession = null, topPosition = false }: UserMenuProps) {
   const { user, isLoading, signOut } = useAuth();
   const [status, setStatus] = React.useState<MenuStatus>(
     isLoading ? MenuStatus.LOADING : user ? MenuStatus.LOGGED_IN : MenuStatus.LOGGED_OUT
   );
   const [signOutError, setSignOutError] = React.useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -59,6 +66,7 @@ export default function UserMenu({ serverSession = null }: { serverSession?: Ses
     setStatus(MenuStatus.LOGGING_OUT);
     try {
       await signOut();
+      setMenuOpen(false);
     } catch (err: any) {
       setSignOutError(err.message);
       setStatus(MenuStatus.LOGGED_IN);
@@ -89,6 +97,67 @@ export default function UserMenu({ serverSession = null }: { serverSession?: Ses
   const email = user?.email;
   const isAdmin = false;
 
+  if (topPosition) {
+    // Mobile view - expanded display
+    return (
+      <div className="w-full">
+        {/* User info row */}
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+            <AvatarFallback>{getInitials(displayName, email)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium truncate">{displayName}</span>
+            {email && <span className="text-xs text-gray-500 truncate">{email}</span>}
+          </div>
+        </div>
+        
+        {/* Menu items */}
+        {menuOpen && (
+          <div className="mt-4 flex flex-col space-y-4 pl-2">
+            <Link href="/trips" className="text-sm">🧳 My Trips</Link>
+            <Link href="/saved" className="text-sm">💾 Saved</Link>
+            <Link href="/settings" className="text-sm">👤 Account</Link>
+            <Link href="/travel-map" className="text-sm">🗺️ Travel Map</Link>
+            {isAdmin && (
+              <Link href="/admin/dashboard" className="text-sm">🛠️ Admin Panel</Link>
+            )}
+            <Link href="/support" className="text-sm">🆘 Support</Link>
+            <Link href="/contribute" className="text-sm">🤝 Contribute</Link>
+          </div>
+        )}
+        
+        {/* Toggle button */}
+        <div className="mt-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs w-full justify-between"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? 'Hide menu' : 'Show menu'}
+            <span className="ml-1">{menuOpen ? '↑' : '↓'}</span>
+          </Button>
+        </div>
+        
+        {/* Logout button at the bottom of mobile menu */}
+        <div className="mt-auto">
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="mt-4 w-full"
+            onClick={handleSignOut}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop dropdown menu
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

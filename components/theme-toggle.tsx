@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/ui/button';
@@ -20,20 +19,6 @@ export function ThemeToggle({ emojiOnly }: { emojiOnly?: boolean } = {}) {
     return <Button variant="ghost" size="icon" className="w-9 px-0 opacity-0" />;
   }
 
-  if (emojiOnly) {
-    return (
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className="w-8 h-8 rounded-full transition-colors hover:bg-muted text-xl"
-        aria-label="Toggle theme"
-      >
-        {theme === 'dark' ? '🌞' : '🌙'}
-      </Button>
-    );
-  }
-
   return (
     <TooltipProvider>
       <Tooltip>
@@ -45,17 +30,23 @@ export function ThemeToggle({ emojiOnly }: { emojiOnly?: boolean } = {}) {
             className="w-8 h-8 rounded-full transition-colors hover:bg-muted"
             aria-label="Toggle theme"
           >
-            <div className="relative h-4 w-4 overflow-hidden">
-              <Sun
-                className={`h-4 w-4 absolute top-0 left-0 transition-all duration-300 ease-out ${
+            <div className="relative h-5 w-5 overflow-hidden flex items-center justify-center">
+              <span
+                className={`absolute text-xl transition-all duration-300 ease-out ${
                   theme === 'dark' ? 'opacity-100 transform-none' : 'opacity-0 -translate-y-2'
                 }`}
-              />
-              <Moon
-                className={`h-4 w-4 absolute top-0 left-0 transition-all duration-300 ease-out ${
+                aria-hidden="true"
+              >
+                ☀️
+              </span>
+              <span
+                className={`absolute text-xl transition-all duration-300 ease-out ${
                   theme === 'dark' ? 'opacity-0 translate-y-2' : 'opacity-100 transform-none'
                 }`}
-              />
+                aria-hidden="true"
+              >
+                🌙
+              </span>
             </div>
           </Button>
         </TooltipTrigger>

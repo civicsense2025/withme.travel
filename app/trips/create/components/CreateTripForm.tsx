@@ -40,6 +40,8 @@ import { CalendarDays, Check, ChevronLeft, ChevronRight, Image, MapPin, Tag } fr
 import { ImageSearchSelector } from '@/components/images/image-search-selector';
 import NextImage from 'next/image';
 import { PlaceSearch } from '@/components/place-search';
+import { useAuth } from '@/components/auth-provider';
+import { AuthModal } from '@/components/auth-modal';
 
 // Define the form schema
 const formSchema = z
@@ -241,10 +243,12 @@ export function CreateTripForm() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo');
+  const { user, isLoading } = useAuth();
 
   // Initialize form
   const form = useForm<FormValues>({
@@ -343,6 +347,21 @@ export function CreateTripForm() {
             .filter((tag) => tag !== '')
         : [];
 
+      // Check if user is logged in
+      if (!user && step === 3) {
+        // Save form data for after authentication
+        localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
+          ...values,
+          tags: tagsArray,
+          cover_image_url: values.cover_image_url || null,
+        }));
+        
+        // Show auth modal for final saving
+        setShowAuthModal(true);
+        setLoading(false);
+        return;
+      }
+
       // Submit to API
       const response = await fetch('/api/trips/create', {
         method: 'POST',
@@ -373,7 +392,9 @@ export function CreateTripForm() {
       localStorage.removeItem(FORM_STORAGE_KEY);
 
       toast({ title: 'Success', description: 'Trip created successfully!' });
-      router.push(redirectTo || PAGE_ROUTES.TRIP_DETAILS(newTripId));
+      router.push(
+        redirectTo || PAGE_ROUTES.TRIP_DETAILS(newTripId) + '?tripCreated=true'
+      );
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       toast({
@@ -434,7 +455,9 @@ export function CreateTripForm() {
 
       localStorage.removeItem(FORM_STORAGE_KEY);
       toast({ title: 'Success!', description: 'Basic trip created quickly!' });
-      router.push(redirectTo || PAGE_ROUTES.TRIP_DETAILS(newTripId));
+      router.push(
+        redirectTo || PAGE_ROUTES.TRIP_DETAILS(newTripId) + '?tripCreated=true'
+      );
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       toast({
@@ -977,6 +1000,32 @@ export function CreateTripForm() {
             form.getValues('title') || form.getValues('destination_name') || 'travel'
           }
         />
+
+        {/* Image preview (hidden when selector open) */}
+        {watchedValues.cover_image_url && !isImageSelectorOpen && (
+          <div className="relative mt-2 rounded-md overflow-hidden h-48 border">
+            <NextImage
+              src={watchedValues.cover_image_url}
+              alt="Trip cover"
+              fill
+              className="object-cover"
+            />
+          </div>
+        )}
+
+        {showAuthModal && (
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => {
+              // Save current form values
+              const formValues = form.getValues();
+              // Store form data for retrieval after login
+              localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formValues));
+              // Redirect to login with return to trips/create
+              window.location.href = `/login?redirectTo=${encodeURIComponent('/trips/create')}`;
+            }}
+          />
+        )}
       </div>
     </div>
   );

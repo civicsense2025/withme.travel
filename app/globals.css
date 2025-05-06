@@ -26,6 +26,17 @@
     --travel-peach: 30 100% 82%;
     --travel-peach-foreground: 30 100% 20%;
 
+    /* Ideas Whiteboard specific variables */
+    --whiteboard-bg: var(--background);
+    --whiteboard-grid-color: 0, 0, 0;
+    --whiteboard-grid-opacity: 0.07;
+    --whiteboard-connection-color: 99, 102, 241;
+    --whiteboard-connection-opacity: 0.9;
+    --whiteboard-control-bg: 255, 255, 255;
+    --whiteboard-control-bg-opacity: 0.9;
+    --whiteboard-control-hover: 241, 245, 249;
+    --whiteboard-card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    
     /* Primary color using travel-purple */
     --primary: 260 100% 82%;
     --primary-foreground: 260 100% 20%;
@@ -94,12 +105,39 @@
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 260 70% 70%;
-  }
-}
 
-@layer base {
+    /* Ideas Whiteboard dark mode overrides */
+    --whiteboard-bg: var(--background);
+    --whiteboard-grid-color: 255, 255, 255;
+    --whiteboard-grid-opacity: 0.1;
+    --whiteboard-connection-color: 153, 161, 255;
+    --whiteboard-connection-opacity: 0.9;
+    --whiteboard-control-bg: 30, 30, 40;
+    --whiteboard-control-bg-opacity: 0.9;
+    --whiteboard-control-hover: 45, 45, 55;
+    --whiteboard-card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-size: 15px;
+  }
+
+  /* Mobile-optimized typography */
+  h1 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold mb-6 leading-normal;
+  }
+  
+  h2 {
+    @apply text-xl md:text-2xl lg:text-3xl font-semibold mb-4 leading-normal;
+  }
+  
+  h3 {
+    @apply text-lg md:text-xl font-medium mb-3 leading-normal;
+  }
+  
+  p {
+    @apply leading-relaxed mb-4;
   }
 }
 
@@ -132,6 +170,24 @@
 
   .travel-button-accent {
     @apply bg-travel-yellow text-amber-900 hover:bg-amber-300;
+  }
+
+  /* Mobile-friendly container */
+  .mobile-container {
+    @apply w-full px-3 sm:px-6 md:max-w-4xl md:mx-auto md:px-8;
+  }
+  
+  /* Collapsible section for mobile */
+  .collapsible-section {
+    @apply rounded-lg border border-border p-4 mb-4 transition-all duration-300;
+  }
+  
+  .collapsible-section-header {
+    @apply flex items-center justify-between cursor-pointer;
+  }
+  
+  .collapsible-section-content {
+    @apply mt-4 overflow-hidden transition-all duration-300;
   }
 
   /* Tiptap-inspired components */
@@ -369,4 +425,127 @@ body.dragging-active * {
   background-color: rgba(var(--primary), 0.05);
   outline: 2px solid rgba(var(--primary), 0.2);
   outline-offset: -2px;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  /* Limit modal size on mobile */
+  .modal {
+    max-height: 75vh;
+    max-width: 75vw;
+    border-radius: 1rem;
+  }
+}
+
+/* Proper z-index layering */
+
+.board-background {
+  pointer-events: auto;
+  z-index: 0;
+}
+
+.grid-overlay {
+  z-index: 5;
+  pointer-events: none; /* Grid should never capture events */
+}
+
+/* Add a new board-content class */
+.board-content {
+  position: relative;
+  z-index: 10;
+}
+
+.idea-card {
+  z-index: 10;
+  /* Add a higher z-index when being interacted with */
+  &:hover, &:focus, &.selected {
+    z-index: 20;
+  }
+  
+  /* Make sure idea card controls are clickable */
+  .idea-card-controls {
+    z-index: 25;
+  }
+}
+
+/* Connections between ideas */
+.idea-connections {
+  z-index: 8; /* Below cards but above grid */
+  pointer-events: none; /* Lines shouldn't capture clicks except delete buttons */
+  
+  /* Only connection control points should capture events */
+  .connection-control {
+    pointer-events: auto;
+  }
+}
+
+/* Temporary connection while creating */
+.temp-connection {
+  z-index: 15; /* Above cards while creating */
+  pointer-events: none;
+}
+
+/* Main UI controls */
+.whiteboard-controls {
+  z-index: 1000; /* Increased from 100 to 1000 */
+  pointer-events: auto !important; /* Force pointer events */
+}
+
+.modal-overlay {
+  z-index: 200; /* Modals should be above everything */
+}
+
+/* Cursor overlay */
+.cursor-overlay {
+  z-index: 150; /* Above controls but below modals */
+  pointer-events: none; /* Never capture events */
+}
+
+/* Add class to interactive elements */
+.interactive {
+  cursor: pointer;
+}
+
+/* Fix for modal content to ensure it's above everything */
+.modal-content {
+  z-index: 201;
+}
+
+/* Fix for dropdown menus to ensure they're visible */
+.dropdown-menu {
+  z-index: 202;
+}
+
+/* Add specific component fixes */
+
+/* Fix for AddIdeaInput */
+.add-idea-input {
+  z-index: 30;
+  position: relative;
+}
+
+/* Fix for AddIdeaModal */
+.add-idea-modal {
+  z-index: 200;
+}
+
+/* Fix for ReadyForVotingModal */
+.ready-for-voting-modal {
+  z-index: 200;
+}
+
+/* Fix for WhiteboardControls */
+.whiteboard-controls {
+  z-index: 100;
+  position: relative;
+}
+
+/* Fix for IdeasFilter */
+.ideas-filter {
+  z-index: 101;
+}
+
+/* Fix for CollaboratorList */
+.collaborator-list {
+  z-index: 101;
 }

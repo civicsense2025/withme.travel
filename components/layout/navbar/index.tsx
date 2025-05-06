@@ -20,6 +20,7 @@ const navLinks: NavLink[] = [
   { href: '/trips', label: 'My Trips' },
   { href: '/destinations', label: 'Destinations' },
   { href: '/itineraries', label: 'Itineraries' },
+  { href: '/groups', label: 'Groups' },
 ];
 
 export function Navbar() {
@@ -31,7 +32,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between">
+      <div className="mobile-container flex h-14 items-center justify-between">
         <Link href="/" className="font-bold text-xl">
           withme.travel
         </Link>
@@ -55,10 +56,9 @@ export function Navbar() {
           <NavbarSearch />
           <ThemeToggle />
           {!isLoading && (
-            <Link href={user ? '/trips/create' : '/login?redirect=/trips/create'}>
+            <Link href={user ? '/trips' : '/login?redirect=/trips/create'}>
               <Button size="sm" className="rounded-full h-8">
-                <PlusCircle className="h-4 w-4 mr-1" />
-                <span>{user ? 'New Trip' : 'Sign In'}</span>
+                <span>{user ? 'Manage Trips' : 'Plan a Trip'}</span>
               </Button>
             </Link>
           )}
@@ -67,10 +67,10 @@ export function Navbar() {
 
         <div className="md:hidden flex items-center gap-2">
           {!isLoading && (
-            <Link href={user ? '/trips/create' : '/login?redirect=/trips/create'}>
+            <Link href={user ? '/trips' : '/login?redirect=/trips/create'}>
               <Button size="sm" className="rounded-full h-8">
-                <PlusCircle className="h-4 w-4" />
-                <span className="sr-only">{user ? 'New Trip' : 'Sign In'}</span>
+                <span className="sr-only md:not-sr-only">{user ? 'Manage Trips' : 'Plan a Trip'}</span>
+                <PlusCircle className="h-4 w-4 md:ml-1 md:mr-0" />
               </Button>
             </Link>
           )}
@@ -86,44 +86,73 @@ export function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-[9999] flex">
-          {/* Overlay (solid background) */}
-          <div className="absolute inset-0 bg-background" onClick={() => setMobileOpen(false)} />
-          {/* Fullscreen Sheet */}
-          <div className="relative w-full h-full flex flex-col p-4 z-10">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-bold text-lg">Menu</span>
+        <div className="fixed inset-0 z-[9999] flex justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setMobileOpen(false)} 
+          />
+          
+          {/* Slide-in Menu Panel */}
+          <div 
+            className="relative w-4/5 max-w-xs h-screen bg-background border-l border-border flex flex-col z-10 animate-in slide-in-from-right duration-300"
+          >
+            {/* Close Button - Top right */}
+            <div className="absolute top-4 right-4">
               <Button
                 variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
               >
-                <X />
+                <X className="h-5 w-5" />
               </Button>
             </div>
-            <nav className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'py-2 px-2 rounded hover:bg-muted',
-                    isActive(link.href) && 'bg-muted'
-                  )}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-4">
-              <NavbarSearch mobileView onSearch={() => setMobileOpen(false)} />
-            </div>
-            <div className="mt-4">
-              <ThemeToggle emojiOnly />
-            </div>
-            <div className="mt-auto pt-4 border-t border-muted">
-              <UserMenu />
+
+            {/* Menu Items */}
+            <div className="flex flex-col h-full pt-16 pb-6 px-6">
+              {/* User avatar and menu at the top */}
+              <div className="mb-6">
+                <UserMenu topPosition />
+              </div>
+              
+              {/* Divider */}
+              <div className="border-t border-muted my-4"></div>
+
+              {/* Search */}
+              <div className="mb-6">
+                <NavbarSearch mobileView onSearch={() => setMobileOpen(false)} />
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-muted my-4"></div>
+
+              {/* Navigation Links */}
+              <nav className="flex flex-col gap-6">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'text-base font-medium',
+                      isActive(link.href) ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+
+              {/* Theme Toggle */}
+              <div className="mt-6 flex items-center">
+                <div className="mr-2 text-sm text-muted-foreground">Theme:</div>
+                <ThemeToggle />
+              </div>
+
+              {/* Footer margin to prevent cutoff */}
+              <div className="mt-auto pt-8 pb-4"></div>
             </div>
           </div>
         </div>

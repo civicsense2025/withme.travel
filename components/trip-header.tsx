@@ -367,10 +367,10 @@ export function TripHeader({
       </div>
 
       {/* Trip Info Header */}
-      <div className="flex flex-col md:flex-row gap-6 items-start justify-between mb-4">
-        <div className="flex-grow">
-          <div className="flex items-start justify-between">
-            <div>
+      <div className="flex flex-col gap-6 items-start justify-between mb-4">
+        <div className="flex-grow w-full">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between">
+            <div className="mb-4 md:mb-0">
               <h1 className="text-3xl font-bold tracking-tight">{tripName}</h1>
               
               {/* Location */}
@@ -457,13 +457,14 @@ export function TripHeader({
               </div>
             </div>
             
-            {/* Edit Button */}
+            {/* Edit Button - Now in its own row on mobile */}
             {canEdit && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full md:w-auto">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={onEdit}
+                  className="md:flex-none flex-1"
                 >
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit Trip
@@ -474,7 +475,7 @@ export function TripHeader({
                   privacySetting={privacySetting || null}
                   slug={slug || null}
                   tripId={tripId}
-                  className=""
+                  className="md:flex-none flex-1"
                 />
               </div>
             )}

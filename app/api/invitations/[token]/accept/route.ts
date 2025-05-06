@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { TABLES } from '@/utils/constants/database';
+import plunk from '@/app/lib/plunk';
 
 export async function POST(
   request: NextRequest,
@@ -101,6 +102,24 @@ export async function POST(
           referred_by: invitation.invited_by,
         })
         .eq('id', user.id);
+    }
+
+    // After updating invitation status and referral tracking
+    try {
+      if (typeof user.email === 'string') {
+        await plunk.events.track({
+          event: 'user_invited_to_trip',
+          email: user.email,
+          data: {
+            invitee_name: user.email.split('@')[0],
+            inviter_name: invitation.invited_by,
+            trip_name: invitation.trip_id,
+            invitation_link: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/invite/${token}`,
+          },
+        });
+      }
+    } catch (plunkError) {
+      console.error('Failed to trigger Plunk trip invitation event:', plunkError);
     }
 
     return NextResponse.json({

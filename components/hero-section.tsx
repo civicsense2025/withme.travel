@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/hooks/use-auth';
 import type { AuthContextType } from '@/components/auth-provider';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
+import useOpenGraphImage from '@/lib/hooks/use-og-image';
 
 // Lazy load the CityBubbles component to improve initial load time
 const CityBubbles = lazy(() =>
@@ -30,6 +32,14 @@ export function HeroSection() {
   );
 
   const [currentPlanningTypeIndex, setCurrentPlanningTypeIndex] = useState(0);
+  const [previewDestination, setPreviewDestination] = useState('');
+
+  // Generate a preview OG image to showcase the thumbnail functionality
+  const ogImage = useOpenGraphImage({
+    type: 'generic',
+    title: 'Plan your next adventure',
+    subtitle: previewDestination || 'WithMe Travel'
+  });
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -38,6 +48,17 @@ export function HeroSection() {
 
     return () => clearInterval(interval);
   }, [planningTypes]);
+
+  // Rotate through some popular destinations for the preview
+  useEffect(() => {
+    const destinations = ['Barcelona, Spain', 'Tokyo, Japan', 'New York, USA', 'Paris, France', 'Bali, Indonesia'];
+    const destinationInterval = setInterval(() => {
+      const nextIndex = Math.floor(Math.random() * destinations.length);
+      setPreviewDestination(destinations[nextIndex]);
+    }, 5000);
+
+    return () => clearInterval(destinationInterval);
+  }, []);
 
   const handleLocationSelect = (destination: any) => {
     if (destination && destination.city) {
@@ -97,13 +118,13 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl md:text-5xl leading-relaxed md:leading-loose font-black lowercase flex flex-col animate-fade-in-up mb-4">
-            <span>say goodbye to the chaos of</span>
-            <div className="h-[1.2em] overflow-hidden relative">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black lowercase flex flex-col gap-1 animate-fade-in-up mb-8 md:mb-6">
+            <span className="leading-tight">say goodbye to the chaos of</span>
+            <div className="h-[2.2em] md:h-[1.8em] overflow-hidden relative mb-2">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={currentPlanningTypeIndex}
-                  className="text-travel-blue dark:text-travel-blue absolute inset-0 flex items-center justify-center"
+                  className="text-3xl md:text-4xl lg:text-5xl text-travel-blue dark:text-travel-blue absolute inset-0 flex items-center justify-center leading-tight"
                   initial={{ y: 40, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -40, opacity: 0 }}
@@ -119,7 +140,7 @@ export function HeroSection() {
           </h1>
         </motion.div>
 
-        <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8">
+        <p className="text-base md:text-lg lg:text-xl max-w-2xl mx-auto mb-10 md:mb-8">
           plan your next adventure together, make decisions easily, and create unforgettable
           memories.
         </p>
@@ -136,10 +157,10 @@ export function HeroSection() {
             aria-label="Search for a destination"
           />
           <Button
-            className="lowercase px-8 py-3 rounded-full h-auto w-full md:w-auto"
+            className="lowercase px-8 py-3 rounded-full h-auto w-full md:w-auto font-medium"
             onClick={handleExploreClick}
           >
-            {user ? 'my trips' : 'explore'}
+            {user ? 'manage trips' : 'plan a trip'}
           </Button>
         </div>
       </div>
@@ -148,7 +169,7 @@ export function HeroSection() {
       <div className="w-full px-0 -mx-3 sm:-mx-6 lg:-mx-8 overflow-visible">
         <h2 className="sr-only">Popular destinations</h2>
         <Suspense fallback={<div className="h-24"></div>}>
-          {/* <CityBubbles /> */} {/* Temporarily comment out for debugging */}
+          <CityBubbles />
         </Suspense>
       </div>
     </section>

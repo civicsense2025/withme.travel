@@ -5,6 +5,7 @@ import '@/app/globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
+import { TooltipProvider } from '@/components/ui/tooltip';
 // Remove the direct imports
 // import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -17,6 +18,8 @@ import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/footer';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { LayoutModeProvider } from './context/layout-mode-context';
+import { ClientSideLayoutRenderer } from '@/components/client-side-layout-renderer';
 
 // Define font but don't export it
 const fontSans = FontSans({
@@ -96,28 +99,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Skip to content
         </a>
 
-        {/* Pass initialSession to Providers for SSR hydration */}
-        <Providers initialSession={session}>
-          <Navbar />
-
-          <div
-            id="main-content"
-            className="min-h-[calc(100vh-4rem-4rem)] max-w-4xl mx-auto px-4 sm:px-6 md:px-8"
-            tabIndex={-1}
-          >
-            {children}
-          </div>
-
-          <Footer />
-
-          <ClientSideProviders>
-            <OfflineNotification />
-            <UpdateNotification />
-            <VercelAnalytics />
-            {/* {process.env.NODE_ENV === 'development' && <AuthTestPanel />} */}
-            {process.env.NODE_ENV === 'development' && <DebugPanel />}
-          </ClientSideProviders>
-        </Providers>
+        <TooltipProvider>
+          <Providers initialSession={session}>
+            <LayoutModeProvider>
+              <ClientSideLayoutRenderer>
+                {children}
+              </ClientSideLayoutRenderer>
+            </LayoutModeProvider>
+            <ClientSideProviders>
+              <OfflineNotification />
+              <UpdateNotification />
+              <VercelAnalytics />
+              {/* {process.env.NODE_ENV === 'development' && <AuthTestPanel />} */}
+              {process.env.NODE_ENV === 'development' && <DebugPanel />}
+            </ClientSideProviders>
+          </Providers>
+        </TooltipProvider>
       </body>
     </html>
   );

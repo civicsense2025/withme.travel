@@ -37,6 +37,10 @@ interface BudgetSnapshotSidebarProps {
   onEditToggle: (isEditing: boolean) => void;
   onSave: (newBudget: number) => Promise<void>;
   onLogExpenseClick: () => void;
+  /**
+   * If true, renders without the Card wrapper (for use inside CollapsibleSection)
+   */
+  noCardWrapper?: boolean;
 }
 
 export default function BudgetSnapshotSidebar({
@@ -48,6 +52,7 @@ export default function BudgetSnapshotSidebar({
   onEditToggle,
   onSave,
   onLogExpenseClick,
+  noCardWrapper = false,
 }: BudgetSnapshotSidebarProps) {
   const [editedBudget, setEditedBudget] = useState<string>(targetBudget?.toString() ?? '');
   const [isSaving, setIsSaving] = useState(false);
@@ -89,22 +94,24 @@ export default function BudgetSnapshotSidebar({
 
   const remaining = targetBudget !== null ? targetBudget - totalPlanned : null;
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Budget Snapshot</CardTitle>
-        {canEdit && !isEditing && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => onEditToggle(true)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
+  const content = (
+    <>
+      {noCardWrapper ? null : (
+        <div className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-1">
+          <span className="text-sm font-medium">Budget Snapshot</span>
+          {canEdit && !isEditing && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onEditToggle(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
+      <div className="px-4">
         {isEditing ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -169,7 +176,7 @@ export default function BudgetSnapshotSidebar({
                     ></div>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground text-right">
+                <p className="text-xs text-muted-foreground text-right py-2">
                   {combinedProgress.toFixed(0)}% of budget
                 </p>
                 {overBudget && (
@@ -181,7 +188,38 @@ export default function BudgetSnapshotSidebar({
             )}
           </div>
         )}
-      </CardContent>
+      </div>
+      <div className="pt-4 border-t px-4 pb-4">
+        {!isEditing && (
+          <Button variant="outline" size="sm" className="w-full" onClick={onLogExpenseClick}>
+            <Plus className="h-4 w-4 mr-2" />
+            Log Expense
+          </Button>
+        )}
+      </div>
+    </>
+  );
+
+  if (noCardWrapper) {
+    return content;
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Budget Snapshot</CardTitle>
+        {canEdit && !isEditing && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => onEditToggle(true)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>{content}</CardContent>
       <CardFooter className="pt-4 border-t">
         {!isEditing && (
           <Button variant="outline" size="sm" className="w-full" onClick={onLogExpenseClick}>

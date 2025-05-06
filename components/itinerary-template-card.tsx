@@ -4,6 +4,7 @@ import { MapPin, Clock, Eye, Heart } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ItineraryTemplateMetadata } from '@/utils/constants/database';
 
 interface ItineraryTemplateCardProps {
   itinerary: {
@@ -21,6 +22,17 @@ interface ItineraryTemplateCardProps {
       name: string | null;
       avatar_url: string | null;
     } | null;
+    destinations: Destination[];
+    duration_days: number;
+    category: string;
+    created_at: string;
+    view_count: number;
+    use_count: number;
+    like_count: number;
+    featured: boolean;
+    cover_image_url: string;
+    groupsize: string;
+    metadata: ItineraryTemplateMetadata;
   };
   index?: number;
 }
@@ -83,6 +95,22 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
             {itinerary.tags.length > 3 && (
               <Badge variant="outline">+{itinerary.tags.length - 3}</Badge>
             )}
+          </div>
+          <div className="mt-4">
+            <p className="text-sm text-gray-500">
+              <span className="font-semibold">Pace:</span> {itinerary.metadata.pace}
+            </p>
+            <p className="text-sm text-gray-500">
+              <span className="font-semibold">Best For:</span> {itinerary.metadata.best_for.join(', ')}
+            </p>
+            <div className="text-sm text-gray-500">
+              <span className="font-semibold">Highlights:</span>
+              <ul className="list-disc list-inside ml-4">
+                {itinerary.metadata.highlights.map((highlight, index) => (
+                  <li key={index}>{highlight}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-2 border-t pt-4">

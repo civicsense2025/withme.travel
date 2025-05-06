@@ -8,7 +8,6 @@ import { createServerClient } from '@supabase/ssr';
 import type { Database } from '../../types/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CookieOptions } from '@supabase/ssr';
-import { cookies, headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // Ensure environment variables are present
@@ -63,6 +62,8 @@ function convertCookieOptions(name: string, value: string, options: CookieOption
  */
 export async function createServerComponentClient(): Promise<TypedSupabaseClient> {
   try {
+    // Import cookies only inside the function
+    const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -90,6 +91,10 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
           }
         },
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
   } catch (error) {
     console.error('Error creating server component client:', error);
@@ -101,6 +106,10 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
         set() {},
         remove() {},
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
   }
 }
@@ -112,11 +121,18 @@ export async function getServerSession() {
   const supabase = await createServerComponentClient();
 
   try {
-    const sessionData = await supabase.auth.getSession();
-    return sessionData;
+    // Get the user securely
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('Error getting user:', error);
+      return { data: { user: null }, error };
+    }
+    // Return the user object instead of the session
+    return { data: { user }, error: null };
   } catch (error) {
-    console.error('Error getting session:', error);
-    return { data: { session: null } };
+    console.error('Error getting session/user:', error);
+    // Ensure the return type matches the expected structure even on catch
+    return { data: { user: null }, error: error instanceof Error ? error : new Error('Unknown error') };
   }
 }
 
@@ -125,7 +141,8 @@ export async function getServerSession() {
  */
 export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
   try {
-    // Try to use Next.js cookies() API
+    // Import cookies only inside the function
+    const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -153,6 +170,10 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
           }
         },
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
   } catch (error) {
     console.warn('Falling back to basic client with no cookie handling:', error);
@@ -164,6 +185,10 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
         set() {},
         remove() {},
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
   }
 }
@@ -208,6 +233,10 @@ export async function createApiClientWithReqRes(req: NextRequest, res: NextRespo
         });
       },
     },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
   });
 }
 
@@ -223,7 +252,7 @@ export const createServerSupabaseClient = createServerComponentClient;
 export async function isAuthenticated() {
   try {
     const { data } = await getServerSession();
-    return !!data?.session;
+    return !!data?.user;
   } catch (error) {
     console.error('Error checking authentication:', error);
     return false;

@@ -288,3 +288,63 @@ psql $DATABASE_URL -f migrations/fix_kyoto_template.sql
 ```
 
 This will create the necessary sections and sample itinerary items for the template to display properly. You can use this pattern to create/fix other templates as needed.
+
+## 🗨️ Universal Comment System
+
+WithMe Travel now supports a universal, reusable comment system for all major content types (ideas, destinations, itinerary items, trips, images, notes, etc). This system is:
+- **Type-safe** and fully documented
+- **API-driven** with REST endpoints for CRUD, reactions, and replies
+- **Expandable** to new content types
+- **UI-ready** with accessible, compact React components
+
+### Usage in React
+
+```tsx
+import { CommentsList } from '@/components/comments';
+
+// Example for an itinerary item
+<CommentsList contentType="itinerary_item" contentId={item.id} />
+
+// For a group idea
+<CommentsList contentType="group_idea" contentId={idea.id} />
+```
+
+- `contentType` must be one of: `destination`, `group_idea`, `itinerary_item`, `trip`, `image`, `note`
+- `contentId` is the UUID of the item being commented on
+
+### API Endpoints
+
+- `GET /api/comments?contentType=...&contentId=...` — List comments (with pagination)
+- `POST /api/comments` — Create a comment
+- `PUT /api/comments/[id]` — Edit a comment
+- `DELETE /api/comments/[id]` — Delete (soft) a comment
+- `GET /api/comments/[id]/replies` — List replies to a comment
+- `GET /api/comments/[id]/reactions` — List reactions for a comment
+- `POST /api/comments/[id]/reactions` — Add a reaction
+- `DELETE /api/comments/[id]/reactions?emoji=...` — Remove a reaction
+
+All endpoints require authentication for write actions.
+
+### Database & Schema
+- See `supabase/migrations/20254626123456_comments_schema.sql` for schema, triggers, and RLS policies.
+- All comments are stored in a single `comments` table, with polymorphic `content_type` and `content_id` fields.
+- Reactions are stored in `comment_reactions`.
+
+### Expansion Plan
+- To add a new commentable type, add it to the `ENUMS.CONTENT_TYPES` in `utils/constants/database.ts` and update the API validation.
+- The UI and API will automatically support new types.
+
+### Architecture Overview
+- **Types:** See `types/comments.ts` for all interfaces and type safety.
+- **API:** See `app/api/comments/` for endpoints.
+- **Hooks:** Use `useComments` from `hooks/use-comments.ts` for all comment logic in React.
+- **Components:** Use `CommentsList`, `CommentItem`, and `CommentForm` from `components/comments/`.
+
+### Example: Adding Comments to a Destination
+```tsx
+<CommentsList contentType="destination" contentId={destination.id} />
+```
+
+---
+
+For more details, see the code in `components/comments/`, `hooks/use-comments.ts`, and the API route handlers in `app/api/comments/`.

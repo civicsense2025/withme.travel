@@ -80,16 +80,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Create Supabase client using our utility
     const supabase = await createRouteHandlerClient();
 
-    // Get current session (the user should be authenticated with the recovery link)
+    // Get current user securely (session after recovery link should be valid)
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (userError || !user) {
       return NextResponse.json(
         {
           success: false,
-          error: 'No active session. Please request a new password reset link.',
+          error: userError?.message || 'Invalid session. Please request a new password reset link.',
         },
         { status: 401, headers }
       );

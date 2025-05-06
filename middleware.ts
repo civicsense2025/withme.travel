@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { Database } from '@/types/database.types';
 import { rateLimit, RateLimitOptions } from '@/utils/middleware/rate-limit';
+import { TABLES } from '@/utils/constants/database';
 
 // Define public paths that don't require authentication
 const publicPaths = [
@@ -20,6 +21,7 @@ const publicPaths = [
   '/countries',
   '/continents',
   '/search',
+  '/groups',
   // Add other public paths as needed
 ];
 
@@ -43,6 +45,7 @@ const publicApiPaths = [
   '/api/search',
   '/api/mapbox',
   '/api/images',
+  '/api/groups',
   // Add other public API paths as needed
 ];
 
@@ -55,6 +58,12 @@ function isPublicPath(path: string): boolean {
 
   // Check exact paths first
   if (publicPaths.includes(normalizedPath)) {
+    return true;
+  }
+
+  // Group preview paths should always be public
+  if (normalizedPath.includes('/ideas-preview')) {
+    console.log(`[Middleware] Public path access (ideas-preview): ${normalizedPath}`);
     return true;
   }
 
@@ -73,6 +82,14 @@ function isPublicPath(path: string): boolean {
     normalizedPath.startsWith('/icons') ||
     normalizedPath.startsWith('/favicon')
   );
+}
+
+/**
+ * Check if a path is for a specific group
+ */
+function isGroupPath(path: string): boolean {
+  // Match /groups/{id} and any subpaths
+  return /^\/groups\/[a-zA-Z0-9-]+/.test(path);
 }
 
 /**
@@ -100,6 +117,12 @@ export async function middleware(req: NextRequest) {
       }
     }
 
+    // Special handling for ideas-preview paths - they're always public
+    if (pathname.includes('/ideas-preview')) {
+      console.log(`[Middleware] Public ideas preview access: ${pathname}`);
+      return NextResponse.next();
+    }
+
     // Skip auth checks for public paths
     if (isPublicPath(pathname)) {
       console.log(`[Middleware] Public path access: ${pathname}`);
@@ -123,6 +146,10 @@ export async function middleware(req: NextRequest) {
             res.cookies.set({ name, value: '', ...options });
           },
         },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
       }
     );
 
@@ -130,6 +157,36 @@ export async function middleware(req: NextRequest) {
     const {
       data: { session },
     } = await supabase.auth.getSession();
+
+    // For group paths, we need special handling
+    if (isGroupPath(pathname)) {
+      console.log(`[Middleware] Group path access: ${pathname}`);
+      
+      // If user is authenticated, let them proceed (individual pages will check membership)
+      if (session) {
+        return res;
+      }
+      
+      // Extract group ID from the path
+      const groupId = pathname.split('/')[2];
+      
+      // If no session, check if the group is public
+      try {
+        const { data: group } = await supabase
+          .from(TABLES.GROUPS)
+          .select('visibility, public_ideas_board')
+          .eq('id', groupId)
+          .single();
+          
+        // If group is public, allow access
+        if (group && (group.visibility === 'public' || group.public_ideas_board)) {
+          console.log(`[Middleware] Allowing public access to group: ${groupId}`);
+          return res;
+        }
+      } catch (error) {
+        console.error(`[Middleware] Error checking group visibility: ${error}`);
+      }
+    }
 
     // If there's no session, redirect to login
     if (!session) {
@@ -142,6 +199,21 @@ export async function middleware(req: NextRequest) {
       console.log(`[Middleware] Redirecting unauthenticated request from ${pathname} to login`);
 
       return NextResponse.redirect(redirectUrl);
+    }
+
+    // Admin route protection
+    if (pathname.startsWith('/admin')) {
+      // Check if user is admin
+      const { data: profile } = await supabase
+        .from(TABLES.PROFILES)
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile?.is_admin) {
+        // User is not an admin, redirect to home
+        return NextResponse.redirect(new URL('/', req.url));
+      }
     }
 
     // User is authenticated, proceed with the request
@@ -163,6 +235,6 @@ export const config = {
      * Match all request paths except static assets, public paths, and api health check
      * We'll handle the specific exclusions inside the middleware function
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

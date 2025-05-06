@@ -180,7 +180,6 @@ function AuthErrorFallback() {
 // Get profile initials - shared function to ensure consistency
 function getProfileInitials(profile: any, user: any): string {
   if (profile?.name) {
-    // Get first letters of each word in the name
     return profile.name
       .split(' ')
       .map((part: string) => part.charAt(0))
@@ -360,6 +359,15 @@ export function Navbar() {
                 My Trips
               </NavItem>
             )}
+
+            {/* Add Groups link (always visible) */}
+            <NavItem
+              href="/groups"
+              isActive={isActive('/groups')}
+              isLoading={false}
+            >
+              Groups
+            </NavItem>
 
             {/* Add Destinations link */}
             <NavItem
@@ -651,11 +659,11 @@ export function Navbar() {
                         >
                           <Avatar className="h-9 w-9">
                             <AvatarImage
-                              src={user.user_metadata?.avatar_url || ''}
+                              src={user.profile?.avatar_url || ''}
                               alt={user?.email || 'User'}
                             />
                             <AvatarFallback>
-                              {user?.email?.charAt(0).toUpperCase() || 'U'}
+                              {getProfileInitials(user.profile, user)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col text-sm">

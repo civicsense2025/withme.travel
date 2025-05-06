@@ -3,6 +3,12 @@ import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { TABLES } from '@/utils/constants/database';
 import { TRIP_ROLES } from '@/utils/constants/status';
+import { VerticalStepper } from '@/components/itinerary/VerticalStepper';
+import { MobileStepper } from '@/components/itinerary/MobileStepper';
+import { Metadata, ResolvingMetadata } from 'next';
+import { createServerComponentClient } from '@/utils/supabase/server';
+import { getOpenGraphImageForTrip } from '@/lib/hooks/use-og-image';
+import { cookies } from 'next/headers';
 
 import type { Database } from '@/types/database.types';
 // Import TABLES but use type assertion
@@ -13,72 +19,164 @@ import TripPageClientWrapper from './trip-page-client-wrapper';
 type ExtendedTables = {
   TRIP_MEMBERS: string;
   TRIPS: string;
+  USERS: string;
+  ITINERARY_ITEMS: string;
+  ITINERARY_SECTIONS: string;
+  DESTINATIONS: string;
   [key: string]: string;
 };
 
 // Use the extended type with the existing TABLES constant
 const Tables = TABLES as unknown as ExtendedTables;
 
+// Define trip data interface
+interface TripData {
+  id: string;
+  name: string;
+  description?: string;
+  destination_id?: string;
+  destinations?: {
+    city?: string;
+    country?: string;
+    image_url?: string;
+  };
+  cover_image_url?: string;
+}
+
+// Add metadata generation for trip pages
+export async function generateMetadata(
+  { params }: { params: Promise<{ tripId: string }> },
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  try {
+    const { tripId } = await params;
+    const supabase = await createServerComponentClient();
+
+    // Fetch trip data for metadata
+    const { data: trip, error } = await supabase
+      .from(TABLES.TRIPS)
+      .select(`id, name, description, destination_id, cover_image_url, destinations:${TABLES.DESTINATIONS}(city, country, image_url)`)
+      .eq('id', tripId)
+      .single();
+
+    if (error || !trip) {
+      console.error('Error fetching trip for metadata:', error);
+      return {
+        title: 'Trip | WithMe Travel',
+        description: 'Plan and organize your trip with WithMe Travel'
+      };
+    }
+
+    const tripData = trip as unknown as TripData;
+    
+    // Create metadata title and description
+    const title = `${tripData.name} | WithMe Travel`;
+    const description = tripData.description
+      ? tripData.description.substring(0, 160)
+      : `Plan your trip to ${tripData.destinations?.city || 'your destination'} with WithMe Travel`;
+      
+    // Generate OG images
+    const ogImages = getOpenGraphImageForTrip({
+      tripId,
+      bgColor: '#4A90E2'
+    });
+    
+    // Return metadata object
+    return {
+      title,
+      description,
+      openGraph: {
+        title: tripData.name,
+        description,
+        images: ogImages,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: tripData.name,
+        description,
+        images: ogImages.map(img => img.url),
+      }
+    };
+  } catch (error) {
+    console.error('Error generating trip metadata:', error);
+    return {
+      title: 'Trip | WithMe Travel',
+      description: 'Plan and organize your trip with WithMe Travel'
+    };
+  }
+}
+
 export default async function TripPage({ params }: { params: Promise<{ tripId: string }> }) {
-  // In Next.js 15, we must await the params
   const { tripId } = await params;
-
-  // Use the unified helper
-  const supabase = await getServerComponentClient();
-
-  // Check authentication status using getUser() for security
+  
+  // Get server component client
+  const supabase = await createServerComponentClient();
+  
+  // Get cookies for guest token check
+  const cookieStore = await cookies();
+  const guestTripToken = cookieStore.get('guest_trip_token')?.value;
+  
+  // Check authentication status
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-
-  // Handle potential auth errors (e.g., invalid token)
-  if (authError) {
-    console.error('Authentication error:', authError);
-    // Redirect to login, clear potentially problematic cookies?
-    redirect(`/login?redirectTo=${encodeURIComponent(`/trips/${tripId}`)}&error=auth_error`);
+  
+  // First check if the trip exists
+  const { data: trip, error: tripError } = await supabase
+    .from(Tables.TRIPS)
+    .select('id, name, created_by, guest_token')
+    .eq('id', tripId)
+    .single();
+  
+  if (tripError) {
+    console.error('Trip not found:', tripError);
+    redirect(`/trips?error=${encodeURIComponent('Trip not found')}`);
   }
-
-  // If user is not authenticated, redirect to login
-  if (!user) {
+  
+  // Determine if this is a guest-created trip the current guest can access
+  const isGuestCreator = !user && trip.guest_token && guestTripToken === trip.guest_token;
+  
+  // Now check if the user has access to this trip
+  if (!user && !isGuestCreator) {
+    // If not authenticated and not a guest creator, redirect to login
     redirect(`/login?redirectTo=${encodeURIComponent(`/trips/${tripId}`)}`);
   }
-
-  // Fetch trip and user's membership in parallel using Tables
-  const [tripResult, memberResult] = await Promise.all([
-    supabase.from(Tables.TRIPS).select('id, name').eq('id', tripId).single(),
-    supabase
+  
+  // If authenticated, check if user is a member of the trip
+  let canEdit = false;
+  
+  if (user) {
+    const { data: membership, error: membershipError } = await supabase
       .from(Tables.TRIP_MEMBERS)
       .select('role')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
-      .maybeSingle(),
-  ]);
-
-  const { data: trip, error: tripError } = tripResult;
-  const { data: member, error: memberError } = memberResult;
-
-  // Handle errors (e.g., network issues)
-  if (tripError || memberError) {
-    console.error('Error fetching trip or membership:', tripError || memberError);
-    // Consider showing a more specific error page
-    // Ensure RLS policies are checked if this happens frequently for authenticated users
-    throw tripError || memberError || new Error('Failed to load trip data');
+      .maybeSingle();
+    
+    if (membershipError) {
+      console.error('Error checking trip membership:', membershipError);
+    }
+    
+    // User can edit if they are a member with admin or editor role
+    if (membership && (membership.role === 'admin' || membership.role === 'editor')) {
+      canEdit = true;
+    } else if (trip.created_by === user.id) {
+      // User is the creator but might not be in trip_members yet
+      canEdit = true;
+    }
+  } else if (isGuestCreator) {
+    // Guest creators can edit their trips
+    canEdit = true;
   }
-
-  if (!trip) {
-    // This could also indicate an RLS issue if the user should have access
-    console.warn(`Trip not found or access denied for ID: ${tripId}, User: ${user.id}`);
-    return notFound();
-  }
-
-  // Use TRIP_ROLES directly from status constants
-  const userRole = member?.role as TripRole | undefined;
-  const canEdit = userRole === TRIP_ROLES.ADMIN || userRole === TRIP_ROLES.EDITOR;
-
+  
   return (
-    <Suspense fallback={<div className="p-4">Loading trip...</div>}>
-      <TripPageClientWrapper tripId={tripId} canEdit={canEdit} />
-    </Suspense>
+    <div className="min-h-screen">
+      <TripPageClientWrapper
+        tripId={tripId}
+        canEdit={canEdit}
+        isGuestCreator={isGuestCreator}
+      />
+    </div>
   );
 }

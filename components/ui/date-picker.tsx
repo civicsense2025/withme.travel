@@ -9,9 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+interface DateRange {
+  from: Date | null;
+  to: Date | null;
+}
+
 interface DatePickerProps {
-  date: Date | null;
-  setDate: (date: Date | null) => void;
+  date: DateRange;
+  setDate: (date: DateRange) => void;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -20,21 +25,24 @@ export function DatePicker({
   date,
   setDate,
   disabled = false,
-  placeholder = 'Pick a date',
+  placeholder = 'Pick a date range',
 }: DatePickerProps) {
   const formattedDate = React.useMemo(() => {
-    if (!date) return null;
-    try {
-      return format(date, 'PPP');
-    } catch (error) {
-      console.error('Invalid date format:', error);
-      return null;
+    if (!date?.from && !date?.to) return null;
+    if (date?.from && date?.to) {
+      return `${format(date.from, 'MMM d')} - ${format(date.to, 'MMM d, yyyy')}`;
     }
+    if (date?.from) {
+      return format(date.from, 'MMM d, yyyy');
+    }
+    return null;
   }, [date]);
 
-  // Custom handler to adapt the Calendar's type to our expected types
-  const handleSelect = (day: Date | undefined) => {
-    return setDate(day || null);
+  const handleSelect = (range: { from?: Date; to?: Date } | undefined) => {
+    setDate({
+      from: range?.from ?? null,
+      to: range?.to ?? null,
+    });
   };
 
   return (
@@ -54,8 +62,8 @@ export function DatePicker({
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
-          mode="single"
-          selected={date || undefined}
+          mode="range"
+          selected={date && date.from ? { from: date.from, to: date.to ?? undefined } : undefined}
           onSelect={handleSelect}
           initialFocus
           disabled={disabled}

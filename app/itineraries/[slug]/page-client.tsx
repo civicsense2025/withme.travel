@@ -4,10 +4,10 @@ import React from 'react';
 import { ItineraryTemplateDisplay } from '@/components/itinerary/itinerary-template-display';
 import { UseTemplateButton } from '@/components/use-template-button';
 import { Button } from '@/components/ui/button';
-import { Heart, Share2 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Heart, Share2, Calendar, MapPin, Clock, User, Star, Tag, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 // Define types to match the server component and database schema
 interface ItineraryTemplateItem {
@@ -113,15 +113,20 @@ export default function ItineraryTemplatePageClient({
     }
   };
 
+  // Extract important metadata fields with fallbacks
+  const budget = template.metadata?.budget || '';
+  const budgetLevel = template.metadata?.budget_level || '';
+  const pace = template.metadata?.pace || '';
+  const travelStyle = template.metadata?.travel_style || '';
+  const audience = template.metadata?.audience || '';
+  const seasonality = template.metadata?.seasonality || '';
+  const highlights = template.metadata?.highlights || [];
+  const rating = template.metadata?.rating || 0;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Main Content */}
-        <div className="lg:col-span-2">
-          <ItineraryTemplateDisplay template={template} sections={sections} />
-        </div>
-
-        {/* Right Column - Sidebar */}
+        {/* Left Column - Sidebar (moved from right) */}
         <div className="space-y-6">
           <div className="bg-card rounded-lg border shadow-sm p-6 space-y-6">
             <div className="space-y-4">
@@ -157,35 +162,129 @@ export default function ItineraryTemplatePageClient({
             <h3 className="text-lg font-semibold mb-4">About This Itinerary</h3>
 
             <div className="space-y-4">
-              <div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">Duration</p>
                 <p className="font-medium">{template.duration_days} days</p>
               </div>
 
-              <div>
-                <p className="text-sm text-muted-foreground">Views</p>
-                <p className="font-medium">{template.view_count || 0}</p>
-              </div>
+              {template.destination && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Destination</p>
+                  <p className="font-medium">
+                    {template.destination.city}, {template.destination.country}
+                  </p>
+                </div>
+              )}
 
-              <div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">Created</p>
                 <p className="font-medium">{new Date(template.created_at).toLocaleDateString()}</p>
               </div>
 
-              {template.tags && template.tags.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Tags</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {template.tags.map((tag) => (
-                      <span key={tag} className="text-xs bg-muted rounded-full px-2 py-1">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Views</p>
+                <p className="font-medium">{template.view_count || 0}</p>
+              </div>
+
+              {rating > 0 && (
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Rating</p>
+                  <p className="font-medium">{rating}/5</p>
                 </div>
               )}
             </div>
+
+            <Separator className="my-4" />
+
+            {/* New metadata section */}
+            <h4 className="font-medium mb-3">Details</h4>
+            <div className="space-y-3">
+              {budgetLevel && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Budget Level</p>
+                  <p className="font-medium">{budgetLevel}</p>
+                </div>
+              )}
+
+              {pace && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Pace</p>
+                  <p className="font-medium">{pace}</p>
+                </div>
+              )}
+
+              {travelStyle && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Travel Style</p>
+                  <p className="font-medium">{travelStyle}</p>
+                </div>
+              )}
+
+              {audience && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Perfect For</p>
+                  <p className="font-medium">{audience}</p>
+                </div>
+              )}
+
+              {seasonality && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Best Season</p>
+                  <p className="font-medium">{seasonality}</p>
+                </div>
+              )}
+
+              {budget && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Estimated Budget</p>
+                  <p className="font-medium">{budget}</p>
+                </div>
+              )}
+            </div>
+
+            {highlights && highlights.length > 0 && (
+              <>
+                <Separator className="my-4" />
+                <div>
+                  <h4 className="font-medium mb-2">Highlights</h4>
+                  <ul className="text-sm space-y-1 list-disc pl-4">
+                    {highlights.map((highlight: string, index: number) => (
+                      <li key={index}>{highlight}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {template.tags && template.tags.length > 0 && (
+              <>
+                <Separator className="my-4" />
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    <h4 className="font-medium">Tags</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {template.tags.map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-xs py-0">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
+        </div>
+
+        {/* Right Column - Main Content (moved from left) */}
+        <div className="lg:col-span-2">
+          <ItineraryTemplateDisplay template={template} sections={sections} />
         </div>
       </div>
     </div>

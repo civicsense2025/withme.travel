@@ -26,7 +26,7 @@ export function Footer() {
     { href: '/trips/create', label: 'Plan a Trip' },
   ];
   if (user) {
-    exploreLinks.push({ href: '/', label: 'My Trips' });
+    exploreLinks.push({ href: '/trips', label: 'My Trips' });
   }
 
   const companyLinks = [{ href: '/support', label: 'Support Us' }];
@@ -40,8 +40,8 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-muted/30 py-12 text-center">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <footer className="bg-muted/30 py-12 text-center pb-16 sm:pb-12">
+      <div className="mobile-container">
         <div className="grid grid-cols-1 gap-10 items-center">
           <div className="space-y-4 flex flex-col items-center">
             <Logo />

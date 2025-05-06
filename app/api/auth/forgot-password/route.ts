@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import * as z from 'zod';
 import { EmailService } from '@/lib/services/email-service';
+import plunk from '@/app/lib/plunk';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -47,19 +48,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Also send a custom email using our EmailService
     try {
-      await EmailService.sendEmail({
-        to: email,
-        subject: 'Reset your password',
-        html: `
-          <h1>Reset your password</h1>
-          <p>Click the link below to reset your password:</p>
-          <p><a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password">Reset Password</a></p>
-          <p>This link will expire in 24 hours.</p>
-        `,
+      await plunk.events.track({
+        event: 'user_password_reset_requested',
+        email,
+        data: {
+          name: email.split('@')[0],
+          password_reset_link: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password`,
+          support_link: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/support`,
+        },
       });
-    } catch (emailError) {
-      console.error('Failed to send custom password reset email:', emailError);
-      // Continue even if our custom email fails, since Supabase will send its own
+    } catch (plunkError) {
+      console.error('Failed to trigger Plunk password reset event:', plunkError);
     }
 
     return NextResponse.json({

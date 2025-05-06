@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface StepperSection {
@@ -83,9 +83,26 @@ export function VerticalStepper({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Find the current section index
+  const currentIndex = sections.findIndex(section => section.id === currentSection);
+  
+  // Navigation to next/previous section
+  const goToNextSection = () => {
+    if (currentIndex < sections.length - 1) {
+      handleSectionClick(sections[currentIndex + 1].id);
+    }
+  };
+  
+  const goToPrevSection = () => {
+    if (currentIndex > 0) {
+      handleSectionClick(sections[currentIndex - 1].id);
+    }
+  };
+
   return (
     <TooltipProvider>
-      <div className="fixed right-4 top-1/2 transform -translate-y-1/2 z-10">
+      {/* Desktop Vertical Stepper */}
+      <div className="fixed right-4 top-1/2 transform -translate-y-1/2 z-10 hidden md:block">
         <div className="flex flex-col items-center space-y-4 rounded-full p-2">
           {/* Scroll to top button */}
           {showScrollToTop && (
