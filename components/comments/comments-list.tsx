@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 import CommentItem from '@/components/comments/comment-item';
 import CommentForm from '@/components/comments/comment-form';
 import { useComments } from '@/hooks/use-comments';
-import { CommentableContentType } from '@/utils/constants/database';
+import { CommentableContentType } from '@/utils/constants/tables';
 
 interface CommentsListProps {
   contentType: CommentableContentType;
@@ -55,7 +55,7 @@ export default function CommentsList({
     if (repliesMap[commentId]) {
       setRepliesMap(prev => ({
         ...prev,
-        [commentId]: prev[commentId] ? [] : [...prev[`${commentId}_cache`] || []]
+        [commentId]: prev[commentId] ? [] : [...(prev[`${commentId}_cache`] || [])]
       }));
       return;
     }

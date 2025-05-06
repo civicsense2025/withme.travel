@@ -1,8 +1,6 @@
-'use client';
-
+'use client';;
 import { useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,7 +85,7 @@ export default function FeedbackEditForm({ initialData }: FeedbackEditFormProps)
       };
 
       const { error } = await supabase
-        .from(TABLES.FEEDBACK)
+        .from('feedback')
         .update(updateData)
         .eq('id', formData.id);
 

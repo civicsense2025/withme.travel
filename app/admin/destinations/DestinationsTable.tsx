@@ -1,9 +1,7 @@
-'use client';
-
+'use client';;
 import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -121,7 +119,7 @@ export default function DestinationsTable({ initialData }: { initialData: Destin
     setIsLoading(true);
     try {
       const { error } = await supabase
-        .from(TABLES.DESTINATIONS)
+        .from('destinations')
         .delete()
         .eq('id', id);
 
@@ -146,7 +144,7 @@ export default function DestinationsTable({ initialData }: { initialData: Destin
       const ids = rows.map((row) => row.id);
       
       const { error } = await supabase
-        .from(TABLES.DESTINATIONS)
+        .from('destinations')
         .delete()
         .in('id', ids);
 

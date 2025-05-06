@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { TABLES } from '@/utils/constants/database';
 import { API_ROUTES } from '@/utils/constants/routes';
 
 // Define a more complete type for TABLES that includes missing properties
@@ -14,9 +13,6 @@ type ExtendedTables = {
   DESTINATIONS: string;
   [key: string]: string;
 };
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 // Define the Destination interface first so it can be used in mockDestinations
 interface Destination {

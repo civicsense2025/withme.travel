@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 // GET: /api/group-idea-comments?ideaId=...&limit=20&offset=0
 export async function GET(request: NextRequest) {
@@ -15,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createRouteHandlerClient();
   const { data, error } = await supabase
-    .from(TABLES.GROUP_IDEA_COMMENTS)
+    .from('group_idea_comments')
     .select('*')
     .eq('idea_id', ideaId)
     .order('created_at', { ascending: true })
@@ -31,15 +30,32 @@ export async function GET(request: NextRequest) {
 // POST: /api/group-idea-comments
 export async function POST(request: NextRequest) {
   const supabase = await createRouteHandlerClient();
+  
+  // Get authenticated user
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Get request body
   const { idea_id, user_id, content, parent_id } = await request.json();
-
-  if (!idea_id || !user_id || !content) {
+  
+  // Use authenticated user's ID if user_id isn't provided
+  const effectiveUserId = user_id || user?.id;
+  
+  if (!idea_id || !content) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+  
+  if (!effectiveUserId) {
+    return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
   }
 
   const { data, error } = await supabase
-    .from(TABLES.GROUP_IDEA_COMMENTS)
-    .insert([{ idea_id, user_id, content, parent_id: parent_id ?? null }])
+    .from('group_idea_comments')
+    .insert([{ 
+      idea_id, 
+      user_id: effectiveUserId, 
+      content, 
+      parent_id: parent_id ?? null 
+    }])
     .select()
     .single();
 
@@ -59,7 +75,7 @@ export async function PATCH(request: NextRequest) {
   }
   // Only allow editing if user_id matches
   const { data: comment, error: fetchError } = await supabase
-    .from(TABLES.GROUP_IDEA_COMMENTS)
+    .from('group_idea_comments')
     .select('user_id')
     .eq('id', id)
     .maybeSingle();
@@ -68,7 +84,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
   const { data, error } = await supabase
-    .from(TABLES.GROUP_IDEA_COMMENTS)
+    .from('group_idea_comments')
     .update({ content })
     .eq('id', id)
     .select()
@@ -86,7 +102,7 @@ export async function DELETE(request: NextRequest) {
   const supabase = await createRouteHandlerClient();
   // Only allow deleting if user_id matches
   const { data: comment, error: fetchError } = await supabase
-    .from(TABLES.GROUP_IDEA_COMMENTS)
+    .from('group_idea_comments')
     .select('user_id')
     .eq('id', id)
     .maybeSingle();
@@ -95,7 +111,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
   const { error } = await supabase
-    .from(TABLES.GROUP_IDEA_COMMENTS)
+    .from('group_idea_comments')
     .delete()
     .eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

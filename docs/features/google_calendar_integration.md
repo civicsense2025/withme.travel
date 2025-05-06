@@ -153,7 +153,7 @@ export async function verifyTripAccess(
 
   // Verify trip access
   const { data: membership, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
+    .from('trip_members')
     .select(FIELDS.TRIP_MEMBERS.ROLE)
     .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
     .eq(FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
@@ -241,7 +241,7 @@ export async function POST(
 
     // Fetch trip data with proper error handling
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
+      .from(trips)
       .select(
         `
         id,
@@ -411,7 +411,7 @@ export async function GET(
 
     // Fetch trip data
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
+      .from(trips)
       .select(
         `
         id,

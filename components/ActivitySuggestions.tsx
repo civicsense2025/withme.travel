@@ -41,7 +41,7 @@ export function ActivitySuggestions({
     }
   }, [selectedActivities, onSelectActivities]);
 
-  const getBudgetCategoryLabel = (category: keyof typeof ENUMS.BUDGET_CATEGORY) => {
+  const getBudgetCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
       'FOOD': '🍴 Food',
       'ACTIVITIES': '🎟️ Activities',

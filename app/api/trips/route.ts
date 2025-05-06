@@ -110,7 +110,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Get all trips where the user is a member
     const { data: memberships, error: membershipError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select('trip_id, role')
       .eq('user_id', user.id);
 
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Fetch all trips that user is a member of
     let query = supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .select(select)
       .in('id', tripIds)
       .order(sortParam, { ascending: orderParam === 'asc' })
@@ -222,13 +222,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Prepare payload using FIELDS
     const insertPayload = {
       ...restOfBody,
-      [FIELDS.TRIPS.NAME]: tripTitle,
-      [FIELDS.TRIPS.CREATED_BY]: createdById,
-      [FIELDS.TRIPS.GUEST_TOKEN]: guestToken,
+      ['NAME']: tripTitle,
+      ['CREATED_BY']: createdById,
+      ['GUEST_TOKEN']: guestToken,
     };
 
     const { data, error } = await supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .insert(insertPayload)
       .select()
       .single();
@@ -244,11 +244,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // If authenticated, add the creator as a member
     if (user) {
-      const tripId = data[FIELDS.TRIPS.ID];
-      const { error: memberError } = await supabase.from(TABLES.TRIP_MEMBERS).insert({
-        [FIELDS.TRIP_MEMBERS.TRIP_ID]: tripId,
-        [FIELDS.TRIP_MEMBERS.USER_ID]: user.id,
-        [FIELDS.TRIP_MEMBERS.ROLE]: TRIP_ROLES.ADMIN,
+      const tripId = data['id'];
+      const { error: memberError } = await supabase.from('trip_members').insert({
+        ['TRIP_ID']: tripId,
+        ['USER_ID']: user.id,
+        ['ROLE']: TRIP_ROLES.ADMIN,
       });
 
       if (memberError) {

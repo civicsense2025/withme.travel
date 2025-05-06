@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/page-header';
 import { SEO, LAYOUT } from './constants';
 import DestinationsClient from './destinations-client';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
 
 // Mark as a dynamic route for fresh data
 export const dynamic = 'force-dynamic';
@@ -41,20 +41,19 @@ export const metadata: Metadata = {
 async function fetchAllDestinations() {
   const supabase = await createServerComponentClient();
   const { data, error } = await supabase
-    .from(TABLES.DESTINATIONS)
+    .from('destinations')
     .select([
-      FIELDS.DESTINATIONS.ID,
-      FIELDS.DESTINATIONS.CONTINENT,
-      FIELDS.DESTINATIONS.COUNTRY,
-      FIELDS.DESTINATIONS.CITY,
-      FIELDS.DESTINATIONS.NAME,
-      FIELDS.DESTINATIONS.IMAGE_URL,
-      FIELDS.DESTINATIONS.DESCRIPTION,
-      FIELDS.DESTINATIONS.UPDATED_AT,
+      'id',
+      'CONTINENT',
+      'COUNTRY',
+      'CITY',
+      'IMAGE_URL',
+      'DESCRIPTION',
+      'UPDATED_AT',
     ].join(','))
-    .order(FIELDS.DESTINATIONS.CONTINENT, { ascending: true })
-    .order(FIELDS.DESTINATIONS.COUNTRY, { ascending: true })
-    .order(FIELDS.DESTINATIONS.NAME, { ascending: true });
+    .order('CONTINENT', { ascending: true })
+    .order('COUNTRY', { ascending: true })
+    .order('CITY', { ascending: true });
 
   if (error) {
     // In production, you might want to log this

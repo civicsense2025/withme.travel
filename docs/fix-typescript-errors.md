@@ -226,7 +226,7 @@ Use these utilities for proper type checking and consistency.
 
 ## Additional Tips
 
-1. **Database constants**: Make sure you're importing from `@/utils/constants/database` and using constants like `TABLES.TRIPS` correctly
+1. **Database constants**: Make sure you're importing from `@/utils/constants/database` and using constants like `trips` correctly
 2. **TypeScript interfaces**: Define proper interfaces for your data types to avoid type errors
 3. **Type casting**: Use explicit type casting when working with database results
 4. **Error handling**: Always include proper error handling in your API routes

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { PRIVACY_SETTINGS } from '@/utils/constants/status';
 
 export const runtime = 'nodejs';
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     
     // Fetch public trips that have cover images and are fully public (not just shared with link)
     const { data: trips, error } = await supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .select(`
         id, 
         name, 

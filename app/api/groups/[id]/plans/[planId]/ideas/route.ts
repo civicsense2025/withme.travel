@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/database';
+import { GroupIdea, ColumnId, IdeaPosition } from '../../../../../../groups/[id]/plans/[slug]/store/idea-store';
+import { cookies } from 'next/headers';
 
 /**
  * GET /api/groups/[id]/plans/[planId]/ideas
- * Get all ideas for a specific plan
+ * Get all ideas in a plan
  */
 export async function GET(
   request: NextRequest,
@@ -25,10 +27,10 @@ export async function GET(
     
     // Check if user is a member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
       .maybeSingle();
     
     if (!membership) {
@@ -40,10 +42,10 @@ export async function GET(
     
     // Check if plan exists and belongs to this group
     const { data: plan, error: planError } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select('*')
       .eq('id', params.planId)
-      .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id)
+      .eq('group_id', params.id)
       .single();
     
     if (planError || !plan) {
@@ -53,31 +55,30 @@ export async function GET(
       );
     }
     
-    // Fetch ideas associated with this plan
+    // Get ideas for this plan
     const { data: ideas, error: ideasError } = await supabase
-      .from(TABLES.GROUP_IDEAS)
+      .from('group_ideas')
       .select(`
         *,
-        creator:${FIELDS.GROUP_IDEAS.CREATED_BY}(
+        creator:created_by(
           id,
           email,
           user_metadata
         ),
-        votes:${TABLES.GROUP_IDEA_VOTES}(
+        votes:group_idea_votes(
           id,
           user_id,
           vote_type
         )
       `)
-      .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
+      .eq('group_id', params.id)
       .eq('plan_id', params.planId)
-      .order('position', { ascending: true })
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
     
     if (ideasError) {
-      console.error('Error fetching plan ideas:', ideasError);
+      console.error('Error fetching ideas:', ideasError);
       return NextResponse.json(
-        { error: 'Failed to fetch plan ideas' },
+        { error: 'Failed to fetch ideas' },
         { status: 500 }
       );
     }
@@ -85,6 +86,121 @@ export async function GET(
     return NextResponse.json({ ideas: ideas || [] });
   } catch (error) {
     console.error('Error in get plan ideas API:', error);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/groups/[id]/plans/[planId]/ideas
+ * Add a new idea to a plan directly
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string; planId: string } }
+) {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    // Check if user is a member of the group
+    const { data: membership, error: membershipError } = await supabase
+      .from('group_members')
+      .select('*')
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    if (!membership) {
+      return NextResponse.json(
+        { error: 'Not a member of this group' },
+        { status: 403 }
+      );
+    }
+    
+    // Check if plan exists and belongs to this group
+    const { data: plan, error: planError } = await supabase
+      .from('group_idea_plans')
+      .select('*')
+      .eq('id', params.planId)
+      .eq('group_id', params.id)
+      .single();
+    
+    if (planError || !plan) {
+      return NextResponse.json(
+        { error: 'Plan not found or does not belong to this group' },
+        { status: 404 }
+      );
+    }
+    
+    // Get request body
+    const body = await request.json();
+    
+    // Validate required fields
+    if (!body.title || !body.type) {
+      return NextResponse.json(
+        { error: 'Title and type are required' },
+        { status: 400 }
+      );
+    }
+    
+    // Ensure position is properly handled if present
+    let position: IdeaPosition | null = null;
+    if (body.position) {
+      if (typeof body.position !== 'object' || !body.position.columnId || typeof body.position.index !== 'number') {
+        return NextResponse.json(
+          { error: 'Invalid position format' },
+          { status: 400 }
+        );
+      }
+      position = {
+        columnId: body.position.columnId,
+        index: body.position.index
+      };
+    }
+    
+    // Create the new idea
+    const { data: idea, error: createError } = await supabase
+      .from('group_ideas')
+      .insert({
+        title: body.title,
+        description: body.description || null,
+        type: body.type,
+        group_id: params.id,
+        plan_id: params.planId,
+        created_by: user.id,
+        position: position,
+        notes: body.notes || null,
+        link: body.link || null,
+        link_meta: body.link_meta || null,
+        start_date: body.start_date || null,
+        end_date: body.end_date || null
+      })
+      .select()
+      .single();
+    
+    if (createError) {
+      console.error('Error creating idea:', createError);
+      return NextResponse.json(
+        { error: 'Failed to create idea' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ idea });
+  } catch (error) {
+    console.error('Error in create plan idea API:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

@@ -5,6 +5,8 @@
  * endpoints, and external API configurations.
  */
 
+// No enums or types in this file should be duplicated from database.ts. Use Database["public"]["Enums"] for any DB enums.
+
 /**
  * Constants related to API integrations
  */

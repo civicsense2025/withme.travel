@@ -1,19 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/service-role';
-import { TABLES } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 
 // Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
+type ExtendedTables = typeof TABLES & {
   [key: string]: string;
 };
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 export const dynamic = 'force-dynamic';
 
@@ -175,7 +167,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const validateEnums = url.searchParams?.get('validateEnums') === 'true';
 
     // List of core tables and enums from our constants
-    const coreTablesFromConstants = Object.values(TABLES);
+    const coreTablesFromConstants = Object.values(TABLES) as string[];
     const coreEnumsFromConstants = validateEnums ? [] : []; // We'll implement enum validation in a future update
 
     // Fetch detected tables and their columns
@@ -352,7 +344,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Find missing tables
     const missingTables = coreTablesFromConstants.filter(
-      (table) => !detectedTableNames.includes(table as string)
+      (table) => !detectedTableNames.includes(table)
     );
 
     // Find missing enums if validation is requested
@@ -381,7 +373,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const result: SchemaCheckResult = {
       missingTables,
       detectedTables: detectedTableNames,
-      checkedTables: coreTablesFromConstants as string[],
+      checkedTables: coreTablesFromConstants,
       success: missingTables.length === 0 && (!validateEnums || missingEnums.length === 0),
       ...(validateEnums && { missingEnums }),
       warnings,
@@ -430,9 +422,6 @@ export const TABLES = {
 ${tableNames.map((table) => `  ${table.toUpperCase()}: '${table}'`).join(',\n')}
 } as const;
 
-// Legacy export (avoid using in new code)
-export const TABLES = TABLES;
-
 // Database Fields - Field names by table
 export const FIELDS = {
   COMMON: {
@@ -450,9 +439,6 @@ ${columns.map((col: TableColumn) => `    ${col.name.toUpperCase()}: '${col.name}
   .join(',\n')}
 } as const;
 
-// Legacy export (avoid using in new code)
-export const FIELDS = FIELDS;
-
 // Database Enums - Enum values from database
 export const ENUMS = {
 ${enumNames
@@ -465,24 +451,15 @@ ${values.map((value) => `    ${value.toUpperCase()}: '${value}'`).join(',\n')}
   .join(',\n')}
 } as const;
 
-// Legacy export (avoid using in new code)
-export const ENUMS = ENUMS;
-
 // Database Functions - Names of database functions
 export const FUNCTIONS = {
   EXECUTE_SQL: 'execute_sql'
 } as const;
 
-// Legacy export (avoid using in new code)
-export const DB_FUNCTIONS = FUNCTIONS;
-
 // RLS Policies - Names of row-level security policies
 export const POLICIES = {
   // Define your policy names here
 } as const;
-
-// Legacy export (avoid using in new code)
-export const DB_POLICIES = POLICIES;
 
 // TypeScript Types
 ${enumNames

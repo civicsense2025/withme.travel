@@ -1,7 +1,6 @@
 import { createRouteHandlerClient } from '@/utils/supabase/api';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database';
 
 export async function POST(
   request: Request,
@@ -23,7 +22,7 @@ export async function POST(
 
     // Check if user is admin
     const { data: profile, error: profileError } = await supabase
-      .from(TABLES.PROFILES)
+      .from('profiles')
       .select('is_admin')
       .eq('id', session.user.id)
       .single();
@@ -37,7 +36,7 @@ export async function POST(
 
     // Delete the feedback item
     const { error } = await supabase
-      .from(TABLES.FEEDBACK)
+      .from('feedback')
       .delete()
       .eq('id', id);
 

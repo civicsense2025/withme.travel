@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
-import { TABLES } from '@/utils/constants/database';
 import { checkAdminAuth } from '../utils/auth';
 import FeedbackTable from './FeedbackTable';
 
@@ -39,7 +38,7 @@ export default async function AdminFeedbackPage() {
 
   // Fetch feedback items
   const { data, error } = await supabase
-    .from(TABLES.FEEDBACK)
+    .from('feedback')
     .select(`
       id,
       user_id,

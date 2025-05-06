@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
-import { TABLES } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 
 // Define a more complete type for TABLES that includes missing properties
 interface ExtendedTables {
@@ -74,19 +74,19 @@ export async function GET(
       .select(
         `
         *,
-        ${Tables.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
-          ${FIELDS.PROFILES.NAME},
-          ${FIELDS.PROFILES.AVATAR_URL}
+        ${Tables.PROFILES}:${'USER_ID'} (
+          ${'NAME'},
+          ${'AVATAR_URL'}
         ),
         likes:${Tables.TRIP_COMMENT_LIKES} (
-          ${FIELDS.COMMON.ID},
-          ${FIELDS.TRIP_COMMENT_LIKES.USER_ID}
+          ${'id'},
+          ${'USER_ID'}
         )
       `
       )
-      .eq(FIELDS.TRIP_ITEM_COMMENTS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_ITEM_COMMENTS.ITEM_ID, itemId)
-      .order(FIELDS.COMMON.CREATED_AT, { ascending: false });
+      .eq('TRIP_ID', tripId)
+      .eq('ITEM_ID', itemId)
+      .order('CREATED_AT', { ascending: false });
 
     if (error) throw error;
 
@@ -120,10 +120,10 @@ export async function POST(
     }
 
     const { data: member, error: memberError } = await supabase
-      .from(Tables.TRIP_MEMBERS)
-      .select(FIELDS.COMMON.ID)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .from('trip_members')
+      .select('id')
+      .eq('TRIP_ID', tripId)
+      .eq('USER_ID', user.id)
       .maybeSingle();
 
     if (memberError || !member) {
@@ -131,10 +131,10 @@ export async function POST(
     }
 
     const insertObject = {
-      [FIELDS.TRIP_ITEM_COMMENTS.TRIP_ID]: tripId,
-      [FIELDS.TRIP_ITEM_COMMENTS.ITEM_ID]: itemId,
-      [FIELDS.TRIP_ITEM_COMMENTS.USER_ID]: user.id,
-      [FIELDS.TRIP_ITEM_COMMENTS.CONTENT]: content.trim(),
+      ['TRIP_ID']: tripId,
+      ['ITEM_ID']: itemId,
+      ['USER_ID']: user.id,
+      ['CONTENT']: content.trim(),
     };
 
     const { data, error } = await supabase
@@ -143,9 +143,9 @@ export async function POST(
       .select(
         `
         *,
-        ${Tables.PROFILES}:${FIELDS.TRIP_ITEM_COMMENTS.USER_ID} (
-          ${FIELDS.PROFILES.NAME},
-          ${FIELDS.PROFILES.AVATAR_URL}
+        ${Tables.PROFILES}:${'USER_ID'} (
+          ${'NAME'},
+          ${'AVATAR_URL'}
         )
       `
       )

@@ -154,9 +154,9 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
         // Fetch members
         const { data, error } = await supabase
-          .from(Tables.TRIP_MEMBERS)
+          .from('trip_members')
           .select('*')
-          .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
+          .eq('TRIP_ID', tripId);
 
         if (error) throw error;
 
@@ -272,9 +272,9 @@ export function TripManagement({ tripId }: TripManagementProps) {
 
       // Refresh members list
       const { data, error } = await supabase
-        .from(Tables.TRIP_MEMBERS)
+        .from('trip_members')
         .select('*')
-        .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
+        .eq('TRIP_ID', tripId);
 
       if (error) throw error;
 

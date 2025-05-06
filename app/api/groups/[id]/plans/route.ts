@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
-import { cookies } from 'next/headers';
 
 /**
  * Get all plans for a group
@@ -26,10 +24,10 @@ export async function GET(
 
     // Check membership
     const { data: membership } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (!membership) {
@@ -45,24 +43,24 @@ export async function GET(
     
     // Fetch plans with creators
     let query = supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select(`
         *,
-        creator:${FIELDS.GROUP_IDEA_PLANS.CREATED_BY}(
+        creator:created_by(
           id,
           email,
           user_metadata
         ),
-        ideas:${TABLES.GROUP_IDEAS}(id)
+        ideas:group_ideas(id)
       `)
-      .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id);
+      .eq('group_id', params.id);
     
     // Filter out archived plans unless explicitly requested
     if (!includeArchived) {
       query = query.is('is_archived', null).or('is_archived.eq.false');
     }
     
-    const { data: plans, error } = await query.order(FIELDS.GROUP_IDEA_PLANS.CREATED_AT, { ascending: false });
+    const { data: plans, error } = await query.order('created_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching group plans:', error);
@@ -112,10 +110,10 @@ export async function POST(
 
     // Check membership
     const { data: membership } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (!membership) {
@@ -138,12 +136,12 @@ export async function POST(
     
     // Insert new plan
     const { data: plan, error } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .insert({
-        [FIELDS.GROUP_IDEA_PLANS.GROUP_ID]: params.id,
-        [FIELDS.GROUP_IDEA_PLANS.NAME]: body.name,
-        [FIELDS.GROUP_IDEA_PLANS.DESCRIPTION]: body.description || null,
-        [FIELDS.GROUP_IDEA_PLANS.CREATED_BY]: user.id,
+        group_id: params.id,
+        name: body.name,
+        description: body.description || null,
+        created_by: user.id,
       })
       .select()
       .single();

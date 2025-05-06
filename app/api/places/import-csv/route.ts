@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { parse } from 'csv-parse/sync';
 import type { PlaceCategory } from '@/types/places';
+import { TABLES } from '@/utils/constants/tables';
 
 // Define place schema for CSV import
 interface PlaceImportData {

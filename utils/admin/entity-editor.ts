@@ -1,5 +1,3 @@
-import { TABLES } from '@/utils/constants/database';
-
 /**
  * Updates a destination entity with the given data
  * @param entityId The ID of the destination to update

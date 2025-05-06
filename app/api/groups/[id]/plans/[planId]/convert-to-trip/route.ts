@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 export async function POST(
   request: NextRequest,
@@ -22,7 +21,7 @@ export async function POST(
 
     // Check if user is member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('user_id')
       .eq('group_id', groupId)
       .eq('user_id', session.session.user.id)
@@ -37,7 +36,7 @@ export async function POST(
 
     // Check if plan exists and belongs to the group
     const { data: plan, error: planError } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select('id')
       .eq('id', planId)
       .eq('group_id', groupId)
@@ -55,7 +54,7 @@ export async function POST(
     if (!newTripId) {
       // Get plan name to use as trip title
       const { data: planData } = await supabase
-        .from(TABLES.GROUP_IDEA_PLANS)
+        .from('group_idea_plans')
         .select('name')
         .eq('id', planId)
         .single();
@@ -64,7 +63,7 @@ export async function POST(
       let destId = destinationId;
       if (!destId) {
         const { data: groupData } = await supabase
-          .from(TABLES.GROUPS)
+          .from('groups')
           .select('destination_id')
           .eq('id', groupId)
           .single();
@@ -111,7 +110,7 @@ export async function POST(
 
     // Get the created trip details to return
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .select(`
         id, 
         title, 

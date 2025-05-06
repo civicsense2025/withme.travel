@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
 
 /**
  * POST /api/groups/[id]/plans/[planId]/remove-ideas
@@ -25,10 +24,10 @@ export async function POST(
     
     // Check if user is a member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .eq('GROUP_ID', params.id)
+      .eq('USER_ID', user.id)
       .maybeSingle();
     
     if (!membership) {
@@ -40,10 +39,10 @@ export async function POST(
     
     // Check if plan exists and belongs to this group
     const { data: plan, error: planError } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select('*')
       .eq('id', params.planId)
-      .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id)
+      .eq('GROUP_ID', params.id)
       .single();
     
     if (planError || !plan) {
@@ -65,9 +64,9 @@ export async function POST(
     
     // Validate that these ideas belong to this plan and group
     const { data: ideas, error: ideasError } = await supabase
-      .from(TABLES.GROUP_IDEAS)
+      .from('group_ideas')
       .select('id')
-      .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
+      .eq('GROUP_ID', params.id)
       .eq('plan_id', params.planId)
       .in('id', ideaIds);
     
@@ -90,10 +89,10 @@ export async function POST(
     // Update each idea to remove it from the plan
     const updates = ideaIds.map(async (ideaId) => {
       const { error } = await supabase
-        .from(TABLES.GROUP_IDEAS)
+        .from('group_ideas')
         .update({ plan_id: null })
         .eq('id', ideaId)
-        .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
+        .eq('GROUP_ID', params.id)
         .eq('plan_id', params.planId);
       
       if (error) {

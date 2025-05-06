@@ -432,9 +432,9 @@ $$;
 -- these files manually or in a separate migration
 -- 
 -- In database.ts, add:
--- TABLES.GROUPS = 'groups';
--- TABLES.GROUP_MEMBERS = 'group_members';
--- TABLES.GROUP_TRIPS = 'group_trips';
+-- groups = 'groups';
+-- group_members = 'group_members';
+-- group_group_trips = 'group_trips';
 --
 -- Add fields for each table as well
 --

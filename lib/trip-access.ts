@@ -1,50 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { TABLES } from '@/utils/constants/database';
-
-// Define TripRole type since it's not exported from constants
-export type TripRole = 'admin' | 'editor' | 'contributor' | 'viewer';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { errorResponse } from '@/lib/api-utils';
 import type { Database } from '@/types/database.types';
 
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
-// Define constants for database fields and enum values
-const FIELDS = {
-  TRIP_MEMBERS: {
-    ROLE: 'role',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-  },
-  TRIPS: {
-    ID: 'id',
-    CREATED_BY: 'created_by',
-    IS_PUBLIC: 'is_public',
-    PRIVACY_SETTING: 'privacy_setting',
-  },
-};
-
-const ENUMS = {
-  TRIP_ROLES: {
-    ADMIN: 'admin' as TripRole,
-    EDITOR: 'editor' as TripRole,
-    CONTRIBUTOR: 'contributor' as TripRole,
-    VIEWER: 'viewer' as TripRole,
-  },
-};
+// Define TripRole type since it's not exported from constants
+export type TripRole = 'admin' | 'editor' | 'contributor' | 'viewer';
 
 // Ensure environment variables are available
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,9 +40,9 @@ export async function checkTripAccess(
   userId: string,
   tripId: string,
   allowedRoles: TripRole[] = [
-    ENUMS.TRIP_ROLES.ADMIN,
-    ENUMS.TRIP_ROLES.EDITOR,
-    ENUMS.TRIP_ROLES.CONTRIBUTOR,
+    'admin',
+    'editor',
+    'contributor',
   ]
 ): Promise<TripAccessResult> {
   if (!supabaseAdmin) {
@@ -90,10 +52,10 @@ export async function checkTripAccess(
 
   // First check member role
   const { data: member, error: memberError } = await supabaseAdmin
-    .from(Tables.TRIP_MEMBERS)
-    .select(FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .from('trip_members')
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (memberError) {
@@ -116,11 +78,11 @@ export async function checkTripAccess(
 
   // If not a member or doesn't have required role, check if trip is public
   // (only relevant if viewer role is allowed)
-  if (allowedRoles.includes(ENUMS.TRIP_ROLES.VIEWER)) {
+  if (allowedRoles.includes('viewer')) {
     const { data: trip, error: tripError } = await supabaseAdmin
-      .from(Tables.TRIPS)
+      .from('trips')
       .select('is_public, privacy_setting')
-      .eq(FIELDS.TRIPS.ID, tripId)
+      .eq('id', tripId)
       .single();
 
     if (tripError) {
@@ -139,7 +101,7 @@ export async function checkTripAccess(
       trip.privacy_setting === 'shared_with_link';
 
     if (isPublic) {
-      return { allowed: true, role: ENUMS.TRIP_ROLES.VIEWER };
+      return { allowed: true, role: 'viewer' };
     }
   }
 
@@ -173,9 +135,9 @@ export async function getTripPermissions(userId: string, tripId: string) {
 
   // Check if trip exists and get basic info
   const { data: trip, error: tripError } = await supabaseAdmin
-    .from(Tables.TRIPS)
+    .from('trips')
     .select('id, created_by, is_public, privacy_setting')
-    .eq(FIELDS.TRIPS.ID, tripId)
+    .eq('id', tripId)
     .single();
 
   if (tripError) {
@@ -207,10 +169,10 @@ export async function getTripPermissions(userId: string, tripId: string) {
 
   // Check if user is a member of this trip
   const { data: member, error: memberError } = await supabaseAdmin
-    .from(Tables.TRIP_MEMBERS)
-    .select(FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .from('trip_members')
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (memberError) {
@@ -250,25 +212,25 @@ export async function getTripPermissions(userId: string, tripId: string) {
   };
 
   // Set permissions based on role
-  if (role === ENUMS.TRIP_ROLES.ADMIN) {
+  if (role === 'admin') {
     permissions.canView = true;
     permissions.canEdit = true;
     permissions.canManage = true;
     permissions.canAddMembers = true;
     permissions.canDeleteTrip = isCreator; // Only creator can delete
-  } else if (role === ENUMS.TRIP_ROLES.EDITOR) {
+  } else if (role === 'editor') {
     permissions.canView = true;
     permissions.canEdit = true;
     permissions.canAddMembers = true;
     permissions.canManage = false;
     permissions.canDeleteTrip = false;
-  } else if (role === ENUMS.TRIP_ROLES.CONTRIBUTOR) {
+  } else if (role === 'contributor') {
     permissions.canView = true;
     permissions.canEdit = true;
     permissions.canAddMembers = false;
     permissions.canManage = false;
     permissions.canDeleteTrip = false;
-  } else if (role === ENUMS.TRIP_ROLES.VIEWER) {
+  } else if (role === 'viewer') {
     permissions.canView = true;
     permissions.canEdit = false;
     permissions.canAddMembers = false;
@@ -296,7 +258,7 @@ export async function getTripPermissions(userId: string, tripId: string) {
 export async function ensureTripAccess(
   userId: string,
   tripId: string,
-  allowedRoles: TripRole[] = [ENUMS.TRIP_ROLES.ADMIN, ENUMS.TRIP_ROLES.EDITOR]
+  allowedRoles: TripRole[] = ['admin', 'editor']
 ): Promise<NextResponse | null> {
   try {
     const accessResult = await checkTripAccess(userId, tripId, allowedRoles);
@@ -332,10 +294,10 @@ export async function getUserTripRole(userId: string, tripId: string): Promise<T
 
   try {
     const { data, error } = await supabaseAdmin
-      .from(Tables.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+      .from('trip_members')
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', userId)
       .maybeSingle();
 
     if (error) {
@@ -367,7 +329,5 @@ export async function canUserEditTrip(userId: string, tripId: string): Promise<b
   }
 
   // Users with these roles can edit the trip
-  return [ENUMS.TRIP_ROLES.ADMIN, ENUMS.TRIP_ROLES.EDITOR, ENUMS.TRIP_ROLES.CONTRIBUTOR].includes(
-    role
-  );
+  return ['admin', 'editor', 'contributor'].includes(role);
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSupabase } from '@/utils/supabase-server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
 
 export async function POST(request: Request) {
   const supabase = await getServerSupabase();
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   }
   // Upsert group_members row
   const { error } = await supabase
-    .from(TABLES.GROUP_MEMBERS)
+    .from('group_members')
     .upsert({
       group_id: groupId,
       user_id: session.user.id,

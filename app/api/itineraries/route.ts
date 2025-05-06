@@ -1,6 +1,5 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES, FIELDS as DB_FIELDS } from '@/utils/constants/database';
 
 // Define constants for tables/fields not in the imported constants
 const ITINERARY_FIELDS = {
@@ -25,7 +24,7 @@ async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
   
   try {
     const { data, error } = await supabase
-      .from(TABLES.PROFILES)
+      .from('profiles')
       .select('is_admin')
       .eq('id', userId)
       .single();
@@ -56,16 +55,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.log(`[API] User authenticated: ${!!user}`);
 
     // DEBUG: Print the table name being queried
-    console.log(`[API] Querying table: ${TABLES.ITINERARY_TEMPLATES}`);
+    console.log(`[API] Querying table: itinerary_templates`);
 
     // Initialize the query to select templates with destinations
     let query = supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
-      .select(`
-        *,
-        ${TABLES.DESTINATIONS}(*)
-      `)
-      .order(DB_FIELDS.COMMON.CREATED_AT, { ascending: false });
+      .from('itinerary_templates')
+      .select(`*, destinations(*)`)
+      .order('created_at', { ascending: false });
 
     // Apply filters based on authentication status and admin status
     let data;
@@ -86,7 +82,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         // Regular authenticated users: show published templates + their drafts
         console.log(`[API] Regular user ${user.id} - fetching published templates and user's drafts`);
         const result = await query.or(
-          `${DB_FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED}.eq.true,${DB_FIELDS.ITINERARY_TEMPLATES.CREATED_BY}.eq.${user.id}`
+          `is_published.eq.true,created_by.eq.${user.id}`
         );
         data = result.data;
         templatesError = result.error;
@@ -94,7 +90,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     } else {
       // For unauthenticated users: only show published templates
       console.log('[API] Unauthenticated request, fetching only published templates');
-      const result = await query.eq(DB_FIELDS.ITINERARY_TEMPLATES.IS_PUBLISHED, true);
+      const result = await query.eq('is_published', true);
       data = result.data;
       templatesError = result.error;
     }
@@ -135,7 +131,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       
       if (creatorIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
-          .from(TABLES.PROFILES)
+          .from('profiles')
           .select('id, name, avatar_url')
           .in('id', creatorIds);
         
@@ -201,7 +197,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 1. Insert the itinerary template
     const { data: template, error: templateError } = await supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
+      .from('itinerary_templates')
       .insert({
         title: itineraryData.title,
         slug: slug,
@@ -233,7 +229,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
 
         const { data: sectionData, error: sectionError } = await supabase
-          .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
+          .from('itinerary_template_sections')
           .insert({
             template_id: template.id,
             day_number: section.day_number,
@@ -262,7 +258,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }));
 
           const { data: itemsData, error: itemsError } = await supabase
-            .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
+            .from('itinerary_template_items')
             .insert(items)
             .select();
 

@@ -81,13 +81,13 @@ export default function IdeasPreviewClient({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
-              <Link href={`/signup?redirectTo=/groups/${groupId}/ideas`} className="flex-1">
-                <Button className="w-full">Sign Up</Button>
-              </Link>
-              <Link href={`/login?redirectTo=/groups/${groupId}/ideas`} className="flex-1">
-                <Button variant="outline" className="w-full">Log In</Button>
-              </Link>
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              <Button size="lg" asChild className="flex-1">
+                <Link href={`/signup?redirectTo=/groups/${groupId}`}>Sign Up to Plan</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="flex-1">
+                <Link href={`/login?redirectTo=/groups/${groupId}`}>Login to Join</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

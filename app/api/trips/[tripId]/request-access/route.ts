@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-// Direct table/field names used instead of imports
-import { TABLES } from '@/utils/constants/database';
 import { PERMISSION_STATUSES } from '@/utils/constants/status';
 import { EmailService } from '@/lib/services/email-service';
 import { Database } from '@/types/database.types';

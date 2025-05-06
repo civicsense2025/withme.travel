@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { checkAdminAuth } from '@/app/admin/utils/auth';
 
 /**
@@ -51,7 +50,7 @@ export async function PUT(
 
     // Update all destinations in this country with the selected fields
     const { error: updateError } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .update(sanitizedData)
       .eq('country', countryName);
 

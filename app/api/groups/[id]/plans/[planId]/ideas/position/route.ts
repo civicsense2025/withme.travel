@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
+import { GroupIdea, ColumnId, IdeaPosition } from '../../../../../../../groups/[id]/plans/[slug]/store/idea-store';
+
+interface IdeaPositionUpdate {
+  ideaId: string;
+  position: IdeaPosition;
+}
 
 /**
  * PATCH /api/groups/[id]/plans/[planId]/ideas/position
@@ -25,10 +31,10 @@ export async function PATCH(
     
     // Check if user is a member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
       .maybeSingle();
     
     if (!membership) {
@@ -39,7 +45,7 @@ export async function PATCH(
     }
     
     // Get the request body containing idea positions
-    const { positions } = await request.json();
+    const { positions } = await request.json() as { positions: IdeaPositionUpdate[] };
     
     if (!positions || !Array.isArray(positions)) {
       return NextResponse.json(
@@ -52,9 +58,9 @@ export async function PATCH(
     const ideaIds = positions.map(p => p.ideaId);
     
     const { data: ideas, error: ideasError } = await supabase
-      .from(TABLES.GROUP_IDEAS)
+      .from('group_ideas')
       .select('id')
-      .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
+      .eq('group_id', params.id)
       .eq('plan_id', params.planId)
       .in('id', ideaIds);
     
@@ -77,10 +83,10 @@ export async function PATCH(
     // Update each idea's position
     const updates = positions.map(async ({ ideaId, position }) => {
       const { error } = await supabase
-        .from(TABLES.GROUP_IDEAS)
+        .from('group_ideas')
         .update({ position })
         .eq('id', ideaId)
-        .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
+        .eq('group_id', params.id)
         .eq('plan_id', params.planId);
       
       if (error) {

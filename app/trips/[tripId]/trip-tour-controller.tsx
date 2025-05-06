@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 // import { useTour } from 'onborda';
 const useTour: any = () => ({ startTour: () => {} }); // fallback for linter
 // Try default import for tripPlanningTour
-import tripPlanningTour from '@/lib/onboarding/tours/trip-planning-tour';
+import { tripPlanningTour } from '../../lib/onboarding/tours/trip-planning-tour';
 
 export function TripTourController() {
   const { startTour } = useTour();

@@ -1,7 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import Link from 'next/link';
 import IdeasPreviewClient from './ideas-preview-client';
 
@@ -16,7 +15,7 @@ export default async function GroupIdeasPreviewPage({ params }: { params: Promis
   
   // Fetch group without requiring authentication
   const { data: group, error } = await supabase
-    .from(TABLES.GROUPS)
+    .from('groups')
     .select('*')
     .eq('id', id)
     .single();
@@ -41,7 +40,7 @@ export default async function GroupIdeasPreviewPage({ params }: { params: Promis
   
   // Fetch ideas
   const { data: ideas, error: ideasError } = await supabase
-    .from(TABLES.GROUP_IDEAS)
+    .from('group_ideas')
     .select('*')
     .eq('group_id', id)
     .order('created_at', { ascending: false });

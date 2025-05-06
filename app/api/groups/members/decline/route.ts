@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSupabase } from '@/utils/supabase-server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
 
 export async function POST(request: Request) {
   const supabase = await getServerSupabase();
@@ -15,10 +15,10 @@ export async function POST(request: Request) {
   }
   // Set status to 'left' for this user
   const { error } = await supabase
-    .from(TABLES.GROUP_MEMBERS)
+    .from('group_members')
     .update({ status: 'left' })
-    .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId)
-    .eq(FIELDS.GROUP_MEMBERS.USER_ID, session.user.id);
+    .eq('GROUP_ID', groupId)
+    .eq('USER_ID', session.user.id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

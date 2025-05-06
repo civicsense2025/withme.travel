@@ -1,4 +1,3 @@
-import { TABLES } from '@/utils/constants/database';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { THEME } from '@/utils/constants/ui';
@@ -21,8 +20,17 @@ import { THEME } from '@/utils/constants/ui';
  * For backward compatibility, you can also import from here.
  */
 
-// Re-export database constants
-export { TABLES } from './database';
+// Central re-export of all database constants
+// This file is the recommended entry point for all database constants
+
+// Export database model types from database.ts
+export * from './database';
+
+// Export constants from tables.ts
+export { TABLES, FIELDS, ENUMS } from './tables';
+export type { CommentableContentType } from './tables';
+
+// Deprecated: TABLES is now replaced by Database['public']['Tables'] keys. Import types directly from database.ts
 
 // Re-export route constants
 export { API_ROUTES, PAGE_ROUTES } from './routes';

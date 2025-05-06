@@ -98,7 +98,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     const { data: newTrip, error: tripError } = await supabaseAdmin
-      .from(TABLES.TRIPS)
+      .from('trips')
       .insert([tripData])
       .select()
       .single();
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     const { error: memberError } = await supabaseAdmin
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .insert([memberData]);
 
     if (memberError) {

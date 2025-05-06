@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { SubmitResponsesSchema } from '@/app/components/feedback/types';
-import { TABLES } from '@/utils/constants/database';
 import { z } from 'zod';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

@@ -5,7 +5,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient, Session, User } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 
 export interface ExtendedUser extends User {
   profile?: {
@@ -63,12 +64,12 @@ export function AuthProvider({ initialSession, children }: AuthProviderProps) {
     const { data, error } = await supabase
       .from(TABLES.PROFILES)
       .select([
-        FIELDS.PROFILES.NAME,
-        FIELDS.PROFILES.AVATAR_URL,
-        FIELDS.PROFILES.USERNAME,
-        FIELDS.PROFILES.EMAIL,
+        'name',
+        'avatar_url',
+        'username',
+        'email',
       ].join(','))
-      .eq(FIELDS.PROFILES.ID, userId)
+      .eq('id', userId)
       .single();
 
     if (error || !data || typeof data !== 'object' || 'error' in data) {

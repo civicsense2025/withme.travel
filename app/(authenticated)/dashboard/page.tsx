@@ -49,22 +49,22 @@ interface Trip {
 export default async function DashboardPage() {
   // Check authentication
   const { data } = await getServerSession();
-  const session = data.session;
+  const user = data.user;
 
   // Redirect to login if not authenticated
-  if (!session) {
+  if (!user) {
     redirect('/login?from=dashboard');
   }
 
   // Get user data
-  const userId = session.user.id;
+  const userId = user.id;
   const userProfile = await getUserProfile(userId);
   const recentTrips = await getRecentTrips(userId);
   const tripCount = await getTripCount(userId);
 
   return (
     <DashboardClient
-      user={session.user}
+      user={user}
       profile={userProfile}
       recentTrips={recentTrips}
       tripCount={tripCount}

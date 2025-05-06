@@ -13,7 +13,6 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import type { TripRole } from '@/types/trip';
 
 // Helper function to check user membership and role

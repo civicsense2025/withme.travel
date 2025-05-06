@@ -5,7 +5,6 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContinentStatsClientWrapper } from './client-wrapper';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 interface ContinentPageProps {
   params: {
@@ -20,7 +19,7 @@ export default async function ContinentPage({ params }: ContinentPageProps) {
   // Fetch continent data from Supabase
   const supabase = await createServerComponentClient();
   const { data: destinations, error } = await supabase
-    .from(TABLES.DESTINATIONS)
+    .from('destinations')
     .select('*')
     .eq('continent', continentName);
 

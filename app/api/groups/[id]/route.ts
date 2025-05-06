@@ -1,23 +1,5 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import { TABLES, FIELDS } from "@/utils/constants/database";
-
-// Helper to create Supabase client
-async function getSupabaseClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-}
 
 // GET /api/groups/[id] - Get a specific group by ID
 export async function GET(
@@ -25,11 +7,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = await createRouteHandlerClient();
     
-    // Get user session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Get user securely
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
@@ -40,20 +23,20 @@ export async function GET(
     
     // Get the group with members and trips
     const { data: group, error } = await supabase
-      .from(TABLES.GROUPS)
+      .from('groups')
       .select(`
         *,
-        ${TABLES.GROUP_MEMBERS} (
+        group_members (
           user_id,
           role,
           status,
           joined_at
         ),
-        ${TABLES.GROUP_TRIPS} (
+        group_trips (
           trip_id,
           added_at,
           added_by,
-          trips:${TABLES.TRIPS} (
+          trips:trips (
             id,
             name,
             start_date,
@@ -63,7 +46,7 @@ export async function GET(
           )
         )
       `)
-      .eq(FIELDS.GROUPS.ID, groupId)
+      .eq('id', groupId)
       .single();
     
     if (error) {
@@ -90,11 +73,12 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = await createRouteHandlerClient();
     
-    // Get user session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Get user securely
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
@@ -105,11 +89,11 @@ export async function PUT(
     
     // Check if user is owner or admin
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select("role")
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, session.user.id)
-      .eq(FIELDS.GROUP_MEMBERS.STATUS, "active")
+      .eq('group_id', groupId)
+      .eq('user_id', user.id)
+      .eq('status', "active")
       .single();
     
     if (membershipError || !membership || !["owner", "admin"].includes(membership.role)) {
@@ -133,7 +117,7 @@ export async function PUT(
     
     // Update the group
     const { data, error } = await supabase
-      .from(TABLES.GROUPS)
+      .from('groups')
       .update({
         name,
         description,
@@ -141,7 +125,7 @@ export async function PUT(
         visibility,
         updated_at: new Date().toISOString(),
       })
-      .eq(FIELDS.GROUPS.ID, groupId)
+      .eq('id', groupId)
       .select()
       .single();
     
@@ -166,11 +150,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = await createRouteHandlerClient();
     
-    // Get user session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Get user securely
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
@@ -181,11 +166,11 @@ export async function DELETE(
     
     // Check if user is owner
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select("role")
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, session.user.id)
-      .eq(FIELDS.GROUP_MEMBERS.STATUS, "active")
+      .eq('group_id', groupId)
+      .eq('user_id', user.id)
+      .eq('status', "active")
       .single();
     
     if (membershipError || !membership || membership.role !== "owner") {
@@ -197,9 +182,9 @@ export async function DELETE(
     
     // Delete the group (cascade will handle related records)
     const { error } = await supabase
-      .from(TABLES.GROUPS)
+      .from('groups')
       .delete()
-      .eq(FIELDS.GROUPS.ID, groupId);
+      .eq('id', groupId);
     
     if (error) {
       console.error("Error deleting group:", error);

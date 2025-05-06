@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -23,7 +23,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Query tags
     const { data, error } = await supabase
-      .from('tags')
+      .from(TABLES.TAGS)
       .select('id, name')
       .order('name', { ascending: true });
 

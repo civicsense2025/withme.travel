@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/utils/supabase-server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -14,9 +13,9 @@ export default async function GroupInvitePage({ params }: { params: { id: string
   }
   // Fetch group and membership
   const { data: group, error } = await supabase
-    .from(TABLES.GROUPS)
-    .select(`*, ${TABLES.GROUP_MEMBERS} (user_id, role, status)`)
-    .eq(FIELDS.GROUPS.ID, groupId)
+    .from('groups')
+    .select(`*, ${'group_members'} (user_id, role, status)`)
+    .eq('id', groupId)
     .single();
   if (error || !group) {
     redirect('/groups');

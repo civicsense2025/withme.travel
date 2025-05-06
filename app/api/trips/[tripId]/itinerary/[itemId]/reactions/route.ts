@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
 import type { Database, ItineraryItemReaction } from '@/types/database.types';
+import { TABLES } from '@/utils/constants/tables';
 
 const ALLOWED_EMOJIS = ['👍', '❤️', '😂', '😮', '👎'];
 
@@ -22,9 +23,9 @@ export async function POST(request: NextRequest, { params }: { params: { tripId:
   const { data: existing, error: fetchError } = await supabase
     .from(TABLES.ITINERARY_ITEM_REACTIONS)
     .select('*')
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.ITINERARY_ITEM_ID, itemId)
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.USER_ID, user.id)
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.EMOJI, emoji)
+    .eq('ITINERARY_ITEM_ID', itemId)
+    .eq('USER_ID', user.id)
+    .eq('EMOJI', emoji)
     .maybeSingle();
   if (fetchError) {
     return NextResponse.json({ error: 'Failed to check existing reaction' }, { status: 500 });
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest, { params }: { params: { tripId:
   const { data: reactions, error: reactionsError } = await supabase
     .from(TABLES.ITINERARY_ITEM_REACTIONS)
     .select('*')
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.ITINERARY_ITEM_ID, itemId);
+    .eq('ITINERARY_ITEM_ID', itemId);
   if (reactionsError) {
     return NextResponse.json({ error: 'Failed to fetch reactions' }, { status: 500 });
   }
@@ -79,9 +80,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { tripI
   const { error: deleteError } = await supabase
     .from(TABLES.ITINERARY_ITEM_REACTIONS)
     .delete()
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.ITINERARY_ITEM_ID, itemId)
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.USER_ID, user.id)
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.EMOJI, emoji);
+    .eq('ITINERARY_ITEM_ID', itemId)
+    .eq('USER_ID', user.id)
+    .eq('EMOJI', emoji);
   if (deleteError) {
     return NextResponse.json({ error: 'Failed to remove reaction' }, { status: 500 });
   }
@@ -89,7 +90,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { tripI
   const { data: reactions, error: reactionsError } = await supabase
     .from(TABLES.ITINERARY_ITEM_REACTIONS)
     .select('*')
-    .eq(FIELDS.ITINERARY_ITEM_REACTIONS.ITINERARY_ITEM_ID, itemId);
+    .eq('ITINERARY_ITEM_ID', itemId);
   if (reactionsError) {
     return NextResponse.json({ error: 'Failed to fetch reactions' }, { status: 500 });
   }

@@ -179,25 +179,16 @@ export function Todo({ initialItems, canEdit = false, onItemDelete }: TodoProps)
             <CheckCircle2 className="h-3 w-3 mr-1" /> Confirmed
           </Badge>
         );
-      case ITEM_STATUSES.CANCELLED:
+      case ITEM_STATUSES.REJECTED:
         return (
           <Badge variant="destructive" className="ml-2">
-            <XCircle className="h-3 w-3 mr-1" /> Canceled
+            <XCircle className="h-3 w-3 mr-1" /> Rejected
           </Badge>
         );
       case ITEM_STATUSES.SUGGESTED:
         return (
           <Badge variant="outline" className="ml-2">
             <AlertCircle className="h-3 w-3 mr-1" /> Suggested
-          </Badge>
-        );
-      case ITEM_STATUSES.ACTIVE:
-        return (
-          <Badge
-            variant="outline"
-            className="ml-2 border-blue-600/40 bg-blue-500/10 text-blue-700 dark:text-blue-400"
-          >
-            <AlertCircle className="h-3 w-3 mr-1" /> Active
           </Badge>
         );
       default:
@@ -242,9 +233,9 @@ export function Todo({ initialItems, canEdit = false, onItemDelete }: TodoProps)
                         Mark as confirmed
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.CANCELLED)}
+                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.REJECTED)}
                       >
-                        Mark as canceled
+                        Mark as rejected
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

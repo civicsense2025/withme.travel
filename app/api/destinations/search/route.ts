@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     
     // Using the client with the correct table from constants
     const { data, error } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select('*')
       .or(`city.ilike.%${query}%,country.ilike.%${query}%,state_province.ilike.%${query}%,name.ilike.%${query}%`)
       .limit(10);

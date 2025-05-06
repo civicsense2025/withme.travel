@@ -62,9 +62,9 @@ async function checkTripAccess(
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
-    .select(FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .select('ROLE')
+    .eq('TRIP_ID', tripId)
+    .eq('USER_ID', userId)
     .maybeSingle();
 
   if (error) {
@@ -105,9 +105,9 @@ async function checkTripMembership(
 ): Promise<boolean> {
   const { data, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
-    .select(FIELDS.TRIP_MEMBERS.USER_ID)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .select('USER_ID')
+    .eq('TRIP_ID', tripId)
+    .eq('USER_ID', userId)
     .maybeSingle();
 
   if (error) {
@@ -167,12 +167,12 @@ export async function POST(
     // Upsert the vote: If the user already voted on this item, update the vote. Otherwise, insert a new vote.
     const { error: upsertError } = await supabase.from(ITINERARY_ITEM_VOTES_TABLE).upsert(
       {
-        [FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID]: itemId,
-        [FIELDS.ITINERARY_ITEM_VOTES.USER_ID]: userId,
-        [FIELDS.ITINERARY_ITEM_VOTES.VOTE_TYPE]: voteType,
+        ['ITEM_ID']: itemId,
+        ['USER_ID']: userId,
+        ['VOTE_TYPE']: voteType,
       },
       {
-        onConflict: `${FIELDS.ITINERARY_ITEM_VOTES.ITEM_ID},${FIELDS.ITINERARY_ITEM_VOTES.USER_ID}`,
+        onConflict: `${'ITEM_ID'},${'USER_ID'}`,
       }
     );
 

@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivitySuggestions } from '@/components/ActivitySuggestions';
 import { ActivityIdea } from '@/utils/activity-generator';
-import { TABLES, ENUMS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/database';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
 import { ChevronLeft, Plus, Lightbulb, List, Map } from 'lucide-react';
 import Link from 'next/link';
@@ -30,7 +30,7 @@ export default function AddActivityPage() {
       try {
         const supabase = getBrowserClient();
         const { data: tripData, error: tripError } = await supabase
-          .from(TABLES.TRIPS)
+          .from('trips')
           .select('*, destination:destination_id(*)')
           .eq('id', tripId)
           .single();

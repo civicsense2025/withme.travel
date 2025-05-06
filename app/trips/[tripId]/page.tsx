@@ -1,7 +1,6 @@
 import { getServerComponentClient } from '@/utils/supabase/unified';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { TABLES } from '@/utils/constants/database';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { VerticalStepper } from '@/components/itinerary/VerticalStepper';
 import { MobileStepper } from '@/components/itinerary/MobileStepper';
@@ -9,6 +8,7 @@ import { Metadata, ResolvingMetadata } from 'next';
 import { createServerComponentClient } from '@/utils/supabase/server';
 import { getOpenGraphImageForTrip } from '@/lib/hooks/use-og-image';
 import { cookies } from 'next/headers';
+import { TABLES } from '@/utils/constants/database';
 
 import type { Database } from '@/types/database.types';
 // Import TABLES but use type assertion
@@ -124,7 +124,7 @@ export default async function TripPage({ params }: { params: Promise<{ tripId: s
   
   // First check if the trip exists
   const { data: trip, error: tripError } = await supabase
-    .from(Tables.TRIPS)
+    .from(TABLES.TRIPS)
     .select('id, name, created_by, guest_token')
     .eq('id', tripId)
     .single();
@@ -148,7 +148,7 @@ export default async function TripPage({ params }: { params: Promise<{ tripId: s
   
   if (user) {
     const { data: membership, error: membershipError } = await supabase
-      .from(Tables.TRIP_MEMBERS)
+      .from('trip_members')
       .select('role')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)

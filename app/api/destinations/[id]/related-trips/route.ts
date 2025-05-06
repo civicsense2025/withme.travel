@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/utils/supabase/api';
-import { TABLES } from '@/utils/constants/database';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -11,9 +10,6 @@ type ExtendedTables = {
   ITINERARY_SECTIONS: string;
   [key: string]: string;
 };
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 /**
  * GET related trips for a destination
@@ -33,7 +29,7 @@ export async function GET(
 
     // Fetch public trips associated with this destination
     const { data: trips, error } = await supabase
-      .from(Tables.TRIPS)
+      .from('trips')
       .select(
         `
         id, 

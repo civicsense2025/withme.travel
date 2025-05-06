@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 /**
  * Get aggregated stats for a specific country
@@ -15,7 +14,7 @@ export async function GET(
 
     // Get sample destination to extract common properties
     const { data: sampleData, error: sampleError } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select('local_language, visa_required, lgbtq_friendliness, accessibility')
       .eq('country', countryName)
       .limit(1)
@@ -27,7 +26,7 @@ export async function GET(
 
     // Get aggregated stats
     const { data: statsData, error: statsError } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select('*')
       .eq('country', countryName);
 

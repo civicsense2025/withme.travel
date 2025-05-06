@@ -98,17 +98,21 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
           </div>
           <div className="mt-4">
             <p className="text-sm text-gray-500">
-              <span className="font-semibold">Pace:</span> {itinerary.metadata.pace}
+              <span className="font-semibold">Pace:</span> {itinerary.metadata?.pace ?? 'N/A'}
             </p>
             <p className="text-sm text-gray-500">
-              <span className="font-semibold">Best For:</span> {itinerary.metadata.best_for.join(', ')}
+              <span className="font-semibold">Best For:</span> {Array.isArray(itinerary.metadata?.best_for) ? itinerary.metadata.best_for.join(', ') : 'N/A'}
             </p>
             <div className="text-sm text-gray-500">
               <span className="font-semibold">Highlights:</span>
               <ul className="list-disc list-inside ml-4">
-                {itinerary.metadata.highlights.map((highlight, index) => (
-                  <li key={index}>{highlight}</li>
-                ))}
+                {Array.isArray(itinerary.metadata?.highlights) && itinerary.metadata.highlights.length > 0 ? (
+                  itinerary.metadata.highlights.map((highlight, index) => (
+                    <li key={index}>{highlight}</li>
+                  ))
+                ) : (
+                  <li>N/A</li>
+                )}
               </ul>
             </div>
           </div>

@@ -1,0 +1,59 @@
+app/api/groups/[id]/plans/[planId]/ideas/position/route.ts(4,30): error TS2307: Cannot find module '@/types/plans' or its corresponding type declarations.
+app/api/groups/[id]/plans/[planId]/ideas/route.ts(4,41): error TS2307: Cannot find module '@/types' or its corresponding type declarations.
+app/api/guest/token/route.ts(75,36): error TS2339: Property 'get' does not exist on type 'Promise<ReadonlyRequestCookies>'.
+app/api/guest/token/route.ts(118,36): error TS2339: Property 'get' does not exist on type 'Promise<ReadonlyRequestCookies>'.
+app/groups/[id]/plans/[slug]/components/cursor-layer.tsx(3,10): error TS2305: Module '"../context/whiteboard-context"' has no exported member 'useWhiteboard'.
+app/groups/[id]/plans/[slug]/components/grid-overlay.tsx(3,10): error TS2305: Module '"../context/whiteboard-context"' has no exported member 'useWhiteboard'.
+app/groups/[id]/plans/[slug]/components/ideas-filter.tsx(19,10): error TS2614: Module '"@/app/*"' has no exported member 'useWhiteboard'. Did you mean to use 'import useWhiteboard from "@/app/*"' instead?
+app/groups/[id]/plans/[slug]/components/whiteboard-controls.tsx(4,10): error TS2305: Module '"../context/whiteboard-context"' has no exported member 'useWhiteboard'.
+app/groups/[id]/plans/[slug]/components/WhiteboardToolbar.tsx(92,102): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ViewMode'.
+app/groups/[id]/plans/[slug]/create-idea-dialog.tsx(11,37): error TS2307: Cannot find module '../../../ideas/store/idea-store' or its corresponding type declarations.
+app/groups/[id]/plans/[slug]/edit-idea-dialog.tsx(11,37): error TS2307: Cannot find module '../../../ideas/store/idea-store' or its corresponding type declarations.
+app/groups/[id]/plans/[slug]/idea-board.tsx(280,17): error TS2322: Type '{ created_by: string | null; position: ({ x: number; y: number; w: number; h: number; } & IdeaPosition) | { columnId: "destination"; index: number; }; id: string; group_id: string; ... 11 more ...; user_vote: VoteType | null; }' is not assignable to type 'GroupIdea'.
+  Types of property 'type' are incompatible.
+    Type 'IdeaType' is not assignable to type 'ColumnId'.
+      Type '"note"' is not assignable to type 'ColumnId'.
+app/groups/[id]/plans/[slug]/plan-ideas-client.tsx(12,22): error TS2307: Cannot find module '../../ideas/idea-card' or its corresponding type declarations.
+app/groups/[id]/plans/[slug]/plan-ideas-client.tsx(13,41): error TS2307: Cannot find module '../../ideas/store/idea-store' or its corresponding type declarations.
+app/groups/[id]/plans/[slug]/plan-ideas-client.tsx(486,38): error TS7006: Parameter 'position' implicitly has an 'any' type.
+app/groups/[id]/plans/[slug]/ready-for-voting-modal.tsx(104,24): error TS2345: Argument of type 'Record<string, number>' is not assignable to parameter of type 'SetStateAction<Record<string, any[]>>'.
+app/groups/[id]/plans/plans-client.tsx(329,26): error TS2322: Type '{ children: Element; asChild: true; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLButtonElement>'.
+  Property 'asChild' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLButtonElement>'.
+app/groups/components/IdeasPresenceProvider.tsx(4,29): error TS2307: Cannot find module '@/_disabled_features/presence/use-presence' or its corresponding type declarations.
+app/groups/components/IdeasPresenceProvider.tsx(63,61): error TS7006: Parameter 'user' implicitly has an 'any' type.
+app/itineraries/page.tsx(54,15): error TS2304: Cannot find name 'TABLES'.
+app/page.tsx(18,28): error TS2339: Property 'session' does not exist on type '{ user: User | null; } | { user: null; }'.
+  Property 'session' does not exist on type '{ user: User | null; }'.
+app/task-demo/page.tsx(195,11): error TS2322: Type '({ id: string; title: string; description: string; status: "suggested"; dueDate: string; priority: "high"; votes: { up: number; down: number; upVoters: { id: string; name: string; avatar_url: null; username: string; }[]; downVoters: { ...; }[]; userVote: null; }; assignee: { ...; }; tags: string[]; } | { ...; } | { ...' is not assignable to type 'TaskItem[]'.
+  Type '{ id: string; title: string; description: string; status: "suggested"; dueDate: string; priority: "high"; votes: { up: number; down: number; upVoters: { id: string; name: string; avatar_url: null; username: string; }[]; downVoters: { ...; }[]; userVote: null; }; assignee: { ...; }; tags: string[]; } | { ...; } | { ....' is not assignable to type 'TaskItem'.
+    Type '{ id: string; title: string; description: string; status: "active"; priority: "low"; votes: { up: number; down: number; upVoters: { id: string; name: string; avatar_url: null; username: string; }[]; downVoters: { ...; }[]; userVote: "down"; }; tags: string[]; dueDate?: undefined; assignee?: undefined; }' is not assignable to type 'TaskItem'.
+      Types of property 'status' are incompatible.
+        Type '"active"' is not assignable to type '"suggested" | "confirmed" | "rejected"'.
+app/trips/[tripId]/add-activity/page.tsx(59,15): error TS2304: Cannot find name 'TABLES'.
+app/trips/[tripId]/add-activity/page.tsx(82,15): error TS2304: Cannot find name 'TABLES'.
+app/trips/[tripId]/edit/page.tsx(79,15): error TS2339: Property 'session' does not exist on type '{ user: User | null; } | { user: null; }'.
+app/trips/[tripId]/page.tsx(29,16): error TS2552: Cannot find name 'TABLES'. Did you mean 'Tables'?
+app/trips/[tripId]/page.tsx(57,87): error TS2304: Cannot find name 'destinations'.
+app/trips/[tripId]/page.tsx(126,11): error TS2552: Cannot find name 'trips'. Did you mean 'trip'?
+app/trips/[tripId]/trip-page-client.tsx(180,16): error TS2552: Cannot find name 'TABLES'. Did you mean 'Tables'?
+components/ActivitySuggestions.tsx(44,64): error TS2339: Property 'BUDGET_CATEGORY' does not exist on type '{ CONTENT_TYPE: { TRIP: string; DESTINATION: string; ITINERARY_ITEM: string; COLLECTION: string; TEMPLATE: string; GROUP_IDEA: string; }; TRIP_ROLES: { ADMIN: string; EDITOR: string; VIEWER: string; CONTRIBUTOR: string; }; ITEM_STATUS: { ...; }; IMAGE_TYPE: { ...; }; }'.
+components/ActivitySuggestions.tsx(55,19): error TS2538: Type 'symbol' cannot be used as an index type.
+components/groups/ActivityGeneratorWidget.tsx(110,64): error TS2339: Property 'BUDGET_CATEGORY' does not exist on type '{ CONTENT_TYPE: { TRIP: string; DESTINATION: string; ITINERARY_ITEM: string; COLLECTION: string; TEMPLATE: string; GROUP_IDEA: string; }; TRIP_ROLES: { ADMIN: string; EDITOR: string; VIEWER: string; CONTRIBUTOR: string; }; ITEM_STATUS: { ...; }; IMAGE_TYPE: { ...; }; }'.
+components/itinerary-template-card.tsx(101,80): error TS2339: Property 'pace' does not exist on type 'ItineraryTemplateMetadata'.
+components/itinerary-template-card.tsx(104,84): error TS2339: Property 'best_for' does not exist on type 'ItineraryTemplateMetadata'.
+components/itinerary-template-card.tsx(109,37): error TS2339: Property 'highlights' does not exist on type 'ItineraryTemplateMetadata'.
+components/itinerary-template-card.tsx(109,53): error TS7006: Parameter 'highlight' implicitly has an 'any' type.
+components/itinerary-template-card.tsx(109,64): error TS7006: Parameter 'index' implicitly has an 'any' type.
+components/Task.tsx(260,12): error TS2678: Type '"cancelled"' is not comparable to type '"suggested" | "confirmed" | "rejected"'.
+components/Task.tsx(278,12): error TS2678: Type '"active"' is not comparable to type '"suggested" | "confirmed" | "rejected"'.
+components/Task.tsx(388,68): error TS2345: Argument of type '"active"' is not assignable to parameter of type '"suggested" | "confirmed" | "rejected"'.
+components/Task.tsx(395,68): error TS2345: Argument of type '"cancelled"' is not assignable to parameter of type '"suggested" | "confirmed" | "rejected"'.
+components/Todo.tsx(182,12): error TS2678: Type '"cancelled"' is not comparable to type '"suggested" | "confirmed" | "rejected"'.
+components/Todo.tsx(194,12): error TS2678: Type '"active"' is not comparable to type '"suggested" | "confirmed" | "rejected"'.
+components/Todo.tsx(245,68): error TS2345: Argument of type '"cancelled"' is not assignable to parameter of type '"suggested" | "confirmed" | "rejected"'.
+components/trip-management.tsx(109,16): error TS2552: Cannot find name 'TABLES'. Did you mean 'Tables'?
+components/ui/data-table.tsx(2,60): error TS2307: Cannot find module '@tanstack/react-table' or its corresponding type declarations.
+components/ui/data-table.tsx(15,41): error TS7006: Parameter 'headerGroup' implicitly has an 'any' type.
+components/ui/data-table.tsx(17,41): error TS7006: Parameter 'header' implicitly has an 'any' type.
+components/ui/data-table.tsx(28,42): error TS7006: Parameter 'row' implicitly has an 'any' type.
+components/ui/data-table.tsx(30,43): error TS7006: Parameter 'cell' implicitly has an 'any' type.

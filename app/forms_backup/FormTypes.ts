@@ -1,11 +1,3 @@
-/**
- * Form System Types
- *
- * This file contains TypeScript types and Zod schemas for the forms system
- 
- */
-
-import { type TABLES } from '@/utils/constants/database';
 import z from 'zod';
 
 // =========================================

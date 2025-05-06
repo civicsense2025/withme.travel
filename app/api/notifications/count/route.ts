@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 
 /**
  * GET route handler for fetching notification counts
@@ -19,8 +20,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { count, error } = await supabase
       .from(TABLES.NOTIFICATIONS)
       .select('*', { count: 'exact', head: true })
-      .eq(FIELDS.NOTIFICATIONS.USER_ID, user.id)
-      .eq(FIELDS.NOTIFICATIONS.READ, false);
+      .eq('USER_ID', user.id)
+      .eq('READ', false);
 
     if (error) {
       console.error('Error fetching notification count:', error);

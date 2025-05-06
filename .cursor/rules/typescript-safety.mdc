@@ -86,7 +86,7 @@ All database constants should be defined in `utils/constants/database.ts` and im
 import { TABLES } from '@/utils/constants/database';
 
 // Use imported constants
-const { data } = await supabase.from(TABLES.TRIPS).select('*');
+const { data } = await supabase.from(trips).select('*');
 ```
 
 ❌ **Bad Practice:**
@@ -198,7 +198,7 @@ Always check for errors in Supabase responses:
 
 ✅ **Good Practice:**
 ```typescript
-const { data, error } = await supabase.from(TABLES.TRIPS).select('*');
+const { data, error } = await supabase.from(trips).select('*');
 
 if (error) {
   console.error('Error fetching trips:', error);

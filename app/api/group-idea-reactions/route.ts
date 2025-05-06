@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 // GET: /api/group-idea-reactions?ideaId=...&commentId=...
 export async function GET(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing ideaId or commentId' }, { status: 400 });
   }
   const supabase = await createRouteHandlerClient();
-  let query = supabase.from(TABLES.GROUP_IDEA_REACTIONS).select('*');
+  let query = supabase.from('group_idea_reactions').select('*');
   if (ideaId) query = query.eq('idea_id', ideaId);
   if (commentId) query = query.eq('comment_id', commentId);
   const { data, error } = await query;
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   const { data, error } = await supabase
-    .from(TABLES.GROUP_IDEA_REACTIONS)
+    .from('group_idea_reactions')
     .insert([{ idea_id, comment_id, user_id, emoji }])
     .select()
     .single();
@@ -43,7 +42,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   const { data, error } = await supabase
-    .from(TABLES.GROUP_IDEA_REACTIONS)
+    .from('group_idea_reactions')
     .update({ emoji })
     .eq('id', id)
     .select()
@@ -59,7 +58,7 @@ export async function DELETE(request: NextRequest) {
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   const supabase = await createRouteHandlerClient();
   const { error } = await supabase
-    .from(TABLES.GROUP_IDEA_REACTIONS)
+    .from('group_idea_reactions')
     .delete()
     .eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { getComments, createComment } from '@/app/api/db-utils';
-import { CommentableContentType } from '@/utils/constants/database';
-import type { CommentCreateInput } from '@/types/comments';
+import type { CommentableContentType, CommentCreateInput } from '@/types/comments';
 import { captureException } from '@sentry/nextjs';
 
 /**

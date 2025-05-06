@@ -1,5 +1,4 @@
 import { getServerSupabase } from '@/utils/supabase-server';
-import { TABLES } from '@/utils/constants/database';
 import GroupsClientPage from './groups-client';
 import GroupsLandingPage from './components/landing-page';
 
@@ -23,18 +22,18 @@ export default async function GroupsPage() {
   let groups = [];
   try {
     const { data, error } = await supabase
-      .from(TABLES.GROUPS)
+      .from('groups')
       .select(`
         *,
-        ${TABLES.GROUP_MEMBERS} (
+        ${'group_members'} (
           user_id,
           role,
           status
         ),
-        trip_count:${TABLES.GROUP_TRIPS}(count)
+        trip_count:${'group_trips'}(count)
       `)
-      .eq(`${TABLES.GROUP_MEMBERS}.user_id`, userId)
-      .eq(`${TABLES.GROUP_MEMBERS}.status`, 'active');
+      .eq(`${'group_members'}.user_id`, userId)
+      .eq(`${'group_members'}.status`, 'active');
     if (error) {
       console.error('Error loading groups:', error);
     } else {

@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation';
-import { TABLES } from '@/utils/constants/database';
 import { Container } from '@/components/container';
 import { checkAdminAuth } from '../utils/auth';
 // @ts-ignore: Temporarily ignoring missing component file
-import { FormAnalyticsDashboard } from '@/components/feedback/analytics/FormAnalyticsDashboard';
+import FormAnalyticsDashboard from '../../components/feedback/analytics/FormAnalyticsDashboard';
 
 export const metadata = {
   title: 'Analytics Dashboard | Admin Panel',
@@ -32,24 +31,24 @@ export default async function AnalyticsPage() {
   ] = await Promise.all([
     // User growth data
     supabase
-      .from(TABLES.PROFILES)
+      .from('profiles')
       .select('created_at')
       .order('created_at', { ascending: true }),
       
     // Content creation data
     supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
+      .from('itinerary_templates')
       .select('created_at, type:template_type, destination_id')
       .order('created_at', { ascending: true }),
       
     // Feedback categories data
     supabase
-      .from(TABLES.FEEDBACK)
+      .from('feedback')
       .select('type, status, created_at'),
       
     // Destination popularity
     supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select('id, name, likes_count, city, country')
       .order('likes_count', { ascending: false })
       .limit(10)

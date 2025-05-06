@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { cookies } from 'next/headers';
+import { TABLES } from '@/utils/constants/tables';
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
     // 1. Update group_members: set user_id where guest_token matches
     const { error: memberError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .update({ user_id: userId, guest_token: null })
       .eq('group_id', group_id)
       .eq('guest_token', guest_token);
@@ -26,25 +26,25 @@ export async function POST(request: Request) {
     }
     // 2. Update group_ideas: set created_by where guest_token matches
     await supabase
-      .from(TABLES.GROUP_IDEAS)
+      .from('group_ideas')
       .update({ created_by: userId, guest_token: null })
       .eq('group_id', group_id)
       .eq('guest_token', guest_token);
     // 3. Update comments: set user_id where guest_token matches
     await supabase
-      .from(TABLES.COMMENTS)
+      .from('comments')
       .update({ user_id: userId, guest_token: null })
       .eq('group_id', group_id)
       .eq('guest_token', guest_token);
     // 4. If only one member, set role to owner
     const { data: members } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
       .eq('group_id', group_id)
       .eq('status', 'active');
     if (members && members.length === 1) {
       await supabase
-        .from(TABLES.GROUP_MEMBERS)
+        .from('group_members')
         .update({ role: 'owner' })
         .eq('group_id', group_id)
         .eq('user_id', userId);

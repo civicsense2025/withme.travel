@@ -1,7 +1,7 @@
 // Server-side database functions that use the Supabase server client
 // These should only be used in API routes or server components
 
-import { TABLES, FIELDS, CommentableContentType } from '@/utils/constants/database';
+import type { CommentableContentType } from '@/types/comments';
 import { captureException } from '@sentry/nextjs';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import type { ItineraryItemReaction } from '@/types/database.types';
@@ -336,9 +336,9 @@ export async function getUserProfile(userId: string): Promise<any> {
 export async function getItineraryItemReactions(supabase: any, itemIds: string[]): Promise<Record<string, ItineraryItemReaction[]>> {
   if (!itemIds.length) return {};
   const { data, error } = await supabase
-    .from(TABLES.ITINERARY_ITEM_REACTIONS)
+    .from('itinerary_item_reactions')
     .select('*')
-    .in(FIELDS.ITINERARY_ITEM_REACTIONS.ITINERARY_ITEM_ID, itemIds);
+    .in('ITINERARY_ITEM_ID', itemIds);
   if (error) {
     console.error('Error fetching reactions:', error);
     return {};
@@ -386,12 +386,12 @@ export async function getComments(
 
     // Count total comments for pagination info
     const { count, error: countError } = await supabase
-      .from(TABLES.COMMENTS)
+      .from('comments')
       .select('*', { count: 'exact', head: true })
-      .eq(FIELDS.COMMENTS.CONTENT_TYPE, contentType)
-      .eq(FIELDS.COMMENTS.CONTENT_ID, contentId)
-      .is(FIELDS.COMMENTS.IS_DELETED, false)
-      .eq(FIELDS.COMMENTS.PARENT_ID, parentId);
+      .eq('CONTENT_TYPE', contentType)
+      .eq('CONTENT_ID', contentId)
+      .is('IS_DELETED', false)
+      .eq('PARENT_ID', parentId);
 
     if (countError) {
       console.error('Error counting comments:', countError);
@@ -444,16 +444,16 @@ export async function createComment(
   try {
     // Insert the new comment
     const { data: commentData, error: commentError } = await supabase
-      .from(TABLES.COMMENTS)
+      .from('comments')
       .insert({
-        [FIELDS.COMMENTS.USER_ID]: userId,
-        [FIELDS.COMMENTS.CONTENT_TYPE]: contentType,
-        [FIELDS.COMMENTS.CONTENT_ID]: contentId,
-        [FIELDS.COMMENTS.CONTENT]: content,
-        [FIELDS.COMMENTS.PARENT_ID]: parentId,
-        [FIELDS.COMMENTS.ATTACHMENT_URL]: attachmentUrl,
-        [FIELDS.COMMENTS.ATTACHMENT_TYPE]: attachmentType,
-        [FIELDS.COMMENTS.METADATA]: metadata
+        ['USER_ID']: userId,
+        ['CONTENT_TYPE']: contentType,
+        ['CONTENT_ID']: contentId,
+        ['CONTENT']: content,
+        ['PARENT_ID']: parentId,
+        ['ATTACHMENT_URL']: attachmentUrl,
+        ['ATTACHMENT_TYPE']: attachmentType,
+        ['METADATA']: metadata
       })
       .select('*')
       .single();
@@ -465,7 +465,7 @@ export async function createComment(
 
     // Get user profile data
     const { data: userData, error: userError } = await supabase
-      .from(TABLES.PROFILES)
+      .from('profiles')
       .select('id, name, avatar_url')
       .eq('id', userId)
       .single();
@@ -514,17 +514,17 @@ export async function updateComment(
   try {
     // Update the comment
     const { data: commentData, error: commentError } = await supabase
-      .from(TABLES.COMMENTS)
+      .from('comments')
       .update({
-        [FIELDS.COMMENTS.CONTENT]: content,
-        [FIELDS.COMMENTS.ATTACHMENT_URL]: attachmentUrl,
-        [FIELDS.COMMENTS.ATTACHMENT_TYPE]: attachmentType,
-        [FIELDS.COMMENTS.METADATA]: metadata,
-        [FIELDS.COMMENTS.IS_EDITED]: true,
-        [FIELDS.COMMENTS.UPDATED_AT]: new Date().toISOString()
+        ['CONTENT']: content,
+        ['ATTACHMENT_URL']: attachmentUrl,
+        ['ATTACHMENT_TYPE']: attachmentType,
+        ['METADATA']: metadata,
+        ['IS_EDITED']: true,
+        ['UPDATED_AT']: new Date().toISOString()
       })
-      .eq(FIELDS.COMMENTS.ID, commentId)
-      .eq(FIELDS.COMMENTS.USER_ID, userId)
+      .eq('id', commentId)
+      .eq('USER_ID', userId)
       .select('*')
       .single();
 
@@ -535,7 +535,7 @@ export async function updateComment(
 
     // Get user profile data
     const { data: userData, error: userError } = await supabase
-      .from(TABLES.PROFILES)
+      .from('profiles')
       .select('id, name, avatar_url')
       .eq('id', userId)
       .single();
@@ -576,13 +576,13 @@ export async function deleteComment(
   try {
     // Soft delete the comment
     const { error } = await supabase
-      .from(TABLES.COMMENTS)
+      .from('comments')
       .update({
-        [FIELDS.COMMENTS.IS_DELETED]: true,
-        [FIELDS.COMMENTS.UPDATED_AT]: new Date().toISOString()
+        ['IS_DELETED']: true,
+        ['UPDATED_AT']: new Date().toISOString()
       })
-      .eq(FIELDS.COMMENTS.ID, commentId)
-      .eq(FIELDS.COMMENTS.USER_ID, userId);
+      .eq('id', commentId)
+      .eq('USER_ID', userId);
 
     if (error) {
       console.error('Error deleting comment:', error);
@@ -610,14 +610,14 @@ export async function getCommentReactions(
   try {
     // Get reactions with user profile data
     const { data, error } = await supabase
-      .from(TABLES.COMMENT_REACTIONS)
+      .from('comment_reactions')
       .select(`
         *,
-        ${TABLES.PROFILES}:${FIELDS.COMMENT_REACTIONS.USER_ID} (
+        ${'profiles'}:${'USER_ID'} (
           id, name, avatar_url
         )
       `)
-      .eq(FIELDS.COMMENT_REACTIONS.COMMENT_ID, commentId);
+      .eq('COMMENT_ID', commentId);
 
     if (error) {
       console.error('Error fetching comment reactions:', error);
@@ -650,11 +650,11 @@ export async function addCommentReaction(
   try {
     // First, check if the user already reacted with this emoji
     const { data: existingReaction, error: checkError } = await supabase
-      .from(TABLES.COMMENT_REACTIONS)
+      .from('comment_reactions')
       .select('id')
-      .eq(FIELDS.COMMENT_REACTIONS.COMMENT_ID, commentId)
-      .eq(FIELDS.COMMENT_REACTIONS.USER_ID, userId)
-      .eq(FIELDS.COMMENT_REACTIONS.EMOJI, emoji)
+      .eq('COMMENT_ID', commentId)
+      .eq('USER_ID', userId)
+      .eq('EMOJI', emoji)
       .maybeSingle();
 
     if (checkError) {
@@ -666,10 +666,10 @@ export async function addCommentReaction(
     if (existingReaction) {
       // Get full user data for the existing reaction
       const { data: reactionWithUser, error: fetchError } = await supabase
-        .from(TABLES.COMMENT_REACTIONS)
+        .from('comment_reactions')
         .select(`
           *,
-          ${TABLES.PROFILES}:${FIELDS.COMMENT_REACTIONS.USER_ID} (
+          ${'profiles'}:${'USER_ID'} (
             id, name, avatar_url
           )
         `)
@@ -686,15 +686,15 @@ export async function addCommentReaction(
 
     // If the reaction doesn't exist, create a new one
     const { data: newReaction, error: insertError } = await supabase
-      .from(TABLES.COMMENT_REACTIONS)
+      .from('comment_reactions')
       .insert({
-        [FIELDS.COMMENT_REACTIONS.COMMENT_ID]: commentId,
-        [FIELDS.COMMENT_REACTIONS.USER_ID]: userId,
-        [FIELDS.COMMENT_REACTIONS.EMOJI]: emoji
+        ['COMMENT_ID']: commentId,
+        ['USER_ID']: userId,
+        ['EMOJI']: emoji
       })
       .select(`
         *,
-        ${TABLES.PROFILES}:${FIELDS.COMMENT_REACTIONS.USER_ID} (
+        ${'profiles'}:${'USER_ID'} (
           id, name, avatar_url
         )
       `)
@@ -707,16 +707,16 @@ export async function addCommentReaction(
 
     // Update the comment's reaction count
     await supabase
-      .from(TABLES.COMMENTS)
+      .from('comments')
       .update({
-        [FIELDS.COMMENTS.REACTIONS_COUNT]: supabase.rpc('increment', { 
+        ['REACTIONS_COUNT']: supabase.rpc('increment', { 
           row_id: commentId,
-          table_name: TABLES.COMMENTS,
-          column_name: FIELDS.COMMENTS.REACTIONS_COUNT, 
+          table_name: 'comments',
+          column_name: 'REACTIONS_COUNT', 
           amount: 1 
         })
       })
-      .eq(FIELDS.COMMENTS.ID, commentId);
+      .eq('id', commentId);
 
     return newReaction as CommentReactionWithUser;
   } catch (e) {
@@ -743,11 +743,11 @@ export async function removeCommentReaction(
   try {
     // Delete the reaction
     const { error: deleteError, count } = await supabase
-      .from(TABLES.COMMENT_REACTIONS)
+      .from('comment_reactions')
       .delete({ count: 'exact' })
-      .eq(FIELDS.COMMENT_REACTIONS.COMMENT_ID, commentId)
-      .eq(FIELDS.COMMENT_REACTIONS.USER_ID, userId)
-      .eq(FIELDS.COMMENT_REACTIONS.EMOJI, emoji);
+      .eq('COMMENT_ID', commentId)
+      .eq('USER_ID', userId)
+      .eq('EMOJI', emoji);
 
     if (deleteError) {
       console.error('Error deleting reaction:', deleteError);
@@ -758,17 +758,17 @@ export async function removeCommentReaction(
     if (count && count > 0) {
       // Update the comment's reaction count
       await supabase
-        .from(TABLES.COMMENTS)
+        .from('comments')
         .update({
-          [FIELDS.COMMENTS.REACTIONS_COUNT]: supabase.rpc('decrement', { 
+          ['REACTIONS_COUNT']: supabase.rpc('decrement', { 
             row_id: commentId,
-            table_name: TABLES.COMMENTS,
-            column_name: FIELDS.COMMENTS.REACTIONS_COUNT, 
+            table_name: 'comments',
+            column_name: 'REACTIONS_COUNT', 
             amount: 1 
           })
         })
-        .eq(FIELDS.COMMENTS.ID, commentId)
-        .gt(FIELDS.COMMENTS.REACTIONS_COUNT, 0); // Only decrement if greater than 0
+        .eq('id', commentId)
+        .gt('REACTIONS_COUNT', 0); // Only decrement if greater than 0
     }
 
     return true;

@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import type { Database } from '@/types/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -52,9 +51,9 @@ async function checkTripAccess(
 
     const { data, error } = await supabase
       .from(TRIP_MEMBERS_TABLE)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .select('ROLE')
+      .eq('TRIP_ID', tripId)
+      .eq('USER_ID', user.id)
       .maybeSingle();
 
     if (error || !data) {
@@ -90,9 +89,9 @@ export async function POST(
     // Check if user has access to this trip
     const { data, error: membershipError } = await supabase
       .from(TRIP_MEMBERS_TABLE)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, user.id)
+      .select('ROLE')
+      .eq('TRIP_ID', tripId)
+      .eq('USER_ID', user.id)
       .single();
 
     if (membershipError || !data) {
@@ -162,12 +161,12 @@ export async function POST(
 
     // Store reference in the database
     const { error: dbError } = await supabase.from(TRIP_IMAGES_TABLE).insert({
-      [FIELDS.TRIP_IMAGES.TRIP_ID]: tripId,
-      [FIELDS.TRIP_IMAGES.FILE_PATH]: filePath,
-      [FIELDS.TRIP_IMAGES.FILE_NAME]: file.name,
-      [FIELDS.TRIP_IMAGES.CREATED_BY]: user.id,
-      [FIELDS.TRIP_IMAGES.CONTENT_TYPE]: file.type,
-      [FIELDS.TRIP_IMAGES.SIZE_BYTES]: file.size,
+      ['TRIP_ID']: tripId,
+      ['FILE_PATH']: filePath,
+      ['FILE_NAME']: file.name,
+      ['CREATED_BY']: user.id,
+      ['CONTENT_TYPE']: file.type,
+      ['SIZE_BYTES']: file.size,
     });
 
     if (dbError) {
@@ -204,8 +203,8 @@ export async function GET(
     const { data, error } = await supabase
       .from(TRIP_IMAGES_TABLE)
       .select('*')
-      .eq(FIELDS.TRIP_IMAGES.TRIP_ID, tripId)
-      .order(FIELDS.COMMON.CREATED_AT, { ascending: false });
+      .eq('TRIP_ID', tripId)
+      .order('CREATED_AT', { ascending: false });
 
     if (error) {
       console.error('Error fetching trip images:', error);

@@ -367,7 +367,6 @@ export function ActivityTimeline({
           </Button>
         )}
       </div>
-
       <ScrollArea className="relative" style={{ maxHeight }}>
         {hasError && (
           <div className="p-4 text-center text-red-500">
@@ -377,7 +376,7 @@ export function ActivityTimeline({
 
         {isLoading && displayActivities.length === 0 ? (
           // Show loading skeletons only on initial load
-          <div className="space-y-4 p-4">
+          (<div className="space-y-4 p-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex items-start gap-3">
                 <Skeleton className="h-8 w-8 rounded-full" />
@@ -387,16 +386,16 @@ export function ActivityTimeline({
                 </div>
               </div>
             ))}
-          </div>
+          </div>)
         ) : useTripHistory ? (
           // Trip history content (placeholder)
-          <div className="p-4 space-y-1">
+          (<div className="p-4 space-y-1">
             {historyItems.length === 0 ? (
               <div className="text-center text-muted-foreground py-6">No activity history yet</div>
             ) : (
               historyItems.map((historyItem) => renderTripHistoryItem(historyItem))
             )}
-          </div>
+          </div>)
         ) : displayActivities.length === 0 ? (
           <div className="text-center text-muted-foreground py-6">No activity yet</div>
         ) : (

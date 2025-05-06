@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createApiRouteClient } from '@/utils/api-helpers/cookie-handlers';
 import { parseGoogleMapsList, type PlaceData } from '@/utils/googleMapsParser';
-import { TABLES } from '@/utils/constants/database';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Define place category type to match database enum

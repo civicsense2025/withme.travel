@@ -1,9 +1,8 @@
 'use client';
-
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FeedbackItem } from './page';
@@ -185,7 +184,7 @@ export default function FeedbackTable({ initialData }: FeedbackTableProps) {
     setIsLoading(true);
     try {
       const { error } = await supabase
-        .from(TABLES.FEEDBACK)
+        .from('feedback')
         .delete()
         .eq('id', id);
 

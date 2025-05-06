@@ -72,10 +72,10 @@ async function checkTripAccess(
   allowedRoles: AllowedRoleKey[]
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
-    .select(FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .from('trip_members')
+    .select('ROLE')
+    .eq('TRIP_ID', tripId)
+    .eq('USER_ID', userId)
     .maybeSingle();
   if (error) return { allowed: false, error: error.message, status: 500 };
   if (!member) return { allowed: false, error: 'Not a member', status: 403 };
@@ -123,9 +123,9 @@ export async function POST(
     // 1. Check for existing items in the trip and find the maximum day number
     const { data: existingItems, error: existingItemsError } = await supabase
       .from(TABLES.ITINERARY_ITEMS)
-      .select(FIELDS.ITINERARY_ITEMS.DAY_NUMBER)
-      .eq(FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId)
-      .order(FIELDS.ITINERARY_ITEMS.DAY_NUMBER, { ascending: false })
+      .select('DAY_NUMBER')
+      .eq('TRIP_ID', tripId)
+      .order('DAY_NUMBER', { ascending: false })
       .limit(1);
 
     if (existingItemsError) {
@@ -160,7 +160,7 @@ export async function POST(
         )
       `
       )
-      .eq(FIELDS.COMMON.ID, templateId)
+      .eq('id', templateId)
       .single();
 
     if (templateError) {
@@ -245,9 +245,9 @@ export async function POST(
         const { data: templateItems, error: templateItemsError } = await supabase
           .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
           .select('*')
-          .eq(FIELDS.ITINERARY_TEMPLATE_ITEMS.TEMPLATE_ID, templateId)
-          .order(FIELDS.ITINERARY_TEMPLATE_ITEMS.DAY, { ascending: true })
-          .order(FIELDS.ITINERARY_TEMPLATE_ITEMS.ITEM_ORDER, { ascending: true });
+          .eq('TEMPLATE_ID', templateId)
+          .order('DAY', { ascending: true })
+          .order('ITEM_ORDER', { ascending: true });
 
         if (templateItemsError) {
           console.error('Error fetching template items:', templateItemsError);

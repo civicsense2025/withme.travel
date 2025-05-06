@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getServerSupabase } from '@/utils/supabase-server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
 import GroupDetailClient from './group-detail-client';
 import { GroupMember, GroupTrip } from '@/types/groups';
 import { v4 as uuidv4 } from 'uuid';
@@ -38,16 +37,16 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
       // For now, just use it in-memory for this request
     }
     // TODO: Use guestToken to fetch or create a guest group record in the DB
-    // Example: await supabase.from(TABLES.GROUPS).upsert({ id: groupId, guest_token: guestToken, ... })
+    // Example: await supabase.from('groups').upsert({ id: groupId, guest_token: guestToken, ... })
     // For now, continue to fetch the group as normal
   }
 
   // Fetch group details (fix join syntax)
   const { data: group, error } = await supabase
-    .from(TABLES.GROUPS)
+    .from('groups')
     .select(`
       *,
-      ${TABLES.GROUP_MEMBERS} (
+      ${'group_members'} (
         user_id,
         role,
         status,
@@ -60,9 +59,9 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           username
         )
       ),
-      trip_count:${TABLES.GROUP_TRIPS}(count)
+      trip_count:${'group_trips'}(count)
     `)
-    .eq(FIELDS.GROUPS.ID, groupId)
+    .eq('id', groupId)
     .single();
   
   if (error || !group) {
@@ -81,18 +80,18 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
 
   // Get the trips associated with this group (most recent 5)
   const { data: trips, error: tripsError } = await supabase
-    .from(TABLES.GROUP_TRIPS)
+    .from('group_trips')
     .select(`
       added_at,
       added_by,
-      trip:${TABLES.TRIPS}!trip_id (
+      trip:${'trips'}!trip_id (
         id,
         name,
         start_date,
         end_date,
         created_by,
         destination_id,
-        destinations:${TABLES.DESTINATIONS}!destination_id (
+        destinations:${'destinations'}!destination_id (
           id,
           name,
           country,
@@ -100,7 +99,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
         )
       )
     `)
-    .eq(FIELDS.GROUP_TRIPS.GROUP_ID, groupId)
+    .eq('group_id', groupId)
     .order('added_at', { ascending: false })
     .limit(5);
   

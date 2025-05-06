@@ -338,14 +338,14 @@ export function MembersTab({
                   </div>
                 </div>
                 {canEdit && ( // Assuming 'canEdit' determines if the current user can remove others
-                  <Button
+                  (<Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleRemoveMember(member.user_id)}
                     className="text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </Button>)
                 )}
               </li>
             ))}

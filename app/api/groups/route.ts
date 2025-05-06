@@ -1,6 +1,6 @@
 import { createRouteHandlerClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import { TABLES, FIELDS } from "@/utils/constants/database";
+import type { Database } from "@/utils/constants/database";
 import { cookies } from "next/headers";
 
 // GET /api/groups - Get a list of groups the user belongs to
@@ -24,22 +24,22 @@ export async function GET(request: Request) {
     const offset = parseInt(url.searchParams.get("offset") || "0");
     
     let query = supabase
-      .from(TABLES.GROUPS)
+      .from('groups')
       .select(`
         *,
-        ${TABLES.GROUP_MEMBERS} (
+        group_members (
           user_id,
           role,
           status
         ),
-        trip_count:${TABLES.GROUP_TRIPS}(count)
+        trip_count:group_trips(count)
       `)
-      .eq(`${TABLES.GROUP_MEMBERS}.user_id`, userId)
-      .eq(`${TABLES.GROUP_MEMBERS}.status`, "active");
+      .eq('group_members.user_id', userId)
+      .eq('group_members.status', "active");
     
     // Add search filter if provided
     if (searchQuery) {
-      query = query.ilike(FIELDS.GROUPS.NAME, `%${searchQuery}%`);
+      query = query.ilike('name', `%${searchQuery}%`);
     }
     
     // Add pagination
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       }
       // Insert guest group
       const { data: group, error } = await supabase
-        .from(TABLES.GROUPS)
+        .from('groups')
         .insert({
           name,
           description: description || null,
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
           console.warn("RPC error with recursion, falling back to direct insert:", error);
           // Fallback to direct insert and then add membership
           const { data: newGroup, error: insertError } = await supabase
-            .from(TABLES.GROUPS)
+            .from('groups')
             .insert({
               name,
               description: description || null,
@@ -177,7 +177,7 @@ export async function POST(request: Request) {
           
           // Now add the user as admin member
           const { error: memberError } = await supabase
-            .from(TABLES.GROUP_MEMBERS)
+            .from('group_members')
             .insert({
               group_id: newGroup.id,
               user_id: userId,
@@ -208,16 +208,16 @@ export async function POST(request: Request) {
       
       // If RPC succeeded, fetch the newly created group with members
       const { data: newGroup, error: fetchError } = await supabase
-        .from(TABLES.GROUPS)
+        .from('groups')
         .select(`
           *,
-          ${TABLES.GROUP_MEMBERS} (
+          group_members (
             user_id,
             role,
             status
           )
         `)
-        .eq(FIELDS.GROUPS.ID, data)
+        .eq('id', data)
         .single();
         
       if (fetchError) {

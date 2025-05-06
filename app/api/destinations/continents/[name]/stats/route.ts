@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 /**
  * Get aggregated stats for a specific continent
@@ -15,7 +14,7 @@ export async function GET(
 
     // Get all destinations in this continent
     const { data: destinationsData, error: destinationsError } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select('*')
       .eq('continent', continentName);
 

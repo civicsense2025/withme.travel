@@ -1,4 +1,4 @@
-'use client';
+'use client';;
 import { PAGE_ROUTES, API_ROUTES } from '@/utils/constants/routes';
 import {
   ITINERARY_CATEGORIES,
@@ -9,7 +9,6 @@ import {
 } from '@/utils/constants/status';
 import { VerticalStepper } from '@/components/itinerary/VerticalStepper';
 import { MobileStepper } from '@/components/itinerary/MobileStepper';
-import { TABLES } from '@/utils/constants/database';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -168,17 +167,8 @@ import * as Sentry from '@sentry/nextjs';
 // UI Components
 
 // Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
 
 // Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 import type { TripMember } from './context/trip-data-provider';
 

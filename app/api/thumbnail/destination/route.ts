@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 export const runtime = 'nodejs';
 
@@ -99,7 +98,7 @@ export async function GET(
     if (destinationId) {
       const supabase = await createRouteHandlerClient();
       const { data, error } = await supabase
-        .from(TABLES.DESTINATIONS)
+        .from('destinations')
         .select('id, city, country, image_url, description, highlights, byline')
         .eq('id', destinationId)
         .single();
@@ -111,7 +110,7 @@ export async function GET(
 
       // Get tags for this destination
       const { data: tagData, error: tagError } = await supabase
-        .from(TABLES.DESTINATION_TAGS)
+        .from('destination_tags')
         .select('tags(name)')
         .eq('destination_id', destinationId)
         .limit(5);

@@ -82,8 +82,8 @@ export async function POST(
     const { data: memberData, error: permissionError } = await supabase
       .from(TRIP_MEMBERS_TABLE)
       .select('role')
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, data.user.id)
+      .eq('TRIP_ID', tripId)
+      .eq('USER_ID', data.user.id)
       .maybeSingle();
 
     if (permissionError || !memberData) {
@@ -160,8 +160,8 @@ export async function POST(
           const { count, error: checkError } = await supabase
             .from(TRIP_MEMBERS_TABLE)
             .select('*', { count: 'exact', head: true })
-            .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-            .eq(FIELDS.TRIP_MEMBERS.USER_ID, member.userId);
+            .eq('TRIP_ID', tripId)
+            .eq('USER_ID', member.userId);
 
           if (checkError) {
             console.error(`Error checking membership for ${member.userId}:`, checkError);

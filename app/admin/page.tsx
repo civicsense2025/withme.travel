@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { TABLES } from '@/utils/constants/database';
 import { Container } from '@/components/container';
 import { checkAdminAuth } from './utils/auth';
 import { AdminStatsCard } from './components/AdminStatsCard';
@@ -33,15 +32,15 @@ export default async function AdminPage() {
     recentFeedbackResult,
     tripsResult
   ] = await Promise.all([
-    supabase.from(TABLES.DESTINATIONS).select('id', { count: 'exact', head: true }),
-    supabase.from(TABLES.ITINERARY_TEMPLATES).select('id', { count: 'exact', head: true }),
-    supabase.from(TABLES.PROFILES).select('id', { count: 'exact', head: true }),
-    supabase.from(TABLES.FEEDBACK).select('id', { count: 'exact', head: true }),
-    supabase.from(TABLES.FEEDBACK)
+    supabase.from('DESTINATIONS').select('id', { count: 'exact', head: true }),
+    supabase.from('ITINERARY_TEMPLATES').select('id', { count: 'exact', head: true }),
+    supabase.from('PROFILES').select('id', { count: 'exact', head: true }),
+    supabase.from('FEEDBACK').select('id', { count: 'exact', head: true }),
+    supabase.from('FEEDBACK')
       .select('id, content, type, status, created_at, email, user:profiles!feedback_user_id_fkey(full_name, email)')
       .order('created_at', { ascending: false })
       .limit(5),
-    supabase.from(TABLES.TRIPS).select('id', { count: 'exact', head: true }),
+    supabase.from('trips').select('id', { count: 'exact', head: true }),
   ]);
 
   const stats = {

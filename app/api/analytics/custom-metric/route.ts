@@ -1,49 +1,57 @@
-import { NextResponse } from 'next/server';
-import { ApiError } from '@/utils/api-error';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/tables';
 
 /**
  * API route for collecting custom performance metrics
  * POST /api/analytics/custom-metric
  */
-async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    // Parse the metric data from the request body
-    const metricData = await req.json();
-
-    // Basic validation
-    if (!metricData.name || typeof metricData.value !== 'number') {
-      return ApiError.badRequest('Invalid metric data').toResponse();
+    const supabase = await createRouteHandlerClient();
+    
+    // Get auth session to identify the user
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    
+    // Get analytics data from request
+    const analyticsData = await request.json();
+    
+    if (!analyticsData.name) {
+      return NextResponse.json({ error: 'Event name is required' }, { status: 400 });
     }
-
-    // Add timestamp if not provided
-    if (!metricData.timestamp) {
-      metricData.timestamp = Date.now();
+    
+    // Insert into analytics events table
+    const { error } = await supabase.from('analytics_events').insert({
+      user_id: userId || null,
+      event_name: analyticsData.name,
+      event_category: analyticsData.category || 'uncategorized',
+      properties: analyticsData.properties || {},
+      page_url: analyticsData.properties?.pathname || null,
+      session_id: request.cookies.get('analytics_session_id')?.value || null,
+      created_at: new Date().toISOString()
+    });
+    
+    if (error) {
+      console.error('Error saving analytics event:', error);
+      return NextResponse.json({ error: 'Failed to save analytics event' }, { status: 500 });
     }
-
-    // Add additional context for analysis
-    metricData.userAgent = req.headers.get('user-agent') || null;
-
-    // Log metrics in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Custom Metric]', metricData);
-    }
-
-    // In a real application, you would:
-    // 1. Store metrics in a database
-    // 2. Send to an analytics service
-    // 3. Generate reports on performance
-
-    // Example: Store in database
-    // const { data, error } = await supabase
-    //   .from('custom_metrics')
-    //   .insert([metricData]);
-
-    // Return success
+    
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error processing custom metric:', error);
-    return ApiError.internal('Failed to process custom metric data').toResponse();
+  } catch (err) {
+    console.error('Error processing analytics event:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export { POST };
+// Options GET request handler for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}

@@ -1,16 +1,11 @@
-import { TABLES, ENUMS, CommentableContentType } from '@/utils/constants/database';
+// import { Tables } from '@/utils/constants/database'; // Not used in this file
+import type { Database } from '@/utils/constants/database';
 import type { Profile } from './database.types';
 
 /**
  * Content type that can be commented on
  */
-export type CommentableType = 
-  | 'destination'    // Comments on destinations
-  | 'group_idea'     // Comments on group planning ideas
-  | 'itinerary_item' // Comments on trip itinerary items
-  | 'trip'           // Comments on entire trips
-  | 'image'          // Comments on images
-  | 'note';          // Comments on collaborative notes
+export type CommentableContentType = Database['public']['Enums']['content_type'] | 'group_idea' | 'image' | 'note';
 
 /**
  * Base comment interface

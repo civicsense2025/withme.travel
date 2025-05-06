@@ -40,7 +40,7 @@ interface TaskVotes {
   userVote: 'up' | 'down' | null;
 }
 
-interface TaskItem {
+export interface TaskItem {
   id: string;
   title: string;
   description?: string;
@@ -257,12 +257,6 @@ export function Task({
             <CheckCircle2 className="h-3 w-3 mr-1" /> Confirmed
           </Badge>
         );
-      case ITEM_STATUSES.CANCELLED:
-        return (
-          <Badge variant="destructive" className="ml-2">
-            <XCircle className="h-3 w-3 mr-1" /> Canceled
-          </Badge>
-        );
       case ITEM_STATUSES.REJECTED:
         return (
           <Badge variant="destructive" className="ml-2">
@@ -273,15 +267,6 @@ export function Task({
         return (
           <Badge variant="outline" className="ml-2">
             <AlertCircle className="h-3 w-3 mr-1" /> Suggested
-          </Badge>
-        );
-      case ITEM_STATUSES.ACTIVE:
-        return (
-          <Badge
-            variant="outline"
-            className="ml-2 border-blue-600/40 bg-blue-500/10 text-blue-700 dark:text-blue-400"
-          >
-            <AlertCircle className="h-3 w-3 mr-1" /> Active
           </Badge>
         );
       default:
@@ -385,18 +370,18 @@ export function Task({
                         Mark as confirmed
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.ACTIVE)}
+                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.SUGGESTED)}
                         disabled={updatingStatusItemId === item.id}
                       >
                         <AlertCircle className="h-4 w-4 mr-2 text-blue-500" />
-                        Mark as active
+                        Mark as suggested
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.CANCELLED)}
+                        onClick={() => handleStatusUpdate(item.id, ITEM_STATUSES.REJECTED)}
                         disabled={updatingStatusItemId === item.id}
                       >
                         <XCircle className="h-4 w-4 mr-2 text-red-500" />
-                        Mark as canceled
+                        Mark as rejected
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

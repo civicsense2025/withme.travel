@@ -46,17 +46,17 @@ export async function GET(
       .from('itinerary_items')
       .select(
         `
-        ${FIELDS.COMMON.ID},
-        ${FIELDS.ITINERARY_ITEMS.DAY_NUMBER},
-        ${FIELDS.ITINERARY_ITEMS.LATITUDE},
-        ${FIELDS.ITINERARY_ITEMS.LONGITUDE},
-        ${FIELDS.ITINERARY_ITEMS.POSITION},
-        ${FIELDS.ITINERARY_ITEMS.START_TIME}
+        ${'id'},
+        ${'DAY_NUMBER'},
+        ${'LATITUDE'},
+        ${'LONGITUDE'},
+        ${'POSITION'},
+        ${'START_TIME'}
       `
       ) // Select fields needed by calculateTravelTimes
       .eq('trip_id', tripId)
-      .not(FIELDS.ITINERARY_ITEMS.LATITUDE, 'is', null)
-      .not(FIELDS.ITINERARY_ITEMS.LONGITUDE, 'is', null);
+      .not('LATITUDE', 'is', null)
+      .not('LONGITUDE', 'is', null);
 
     if (itemsError) {
       console.error('Supabase error fetching itinerary items for travel times:', itemsError);

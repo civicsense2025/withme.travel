@@ -46,8 +46,8 @@ async function checkTripAccess(
   const { data, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
     .select('role')
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .eq('TRIP_ID', tripId)
+    .eq('USER_ID', userId)
     .maybeSingle();
 
   if (error) {

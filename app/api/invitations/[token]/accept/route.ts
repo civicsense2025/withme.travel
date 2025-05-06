@@ -1,7 +1,6 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database';
 import plunk from '@/app/lib/plunk';
 
 export async function POST(

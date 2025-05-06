@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { TABLES, FIELDS } from "@/utils/constants/database";
+import { FIELDS, TABLES } from "@/utils/constants/tables";
 
 // Helper to create Supabase client
 async function getSupabaseClient() {
@@ -43,11 +43,11 @@ export async function GET(request: Request) {
     
     // Check if user is member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select("role")
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, session.user.id)
-      .eq(FIELDS.GROUP_MEMBERS.STATUS, "active")
+      .eq('GROUP_ID', groupId)
+      .eq('USER_ID', session.user.id)
+      .eq('STATUS', "active")
       .single();
     
     if (membershipError) {
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     
     // Get trips for this group
     const { data: trips, error } = await supabase
-      .from(TABLES.GROUP_TRIPS)
+      .from('group_trips')
       .select(`
         added_at,
         added_by,
@@ -68,14 +68,14 @@ export async function GET(request: Request) {
           full_name,
           avatar_url
         ),
-        trip:${TABLES.TRIPS}!trip_id (
+        trip:${'trips'}!trip_id (
           id,
           name,
           start_date,
           end_date,
           created_by,
           destination_id,
-          destinations:${TABLES.DESTINATIONS}!destination_id (
+          destinations:${'destinations'}!destination_id (
             id,
             name,
             country,
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
           )
         )
       `)
-      .eq(FIELDS.GROUP_TRIPS.GROUP_ID, groupId)
+      .eq('GROUP_ID', groupId)
       .order("added_at", { ascending: false });
     
     if (error) {
@@ -137,17 +137,17 @@ export async function POST(request: Request) {
     
     // Fetch the added trip
     const { data: trip, error: fetchError } = await supabase
-      .from(TABLES.GROUP_TRIPS)
+      .from('group_trips')
       .select(`
         added_at,
-        trip:${TABLES.TRIPS}!trip_id (
+        trip:${'trips'}!trip_id (
           id,
           name,
           start_date,
           end_date,
           created_by,
           destination_id,
-          destinations:${TABLES.DESTINATIONS}!destination_id (
+          destinations:${'destinations'}!destination_id (
             id,
             name,
             country,
@@ -155,8 +155,8 @@ export async function POST(request: Request) {
           )
         )
       `)
-      .eq(FIELDS.GROUP_TRIPS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_TRIPS.TRIP_ID, tripId)
+      .eq('GROUP_ID', groupId)
+      .eq('TRIP_ID', tripId)
       .single();
     
     if (fetchError) {
@@ -199,11 +199,11 @@ export async function DELETE(request: Request) {
     
     // Check if user is admin/owner of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select("role")
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, session.user.id)
-      .eq(FIELDS.GROUP_MEMBERS.STATUS, "active")
+      .eq('GROUP_ID', groupId)
+      .eq('USER_ID', session.user.id)
+      .eq('STATUS', "active")
       .single();
     
     if (membershipError || !membership || !["owner", "admin"].includes(membership.role)) {
@@ -215,10 +215,10 @@ export async function DELETE(request: Request) {
     
     // Remove the trip from the group
     const { error } = await supabase
-      .from(TABLES.GROUP_TRIPS)
+      .from('group_trips')
       .delete()
-      .eq(FIELDS.GROUP_TRIPS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_TRIPS.TRIP_ID, tripId);
+      .eq('GROUP_ID', groupId)
+      .eq('TRIP_ID', tripId);
     
     if (error) {
       console.error("Error removing trip from group:", error);

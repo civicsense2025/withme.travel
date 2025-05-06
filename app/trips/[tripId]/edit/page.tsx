@@ -1,5 +1,4 @@
 import { createServerComponentClient, getServerSession } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { PAGE_ROUTES } from '@/utils/constants/routes';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -77,9 +76,9 @@ export default async function EditTripPage({ params }: PageProps) {
   try {
     // Check if user is logged in using the getServerSession helper
     const {
-      data: { session },
+      data: { user },
     } = await getServerSession();
-    if (!session) {
+    if (!user) {
       console.log('No session found for edit trip page, redirecting to login');
       redirect(`${PAGE_ROUTES.LOGIN}?redirectTo=${encodeURIComponent(`/trips/${tripId}/edit`)}`);
     }
@@ -92,7 +91,7 @@ export default async function EditTripPage({ params }: PageProps) {
       .from(TRIP_MEMBERS_TABLE)
       .select(ROLE_FIELD)
       .eq(TRIP_ID_FIELD, tripId)
-      .eq(USER_ID_FIELD, session.user.id)
+      .eq(USER_ID_FIELD, user.id)
       .single();
 
     if (tripMemberError || !tripMember) {
@@ -107,7 +106,7 @@ export default async function EditTripPage({ params }: PageProps) {
 
     // Fetch trip data with destination and tags
     const { data: trip, error: tripError } = (await supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .select(
         `
         id, name, start_date, end_date, destination_id, cover_image_url, privacy_setting,

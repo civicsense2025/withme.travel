@@ -1,8 +1,8 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/utils/error-logger';
-import { TABLES, FIELDS } from '@/utils/constants/database';
 import { rateLimit } from '@/lib/rate-limit';
+import { TABLES } from '@/utils/constants/tables';
 
 // Edge cache: revalidate GET every 10s
 const REVALIDATE_SECONDS = 10;
@@ -22,15 +22,15 @@ export async function GET(req: NextRequest) {
     const userId = await getCurrentUserId(supabase);
     const type = req.nextUrl.searchParams.get('type') ?? undefined;
     let q = supabase
-      .from(TABLES.LIKES)
-      .select(FIELDS.LIKES.ITEM_ID)
-      .eq(FIELDS.LIKES.USER_ID, userId);
-    if (type) q = q.eq(FIELDS.LIKES.ITEM_TYPE, type);
+      .from('likes')
+      .select('ITEM_ID')
+      .eq('USER_ID', userId);
+    if (type) q = q.eq('ITEM_TYPE', type);
     const { data: likes, error } = await q;
     if (error) throw error;
     // Only return array of item IDs
     const ids = Array.isArray(likes)
-      ? likes.map((r: any) => r[FIELDS.LIKES.ITEM_ID])
+      ? likes.map((r: any) => r['ITEM_ID'])
       : [];
     return NextResponse.json(
       { data: ids },
@@ -60,11 +60,11 @@ export async function POST(req: NextRequest) {
     }
     // Upsert: insert or ignore if already exists
     const { error } = await supabase
-      .from(TABLES.LIKES)
+      .from('likes')
       .upsert({
-        [FIELDS.LIKES.USER_ID]: userId,
-        [FIELDS.LIKES.ITEM_ID]: itemId,
-        [FIELDS.LIKES.ITEM_TYPE]: itemType,
+        ['USER_ID']: userId,
+        ['ITEM_ID']: itemId,
+        ['ITEM_TYPE']: itemType,
       })
       .select();
     if (error) throw error;
@@ -91,11 +91,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing itemId or itemType' }, { status: 400 });
     }
     const { error, count } = await supabase
-      .from(TABLES.LIKES)
+      .from('likes')
       .delete({ count: 'exact' })
-      .eq(FIELDS.LIKES.USER_ID, userId)
-      .eq(FIELDS.LIKES.ITEM_ID, itemId)
-      .eq(FIELDS.LIKES.ITEM_TYPE, itemType);
+      .eq('USER_ID', userId)
+      .eq('ITEM_ID', itemId)
+      .eq('ITEM_TYPE', itemType);
     if (error) throw error;
     if (count === 0) {
       return NextResponse.json({ error: 'Like not found' }, { status: 404 });

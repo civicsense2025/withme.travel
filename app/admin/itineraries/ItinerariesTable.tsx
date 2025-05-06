@@ -1,9 +1,8 @@
 'use client';
-
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -143,7 +142,7 @@ export default function ItinerariesTable({ initialData }: ItinerariesTableProps)
     setIsLoading(true);
     try {
       const { error } = await supabase
-        .from(TABLES.ITINERARY_TEMPLATES)
+        .from('itinerary_templates')
         .delete()
         .eq('id', id);
 

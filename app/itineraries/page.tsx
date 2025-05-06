@@ -3,7 +3,7 @@ import { PlusCircle } from 'lucide-react';
 import { createServerComponentClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { TABLES, FIELDS, ItineraryTemplateMetadata } from '@/utils/constants/database';
+import { FIELDS, ItineraryTemplateMetadata, TABLES } from '@/utils/constants/database';
 
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';

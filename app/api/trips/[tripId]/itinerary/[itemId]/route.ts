@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
-import { TABLES } from '@/utils/constants/database';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { Database } from '@/types/database.types';
 import { type SupabaseClient } from '@supabase/supabase-js';
@@ -58,9 +57,9 @@ async function checkTripAccess(
 ): Promise<{ allowed: boolean; error?: string; status?: number; role?: string }> {
   const { data: member, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
-    .select(FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .select('ROLE')
+    .eq('TRIP_ID', tripId)
+    .eq('USER_ID', userId)
     .maybeSingle();
 
   if (error) {
@@ -71,8 +70,8 @@ async function checkTripAccess(
   if (!member) {
     const { data: trip, error: tripError } = await supabase
       .from(TRIPS_TABLE)
-      .select(FIELDS.TRIPS.PRIVACY_SETTING)
-      .eq(FIELDS.COMMON.ID, tripId)
+      .select('PRIVACY_SETTING')
+      .eq('id', tripId)
       .maybeSingle();
 
     if (tripError) {
@@ -143,8 +142,8 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from(ITINERARY_ITEMS_TABLE)
       .delete()
-      .eq(FIELDS.COMMON.ID, itemId)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId);
+      .eq('id', itemId)
+      .eq('TRIP_ID', tripId);
 
     if (deleteError) {
       console.error('Error deleting item:', deleteError);
@@ -187,8 +186,8 @@ export async function GET(
     const { data: item, error: fetchError } = await supabase
       .from(ITINERARY_ITEMS_TABLE)
       .select('*')
-      .eq(FIELDS.COMMON.ID, itemId)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq('id', itemId)
+      .eq('TRIP_ID', tripId)
       .maybeSingle();
 
     if (fetchError) {
@@ -270,8 +269,8 @@ export async function PUT(
     const { data: updatedItem, error: updateError } = await supabase
       .from(ITINERARY_ITEMS_TABLE)
       .update(updateData)
-      .eq(FIELDS.COMMON.ID, itemId)
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
+      .eq('id', itemId)
+      .eq('TRIP_ID', tripId)
       .select('*')
       .single();
 

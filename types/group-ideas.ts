@@ -1,5 +1,9 @@
-import { IdeaType, PlanningSessionStatus, VoteType } from '@/utils/constants/database';
-import { Database } from './database.types';
+import type { Database } from './database.types';
+
+// Enum type aliases
+export type IdeaType = 'activity' | 'place' | 'note' | 'question' | 'other';
+export type PlanningSessionStatus = 'draft' | 'active' | 'voting' | 'complete' | 'archived';
+export type VoteType = Database['public']['Enums']['vote_type'];
 
 // Basic group idea type
 export type GroupIdea = {

@@ -1,7 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { TABLES, FIELDS } from "@/utils/constants/database";
 
 // Helper to create Supabase client
 async function getSupabaseClient() {
@@ -43,11 +42,11 @@ export async function GET(request: Request) {
     
     // Check if user is member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select("role")
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, session.user.id)
-      .eq(FIELDS.GROUP_MEMBERS.STATUS, "active")
+      .eq('GROUP_ID', groupId)
+      .eq('USER_ID', session.user.id)
+      .eq('STATUS', "active")
       .single();
     
     if (membershipError) {
@@ -59,21 +58,21 @@ export async function GET(request: Request) {
     
     // Get all members with their profiles
     const { data: members, error } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select(`
         user_id,
         role,
         status,
         joined_at,
         updated_at,
-        profiles:${TABLES.PROFILES}(
+        profiles:${'profiles'}(
           id,
           avatar_url,
           full_name,
           username
         )
       `)
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId);
+      .eq('GROUP_ID', groupId);
     
     if (error) {
       console.error("Error fetching group members:", error);
@@ -127,21 +126,21 @@ export async function POST(request: Request) {
     
     // Fetch the created invitation
     const { data: invitation, error: fetchError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select(`
         user_id,
         role,
         status,
         updated_at,
-        profiles:${TABLES.PROFILES} (
+        profiles:${'profiles'} (
           id,
           avatar_url,
           full_name,
           username
         )
       `)
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, groupId)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, userId)
+      .eq('GROUP_ID', groupId)
+      .eq('USER_ID', userId)
       .single();
     
     if (fetchError) {

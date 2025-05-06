@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
-import { TABLES } from '@/utils/constants/database';
 import Link from 'next/link';
 import { checkAdminAuth } from '../utils/auth';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/utils/constants/tables';
 
 export const metadata = {
   title: 'Manage Users | Admin Panel',
@@ -28,7 +28,7 @@ async function getUsers(supabase: SupabaseClient, page = 0, perPage = 20) {
   
   // First get the total count for pagination
   const { count, error: countError } = await supabase
-    .from(TABLES.PROFILES)
+    .from('profiles')
     .select('id', { count: 'exact', head: true });
     
   if (countError) {

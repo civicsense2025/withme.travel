@@ -4,7 +4,7 @@ import { Tag } from '@/types/tags';
 
 /**
  * Trip interface aligned with database schema
- * Based on TABLES.TRIPS fields in utils/constants/database.ts
+ * Based on trips fields in utils/constants/database.ts
  */
 export interface Trip {
   // Common fields

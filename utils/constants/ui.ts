@@ -7,6 +7,8 @@
  * - TIME_FORMATS: Date and time display formats
  */
 
+// No enums or types in this file should be duplicated from database.ts. Use Database["public"]["Enums"] for any DB enums.
+
 import { ITINERARY_CATEGORIES } from './status';
 
 // Theme related constants

@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/tables';
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
   TRIP_MEMBERS: string;
@@ -76,14 +77,14 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     };
 
     // Add onboarding fields if present
-    if (typeof updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED] !== 'undefined') {
-      updateObj[FIELDS.PROFILES.ONBOARDING_COMPLETED] = updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED];
+    if (typeof updateData['ONBOARDING_COMPLETED'] !== 'undefined') {
+      updateObj['ONBOARDING_COMPLETED'] = updateData['ONBOARDING_COMPLETED'];
     }
-    if (typeof updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED_AT] !== 'undefined') {
-      updateObj[FIELDS.PROFILES.ONBOARDING_COMPLETED_AT] = updateData[FIELDS.PROFILES.ONBOARDING_COMPLETED_AT];
+    if (typeof updateData['ONBOARDING_COMPLETED_AT'] !== 'undefined') {
+      updateObj['ONBOARDING_COMPLETED_AT'] = updateData['ONBOARDING_COMPLETED_AT'];
     }
-    if (typeof updateData[FIELDS.PROFILES.ONBOARDING_STEP] !== 'undefined') {
-      updateObj[FIELDS.PROFILES.ONBOARDING_STEP] = updateData[FIELDS.PROFILES.ONBOARDING_STEP];
+    if (typeof updateData['ONBOARDING_STEP'] !== 'undefined') {
+      updateObj['ONBOARDING_STEP'] = updateData['ONBOARDING_STEP'];
     }
 
     // Update user profile

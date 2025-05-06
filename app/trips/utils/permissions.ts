@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
-import { TABLES } from '@/utils/constants/database';
 import { TRIP_ROLES, type TripRole } from '@/utils/constants/status';
+import { TABLES } from '@/utils/constants/tables';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -50,7 +50,7 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
 
   // Check if user is a member
   const { data: membership } = await supabase
-    .from(Tables.TRIP_MEMBERS)
+    .from('trip_members')
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', user.id)
@@ -58,7 +58,7 @@ export async function checkTripPermissions(tripId: string): Promise<PermissionCh
 
   // Check if user is the creator
   const { data: trip } = await supabase
-    .from(Tables.TRIPS)
+    .from(TABLES.TRIPS)
     .select('created_by, is_public')
     .eq('id', tripId)
     .single();

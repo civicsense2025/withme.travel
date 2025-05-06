@@ -6,6 +6,8 @@
  * - PAGE_ROUTES: All page paths (for navigation/linking)
  */
 
+// No enums or types in this file should be duplicated from database.ts. Use Database["public"]["Enums"] for any DB enums.
+
 // API Routes - All backend API endpoints
 export const API_ROUTES = {
   // Trip routes

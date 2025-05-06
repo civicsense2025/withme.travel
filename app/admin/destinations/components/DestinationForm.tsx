@@ -1,8 +1,6 @@
-'use client';
-
+'use client';;
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
 import { useRouter } from 'next/navigation';
 
 interface Destination {
@@ -123,13 +121,13 @@ export default function DestinationForm({ initialData }: DestinationFormProps) {
       if (isEditing) {
         // Update existing destination
         result = await supabase
-          .from(TABLES.DESTINATIONS)
+          .from('destinations')
           .update(formData)
           .eq('id', formData.id);
       } else {
         // Create new destination
         result = await supabase
-          .from(TABLES.DESTINATIONS)
+          .from('destinations')
           .insert(formData)
           .select('id')
           .single();

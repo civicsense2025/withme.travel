@@ -66,10 +66,10 @@ export async function POST(
 
     // Check if user is a member of this trip
     const { data: member, error: memberError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select()
-      .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-      .eq(FIELDS.TRIP_MEMBERS.USER_ID, session.user.id)
+      .eq('TRIP_ID', tripId)
+      .eq('USER_ID', session.user.id)
       .maybeSingle();
 
     if (memberError || !member) {
@@ -81,9 +81,9 @@ export async function POST(
 
     // Get trip details
     const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
-      .select(`${FIELDS.TRIPS.NAME}, ${FIELDS.TRIPS.START_DATE}, ${FIELDS.TRIPS.END_DATE}`)
-      .eq(FIELDS.COMMON.ID, tripId)
+      .from('trips')
+      .select(`${'NAME'}, ${'START_DATE'}, ${'END_DATE'}`)
+      .eq('id', tripId)
       .single();
 
     if (tripError) {
@@ -98,11 +98,11 @@ export async function POST(
     let query = supabase
       .from(TABLES.ITINERARY_ITEMS)
       .select('*')
-      .eq(FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId);
+      .eq('TRIP_ID', tripId);
 
     // Filter by selected days if applicable
     if (exportOption === 'selected' && selectedDays && selectedDays.length > 0) {
-      query = query.in(FIELDS.ITINERARY_ITEMS.DATE, selectedDays);
+      query = query.in('DATE', selectedDays);
     }
 
     const { data: items, error: itemsError } = await query;

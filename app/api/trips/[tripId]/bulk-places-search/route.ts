@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createApiRouteClient } from '@/utils/api-helpers/cookie-handlers';
-import { TABLES as TABLES_RAW } from '@/utils/constants/database';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/utils/constants/tables';
 
 // Explicitly type TABLES_FULL as the type of the real TABLES object
-const TABLES_FULL: typeof import('@/utils/constants/database').TABLES = TABLES_RAW;
+const TABLES_FULL: typeof import('@/utils/constants/database').TABLES = TABLES;
 
 // Define the minimal place type for response
 interface BulkPlaceResult {

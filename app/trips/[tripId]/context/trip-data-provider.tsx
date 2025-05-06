@@ -1,5 +1,4 @@
-'use client';
-
+'use client';;
 import { ITEM_STATUSES, TRIP_STATUSES } from '@/utils/constants/status';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -10,7 +9,6 @@ import {
   ItinerarySection as DbItinerarySection,
 } from '@/types/database.types';
 import { createClient } from '@/utils/supabase/client';
-import { TABLES } from '@/utils/constants/database';
 // Default import for fast-deep-equal
 import deepEqual from 'fast-deep-equal';
 

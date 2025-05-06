@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import {
   createSuccessResponse,

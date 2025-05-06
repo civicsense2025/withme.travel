@@ -18,7 +18,7 @@ async function checkTripAccess(
   allowedRoles: string[] = ['admin', 'editor', 'contributor']
 ) {
   const { data, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
+    .from('trip_members')
     .select('role')
     .eq('trip_id', tripId)
     .eq('user_id', userId)

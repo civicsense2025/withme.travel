@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/database';
 import PlansClient from './plans-client';
 
 /**
@@ -15,12 +15,13 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
   
   // Fetch the group data to verify it exists and user has access
   const { data: group, error } = await supabase
-    .from(TABLES.GROUPS)
+    .from('groups')
     .select('*')
     .eq('id', params.id)
     .single();
 
   if (error || !group) {
+    console.error('Group not found:', error);
     notFound();
   }
 
@@ -31,7 +32,7 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
 
   // Check if user is a member of the group
   const { data: membership, error: membershipError } = await supabase
-    .from(TABLES.GROUP_MEMBERS)
+    .from('group_members')
     .select('*')
     .eq('group_id', params.id)
     .eq('user_id', user.id)
@@ -43,27 +44,41 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
     redirect(`/groups/${params.id}`);
   }
 
-  // Fetch initial plans to pass to client component
-  const { data: plans } = await supabase
-    .from(TABLES.GROUP_IDEA_PLANS)
+  // Fetch initial plans to pass to client component - avoid selecting user_metadata directly
+  const { data: plans, error: plansError } = await supabase
+    .from('group_idea_plans')
     .select(`
       *,
-      creator:${FIELDS.GROUP_IDEA_PLANS.CREATED_BY}(
+      creator:created_by(
         id,
-        email,
-        user_metadata
+        email
       ),
-      ideas:${TABLES.GROUP_IDEAS}(id)
+      ideas:group_ideas(id)
     `)
-    .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id)
-    .order(FIELDS.GROUP_IDEA_PLANS.CREATED_AT, { ascending: false });
+    .eq('group_id', params.id)
+    .order('created_at', { ascending: false });
+  
+  if (plansError) {
+    console.error('Error fetching plans:', plansError);
+  }
   
   // Process plans to include idea count
   const processedPlans = plans?.map(plan => ({
     ...plan,
     ideas_count: plan.ideas?.length || 0,
-    ideas: undefined // Don't pass all ideas to client, just the count
+    ideas: undefined, // Don't pass all ideas to client, just the count
+    creator: plan.creator ? {
+      ...plan.creator,
+      user_metadata: {} // Add an empty user_metadata object to match expected interface
+    } : undefined
   })) || [];
+
+  // Debug logs
+  console.log('Plans page rendering with:');
+  console.log('groupId:', params.id);
+  console.log('user:', user?.id);
+  console.log('membership:', membership?.role);
+  console.log('plans count:', processedPlans.length);
 
   // Check if user is an admin of the group
   const isAdmin = membership.role === 'admin' || membership.role === 'owner';

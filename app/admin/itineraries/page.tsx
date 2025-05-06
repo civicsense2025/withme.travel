@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
-import { TABLES } from '@/utils/constants/database';
 import { checkAdminAuth } from '../utils/auth';
 import ItinerariesTable, { Itinerary } from './ItinerariesTable';
 
@@ -22,7 +21,7 @@ export default async function AdminItinerariesPage() {
 
   // Fetch itinerary templates without joining profiles
   const { data, error } = await supabase
-    .from(TABLES.ITINERARY_TEMPLATES)
+    .from('itinerary_templates')
     .select(`
       id,
       title,

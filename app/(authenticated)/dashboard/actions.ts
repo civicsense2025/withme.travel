@@ -38,18 +38,18 @@ export async function getTripCount(userId: string) {
 export async function getUserProfile(userId: string) {
   try {
     const { data } = await getServerSession();
-    const session = data.session;
+    const user = data.user;
 
-    if (!session || session.user.id !== userId) {
+    if (!user || user.id !== userId) {
       throw new Error('Not authorized to access this profile');
     }
 
     // Return a simplified profile with only the needed fields
     return {
-      id: session.user.id,
-      name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-      avatar_url: session.user.user_metadata?.avatar_url || null,
-      bio: session.user.user_metadata?.bio || null,
+      id: user.id,
+      name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+      avatar_url: user.user_metadata?.avatar_url || null,
+      bio: user.user_metadata?.bio || null,
     };
   } catch (error) {
     console.error('Error fetching user profile:', error);

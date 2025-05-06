@@ -2,7 +2,6 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
-import { TABLES, FIELDS } from '@/utils/constants/database';
 import { checkAdminAuth } from '../utils/auth';
 import DestinationsTable from './DestinationsTable';
 
@@ -24,7 +23,7 @@ export default async function AdminDestinationsPage() {
 
   // Fetch destinations (limited to 50 for now - would implement pagination in a full solution)
   const { data: destinations, error: fetchError } = await supabase
-    .from(TABLES.DESTINATIONS)
+    .from('DESTINATIONS')
     .select(`
       id,
       name,

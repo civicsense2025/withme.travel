@@ -5,12 +5,24 @@ import { Task } from '@/components/Task';
 import { ITEM_STATUSES, type ItemStatus } from '@/utils/constants/status';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import type { TaskItem } from '@/components/Task';
 
 export default function TaskDemo() {
-  // Sample task data
-  const [initialTasks, setInitialTasks] = useState([
+  // Ensure initialTasks is TaskItem[] and status values are valid
+  const initialTasks: TaskItem[] = [
     {
       id: '1',
+      title: 'Sample Task',
+      description: 'This is a sample',
+      status: 'suggested',
+      dueDate: '2024-06-01',
+      priority: 'high',
+      votes: { up: 0, down: 0, upVoters: [], downVoters: [], userVote: null },
+      assignee: { id: '1', name: 'User', avatar_url: null, username: 'user' },
+      tags: ['demo'],
+    },
+    {
+      id: '2',
       title: 'Book flights to Paris',
       description: 'Find the best flight deals for our trip in June',
       status: ITEM_STATUSES.SUGGESTED,
@@ -38,7 +50,7 @@ export default function TaskDemo() {
       tags: ['travel', 'planning', 'flight']
     },
     {
-      id: '2',
+      id: '3',
       title: 'Research accommodations',
       description: 'Find hotels or Airbnbs in the city center',
       status: ITEM_STATUSES.CONFIRMED,
@@ -66,10 +78,10 @@ export default function TaskDemo() {
       tags: ['accommodation', 'planning']
     },
     {
-      id: '3',
+      id: '4',
       title: 'Create itinerary for day 1',
       description: 'Plan activities and sights for our first day in Paris',
-      status: ITEM_STATUSES.ACTIVE,
+      status: ITEM_STATUSES.SUGGESTED,
       priority: 'low' as const,
       votes: {
         up: 2,
@@ -87,7 +99,7 @@ export default function TaskDemo() {
       tags: ['itinerary', 'planning', 'activities']
     },
     {
-      id: '4',
+      id: '5',
       title: 'Book restaurant for anniversary dinner',
       description: 'Find a romantic restaurant with Eiffel Tower view',
       status: ITEM_STATUSES.REJECTED,
@@ -108,7 +120,7 @@ export default function TaskDemo() {
       },
       tags: ['dining', 'special', 'romantic']
     }
-  ]);
+  ];
 
   // Handler functions for Task component
   const handleStatusChange = async (itemId: string, newStatus: ItemStatus) => {
@@ -133,9 +145,7 @@ export default function TaskDemo() {
       description: `Task ${itemId} has been removed`,
     });
     
-    // Update local state to remove the task
-    setInitialTasks(tasks => tasks.filter(task => task.id !== itemId));
-    
+    // In a real app, update state here
     return Promise.resolve();
   };
 
@@ -192,8 +202,8 @@ export default function TaskDemo() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Task List</h2>
         <Task 
-          initialItems={initialTasks}
-          canEdit={canEdit}
+          initialItems={Array.isArray(initialTasks) ? initialTasks : []}
+          canEdit={!!canEdit}
           onItemDelete={handleDelete}
           onStatusChange={handleStatusChange}
           onVote={handleVote}

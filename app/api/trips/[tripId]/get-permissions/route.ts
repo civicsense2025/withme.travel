@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import type { Database } from '@/types/database.types';
 
@@ -70,8 +69,8 @@ export async function GET(
     if (userError || !user) {
       // Check if trip is public before returning default
       const { data: publicTripData, error: publicTripError } = await supabase
-        .from(TABLES.TRIPS)
-        .select(FIELDS.TRIPS.IS_PUBLIC)
+        .from('trips')
+        .select('IS_PUBLIC')
         .eq('id', tripId)
         .maybeSingle<TripPublicCheck>();
 
@@ -91,15 +90,15 @@ export async function GET(
     // Check if the user is a member of the trip
     const { data: membership, error: membershipError } = await supabase
       .from(LOCAL_TABLES.TRIP_MEMBERS)
-      .select(FIELDS.TRIP_MEMBERS.ROLE)
+      .select('ROLE')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
       .single();
 
     // Check if user is the creator of the trip
     const { data: trip, error: tripError } = await supabase
-      .from(LOCAL_TABLES.TRIPS)
-      .select(`${FIELDS.TRIPS.CREATED_BY}, ${FIELDS.TRIPS.IS_PUBLIC}`)
+      .from('trips')
+      .select('created_by, is_public')
       .eq('id', tripId)
       .single<TripCreatorCheck>();
 

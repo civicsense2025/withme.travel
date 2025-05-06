@@ -1,4 +1,3 @@
-import { ENUMS } from './constants/database';
 import { ItineraryItem } from '@/types/itinerary';
 
 // Categories of activities
@@ -159,6 +158,17 @@ const ACTIVITY_TYPE_MAP: Record<string, string[]> = {
 // For consistent type mapping
 type ActivityType = 'MUSEUM' | 'LANDMARK' | 'PARK' | 'BEACH' | 'RESTAURANT' | 'ADVENTURE' | 'SHOPPING' | 'EVENT';
 
+// Define local budget category type and values
+export type BudgetCategory = 'accommodation' | 'transportation' | 'food' | 'activities' | 'shopping' | 'other';
+export const BUDGET_CATEGORIES: BudgetCategory[] = [
+  'accommodation',
+  'transportation',
+  'food',
+  'activities',
+  'shopping',
+  'other',
+];
+
 /**
  * Interface for activity idea objects
  */
@@ -168,7 +178,7 @@ export interface ActivityIdea {
   category: string;
   activityType: ActivityType;
   duration: number;
-  budgetCategory: keyof typeof ENUMS.BUDGET_CATEGORY;
+  budgetCategory: BudgetCategory;
   relevanceScore: number;
 }
 
@@ -278,33 +288,33 @@ function determineCategory(keywords: string[]): string {
 function determineBudgetCategory(
   activityType: ActivityType, 
   category: string
-): keyof typeof ENUMS.BUDGET_CATEGORY {
+): BudgetCategory {
   // Map certain activity types to budget categories
-  const typeTobudget: Record<string, keyof typeof ENUMS.BUDGET_CATEGORY> = {
-    'RESTAURANT': 'FOOD',
-    'MUSEUM': 'ACTIVITIES',
-    'LANDMARK': 'ACTIVITIES',
-    'SHOPPING': 'SHOPPING',
-    'BEACH': 'ACTIVITIES',
-    'PARK': 'ACTIVITIES',
-    'ADVENTURE': 'ACTIVITIES',
-    'EVENT': 'ACTIVITIES'
+  const typeTobudget: Record<string, BudgetCategory> = {
+    'RESTAURANT': 'food',
+    'MUSEUM': 'activities',
+    'LANDMARK': 'activities',
+    'SHOPPING': 'shopping',
+    'BEACH': 'activities',
+    'PARK': 'activities',
+    'ADVENTURE': 'activities',
+    'EVENT': 'activities'
   };
   
   // Map categories to budget categories
-  const categoryToBudget: Record<string, keyof typeof ENUMS.BUDGET_CATEGORY> = {
-    'FOOD': 'FOOD',
-    'SHOPPING': 'SHOPPING',
-    'TRANSPORT': 'TRANSPORTATION',
-    'CULTURE': 'ACTIVITIES',
-    'NATURE': 'ACTIVITIES',
-    'ADVENTURE': 'ACTIVITIES',
-    'RELAXATION': 'ACTIVITIES',
-    'NIGHTLIFE': 'ACTIVITIES'
+  const categoryToBudget: Record<string, BudgetCategory> = {
+    'FOOD': 'food',
+    'SHOPPING': 'shopping',
+    'TRANSPORT': 'transportation',
+    'CULTURE': 'activities',
+    'NATURE': 'activities',
+    'ADVENTURE': 'activities',
+    'RELAXATION': 'activities',
+    'NIGHTLIFE': 'activities'
   };
   
-  // Try to get from activity type first, then from category, or default to ACTIVITIES
-  return typeTobudget[activityType] || categoryToBudget[category] || 'ACTIVITIES';
+  // Try to get from activity type first, then from category, or default to activities
+  return typeTobudget[activityType] || categoryToBudget[category] || 'activities';
 }
 
 /**

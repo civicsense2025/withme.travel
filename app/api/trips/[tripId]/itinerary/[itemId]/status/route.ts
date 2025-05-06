@@ -46,9 +46,9 @@ async function checkTripAccess(
 ): Promise<{ allowed: boolean; error?: string; status?: number }> {
   const { data: member, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
-    .select(FIELDS.TRIP_MEMBERS.ROLE)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
+    .select('ROLE')
+    .eq('TRIP_ID', tripId)
+    .eq('USER_ID', userId)
     .maybeSingle();
 
   if (error) {
@@ -125,9 +125,9 @@ export async function PATCH(
     // Check if the item exists and belongs to the trip
     const { data: itemCheck, error: itemCheckError } = await supabase
       .from(ITINERARY_ITEMS_TABLE)
-      .select(FIELDS.COMMON.ID)
-      .eq(FIELDS.COMMON.ID, itemId)
-      .eq(FIELDS.ITINERARY_ITEMS.TRIP_ID, tripId)
+      .select('id')
+      .eq('id', itemId)
+      .eq('TRIP_ID', tripId)
       .maybeSingle();
 
     if (itemCheckError) {
@@ -146,10 +146,10 @@ export async function PATCH(
     const { error: updateError } = await supabase
       .from(ITINERARY_ITEMS_TABLE)
       .update({
-        [FIELDS.ITINERARY_ITEMS.STATUS]: newStatus,
-        [FIELDS.COMMON.UPDATED_AT]: new Date().toISOString(),
+        ['STATUS']: newStatus,
+        ['UPDATED_AT']: new Date().toISOString(),
       })
-      .eq(FIELDS.COMMON.ID, itemId);
+      .eq('id', itemId);
 
     if (updateError) {
       console.error('Error updating itinerary item status:', updateError);

@@ -1,9 +1,7 @@
-'use client';
-
+'use client';;
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -142,7 +140,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
     setIsLoading(true);
     try {
       const { error } = await supabase
-        .from(TABLES.PROFILES)
+        .from('profiles')
         .delete()
         .eq('id', id);
 
@@ -167,7 +165,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
       const ids = rows.map((row) => row.id);
       
       const { error } = await supabase
-        .from(TABLES.PROFILES)
+        .from('profiles')
         .delete()
         .in('id', ids);
 
@@ -192,7 +190,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
       const ids = rows.map((row) => row.id);
       
       const { error } = await supabase
-        .from(TABLES.PROFILES)
+        .from('profiles')
         .update({ is_admin: adminStatus })
         .in('id', ids);
 

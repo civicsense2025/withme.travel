@@ -1,1514 +1,4227 @@
-// This file was automatically generated from the database schema
-// Generated at: 2025-06-20T09:15:30.661Z
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-// Database Tables - Constant names for all database tables
-export const TABLES = {
-  ACCESS_REQUESTS: 'access_requests',
-  ALBUMS: 'albums',
-  BUDGET_ITEMS: 'budget_items',
-  COLLABORATIVE_NOTES: 'collaborative_notes',
-  COLLABORATIVE_SESSIONS: 'collaborative_sessions',
-  CONTENT_CUSTOMIZATIONS: 'content_customizations',
-  CONTENT_QUALITY_METRICS: 'content_quality_metrics',
-  CONTENT_SHARING_HISTORY: 'content_sharing_history',
-  CONTENT_SLUGS: 'content_slugs',
-  DESTINATION_TAGS: 'destination_tags',
-  DESTINATIONS: 'destinations',
-  EXPENSES: 'expenses',
-  FEEDBACK: 'feedback',
-  FOCUS_SESSIONS: 'focus_sessions',
-  FORM_COLLABORATORS: 'form_collaborators',
-  FORM_TEMPLATES: 'form_templates',
-  FORMS: 'forms',
-  GROUPS: 'groups',
-  GROUP_ACTIVITIES: 'group_activities',
-  GROUP_IDEAS: 'group_ideas',
-  GROUP_IDEA_PLANS: 'group_idea_plans',
-  GROUP_IDEA_NOTES: 'group_idea_notes',
-  GROUP_IDEA_VOTES: 'group_idea_votes',
-  GROUP_MEMBERS: 'group_members',
-  GROUP_TRIPS: 'group_trips',
-  IMAGE_METADATA: 'image_metadata',
-  INVITATIONS: 'invitations',
-  ITEM_POPULARITY_METRICS: 'item_popularity_metrics',
-  ITINERARY_ITEM_VOTES: 'itinerary_item_votes',
-  ITINERARY_ITEMS: 'itinerary_items',
-  ITINERARY_SECTIONS: 'itinerary_sections',
-  ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items',
-  ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
-  ITINERARY_TEMPLATES: 'itinerary_templates',
-  LIKES: 'likes',
-  LOCATIONS: 'locations',
-  NOTE_TAGS: 'note_tags',
-  NOTIFICATION_PREFERENCES: 'notification_preferences',
-  NOTIFICATIONS: 'notifications',
-  ONBOARDING_EVENTS: 'onboarding_events',
-  ONBOARDING_TOUR_COMPLETIONS: 'onboarding_tour_completions',
-  ONBOARDING_PREFERENCES: 'onboarding_preferences',
-  PERMISSION_REQUESTS: 'permission_requests',
-  PERFORMANCE_METRICS: 'performance_metrics',
-  PLACES: 'places',
-  PREFERENCE_WEIGHTS: 'preference_weights',
-  PROFILES: 'profiles',
-  QUESTION_BRANCHING: 'question_branching',
-  QUESTIONS: 'questions',
-  REFERRALS: 'referrals',
-  RESPONSE_SESSIONS: 'response_sessions',
-  RESPONSES: 'responses',
-  SURVEY_RESPONSES: 'survey_responses',
-  TAGS: 'tags',
-  TEMPLATE_APPLICATIONS: 'template_applications',
-  TEMPLATE_TAGS: 'template_tags',
-  TEAM_INVITATIONS: 'team_invitations',
-  TEAM_MEMBERS: 'team_members',
-  TEAMS: 'teams',
-  TRIP_COMMENT_LIKES: 'trip_comment_likes',
-  TRIP_HISTORY: 'trip_history',
-  TRIP_IMAGES: 'trip_images',
-  TRIP_ITEM_COMMENTS: 'trip_item_comments',
-  TRIP_ITEM_VOTES: 'trip_item_votes',
-  TRIP_MEMBERS: 'trip_members',
-  TRIP_NOTES: 'trip_notes',
-  TRIP_SETTINGS: 'trip_settings',
-  TRIP_TAGS: 'trip_tags',
-  TRIP_TEMPLATE_USES: 'trip_template_uses',
-  TRIP_VOTE_OPTIONS: 'trip_vote_options',
-  TRIP_VOTE_POLLS: 'trip_vote_polls',
-  TRIP_VOTES: 'trip_votes',
-  TRIPS: 'trips',
-  USER_ACTIVITY: 'user_activity',
-  USER_ACTIVITY_DAILY: 'user_activity_daily',
-  USER_INTERACTIONS: 'user_interactions',
-  USER_INTERESTS: 'user_interests',
-  USER_LOGIN_HISTORY: 'user_login_history',
-  USER_PREFERENCES: 'user_preferences',
-  USER_PRESENCE: 'user_presence',
-  USER_SUGGESTED_TAGS: 'user_suggested_tags',
-  USER_TRAVEL: 'user_travel',
-  USERS: 'users',
-  VALIDATION_LOGS: 'validation_logs',
-  VOTES: 'votes',
-  TRIP_EXPENSES: 'trip_expenses',
-  TAG_GROUPS: 'tag_groups',
-  TRIP_COMMENTS: 'trip_comments',
-  TRIP_ACCESS_REQUESTS: 'trip_access_requests',
-  TRIP_LIKES: 'trip_likes',
-  DESTINATION_REVIEWS: 'destination_reviews',
-  DESTINATION_IMAGES: 'destination_images',
-  SETTINGS: 'user_settings',
-  ITINERARY_ITEM_REACTIONS: 'itinerary_item_reactions',
-  FEATURE_USAGE: 'feature_usage',
-  ERROR_LOGS: 'error_logs',
-  GROUP_PLANNING_SESSIONS: 'group_planning_sessions',
-  PLANNING_READINESS: 'planning_readiness',
-  PLANNING_POLLS: 'planning_polls',
-  PLANNING_POLL_OPTIONS: 'planning_poll_options',
-  PLANNING_POLL_VOTES: 'planning_poll_votes',
-  COMMENTS: 'comments',
-  COMMENT_REACTIONS: 'comment_reactions',
-  REPORTED_CONTENT: 'reported_content',
-  MODERATION_LOGS: 'moderation_logs',
-  MODERATION_RULES: 'moderation_rules',
-  CONTENT_FLAGS: 'content_flags',
-  GROUP_IDEA_COMMENTS: 'group_idea_comments',
-  GROUP_IDEA_REACTIONS: 'group_idea_reactions',
-} as const;
-
-export const FIELDS = {
-  COMMON: {
-    ID: 'id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  ACCESS_REQUESTS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    REQUESTED_AT: 'requested_at',
-    STATUS: 'status',
-    APPROVED_BY: 'approved_by',
-    APPROVED_AT: 'approved_at',
-    MESSAGE: 'message',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  ALBUMS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  BUDGET_ITEMS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TITLE: 'title',
-    AMOUNT: 'amount',
-    CURRENCY: 'currency',
-    CATEGORY: 'category',
-    PAID_BY: 'paid_by',
-    DATE: 'date',
-    SOURCE: 'source',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  COLLABORATIVE_NOTES: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TITLE: 'title',
-    CONTENT: 'content',
-    CREATED_BY: 'created_by',
-    IS_PINNED: 'is_pinned',
-    LAST_EDITED_BY: 'last_edited_by',
-    LAST_EDITED_AT: 'last_edited_at',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  COLLABORATIVE_SESSIONS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    DOCUMENT_TYPE: 'document_type',
-    DOCUMENT_ID: 'document_id',
-    CONTENT: 'content',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  CONTENT_CUSTOMIZATIONS: {
-    ID: 'id',
-    ITEM_ID: 'item_id',
-    USER_ID: 'user_id',
-    CUSTOMIZATION_TYPE: 'customization_type',
-    ORIGINAL_VALUE: 'original_value',
-    CUSTOMIZED_VALUE: 'customized_value',
-    IS_PRIVATE: 'is_private',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    METADATA: 'metadata',
-  },
-  CONTENT_QUALITY_METRICS: {
-    ID: 'id',
-    ITEM_ID: 'item_id',
-    TRIP_ID: 'trip_id',
-    QUALITY_SCORE: 'quality_score',
-    ENGAGEMENT_SCORE: 'engagement_score',
-    POPULARITY_SCORE: 'popularity_score',
-    USAGE_COUNT: 'usage_count',
-    LAST_USED_AT: 'last_used_at',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    METADATA: 'metadata',
-  },
-  CONTENT_SHARING_HISTORY: {
-    ID: 'id',
-    ITEM_ID: 'item_id',
-    SOURCE_TRIP_ID: 'source_trip_id',
-    TARGET_TRIP_ID: 'target_trip_id',
-    SHARED_BY: 'shared_by',
-    SHARED_AT: 'shared_at',
-    CUSTOMIZATIONS: 'customizations',
-    METADATA: 'metadata',
-  },
-  CONTENT_SLUGS: {
-    ID: 'id',
-    CONTENT_TYPE: 'content_type',
-    CONTENT_ID: 'content_id',
-    SLUG: 'slug',
-    IS_CANONICAL: 'is_canonical',
-    CREATED_AT: 'created_at',
-    CREATED_BY: 'created_by',
-  },
-  DESTINATION_TAGS: {
-    ID: 'id',
-    DESTINATION_ID: 'destination_id',
-    TAG_ID: 'tag_id',
-    ADDED_BY: 'added_by',
-    CREATED_AT: 'created_at',
-    CONFIDENCE_SCORE: 'confidence_score',
-    VOTES_UP: 'votes_up',
-    VOTES_DOWN: 'votes_down',
-    IS_VERIFIED: 'is_verified',
-  },
-  DESTINATIONS: {
-    ID: 'id',
-    NAME: 'name',
-    SLUG: 'slug',
-    DESCRIPTION: 'description',
-    COUNTRY: 'country',
-    REGION: 'region',
-    CITY: 'city',
-    LONGITUDE: 'longitude',
-    LATITUDE: 'latitude',
-    TIMEZONE: 'timezone',
-    IMAGE_URL: 'image_url',
-    POPULATION: 'population',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    SHORT_DESCRIPTION: 'short_description',
-    IS_PUBLISHED: 'is_published',
-    CONTINENT: 'continent',
-    LOCATION_HIERARCHY: 'location_hierarchy',
-    KNOWN_FOR: 'known_for',
-    CLIMATE: 'climate',
-    BEST_TIMES_TO_VISIT: 'best_times_to_visit',
-    LANGUAGES: 'languages',
-    TOP_ATTRACTIONS: 'top_attractions',
-    LOCAL_TIPS: 'local_tips',
-    FUN_FACTS: 'fun_facts',
-    CURRENCY: 'currency',
-    SAFETY_INFO: 'safety_info',
-    GETTING_AROUND: 'getting_around',
-    TAGS: 'tags',
-    METADATA: 'metadata',
-    CREATED_BY: 'created_by',
-    CONTENT_STATUS: 'content_status',
-    COVER_IMAGE_URL: 'cover_image_url',
-  },
-  EXPENSES: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TITLE: 'title',
-    AMOUNT: 'amount',
-    CATEGORY: 'category',
-    DATE: 'date',
-    PAID_BY: 'paid_by',
-    CREATED_AT: 'created_at',
-    CURRENCY: 'currency',
-    SOURCE: 'source',
-    UPDATED_AT: 'updated_at',
-  },
-  FOCUS_SESSIONS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    INITIATED_BY: 'initiated_by',
-    SECTION_ID: 'section_id',
-    SECTION_PATH: 'section_path',
-    SECTION_NAME: 'section_name',
-    ACTIVE: 'active',
-    MESSAGE: 'message',
-    CREATED_AT: 'created_at',
-    EXPIRES_AT: 'expires_at',
-  },
-  IMAGE_METADATA: {
-    ID: 'id',
-    ENTITY_ID: 'entity_id',
-    ENTITY_TYPE: 'entity_type',
-    URL: 'url',
-    ALT_TEXT: 'alt_text',
-    ATTRIBUTION: 'attribution',
-    PHOTOGRAPHER_NAME: 'photographer_name',
-    PHOTOGRAPHER_URL: 'photographer_url',
-    LICENSE: 'license',
-    SOURCE: 'source',
-    SOURCE_ID: 'source_id',
-    WIDTH: 'width',
-    HEIGHT: 'height',
-    FOCAL_POINT_X: 'focal_point_x',
-    FOCAL_POINT_Y: 'focal_point_y',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    ATTRIBUTION_HTML: 'attribution_html',
-  },
-  INVITATIONS: {
-    ID: 'id',
-    CREATED_AT: 'created_at',
-    INVITED_BY: 'invited_by',
-    TRIP_ID: 'trip_id',
-    INVITATION_STATUS: 'invitation_status',
-    EMAIL: 'email',
-    TOKEN: 'token',
-    EXPIRES_AT: 'expires_at',
-  },
-  ITEM_POPULARITY_METRICS: {
-    ID: 'id',
-    ITEM_ID: 'item_id',
-    VIEWS_LAST_24H: 'views_last_24h',
-    VIEWS_LAST_7D: 'views_last_7d',
-    VIEWS_LAST_30D: 'views_last_30d',
-    SHARES_LAST_24H: 'shares_last_24h',
-    SHARES_LAST_7D: 'shares_last_7d',
-    SHARES_LAST_30D: 'shares_last_30d',
-    LIKES_LAST_24H: 'likes_last_24h',
-    LIKES_LAST_7D: 'likes_last_7d',
-    LIKES_LAST_30D: 'likes_last_30d',
-    TRENDING_SCORE: 'trending_score',
-    LAST_UPDATED: 'last_updated',
-  },
-  ITINERARY_ITEM_VOTES: {
-    ID: 'id',
-    ITINERARY_ITEM_ID: 'itinerary_item_id',
-    USER_ID: 'user_id',
-    VOTE_TYPE: 'vote_type',
-    CREATED_AT: 'created_at',
-  },
-  ITINERARY_ITEMS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TITLE: 'title',
-    TYPE: 'type',
-    DATE: 'date',
-    START_TIME: 'start_time',
-    END_TIME: 'end_time',
-    LOCATION: 'location',
-    PLACE_ID: 'place_id',
-    LATITUDE: 'latitude',
-    LONGITUDE: 'longitude',
-    COST: 'cost',
-    NOTES: 'notes',
-    CREATED_AT: 'created_at',
-    CREATED_BY: 'created_by',
-    ITEM_TYPE: 'item_type',
-    IS_CUSTOM: 'is_custom',
-    DAY_NUMBER: 'day_number',
-    ADDRESS: 'address',
-    CATEGORY: 'category',
-    STATUS: 'status',
-    POSITION: 'position',
-    ESTIMATED_COST: 'estimated_cost',
-    CURRENCY: 'currency',
-    DURATION_MINUTES: 'duration_minutes',
-    SECTION_ID: 'section_id',
-    UPDATED_AT: 'updated_at',
-    COVER_IMAGE_URL: 'cover_image_url',
-    CONTENT_LAYER: 'content_layer',
-    ORIGINAL_ID: 'original_id',
-    SOURCE_TRIP_ID: 'source_trip_id',
-    ATTRIBUTION_TYPE: 'attribution_type',
-    ATTRIBUTION_METADATA: 'attribution_metadata',
-    SEO_TITLE: 'seo_title',
-    SEO_DESCRIPTION: 'seo_description',
-    CANONICAL_URL: 'canonical_url',
-    SLUG: 'slug',
-    META_KEYWORDS: 'meta_keywords',
-    STRUCTURED_DATA: 'structured_data',
-    SHARE_STATUS: 'share_status',
-    SHARE_COUNT: 'share_count',
-    LIKE_COUNT: 'like_count',
-    VIEW_COUNT: 'view_count',
-    VOTES: 'votes',
-    LAST_MODIFIED_BY: 'last_modified_by',
-    IS_FAVORITE: 'is_favorite',
-    DAY: 'day',
-  },
-  ITINERARY_SECTIONS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    DAY_NUMBER: 'day_number',
-    DATE: 'date',
-    TITLE: 'title',
-    POSITION: 'position',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  ITINERARY_TEMPLATE_ITEMS: {
-    ID: 'id',
-    TEMPLATE_ID: 'template_id',
-    DAY: 'day',
-    ITEM_ORDER: 'item_order',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    START_TIME: 'start_time',
-    END_TIME: 'end_time',
-    LOCATION: 'location',
-    PLACE_ID: 'place_id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  ITINERARY_TEMPLATE_SECTIONS: {
-    ID: 'id',
-    CREATED_AT: 'created_at',
-  },
-  ITINERARY_TEMPLATES: {
-    ID: 'id',
-    TITLE: 'title',
-    SLUG: 'slug',
-    DESCRIPTION: 'description',
-    DESTINATION_ID: 'destination_id',
-    DURATION_DAYS: 'duration_days',
-    CATEGORY: 'category',
-    CREATED_BY: 'created_by',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    IS_PUBLISHED: 'is_published',
-    VIEW_COUNT: 'view_count',
-    USE_COUNT: 'use_count',
-    LIKE_COUNT: 'like_count',
-    FEATURED: 'featured',
-    COVER_IMAGE_URL: 'cover_image_url',
-    GROUPSIZE: 'groupsize',
-    TAGS: 'tags',
-    TEMPLATE_TYPE: 'template_type',
-    SOURCE_TRIP_ID: 'source_trip_id',
-    VERSION: 'version',
-    COPIED_COUNT: 'copied_count',
-    LAST_COPIED_AT: 'last_copied_at',
-    METADATA: 'metadata',
-  },
-  LIKES: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    ITEM_ID: 'item_id',
-    ITEM_TYPE: 'item_type',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  LOCATIONS: {
-    ID: 'id',
-    NAME: 'name',
-    PARENT_ID: 'parent_id',
-    TYPE: 'type',
-    CREATED_AT: 'created_at',
-  },
-  NOTE_TAGS: {
-    NOTE_ID: 'note_id',
-    TAG_ID: 'tag_id',
-    ASSIGNED_AT: 'assigned_at',
-  },
-  NOTIFICATION_PREFERENCES: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    EMAIL_ENABLED: 'email_enabled',
-    PUSH_ENABLED: 'push_enabled',
-    IN_APP_ENABLED: 'in_app_enabled',
-    TRIP_UPDATES: 'trip_updates',
-    ITINERARY_CHANGES: 'itinerary_changes',
-    MEMBER_ACTIVITY: 'member_activity',
-    COMMENTS: 'comments',
-    VOTES: 'votes',
-    FOCUS_EVENTS: 'focus_events',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  NOTIFICATIONS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TYPE: 'type',
-    TITLE: 'title',
-    CONTENT: 'content',
-    READ: 'read',
-    ACTOR_ID: 'actor_id',
-    RESOURCE_TYPE: 'resource_type',
-    RESOURCE_ID: 'resource_id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at'
-  },
-  PERMISSION_REQUESTS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    STATUS: 'status',
-    MESSAGE: 'message',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  PLACES: {
-    ID: 'id',
-    NAME: 'name',
-    DESCRIPTION: 'description',
-    CATEGORY: 'category',
-    ADDRESS: 'address',
-    LATITUDE: 'latitude',
-    LONGITUDE: 'longitude',
-    DESTINATION_ID: 'destination_id',
-    PRICE_LEVEL: 'price_level',
-    RATING: 'rating',
-    RATING_COUNT: 'rating_count',
-    IMAGES: 'images',
-    TAGS: 'tags',
-    OPENING_HOURS: 'opening_hours',
-    IS_VERIFIED: 'is_verified',
-    SUGGESTED_BY: 'suggested_by',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    SOURCE: 'source',
-    SOURCE_ID: 'source_id',
-  },
-  PREFERENCE_WEIGHTS: {
-    ID: 'id',
-    CATEGORY: 'category',
-    SUBCATEGORY: 'subcategory',
-    WEIGHT: 'weight',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  PROFILES: {
-    ID: 'id',
-    UPDATED_AT: 'updated_at',
-    NAME: 'name',
-    AVATAR_URL: 'avatar_url',
-    IS_ADMIN: 'is_admin',
-    EMAIL: 'email',
-    USERNAME: 'username',
-    COVER_IMAGE_URL: 'cover_image_url',
-    BIO: 'bio',
-    LOCATION: 'location',
-    WEBSITE: 'website',
-    IS_VERIFIED: 'is_verified',
-    HOME_LOCATION_ID: 'home_location_id',
-    FIRST_NAME: 'first_name',
-    TRAVEL_PERSONALITY: 'travel_personality',
-    TRAVEL_SQUAD: 'travel_squad',
-    ONBOARDING_COMPLETED: 'onboarding_completed',
-    ONBOARDING_COMPLETED_AT: 'onboarding_completed_at',
-    ONBOARDING_STEP: 'onboarding_step',
-  },
-  QUESTIONS: {
-    ID: 'id',
-    FORM_ID: 'form_id',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    PLACEHOLDER: 'placeholder',
-    IS_REQUIRED: 'is_required',
-    QUESTION_TYPE: 'question_type',
-    POSITION: 'position',
-    OPTIONS: 'options',
-    VALIDATION_RULES: 'validation_rules',
-    CONDITIONAL_LOGIC: 'conditional_logic',
-    DEFAULT_VALUE: 'default_value',
-    MAX_CHARACTER_COUNT: 'max_character_count',
-    SHOW_CHARACTER_COUNT: 'show_character_count',
-    RATING_SCALE: 'rating_scale',
-    RATING_TYPE: 'rating_type',
-    ALLOWED_FILE_TYPES: 'allowed_file_types',
-    MAX_FILE_SIZE: 'max_file_size',
-    MAX_FILES: 'max_files',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  QUESTION_BRANCHING: {
-    ID: 'id',
-    FORM_ID: 'form_id',
-    SOURCE_QUESTION_ID: 'source_question_id',
-    TARGET_QUESTION_ID: 'target_question_id',
-    CONDITION_TYPE: 'condition_type',
-    CONDITION_VALUE: 'condition_value',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  REFERRALS: {
-    ID: 'id',
-    REFERRER_ID: 'referrer_id',
-    REFERRED_ID: 'referred_id',
-    REFERRAL_CODE: 'referral_code',
-    TRIP_ID: 'trip_id',
-    CONVERTED: 'converted',
-    CREATED_AT: 'created_at',
-    CONVERTED_AT: 'converted_at',
-  },
-  TAGS: {
-    ID: 'id',
-    NAME: 'name',
-    SLUG: 'slug',
-    CATEGORY: 'category',
-    EMOJI: 'emoji',
-    DESCRIPTION: 'description',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    CREATED_BY: 'created_by',
-    IS_VERIFIED: 'is_verified',
-    USE_COUNT: 'use_count',
-    METADATA: 'metadata',
-  },
-  TEMPLATE_APPLICATIONS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TEMPLATE_ID: 'template_id',
-    APPLIED_AT: 'applied_at',
-    APPLIED_BY: 'applied_by',
-    VERSION_USED: 'version_used',
-    SUCCESS_RATE: 'success_rate',
-    OPTIMIZATION_LEVEL: 'optimization_level',
-    FALLBACKS_USED: 'fallbacks_used',
-    APPLICATION_METADATA: 'application_metadata',
-  },
-  TRIP_COMMENT_LIKES: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    COMMENT_ID: 'comment_id',
-    USER_ID: 'user_id',
-    CREATED_AT: 'created_at',
-  },
-  TRIP_HISTORY: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    CREATED_AT: 'created_at',
-    USER_ID: 'user_id',
-    ACTION_TYPE: 'action_type',
-    DETAILS: 'details',
-  },
-  TRIP_IMAGES: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    FILE_PATH: 'file_path',
-    FILE_NAME: 'file_name',
-    CONTENT_TYPE: 'content_type',
-    SIZE_BYTES: 'size_bytes',
-    CREATED_BY: 'created_by',
-    CREATED_AT: 'created_at',
-    WIDTH: 'width',
-    HEIGHT: 'height',
-    DESCRIPTION: 'description',
-    ALBUM_ID: 'album_id',
-  },
-  TRIP_ITEM_COMMENTS: {
-    ID: 'id',
-    ITEM_ID: 'item_id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    CONTENT: 'content',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  TRIP_MEMBERS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    USER_ID: 'user_id',
-    ROLE: 'role',
-    JOINED_AT: 'joined_at',
-    INVITED_BY: 'invited_by',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  TRIP_NOTES: {
-    TRIP_ID: 'trip_id',
-    CONTENT: 'content',
-    UPDATED_BY: 'updated_by',
-    UPDATED_AT: 'updated_at',
-    USER_ID: 'user_id',
-    ALBUM_ID: 'album_id',
-    ID: 'id',
-    TITLE: 'title',
-  },
-  TRIP_TAGS: {
-    TRIP_ID: 'trip_id',
-    TAG_ID: 'tag_id',
-    ASSIGNED_AT: 'assigned_at',
-  },
-  TRIP_TEMPLATE_USES: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TEMPLATE_ID: 'template_id',
-    APPLIED_AT: 'applied_at',
-    APPLIED_BY: 'applied_by',
-    VERSION_USED: 'version_used',
-    MODIFICATIONS: 'modifications',
-  },
-  TRIP_VOTE_OPTIONS: {
-    ID: 'id',
-    POLL_ID: 'poll_id',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    IMAGE_URL: 'image_url',
-    CREATED_AT: 'created_at',
-  },
-  TRIP_VOTE_POLLS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    IS_ACTIVE: 'is_active',
-    CREATED_BY: 'created_by',
-    EXPIRES_AT: 'expires_at',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  TRIP_VOTES: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    POLL_ID: 'poll_id',
-    OPTION_ID: 'option_id',
-    USER_ID: 'user_id',
-    CREATED_AT: 'created_at',
-  },
-  TRIPS: {
-    ID: 'id',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    START_DATE: 'start_date',
-    END_DATE: 'end_date',
-    CREATED_BY: 'created_by',
-    IS_PUBLIC: 'is_public',
-    PRIVACY_SETTING: 'privacy_setting',
-    LOCATION: 'location',
-    TRIP_TYPE: 'trip_type',
-    STATUS: 'status',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    PLANNING_SESSION_ID: 'planning_session_id',
-    FROM_PLANNING: 'from_planning',
-    TOUR_COMPLETED: 'tour_completed',
-  },
-  USER_ACTIVITY: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    SESSION_ID: 'session_id',
-    EVENT_TYPE: 'event_type',
-    ENTITY_TYPE: 'entity_type',
-    ENTITY_ID: 'entity_id',
-    ACTION: 'action',
-    IP_ADDRESS: 'ip_address',
-    USER_AGENT: 'user_agent',
-    REFERRER: 'referrer',
-    PATH: 'path',
-    METADATA: 'metadata',
-    CREATED_AT: 'created_at',
-  },
-  USER_ACTIVITY_DAILY: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    DATE: 'date',
-    ACTIVITY_COUNT: 'activity_count',
-    METADATA: 'metadata',
-    CREATED_AT: 'created_at',
-  },
-  USER_INTERACTIONS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    DESTINATION_ID: 'destination_id',
-    INTERACTION_TYPE: 'interaction_type',
-    CREATED_AT: 'created_at',
-  },
-  USER_INTERESTS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TAG_ID: 'tag_id',
-    STRENGTH: 'strength',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  USER_LOGIN_HISTORY: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    LOGIN_AT: 'login_at',
-    IP_ADDRESS: 'ip_address',
-    USER_AGENT: 'user_agent',
-    SUCCESS: 'success',
-    METHOD: 'method',
-    CREATED_AT: 'created_at',
-  },
-  USER_PREFERENCES: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TRAVEL_STYLES: 'travel_styles',
-    PREFERRED_PACE: 'preferred_pace',
-    BUDGET_RANGE: 'budget_range',
-    PREFERRED_ACTIVITY_TYPES: 'preferred_activity_types',
-    PREFERRED_TIMES_OF_DAY: 'preferred_times_of_day',
-    ACCESSIBILITY_NEEDS: 'accessibility_needs',
-    DIETARY_RESTRICTIONS: 'dietary_restrictions',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    METADATA: 'metadata',
-  },
-  USER_PRESENCE: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TRIP_ID: 'trip_id',
-    DOCUMENT_ID: 'document_id',
-    STATUS: 'status',
-    LAST_ACTIVE: 'last_active',
-  },
-  USER_SUGGESTED_TAGS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    DESTINATION_ID: 'destination_id',
-    NAME: 'name',
-    SLUG: 'slug',
-    CATEGORY: 'category',
-    STATUS: 'status',
-    ADMIN_NOTES: 'admin_notes',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  USER_TRAVEL: {
-    USER_ID: 'user_id',
-    DESTINATION_ID: 'destination_id',
-    VISITED_AT: 'visited_at',
-  },
-  USERS: {
-    ID: 'id',
-    EMAIL: 'email',
-    NAME: 'name',
-    AVATAR_URL: 'avatar_url',
-    CREATED_AT: 'created_at',
-    IS_ADMIN: 'is_admin',
-    BIO: 'bio',
-    LOCATION: 'location',
-    INTERESTS: 'interests',
-    UPDATED_AT: 'updated_at',
-    USERNAME: 'username',
-    FULL_NAME: 'full_name',
-    LAST_SIGN_IN_AT: 'last_sign_in_at',
-  },
-  VALIDATION_LOGS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    TEMPLATE_ID: 'template_id',
-    IS_VALID: 'is_valid',
-    VALIDATION_ERRORS: 'validation_errors',
-    VALIDATED_AT: 'validated_at',
-    VALIDATED_BY: 'validated_by',
-  },
-  VOTES: {
-    ID: 'id',
-    ITINERARY_ITEM_ID: 'itinerary_item_id',
-    USER_ID: 'user_id',
-    VOTE_TYPE: 'vote_type',
-    CREATED_AT: 'created_at',
-  },
-  TEMPLATE_TAGS: {
-    ID: 'id',
-    TEMPLATE_ID: 'template_id',
-    TAG_ID: 'tag_id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  TRIP_SETTINGS: {
-    ID: 'id',
-    TRIP_ID: 'trip_id',
-    SETTING_TYPE: 'setting_type',
-    VALUE: 'value',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  TEAM_INVITATIONS: {
-    ID: 'id',
-    TEAM_ID: 'team_id',
-    INVITED_BY: 'invited_by',
-    INVITATION_STATUS: 'invitation_status',
-    EMAIL: 'email',
-    TOKEN: 'token',
-    EXPIRES_AT: 'expires_at',
-  },
-  TEAM_MEMBERS: {
-    ID: 'id',
-    TEAM_ID: 'team_id',
-    USER_ID: 'user_id',
-    ROLE: 'role',
-    CREATED_AT: 'created_at',
-    INVITED_BY: 'invited_by',
-    JOINED_AT: 'joined_at',
-  },
-  TEAMS: {
-    ID: 'id',
-    NAME: 'name',
-    DESCRIPTION: 'description',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  ITINERARY_ITEM_REACTIONS: {
-    ID: 'id',
-    ITINERARY_ITEM_ID: 'itinerary_item_id',
-    USER_ID: 'user_id',
-    EMOJI: 'emoji',
-    CREATED_AT: 'created_at',
-  },
-  GROUPS: {
-    ID: 'id',
-    NAME: 'name',
-    SLUG: 'slug',
-    EMOJI: 'emoji',
-    DESCRIPTION: 'description',
-    CREATED_BY: 'created_by',
-    VISIBILITY: 'visibility',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  GROUP_MEMBERS: {
-    GROUP_ID: 'group_id',
-    USER_ID: 'user_id',
-    ROLE: 'role',
-    STATUS: 'status',
-    INVITATION_EMAIL: 'invitation_email',
-    INVITATION_TOKEN: 'invitation_token',
-    INVITATION_EXPIRES_AT: 'invitation_expires_at',
-    JOINED_AT: 'joined_at',
-    UPDATED_AT: 'updated_at',
-  },
-  GROUP_TRIPS: {
-    GROUP_ID: 'group_id',
-    TRIP_ID: 'trip_id',
-    ADDED_BY: 'added_by',
-    NOTES: 'notes',
-    IS_FEATURED: 'is_featured',
-    DISPLAY_ORDER: 'display_order',
-    ADDED_AT: 'added_at',
-    UPDATED_AT: 'updated_at',
-  },
-  GROUP_ACTIVITIES: {
-    ID: 'id',
-    GROUP_ID: 'group_id',
-    USER_ID: 'user_id',
-    ACTIVITY_TYPE: 'activity_type',
-    TRIP_ID: 'trip_id',
-    DETAILS: 'details',
-    CREATED_AT: 'created_at',
-  },
-  ONBOARDING_EVENTS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    EVENT_TYPE: 'event_type',
-    TOUR_ID: 'tour_id',
-    STEP_ID: 'step_id',
-    EVENT_DATA: 'event_data',
-    SESSION_ID: 'session_id',
-    CREATED_AT: 'created_at',
-  },
-  ONBOARDING_TOUR_COMPLETIONS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    TOUR_ID: 'tour_id',
-    COMPLETED_AT: 'completed_at',
-    IS_SKIPPED: 'is_skipped',
-    TIME_SPENT: 'time_spent',
-    STEPS_VIEWED: 'steps_viewed',
-  },
-  ONBOARDING_PREFERENCES: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    FEATURE_ID: 'feature_id',
-    IS_ENABLED: 'is_enabled',
-    SHOW_TOURS: 'show_tours',
-    NOTIFICATION_LEVEL: 'notification_level',
-    PREFERENCES: 'preferences',
-    UPDATED_AT: 'updated_at',
-  },
-  FEATURE_USAGE: {
-    ID: 'id',
-    FEATURE_ID: 'feature_id',
-    USER_ID: 'user_id',
-    ENTITY_ID: 'entity_id',
-    ACTION: 'action',
-    VALUE: 'value',
-    CONTEXT: 'context',
-    METADATA: 'metadata',
-    CREATED_AT: 'created_at',
-  },
-  ERROR_LOGS: {
-    ID: 'id',
-    USER_ID: 'user_id',
-    SESSION_ID: 'session_id',
-    ERROR_TYPE: 'error_type',
-    ERROR_MESSAGE: 'error_message',
-    ERROR_STACK: 'error_stack',
-    URL: 'url',
-    PATH: 'path',
-    COMPONENT: 'component',
-    SEVERITY: 'severity',
-    BROWSER: 'browser',
-    OS: 'os',
-    DEVICE: 'device',
-    METADATA: 'metadata',
-    CREATED_AT: 'created_at',
-  },
-  GROUP_IDEAS: {
-    ID: 'id',
-    GROUP_ID: 'group_id',
-    TITLE: 'title',
-    DESCRIPTION: 'description',
-    TYPE: 'type',
-    CREATED_BY: 'created_by',
-    GUEST_TOKEN: 'guest_token',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    VOTES_UP: 'votes_up',
-    VOTES_DOWN: 'votes_down',
-    POSITION: 'position',
-    SELECTED: 'selected',
-    META: 'meta',
-  },
-  GROUP_IDEA_NOTES: {
-    ID: 'id',
-    IDEA_ID: 'idea_id',
-    CONTENT: 'content',
-    CREATED_BY: 'created_by',
-    GUEST_TOKEN: 'guest_token',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  GROUP_IDEA_PLANS: {
-    ID: 'id',
-    GROUP_ID: 'group_id',
-    NAME: 'name',
-    DESCRIPTION: 'description',
-    CREATED_BY: 'created_by',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  GROUP_IDEA_VOTES: {
-    ID: 'id',
-    IDEA_ID: 'idea_id',
-    USER_ID: 'user_id',
-    GUEST_TOKEN: 'guest_token',
-    VOTE_TYPE: 'vote_type',
-    CREATED_AT: 'created_at',
-  },
-  GROUP_PLANNING_SESSIONS: {
-    ID: 'id',
-    GROUP_ID: 'group_id',
-    NAME: 'name',
-    STATUS: 'status',
-    DESTINATION: 'destination',
-    DATE_RANGE: 'date_range',
-    BUDGET: 'budget',
-    ACTIVITIES: 'activities',
-    TRIP_ID: 'trip_id',
-    CREATED_BY: 'created_by',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    COMPLETED_AT: 'completed_at',
-    EXPORTED_AT: 'exported_at',
-  },
-  PLANNING_READINESS: {
-    ID: 'id',
-    SESSION_ID: 'session_id',
-    USER_ID: 'user_id',
-    GUEST_TOKEN: 'guest_token',
-    IS_READY: 'is_ready',
-    READY_AT: 'ready_at',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-  },
-  PLANNING_POLLS: {
-    ID: 'id',
-    SESSION_ID: 'session_id',
-    QUESTION: 'question',
-    TYPE: 'type',
-    MULTI_SELECT: 'multi_select',
-    CREATED_AT: 'created_at',
-  },
-  PLANNING_POLL_OPTIONS: {
-    ID: 'id',
-    POLL_ID: 'poll_id',
-    TEXT: 'text',
-    IDEA_ID: 'idea_id',
-    CREATED_AT: 'created_at',
-  },
-  PLANNING_POLL_VOTES: {
-    ID: 'id',
-    OPTION_ID: 'option_id',
-    USER_ID: 'user_id',
-    GUEST_TOKEN: 'guest_token',
-    CREATED_AT: 'created_at',
-  },
-  COMMENTS: {
-    ID: 'id',
-    CONTENT: 'content',
-    USER_ID: 'user_id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    PARENT_ID: 'parent_id',
-    CONTENT_TYPE: 'content_type',
-    CONTENT_ID: 'content_id',
-    IS_EDITED: 'is_edited',
-    IS_DELETED: 'is_deleted',
-    REACTIONS_COUNT: 'reactions_count',
-    REPLIES_COUNT: 'replies_count',
-    ATTACHMENT_URL: 'attachment_url',
-    ATTACHMENT_TYPE: 'attachment_type',
-    METADATA: 'metadata',
-  },
-  COMMENT_REACTIONS: {
-    ID: 'id',
-    COMMENT_ID: 'comment_id',
-    USER_ID: 'user_id',
-    EMOJI: 'emoji',
-    CREATED_AT: 'created_at',
-  },
-  REPORTED_CONTENT: {
-    ID: 'id',
-    CONTENT_TYPE: 'content_type',
-    CONTENT_ID: 'content_id',
-    REPORTER_ID: 'reporter_id',
-    REASON: 'reason',
-    STATUS: 'status',
-    CREATED_AT: 'created_at',
-    RESOLVED_AT: 'resolved_at',
-    RESOLVER_ID: 'resolver_id',
-    RESOLUTION_NOTES: 'resolution_notes',
-    ENCRYPTED_CONTENT_SNAPSHOT: 'encrypted_content_snapshot'
-  },
-  MODERATION_LOGS: {
-    ID: 'id',
-    MODERATOR_ID: 'moderator_id',
-    ACTION: 'action',
-    TARGET_TYPE: 'target_type',
-    TARGET_ID: 'target_id',
-    NOTES: 'notes',
-    CREATED_AT: 'created_at'
-  },
-  GROUP_IDEA_COMMENTS: {
-    ID: 'id',
-    IDEA_ID: 'idea_id',
-    USER_ID: 'user_id',
-    CONTENT: 'content',
-    PARENT_ID: 'parent_id',
-    CREATED_AT: 'created_at',
-    UPDATED_AT: 'updated_at',
-    IS_EDITED: 'is_edited',
-    IS_DELETED: 'is_deleted',
-    REACTIONS_COUNT: 'reactions_count',
-    REPLIES_COUNT: 'replies_count',
-    ATTACHMENT_URL: 'attachment_url',
-    ATTACHMENT_TYPE: 'attachment_type',
-    METADATA: 'metadata',
-  },
-  GROUP_IDEA_REACTIONS: {
-    ID: 'id',
-    IDEA_ID: 'idea_id',
-    USER_ID: 'user_id',
-    COMMENT_ID: 'comment_id',
-    EMOJI: 'emoji',
-    CREATED_AT: 'created_at',
-  },
-} as const;
-
-export const ENUMS = {
-  TRIP_ROLES: {
-    ADMIN: 'admin',
-    EDITOR: 'editor',
-    CONTRIBUTOR: 'contributor',
-    VIEWER: 'viewer',
-  },
-  GROUP_ROLES: {
-    OWNER: 'owner',
-    ADMIN: 'admin',
-    MEMBER: 'member',
-  },
-  GROUP_MEMBER_STATUS: {
-    INVITED: 'invited',
-    ACTIVE: 'active',
-    LEFT: 'left',
-    REMOVED: 'removed',
-  },
-  GROUP_ACTIVITY_TYPE: {
-    TRIP_ADDED: 'trip_added',
-    TRIP_REMOVED: 'trip_removed',
-    MEMBER_JOINED: 'joined_group',
-    MEMBER_LEFT: 'left_group',
-    INVITE_SENT: 'invite_sent',
-    OWNERSHIP_TRANSFERRED: 'ownership_transferred',
-    GROUP_UPDATED: 'group_updated',
-  },
-  ITEM_STATUS: {
-    SUGGESTED: 'suggested',
-    CONFIRMED: 'confirmed',
-    REJECTED: 'rejected',
-  },
-  TRIP_STATUS: {
-    PLANNING: 'planning',
-    UPCOMING: 'upcoming',
-    IN_PROGRESS: 'in_progress',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled',
-  },
-  PERMISSION_STATUS: {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    DENIED: 'denied',
-  },
-  IMAGE_TYPE: {
-    DESTINATION: 'destination',
-    TRIP_COVER: 'trip_cover',
-    USER_AVATAR: 'user_avatar',
-    TEMPLATE_COVER: 'template_cover',
-    GROUP_COVER: 'group_cover',
-  },
-  CONTENT_TYPE: {
-    TRIP: 'trip',
-    ITINERARY_ITEM: 'itinerary_item',
-    DESTINATION: 'destination',
-    COLLECTION: 'collection',
-    TEMPLATE: 'template',
-    GROUP: 'group',
-    COMMENT: 'comment',
-    PROFILE: 'profile',
-    TRIP_DESCRIPTION: 'trip_description'
-  },
-  QUESTION_TYPE: {
-    TEXT: 'text',
-    SELECT: 'select',
-    MULTI_SELECT: 'multi_select',
-    DATE: 'date',
-    NUMBER: 'number',
-    BOOLEAN: 'boolean',
-  },
-  FORM_STATUS: {
-    DRAFT: 'draft',
-    PUBLISHED: 'published',
-    ARCHIVED: 'archived',
-  },
-  FORM_VISIBILITY: {
-    PUBLIC: 'public',
-    PRIVATE: 'private',
-    SHARED: 'shared',
-  },
-  ITINERARY_CATEGORY: {
-    ICONIC_LANDMARKS: 'Iconic Landmarks',
-    LOCAL_SECRETS: 'Local Secrets',
-    CULTURAL_EXPERIENCES: 'Cultural Experiences',
-    OUTDOOR_ADVENTURES: 'Outdoor Adventures',
-    FOOD_AND_DRINK: 'Food & Drink',
-    NIGHTLIFE: 'Nightlife',
-    RELAXATION: 'Relaxation',
-    SHOPPING: 'Shopping',
-    GROUP_ACTIVITIES: 'Group Activities',
-    DAY_EXCURSIONS: 'Day Excursions',
-    ACCOMMODATIONS: 'Accommodations',
-    TRANSPORTATION: 'Transportation',
-    FLEXIBLE_OPTIONS: 'Flexible Options',
-    SPECIAL_OCCASIONS: 'Special Occasions',
-    OTHER: 'Other',
-  },
-  ITINERARY_ITEM_STATUS: {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    REJECTED: 'rejected',
-  },
-  INVITATION_STATUS: {
-    PENDING: 'pending',
-    ACCEPTED: 'accepted',
-    DECLINED: 'declined',
-    EXPIRED: 'expired',
-  },
-  PRIVACY_SETTING: {
-    PRIVATE: 'private',
-    SHARED_WITH_LINK: 'shared_with_link',
-    PUBLIC: 'public',
-  },
-  TRIP_PRIVACY_SETTING: {
-    PRIVATE: 'private',
-    SHARED_WITH_LINK: 'shared_with_link',
-    PUBLIC: 'public',
-  },
-  PLACE_CATEGORY: {
-    ATTRACTION: 'attraction',
-    RESTAURANT: 'restaurant',
-    CAFE: 'cafe',
-    HOTEL: 'hotel',
-    LANDMARK: 'landmark',
-    SHOPPING: 'shopping',
-    TRANSPORT: 'transport',
-    OTHER: 'other',
-  },
-  TAG_STATUS: {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    REJECTED: 'rejected',
-  },
-  TRAVEL_PACE: {
-    VERY_SLOW: 'very_slow',
-    SLOW: 'slow',
-    MODERATE: 'moderate',
-    FAST: 'fast',
-    VERY_FAST: 'very_fast',
-  },
-  TRAVEL_PERSONALITY_TYPE: {
-    PLANNER: 'planner',
-    ADVENTURER: 'adventurer',
-    FOODIE: 'foodie',
-    SIGHTSEER: 'sightseer',
-    RELAXER: 'relaxer',
-    CULTURE: 'culture',
-  },
-  TRAVEL_SQUAD_TYPE: {
-    FRIENDS: 'friends',
-    FAMILY: 'family',
-    PARTNER: 'partner',
-    SOLO: 'solo',
-    COWORKERS: 'coworkers',
-    MIXED: 'mixed',
-  },
-  TRAVEL_STYLE: {
-    ADVENTUROUS: 'adventurous',
-    RELAXED: 'relaxed',
-    CULTURAL: 'cultural',
-    LUXURY: 'luxury',
-    BUDGET: 'budget',
-    FAMILY: 'family',
-    SOLO: 'solo',
-    NIGHTLIFE: 'nightlife',
-    NATURE: 'nature',
-    FOOD_FOCUSED: 'food_focused',
-  },
-  BUDGET_CATEGORY: {
-    ACCOMMODATION: 'accommodation',
-    TRANSPORTATION: 'transportation',
-    FOOD: 'food',
-    ACTIVITIES: 'activities',
-    SHOPPING: 'shopping',
-    OTHER: 'other',
-  },
-  TRIP_TYPE: {
-    LEISURE: 'leisure',
-    BUSINESS: 'business',
-    FAMILY: 'family',
-    SOLO: 'solo',
-    GROUP: 'group',
-    OTHER: 'other',
-  },
-  VOTE_TYPE: {
-    UP: 'up',
-    DOWN: 'down',
-    THUMBS_UP: '👍',
-    THUMBS_DOWN: '👎',
-    HEART: '❤️',
-    QUESTION: '❓',
-  },
-  INTERACTION_TYPE: {
-    LIKE: 'like',
-    VISIT: 'visit',
-    BOOKMARK: 'bookmark',
-    TAG: 'tag',
-  },
-  URL_FORMAT: {
-    CANONICAL: 'canonical',
-    SHORT: 'short',
-  },
-  TRIP_ACTION_TYPE: {
-    CREATED: 'created',
-    UPDATED_DETAILS: 'updated_details',
-    ADDED_MEMBER: 'added_member',
-    REMOVED_MEMBER: 'removed_member',
-    ADDED_TRIP_ITEM: 'added_trip_item',
-    REMOVED_TRIP_ITEM: 'removed_trip_item',
-    UPDATED_TRIP_ITEM: 'updated_trip_item',
-    SHARED: 'shared',
-    UNSHARED: 'unshared',
-  },
-  ERROR_SEVERITY: {
-    INFO: 'info',
-    WARNING: 'warning',
-    ERROR: 'error',
-    CRITICAL: 'critical',
-  },
-  ONBOARDING_EVENT_TYPE: {
-    TOUR_STARTED: 'tour_started',
-    TOUR_COMPLETED: 'tour_completed',
-    TOUR_SKIPPED: 'tour_skipped',
-    STEP_VIEWED: 'step_viewed',
-    STEP_COMPLETED: 'step_completed',
-    ONBOARDING_COMPLETED: 'onboarding_completed',
-    STEP_CHANGED: 'step_changed',
-  },
-  IDEA_TYPES: {
-    DESTINATION: 'destination',
-    DATE: 'date',
-    ACTIVITY: 'activity',
-    BUDGET: 'budget',
-    OTHER: 'other',
-  },
-  PLANNING_SESSION_STATUSES: {
-    DRAFT: 'draft',
-    IN_PROGRESS: 'in_progress',
-    VOTING: 'voting',
-    COMPLETED: 'completed',
-    CONVERTED: 'converted',
-  },
-  CONTENT_TYPES: {
-    DESTINATION: 'destination',
-    GROUP_IDEA: 'group_idea',
-    ITINERARY_ITEM: 'itinerary_item',
-    TRIP: 'trip',
-    IMAGE: 'image',
-    NOTE: 'note',
-  },
-  NOTIFICATION_TYPES: {
-    COMMENT: 'comment',
-    MENTION: 'mention',
-    TRIP_INVITE: 'trip_invite',
-    TRIP_UPDATE: 'trip_update',
-    NEW_MEMBER: 'new_member',
-    ITINERARY_CHANGE: 'itinerary_change',
-    SYSTEM_MESSAGE: 'system_message'
-  },
-  MODERATION_STATUS: {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    REJECTED: 'rejected', 
-    ESCALATED: 'escalated'
+export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
-} as const;
+  public: {
+    Tables: {
+      access_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          message: string | null
+          requested_at: string
+          status: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          requested_at?: string
+          status?: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          requested_at?: string
+          status?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_requests_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      albums: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "albums_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_items: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["budget_category"]
+          created_at: string
+          currency: string
+          date: string
+          id: string
+          paid_by: string
+          source: string | null
+          title: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: Database["public"]["Enums"]["budget_category"]
+          created_at?: string
+          currency?: string
+          date: string
+          id?: string
+          paid_by: string
+          source?: string | null
+          title: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["budget_category"]
+          created_at?: string
+          currency?: string
+          date?: string
+          id?: string
+          paid_by?: string
+          source?: string | null
+          title?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborative_notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_pinned: boolean
+          last_edited_at: string | null
+          last_edited_by: string | null
+          title: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_pinned?: boolean
+          last_edited_at?: string | null
+          last_edited_by?: string | null
+          title: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_pinned?: boolean
+          last_edited_at?: string | null
+          last_edited_by?: string | null
+          title?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborative_notes_last_edited_by_fkey"
+            columns: ["last_edited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborative_notes_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborative_sessions: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          document_id: string
+          document_type: string
+          id: string
+          trip_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          document_id: string
+          document_type: string
+          id?: string
+          trip_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          document_id?: string
+          document_type?: string
+          id?: string
+          trip_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      content_customizations: {
+        Row: {
+          created_at: string | null
+          customization_type: string
+          customized_value: Json | null
+          id: string
+          is_private: boolean | null
+          item_id: string | null
+          metadata: Json | null
+          original_value: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customization_type: string
+          customized_value?: Json | null
+          id?: string
+          is_private?: boolean | null
+          item_id?: string | null
+          metadata?: Json | null
+          original_value?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customization_type?: string
+          customized_value?: Json | null
+          id?: string
+          is_private?: boolean | null
+          item_id?: string | null
+          metadata?: Json | null
+          original_value?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_customizations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_customizations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_quality_metrics: {
+        Row: {
+          created_at: string | null
+          engagement_score: number | null
+          id: string
+          item_id: string | null
+          last_used_at: string | null
+          metadata: Json | null
+          popularity_score: number | null
+          quality_score: number | null
+          trip_id: string | null
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          engagement_score?: number | null
+          id?: string
+          item_id?: string | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          popularity_score?: number | null
+          quality_score?: number | null
+          trip_id?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          engagement_score?: number | null
+          id?: string
+          item_id?: string | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          popularity_score?: number | null
+          quality_score?: number | null
+          trip_id?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_quality_metrics_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_quality_metrics_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_sharing_history: {
+        Row: {
+          customizations: Json | null
+          id: string
+          item_id: string | null
+          metadata: Json | null
+          shared_at: string | null
+          shared_by: string | null
+          source_trip_id: string | null
+          target_trip_id: string | null
+        }
+        Insert: {
+          customizations?: Json | null
+          id?: string
+          item_id?: string | null
+          metadata?: Json | null
+          shared_at?: string | null
+          shared_by?: string | null
+          source_trip_id?: string | null
+          target_trip_id?: string | null
+        }
+        Update: {
+          customizations?: Json | null
+          id?: string
+          item_id?: string | null
+          metadata?: Json | null
+          shared_at?: string | null
+          shared_by?: string | null
+          source_trip_id?: string | null
+          target_trip_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_sharing_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_sharing_history_shared_by_fkey"
+            columns: ["shared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_sharing_history_source_trip_id_fkey"
+            columns: ["source_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_sharing_history_target_trip_id_fkey"
+            columns: ["target_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_slugs: {
+        Row: {
+          content_id: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_canonical: boolean | null
+          slug: string
+        }
+        Insert: {
+          content_id: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_canonical?: boolean | null
+          slug: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_canonical?: boolean | null
+          slug?: string
+        }
+        Relationships: []
+      }
+      destination_tags: {
+        Row: {
+          added_by: string | null
+          confidence_score: number | null
+          created_at: string | null
+          destination_id: string | null
+          id: string
+          is_verified: boolean | null
+          tag_id: string | null
+          votes_down: number | null
+          votes_up: number | null
+        }
+        Insert: {
+          added_by?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          destination_id?: string | null
+          id?: string
+          is_verified?: boolean | null
+          tag_id?: string | null
+          votes_down?: number | null
+          votes_up?: number | null
+        }
+        Update: {
+          added_by?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          destination_id?: string | null
+          id?: string
+          is_verified?: boolean | null
+          tag_id?: string | null
+          votes_down?: number | null
+          votes_up?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "destination_tags_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "destination_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      destinations: {
+        Row: {
+          accessibility: number | null
+          address: string | null
+          avg_cost_per_day: number | null
+          avg_days: number | null
+          beach_quality: number | null
+          best_season: string | null
+          byline: string | null
+          city: string | null
+          continent: string | null
+          country: string | null
+          created_at: string
+          cuisine_rating: number | null
+          cultural_attractions: number | null
+          currency: string | null
+          description: string | null
+          digital_nomad_friendly: boolean | null
+          eco_friendly_options: number | null
+          emoji: string | null
+          family_friendly: boolean | null
+          highlights: string | null
+          id: string
+          image_metadata: Json | null
+          image_url: string | null
+          instagram_worthy_spots: number | null
+          latitude: number | null
+          lgbtq_friendliness: number | null
+          likes_count: number | null
+          local_language: string | null
+          longitude: number | null
+          mapbox_id: string | null
+          name: string | null
+          nightlife_rating: number | null
+          off_peak_appeal: number | null
+          outdoor_activities: number | null
+          perfect_for: string | null
+          popularity: number | null
+          public_transportation: number | null
+          safety_rating: number | null
+          shopping_rating: number | null
+          state_province: string | null
+          time_zone: string | null
+          updated_at: string | null
+          visa_required: boolean | null
+          walkability: number | null
+          wifi_connectivity: number | null
+        }
+        Insert: {
+          accessibility?: number | null
+          address?: string | null
+          avg_cost_per_day?: number | null
+          avg_days?: number | null
+          beach_quality?: number | null
+          best_season?: string | null
+          byline?: string | null
+          city?: string | null
+          continent?: string | null
+          country?: string | null
+          created_at?: string
+          cuisine_rating?: number | null
+          cultural_attractions?: number | null
+          currency?: string | null
+          description?: string | null
+          digital_nomad_friendly?: boolean | null
+          eco_friendly_options?: number | null
+          emoji?: string | null
+          family_friendly?: boolean | null
+          highlights?: string | null
+          id?: string
+          image_metadata?: Json | null
+          image_url?: string | null
+          instagram_worthy_spots?: number | null
+          latitude?: number | null
+          lgbtq_friendliness?: number | null
+          likes_count?: number | null
+          local_language?: string | null
+          longitude?: number | null
+          mapbox_id?: string | null
+          name?: string | null
+          nightlife_rating?: number | null
+          off_peak_appeal?: number | null
+          outdoor_activities?: number | null
+          perfect_for?: string | null
+          popularity?: number | null
+          public_transportation?: number | null
+          safety_rating?: number | null
+          shopping_rating?: number | null
+          state_province?: string | null
+          time_zone?: string | null
+          updated_at?: string | null
+          visa_required?: boolean | null
+          walkability?: number | null
+          wifi_connectivity?: number | null
+        }
+        Update: {
+          accessibility?: number | null
+          address?: string | null
+          avg_cost_per_day?: number | null
+          avg_days?: number | null
+          beach_quality?: number | null
+          best_season?: string | null
+          byline?: string | null
+          city?: string | null
+          continent?: string | null
+          country?: string | null
+          created_at?: string
+          cuisine_rating?: number | null
+          cultural_attractions?: number | null
+          currency?: string | null
+          description?: string | null
+          digital_nomad_friendly?: boolean | null
+          eco_friendly_options?: number | null
+          emoji?: string | null
+          family_friendly?: boolean | null
+          highlights?: string | null
+          id?: string
+          image_metadata?: Json | null
+          image_url?: string | null
+          instagram_worthy_spots?: number | null
+          latitude?: number | null
+          lgbtq_friendliness?: number | null
+          likes_count?: number | null
+          local_language?: string | null
+          longitude?: number | null
+          mapbox_id?: string | null
+          name?: string | null
+          nightlife_rating?: number | null
+          off_peak_appeal?: number | null
+          outdoor_activities?: number | null
+          perfect_for?: string | null
+          popularity?: number | null
+          public_transportation?: number | null
+          safety_rating?: number | null
+          shopping_rating?: number | null
+          state_province?: string | null
+          time_zone?: string | null
+          updated_at?: string | null
+          visa_required?: boolean | null
+          walkability?: number | null
+          wifi_connectivity?: number | null
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          currency: string
+          date: string | null
+          id: string
+          paid_by: string | null
+          source: string | null
+          title: string
+          trip_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          currency?: string
+          date?: string | null
+          id?: string
+          paid_by?: string | null
+          source?: string | null
+          title: string
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          currency?: string
+          date?: string | null
+          id?: string
+          paid_by?: string | null
+          source?: string | null
+          title?: string
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      focus_sessions: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          initiated_by: string
+          message: string | null
+          section_id: string
+          section_name: string
+          section_path: string
+          trip_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          initiated_by: string
+          message?: string | null
+          section_id: string
+          section_name: string
+          section_path: string
+          trip_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          initiated_by?: string
+          message?: string | null
+          section_id?: string
+          section_name?: string
+          section_path?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "focus_sessions_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_collaborators: {
+        Row: {
+          accepted: boolean | null
+          accepted_at: string | null
+          created_at: string
+          form_id: string
+          id: string
+          invited_by: string | null
+          last_viewed_at: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted?: boolean | null
+          accepted_at?: string | null
+          created_at?: string
+          form_id: string
+          id?: string
+          invited_by?: string | null
+          last_viewed_at?: string | null
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted?: boolean | null
+          accepted_at?: string | null
+          created_at?: string
+          form_id?: string
+          id?: string
+          invited_by?: string | null
+          last_viewed_at?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_collaborators_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          form_type: string
+          id: string
+          is_published: boolean | null
+          last_modified_by: string | null
+          tags: string[] | null
+          template_data: Json | null
+          title: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          form_type: string
+          id?: string
+          is_published?: boolean | null
+          last_modified_by?: string | null
+          tags?: string[] | null
+          template_data?: Json | null
+          title: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          form_type?: string
+          id?: string
+          is_published?: boolean | null
+          last_modified_by?: string | null
+          tags?: string[] | null
+          template_data?: Json | null
+          title?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
+      forms: {
+        Row: {
+          allow_anonymous: boolean | null
+          created_at: string
+          created_by: string | null
+          custom_theme: Json | null
+          description: string | null
+          expires_at: string | null
+          form_type: string
+          id: string
+          is_template: boolean | null
+          logo_url: string | null
+          metadata: Json | null
+          parent_form_id: string | null
+          progress_save_duration: number | null
+          settings: Json | null
+          status: string
+          template_id: string | null
+          title: string
+          trip_id: string | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          allow_anonymous?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          custom_theme?: Json | null
+          description?: string | null
+          expires_at?: string | null
+          form_type: string
+          id?: string
+          is_template?: boolean | null
+          logo_url?: string | null
+          metadata?: Json | null
+          parent_form_id?: string | null
+          progress_save_duration?: number | null
+          settings?: Json | null
+          status?: string
+          template_id?: string | null
+          title: string
+          trip_id?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          allow_anonymous?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          custom_theme?: Json | null
+          description?: string | null
+          expires_at?: string | null
+          form_type?: string
+          id?: string
+          is_template?: boolean | null
+          logo_url?: string | null
+          metadata?: Json | null
+          parent_form_id?: string | null
+          progress_save_duration?: number | null
+          settings?: Json | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          trip_id?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forms_parent_form_id_fkey"
+            columns: ["parent_form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forms_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forms_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_metadata: {
+        Row: {
+          alt_text: string | null
+          attribution: string | null
+          attribution_html: string | null
+          created_at: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["image_type"]
+          focal_point_x: number | null
+          focal_point_y: number | null
+          height: number | null
+          id: string
+          license: string | null
+          photographer_name: string | null
+          photographer_url: string | null
+          source: string
+          source_id: string | null
+          updated_at: string | null
+          url: string
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          attribution?: string | null
+          attribution_html?: string | null
+          created_at?: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["image_type"]
+          focal_point_x?: number | null
+          focal_point_y?: number | null
+          height?: number | null
+          id?: string
+          license?: string | null
+          photographer_name?: string | null
+          photographer_url?: string | null
+          source: string
+          source_id?: string | null
+          updated_at?: string | null
+          url: string
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          attribution?: string | null
+          attribution_html?: string | null
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["image_type"]
+          focal_point_x?: number | null
+          focal_point_y?: number | null
+          height?: number | null
+          id?: string
+          license?: string | null
+          photographer_name?: string | null
+          photographer_url?: string | null
+          source?: string
+          source_id?: string | null
+          updated_at?: string | null
+          url?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
+      invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: number
+          invitation_status: Database["public"]["Enums"]["invitation_status"]
+          invited_by: string | null
+          token: string
+          trip_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: number
+          invitation_status?: Database["public"]["Enums"]["invitation_status"]
+          invited_by?: string | null
+          token: string
+          trip_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: number
+          invitation_status?: Database["public"]["Enums"]["invitation_status"]
+          invited_by?: string | null
+          token?: string
+          trip_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_popularity_metrics: {
+        Row: {
+          id: string
+          item_id: string | null
+          last_updated: string | null
+          likes_last_24h: number | null
+          likes_last_30d: number | null
+          likes_last_7d: number | null
+          shares_last_24h: number | null
+          shares_last_30d: number | null
+          shares_last_7d: number | null
+          trending_score: number | null
+          views_last_24h: number | null
+          views_last_30d: number | null
+          views_last_7d: number | null
+        }
+        Insert: {
+          id?: string
+          item_id?: string | null
+          last_updated?: string | null
+          likes_last_24h?: number | null
+          likes_last_30d?: number | null
+          likes_last_7d?: number | null
+          shares_last_24h?: number | null
+          shares_last_30d?: number | null
+          shares_last_7d?: number | null
+          trending_score?: number | null
+          views_last_24h?: number | null
+          views_last_30d?: number | null
+          views_last_7d?: number | null
+        }
+        Update: {
+          id?: string
+          item_id?: string | null
+          last_updated?: string | null
+          likes_last_24h?: number | null
+          likes_last_30d?: number | null
+          likes_last_7d?: number | null
+          shares_last_24h?: number | null
+          shares_last_30d?: number | null
+          shares_last_7d?: number | null
+          trending_score?: number | null
+          views_last_24h?: number | null
+          views_last_30d?: number | null
+          views_last_7d?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_popularity_metrics_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itinerary_item_votes: {
+        Row: {
+          created_at: string
+          id: string
+          itinerary_item_id: string
+          updated_at: string
+          user_id: string
+          vote: Database["public"]["Enums"]["vote_type"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          itinerary_item_id: string
+          updated_at?: string
+          user_id: string
+          vote: Database["public"]["Enums"]["vote_type"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          itinerary_item_id?: string
+          updated_at?: string
+          user_id?: string
+          vote?: Database["public"]["Enums"]["vote_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_item_votes_itinerary_item_id_fkey"
+            columns: ["itinerary_item_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itinerary_item_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itinerary_items: {
+        Row: {
+          address: string | null
+          attribution_metadata: Json | null
+          attribution_type: string | null
+          canonical_url: string | null
+          category: Database["public"]["Enums"]["itinerary_category"] | null
+          content_layer: string | null
+          cost: number | null
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          date: string | null
+          day: number | null
+          day_number: number | null
+          description: string | null
+          duration_minutes: number | null
+          end_time: string | null
+          estimated_cost: number | null
+          id: string
+          is_custom: boolean | null
+          is_favorite: boolean
+          item_type: string | null
+          last_modified_by: string | null
+          latitude: number | null
+          like_count: number | null
+          location: string | null
+          longitude: number | null
+          meta_keywords: string[] | null
+          notes: string | null
+          original_id: string | null
+          place_id: string | null
+          position: number | null
+          section_id: string | null
+          seo_description: string | null
+          seo_title: string | null
+          share_count: number | null
+          share_status: string | null
+          slug: string | null
+          source_trip_id: string | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["item_status"] | null
+          structured_data: Json | null
+          title: string
+          trip_id: string | null
+          type: string | null
+          updated_at: string | null
+          view_count: number | null
+          votes: Json | null
+        }
+        Insert: {
+          address?: string | null
+          attribution_metadata?: Json | null
+          attribution_type?: string | null
+          canonical_url?: string | null
+          category?: Database["public"]["Enums"]["itinerary_category"] | null
+          content_layer?: string | null
+          cost?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          date?: string | null
+          day?: number | null
+          day_number?: number | null
+          description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          estimated_cost?: number | null
+          id?: string
+          is_custom?: boolean | null
+          is_favorite?: boolean
+          item_type?: string | null
+          last_modified_by?: string | null
+          latitude?: number | null
+          like_count?: number | null
+          location?: string | null
+          longitude?: number | null
+          meta_keywords?: string[] | null
+          notes?: string | null
+          original_id?: string | null
+          place_id?: string | null
+          position?: number | null
+          section_id?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          share_count?: number | null
+          share_status?: string | null
+          slug?: string | null
+          source_trip_id?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["item_status"] | null
+          structured_data?: Json | null
+          title: string
+          trip_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+          votes?: Json | null
+        }
+        Update: {
+          address?: string | null
+          attribution_metadata?: Json | null
+          attribution_type?: string | null
+          canonical_url?: string | null
+          category?: Database["public"]["Enums"]["itinerary_category"] | null
+          content_layer?: string | null
+          cost?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          date?: string | null
+          day?: number | null
+          day_number?: number | null
+          description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          estimated_cost?: number | null
+          id?: string
+          is_custom?: boolean | null
+          is_favorite?: boolean
+          item_type?: string | null
+          last_modified_by?: string | null
+          latitude?: number | null
+          like_count?: number | null
+          location?: string | null
+          longitude?: number | null
+          meta_keywords?: string[] | null
+          notes?: string | null
+          original_id?: string | null
+          place_id?: string | null
+          position?: number | null
+          section_id?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          share_count?: number | null
+          share_status?: string | null
+          slug?: string | null
+          source_trip_id?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["item_status"] | null
+          structured_data?: Json | null
+          title?: string
+          trip_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+          votes?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_itinerary_items_creator"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_itinerary_items_place"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_itinerary_items_trip"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itinerary_items_original_id_fkey"
+            columns: ["original_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itinerary_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itinerary_items_source_trip_id_fkey"
+            columns: ["source_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itinerary_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itinerary_sections: {
+        Row: {
+          created_at: string
+          date: string | null
+          day_number: number
+          id: string
+          position: number
+          title: string | null
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          day_number: number
+          id?: string
+          position?: number
+          title?: string | null
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          day_number?: number
+          id?: string
+          position?: number
+          title?: string | null
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_sections_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itinerary_template_items: {
+        Row: {
+          address: string | null
+          attribution_metadata: Json | null
+          attribution_type: string | null
+          canonical_url: string | null
+          category: Database["public"]["Enums"]["itinerary_category"] | null
+          content_layer: string | null
+          cost: number | null
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          date: string | null
+          day: number
+          day_number: number | null
+          description: string | null
+          duration_minutes: number | null
+          end_time: string | null
+          estimated_cost: number | null
+          id: string
+          is_custom: boolean | null
+          is_favorite: boolean | null
+          item_order: number
+          item_type: string | null
+          last_modified_by: string | null
+          latitude: number | null
+          like_count: number | null
+          location: string | null
+          longitude: number | null
+          meta_keywords: string[] | null
+          notes: string | null
+          original_id: string | null
+          place_id: string | null
+          position: number | null
+          section_id: number | null
+          seo_description: string | null
+          seo_title: string | null
+          share_count: number | null
+          share_status: string | null
+          slug: string | null
+          source_trip_id: string | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["item_status"] | null
+          structured_data: Json | null
+          template_id: string
+          title: string | null
+          trip_id: string | null
+          type: string | null
+          updated_at: string | null
+          view_count: number | null
+          votes: Json | null
+        }
+        Insert: {
+          address?: string | null
+          attribution_metadata?: Json | null
+          attribution_type?: string | null
+          canonical_url?: string | null
+          category?: Database["public"]["Enums"]["itinerary_category"] | null
+          content_layer?: string | null
+          cost?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          date?: string | null
+          day: number
+          day_number?: number | null
+          description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          estimated_cost?: number | null
+          id?: string
+          is_custom?: boolean | null
+          is_favorite?: boolean | null
+          item_order?: number
+          item_type?: string | null
+          last_modified_by?: string | null
+          latitude?: number | null
+          like_count?: number | null
+          location?: string | null
+          longitude?: number | null
+          meta_keywords?: string[] | null
+          notes?: string | null
+          original_id?: string | null
+          place_id?: string | null
+          position?: number | null
+          section_id?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
+          share_count?: number | null
+          share_status?: string | null
+          slug?: string | null
+          source_trip_id?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["item_status"] | null
+          structured_data?: Json | null
+          template_id: string
+          title?: string | null
+          trip_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+          votes?: Json | null
+        }
+        Update: {
+          address?: string | null
+          attribution_metadata?: Json | null
+          attribution_type?: string | null
+          canonical_url?: string | null
+          category?: Database["public"]["Enums"]["itinerary_category"] | null
+          content_layer?: string | null
+          cost?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          date?: string | null
+          day?: number
+          day_number?: number | null
+          description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          estimated_cost?: number | null
+          id?: string
+          is_custom?: boolean | null
+          is_favorite?: boolean | null
+          item_order?: number
+          item_type?: string | null
+          last_modified_by?: string | null
+          latitude?: number | null
+          like_count?: number | null
+          location?: string | null
+          longitude?: number | null
+          meta_keywords?: string[] | null
+          notes?: string | null
+          original_id?: string | null
+          place_id?: string | null
+          position?: number | null
+          section_id?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
+          share_count?: number | null
+          share_status?: string | null
+          slug?: string | null
+          source_trip_id?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["item_status"] | null
+          structured_data?: Json | null
+          template_id?: string
+          title?: string | null
+          trip_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+          votes?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_itinerary_template_items_place_id"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_itinerary_template_items_section_id"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_template_sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_itinerary_template_items_template_id"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itinerary_template_sections: {
+        Row: {
+          created_at: string
+          date: string | null
+          day_number: number
+          id: number
+          position: number
+          template_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          day_number: number
+          id?: number
+          position?: number
+          template_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          day_number?: number
+          id?: number
+          position?: number
+          template_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_template_sections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itinerary_templates: {
+        Row: {
+          category: string
+          copied_count: number | null
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          destination_id: string
+          duration_days: number
+          featured: boolean | null
+          groupsize: string | null
+          id: string
+          is_published: boolean | null
+          last_copied_at: string | null
+          like_count: number | null
+          metadata: Json | null
+          slug: string
+          source_trip_id: string | null
+          tags: string[] | null
+          template_type: string | null
+          title: string
+          updated_at: string | null
+          use_count: number | null
+          version: number | null
+          view_count: number | null
+        }
+        Insert: {
+          category: string
+          copied_count?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          destination_id: string
+          duration_days: number
+          featured?: boolean | null
+          groupsize?: string | null
+          id?: string
+          is_published?: boolean | null
+          last_copied_at?: string | null
+          like_count?: number | null
+          metadata?: Json | null
+          slug: string
+          source_trip_id?: string | null
+          tags?: string[] | null
+          template_type?: string | null
+          title: string
+          updated_at?: string | null
+          use_count?: number | null
+          version?: number | null
+          view_count?: number | null
+        }
+        Update: {
+          category?: string
+          copied_count?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          destination_id?: string
+          duration_days?: number
+          featured?: boolean | null
+          groupsize?: string | null
+          id?: string
+          is_published?: boolean | null
+          last_copied_at?: string | null
+          like_count?: number | null
+          metadata?: Json | null
+          slug?: string
+          source_trip_id?: string | null
+          tags?: string[] | null
+          template_type?: string | null
+          title?: string
+          updated_at?: string | null
+          use_count?: number | null
+          version?: number | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_templates_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itinerary_templates_source_trip_id_fkey"
+            columns: ["source_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      likes: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_tags: {
+        Row: {
+          assigned_at: string
+          note_id: string
+          tag_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          note_id: string
+          tag_id: string
+        }
+        Update: {
+          assigned_at?: string
+          note_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_tags_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "trip_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          comments: boolean | null
+          created_at: string | null
+          email_enabled: boolean | null
+          focus_events: boolean | null
+          id: string
+          in_app_enabled: boolean | null
+          itinerary_changes: boolean | null
+          member_activity: boolean | null
+          push_enabled: boolean | null
+          trip_updates: boolean | null
+          updated_at: string | null
+          user_id: string
+          votes: boolean | null
+        }
+        Insert: {
+          comments?: boolean | null
+          created_at?: string | null
+          email_enabled?: boolean | null
+          focus_events?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          itinerary_changes?: boolean | null
+          member_activity?: boolean | null
+          push_enabled?: boolean | null
+          trip_updates?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          votes?: boolean | null
+        }
+        Update: {
+          comments?: boolean | null
+          created_at?: string | null
+          email_enabled?: boolean | null
+          focus_events?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          itinerary_changes?: boolean | null
+          member_activity?: boolean | null
+          push_enabled?: boolean | null
+          trip_updates?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          votes?: boolean | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          content: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          notification_type: string
+          priority: string | null
+          read: boolean | null
+          reference_id: string | null
+          reference_type: string | null
+          sender_id: string | null
+          title: string
+          trip_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          content: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          notification_type: string
+          priority?: string | null
+          read?: boolean | null
+          reference_id?: string | null
+          reference_type?: string | null
+          sender_id?: string | null
+          title: string
+          trip_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          content?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          notification_type?: string
+          priority?: string | null
+          read?: boolean | null
+          reference_id?: string | null
+          reference_type?: string | null
+          sender_id?: string | null
+          title?: string
+          trip_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permission_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          status: string
+          trip_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          status?: string
+          trip_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          status?: string
+          trip_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      places: {
+        Row: {
+          address: string | null
+          category: Database["public"]["Enums"]["place_category"] | null
+          created_at: string
+          description: string | null
+          destination_id: string | null
+          id: string
+          images: string[] | null
+          is_verified: boolean | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          opening_hours: Json | null
+          price_level: number | null
+          rating: number | null
+          rating_count: number | null
+          source: string | null
+          source_id: string | null
+          suggested_by: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          category?: Database["public"]["Enums"]["place_category"] | null
+          created_at?: string
+          description?: string | null
+          destination_id?: string | null
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          opening_hours?: Json | null
+          price_level?: number | null
+          rating?: number | null
+          rating_count?: number | null
+          source?: string | null
+          source_id?: string | null
+          suggested_by?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          category?: Database["public"]["Enums"]["place_category"] | null
+          created_at?: string
+          description?: string | null
+          destination_id?: string | null
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          opening_hours?: Json | null
+          price_level?: number | null
+          rating?: number | null
+          rating_count?: number | null
+          source?: string | null
+          source_id?: string | null
+          suggested_by?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "places_suggested_by_fkey"
+            columns: ["suggested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preference_weights: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          subcategory: string | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          subcategory?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          subcategory?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          cover_image_url: string | null
+          email: string | null
+          first_name: string | null
+          home_location_id: string | null
+          id: string
+          is_admin: boolean | null
+          is_verified: boolean | null
+          location: string | null
+          name: string | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarding_step: number | null
+          travel_personality:
+            | Database["public"]["Enums"]["travel_personality_type"]
+            | null
+          travel_squad: Database["public"]["Enums"]["travel_squad_type"] | null
+          updated_at: string | null
+          username: string | null
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          cover_image_url?: string | null
+          email?: string | null
+          first_name?: string | null
+          home_location_id?: string | null
+          id: string
+          is_admin?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_step?: number | null
+          travel_personality?:
+            | Database["public"]["Enums"]["travel_personality_type"]
+            | null
+          travel_squad?: Database["public"]["Enums"]["travel_squad_type"] | null
+          updated_at?: string | null
+          username?: string | null
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          cover_image_url?: string | null
+          email?: string | null
+          first_name?: string | null
+          home_location_id?: string | null
+          id?: string
+          is_admin?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_step?: number | null
+          travel_personality?:
+            | Database["public"]["Enums"]["travel_personality_type"]
+            | null
+          travel_squad?: Database["public"]["Enums"]["travel_squad_type"] | null
+          updated_at?: string | null
+          username?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_home_location_id_fkey"
+            columns: ["home_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_branching: {
+        Row: {
+          condition_type: string
+          condition_value: Json
+          created_at: string
+          form_id: string
+          id: string
+          source_question_id: string
+          target_question_id: string
+          updated_at: string
+        }
+        Insert: {
+          condition_type: string
+          condition_value: Json
+          created_at?: string
+          form_id: string
+          id?: string
+          source_question_id: string
+          target_question_id: string
+          updated_at?: string
+        }
+        Update: {
+          condition_type?: string
+          condition_value?: Json
+          created_at?: string
+          form_id?: string
+          id?: string
+          source_question_id?: string
+          target_question_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_branching_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_branching_source_question_id_fkey"
+            columns: ["source_question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_branching_target_question_id_fkey"
+            columns: ["target_question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          allowed_file_types: string[] | null
+          conditional_logic: Json | null
+          created_at: string
+          default_value: string | null
+          description: string | null
+          form_id: string
+          id: string
+          is_required: boolean | null
+          max_character_count: number | null
+          max_file_size: number | null
+          max_files: number | null
+          options: Json | null
+          placeholder: string | null
+          position: number | null
+          question_type: string
+          rating_scale: number | null
+          rating_type: string | null
+          show_character_count: boolean | null
+          title: string
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          allowed_file_types?: string[] | null
+          conditional_logic?: Json | null
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          form_id: string
+          id?: string
+          is_required?: boolean | null
+          max_character_count?: number | null
+          max_file_size?: number | null
+          max_files?: number | null
+          options?: Json | null
+          placeholder?: string | null
+          position?: number | null
+          question_type: string
+          rating_scale?: number | null
+          rating_type?: string | null
+          show_character_count?: boolean | null
+          title: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          allowed_file_types?: string[] | null
+          conditional_logic?: Json | null
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          form_id?: string
+          id?: string
+          is_required?: boolean | null
+          max_character_count?: number | null
+          max_file_size?: number | null
+          max_files?: number | null
+          options?: Json | null
+          placeholder?: string | null
+          position?: number | null
+          question_type?: string
+          rating_scale?: number | null
+          rating_type?: string | null
+          show_character_count?: boolean | null
+          title?: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          converted: boolean | null
+          converted_at: string | null
+          created_at: string | null
+          id: string
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          trip_id: string | null
+        }
+        Insert: {
+          converted?: boolean | null
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          trip_id?: string | null
+        }
+        Update: {
+          converted?: boolean | null
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          referral_code?: string
+          referred_id?: string
+          referrer_id?: string
+          trip_id?: string | null
+        }
+        Relationships: []
+      }
+      response_sessions: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string
+          expires_at: string | null
+          form_id: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          progress: Json | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          form_id: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          progress?: Json | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          form_id?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          progress?: Json | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "response_sessions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responses: {
+        Row: {
+          created_at: string
+          files: string[] | null
+          id: string
+          metadata: Json | null
+          question_id: string
+          session_id: string
+          updated_at: string
+          value: string | null
+          value_json: Json | null
+        }
+        Insert: {
+          created_at?: string
+          files?: string[] | null
+          id?: string
+          metadata?: Json | null
+          question_id: string
+          session_id: string
+          updated_at?: string
+          value?: string | null
+          value_json?: Json | null
+        }
+        Update: {
+          created_at?: string
+          files?: string[] | null
+          id?: string
+          metadata?: Json | null
+          question_id?: string
+          session_id?: string
+          updated_at?: string
+          value?: string | null
+          value_json?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "response_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          emoji: string | null
+          id: string
+          is_verified: boolean | null
+          metadata: Json | null
+          name: string
+          slug: string
+          updated_at: string | null
+          use_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          is_verified?: boolean | null
+          metadata?: Json | null
+          name: string
+          slug: string
+          updated_at?: string | null
+          use_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          is_verified?: boolean | null
+          metadata?: Json | null
+          name?: string
+          slug?: string
+          updated_at?: string | null
+          use_count?: number | null
+        }
+        Relationships: []
+      }
+      template_applications: {
+        Row: {
+          application_metadata: Json | null
+          applied_at: string | null
+          applied_by: string | null
+          fallbacks_used: number | null
+          id: string
+          optimization_level: string | null
+          success_rate: number | null
+          template_id: string | null
+          trip_id: string | null
+          version_used: number | null
+        }
+        Insert: {
+          application_metadata?: Json | null
+          applied_at?: string | null
+          applied_by?: string | null
+          fallbacks_used?: number | null
+          id?: string
+          optimization_level?: string | null
+          success_rate?: number | null
+          template_id?: string | null
+          trip_id?: string | null
+          version_used?: number | null
+        }
+        Update: {
+          application_metadata?: Json | null
+          applied_at?: string | null
+          applied_by?: string | null
+          fallbacks_used?: number | null
+          id?: string
+          optimization_level?: string | null
+          success_rate?: number | null
+          template_id?: string | null
+          trip_id?: string | null
+          version_used?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_applications_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_applications_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "trip_item_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_comment_likes_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_comment_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_history: {
+        Row: {
+          action_type: Database["public"]["Enums"]["trip_action_type"]
+          created_at: string
+          details: Json | null
+          id: number
+          trip_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["trip_action_type"]
+          created_at?: string
+          details?: Json | null
+          id?: number
+          trip_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["trip_action_type"]
+          created_at?: string
+          details?: Json | null
+          id?: number
+          trip_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_history_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_images: {
+        Row: {
+          album_id: number | null
+          content_type: string
+          created_at: string | null
+          created_by: string
+          description: string | null
+          file_name: string
+          file_path: string
+          height: number | null
+          id: string
+          size_bytes: number
+          trip_id: string
+          width: number | null
+        }
+        Insert: {
+          album_id?: number | null
+          content_type: string
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          height?: number | null
+          id?: string
+          size_bytes: number
+          trip_id: string
+          width?: number | null
+        }
+        Update: {
+          album_id?: number | null
+          content_type?: string
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          height?: number | null
+          id?: string
+          size_bytes?: number
+          trip_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_images_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_images_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_item_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          item_id: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          item_id: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_item_comments_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_members: {
+        Row: {
+          created_at: string | null
+          external_email: string | null
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          last_viewed_at: string | null
+          notification_preferences: Json | null
+          role: Database["public"]["Enums"]["trip_role"]
+          trip_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          external_email?: string | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          last_viewed_at?: string | null
+          notification_preferences?: Json | null
+          role?: Database["public"]["Enums"]["trip_role"]
+          trip_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          external_email?: string | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          last_viewed_at?: string | null
+          notification_preferences?: Json | null
+          role?: Database["public"]["Enums"]["trip_role"]
+          trip_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_members_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_members_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_notes: {
+        Row: {
+          album_id: number | null
+          content: string | null
+          id: string
+          title: string
+          trip_id: string
+          updated_at: string | null
+          updated_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          album_id?: number | null
+          content?: string | null
+          id?: string
+          title: string
+          trip_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          album_id?: number | null
+          content?: string | null
+          id?: string
+          title?: string
+          trip_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_notes_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_notes_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_notes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_notes_updated_by_fkey1"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_tags: {
+        Row: {
+          assigned_at: string | null
+          tag_id: string
+          trip_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          tag_id: string
+          trip_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          tag_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_tags_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_template_uses: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          id: string
+          modifications: Json | null
+          template_id: string | null
+          trip_id: string | null
+          version_used: number | null
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          id?: string
+          modifications?: Json | null
+          template_id?: string | null
+          trip_id?: string | null
+          version_used?: number | null
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          id?: string
+          modifications?: Json | null
+          template_id?: string | null
+          trip_id?: string | null
+          version_used?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_template_uses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_template_uses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_vote_options: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          poll_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          poll_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          poll_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_vote_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "trip_vote_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_vote_polls: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          title: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_vote_polls_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_id: string
+          poll_id: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_id: string
+          poll_id: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_id?: string
+          poll_id?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "trip_vote_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "trip_vote_polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_votes_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          budget: string | null
+          color_scheme: string | null
+          comments_count: number | null
+          cover_image_position_y: number | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          date_flexibility: string | null
+          description: string | null
+          destination_id: string | null
+          destination_name: string | null
+          duration_days: number | null
+          end_date: string | null
+          id: string
+          is_archived: boolean
+          is_public: boolean
+          last_accessed_at: string | null
+          likes_count: number | null
+          member_count: number | null
+          name: string
+          playlist_url: string | null
+          privacy_setting: Database["public"]["Enums"]["trip_privacy_setting"]
+          public_slug: string | null
+          shared_url: string | null
+          slug: string | null
+          splitwise_group_id: number | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["trip_status"] | null
+          travelers_count: number | null
+          trip_emoji: string | null
+          trip_type: string | null
+          updated_at: string
+          use_count: number | null
+          vibe: string | null
+          view_count: number | null
+        }
+        Insert: {
+          budget?: string | null
+          color_scheme?: string | null
+          comments_count?: number | null
+          cover_image_position_y?: number | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          date_flexibility?: string | null
+          description?: string | null
+          destination_id?: string | null
+          destination_name?: string | null
+          duration_days?: number | null
+          end_date?: string | null
+          id?: string
+          is_archived?: boolean
+          is_public?: boolean
+          last_accessed_at?: string | null
+          likes_count?: number | null
+          member_count?: number | null
+          name: string
+          playlist_url?: string | null
+          privacy_setting?: Database["public"]["Enums"]["trip_privacy_setting"]
+          public_slug?: string | null
+          shared_url?: string | null
+          slug?: string | null
+          splitwise_group_id?: number | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["trip_status"] | null
+          travelers_count?: number | null
+          trip_emoji?: string | null
+          trip_type?: string | null
+          updated_at?: string
+          use_count?: number | null
+          vibe?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          budget?: string | null
+          color_scheme?: string | null
+          comments_count?: number | null
+          cover_image_position_y?: number | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          date_flexibility?: string | null
+          description?: string | null
+          destination_id?: string | null
+          destination_name?: string | null
+          duration_days?: number | null
+          end_date?: string | null
+          id?: string
+          is_archived?: boolean
+          is_public?: boolean
+          last_accessed_at?: string | null
+          likes_count?: number | null
+          member_count?: number | null
+          name?: string
+          playlist_url?: string | null
+          privacy_setting?: Database["public"]["Enums"]["trip_privacy_setting"]
+          public_slug?: string | null
+          shared_url?: string | null
+          slug?: string | null
+          splitwise_group_id?: number | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["trip_status"] | null
+          travelers_count?: number | null
+          trip_emoji?: string | null
+          trip_type?: string | null
+          updated_at?: string
+          use_count?: number | null
+          vibe?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_activity_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          interaction_data: Json | null
+          interaction_type: string
+          item_id: string | null
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interaction_data?: Json | null
+          interaction_type: string
+          item_id?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interaction_data?: Json | null
+          interaction_type?: string
+          item_id?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_activity_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_interactions: {
+        Row: {
+          created_at: string | null
+          destination_id: string | null
+          id: string
+          interaction_type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          destination_id?: string | null
+          id?: string
+          interaction_type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          destination_id?: string | null
+          id?: string
+          interaction_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interactions_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_interests: {
+        Row: {
+          created_at: string | null
+          id: string
+          strength: number | null
+          tag_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          strength?: number | null
+          tag_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          strength?: number | null
+          tag_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interests_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_interests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_login_history: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          login_at: string
+          method: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          login_at?: string
+          method?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          login_at?: string
+          method?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_login_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          accessibility_needs: string[] | null
+          budget_range: unknown | null
+          created_at: string | null
+          dietary_restrictions: string[] | null
+          id: string
+          metadata: Json | null
+          preferred_activity_types: string[] | null
+          preferred_pace: Database["public"]["Enums"]["travel_pace"] | null
+          preferred_times_of_day: string[] | null
+          travel_styles: Database["public"]["Enums"]["travel_style"][] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accessibility_needs?: string[] | null
+          budget_range?: unknown | null
+          created_at?: string | null
+          dietary_restrictions?: string[] | null
+          id?: string
+          metadata?: Json | null
+          preferred_activity_types?: string[] | null
+          preferred_pace?: Database["public"]["Enums"]["travel_pace"] | null
+          preferred_times_of_day?: string[] | null
+          travel_styles?: Database["public"]["Enums"]["travel_style"][] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accessibility_needs?: string[] | null
+          budget_range?: unknown | null
+          created_at?: string | null
+          dietary_restrictions?: string[] | null
+          id?: string
+          metadata?: Json | null
+          preferred_activity_types?: string[] | null
+          preferred_pace?: Database["public"]["Enums"]["travel_pace"] | null
+          preferred_times_of_day?: string[] | null
+          travel_styles?: Database["public"]["Enums"]["travel_style"][] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_presence: {
+        Row: {
+          document_id: string | null
+          id: string
+          last_active: string | null
+          status: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          document_id?: string | null
+          id?: string
+          last_active?: string | null
+          status?: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          document_id?: string | null
+          id?: string
+          last_active?: string | null
+          status?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_presence_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_suggested_tags: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string | null
+          destination_id: string | null
+          id: string
+          name: string
+          slug: string
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          created_at?: string | null
+          destination_id?: string | null
+          id?: string
+          name: string
+          slug: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string | null
+          destination_id?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_suggested_tags_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_suggested_tags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_travel: {
+        Row: {
+          destination_id: string
+          user_id: string
+          visited_at: string
+        }
+        Insert: {
+          destination_id: string
+          user_id: string
+          visited_at?: string
+        }
+        Update: {
+          destination_id?: string
+          user_id?: string
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_travel_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_travel_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_logs: {
+        Row: {
+          id: string
+          is_valid: boolean
+          template_id: string | null
+          trip_id: string | null
+          validated_at: string | null
+          validated_by: string | null
+          validation_errors: string[] | null
+        }
+        Insert: {
+          id?: string
+          is_valid: boolean
+          template_id?: string | null
+          trip_id?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_errors?: string[] | null
+        }
+        Update: {
+          id?: string
+          is_valid?: boolean
+          template_id?: string | null
+          trip_id?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_errors?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_logs_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          itinerary_item_id: string | null
+          user_id: string | null
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          itinerary_item_id?: string | null
+          user_id?: string | null
+          vote_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          itinerary_item_id?: string | null
+          user_id?: string | null
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_itinerary_item_id_fkey"
+            columns: ["itinerary_item_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      apply_template_to_trip: {
+        Args: {
+          p_template_id: string
+          p_trip_id: string
+          p_user_id: string
+          p_options?: Json
+        }
+        Returns: Json
+      }
+      approve_user_suggested_tag: {
+        Args: {
+          p_suggestion_id: string
+          p_admin_id: string
+          p_admin_notes?: string
+        }
+        Returns: string
+      }
+      approve_user_tag: {
+        Args: { tag_id: string; admin_id: string; notes?: string }
+        Returns: undefined
+      }
+      calculate_preference_match: {
+        Args: { p_item_id: string; p_user_id: string }
+        Returns: number
+      }
+      can_edit_trip: {
+        Args: { p_trip_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      can_manage_trip_members: {
+        Args: { p_trip_id: string }
+        Returns: boolean
+      }
+      check_if_user_is_trip_member_with_role: {
+        Args: {
+          user_id_to_check: string
+          trip_id_to_check: string
+          allowed_roles: Database["public"]["Enums"]["trip_role"][]
+        }
+        Returns: boolean
+      }
+      cleanup_old_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      copy_and_customize_item: {
+        Args: {
+          p_source_item_id: string
+          p_target_trip_id: string
+          p_user_id: string
+          p_customizations?: Json
+        }
+        Returns: string
+      }
+      copy_template_to_trip: {
+        Args: { p_template_id: string; p_trip_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      count_item_comments: {
+        Args: { p_item_id: string }
+        Returns: number
+      }
+      create_template_sections_from_items: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_trip_with_owner: {
+        Args:
+          | {
+              p_name: string
+              p_description: string
+              p_user_id: string
+              p_start_date?: string
+              p_end_date?: string
+              p_destination_id?: string
+              p_destination_name?: string
+              p_cover_image_url?: string
+              p_trip_type?: Database["public"]["Enums"]["trip_type"]
+              p_privacy_setting?: Database["public"]["Enums"]["privacy_setting"]
+            }
+          | { trip_data: Json; p_owner_id: string }
+          | {
+              trip_name: string
+              user_id: string
+              description_param?: string
+              tags_param?: string[]
+              destination_id?: string
+              destination_name_param?: string
+              start_date?: string
+              end_date?: string
+              is_public?: boolean
+              cover_image_url?: string
+              latitude?: number
+              longitude?: number
+            }
+        Returns: Json
+      }
+      execute_sql: {
+        Args: { query: string }
+        Returns: Json[]
+      }
+      generate_random_itinerary: {
+        Args: { p_trip_id: string; p_user_id: string; p_options?: Json }
+        Returns: Json
+      }
+      generate_random_slug: {
+        Args: { length: number }
+        Returns: string
+      }
+      generate_slug: {
+        Args: { input_text: string }
+        Returns: string
+      }
+      generate_unique_slug: {
+        Args: {
+          input_text: string
+          content_type_val: Database["public"]["Enums"]["content_type"]
+          content_id_val: string
+        }
+        Returns: string
+      }
+      get_destination_recommendations: {
+        Args: { p_user_id: string; p_limit?: number }
+        Returns: {
+          destination_id: string
+          match_score: number
+          matching_tags: Json
+        }[]
+      }
+      get_poll_results: {
+        Args: { poll_id_param: string }
+        Returns: Json
+      }
+      get_poll_with_options: {
+        Args: { poll_id: string }
+        Returns: Json
+      }
+      get_sections_for_template: {
+        Args: { p_template_id: string }
+        Returns: {
+          created_at: string
+          date: string | null
+          day_number: number
+          id: number
+          position: number
+          template_id: string
+          title: string | null
+          updated_at: string
+        }[]
+      }
+      get_trip_activity_timeline: {
+        Args: {
+          trip_id_param: string
+          limit_param?: number
+          offset_param?: number
+        }
+        Returns: {
+          id: number
+          trip_id: string
+          created_at: string
+          user_id: string
+          action_type: Database["public"]["Enums"]["trip_action_type"]
+          details: Json
+          actor_name: string
+          actor_avatar: string
+        }[]
+      }
+      get_trip_role: {
+        Args: { p_trip_id: string; p_user_id?: string }
+        Returns: string
+      }
+      get_unread_notification_count: {
+        Args: { user_id_param: string }
+        Returns: number
+      }
+      get_user_poll_vote: {
+        Args: { p_poll_id: string; p_user_id?: string }
+        Returns: Json
+      }
+      get_user_votes: {
+        Args: { trip_id_param: string; user_id_param?: string }
+        Returns: {
+          poll_id: string
+          option_id: string
+          voted_at: string
+          poll_title: string
+          option_title: string
+        }[]
+      }
+      has_trip_role: {
+        Args: {
+          p_trip_id: string
+          p_user_id: string
+          p_role: Database["public"]["Enums"]["trip_role"]
+        }
+        Returns: boolean
+      }
+      has_user_liked_comment: {
+        Args: { p_comment_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      has_user_voted: {
+        Args: { p_poll_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      increment_counter: {
+        Args: { row_id: string }
+        Returns: number
+      }
+      insert_tag_if_not_exists: {
+        Args: {
+          p_name: string
+          p_slug: string
+          p_category: string
+          p_emoji?: string
+          p_description?: string
+        }
+        Returns: string
+      }
+      is_poll_expired: {
+        Args: { poll_id_param: string }
+        Returns: boolean
+      }
+      is_trip_member: {
+        Args: { p_trip_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      is_trip_member_simple: {
+        Args: { p_trip_id: string }
+        Returns: boolean
+      }
+      is_trip_member_with_role: {
+        Args: { _trip_id: string; _user_id: string; _roles: string[] }
+        Returns: boolean
+      }
+      pg_execute: {
+        Args: { query: string }
+        Returns: undefined
+      }
+      recommend_by_geography: {
+        Args: { location_id: string; limit_count?: number }
+        Returns: {
+          destination_id: string
+          destination_name: string
+          local_popularity: number
+        }[]
+      }
+      recommend_popular_destinations: {
+        Args: { limit_count?: number }
+        Returns: {
+          destination_id: string
+          destination_name: string
+          popularity_score: number
+        }[]
+      }
+      update_itinerary_item_position: {
+        Args: {
+          p_item_id: string
+          p_trip_id: string
+          p_day_number: number
+          p_position: number
+        }
+        Returns: undefined
+      }
+      update_popularity_metrics: {
+        Args: { p_item_id: string; p_action: string }
+        Returns: undefined
+      }
+      update_profile_onboarding: {
+        Args: {
+          p_user_id: string
+          p_first_name?: string
+          p_travel_personality?: Database["public"]["Enums"]["travel_personality_type"]
+          p_travel_squad?: Database["public"]["Enums"]["travel_squad_type"]
+          p_onboarding_step?: number
+          p_complete_onboarding?: boolean
+        }
+        Returns: Json
+      }
+      validate_itinerary: {
+        Args: { p_trip_id: string; p_template_id: string }
+        Returns: {
+          is_valid: boolean
+          validation_errors: string[]
+        }[]
+      }
+    }
+    Enums: {
+      budget_category:
+        | "accommodation"
+        | "transportation"
+        | "food"
+        | "activities"
+        | "shopping"
+        | "other"
+      content_type:
+        | "trip"
+        | "itinerary_item"
+        | "destination"
+        | "collection"
+        | "template"
+      image_type:
+        | "destination"
+        | "trip_cover"
+        | "user_avatar"
+        | "template_cover"
+      interaction_type: "like" | "visit" | "bookmark" | "tag"
+      invitation_status: "pending" | "accepted" | "declined" | "expired"
+      item_status: "suggested" | "confirmed" | "rejected"
+      itinerary_category:
+        | "Iconic Landmarks"
+        | "Local Secrets"
+        | "Cultural Experiences"
+        | "Outdoor Adventures"
+        | "Food & Drink"
+        | "Nightlife"
+        | "Relaxation"
+        | "Shopping"
+        | "Group Activities"
+        | "Day Excursions"
+        | "Accommodations"
+        | "Transportation"
+        | "Flexible Options"
+        | "Special Occasions"
+        | "Other"
+      itinerary_item_status: "pending" | "approved" | "rejected"
+      place_category:
+        | "attraction"
+        | "restaurant"
+        | "cafe"
+        | "hotel"
+        | "landmark"
+        | "shopping"
+        | "transport"
+        | "other"
+      privacy_setting: "private" | "shared_with_link" | "public"
+      tag_status: "pending" | "approved" | "rejected"
+      travel_pace: "very_slow" | "slow" | "moderate" | "fast" | "very_fast"
+      travel_personality_type:
+        | "planner"
+        | "adventurer"
+        | "foodie"
+        | "sightseer"
+        | "relaxer"
+        | "culture"
+      travel_squad_type:
+        | "friends"
+        | "family"
+        | "partner"
+        | "solo"
+        | "coworkers"
+        | "mixed"
+      travel_style:
+        | "adventurous"
+        | "relaxed"
+        | "cultural"
+        | "luxury"
+        | "budget"
+        | "family"
+        | "solo"
+        | "nightlife"
+        | "nature"
+        | "food_focused"
+      trip_action_type:
+        | "TRIP_CREATED"
+        | "TRIP_UPDATED"
+        | "ITINERARY_ITEM_ADDED"
+        | "ITINERARY_ITEM_UPDATED"
+        | "ITINERARY_ITEM_DELETED"
+        | "MEMBER_ADDED"
+        | "MEMBER_REMOVED"
+        | "MEMBER_ROLE_UPDATED"
+        | "INVITATION_SENT"
+        | "ACCESS_REQUEST_SENT"
+        | "ACCESS_REQUEST_UPDATED"
+        | "NOTE_CREATED"
+        | "NOTE_UPDATED"
+        | "NOTE_DELETED"
+        | "IMAGE_UPLOADED"
+        | "TAG_ADDED"
+        | "TAG_REMOVED"
+        | "SPLITWISE_GROUP_LINKED"
+        | "SPLITWISE_GROUP_UNLINKED"
+        | "SPLITWISE_GROUP_CREATED_AND_LINKED"
+        | "COMMENT_ADDED"
+        | "COMMENT_UPDATED"
+        | "COMMENT_DELETED"
+        | "VOTE_CAST"
+        | "FOCUS_INITIATED"
+      trip_privacy_setting: "private" | "shared_with_link" | "public"
+      trip_role: "admin" | "editor" | "viewer" | "contributor"
+      trip_status:
+        | "planning"
+        | "upcoming"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      trip_type: "leisure" | "business" | "family" | "solo" | "group" | "other"
+      url_format: "canonical" | "short" | "social" | "tracking"
+      vote_type: "up" | "down"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
 
-// Add a new export type for GroupRole from the ENUMS object
-export type GroupRole = (typeof ENUMS.GROUP_ROLES)[keyof typeof ENUMS.GROUP_ROLES];
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
-// Add a new export type for GroupMemberStatus from the ENUMS object
-export type GroupMemberStatus = (typeof ENUMS.GROUP_MEMBER_STATUS)[keyof typeof ENUMS.GROUP_MEMBER_STATUS];
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
-// Add a new export type for GroupActivityType from the ENUMS object
-export type GroupActivityType = (typeof ENUMS.GROUP_ACTIVITY_TYPE)[keyof typeof ENUMS.GROUP_ACTIVITY_TYPE];
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
-// Add a new export type for OnboardingEventType from the ENUMS object
-export type OnboardingEventType = (typeof ENUMS.ONBOARDING_EVENT_TYPE)[keyof typeof ENUMS.ONBOARDING_EVENT_TYPE];
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
-// Add a new export type for ErrorSeverity from the ENUMS object
-export type ErrorSeverity = (typeof ENUMS.ERROR_SEVERITY)[keyof typeof ENUMS.ERROR_SEVERITY];
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
-export type TripRole = (typeof ENUMS.TRIP_ROLES)[keyof typeof ENUMS.TRIP_ROLES];
-export type ItemStatus = (typeof ENUMS.ITEM_STATUS)[keyof typeof ENUMS.ITEM_STATUS];
-export type TripStatus = (typeof ENUMS.TRIP_STATUS)[keyof typeof ENUMS.TRIP_STATUS];
-export type PermissionStatus =
-  (typeof ENUMS.PERMISSION_STATUS)[keyof typeof ENUMS.PERMISSION_STATUS];
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
-export type ImageType = (typeof ENUMS.IMAGE_TYPE)[keyof typeof ENUMS.IMAGE_TYPE];
-export type ContentItemType = (typeof ENUMS.CONTENT_TYPE)[keyof typeof ENUMS.CONTENT_TYPE];
-export type QuestionType = (typeof ENUMS.QUESTION_TYPE)[keyof typeof ENUMS.QUESTION_TYPE];
-export type FormStatus = (typeof ENUMS.FORM_STATUS)[keyof typeof ENUMS.FORM_STATUS];
-export type FormVisibility = (typeof ENUMS.FORM_VISIBILITY)[keyof typeof ENUMS.FORM_VISIBILITY];
-export type ItineraryCategory =
-  (typeof ENUMS.ITINERARY_CATEGORY)[keyof typeof ENUMS.ITINERARY_CATEGORY];
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      budget_category: [
+        "accommodation",
+        "transportation",
+        "food",
+        "activities",
+        "shopping",
+        "other",
+      ],
+      content_type: [
+        "trip",
+        "itinerary_item",
+        "destination",
+        "collection",
+        "template",
+      ],
+      image_type: [
+        "destination",
+        "trip_cover",
+        "user_avatar",
+        "template_cover",
+      ],
+      interaction_type: ["like", "visit", "bookmark", "tag"],
+      invitation_status: ["pending", "accepted", "declined", "expired"],
+      item_status: ["suggested", "confirmed", "rejected"],
+      itinerary_category: [
+        "Iconic Landmarks",
+        "Local Secrets",
+        "Cultural Experiences",
+        "Outdoor Adventures",
+        "Food & Drink",
+        "Nightlife",
+        "Relaxation",
+        "Shopping",
+        "Group Activities",
+        "Day Excursions",
+        "Accommodations",
+        "Transportation",
+        "Flexible Options",
+        "Special Occasions",
+        "Other",
+      ],
+      itinerary_item_status: ["pending", "approved", "rejected"],
+      place_category: [
+        "attraction",
+        "restaurant",
+        "cafe",
+        "hotel",
+        "landmark",
+        "shopping",
+        "transport",
+        "other",
+      ],
+      privacy_setting: ["private", "shared_with_link", "public"],
+      tag_status: ["pending", "approved", "rejected"],
+      travel_pace: ["very_slow", "slow", "moderate", "fast", "very_fast"],
+      travel_personality_type: [
+        "planner",
+        "adventurer",
+        "foodie",
+        "sightseer",
+        "relaxer",
+        "culture",
+      ],
+      travel_squad_type: [
+        "friends",
+        "family",
+        "partner",
+        "solo",
+        "coworkers",
+        "mixed",
+      ],
+      travel_style: [
+        "adventurous",
+        "relaxed",
+        "cultural",
+        "luxury",
+        "budget",
+        "family",
+        "solo",
+        "nightlife",
+        "nature",
+        "food_focused",
+      ],
+      trip_action_type: [
+        "TRIP_CREATED",
+        "TRIP_UPDATED",
+        "ITINERARY_ITEM_ADDED",
+        "ITINERARY_ITEM_UPDATED",
+        "ITINERARY_ITEM_DELETED",
+        "MEMBER_ADDED",
+        "MEMBER_REMOVED",
+        "MEMBER_ROLE_UPDATED",
+        "INVITATION_SENT",
+        "ACCESS_REQUEST_SENT",
+        "ACCESS_REQUEST_UPDATED",
+        "NOTE_CREATED",
+        "NOTE_UPDATED",
+        "NOTE_DELETED",
+        "IMAGE_UPLOADED",
+        "TAG_ADDED",
+        "TAG_REMOVED",
+        "SPLITWISE_GROUP_LINKED",
+        "SPLITWISE_GROUP_UNLINKED",
+        "SPLITWISE_GROUP_CREATED_AND_LINKED",
+        "COMMENT_ADDED",
+        "COMMENT_UPDATED",
+        "COMMENT_DELETED",
+        "VOTE_CAST",
+        "FOCUS_INITIATED",
+      ],
+      trip_privacy_setting: ["private", "shared_with_link", "public"],
+      trip_role: ["admin", "editor", "viewer", "contributor"],
+      trip_status: [
+        "planning",
+        "upcoming",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      trip_type: ["leisure", "business", "family", "solo", "group", "other"],
+      url_format: ["canonical", "short", "social", "tracking"],
+      vote_type: ["up", "down"],
+    },
+  },
+} as const
 
-export type ItineraryItemStatus = (typeof ENUMS.ITINERARY_ITEM_STATUS)[keyof typeof ENUMS.ITINERARY_ITEM_STATUS];
-export type InvitationStatus = (typeof ENUMS.INVITATION_STATUS)[keyof typeof ENUMS.INVITATION_STATUS];
-export type PrivacySetting = (typeof ENUMS.PRIVACY_SETTING)[keyof typeof ENUMS.PRIVACY_SETTING];
-export type TripPrivacySetting = (typeof ENUMS.TRIP_PRIVACY_SETTING)[keyof typeof ENUMS.TRIP_PRIVACY_SETTING];
-export type PlaceCategory = (typeof ENUMS.PLACE_CATEGORY)[keyof typeof ENUMS.PLACE_CATEGORY];
-export type TagStatus = (typeof ENUMS.TAG_STATUS)[keyof typeof ENUMS.TAG_STATUS];
-export type TravelPace = (typeof ENUMS.TRAVEL_PACE)[keyof typeof ENUMS.TRAVEL_PACE];
-export type TravelPersonalityType = (typeof ENUMS.TRAVEL_PERSONALITY_TYPE)[keyof typeof ENUMS.TRAVEL_PERSONALITY_TYPE];
-export type TravelSquadType = (typeof ENUMS.TRAVEL_SQUAD_TYPE)[keyof typeof ENUMS.TRAVEL_SQUAD_TYPE];
-export type TravelStyle = (typeof ENUMS.TRAVEL_STYLE)[keyof typeof ENUMS.TRAVEL_STYLE];
-export type BudgetCategory = (typeof ENUMS.BUDGET_CATEGORY)[keyof typeof ENUMS.BUDGET_CATEGORY];
-export type TripType = (typeof ENUMS.TRIP_TYPE)[keyof typeof ENUMS.TRIP_TYPE];
-export type VoteType = (typeof ENUMS.VOTE_TYPE)[keyof typeof ENUMS.VOTE_TYPE];
-export type InteractionType = (typeof ENUMS.INTERACTION_TYPE)[keyof typeof ENUMS.INTERACTION_TYPE];
-export type UrlFormat = (typeof ENUMS.URL_FORMAT)[keyof typeof ENUMS.URL_FORMAT];
-export type TripActionType = (typeof ENUMS.TRIP_ACTION_TYPE)[keyof typeof ENUMS.TRIP_ACTION_TYPE];
-export type IdeaType = (typeof ENUMS.IDEA_TYPES)[keyof typeof ENUMS.IDEA_TYPES];
-export type PlanningSessionStatus = (typeof ENUMS.PLANNING_SESSION_STATUSES)[keyof typeof ENUMS.PLANNING_SESSION_STATUSES];
+// Re-exports for backward compatibility
+import { TABLES, FIELDS, ENUMS } from './tables';
+export { TABLES, FIELDS, ENUMS };
+export type { CommentableContentType, ItineraryTemplateMetadata } from './tables';
 
-export type TableNames = (typeof TABLES)[keyof typeof TABLES];
-export type TableFields<T extends keyof typeof FIELDS> =
-  (typeof FIELDS)[T][keyof (typeof FIELDS)[T]];
 
-const ITINERARY_TEMPLATE_METADATA_FIELDS = {
-  PACE: 'pace',
-  BEST_FOR: 'best_for',
-  LANGUAGES: 'languages',
-  HIGHLIGHTS: 'highlights',
-  LOCAL_TIPS: 'local_tips',
-  BEST_SEASONS: 'best_seasons',
-  AVOID_SEASONS: 'avoid_seasons',
-  MORNING_START: 'morning_start',
-  ACCESSIBILITY_LEVEL: 'accessibility_level',
-  SUSTAINABILITY_ASPECTS: 'sustainability_aspects',
-  ESTIMATED_BUDGET_USD_PER_DAY: 'estimated_budget_usd_per_day',
-};
-
-export type ItineraryTemplateMetadata = {
-  pace: string;
-  best_for: string[];
-  languages: string[];
-  highlights: string[];
-  local_tips: string[];
-  best_seasons: string[];
-  avoid_seasons: string[];
-  morning_start: string;
-  accessibility_level: string;
-  sustainability_aspects: string[];
-  estimated_budget_usd_per_day: number;
-};
-
-// Change our new type to CommentableContentType
-export type CommentableContentType = (typeof ENUMS.CONTENT_TYPES)[keyof typeof ENUMS.CONTENT_TYPES];

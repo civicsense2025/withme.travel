@@ -6,7 +6,7 @@
  
  */
 
-import { BUDGET_CATEGORIES } from './validation';
+import type { Database } from './database';
 
 /**
  * Colors for expense categories
@@ -14,7 +14,7 @@ import { BUDGET_CATEGORIES } from './validation';
  
  */
 
-export const EXPENSE_CATEGORY_COLORS: Record<string, string> = {
+export const EXPENSE_CATEGORY_COLORS: Record<Database['public']['Enums']['budget_category'], string> = {
   accommodation: '#4f46e5', // indigo
   food: '#16a34a', // green
   transportation: '#f59e0b', // amber
@@ -23,15 +23,14 @@ export const EXPENSE_CATEGORY_COLORS: Record<string, string> = {
   other: '#6b7280', // gray
 } as const;
 
-// Ensure all budget categories have a corresponding color
-// This creates a type-safe mapping between budget categories and their colors
-export const BUDGET_CATEGORY_COLORS: Record<keyof typeof BUDGET_CATEGORIES, string> = {
-  ACCOMMODATION: EXPENSE_CATEGORY_COLORS.accommodation,
-  FOOD: EXPENSE_CATEGORY_COLORS.food,
-  TRANSPORTATION: EXPENSE_CATEGORY_COLORS.transportation,
-  ACTIVITIES: EXPENSE_CATEGORY_COLORS.activities,
-  SHOPPING: EXPENSE_CATEGORY_COLORS.shopping,
-  OTHER: EXPENSE_CATEGORY_COLORS.other,
+// Use DB enum values as keys
+export const BUDGET_CATEGORY_COLORS: Record<Database['public']['Enums']['budget_category'], string> = {
+  accommodation: EXPENSE_CATEGORY_COLORS.accommodation,
+  food: EXPENSE_CATEGORY_COLORS.food,
+  transportation: EXPENSE_CATEGORY_COLORS.transportation,
+  activities: EXPENSE_CATEGORY_COLORS.activities,
+  shopping: EXPENSE_CATEGORY_COLORS.shopping,
+  other: EXPENSE_CATEGORY_COLORS.other,
 } as const;
 
 /**

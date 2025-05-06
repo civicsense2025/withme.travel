@@ -5,7 +5,6 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CountryStatsClientWrapper } from './client-wrapper';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 interface CountryPageProps {
   params: {
@@ -20,7 +19,7 @@ export default async function CountryPage({ params }: CountryPageProps) {
   // Fetch country data from Supabase
   const supabase = await createServerComponentClient();
   const { data: destinations, error } = await supabase
-    .from(TABLES.DESTINATIONS)
+    .from('destinations')
     .select('*')
     .eq('country', countryName);
 
@@ -43,9 +42,7 @@ export default async function CountryPage({ params }: CountryPageProps) {
           </Button>
         </Link>
       </div>
-
       <h1 className="text-3xl font-bold mb-4">{countryName}</h1>
-      
       <div className="grid grid-cols-1 gap-8">
         <Suspense fallback={<p>Loading country information...</p>}>
           <CountryStatsClientWrapper country={countryName} destinationsCount={destinations.length} />

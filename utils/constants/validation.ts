@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Database } from './database';
 /**
  * Validation-related constants
  *
@@ -21,14 +22,13 @@ export const LIMITS = {
   TAG_LENGTH_MAX: 30,
 } as const;
 
-// Status enums
+// Status enums (from DB)
 export const ITEM_STATUSES = {
   SUGGESTED: 'suggested',
   CONFIRMED: 'confirmed',
   REJECTED: 'rejected',
 } as const;
-
-export type ItemStatus = (typeof ITEM_STATUSES)[keyof typeof ITEM_STATUSES];
+export type ItemStatus = Database['public']['Enums']['item_status'];
 
 export const TRIP_STATUSES = {
   PLANNING: 'planning',
@@ -37,23 +37,20 @@ export const TRIP_STATUSES = {
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
 } as const;
-
-export type TripStatus = (typeof TRIP_STATUSES)[keyof typeof TRIP_STATUSES];
+export type TripStatus = Database['public']['Enums']['trip_status'];
 
 export const VOTE_TYPES = {
   UP: 'up',
   DOWN: 'down',
 } as const;
+export type VoteType = Database['public']['Enums']['vote_type'];
 
-export type VoteType = (typeof VOTE_TYPES)[keyof typeof VOTE_TYPES];
-
-// Split Types for Budget Items
+// Split Types for Budget Items (app only)
 export const SPLIT_TYPES = {
   EQUAL: 'equal',
   CUSTOM: 'custom',
   INDIVIDUAL: 'individual',
 } as const;
-
 export type SplitType = (typeof SPLIT_TYPES)[keyof typeof SPLIT_TYPES];
 
 // Trip Types
@@ -65,8 +62,7 @@ export const TRIP_TYPES = {
   GROUP: 'group',
   OTHER: 'other',
 } as const;
-
-export type TripType = (typeof TRIP_TYPES)[keyof typeof TRIP_TYPES];
+export type TripType = Database['public']['Enums']['trip_type'];
 
 // Invitation statuses
 export const INVITATION_STATUSES = {
@@ -75,8 +71,7 @@ export const INVITATION_STATUSES = {
   DECLINED: 'declined',
   EXPIRED: 'expired',
 } as const;
-
-export type InvitationStatus = (typeof INVITATION_STATUSES)[keyof typeof INVITATION_STATUSES];
+export type InvitationStatus = Database['public']['Enums']['invitation_status'];
 
 // Template Categories
 export const TEMPLATE_CATEGORIES = {
@@ -101,8 +96,7 @@ export const BUDGET_CATEGORIES = {
   SHOPPING: 'shopping',
   OTHER: 'other',
 } as const;
-
-export type BudgetCategory = (typeof BUDGET_CATEGORIES)[keyof typeof BUDGET_CATEGORIES];
+export type BudgetCategory = Database['public']['Enums']['budget_category'];
 
 // Regular expressions for validation
 export const VALIDATION_PATTERNS = {

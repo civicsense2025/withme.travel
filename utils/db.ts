@@ -5,20 +5,6 @@ import type { Database } from '@/types/database.types';
 import { createServerComponentClient } from '@/utils/supabase/server';
 import { cache } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { TABLES } from '@/utils/constants/database';
-
-// Define a more complete type for TABLES that includes missing properties
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  [key: string]: string;
-};
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 // Define interfaces for our data types
 interface TripMember {
@@ -296,7 +282,7 @@ export async function getRecentTripsDB(userId: string, limit: number = 3): Promi
 
     // Fetch membership first
     const { data: members, error: membersError } = await supabase
-      .from(Tables.TRIP_MEMBERS)
+      .from('trip_members')
       .select('trip_id')
       .eq('user_id', userId);
 
@@ -315,7 +301,7 @@ export async function getRecentTripsDB(userId: string, limit: number = 3): Promi
 
     // Fetch trips
     const { data: trips, error: tripsError } = await supabase
-      .from(Tables.TRIPS)
+      .from('trips')
       .select(
         `
         id,
@@ -367,7 +353,7 @@ export async function getTripCountDB(userId: string): Promise<number> {
 
     // Simpler count query using trip_members join
     const { count, error } = await supabase
-      .from(Tables.TRIP_MEMBERS)
+      .from('trip_members')
       .select('trip_id', { count: 'exact', head: true })
       .eq('user_id', userId);
 

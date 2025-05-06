@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
 import { TRIP_ROLES } from '@/utils/constants/status';
 
 export const runtime = 'nodejs';
@@ -52,7 +51,7 @@ export async function GET(
     // Fetch trip data from Supabase
     const supabase = await createRouteHandlerClient();
     const { data: trip, error } = await supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .select(`
         id, 
         name, 
@@ -61,7 +60,7 @@ export async function GET(
         end_date, 
         cover_image_url, 
         destination_id,
-        destinations:${TABLES.DESTINATIONS}(id, city, country, image_url)
+        destinations:${'destinations'}(id, city, country, image_url)
       `)
       .eq('id', tripId)
       .single();
@@ -73,11 +72,11 @@ export async function GET(
 
     // Get members for this trip with profiles
     const { data: members, error: membersError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
+      .from('trip_members')
       .select(`
         user_id,
         role,
-        profiles:${TABLES.PROFILES}(full_name, avatar_url)
+        profiles:${'profiles'}(full_name, avatar_url)
       `)
       .eq('trip_id', tripId);
 
@@ -87,7 +86,7 @@ export async function GET(
 
     // Get tags for this trip
     const { data: tagData, error: tagError } = await supabase
-      .from(TABLES.TRIP_TAGS)
+      .from('trip_tags')
       .select('tags(name)')
       .eq('trip_id', tripId)
       .limit(5);

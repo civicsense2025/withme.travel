@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server'; // Use unified client
 import { checkTripAccess } from '@/lib/trip-access';
 import { z } from 'zod';
-import { TABLES } from '@/utils/constants/database';
 import type { Database } from '@/types/database.types';
 
 // Define field constants locally since they differ from central constants

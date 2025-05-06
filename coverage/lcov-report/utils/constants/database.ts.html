@@ -2014,17 +2014,17 @@ export interface DatabaseTables {
  *
  * // Using table names
  * const { data } = await supabase
- *   .from(TABLES.TRIPS)
+ *   .from(trips)
  *   .select('*');
  *
  * // For backward compatibility:
  * const { data: oldData } = await supabase
- *   .from(DB_TABLES.TRIPS)
+ *   .from(DB_trips)
  *   .select('*');
  *
  * // Using column names
  * const { data: tripData } = await supabase
- *   .from(TABLES.TRIPS)
+ *   .from(trips)
  *   .select(`
  *     ${FIELDS.COMMON.ID},
  *     ${FIELDS.TRIPS.NAME},

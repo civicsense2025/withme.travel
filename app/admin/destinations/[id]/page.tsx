@@ -1,7 +1,6 @@
 import { checkAdminAuth } from '../../utils/auth';
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
-import { TABLES } from '@/utils/constants/database';
 import DestinationForm from '../components/DestinationForm';
 
 export const metadata = {
@@ -29,7 +28,7 @@ export default async function EditDestinationPage({ params }: PageProps) {
 
   // Fetch the destination
   const { data: destination, error } = await supabase
-    .from(TABLES.DESTINATIONS)
+    .from('destinations')
     .select('*')
     .eq('id', id)
     .single();

@@ -1,6 +1,5 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database'; // Keep TABLES import
 
 // Define places table constant
 const PLACES_TABLE = 'places';

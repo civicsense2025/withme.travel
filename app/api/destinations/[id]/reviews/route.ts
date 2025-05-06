@@ -2,7 +2,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 
 // Placeholder for database fetching logic
 async function getReviewsForDestination(

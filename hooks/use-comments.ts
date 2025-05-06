@@ -2,8 +2,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { type CommentWithUser, type CommentReactionWithUser, type PaginatedCommentsResponse } from '@/types/comments';
-import { CommentableContentType } from '@/utils/constants/database';
+import type { Database } from '@/utils/constants/database';
+import { Constants } from '@/utils/constants/database';
 import { toast } from '@/components/ui/use-toast';
+
+type Vote = Database['public']['Enums']['vote_type'];
 
 interface UseCommentsOptions {
   contentType: CommentableContentType;
@@ -27,6 +30,8 @@ interface UseCommentsResponse {
   addReaction: (commentId: string, emoji: string) => Promise<CommentReactionWithUser | null>;
   removeReaction: (commentId: string, emoji: string) => Promise<boolean>;
 }
+
+export type CommentableContentType = 'trip' | 'destination' | 'itinerary_item' | 'collection' | 'template' | 'group_idea';
 
 /**
  * Custom hook for interacting with the comments API
@@ -132,13 +137,17 @@ export function useComments({
     try {
       let response;
       if (contentType === 'group_idea') {
+        // Get user_id from localStorage or other client-side storage
+        const userId = typeof window !== 'undefined' ? window.localStorage.getItem('user_id') : null;
+        
         response = await fetch('/api/group-idea-comments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             content,
             idea_id: contentId,
-            parent_id: parentId || null
+            parent_id: parentId || null,
+            user_id: userId  // Include user_id in the request
           })
         });
       } else {

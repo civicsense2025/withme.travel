@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/database';
 import { PRIVACY_SETTINGS } from '@/utils/constants/status';
 
 export const metadata: Metadata = {
@@ -51,7 +50,7 @@ async function getPublicTrips(limit = 3): Promise<Trip[]> {
     
     // Fetch public trips that have cover images
     const { data: trips, error } = await supabase
-      .from(TABLES.TRIPS)
+      .from('trips')
       .select(`
         id, 
         name, 
@@ -85,7 +84,7 @@ async function getPopularDestinations(limit = 3): Promise<Destination[]> {
     
     // Fetch popular destinations with images
     const { data: destinations, error } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select(`
         id,
         city,

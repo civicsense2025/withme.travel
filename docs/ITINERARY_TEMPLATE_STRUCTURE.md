@@ -64,7 +64,7 @@ Instead of embedding static `CREATE TABLE` statements, this section provides a h
 
 ### Core Structure Tables
 
-1.  **`TABLES.TRIPS`**:
+1.  **`trips`**:
 
     - **Description**: Represents an actual trip created by a user. This is the primary record for a user's planned journey. It can be created from scratch or by applying an `itinerary_template`.
     - **Required Fields**:

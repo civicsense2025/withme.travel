@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { flexRender, getCoreRowModel, useReactTable, ColumnDef, HeaderGroup, Header, Row, Cell } from '@tanstack/react-table';
 
-export function DataTable<TData>({ columns, data }: { columns: any[]; data: TData[] }) {
+export function DataTable<TData>({ columns, data }: { columns: ColumnDef<TData>[]; data: TData[] }) {
   const table = useReactTable({
     data,
     columns,
@@ -12,9 +12,9 @@ export function DataTable<TData>({ columns, data }: { columns: any[]; data: TDat
     <div className="rounded-md border">
       <table className="w-full">
         <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
+          {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>) => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
+              {headerGroup.headers.map((header: Header<TData, unknown>) => (
                 <th key={header.id} className="px-4 py-2 text-left">
                   {header.isPlaceholder
                     ? null
@@ -25,9 +25,9 @@ export function DataTable<TData>({ columns, data }: { columns: any[]; data: TDat
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map((row) => (
+          {table.getRowModel().rows.map((row: Row<TData>) => (
             <tr key={row.id} className="border-t">
-              {row.getVisibleCells().map((cell) => (
+              {row.getVisibleCells().map((cell: Cell<TData, unknown>) => (
                 <td key={cell.id} className="px-4 py-2">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>

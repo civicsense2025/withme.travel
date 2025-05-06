@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
+import { TABLES } from '@/utils/constants/database';
 
 /**
  * POST /api/groups/[id]/plans/[planId]/add-ideas
@@ -25,10 +25,10 @@ export async function POST(
     
     // Check if user is a member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
       .maybeSingle();
     
     if (!membership) {
@@ -40,10 +40,10 @@ export async function POST(
     
     // Check if plan exists and belongs to this group
     const { data: plan, error: planError } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select('*')
       .eq('id', params.planId)
-      .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id)
+      .eq('group_id', params.id)
       .single();
     
     if (planError || !plan) {
@@ -65,9 +65,9 @@ export async function POST(
     
     // Validate that these ideas belong to this group
     const { data: ideas, error: ideasError } = await supabase
-      .from(TABLES.GROUP_IDEAS)
+      .from('group_ideas')
       .select('id')
-      .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
+      .eq('group_id', params.id)
       .in('id', ideaIds);
     
     if (ideasError) {
@@ -89,10 +89,10 @@ export async function POST(
     // Update each idea to add it to the plan
     const updates = ideaIds.map(async (ideaId) => {
       const { error } = await supabase
-        .from(TABLES.GROUP_IDEAS)
+        .from('group_ideas')
         .update({ plan_id: params.planId })
         .eq('id', ideaId)
-        .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id);
+        .eq('group_id', params.id);
       
       if (error) {
         console.error(`Error adding idea ${ideaId} to plan:`, error);
@@ -120,21 +120,21 @@ export async function POST(
     
     // Fetch the updated ideas with their details
     const { data: updatedIdeas, error: fetchError } = await supabase
-      .from(TABLES.GROUP_IDEAS)
+      .from('group_ideas')
       .select(`
         *,
-        creator:${FIELDS.GROUP_IDEAS.CREATED_BY}(
+        creator:created_by(
           id,
           email,
           user_metadata
         ),
-        votes:${TABLES.GROUP_IDEA_VOTES}(
+        votes:group_idea_votes(
           id,
           user_id,
           vote_type
         )
       `)
-      .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
+      .eq('group_id', params.id)
       .eq('plan_id', params.planId)
       .in('id', ideaIds);
     

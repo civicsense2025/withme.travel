@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import TripsClientPage from './trips-client';
 import { getServerComponentClient } from '@/utils/supabase/unified';
-import { TABLES } from '@/utils/constants/database';
 import { TripsFeedbackButton } from './TripsFeedbackButton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,9 +14,6 @@ type ExtendedTables = {
   ITINERARY_SECTIONS: string;
   [key: string]: string;
 };
-
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
 
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
@@ -49,7 +45,7 @@ export default async function TripsPage() {
       `
       role, 
       joined_at,
-      trip:${Tables.TRIPS} (
+      trip:${'trips'} (
         id, name, start_date, 
         end_date, created_at,
         status, destination_id, destination_name,
@@ -60,11 +56,11 @@ export default async function TripsPage() {
     )
     .eq('user_id', user.id)
     .order('start_date', {
-      foreignTable: Tables.TRIPS,
+      foreignTable: 'trips',
       ascending: false,
       nullsFirst: false,
     })
-    .order('created_at', { foreignTable: Tables.TRIPS, ascending: false });
+    .order('created_at', { foreignTable: 'trips', ascending: false });
 
   // Log if there was a query error
   if (queryError) {

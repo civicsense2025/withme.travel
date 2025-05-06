@@ -44,7 +44,7 @@ import { TABLES, FIELDS, ENUMS, type TripRole, type ItemStatus } from '@/utils/c
 
 async function getUserTrip(userId: string, tripId: string) {
   const { data, error } = await supabase
-    .from(TABLES.TRIP_MEMBERS)
+    .from('trip_members')
     .select(`${FIELDS.TRIP_MEMBERS.ROLE}`)
     .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
     .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
@@ -194,7 +194,7 @@ async function getRandomImage(query) {
 
 // Use predefined query pattern
 const { data } = await supabase
-  .from(TABLES.TRIPS)
+  .from(trips)
   .select(QUERY_SNIPPETS.TRIP_WITH_CREATOR)
   .eq('id', tripId);
 ```

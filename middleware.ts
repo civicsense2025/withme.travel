@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { Database } from '@/types/database.types';
 import { rateLimit, RateLimitOptions } from '@/utils/middleware/rate-limit';
-import { TABLES } from '@/utils/constants/database';
 
 // Define public paths that don't require authentication
 const publicPaths = [
@@ -173,7 +172,7 @@ export async function middleware(req: NextRequest) {
       // If no session, check if the group is public
       try {
         const { data: group } = await supabase
-          .from(TABLES.GROUPS)
+          .from('groups')
           .select('visibility, public_ideas_board')
           .eq('id', groupId)
           .single();
@@ -205,7 +204,7 @@ export async function middleware(req: NextRequest) {
     if (pathname.startsWith('/admin')) {
       // Check if user is admin
       const { data: profile } = await supabase
-        .from(TABLES.PROFILES)
+        .from('profiles')
         .select('is_admin')
         .eq('id', session.user.id)
         .single();

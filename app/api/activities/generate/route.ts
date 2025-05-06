@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { extractKeywords, generateActivityIdeas } from '@/utils/activity-generator';
-import { TABLES } from '@/utils/constants/database';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 
 export async function POST(req: Request) {
@@ -17,7 +16,7 @@ export async function POST(req: Request) {
     // Get destination data
     const supabase = await createRouteHandlerClient();
     const { data: destination, error: destinationError } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select('name, description')
       .eq('id', destinationId)
       .single();
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
     
     // Try to get template data if available
     const { data: tripTemplate, error: templateError } = await supabase
-      .from(TABLES.ITINERARY_TEMPLATES)
+      .from('itinerary_templates')
       .select('items')
       .eq('destination_id', destinationId)
       .single();

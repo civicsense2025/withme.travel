@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityIdea } from '@/utils/activity-generator';
 import { useActivitySuggestions } from '@/hooks/useActivitySuggestions';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { TABLES, ENUMS } from '@/utils/constants/database';
+import { BUDGET_CATEGORIES, BudgetCategory } from '@/utils/constants/status';
 
 interface ActivityGeneratorWidgetProps {
   groupId: string;
@@ -42,7 +42,7 @@ export function ActivityGeneratorWidget({
       try {
         const supabase = getBrowserClient();
         const { data, error } = await supabase
-          .from(TABLES.DESTINATIONS)
+          .from('destinations')
           .select('name, description')
           .eq('id', destinationId)
           .single();
@@ -107,18 +107,17 @@ export function ActivityGeneratorWidget({
     }
   };
 
-  const getBudgetCategoryLabel = (category: keyof typeof ENUMS.BUDGET_CATEGORY) => {
-    const labels: Record<string, string> = {
-      'FOOD': '🍴 Food',
-      'ACTIVITIES': '🎟️ Activities',
-      'TRANSPORTATION': '🚆 Transport',
-      'SHOPPING': '🛍️ Shopping',
-      'LODGING': '🏨 Lodging',
-      'SERVICES': '✨ Services',
-      'OTHER': '📌 Other'
+  const getBudgetCategoryLabel = (categoryValue: BudgetCategory) => {
+    // categoryValue will be 'accommodation', 'food', etc.
+    const valueToLabelMap: Record<BudgetCategory, string> = {
+      accommodation: '🏨 Lodging',
+      transportation: '🚆 Transport',
+      food: '🍴 Food',
+      activities: '🎟️ Activities',
+      shopping: '🛍️ Shopping',
+      other: '📌 Other',
     };
-    
-    return labels[category] || 'Other';
+    return valueToLabelMap[categoryValue] || 'Other';
   };
   
   const formatDuration = (hours: number) => {

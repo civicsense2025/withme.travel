@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES, FIELDS } from '@/utils/constants/database';
-import { cookies } from 'next/headers';
 
 /**
  * Get a specific plan with ideas
@@ -26,10 +24,10 @@ export async function GET(
 
     // Check membership
     const { data: membership } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
+      .from('group_members')
       .select('*')
-      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
-      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .eq('GROUP_ID', params.id)
+      .eq('USER_ID', user.id)
       .maybeSingle();
 
     if (!membership) {
@@ -41,23 +39,22 @@ export async function GET(
     
     // Fetch the plan with all related data
     const { data: plan, error } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select(`
         *,
-        creator:${FIELDS.GROUP_IDEA_PLANS.CREATED_BY}(
+        creator:${'CREATED_BY'}(
           id, 
-          email,
-          user_metadata
+          email
         ),
-        group:${FIELDS.GROUP_IDEA_PLANS.GROUP_ID}(
+        group:${'GROUP_ID'}(
           id,
           name,
           emoji
         ),
-        ideas:${TABLES.GROUP_IDEAS}(*)
+        ideas:${'group_ideas'}(*)
       `)
-      .eq(FIELDS.GROUP_IDEA_PLANS.ID, params.planId)
-      .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id)
+      .eq('id', params.planId)
+      .eq('GROUP_ID', params.id)
       .single();
     
     if (error) {
@@ -107,15 +104,15 @@ export async function PUT(
 
     // Check membership and permissions (admin or creator only)
     const { data: group } = await supabase
-      .from(TABLES.GROUPS)
+      .from('groups')
       .select(`
         *,
-        ${TABLES.GROUP_MEMBERS}(
+        ${'group_members'}(
           user_id,
           role
         )
       `)
-      .eq(FIELDS.GROUPS.ID, params.id)
+      .eq('id', params.id)
       .single();
     
     // Check if user is a member with admin privileges
@@ -126,9 +123,9 @@ export async function PUT(
     
     // Check if user is the creator of the plan
     const { data: plan } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select('created_by')
-      .eq(FIELDS.GROUP_IDEA_PLANS.ID, params.planId)
+      .eq('id', params.planId)
       .single();
     
     const isCreator = plan?.created_by === user.id;
@@ -154,18 +151,18 @@ export async function PUT(
     
     // Update the plan
     const { data: updatedPlan, error } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .update({
-        [FIELDS.GROUP_IDEA_PLANS.NAME]: body.name,
-        [FIELDS.GROUP_IDEA_PLANS.DESCRIPTION]: body.description || null,
-        [FIELDS.GROUP_IDEA_PLANS.UPDATED_AT]: new Date().toISOString(),
+        ['NAME']: body.name,
+        ['DESCRIPTION']: body.description || null,
+        ['UPDATED_AT']: new Date().toISOString(),
         // Only update archive status if it's included in the request
         ...(body.is_archived !== undefined 
           ? { is_archived: body.is_archived } 
           : {})
       })
-      .eq(FIELDS.GROUP_IDEA_PLANS.ID, params.planId)
-      .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id)
+      .eq('id', params.planId)
+      .eq('GROUP_ID', params.id)
       .select()
       .single();
     
@@ -210,15 +207,15 @@ export async function DELETE(
 
     // Check membership and permissions (admin or creator only)
     const { data: group } = await supabase
-      .from(TABLES.GROUPS)
+      .from('groups')
       .select(`
         *,
-        ${TABLES.GROUP_MEMBERS}(
+        ${'group_members'}(
           user_id,
           role
         )
       `)
-      .eq(FIELDS.GROUPS.ID, params.id)
+      .eq('id', params.id)
       .single();
     
     // Check if user is a member with admin privileges
@@ -229,9 +226,9 @@ export async function DELETE(
     
     // Check if user is the creator of the plan
     const { data: plan } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .select('created_by')
-      .eq(FIELDS.GROUP_IDEA_PLANS.ID, params.planId)
+      .eq('id', params.planId)
       .single();
     
     const isCreator = plan?.created_by === user.id;
@@ -246,10 +243,10 @@ export async function DELETE(
     
     // Delete the plan (cascades to ideas by RLS)
     const { error } = await supabase
-      .from(TABLES.GROUP_IDEA_PLANS)
+      .from('group_idea_plans')
       .delete()
-      .eq(FIELDS.GROUP_IDEA_PLANS.ID, params.planId)
-      .eq(FIELDS.GROUP_IDEA_PLANS.GROUP_ID, params.id);
+      .eq('id', params.planId)
+      .eq('GROUP_ID', params.id);
     
     if (error) {
       console.error('Error deleting plan:', error);

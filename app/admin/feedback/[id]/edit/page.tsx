@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
-import { TABLES } from '@/utils/constants/database';
 import { checkAdminAuth } from '../../../utils/auth';
 import FeedbackEditForm from './FeedbackEditForm';
 
@@ -26,7 +25,7 @@ export default async function FeedbackEditPage({ params }: FeedbackEditPageProps
 
   // Fetch the feedback item
   const { data: feedback, error } = await supabase
-    .from(TABLES.FEEDBACK)
+    .from('feedback')
     .select(`
       *,
       user:profiles!feedback_user_id_fkey(id, full_name, email)

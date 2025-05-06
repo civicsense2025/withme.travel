@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { sanitizeString } from '@/utils/sanitize';
-import { TABLES } from '@/utils/constants/database';
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +18,7 @@ export async function GET(
     const supabase = await createRouteHandlerClient();
 
     const { data, error } = await supabase
-      .from(TABLES.DESTINATIONS)
+      .from('destinations')
       .select('*')
       .eq('slug', sanitizedSlug)
       .single();

@@ -112,7 +112,7 @@ export async function GET(
     }
 
     // Fetch data
-    const { data, error } = await supabase.from(TABLES.TRIPS).select('*').eq('id', tripId).single();
+    const { data, error } = await supabase.from(trips).select('*').eq('id', tripId).single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

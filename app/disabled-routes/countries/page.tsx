@@ -1,12 +1,10 @@
-'use client';
-
+'use client';;
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/page-header';
 import { useEffect, useState } from 'react';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { TABLES } from '@/utils/constants/database';
 
 // Define types for country data
 interface CountryData {
@@ -47,7 +45,7 @@ export default function CountriesPage() {
 
         // Get unique countries with aggregated data
         const { data, error } = await supabase
-          .from(TABLES.DESTINATIONS)
+          .from('destinations')
           .select('country, image_url')
           .order('country', { ascending: true })
           .not('country', 'is', null);
