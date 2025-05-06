@@ -29,23 +29,24 @@ export default async function IdeasPage({ params }: { params: Promise<{ id: stri
   }
 
   // Check if user is authenticated
-  if (userError || !user) {
-    console.warn('[IdeasPage] User not authenticated or error fetching user:', userError);
-    redirect(`/login?callbackUrl=/groups/${id}/ideas`);
-  }
+  // (Guests are allowed, so don't redirect)
+  const isAuthenticated = !!user;
 
-  // Check if user is a member of the group
-  const { data: membership, error: membershipError } = await supabase
-    .from(TABLES.GROUP_MEMBERS)
-    .select('*')
-    .eq('group_id', id)
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .maybeSingle();
-
-  // If not a member and the group is not public, redirect to group page
-  if (!membership && group.visibility !== 'public') {
-    redirect(`/groups/${id}`);
+  // Check if user is a member of the group (only if authenticated)
+  let membership = null;
+  if (isAuthenticated) {
+    const { data: m, error: membershipError } = await supabase
+      .from(TABLES.GROUP_MEMBERS)
+      .select('*')
+      .eq('group_id', id)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+    membership = m;
+    // If not a member and the group is not public, redirect to group page
+    if (!membership && group.visibility !== 'public') {
+      redirect(`/groups/${id}`);
+    }
   }
 
   // Fetch initial ideas to pass to client component
@@ -62,6 +63,7 @@ export default async function IdeasPage({ params }: { params: Promise<{ id: stri
         groupId={id}
         initialIdeas={ideas || []}
         groupName={group.name}
+        isAuthenticated={isAuthenticated}
       />
     </Suspense>
   );

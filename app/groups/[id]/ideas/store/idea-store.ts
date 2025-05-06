@@ -30,6 +30,14 @@ export interface GroupIdea {
   notes?: string | null;
   start_date?: string | null; // For date ideas
   end_date?: string | null;   // For date ideas
+  link?: string | null; // Optional hyperlink for the idea
+  link_meta?: {
+    title?: string;
+    description?: string;
+    image?: string;
+    siteName?: string;
+    url?: string;
+  } | null;
 }
 
 interface IdeaStoreState {

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { TABLES, FIELDS, ENUMS } from '@/utils/constants/database';
@@ -26,38 +26,48 @@ const ideaSchema = z.object({
 });
 
 /**
- * Get all ideas for a group
  * GET /api/groups/[id]/ideas
+ * Get all ideas for a group, optionally filtered by plan_id
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { searchParams } = new URL(request.url);
-    const orderBy = searchParams.get('orderBy') || 'created_at';
-    const direction = searchParams.get('direction') || 'desc';
-    const limit = parseInt(searchParams.get('limit') || '50');
-    
     const supabase = await createRouteHandlerClient();
-    const cookieStore = await cookies();
     
-    // Get the current user if authenticated
+    // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    // Get guest token if not authenticated
-    const guestToken = user ? null : await getGuestToken();
-    
-    // Verify user membership or public access (you should implement your own access control)
-    if (userError || (!user && !guestToken)) {
+    if (!user) {
       return NextResponse.json(
-        { error: userError?.message || 'Authentication or guest token required to view group ideas' },
+        { error: 'Authentication required' },
         { status: 401 }
       );
     }
     
-    // Fetch ideas and their creator info in a single join query
-    const { data: ideas, error } = await supabase
+    // Check if user is a member of the group
+    const { data: membership, error: membershipError } = await supabase
+      .from(TABLES.GROUP_MEMBERS)
+      .select('*')
+      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
+      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .maybeSingle();
+    
+    if (!membership) {
+      return NextResponse.json(
+        { error: 'Not a member of this group' },
+        { status: 403 }
+      );
+    }
+    
+    // Extract query params
+    const url = new URL(request.url);
+    const planId = url.searchParams.get('planId');
+    const selectedOnly = url.searchParams.get('selectedOnly') === 'true';
+    
+    // Build query
+    let query = supabase
       .from(TABLES.GROUP_IDEAS)
       .select(`
         *,
@@ -65,54 +75,40 @@ export async function GET(
           id,
           email,
           user_metadata
+        ),
+        votes:${TABLES.GROUP_IDEA_VOTES}(
+          id,
+          user_id,
+          vote_type
         )
       `)
-      .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id)
-      .order(orderBy as any, { ascending: direction === 'asc' })
-      .limit(limit);
+      .eq(FIELDS.GROUP_IDEAS.GROUP_ID, params.id);
+    
+    // Add filters if provided
+    if (planId) {
+      query = query.eq('plan_id', planId);
+    }
+    
+    if (selectedOnly) {
+      query = query.eq('selected', true);
+    }
+    
+    // Execute query with proper ordering
+    const { data: ideas, error } = await query
+      .order('position', { ascending: true })
+      .order('created_at', { ascending: true });
     
     if (error) {
-      console.error('Error fetching group ideas:', error);
+      console.error('Error fetching ideas:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch group ideas' },
+        { error: 'Failed to fetch ideas' },
         { status: 500 }
       );
     }
     
-    // For each idea, check if the current user or guest has voted on it
-    if (ideas.length > 0) {
-      // Fetch all votes for the user or guest for these ideas
-      const { data: votes } = await supabase
-        .from(TABLES.GROUP_IDEA_VOTES)
-        .select('*')
-        .in(
-          FIELDS.GROUP_IDEA_VOTES.IDEA_ID, 
-          ideas.map(idea => idea.id)
-        )
-        .or(
-          user 
-            ? `${FIELDS.GROUP_IDEA_VOTES.USER_ID}.eq.${user.id}`
-            : `${FIELDS.GROUP_IDEA_VOTES.GUEST_TOKEN}.eq.${guestToken}`
-        );
-      
-      // Create a map of idea ID to vote type for quick lookup
-      const voteMap = (votes || []).reduce((map, vote) => {
-        map[vote.idea_id] = vote.vote_type;
-        return map;
-      }, {} as Record<string, string>);
-      
-      // Add user voting info to each idea
-      const ideasWithVotes = ideas.map(idea => ({
-        ...idea,
-        user_vote: voteMap[idea.id] || null
-      }));
-      
-      return NextResponse.json({ ideas: ideasWithVotes });
-    }
-    
-    return NextResponse.json({ ideas });
+    return NextResponse.json({ ideas: ideas || [] });
   } catch (error) {
-    console.error('Error processing group ideas request:', error);
+    console.error('Error in group ideas API:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
@@ -121,67 +117,69 @@ export async function GET(
 }
 
 /**
- * Create a new idea for a group
  * POST /api/groups/[id]/ideas
+ * Create a new idea for a group
  */
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const supabase = await createRouteHandlerClient();
     
-    // Get the current user if authenticated
+    // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    // Get guest token if not authenticated
-    const guestToken = user ? null : await getGuestToken();
-    
-    // Require either user auth or guest token
-    if (userError || (!user && !guestToken)) {
+    if (!user) {
       return NextResponse.json(
-        { error: userError?.message || 'Authentication or guest token required to create ideas' },
+        { error: 'Authentication required' },
         { status: 401 }
       );
     }
     
-    // Parse and validate request body
+    // Check if user is a member of the group
+    const { data: membership, error: membershipError } = await supabase
+      .from(TABLES.GROUP_MEMBERS)
+      .select('*')
+      .eq(FIELDS.GROUP_MEMBERS.GROUP_ID, params.id)
+      .eq(FIELDS.GROUP_MEMBERS.USER_ID, user.id)
+      .maybeSingle();
+    
+    if (!membership) {
+      return NextResponse.json(
+        { error: 'Not a member of this group' },
+        { status: 403 }
+      );
+    }
+    
+    // Get request body
     const body = await request.json();
     
-    try {
-      ideaSchema.parse(body);
-    } catch (validationError) {
-      if (validationError instanceof z.ZodError) {
-        return NextResponse.json(
-          { 
-            error: 'Validation error', 
-            details: validationError.errors 
-          },
-          { status: 400 }
-        );
-      }
-      
+    // Validate required fields
+    if (!body.title || !body.type) {
       return NextResponse.json(
-        { error: 'Invalid idea data' },
+        { error: 'Title and type are required' },
         { status: 400 }
       );
     }
     
-    const ideaData = {
-      group_id: params.id,
-      title: body.title,
-      description: body.description || null,
-      type: body.type,
-      created_by: user?.id || null,
-      guest_token: !user ? guestToken : null,
-      position: body.position || { x: 0, y: 0, w: 3, h: 2 },
-      meta: body.meta || null
-    };
-    
-    // Insert the new idea
-    const { data: newIdea, error } = await supabase
+    // Insert new idea
+    const { data: idea, error } = await supabase
       .from(TABLES.GROUP_IDEAS)
-      .insert(ideaData)
+      .insert({
+        [FIELDS.GROUP_IDEAS.GROUP_ID]: params.id,
+        [FIELDS.GROUP_IDEAS.TITLE]: body.title,
+        [FIELDS.GROUP_IDEAS.DESCRIPTION]: body.description,
+        [FIELDS.GROUP_IDEAS.TYPE]: body.type,
+        [FIELDS.GROUP_IDEAS.CREATED_BY]: user.id,
+        plan_id: body.plan_id || null,
+        // Optional fields
+        start_date: body.start_date || null,
+        end_date: body.end_date || null,
+        position: body.position || null,
+        notes: body.notes || null,
+        meta: body.meta || null,
+      })
       .select(`
         *,
         creator:${FIELDS.GROUP_IDEAS.CREATED_BY}(
@@ -193,16 +191,16 @@ export async function POST(
       .single();
     
     if (error) {
-      console.error('Error creating group idea:', error);
+      console.error('Error creating idea:', error);
       return NextResponse.json(
         { error: 'Failed to create idea' },
         { status: 500 }
       );
     }
     
-    return NextResponse.json({ idea: newIdea }, { status: 201 });
+    return NextResponse.json({ idea });
   } catch (error) {
-    console.error('Error processing create idea request:', error);
+    console.error('Error in create idea API:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

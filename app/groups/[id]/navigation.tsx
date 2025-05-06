@@ -40,6 +40,12 @@ export default function GroupNavigation({ groupId }: GroupNavigationProps) {
       exact: false
     },
     {
+      href: `/groups/${groupId}/plans`,
+      label: 'Plans',
+      icon: <Pencil className="w-4 h-4 mr-2" />,
+      exact: false
+    },
+    {
       href: `/groups/${groupId}/trips`,
       label: 'Trips',
       icon: <Calendar className="w-4 h-4 mr-2" />,

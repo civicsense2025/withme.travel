@@ -279,10 +279,12 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
               <IdeaCard
                 idea={{ ...idea, created_by: idea.created_by ?? null, position: isValidIdeaPosition(idea.position) ? idea.position : { columnId: 'destination', index: 0 } }}
                 position={position}
-                onDelete={() => {}}
+                onDelete={() => handleRemoveVote(idea.id)}
                 onEdit={() => {}}
                 onPositionChange={() => {}}
                 userId={idea.created_by || 'unknown'}
+                isAuthenticated={isAuthenticated}
+                groupId={groupId}
               />
             </div>
           );

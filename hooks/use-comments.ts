@@ -185,14 +185,15 @@ export function useComments({
    */
   const updateComment = useCallback(async (commentId: string, content: string): Promise<CommentWithUser | null> => {
     setError(null);
-    
     try {
       let response;
       if (contentType === 'group_idea') {
-        response = await fetch(`/api/group-idea-comments/${commentId}`, {
-          method: 'PUT',
+        // PATCH to /api/group-idea-comments with id, user_id, content
+        const userId = typeof window !== 'undefined' ? window.localStorage.getItem('user_id') : null;
+        response = await fetch(`/api/group-idea-comments`, {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content })
+          body: JSON.stringify({ id: commentId, user_id: userId, content })
         });
       } else {
         response = await fetch(`/api/comments/${commentId}`, {
@@ -201,30 +202,21 @@ export function useComments({
           body: JSON.stringify({ content })
         });
       }
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update comment');
       }
-
-      const updatedComment: CommentWithUser = await response.json();
-      
-      // Update the comment in the state
+      const updatedComment: CommentWithUser = contentType === 'group_idea' ? (await response.json()).comment : await response.json();
       setComments(prevComments => 
         prevComments.map(comment => 
           comment.id === commentId ? updatedComment : comment
         )
       );
-      
       return updatedComment;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while updating comment';
       setError(errorMessage);
-      toast({
-        title: "Update Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      toast({ title: "Update Error", description: errorMessage, variant: "destructive" });
       return null;
     }
   }, [contentType]);
@@ -234,25 +226,20 @@ export function useComments({
    */
   const deleteComment = useCallback(async (commentId: string): Promise<boolean> => {
     setError(null);
-    
     try {
       let response;
       if (contentType === 'group_idea') {
-        response = await fetch(`/api/group-idea-comments/${commentId}`, {
-          method: 'DELETE'
-        });
+        // DELETE to /api/group-idea-comments?id=...&user_id=...
+        const userId = typeof window !== 'undefined' ? window.localStorage.getItem('user_id') : null;
+        const params = new URLSearchParams({ id: commentId, user_id: userId || '' });
+        response = await fetch(`/api/group-idea-comments?${params.toString()}`, { method: 'DELETE' });
       } else {
-        response = await fetch(`/api/comments/${commentId}`, {
-          method: 'DELETE'
-        });
+        response = await fetch(`/api/comments/${commentId}`, { method: 'DELETE' });
       }
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete comment');
       }
-
-      // Update the state to reflect the deleted comment
       setComments(prevComments => 
         prevComments.map(comment => 
           comment.id === commentId 
@@ -260,16 +247,11 @@ export function useComments({
             : comment
         )
       );
-      
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while deleting comment';
       setError(errorMessage);
-      toast({
-        title: "Delete Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      toast({ title: "Delete Error", description: errorMessage, variant: "destructive" });
       return false;
     }
   }, [contentType]);
@@ -333,21 +315,21 @@ export function useComments({
   }, [contentType]);
 
   /**
-   * Add a reaction to a comment
+   * Add a reaction to a comment (group_idea)
    */
   const addReaction = useCallback(async (commentId: string, emoji: string): Promise<CommentReactionWithUser | null> => {
     setError(null);
-    
     try {
       if (!emoji || typeof emoji !== 'string') {
         throw new Error('Invalid emoji format');
       }
       let response;
       if (contentType === 'group_idea') {
-        response = await fetch(`/api/group-idea-comments/${commentId}/reactions`, {
+        const userId = typeof window !== 'undefined' ? window.localStorage.getItem('user_id') : null;
+        response = await fetch(`/api/group-idea-reactions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emoji })
+          body: JSON.stringify({ comment_id: commentId, user_id: userId, emoji })
         });
       } else {
         response = await fetch(`/api/comments/${commentId}/reactions`, {
@@ -356,23 +338,18 @@ export function useComments({
           body: JSON.stringify({ emoji })
         });
       }
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to add reaction');
       }
-
-      const reaction: CommentReactionWithUser = await response.json();
-      
-      // Update the comment's reactions count in the state
+      const reaction: CommentReactionWithUser = contentType === 'group_idea' ? (await response.json()).reaction : await response.json();
       setComments(prevComments => 
         prevComments.map(comment => 
           comment.id === commentId 
-            ? { ...comment, reactions_count: comment.reactions_count + 1 } 
+            ? { ...comment, reactions_count: (comment.reactions_count || 0) + 1 } 
             : comment
         )
       );
-      
       return reaction;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while adding reaction';
@@ -383,40 +360,33 @@ export function useComments({
   }, [contentType]);
 
   /**
-   * Remove a reaction from a comment
+   * Remove a reaction from a comment (group_idea)
    */
   const removeReaction = useCallback(async (commentId: string, emoji: string): Promise<boolean> => {
     setError(null);
-    
     try {
       if (!emoji || typeof emoji !== 'string') {
         throw new Error('Invalid emoji format');
       }
       let response;
       if (contentType === 'group_idea') {
-        response = await fetch(`/api/group-idea-comments/${commentId}/reactions?emoji=${encodeURIComponent(emoji)}`, {
-          method: 'DELETE'
-        });
+        const userId = typeof window !== 'undefined' ? window.localStorage.getItem('user_id') : null;
+        const params = new URLSearchParams({ comment_id: commentId, user_id: userId || '', emoji });
+        response = await fetch(`/api/group-idea-reactions?${params.toString()}`, { method: 'DELETE' });
       } else {
-        response = await fetch(`/api/comments/${commentId}/reactions?emoji=${encodeURIComponent(emoji)}`, {
-          method: 'DELETE'
-        });
+        response = await fetch(`/api/comments/${commentId}/reactions?emoji=${encodeURIComponent(emoji)}`, { method: 'DELETE' });
       }
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to remove reaction');
       }
-
-      // Update the comment's reactions count in the state
       setComments(prevComments => 
         prevComments.map(comment => 
-          comment.id === commentId && comment.reactions_count > 0
-            ? { ...comment, reactions_count: comment.reactions_count - 1 } 
+          comment.id === commentId 
+            ? { ...comment, reactions_count: Math.max((comment.reactions_count || 1) - 1, 0) } 
             : comment
         )
       );
-      
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while removing reaction';

@@ -7,7 +7,7 @@ import {
   Users, User, MapPin, Calendar, Plus, Settings, Edit, 
   TrashIcon, UserPlus, Share2, MessageSquare, Lightbulb, 
   ChevronRight, Sparkles, Mail, Smartphone, Instagram, 
-  LogIn, ArrowRight
+  LogIn, ArrowRight, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +21,14 @@ interface GroupDetailClientProps {
   group: Group;
   membership: GroupMember | null;
   recentTrips: GroupTrip[];
+  isAuthenticated: boolean;
 }
 
 export default function GroupDetailClient({
   group,
   membership,
   recentTrips,
+  isAuthenticated,
 }: GroupDetailClientProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -352,6 +354,34 @@ export default function GroupDetailClient({
                     </Button>
                   </div>
                 </div>
+              </div>
+
+              {/* Plans Board Callout */}
+              <div className="block">
+                <Link href={`/groups/${group.id}/plans`}>
+                  <div className="rounded-lg p-6 mb-4 relative overflow-hidden group transition-all hover:shadow-md cursor-pointer">
+                    {/* Gradient background with blur */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-teal-500/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
+                    <div className="absolute inset-0 backdrop-blur-[1px] group-hover:backdrop-blur-[2px] transition-all"></div>
+                    
+                    {/* Content */}
+                    <div className="relative z-10 flex justify-between items-center">
+                      <div>
+                        <h3 className="text-xl font-semibold flex items-center">
+                          <Pencil className="h-5 w-5 mr-2 text-blue-500" />
+                          Group Planning Boards
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                          Organize trip ideas into planning boards with collaborative lists.
+                        </p>
+                      </div>
+                      <Button className="group-hover:translate-x-1 transition-transform" size="sm">
+                        View Plans
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                </Link>
               </div>
               
               <h2 className="text-xl font-semibold">Recent Activity</h2>

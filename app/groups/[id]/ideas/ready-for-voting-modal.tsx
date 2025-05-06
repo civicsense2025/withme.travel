@@ -42,12 +42,12 @@ export function ReadyForVotingModal({
   const [isLoading, setIsLoading] = useState(false);
   const [activeMembers, setActiveMembers] = useState<any[]>([]);
   const [totalIdeas, setTotalIdeas] = useState(0);
-  const [ideasByType, setIdeasByType] = useState<Record<string, number>>({
-    destination: 0,
-    date: 0,
-    activity: 0,
-    budget: 0,
-    other: 0
+  const [ideasByType, setIdeasByType] = useState<Record<string, any[]>>({
+    destination: [],
+    date: [],
+    activity: [],
+    budget: [],
+    other: []
   });
   
   // Fetch group ideas and members

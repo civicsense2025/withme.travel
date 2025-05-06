@@ -20,10 +20,10 @@ interface KeyboardShortcutsBarProps {
 
 const KeyboardShortcutsBar: React.FC<KeyboardShortcutsBarProps> = ({ onHide }) => (
   <div className="fixed left-1/2 -translate-x-1/2" style={{ bottom: '10vh', zIndex: 50 }}>
-    <div className="flex flex-col items-center bg-white/90 rounded-lg shadow-lg px-4 py-2 border min-w-[340px] relative">
+    <div className="flex flex-col items-center bg-white/95 rounded-2xl shadow-lg border border-gray-100 px-6 py-3 min-w-[340px] relative">
       {/* Hide button */}
       <button
-        className="absolute top-2 right-2 p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 focus:outline-none"
+        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--travel-purple))]"
         aria-label="Hide keyboard shortcuts"
         onClick={onHide}
         tabIndex={0}
@@ -33,40 +33,40 @@ const KeyboardShortcutsBar: React.FC<KeyboardShortcutsBarProps> = ({ onHide }) =
       {/* First row: primary shortcuts */}
       <div className="flex gap-4 mb-1 justify-center">
         <div className="flex flex-col items-center">
-          <kbd className={`kbd px-2 py-1 rounded ${shortcutStyles.D}`} aria-label="Destination">D</kbd>
+          <kbd className={`kbd px-3 py-2 rounded-xl text-base font-semibold ${shortcutStyles.D}`} aria-label="Destination">D</kbd>
           <span className="text-xs mt-1 text-blue-800 font-medium">Destination</span>
         </div>
         <div className="flex flex-col items-center">
-          <kbd className={`kbd px-2 py-1 rounded ${shortcutStyles.A}`} aria-label="Activity">A</kbd>
+          <kbd className={`kbd px-3 py-2 rounded-xl text-base font-semibold ${shortcutStyles.A}`} aria-label="Activity">A</kbd>
           <span className="text-xs mt-1 text-green-800 font-medium">Activity</span>
         </div>
         <div className="flex flex-col items-center">
-          <kbd className={`kbd px-2 py-1 rounded ${shortcutStyles.B}`} aria-label="Budget">B</kbd>
+          <kbd className={`kbd px-3 py-2 rounded-xl text-base font-semibold ${shortcutStyles.B}`} aria-label="Budget">B</kbd>
           <span className="text-xs mt-1 text-orange-800 font-medium">Budget</span>
         </div>
         <div className="flex flex-col items-center">
-          <kbd className={`kbd px-2 py-1 rounded ${shortcutStyles.T}`} aria-label="Date">T</kbd>
+          <kbd className={`kbd px-3 py-2 rounded-xl text-base font-semibold ${shortcutStyles.T}`} aria-label="Date">T</kbd>
           <span className="text-xs mt-1 text-yellow-800 font-medium">Date</span>
         </div>
         <div className="flex flex-col items-center">
-          <kbd className={`kbd px-2 py-1 rounded font-sans font-medium ${shortcutStyles.O}`} aria-label="Other" title="Other">O</kbd>
+          <kbd className={`kbd px-3 py-2 rounded-xl text-base font-semibold ${shortcutStyles.O}`} aria-label="Other" title="Other">O</kbd>
           <span className="text-xs mt-1 text-purple-800 font-medium font-sans">Other</span>
         </div>
       </div>
       {/* Second row: secondary shortcuts */}
       <div className="flex gap-3 justify-center text-xs text-gray-500 mt-1 flex-wrap">
         <span className="flex items-center gap-1">
-          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700" aria-label="Help">/</kbd> Help
+          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700 text-base font-medium">/</kbd> Help
         </span>
         <span className="flex items-center gap-1">
-          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700" aria-label="Close">Esc</kbd> Close
+          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700 text-base font-medium">Esc</kbd> Close
         </span>
         <span className="flex items-center gap-1">
-          <kbd className="kbd px-1 py-1 rounded bg-gray-100 text-gray-700">Ctrl</kbd>
+          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700 text-base font-medium">Ctrl</kbd>
           <span>+</span>
-          <kbd className="kbd px-1 py-1 rounded bg-gray-100 text-gray-700">Shift</kbd>
+          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700 text-base font-medium">Shift</kbd>
           <span>+</span>
-          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700">Enter</kbd>
+          <kbd className="kbd px-2 py-1 rounded bg-gray-100 text-gray-700 text-base font-medium">Enter</kbd>
           <span>Start Voting (Owner)</span>
         </span>
       </div>

@@ -39,6 +39,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { AvatarGroup } from '@/components/ui/avatar-group';
 import { CollaboratorList } from './components/collaborator-list';
 import { toast } from '@/components/ui/use-toast';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
 // Define column structure
 const COLUMNS = [
@@ -52,6 +53,7 @@ const COLUMNS = [
 interface IdeasWhiteboardProps {
   groupId: string;
   groupName: string;
+  isAuthenticated: boolean;
 }
 
 // Helper to get initials from profile or user
@@ -67,7 +69,7 @@ function getProfileInitials(profile: any, user: any): string {
   return user?.email?.charAt(0).toUpperCase() || 'U';
 }
 
-export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardProps) {
+export default function IdeasWhiteboard({ groupId, groupName, isAuthenticated }: IdeasWhiteboardProps) {
   const { user } = useAuth();
   const params = useParams();
   const resolvedGroupId = groupId || params?.id as string;
@@ -266,15 +268,9 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
       id: idea.id,
       position: { columnId, index } as IdeaPosition
     }));
-    
-    // Update local state
-    updates.forEach(update => {
-      updateStoreIdea(update.id, { position: update.position } as any);
-    });
-    
     // Save to database
     savePositionUpdates(updates);
-  }, [ideasByColumn, updateStoreIdea, savePositionUpdates]);
+  }, [ideasByColumn, savePositionUpdates]);
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -520,7 +516,7 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
       updates.forEach(update => {
         updateStoreIdea(update.id, { position: update.position } as any);
       });
-      savePositionUpdates(updates);
+      updateIdeaPositions(columnId);
       setDraggedIdea(null);
       setDragOverIndex(null);
       return;
@@ -556,7 +552,7 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
       } as any);
       
       // Re-index both columns
-      updateIdeaPositions(sourceColumnId);
+      updateIdeaPositions(columnId);
       updateIdeaPositions(columnId);
       
       toast({ title: 'Idea moved', description: `Moved to ${columnId} column` });
@@ -766,7 +762,16 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
 
   // Keyboard shortcut for help dialog
   useEffect(() => {
+    function isInputFocused() {
+      const el = document.activeElement;
+      if (!el) return false;
+      const tag = el.tagName.toLowerCase();
+      return (
+        tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable
+      );
+    }
     function handleKeyDown(e: KeyboardEvent) {
+      if (isInputFocused()) return;
       if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setShowHelpDialog(true);
         e.preventDefault();
@@ -826,7 +831,7 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
       <IdeasPresenceContext.Provider value={presenceContext}>
         <div className="fixed inset-0 flex flex-col bg-[#f7fafc] overflow-hidden z-10">
           {/* Header */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b bg-white z-20">
+          <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-8 py-3 border-b bg-white z-20">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                 <a href="/groups" className="hover:underline flex items-center gap-1">
@@ -839,8 +844,7 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
               {loading && <span className="text-sm text-muted-foreground">(Loading...)</span>}
               {error && <span className="text-sm text-red-500">(Error)</span>}
             </div>
-            
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Active Users Button */}
               <div className="cursor-pointer" onClick={() => setShowCollaborators(true)}>
                 <div className="flex items-center -space-x-2">
@@ -881,7 +885,6 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
                   />
                 </DialogContent>
               </Dialog>
-              
               {/* Voting Button */}
               <TooltipProvider>
                 <Tooltip disableHoverableContent={false}>
@@ -890,7 +893,7 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
                       <Button
                         variant="default"
                         size="sm"
-                        className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+                        className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold h-10 px-5 rounded-2xl focus:ring-2 focus:ring-[hsl(var(--travel-purple))] transition-all duration-200"
                         onClick={handleVotingButtonClick}
                         disabled={readyForVotingDisabled}
                         aria-disabled={readyForVotingDisabled}
@@ -908,16 +911,15 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
                   )}
                 </Tooltip>
               </TooltipProvider>
-              
               {/* Export Button */}
               <Button 
                 variant="outline" 
                 size="sm" 
+                className="h-10 px-5 rounded-2xl font-medium"
                 onClick={handleExportAsImage}
               >
                 Export
               </Button>
-              
               {/* Theme Toggle */}
               <ThemeToggle />
             </div>
@@ -929,161 +931,136 @@ export default function IdeasWhiteboard({ groupId, groupName }: IdeasWhiteboardP
             className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4 bg-[#f7fafc] overflow-y-auto"
           >
             {COLUMNS.map((column, idx) => (
-              <div
+              <CollapsibleSection
                 key={column.id}
-                className={`flex flex-col h-full max-h-full bg-gray-100 rounded-2xl shadow-sm transition-all duration-200 ${
-                  (openMobileColumn && openMobileColumn !== column.id && windowWidth !== null && windowWidth < 768) ? 'max-h-12 overflow-hidden' : ''
-                }`}
+                title={column.label}
+                icon={<span className="text-2xl md:text-3xl">{column.emoji}</span>}
+                className="flex flex-col h-full max-h-full bg-gray-100 rounded-2xl shadow-sm transition-all duration-200"
+                headerAction={ideasByColumn[column.id as ColumnId]?.length || 0}
+                defaultOpen={true}
               >
-                {/* Column header with perfect alignment and full rounding, smaller on mobile */}
-                <div
-                  className="flex items-center justify-between px-2 sm:px-4 py-1 sm:py-2 border-b bg-white cursor-pointer rounded-full"
-                  onClick={() => {
-                    if (windowWidth !== null && windowWidth < 768) {
-                      setOpenMobileColumn(openMobileColumn === column.id ? null : column.id);
-                    }
-                  }}
-                  role={windowWidth !== null && windowWidth < 768 ? 'button' : undefined}
-                  tabIndex={windowWidth !== null && windowWidth < 768 ? 0 : undefined}
-                  aria-expanded={openMobileColumn === column.id}
-                >
-                  <div className="flex items-center gap-x-1 sm:gap-x-2">
-                    <span className="text-lg sm:text-xl">{column.emoji}</span>
-                    <span className="font-semibold text-sm sm:text-base capitalize leading-none">{column.label}</span>
-                  </div>
-                  <div className="flex items-center gap-x-1 sm:gap-x-2">
-                    <Badge variant="secondary" className="text-xs sm:text-xs flex items-center justify-center min-w-[20px] sm:min-w-[24px] h-5 sm:h-6">
-                      {ideasByColumn[column.id as ColumnId]?.length || 0}
-                    </Badge>
-                    {windowWidth !== null && windowWidth < 768 && (
-                      <span className="ml-2 text-xs text-gray-400">{openMobileColumn === column.id ? '▲' : '▼'}</span>
-                    )}
-                  </div>
-                </div>
-                {/* Only render column content if open on mobile, or always on md+ */}
-                {(!openMobileColumn || openMobileColumn === column.id || (windowWidth !== null && windowWidth >= 768)) && (
-                  <div className="flex-1 flex flex-col gap-2 p-2">
-                    {/* Column Content */}
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">
-                      {ideasByColumn[column.id as ColumnId]?.map((idea, idx) => (
-                        <div
-                          key={idea.id}
-                          draggable
-                          onDragStart={() => handleDragStart(idea, idx)}
-                          onDragEnd={handleDragEnd}
-                          onDragOver={e => handleCardDragOver(e, column.id as ColumnId, idx)}
-                          className={`cursor-grab ${draggedIdea === idea.id ? 'opacity-50' : ''} ${dragOverIndex === idx && dragOverColumn === column.id ? 'ring-2 ring-blue-300' : ''}`}
-                        >
-                          <IdeaCard
-                            idea={idea}
-                            onDelete={() => handleDeleteIdea(idea.id)}
-                            onEdit={() => { setEditingIdea(idea); setShowAddModal(true); }}
-                            position={{
-                              columnId: column.id as ColumnId,
-                              index: idea.position && 'index' in idea.position ? idea.position.index : 0
-                            }}
-                            onPositionChange={() => {}}
-                            userId={user?.id || ''}
-                          />
-                        </div>
-                      ))}
+                <div className="flex-1 flex flex-col gap-2 p-2 pt-0">
+                  {/* Column Content */}
+                  <div className="flex-1 overflow-y-auto pt-0 space-y-2 scrollbar-thin">
+                    {ideasByColumn[column.id as ColumnId]?.map((idea, idx) => (
+                      <div
+                        key={idea.id}
+                        draggable
+                        onDragStart={() => handleDragStart(idea, idx)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={e => handleCardDragOver(e, column.id as ColumnId, idx)}
+                        className={`cursor-grab ${draggedIdea === idea.id ? 'opacity-50' : ''} ${dragOverIndex === idx && dragOverColumn === column.id ? 'ring-2 ring-blue-300' : ''}`}
+                      >
+                        <IdeaCard
+                          idea={idea}
+                          onDelete={() => handleDeleteIdea(idea.id)}
+                          onEdit={() => { setEditingIdea(idea); setShowAddModal(true); }}
+                          position={{
+                            columnId: column.id as ColumnId,
+                            index: idea.position && 'index' in idea.position ? idea.position.index : 0
+                          }}
+                          onPositionChange={() => {}}
+                          userId={user?.id || ''}
+                          isAuthenticated={isAuthenticated}
+                          groupId={resolvedGroupId}
+                        />
+                      </div>
+                    ))}
 
-                      {/* Inline Add Idea Form or Dialog Triggers */}
-                      {column.id === 'destination' ? (
-                        <>
-                          {showMapboxDialog ? (
-                            <div className="mt-2">
-                              <MapboxDestinationInput
-                                onSelect={(place) => {
-                                  handleIdeaSubmit({
-                                    type: 'destination',
-                                    title: place.place_name,
-                                    description: JSON.stringify(place)
-                                  });
-                                  setShowMapboxDialog(false);
-                                }}
-                                placeholder="Add a destination..."
-                              />
-                              <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowMapboxDialog(false)}>
-                                Cancel
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-blue-200"
-                              onClick={() => setShowMapboxDialog(true)}
-                            >
-                              <Plus className="h-4 w-4 mr-1" /> Add Destination Idea
-                            </Button>
-                          )}
-                        </>
-                      ) : column.id === 'date' ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-green-200"
-                          onClick={() => setShowDateDialog(true)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" /> Add Date Idea
-                        </Button>
-                      ) : column.id === 'budget' ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-orange-200"
-                          onClick={() => setShowBudgetDialog(true)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" /> Add Budget Idea
-                        </Button>
-                      ) : (
-                        inlineEditColumn === column.id ? (
-                          <div ref={inlineEditInputRefWrapper} className="p-2 bg-white rounded-md shadow" tabIndex={-1}>
-                            <Input
-                              ref={inlineEditInputRef}
-                              type="text"
-                              value={newIdeaTitle}
-                              onChange={(e) => setNewIdeaTitle(e.target.value)}
-                              placeholder={`Add a ${column.label.toLowerCase()}...`}
-                              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleInlineIdeaSubmit(column.id as ColumnId);
-                                if (e.key === 'Escape') {
-                                  setInlineEditColumn(null);
-                                  setNewIdeaTitle('');
-                                }
+                    {/* Inline Add Idea Form or Dialog Triggers */}
+                    {column.id === 'destination' ? (
+                      <>
+                        {showMapboxDialog ? (
+                          <div className="mt-2">
+                            <MapboxDestinationInput
+                              onSelect={(place) => {
+                                handleIdeaSubmit({
+                                  type: 'destination',
+                                  title: place.place_name,
+                                  description: JSON.stringify(place)
+                                });
+                                setShowMapboxDialog(false);
                               }}
+                              placeholder="Add a destination..."
                             />
-                            <div className="flex gap-2 mt-2">
-                              <Button onClick={() => handleInlineIdeaSubmit(column.id as ColumnId)} className="flex-1">
-                                Add Idea
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => { setInlineEditColumn(null); setNewIdeaTitle(''); }}>
-                                Cancel
-                              </Button>
-                            </div>
+                            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowMapboxDialog(false)}>
+                              Cancel
+                            </Button>
                           </div>
                         ) : (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-purple-200"
-                            onClick={() => {
-                              setInlineEditColumn(column.id);
-                              setNewIdeaTitle('');
-                            }}
-                            ref={idx === 0 ? firstAddButtonRef : undefined}
+                            className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-blue-200"
+                            onClick={() => setShowMapboxDialog(true)}
                           >
-                            <Plus className="h-4 w-4 mr-1" /> Add {column.label} Idea
+                            <Plus className="h-4 w-4 mr-1" /> Add Destination Idea
                           </Button>
-                        )
-                      )}
-
-                    </div>
+                        )}
+                      </>
+                    ) : column.id === 'date' ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-green-200"
+                        onClick={() => setShowDateDialog(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Date Idea
+                      </Button>
+                    ) : column.id === 'budget' ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-orange-200"
+                        onClick={() => setShowBudgetDialog(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Budget Idea
+                      </Button>
+                    ) : (
+                      inlineEditColumn === column.id ? (
+                        <div ref={inlineEditInputRefWrapper} className="p-2 bg-white rounded-md shadow" tabIndex={-1}>
+                          <Input
+                            ref={inlineEditInputRef}
+                            type="text"
+                            value={newIdeaTitle}
+                            onChange={(e) => setNewIdeaTitle(e.target.value)}
+                            placeholder={`Add a ${column.label.toLowerCase()}...`}
+                            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleInlineIdeaSubmit(column.id as ColumnId);
+                              if (e.key === 'Escape') {
+                                setInlineEditColumn(null);
+                                setNewIdeaTitle('');
+                              }
+                            }}
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <Button onClick={() => handleInlineIdeaSubmit(column.id as ColumnId)} className="flex-1">
+                              Add Idea
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => { setInlineEditColumn(null); setNewIdeaTitle(''); }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full mt-2 text-muted-foreground hover:bg-gray-200 border-dashed border-2 rounded-xl border-purple-200"
+                          onClick={() => {
+                            setInlineEditColumn(column.id);
+                            setNewIdeaTitle('');
+                          }}
+                          ref={idx === 0 ? firstAddButtonRef : undefined}
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> Add {column.label} Idea
+                        </Button>
+                      )
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              </CollapsibleSection>
             ))}
           </div>
 

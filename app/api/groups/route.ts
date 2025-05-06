@@ -81,6 +81,7 @@ export async function POST(request: Request) {
     
     const userId = user.id;
     
+    // Parse body early to get guest token if present
     const body = await request.json();
     const { name, description, emoji, visibility, website } = body;
     console.log('[API] Incoming group creation:', body);
@@ -99,14 +100,14 @@ export async function POST(request: Request) {
       );
     }
 
-    let guestToken: string | null = null;
-    let ip: string | null = null;
+    // --- Guest group creation logic ---
     if (!user) {
+      // Try to get guest token from cookies
       const cookieStore = await cookies();
-      guestToken = cookieStore.get('guest_group_token')?.value || null;
-      ip = (request.headers.get('x-forwarded-for') || '').split(',')[0] || request.headers.get('x-real-ip') || null;
+      let guestToken = cookieStore.get('guest_group_token')?.value || null;
+      let ip = (request.headers.get('x-forwarded-for') || '').split(',')[0] || request.headers.get('x-real-ip') || null;
       console.log('[API] Guest group creation:', { guestToken, ip });
-      // --- Rate limiting for guests ---
+      // Rate limiting for guests
       if (ip) {
         const now = Date.now();
         const rl = rateLimitMap.get(ip) || { count: 0, lastReset: now };
@@ -121,11 +122,9 @@ export async function POST(request: Request) {
         }
       }
       if (!guestToken) {
-        // Generate a new guest token (client should set cookie for future requests)
         guestToken = crypto.randomUUID();
       }
-      // Before insert:
-      console.log('[API] Inserting guest group:', { name, guestToken });
+      // Insert guest group
       const { data: group, error } = await supabase
         .from(TABLES.GROUPS)
         .insert({

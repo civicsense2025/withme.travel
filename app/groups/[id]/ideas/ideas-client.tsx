@@ -11,9 +11,10 @@ interface IdeasClientProps {
   groupId: string;
   initialIdeas: any[];
   groupName: string;
+  isAuthenticated: boolean;
 }
 
-export default function IdeasClient({ groupId, initialIdeas, groupName }: IdeasClientProps) {
+export default function IdeasClient({ groupId, initialIdeas, groupName, isAuthenticated }: IdeasClientProps) {
   const { setFullscreen } = useLayoutMode();
 
   // Enable fullscreen mode when component mounts, disable when unmounts
@@ -35,6 +36,7 @@ export default function IdeasClient({ groupId, initialIdeas, groupName }: IdeasC
           <IdeasWhiteboard 
             groupId={groupId} 
             groupName={groupName}
+            isAuthenticated={isAuthenticated}
           />
         </Card>
       </div>

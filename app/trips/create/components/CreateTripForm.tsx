@@ -42,6 +42,7 @@ import NextImage from 'next/image';
 import { PlaceSearch } from '@/components/place-search';
 import { useAuth } from '@/components/auth-provider';
 import { AuthModal } from '@/components/auth-modal';
+import { ActivitySuggestionsCard } from '@/components/ActivitySuggestionsCard';
 
 // Define the form schema
 const formSchema = z
@@ -643,6 +644,19 @@ export function CreateTripForm() {
                           </FormItem>
                         )}
                       />
+
+                      {/* If a destination is selected, show activity suggestions */}
+                      {step === 1 && watchedValues.destination_id && (
+                        <div className="mt-6">
+                          <ActivitySuggestionsCard 
+                            destinationId={watchedValues.destination_id}
+                            onComplete={() => {
+                              // Move to the next step when the user clicks continue
+                              handleNext();
+                            }}
+                          />
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField

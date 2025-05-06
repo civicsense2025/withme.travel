@@ -102,6 +102,28 @@ export const API_ROUTES = {
   LIBRARY_TEMPLATE: (id: string) => `/api/library/${id}`,
   REFERRALS: '/api/referrals',
   TRIP_REVIEWS: '/api/trip-reviews',
+
+  // Group idea routes
+  GROUP_IDEAS: {
+    LIST: (groupId: string) => `/api/groups/${groupId}/ideas`,
+    DETAIL: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+    CREATE: (groupId: string) => `/api/groups/${groupId}/ideas`,
+    UPDATE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+    DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+    VOTE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+  },
+  GROUP_IDEA_PLANS: {
+    LIST: (groupId: string) => `/api/groups/${groupId}/plans`,
+    DETAIL: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
+    CREATE: (groupId: string) => `/api/groups/${groupId}/plans`,
+    UPDATE: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
+    DELETE: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
+    IDEAS: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}/ideas`,
+  },
+  GROUP_IDEA_VOTES: {
+    CREATE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+    DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+  },
 } as const;
 
 // Page Routes - All frontend navigation paths
@@ -129,6 +151,11 @@ export const PAGE_ROUTES = {
     TEMPLATES: '/admin/templates',
     DESTINATIONS: '/admin/destinations',
   },
+  GROUPS: '/groups',
+  GROUP: (id: string) => `/groups/${id}`,
+  GROUP_IDEAS: (id: string) => `/groups/${id}/ideas`,
+  GROUP_IDEA_PLANS: (id: string) => `/groups/${id}/plans`,
+  GROUP_IDEA_PLAN: (groupId: string, planId: string) => `/groups/${groupId}/plans/${planId}`,
 } as const;
 
 // Route helpers for constructing paths with params

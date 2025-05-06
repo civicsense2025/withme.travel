@@ -138,6 +138,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
         group={group} 
         membership={membership} 
         recentTrips={groupTrips} 
+        isAuthenticated={!!user}
       />
     </>
   );
