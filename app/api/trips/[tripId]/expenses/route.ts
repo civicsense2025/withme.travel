@@ -110,14 +110,14 @@ export async function POST(
     const body = await request.json();
 
     // Basic validation
-    if (!body.title || !body.amount || !body.category || !body.date || !body.paid_by) {
+    if (!body.name || !body.amount || !body.category || !body.date || !body.paid_by) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     // --- End Corrected logic ---
 
     const expenseData = {
       trip_id: tripId,
-      title: body.title,
+      title: body.name,
       amount: Number(body.amount),
       currency: body.currency || 'USD',
       category: body.category,

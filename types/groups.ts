@@ -1,4 +1,4 @@
-import { GroupMemberRole, GroupMemberStatus, GroupVisibility } from '@/utils/constants/status';
+import { GroupMemberStatus, GroupVisibility } from '@/utils/constants/status';
 
 /**
  * Represents a travel group
@@ -17,6 +17,7 @@ export interface Group {
   // Relationships
   group_members?: GroupMember[];
   trip_count?: number;
+  created_by_profile?: Profile;
 }
 
 /**
@@ -81,4 +82,6 @@ export interface Destination {
   name: string;
   country?: string;
   image_url?: string;
-} 
+}
+
+export type GroupMemberRole = 'owner' | 'admin' | 'member' | 'guest'; 

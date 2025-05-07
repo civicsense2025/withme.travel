@@ -2,7 +2,7 @@
 
 ## Overview
 
-The withme.travel authentication system now supports both traditional account-based access and a new guest/anonymous flow for trip creation. This means users can create and explore trips without needing to sign up or log in, dramatically reducing friction and enabling a more welcoming onboarding experience. Authentication is still required for certain actions (like saving, sharing, or collaborating), but the initial trip creation and exploration can be done as a guest.
+The withme.travel authentication system supports both account-based and guest/anonymous flows. Users can create and explore trips as guests, and upgrade to a full account at any time. Authentication is required for sharing, collaboration, and persistent storage, but not for initial trip creation.
 
 ### Key Features
 - **Guest/Anonymous Trip Creation:** Users can create a trip and explore the app without an account. A temporary guest session is created and managed securely.
@@ -10,6 +10,41 @@ The withme.travel authentication system now supports both traditional account-ba
 - **Account-Based Access:** Logged-in users have access to all features, including collaboration, sharing, and persistent storage.
 - **Unified Auth State Management:** The AuthProvider and hooks handle both guest and authenticated user states, ensuring a consistent experience.
 - **A/B Testing Ready:** The new flow enables robust experimentation on onboarding, conversion, and retention.
+
+---
+
+## Best Practices (2025)
+
+- **Always use `getUser()` for Supabase auth checks** (never `getSession()`). This ensures you get the latest, secure user state and avoids stale or missing data.
+- **Profile data must always be pulled from `public.profiles`**. Never use `public.users` (deprecated) for user-facing info.
+- **Use the centralized `AuthProvider` and hooks** for all auth state and actions in React components.
+- **Defensive programming:** Always check for null/undefined user, guest, or session states. Handle all loading, error, and fallback cases.
+- **Never expose guest tokens or allow guest access to other users' data.**
+- **Upgrade path:** When a guest signs up, always link their guest data to the new account securely.
+- **Use constants from `utils/constants/database.ts`** for all DB access (never magic strings).
+- **Enforce Row Level Security (RLS)** on all sensitive tables and endpoints.
+- **Never store sensitive info in public tables or client-side state.**
+
+---
+
+## Guest Collaboration & Whiteboarding
+
+- **Guest tokens** allow users to join group planning sessions and collaborative whiteboards without an account.
+- Guests can:
+  - Create and join group plans and whiteboards in real time
+  - Add, edit, and move ideas, tasks, and comments
+  - See other guests' and members' presence and edits live
+- **Security boundaries:**
+  - Each guest token is isolated to its own group/plan context
+  - Guests cannot access or modify other groups or plans they are not invited to
+  - Guest tokens are never exposed outside their intended session
+  - All sensitive actions (export, sharing, inviting, persistent save) require upgrade to a full account
+- **Upgrade path:**
+  - At any time, a guest can sign up/log in to claim their group/plan and continue collaborating with full access
+  - All guest edits and contributions are preserved and linked to the new account
+- **Defensive design:**
+  - The UI always reflects guest vs. member capabilities
+  - Backend enforces strict RLS and token validation for all collaborative actions
 
 ---
 
@@ -78,43 +113,69 @@ if (isGuest) {
 }
 ```
 
----
+### Server-side Auth Check
+```ts
+import { createServerComponentClient } from '@supabase/ssr';
 
-## Impact on User Experience & Conversion
+export async function getServerSession() {
+  const supabase = createServerComponentClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+```
 
 ### Why This Change?
 - **Lower Friction:** Users can immediately try the core features without the barrier of account creation.
 - **Increased Engagement:** Early data shows higher engagement and more trips started when users aren't forced to sign up first.
 - **Flexible Onboarding:** We can now experiment with different upgrade prompts, timing, and messaging to optimize conversion.
 
-### Future A/B Testing & Experimentation
-- **Onboarding Funnel Experiments:** Easily test different guest-to-signup upgrade flows, prompt placements, and incentives.
-- **Conversion Rate Measurement:** Track how many guest users convert to full accounts, and which triggers are most effective.
-- **Personalized Prompts:** Experiment with personalized upgrade prompts based on user behavior (e.g., after creating a trip, trying to share, etc.).
-- **Retention Analysis:** Compare retention and engagement between users who start as guests vs. those who sign up immediately.
+const { data: profile } = await supabase
+  .from(TABLES.PROFILES)
+  .select('name, avatar_url, bio')
+  .eq('id', user.id)
+  .single();
+```
 
-### Analytics & Measurement
-- All guest and authenticated sessions are tracked with distinct identifiers, enabling precise funnel analysis.
-- Conversion events (guest → signup) are logged for A/B test evaluation.
-- The system is designed to support rapid iteration on onboarding and conversion strategies.
+### Client-side Auth State
+```tsx
+import { useAuth } from '@/components/auth-provider';
 
----
-
-## Best Practices & Implementation Notes
-
-- **Always Use AuthProvider:** All components should use the centralized AuthProvider to access auth state and actions.
-- **Handle All States:** UI should gracefully handle guest, authenticated, loading, and error states.
-- **Use Constants:** Always use constants from `utils/constants/database.ts` for database access.
-- **Secure Guest Data:** Never expose guest tokens or allow guest access to other users' data.
-- **Upgrade Path:** Ensure the upgrade flow preserves all guest data and links it to the new account.
-- **A/B Testing:** Use feature flags or experiment frameworks to control and measure onboarding variations.
+const { user, isGuest, signUp } = useAuth();
+if (!user && !isGuest) return <Loading />;
+if (isGuest) return <button onClick={signUp}>Sign Up</button>;
+```
 
 ---
 
-## Outdated Info Removed
-- The system no longer requires an account to create a trip.
-- All references to mandatory signup before trip creation have been removed.
-- The onboarding funnel is now flexible and supports both guest and authenticated entry points.
+## What to Avoid
+
+- Never use `getSession()` for auth checks—always use `getUser()`.
+- Never query or join on `public.users` for profile data—always use `public.profiles`.
+- Never use magic strings for table/field names—always use constants.
+- Never assume a user is authenticated—always check and handle guest/null states.
+- Never expose guest tokens or allow cross-user guest access.
+
+---
+
+## FAQ
+
+**Q: Why use `getUser()` instead of `getSession()`?**
+A: `getUser()` always returns the current, secure user state and is recommended by Supabase for all server/client checks. `getSession()` can be stale or missing in SSR/edge environments.
+
+**Q: Where should I get user profile data?**
+A: Always from `public.profiles`. `public.users` is deprecated and should never be used for display or joins.
+
+**Q: How do I handle guest vs. authenticated users?**
+A: Use the `AuthProvider` and its hooks. Always check for both states and handle loading/errors defensively.
+
+**Q: How do I ensure secure connections?**
+A: Use only the official Supabase clients, enforce RLS, never expose tokens, and always validate user/session on the backend.
+
+**Q: What if I need to join user data in a query?**
+A: Join on `public.profiles` using the user's ID. Never join on `public.users`.
+
+**Q: Can guests collaborate in real time on group plans and whiteboards?**
+A: Yes! Guest tokens allow real-time group planning and whiteboarding with other guests and members, but guests are strictly isolated to their invited group/plan. All sensitive actions and persistent saves require an upgrade to a full account.
 
 ---
 

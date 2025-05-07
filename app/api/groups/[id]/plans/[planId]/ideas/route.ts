@@ -148,7 +148,7 @@ export async function POST(
     const body = await request.json();
     
     // Validate required fields
-    if (!body.title || !body.type) {
+    if (!body.name || !body.type) {
       return NextResponse.json(
         { error: 'Title and type are required' },
         { status: 400 }
@@ -174,7 +174,7 @@ export async function POST(
     const { data: idea, error: createError } = await supabase
       .from('group_ideas')
       .insert({
-        title: body.title,
+        title: body.name,
         description: body.description || null,
         type: body.type,
         group_id: params.id,

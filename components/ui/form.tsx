@@ -44,7 +44,11 @@ const useFormField = () => {
   const itemContext = React.useContext(FormItemContext);
   const { getFieldState, formState } = useFormContext();
 
-  const fieldState = getFieldState(fieldContext.name, formState);
+  // Defensive: support both new and old react-hook-form versions
+  const fieldState =
+    typeof getFieldState === 'function'
+      ? getFieldState(fieldContext.name, formState)
+      : ((formState as any)?.fields?.[fieldContext.name] || {});
 
   if (!fieldContext) {
     throw new Error('useFormField should be used within <FormField>');

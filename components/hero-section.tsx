@@ -97,7 +97,7 @@ export function HeroSection() {
   return (
     <section
       aria-label="Main welcome section"
-      className="relative py-16 md:py-24 px-3 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center"
+      className="relative py-16 md:py-24 px-3 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center w-full"
     >
       <script
         type="application/ld+json"
@@ -112,7 +112,7 @@ export function HeroSection() {
         <div className="absolute top-[30%] right-[10%] w-40 h-40 rounded-full bg-travel-pink/10 animate-float"></div>
       </div>
 
-      <header>
+      <header className="w-full px-4 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -140,14 +140,14 @@ export function HeroSection() {
           </h1>
         </motion.div>
 
-        <p className="text-base md:text-lg lg:text-xl max-w-2xl mx-auto mb-10 md:mb-8">
+        <p className="text-base md:text-lg lg:text-xl mx-auto mb-10 md:mb-8" style={{ maxWidth: "800px" }}>
           plan your next adventure together, make decisions easily, and create unforgettable
           memories.
         </p>
       </header>
 
       {/* Location search section - optimized for mobile */}
-      <div className="w-full max-w-xl px-2 md:px-0 mb-8">
+      <div className="w-full px-2 md:px-0 mb-8" style={{ maxWidth: "800px" }}>
         <div className="flex flex-col md:flex-row gap-3">
           <LocationSearch
             onLocationSelect={handleLocationSelect}
@@ -166,7 +166,7 @@ export function HeroSection() {
       </div>
 
       {/* Popular destinations section - lazy loaded */}
-      <div className="w-full px-0 -mx-3 sm:-mx-6 lg:-mx-8 overflow-visible">
+      <div className="w-full overflow-visible">
         <h2 className="sr-only">Popular destinations</h2>
         <Suspense fallback={<div className="h-24"></div>}>
           <CityBubbles />

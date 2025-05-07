@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Always learn from your mistakes, our [learnings.mdc](mdc:.cursor/rules/learnings.mdc) and never make the same mistake twice in our codebase when you're editing and creating code, even with little context.

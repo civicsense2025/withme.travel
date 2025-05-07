@@ -1,314 +1,88 @@
 # Constants Management Guide
 
-This guide outlines how constants are organized and should be used within the withme.travel codebase to ensure consistency, maintainability, and type safety.
+This guide explains how to use and manage constants in the withme.travel codebase for maximum clarity, maintainability, and type safety.
 
 ## Core Principles
 
-1.  **Single Source of Truth:** Constants should be defined in a single place to avoid duplication and make updates easier.
-2.  **Organization:** Constants are grouped by domain (database, routes, UI, etc.) into specific files.
-3.  **Clarity:** Use clear and descriptive names for constants.
-4.  **Type Safety:** Leverage TypeScript for defining and using constants whenever possible.
-5.  **Direct Imports:** Always import constants directly from their specific source file. Avoid using index files for imports.
+- **Single Source of Truth:** All constants live in `utils/constants/` and are grouped by domain (database, routes, status, UI, etc.).
+- **Direct Imports Only:** Always import constants directly from their specific file (e.g., `utils/constants/database.ts`). **Never import from `utils/constants.ts` or any index file.**
+- **Type Safety:** Use TypeScript types and enums exported from constants files. Never use magic strings or numbers.
+- **Defensive Usage:** Always check for null/undefined and use enums/types for validation. Never assume a constant exists—handle missing/invalid values gracefully.
 
 ## Directory Structure
 
-All application-wide constants reside within the `utils/constants/` directory. Each file in this directory serves a specific domain:
+- `database.ts`: Database tables, fields, enums, and types (e.g., `TABLES`, `FIELDS`, `ENUMS`, `TripRole`, `ItemStatus`).
+- `routes.ts`: API and page route constants (`API_ROUTES`, `PAGE_ROUTES`).
+- `status.ts`: Status enums, roles, and notification types.
+- `ui.ts`: UI constants (themes, limits, display helpers).
+- `validation.ts`: Validation rules, regex, and Zod schemas.
+- `colors.ts`: Color palettes and mappings.
 
-- `database.ts`: The **primary source** for all database-related constants (table names, field names, enums, functions, policies).
-- `routes.ts`: Defines API endpoint paths and page routes.
-- `status.ts`: Contains status enums, roles, and other status-related values.
-- `ui.ts`: Holds constants related to UI elements, themes, limits, etc.
-- `validation.ts`: Defines validation rules and patterns.
-- `api.ts`: Constants specific to API interactions.
-- `colors.ts`: Defines color palettes and theme colors.
-- _(Other files)_: Additional files may exist for other specific domains.
+## Usage Patterns
 
-## Key Constant Files & Usage
-
-### 1. Database Constants (`utils/constants/database.ts`)
-
-This is the **most critical** constants file.
-
-- **Exports:** It directly exports objects for:
-  - `TABLES`: All database table names.
-  - `FIELDS`: Common and table-specific field names.
-  - `ENUMS`: Database enum values (e.g., `TRIP_ROLES`, `ITEM_STATUS`, `IMAGE_TYPE`, `TRIP_STATUS`, `ITINERARY_CATEGORY`).
-  - `RELATIONSHIPS`: Foreign key relationships between tables.
-- **Legacy Exports (Avoid):** For backward compatibility, it also exports `DB_TABLES`, `DB_FIELDS`, etc. **Do not use these `DB_*` prefixed constants in new code.** Always use the direct exports (`TABLES`, `FIELDS`, etc.).
-- **Types:** It defines explicit TypeScript types for many enums (e.g., `TripRole`, `ItemStatus`, `ImageType`, `TripStatus`, `ItineraryCategory`) directly within the file. These types are automatically derived from the `ENUMS` object using `typeof ENUMS.ENUM_NAME[keyof typeof ENUMS.ENUM_NAME]` for maintainability and to ensure they always match the defined constant values. This enhances type safety and avoids problematic external type imports.
-
-**Correct Usage:**
+### Database Constants
 
 ```typescript
-import { TABLES, FIELDS, ENUMS, type TripRole, type ItemStatus } from '@/utils/constants/database';
+import { TABLES, FIELDS, ENUMS, type TripRole } from '@/utils/constants/database';
 
-async function getUserTrip(userId: string, tripId: string) {
-  const { data, error } = await supabase
-    .from('trip_members')
-    .select(`${FIELDS.TRIP_MEMBERS.ROLE}`)
-    .eq(FIELDS.TRIP_MEMBERS.USER_ID, userId)
-    .eq(FIELDS.TRIP_MEMBERS.TRIP_ID, tripId)
-    .single();
-
-  if (data?.role === ENUMS.TRIP_ROLES.ADMIN) {
-    // ... handle admin case
-  }
+// Always use enums/types for roles/statuses
+if (member.role === ENUMS.TRIP_ROLES.ADMIN) {
+  // ...
 }
 
 function updateRole(newRole: TripRole) {
   // newRole is type-safe
 }
-
-function updateItem(item, status: ItemStatus) {
-  if (status === ENUMS.ITEM_STATUS.CONFIRMED) {
-    // ... handle confirmed case
-  }
-}
 ```
 
-### 2. Route Constants (`utils/constants/routes.ts`)
-
-Defines constants for API endpoints and page navigation paths:
-
-- `API_ROUTES`: Backend API endpoints for client-server communication
-- `PAGE_ROUTES`: Frontend page paths for navigation and linking
-- `ROUTE_HELPERS`: Utility functions for route construction and validation
-
-**Correct Usage:**
+### Route Constants
 
 ```typescript
-import { API_ROUTES, PAGE_ROUTES, ROUTE_HELPERS } from '@/utils/constants/routes';
+import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 
-// Fetch trip data from API
-async function fetchTripData(tripId: string) {
-  const response = await fetch(`${API_ROUTES.TRIPS}/${tripId}`);
-  // ...
-}
-
-// Navigate to trip details page
-// <Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)}>View Trip</Link>
-
-// Add query parameters to a route
-const searchUrl = ROUTE_HELPERS.addQueryParams(API_ROUTES.DESTINATION_SEARCH('paris'), {
-  limit: '10',
-  sort: 'popularity',
-});
+fetch(API_ROUTES.TRIPS);
+<Link href={PAGE_ROUTES.TRIP_DETAILS(trip.id)}>View Trip</Link>
 ```
 
-### 3. Status Constants (`utils/constants/status.ts`)
-
-Contains all status-related constants and their TypeScript types:
-
-- `TRIP_ROLES`: User roles within a trip (admin, editor, contributor, viewer)
-- `PERMISSION_STATUSES`: Permission request statuses
-- `ITINERARY_CATEGORIES`: Categories for itinerary items
-- `ITEM_STATUSES`: Status values for itinerary items
-- `TRIP_STATUSES`: Trip lifecycle statuses
-- `SPLIT_TYPES`, `TRIP_TYPES`, `BUDGET_CATEGORIES`: Various categorization enums
-- `USER_STATUSES`, `PRESENCE_STATUSES`: User state indicators
-- `NOTIFICATION_TYPES`: Types of system notifications
-
-**Correct Usage:**
+### Status & UI Constants
 
 ```typescript
-import {
-  TRIP_ROLES, // Keep importing values from status.ts if needed elsewhere
-  ITEM_STATUSES,
-  NOTIFICATION_TYPES,
-} from '@/utils/constants/status';
+import { TRIP_ROLES, NOTIFICATION_TYPES } from '@/utils/constants/status';
+import { TIME_FORMATS, CATEGORY_DISPLAY } from '@/utils/constants/ui';
 
-// Import the TYPE from database.ts
-import type { TripRole } from '@/utils/constants/database';
-
-// Check user permissions
-if (member.role === TRIP_ROLES.ADMIN || member.role === TRIP_ROLES.EDITOR) {
-  // Allow editing
-}
-
-// Update item status
-function updateItemStatus(item, status: ItemStatus) {
-  if (status === ITEM_STATUSES.CONFIRMED) {
-    sendNotification(NOTIFICATION_TYPES.TRIP_UPDATE);
-  }
-}
+if (member.role === TRIP_ROLES.EDITOR) { /* ... */ }
+const formatted = format(date, TIME_FORMATS.DISPLAY_DATE);
+const info = CATEGORY_DISPLAY[item.category];
 ```
 
-### 4. UI Constants (`utils/constants/ui.ts`)
+### Validation & Defensive Programming
 
-Defines UI-related constants for consistent presentation and formatting:
-
-- `THEME`: Theme colors and properties
-- `LIMITS`: Form field character limits
-- `TIME_FORMATS`: Date and time display formats
-- `INPUT_LIMITS`: Specific limits for different input fields
-- `CATEGORY_DISPLAY`: Visual elements for itinerary categories (emoji, label, color)
-- `ITEM_TYPE_DISPLAY`, `ITEM_STATUS_DISPLAY`: Visual elements for different types and statuses
-
-**Correct Usage:**
+- Always validate values before using them as keys for constants.
+- Use enums/types for all status/category/role checks.
+- Handle missing/invalid values with fallback logic.
 
 ```typescript
-import {
-  TIME_FORMATS,
-  INPUT_LIMITS,
-  CATEGORY_DISPLAY,
-  ITEM_STATUS_DISPLAY
-} from '@/utils/constants/ui';
+import { CATEGORY_DISPLAY } from '@/utils/constants/ui';
 
-// Format date
-const formattedDate = format(date, TIME_FORMATS.DISPLAY_DATE);
-
-// Limit input length
-<Input maxLength={INPUT_LIMITS.TRIP_NAME} />
-
-// Display category with consistent styling
-const categoryInfo = CATEGORY_DISPLAY[item.category] || DEFAULT_CATEGORY_DISPLAY;
-<Badge className={categoryInfo.color}>
-  {categoryInfo.emoji} {categoryInfo.label}
-</Badge>
+const info = CATEGORY_DISPLAY[item.category] || DEFAULT_CATEGORY_DISPLAY;
 ```
 
-### 5. API Constants (`utils/constants/api.ts`)
+## Deprecated: Never Do This
 
-Contains API-related configuration and query helpers:
+- **Never import from `utils/constants.ts` or `utils/constants/index.ts`.**
+- **Never use `DB_*` prefixed constants in new code.**
+- **Never use magic strings for roles, statuses, or categories.**
 
-- `API_ROUTES`: Defined API endpoints (similar to routes.ts but more detailed)
-- `UNSPLASH_CONFIG`: Configuration for Unsplash API integration
-- `DB_QUERIES`: Common database query patterns
-- `FOREIGN_KEYS`: Foreign key relationship names
-- `QUERY_SNIPPETS`: Reusable Supabase query fragments
+## User Data: Auth vs. Profile
 
-**Correct Usage:**
+- Use `TABLES.USERS` for auth (Supabase `auth.users`)
+- Use `TABLES.PROFILES` for public profile data (`public.profiles`)
+- Most joins and lookups use `PROFILES` for display/user info
 
-```typescript
-import { UNSPLASH_CONFIG, DB_QUERIES, QUERY_SNIPPETS } from '@/utils/constants/api';
+## Summary Checklist
 
-// Fetch image from Unsplash
-async function getRandomImage(query) {
-  const url = `${UNSPLASH_CONFIG.API_URL}${UNSPLASH_CONFIG.ENDPOINTS.RANDOM}`;
-  const params = new URLSearchParams({
-    query,
-    ...UNSPLASH_CONFIG.DEFAULT_QUERY_PARAMS,
-  });
-  // ...
-}
-
-// Use predefined query pattern
-const { data } = await supabase
-  .from(trips)
-  .select(QUERY_SNIPPETS.TRIP_WITH_CREATOR)
-  .eq('id', tripId);
-```
-
-### 6. Validation Constants (`utils/constants/validation.ts`)
-
-Contains validation-related constants and Zod schemas:
-
-- `LIMITS`: Form field length/count limits
-- Various status enums (`ITEM_STATUSES`, `TRIP_STATUSES`, etc.)
-- `VALIDATION_PATTERNS`: Regular expressions for validation
-- `ZOD_SCHEMAS`: Reusable Zod validation schemas
-
-**Correct Usage:**
-
-```typescript
-import {
-  VALIDATION_PATTERNS,
-  LIMITS,
-  ZOD_SCHEMAS
-} from '@/utils/constants/validation';
-
-// Validate username format
-const isValidUsername = VALIDATION_PATTERNS.USERNAME.test(username);
-
-// Enforce character limits
-<Input maxLength={LIMITS.TITLE_MAX} minLength={LIMITS.TITLE_MIN} />
-
-// Use predefined Zod schema
-const itemSchema = z.object({
-  status: ZOD_SCHEMAS.ITEM_STATUS,
-  // Other fields...
-});
-```
-
-### 7. Colors Constants (`utils/constants/colors.ts`)
-
-Contains color-related constants for UI styling:
-
-- `EXPENSE_CATEGORY_COLORS`: Colors for expense categories
-- `BUDGET_CATEGORY_COLORS`: Type-safe mapping of budget categories to colors
-- `STATUS_COLORS`: Standard colors for different statuses (success, error, etc.)
-
-**Correct Usage:**
-
-```typescript
-import {
-  EXPENSE_CATEGORY_COLORS,
-  BUDGET_CATEGORY_COLORS,
-  STATUS_COLORS,
-} from '@/utils/constants/colors';
-
-// Use in charts
-const pieChartData = {
-  datasets: [
-    {
-      data: [300, 150, 200],
-      backgroundColor: [
-        EXPENSE_CATEGORY_COLORS.accommodation,
-        EXPENSE_CATEGORY_COLORS.food,
-        EXPENSE_CATEGORY_COLORS.transportation,
-      ],
-    },
-  ],
-};
-
-// Type-safe color selection based on budget category
-function getCategoryColor(category) {
-  return BUDGET_CATEGORY_COLORS[category] || STATUS_COLORS.INFO;
-}
-```
-
-## Deprecated Index Files (Do Not Use for Imports)
-
-- `utils/constants.ts`
-- `utils/constants/index.ts`
-
-These files exist primarily for backward compatibility or historical reasons. **Do not import constants from these index files.** Always import directly from the specific file (e.g., `utils/constants/database.ts`, `utils/constants/routes.ts`). This makes dependencies clearer and avoids potential bundling or type issues.
-
-## User-Related Constants Clarification
-
-When working with user data, it's important to understand the distinction between these two tables:
-
-1. **USERS (auth.users)** - Represents the authentication data stored in the `auth.users` table.
-   - References the `users` table managed by Supabase Auth.
-   - Contains sensitive authentication information.
-   - Use `TABLES.USERS` when you need to reference auth users.
-
-2. **PROFILES (public.profiles)** - Represents user profile data stored in the `public.profiles` table.
-   - Contains public-facing user information (name, avatar, bio, etc.)
-   - Each profile has a foreign key relationship to an auth user.
-   - Use `TABLES.PROFILES` when you need to reference user profiles.
-
-Example of correct usage:
-
-```typescript
-// For authentication-related operations
-const { data: auth_user, error } = await supabase.auth.getUser();
-
-// For profile data operations
-const { data: profile } = await supabase
-  .from(TABLES.PROFILES)
-  .select('name, avatar_url, bio')
-  .eq('id', auth_user.id)
-  .single();
-```
-
-Note that in most cases when joining with other tables like trips or comments, you'll use the user's ID with the PROFILES table, not the USERS table.
-
-## Summary
-
-- Use `utils/constants/` as the central location.
-- Import directly from specific files (`database.ts`, `routes.ts`, etc.).
-- Use `TABLES`, `FIELDS`, `ENUMS` from `database.ts` (avoid `DB_*` prefixes).
-- Leverage the exported types (like `TripRole`, `ItemStatus`, `ImageType`, etc.) derived directly from the `ENUMS` object in `database.ts` for type safety.
-- **Never** import constants or types from `utils/constants.ts` or `utils/constants/index.ts`.
-- Remember the distinction between `TABLES.USERS` (auth.users) and `TABLES.PROFILES` (public.profiles) when working with user data.
+- [x] Import only from the specific constants file you need
+- [x] Use enums/types for all roles, statuses, and categories
+- [x] Validate all values before using as keys
+- [x] Never use index files or legacy/DB_* constants
+- [x] Handle missing/invalid values defensively

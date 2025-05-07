@@ -15,7 +15,7 @@ export function ClientSideLayoutRenderer({ children }: ClientSideLayoutRendererP
     return (
       <div
         id="main-content"
-        className="w-screen h-screen min-h-screen bg-background overflow-hidden"
+        className="w-screen h-screen min-h-screen bg-background overflow-hidden font-sans text-lg"
         tabIndex={-1}
         style={{ margin: 0, padding: 0 }}
       >
@@ -27,9 +27,11 @@ export function ClientSideLayoutRenderer({ children }: ClientSideLayoutRendererP
   // Regular layout: Navbar, container, Footer
   return (
     <>
-      <Navbar />
-      <div id="main-content" className="min-h-[calc(100vh-4rem-4rem)] mobile-container" tabIndex={-1}>
-        {children}
+      <div className="w-full font-sans text-lg">
+        <Navbar />
+        <div id="main-content" className="min-h-[calc(100vh-4rem-4rem)] w-full px-4 md:px-8 font-sans text-lg" tabIndex={-1}>
+          {children}
+        </div>
       </div>
       <Footer />
     </>

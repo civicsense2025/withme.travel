@@ -7,6 +7,8 @@ import type { SupabaseClient, Session, User } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { FIELDS } from '@/utils/constants/database';
 import { TABLES } from '@/utils/constants/tables';
+import { toast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export interface ExtendedUser extends User {
   profile?: {
@@ -45,6 +47,15 @@ export const AuthContext = createContext<AuthContextType>({
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+// Add a helper to get a cookie value by name (client-side)
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
 
 export function AuthProvider({ initialSession, children }: AuthProviderProps) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -143,6 +154,70 @@ export function AuthProvider({ initialSession, children }: AuthProviderProps) {
     );
     return () => listener.subscription.unsubscribe();
   }, [supabase]);
+
+  // --- GUEST TO USER GROUP CLAIM LOGIC ---
+  useEffect(() => {
+    // Only run if user is present (just signed up/logged in)
+    if (!user || !user.id) return;
+    // Only run in browser
+    if (typeof window === 'undefined') return;
+    // Check for guest_token cookie
+    const guestToken = getCookie('guest_token');
+    if (!guestToken) return;
+    // Defensive: only run once per session
+    if ((window as any)._withme_claimed_guest_groups) return;
+    (window as any)._withme_claimed_guest_groups = true;
+
+    // Claim guest groups
+    (async () => {
+      // Find all group_guest_members for this guest_token
+      const { data: guestMemberships, error } = await supabase
+        .from('group_guest_members')
+        .select('group_id')
+        .eq('guest_token', guestToken);
+      if (error || !guestMemberships || guestMemberships.length === 0) return;
+      let firstGroupId: string | null = null;
+      // For each group, insert into group_members if not already present
+      for (const [i, gm] of guestMemberships.entries()) {
+        const groupId = gm.group_id;
+        if (i === 0) firstGroupId = groupId;
+        // Check if already a member
+        const { data: existing } = await supabase
+          .from('group_members')
+          .select('id')
+          .eq('group_id', groupId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (!existing) {
+          await supabase.from('group_members').insert({
+            group_id: groupId,
+            user_id: user.id,
+            role: 'member',
+            status: 'active',
+          });
+        }
+        // Optionally: remove guest membership
+        await supabase
+          .from('group_guest_members')
+          .delete()
+          .eq('group_id', groupId)
+          .eq('guest_token', guestToken);
+      }
+      // Show toast/banner for first group
+      if (firstGroupId) {
+        toast({
+          title: 'Your group was saved!',
+          description: (
+            <span>
+              Click <a href={`/groups/${firstGroupId}`} className="underline text-primary">here</a> to open it.
+            </span>
+          ),
+        });
+      }
+      // Clear the guest_token cookie
+      document.cookie = 'guest_token=; Max-Age=0; path=/; SameSite=Lax';
+    })();
+  }, [user, supabase]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

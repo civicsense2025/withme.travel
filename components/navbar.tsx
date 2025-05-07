@@ -2,7 +2,7 @@
 
 import { PAGE_ROUTES } from '@/utils/constants/routes';
 import * as React from 'react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, PlusCircle, LogOut, Moon, Sun, Search } from 'lucide-react';
@@ -22,6 +22,7 @@ import { UserNav } from '@/components/layout/user-nav';
 import { ErrorBoundary } from '@sentry/nextjs';
 import { debugAuth, clearAuthData } from '@/lib/hooks/auth-debug';
 import { clearAndRefreshAuthCookies } from '@/utils/auth/session';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 // Create a client-only wrapper for the tooltip component
 function ClientOnlyTooltip({ children, text }: { children: React.ReactNode; text: string }) {
@@ -343,11 +344,20 @@ export function Navbar() {
     return pathname === path;
   };
 
+  // Dropdown menu width fix: hooks must be at top level
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuWidth, setMenuWidth] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    if (buttonRef.current) {
+      setMenuWidth(buttonRef.current.offsetWidth);
+    }
+  }, []);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border/40 dark:border-border/20 bg-background/95 backdrop-blur-sm">
-      <div className="flex h-16 items-center justify-between py-4 px-3 sm:px-4 md:px-6 max-w-4xl mx-auto">
+    <header className="sticky top-0 z-40 border-b border-border/40 dark:border-border/20 bg-background/95 backdrop-blur-sm w-full">
+      <div className="flex h-16 items-center justify-between py-4 px-3 sm:px-4 md:px-6 w-full">
         <div className="flex items-center gap-4 md:gap-8">
-          <div className="cursor-pointer" onClick={() => router.push('/')}>
+          <div className="cursor-pointer font-sans text-2xl font-bold" onClick={() => router.push('/')}>
             <Logo />
           </div>
 
@@ -413,15 +423,62 @@ export function Navbar() {
 
           {/* Plan a trip button - visible on all screens */}
           <div className="relative">
-            {!isLoadingState && (
-              <Link href={user ? '/trips/create' : '/login?redirect=/trips/create'}>
-                <ClientOnlyTooltip text={user ? 'Plan a new trip' : 'login to manage your trips'}>
+            {!isLoadingState && !user && (
+              <div className="relative inline-block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      ref={buttonRef}
+                      size="sm"
+                      variant="default"
+                      className={cn(
+                        'relative overflow-hidden lowercase rounded-full',
+                        'bg-travel-purple hover:bg-purple-400 text-purple-900',
+                        'text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8',
+                        'before:absolute before:inset-0 before:bg-shimmer-gradient',
+                        'before:bg-no-repeat before:bg-200%',
+                        'before:animate-shimmer',
+                        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple'
+                      )}
+                    >
+                      <span className="relative z-10 flex items-center">
+                        <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                        <span>start planning</span>
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="left-0"
+                    style={menuWidth ? { minWidth: menuWidth } : {}}
+                  >
+                    <DropdownMenuItem asChild>
+                      <Link href="/trips/create">
+                        <ClientOnlyTooltip text="Start a new trip, solo or with friends">
+                          <span className="flex items-center">🧳<span className="ml-2">Plan a Trip</span></span>
+                        </ClientOnlyTooltip>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href="/groups/create" className="block w-full">
+                        <ClientOnlyTooltip text="Create a collaborative planning group">
+                          <span className="flex items-center">👥<span className="ml-2">Form a Group</span></span>
+                        </ClientOnlyTooltip>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+            {/* Existing button for signed-in users or loading state */}
+            {(!isLoadingState && user) && (
+              <Link href="/trips/create">
+                <ClientOnlyTooltip text="Plan a new trip">
                   <Button
                     className={cn(
                       'relative overflow-hidden lowercase rounded-full',
                       'bg-travel-purple hover:bg-purple-400 text-purple-900',
                       'text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8',
-                      'animate-pulse-soft-scale',
                       'before:absolute before:inset-0 before:bg-shimmer-gradient',
                       'before:bg-no-repeat before:bg-200%',
                       'before:animate-shimmer',
@@ -430,7 +487,7 @@ export function Navbar() {
                   >
                     <span className="relative z-10 flex items-center">
                       <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                      <span>{user ? 'manage my trips' : 'sign in'}</span>
+                      <span>manage my trips</span>
                     </span>
                   </Button>
                 </ClientOnlyTooltip>
@@ -542,7 +599,6 @@ export function Navbar() {
                           'lowercase rounded-full',
                           'bg-travel-purple hover:bg-purple-400 text-purple-900',
                           'text-sm px-3 py-1 h-8',
-                          'animate-pulse-soft-scale',
                           'before:absolute before:inset-0 before:bg-shimmer-gradient',
                           'before:bg-no-repeat before:bg-200%',
                           'before:animate-shimmer',

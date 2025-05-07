@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageDebug, LayoutDebug, DebugBoundary, StateInspector } from '@/components/debug';
 import { ArrowLeft } from 'lucide-react';
+import { Container } from '@/components/container';
 
 export default function ComponentSandboxPage() {
   const [count, setCount] = useState(0);
@@ -25,7 +26,7 @@ export default function ComponentSandboxPage() {
   });
 
   return (
-    <div className="container mx-auto p-4 max-w-5xl">
+    <Container size="full">
       <div className="flex items-center mb-6">
         <Link href="/debug" className="mr-2">
           <ArrowLeft className="h-4 w-4 inline-block" />
@@ -248,6 +249,6 @@ export default function ComponentSandboxPage() {
           .
         </p>
       </div>
-    </div>
+    </Container>
   );
 }

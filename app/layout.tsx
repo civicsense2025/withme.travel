@@ -20,6 +20,9 @@ import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { LayoutModeProvider } from './context/layout-mode-context';
 import { ClientSideLayoutRenderer } from '@/components/client-side-layout-renderer';
+import { Toaster } from '@/components/ui/toaster';
+import { helveticaNeue } from './fonts';
+import { Container } from '@/components/container';
 
 // Define font but don't export it
 const fontSans = FontSans({
@@ -35,14 +38,22 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // SSR: fetch session once
-  const supabase = await createRouteHandlerClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // SSR: fetch session once, but handle missing session gracefully
+  let session = null;
+  try {
+    const supabase = await createRouteHandlerClient();
+    const { data } = await supabase.auth.getSession();
+    session = data?.session ?? null;
+  } catch (err) {
+    // Defensive: log and continue, don't throw
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('No session found or Supabase error:', err);
+    }
+    session = null;
+  }
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={helveticaNeue.variable}>
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -103,7 +114,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Providers initialSession={session}>
             <LayoutModeProvider>
               <ClientSideLayoutRenderer>
-                {children}
+                <Container size="full">
+                  {children}
+                </Container>
               </ClientSideLayoutRenderer>
             </LayoutModeProvider>
             <ClientSideProviders>
@@ -115,6 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </ClientSideProviders>
           </Providers>
         </TooltipProvider>
+        <Toaster />
       </body>
     </html>
   );

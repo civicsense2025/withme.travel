@@ -1,6 +1,7 @@
 import { TrendingDestinations } from '@/components/trending-destinations';
 import { HeroSection } from '@/components/hero-section';
 import { Button } from '@/components/ui/button';
+import { Container } from '@/components/container';
 import Link from 'next/link';
 import { MapPin, CalendarCheck } from 'lucide-react';
 import { cookies } from 'next/headers';
@@ -20,13 +21,13 @@ export default async function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col">
-      <HeroSection />
+    <Container size="full">
+      <main className="flex min-h-screen flex-col w-full">
+        <HeroSection />
 
-      {/* Trending Destinations */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
+        {/* Trending Destinations */}
+        <section className="py-12 w-full">
+          <div className="flex items-center justify-between mb-8 px-4 md:px-8">
             <div>
               <h2 className="text-3xl font-bold mb-2 lowercase">trending destinations</h2>
               <p className="text-muted-foreground">
@@ -37,108 +38,108 @@ export default async function Home() {
               <Link href="/destinations">view all destinations</Link>
             </Button>
           </div>
-          <div>
+          <div className="w-full">
             <TrendingDestinations />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Section - Increased padding and changed layout */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl md:leading-loose font-extrabold mb-4">
-            plan together,{' '}
-            <span className="text-travel-purple dark:text-travel-purple">travel better</span>
-          </h2>
-          <p className="text-lg mb-20 max-w-2xl mx-auto">
-            Everything you need to create amazing group trips without the headaches.
-          </p>
+        {/* Features Section - Increased padding and changed layout */}
+        <section className="py-24 bg-muted/30 w-full">
+          <div className="text-center px-4 md:px-8">
+            <h2 className="text-4xl md:text-5xl md:leading-loose font-extrabold mb-4">
+              plan together,{' '}
+              <span className="text-travel-purple dark:text-travel-purple">travel better</span>
+            </h2>
+            <p className="text-lg mb-20 mx-auto" style={{ maxWidth: "800px" }}>
+              Everything you need to create amazing group trips without the headaches.
+            </p>
 
-          {/* Increased spacing between rows */}
-          <div className="space-y-16 md:space-y-20">
-            {/* Row 1: Two items */}
-            <div className="flex flex-col md:flex-row justify-center gap-10 md:gap-16">
-              <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
-                {/* Feature 1: Find cool spots */}
-                <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <MapPin className="text-travel-purple dark:text-travel-purple h-8 w-8" />
+            {/* Increased spacing between rows */}
+            <div className="space-y-16 md:space-y-20">
+              {/* Row 1: Two items */}
+              <div className="flex flex-col md:flex-row justify-center gap-10 md:gap-16">
+                <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
+                  {/* Feature 1: Find cool spots */}
+                  <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <MapPin className="text-travel-purple dark:text-travel-purple h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">find cool spots</h3>
+                  <p className="text-muted-foreground">
+                    Discover and save places everyone will love. No more endless debates about where
+                    to go.
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">find cool spots</h3>
-                <p className="text-muted-foreground">
-                  Discover and save places everyone will love. No more endless debates about where
-                  to go.
-                </p>
+                <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
+                  {/* Feature 2: Vote on plans */}
+                  <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-travel-purple dark:text-travel-purple"
+                    >
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">vote on plans</h3>
+                  <p className="text-muted-foreground">
+                    Everyone gets a say. Easily vote on activities, restaurants, and accommodations.
+                  </p>
+                </div>
               </div>
-              <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
-                {/* Feature 2: Vote on plans */}
-                <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-travel-purple dark:text-travel-purple"
-                  >
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold mb-3">vote on plans</h3>
-                <p className="text-muted-foreground">
-                  Everyone gets a say. Easily vote on activities, restaurants, and accommodations.
-                </p>
-              </div>
-            </div>
 
-            {/* Row 2: One centered item */}
-            <div className="flex justify-center">
-              <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
-                {/* Feature 3: Build your itinerary */}
-                <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CalendarCheck className="text-travel-purple dark:text-travel-purple h-8 w-8" />
+              {/* Row 2: One centered item */}
+              <div className="flex justify-center">
+                <div className="md:w-1/3 bg-card p-8 rounded-lg shadow-sm border">
+                  {/* Feature 3: Build your itinerary */}
+                  <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CalendarCheck className="text-travel-purple dark:text-travel-purple h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">build your itinerary</h3>
+                  <p className="text-muted-foreground">
+                    Create the perfect schedule together. Sync with your calendar so you never miss a
+                    thing.
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">build your itinerary</h3>
-                <p className="text-muted-foreground">
-                  Create the perfect schedule together. Sync with your calendar so you never miss a
-                  thing.
-                </p>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Section - Increased padding */}
-      <section className="py-24 bg-travel-purple/10">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl md:leading-loose font-extrabold mb-4">
-            ready to start planning?
-          </h2>
-          <p className="text-lg mb-10 max-w-2xl mx-auto">
-            Join withme.travel today and make your next group trip the best one yet.
-          </p>
-          <div className="flex flex-wrap justify-center gap-6">
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900"
-              >
-                Sign up - it's free
-              </Button>
-            </Link>
-            <Link href="/destinations">
-              <Button size="lg" variant="outline" className="rounded-full">
-                Explore destinations
-              </Button>
-            </Link>
+        {/* CTA Section - Increased padding */}
+        <section className="py-24 bg-travel-purple/10 w-full">
+          <div className="text-center px-4 md:px-8">
+            <h2 className="text-4xl md:text-5xl md:leading-loose font-extrabold mb-4">
+              ready to start planning?
+            </h2>
+            <p className="text-lg mb-10 mx-auto" style={{ maxWidth: "800px" }}>
+              Join withme.travel today and make your next group trip the best one yet.
+            </p>
+            <div className="flex flex-wrap justify-center gap-6">
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900"
+                >
+                  Sign up - it's free
+                </Button>
+              </Link>
+              <Link href="/destinations">
+                <Button size="lg" variant="outline" className="rounded-full">
+                  Explore destinations
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </Container>
   );
 }

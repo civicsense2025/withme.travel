@@ -37,7 +37,13 @@ import { DestinationCardProps } from './types';
  * - Focus indicators
  * - Touch target sizing
  */
-const DestinationCard = memo(({ destination }: DestinationCardProps) => {
+
+// Extend props to support disableNavigation
+interface DestinationCardWithDisableProps extends DestinationCardProps {
+  disableNavigation?: boolean;
+}
+
+const DestinationCard = memo(({ destination, disableNavigation }: DestinationCardWithDisableProps) => {
   const router = useRouter();
   
   /**
@@ -69,19 +75,24 @@ const DestinationCard = memo(({ destination }: DestinationCardProps) => {
   }, [router, destination.city, destination.id]);
   
   // Generate accessible label for the destination
-  const ariaLabel = `View ${destination.name || destination.city}${destination.country ? ` in ${destination.country}` : ''}`;
+  const ariaLabel = `View ${destination.city || destination.name}${destination.country ? ` in ${destination.country}` : ''}`;
+  
+  // Always show city as main name if present
+  const displayName = destination.city || destination.name;
   
   return (
     <div
-      role="link"
-      tabIndex={0}
+      role={disableNavigation ? 'presentation' : 'link'}
+      tabIndex={disableNavigation ? -1 : 0}
       className={`${LAYOUT.CARD_CLASSES} ${LAYOUT.ITEM_HEIGHT} cursor-pointer
         hover:opacity-90 hover:ring-2 hover:ring-primary/50
         focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
         active:scale-[0.98] touch-action-manipulation`}
-      onClick={handleNavigate}
-      onKeyDown={handleKeyDown}
-      aria-label={ariaLabel}
+      {...(!disableNavigation && {
+        onClick: handleNavigate,
+        onKeyDown: handleKeyDown,
+        'aria-label': ariaLabel,
+      })}
     >
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -93,7 +104,7 @@ const DestinationCard = memo(({ destination }: DestinationCardProps) => {
       />
       <div className="h-full w-full flex items-end p-4 bg-gradient-to-t from-black/60 to-transparent relative z-10">
         <div className="text-white">
-          <h3 className="font-semibold text-lg">{destination.name || destination.city}</h3>
+          <h3 className="font-semibold text-lg">{displayName}</h3>
           {destination.country && <p className="text-sm opacity-90">{destination.country}</p>}
         </div>
       </div>

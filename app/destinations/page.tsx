@@ -35,43 +35,60 @@ export const metadata: Metadata = {
   },
 };
 
+interface Destination {
+  id: string;
+  name: string;
+  city: string;
+  country: string;
+  image_url: string;
+  description: string;
+}
+
 /**
  * Fetch all destinations from Supabase, selecting only the fields we need.
  */
-async function fetchAllDestinations() {
+async function fetchAllDestinations(): Promise<Destination[]> {
   const supabase = await createServerComponentClient();
   const { data, error } = await supabase
     .from('destinations')
     .select([
       'id',
-      'CONTINENT',
-      'COUNTRY',
-      'CITY',
-      'IMAGE_URL',
-      'DESCRIPTION',
-      'UPDATED_AT',
+      'name',
+      'city',
+      'country',
+      'image_url',
+      'description'
     ].join(','))
-    .order('CONTINENT', { ascending: true })
-    .order('COUNTRY', { ascending: true })
-    .order('CITY', { ascending: true });
+    .order('country', { ascending: true })
+    .order('city', { ascending: true });
 
-  if (error) {
+  if (error || !Array.isArray(data)) {
     // In production, you might want to log this
     return [];
   }
-  
-  // Filter out any possible error objects in the results
-  const validDestinations = Array.isArray(data) 
-    ? data.filter(item => 
-        typeof item === 'object' && 
-        item !== null && 
-        !('error' in item) &&
-        'id' in item &&
-        'name' in item
-      ) 
-    : [];
-    
-  return validDestinations;
+
+  function isDestination(item: any): item is Destination {
+    return (
+      typeof item === 'object' &&
+      item !== null &&
+      typeof item.id === 'string' &&
+      typeof item.name === 'string'
+    );
+  }
+
+  return data.reduce<Destination[]>((acc, item) => {
+    if (isDestination(item)) {
+      acc.push({
+        id: item.id,
+        name: item.name,
+        city: item.city ?? '',
+        country: item.country ?? '',
+        image_url: item.image_url ?? '',
+        description: item.description ?? '',
+      });
+    }
+    return acc;
+  }, []);
 }
 
 /**
@@ -81,7 +98,7 @@ async function fetchAllDestinations() {
  * Uses a client component for the interactive elements.
  */
 export default async function DestinationsPage() {
-  const destinations = await fetchAllDestinations();
+  const destinations: Destination[] = await fetchAllDestinations();
   return (
     <main>
       <PageHeader

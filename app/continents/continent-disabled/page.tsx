@@ -20,6 +20,7 @@ import { DestinationCard } from '@/components/destination-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Container } from '@/components/container';
 
 // Force dynamic rendering for this page since it uses data fetching
 export const dynamic = 'force-dynamic';
@@ -277,7 +278,7 @@ export default function ContinentPage() {
       </div>
 
       {/* Main content */}
-      <div className="container py-12">
+      <Container size="full">
         <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="mb-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -511,7 +512,7 @@ export default function ContinentPage() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </Container>
     </div>
   );
 }

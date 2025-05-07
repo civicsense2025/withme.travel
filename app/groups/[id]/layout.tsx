@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import GroupNavigation from './navigation';
+// import GroupNavigation from './navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -34,9 +34,7 @@ export default async function GroupLayout({
           Back to groups
         </Link>
       </div>
-      
-      <GroupNavigation groupId={id} />
-      
+      {/* <GroupNavigation groupId={id} /> */}
       <main>{children}</main>
     </div>
   );

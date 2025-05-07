@@ -17,12 +17,27 @@ const config = {
       center: true,
       padding: '2rem',
       screens: {
-        '2xl': '1400px',
+        // No max-width constraint for full-width layout
       },
+    },
+    fontSize: {
+      xs: '0.75rem',      // up from 0.75rem
+      sm: '0.875rem',  // up from 0.875rem
+      base: '1rem', // up from 1rem
+      lg: '1.125rem',    // up from 1.125rem
+      xl: '1.25rem',      // up from 1.25rem
+      '2xl': '1.5rem', // up from 1.5rem
+      '3xl': '3rem',   // up from 1.875rem
+      '4xl': '3.5rem', // up from 2.25rem
+      '5xl': '4rem',   // up from 3rem
+      '6xl': '4.5rem', // up from 3.75rem
+      '7xl': '5rem',   // up from 4.5rem
+      '8xl': '6rem',   // up from 6rem
+      '9xl': '7rem',   // up from 8rem
     },
     extend: {
       fontFamily: {
-        serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+        sans: ['var(--font-helvetica-neue)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',

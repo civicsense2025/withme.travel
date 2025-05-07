@@ -6,13 +6,16 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
+import { TABLES as CORE_TABLES } from '@/utils/constants/database';
+import { TABLES as MULTI_CITY_TABLES } from '@/utils/constants/database-multi-city';
 
-// Define table and field constants
+// Combine the tables from both sources
 const TABLES = {
-  TRIPS: 'trips',
-  TRIP_MEMBERS: 'trip_members',
+  ...CORE_TABLES,
+  ...MULTI_CITY_TABLES
 };
 
+// Define table and field constants
 const FIELDS = {
   TRIPS: {
     ID: 'id',
@@ -159,120 +162,128 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const supabase = await createRouteHandlerClient();
-  console.log('[API] Processing trip creation request');
-
   try {
-    const body = await request.json();
-    const { title: tripTitle, ...restOfBody } = body;
+    const supabase = await createRouteHandlerClient();
+    
+    // Get user securely, but don't require a user (allows guest access)
+    let user = null;
+    let guestToken = null;
+    
+    try {
+      // Try to get authenticated user
+      const { data, error } = await supabase.auth.getUser();
+      if (!error) {
+        user = data.user;
+      } else if (process.env.NODE_ENV === 'development') {
+        console.log('No authenticated user, proceeding as guest: ', error);
+      }
+    } catch (err) {
+      console.log('Error checking user auth, proceeding as guest: ', err);
+    }
 
-    // Honeypot check if present in the form
-    if (restOfBody.website && restOfBody.website.length > 0) {
-      console.warn('[API] Honeypot triggered');
+    // Get request body
+    const body = await request.json();
+    const { 
+      name, 
+      destination_id, 
+      start_date, 
+      end_date, 
+      cities = [],
+      website, // Honeypot field
+    } = body;
+    
+    // Honeypot check
+    if (website && website.length > 0) {
+      console.warn('[API] Honeypot triggered:', website);
       return NextResponse.json({ success: true }, { status: 200 });
     }
 
-    if (!tripTitle) {
-      console.warn('[API] Missing trip title');
-      return NextResponse.json({ error: 'Trip title is required' }, { status: 400 });
+    // Validate input
+    if (!name) {
+      return NextResponse.json({ error: "Trip name is required" }, { status: 400 });
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    // Handle both authenticated and guest users
-    let createdById = null;
-    let guestToken = null;
-    let ip = null;
-
-    if (user) {
-      // Authenticated user case
-      console.log('[API] Creating trip for authenticated user:', user.id);
-      createdById = user.id;
-    } else {
-      // Guest user case
-      console.log('[API] Creating trip for guest user');
-      const cookieStore = await cookies();
-      guestToken = cookieStore.get('guest_trip_token')?.value || null;
-      ip = (request.headers.get('x-forwarded-for') || '').split(',')[0] || request.headers.get('x-real-ip') || null;
-      console.log('[API] Guest trip creation attempt:', { guestToken, ip });
-
-      // Rate limiting for guests
-      if (ip) {
-        const now = Date.now();
-        const rl = rateLimitMap.get(ip) || { count: 0, lastReset: now };
-        if (now - rl.lastReset > RATE_LIMIT_WINDOW) {
-          rl.count = 0;
-          rl.lastReset = now;
-        }
-        rl.count++;
-        rateLimitMap.set(ip, rl);
-        if (rl.count > RATE_LIMIT) {
-          return NextResponse.json({ error: 'Too many trip creations from this IP. Please try again later.' }, { status: 429 });
-        }
-      }
-
-      if (!guestToken) {
-        // Generate a new guest token
-        guestToken = crypto.randomUUID();
-      }
-    }
-
-    // Prepare payload using FIELDS
-    const insertPayload = {
-      ...restOfBody,
-      ['NAME']: tripTitle,
-      ['CREATED_BY']: createdById,
-      ['GUEST_TOKEN']: guestToken,
+    let tripId: string | null = null;
+    let newTrip: any = null;
+    
+    // Create trip
+    const trip = {
+      name,
+      destination_id: destination_id || null,
+      start_date: start_date || null,
+      end_date: end_date || null,
+      created_by: user?.id || null,
     };
-
-    const { data, error } = await supabase
-      .from('trips')
-      .insert(insertPayload)
+    
+    // For guests, add guest token
+    if (!user) {
+      // Try to get guest token from cookies
+      const cookieStore = await cookies();
+      let guestToken = cookieStore.get('guest_token')?.value || null;
+      
+      // Generate new guest token if none exists
+      if (!guestToken) {
+        guestToken = crypto.randomUUID();
+        cookieStore.set({
+          name: 'guest_token',
+          value: guestToken,
+          path: '/',
+          maxAge: 30 * 24 * 60 * 60, // 30 days
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+      }
+      
+      // Store guest token with the trip
+      Object.assign(trip, { guest_token: guestToken });
+    }
+    
+    // Insert trip into database
+    const { data: tripData, error: tripError } = await supabase
+      .from(TABLES.TRIPS)
+      .insert(trip)
       .select()
       .single();
-
-    if (error) {
-      console.error('[API /trips POST] Error inserting trip:', error);
-      throw error;
+    
+    if (tripError) {
+      console.error("Error creating trip:", tripError);
+      return NextResponse.json({ error: "Failed to create trip" }, { status: 500 });
     }
-
-    if (!data) {
-      throw new Error('Trip data not returned after insert');
-    }
-
-    // If authenticated, add the creator as a member
-    if (user) {
-      const tripId = data['id'];
-      const { error: memberError } = await supabase.from('trip_members').insert({
-        ['TRIP_ID']: tripId,
-        ['USER_ID']: user.id,
-        ['ROLE']: TRIP_ROLES.ADMIN,
-      });
-
-      if (memberError) {
-        console.error('Error adding creator as trip member:', memberError);
-        // Continue anyway as the trip was created successfully
+    
+    newTrip = tripData;
+    tripId = tripData.id;
+    
+    // If cities are provided, add them to the trip
+    if (tripId && cities && cities.length > 0) {
+      for (let i = 0; i < cities.length; i++) {
+        const city = cities[i];
+        
+        // Create trip city
+        const tripCity = {
+          trip_id: tripId,
+          city_id: city.city_id,
+          position: i,
+          arrival_date: city.arrival_date || null,
+          departure_date: city.departure_date || null,
+        };
+        
+        // Insert trip city
+        const { error: cityError } = await supabase
+          .from(TABLES.TRIP_CITIES)
+          .insert(tripCity);
+        
+        if (cityError) {
+          console.error("Error adding city to trip:", cityError);
+          // Continue with other cities
+        }
       }
     }
-
-    // Set a cookie with the guest token if this is a guest user
-    const response = NextResponse.json({ trip: data });
-    if (guestToken && !user) {
-      response.cookies.set('guest_trip_token', guestToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        path: '/',
-      });
-    }
-
-    return response;
+    
+    // Return trip data
+    return NextResponse.json({ trip: newTrip }, { status: 201 });
   } catch (error) {
-    console.error('Error creating trip:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create trip';
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    console.error("Error creating trip:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

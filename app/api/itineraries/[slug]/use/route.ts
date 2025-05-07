@@ -21,11 +21,11 @@ export async function POST(
   try {
     const body = await request.json();
 
-    if (!body.title) {
+    if (!body.name) {
       return NextResponse.json({ error: 'Trip title is required' }, { status: 400 });
     }
 
-    console.log(`[DEBUG] Creating trip from template with title: ${body.title}`);
+    console.log(`[DEBUG] Creating trip from template with title: ${body.name}`);
 
     // Get the template with its sections and items
     const { data: template, error: templateError } = await supabase
@@ -54,7 +54,7 @@ export async function POST(
     const { data: trip, error: tripError } = await supabase
       .from('trips')
       .insert({
-        name: body.title,
+        name: body.name,
         description: body.description || template.description,
         destination_id: template.destination_id,
         start_date: body.start_date || null,

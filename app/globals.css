@@ -174,7 +174,7 @@
 
   /* Mobile-friendly container */
   .mobile-container {
-    @apply w-full px-3 sm:px-6 md:max-w-4xl md:mx-auto md:px-8;
+    @apply w-full p-0 max-w-none mx-0;
   }
   
   /* Collapsible section for mobile */
@@ -548,4 +548,47 @@ body.dragging-active * {
 /* Fix for CollaboratorList */
 .collaborator-list {
   z-index: 101;
+}
+
+html {
+  font-family: var(--font-helvetica-neue), 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 20px;
+}
+body, button, input, textarea, select {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+nav a, .nav-link, .navbar a {
+  font-size: 1.25rem;
+  font-family: inherit;
+}
+
+/* Override Tailwind container class to be full width */
+.container {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 1rem !important; /* 16px */
+  padding-right: 1rem !important; /* 16px */
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding-left: 1.5rem !important; /* 24px */
+    padding-right: 1.5rem !important; /* 24px */
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-left: 2rem !important; /* 32px */
+    padding-right: 2rem !important; /* 32px */
+  }
 }

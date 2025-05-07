@@ -72,16 +72,23 @@ export async function POST(request: Request) {
   try {
     const supabase = await createRouteHandlerClient();
     
-    // Get user securely
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Get user securely, but don't require a user
+    let user = null;
+    let guestToken = null;
     
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+      // Try to get authenticated user
+      const { data, error } = await supabase.auth.getUser();
+      if (!error) {
+        user = data.user;
+      } else if (process.env.NODE_ENV === 'development') {
+        console.log('No authenticated user, proceeding as guest: ', error);
+      }
+    } catch (err) {
+      console.log('Error checking user auth, proceeding as guest: ', err);
     }
-    
-    const userId = user.id;
-    
-    // Parse body early to get guest token if present
+
+    // Parse body to get group details and guest token if present
     const body = await request.json();
     const { name, description, emoji, visibility, website } = body;
     console.log('[API] Incoming group creation:', body);
@@ -104,9 +111,10 @@ export async function POST(request: Request) {
     if (!user) {
       // Try to get guest token from cookies
       const cookieStore = await cookies();
-      let guestToken = cookieStore.get('guest_group_token')?.value || null;
+      let guestToken = cookieStore.get('guest_token')?.value || null;
       let ip = (request.headers.get('x-forwarded-for') || '').split(',')[0] || request.headers.get('x-real-ip') || null;
       console.log('[API] Guest group creation:', { guestToken, ip });
+      
       // Rate limiting for guests
       if (ip) {
         const now = Date.now();
@@ -121,10 +129,22 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Too many group creations from this IP. Please try again later.' }, { status: 429 });
         }
       }
+      
+      // Generate new guest token if none exists
       if (!guestToken) {
         guestToken = crypto.randomUUID();
+        cookieStore.set({
+          name: 'guest_token',
+          value: guestToken,
+          path: '/',
+          maxAge: 30 * 24 * 60 * 60, // 30 days
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
       }
-      // Insert guest group
+      
+      // Insert guest group (NO guest_token in groups table)
       const { data: group, error } = await supabase
         .from('groups')
         .insert({
@@ -132,14 +152,29 @@ export async function POST(request: Request) {
           description: description || null,
           emoji: emoji || null,
           visibility: visibility || 'private',
-          guest_token: guestToken,
         })
         .select()
         .single();
+        
       if (error) {
         console.error('[API] Error creating guest group:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
+      
+      // Insert into group_guest_members for guest
+      if (group && guestToken) {
+        // Check if already present
+        const { data: existing } = await supabase
+          .from('group_guest_members')
+          .select('id')
+          .eq('group_id', group.id)
+          .eq('guest_token', guestToken)
+          .maybeSingle();
+        if (!existing) {
+          await supabase.from('group_guest_members').insert({ group_id: group.id, guest_token: guestToken });
+        }
+      }
+      
       console.log('[API] Guest group created:', group);
       return NextResponse.json({ group }, { status: 201 });
     }
@@ -166,7 +201,6 @@ export async function POST(request: Request) {
               description: description || null,
               emoji: emoji || null,
               visibility: visibility || 'private',
-              created_by: userId
             })
             .select()
             .single();
@@ -180,7 +214,7 @@ export async function POST(request: Request) {
             .from('group_members')
             .insert({
               group_id: newGroup.id,
-              user_id: userId,
+              user_id: user.id,
               role: 'admin',
               status: 'active'
             });
@@ -194,7 +228,7 @@ export async function POST(request: Request) {
             group: {
               ...newGroup,
               group_members: [{
-                user_id: userId,
+                user_id: user.id,
                 role: 'admin',
                 status: 'active'
               }]

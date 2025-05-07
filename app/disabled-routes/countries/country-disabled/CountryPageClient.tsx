@@ -235,7 +235,7 @@ export default function CountryPageClient({
                     className="bg-card p-4 rounded-lg shadow-sm border"
                   >
                     <DestinationCard 
-                      destination={dest} 
+                      destination={{ ...dest, name: dest.name ?? undefined }} 
                     />
                   </motion.div>
                 ))}

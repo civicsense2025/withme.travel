@@ -154,7 +154,7 @@ export async function POST(
     const body = await request.json();
     
     // Validate required fields
-    if (!body.title || !body.type) {
+    if (!body.name || !body.type) {
       return NextResponse.json(
         { error: 'Title and type are required' },
         { status: 400 }
@@ -166,7 +166,7 @@ export async function POST(
       .from('group_ideas')
       .insert({
         group_id: params.id,
-        title: body.title,
+        title: body.name,
         description: body.description,
         type: body.type,
         created_by: user.id,

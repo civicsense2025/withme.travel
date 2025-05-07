@@ -12,6 +12,8 @@ import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { Loader2, Plus, Edit, Trash, Archive, AlertCircle, FolderSymlink } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { City } from '@/types/multi-city';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Type for a processed plan with ideas count
 interface Plan {
@@ -25,6 +27,9 @@ interface Plan {
   created_at: string;
   updated_at: string;
   ideas_count: number;
+  voting?: boolean;
+  completed?: boolean;
+  trip_id?: string;
   creator?: {
     id: string;
     email: string;
@@ -39,6 +44,30 @@ interface PlansClientProps {
   groupEmoji: string | null;
   isAdmin: boolean;
   userId: string;
+  isGuest?: boolean;
+}
+
+// Utility: Find the closest matching city by name (case-insensitive, fallback to country if needed)
+async function findClosestCityMatch(cityOrDestination: string): Promise<City | null> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return null;
+  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+  // Try exact match first
+  let { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .ilike('name', cityOrDestination);
+  if (!error && data && data.length > 0) return data[0];
+  // Try partial match
+  ({ data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .ilike('name', `%${cityOrDestination}%`)
+    .limit(1));
+  if (!error && data && data.length > 0) return data[0];
+  // Could add more fuzzy logic here (country, region, etc.)
+  return null;
 }
 
 export default function PlansClient({ 
@@ -47,7 +76,8 @@ export default function PlansClient({
   groupName, 
   groupEmoji, 
   isAdmin,
-  userId
+  userId,
+  isGuest = false
 }: PlansClientProps) {
   const router = useRouter();
   const [plans, setPlans] = useState<Plan[]>(initialPlans);
@@ -312,131 +342,91 @@ export default function PlansClient({
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="mx-auto container py-6 space-y-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold flex items-center">
-            {groupEmoji && <span className="mr-2 text-2xl">{groupEmoji}</span>}
-            {groupName} Plans
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            {groupEmoji && <span>{groupEmoji}</span>}
+            <span>{groupName}</span>
           </h1>
-          <p className="text-muted-foreground mt-1">
-            {plans.length} idea board{plans.length !== 1 ? 's' : ''}
-          </p>
+          <p className="text-muted-foreground mt-1">Travel Plans</p>
         </div>
         
-        {/* Create plan button */}
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center">
-              <Plus className="mr-2 h-4 w-4" />
-              New Plan
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create a new idea board</DialogTitle>
-              <DialogDescription>
-                Create a new idea board for your group to collaborate on.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleCreatePlan}>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label htmlFor="name" className="text-sm font-medium">Name</label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="My Awesome Trip Plan"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="description" className="text-sm font-medium">Description (optional)</label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="This is for planning our summer vacation..."
-                    className="col-span-3"
-                  />
-                </div>
+        <div className="flex items-center gap-2">
+          {(
+            !isGuest || isGuest
+          ) && (
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Plan
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create a New Plan</DialogTitle>
+                  <DialogDescription>
+                    Create a new planning board to organize trip ideas with your group.
+                  </DialogDescription>
+                </DialogHeader>
                 
-                {formError && (
-                  <div className="bg-destructive/10 p-3 rounded-md flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-2 text-destructive" />
-                    <p className="text-destructive text-sm">{formError}</p>
+                <form onSubmit={handleCreatePlan} className="space-y-4 mt-4">
+                  {formError && (
+                    <div className="bg-destructive/10 text-destructive text-sm p-2 rounded-md flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      {formError}
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium">
+                      Name
+                    </label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g., Fall Trip to Hawaii"
+                      required
+                    />
                   </div>
-                )}
-              </div>
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={creating}>
-                  {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Plan
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-        
-        {/* Edit plan dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit idea board</DialogTitle>
-              <DialogDescription>
-                Update the details of your idea board.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleUpdatePlan}>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label htmlFor="edit-name" className="text-sm font-medium">Name</label>
-                  <Input
-                    id="edit-name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="My Awesome Trip Plan"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="edit-description" className="text-sm font-medium">Description (optional)</label>
-                  <Textarea
-                    id="edit-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="This is for planning our summer vacation..."
-                    className="col-span-3"
-                  />
-                </div>
-                
-                {formError && (
-                  <div className="bg-destructive/10 p-3 rounded-md flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-2 text-destructive" />
-                    <p className="text-destructive text-sm">{formError}</p>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-sm font-medium">
+                      Description (Optional)
+                    </label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="What's this plan about?"
+                      rows={3}
+                    />
                   </div>
-                )}
-              </div>
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={creating}>
-                  {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Update Plan
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                  
+                  <DialogFooter>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setCreateDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={creating}>
+                      {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Create Plan
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+          
+          <Button variant="outline" onClick={() => router.push(`/groups/${groupId}`)}>
+            Back to Group
+          </Button>
+        </div>
       </div>
       
       {/* Plans grid */}
@@ -449,96 +439,67 @@ export default function PlansClient({
           <div className="inline-flex h-20 w-20 rounded-full bg-muted items-center justify-center mb-4">
             <FolderSymlink className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h2 className="text-2xl font-semibold">No idea boards yet</h2>
+          <h2 className="text-2xl font-semibold">Add your first plan</h2>
           <p className="text-muted-foreground mt-2 mb-6 max-w-md mx-auto">
-            Create your first idea board to start collaborating on trip plans with your group.
-          </p>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create your first plan
-          </Button>
+          Get everyone's ideas in one place and turn inspiration into actual plans.          </p>
+          {!isGuest && (
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create your first plan
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {plans.map((plan) => (
-            <Card key={plan.id} className={plan.is_archived ? "opacity-70" : ""}>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="mr-2 text-xl">{plan.name}</CardTitle>
-                  {plan.is_archived && (
-                    <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
-                      Archived
-                    </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            // Determine plan status
+            let status: 'Not started' | 'Planning' | 'Voting' | 'Completed' = 'Not started';
+            if (plan.ideas_count > 1) status = 'Planning';
+            if (plan.voting) status = 'Voting';
+            if (plan.completed || plan.trip_id) status = 'Completed';
+            if (plan.ideas_count === 1) status = 'Planning';
+
+            // Card background and badge color
+            const cardBg = status === 'Completed'
+              ? 'bg-gradient-to-br from-green-50 to-green-100'
+              : status === 'Voting'
+                ? 'bg-gradient-to-br from-blue-50 to-blue-100'
+                : status === 'Planning'
+                  ? 'bg-gradient-to-br from-yellow-50 to-yellow-100'
+                  : 'bg-gradient-to-br from-gray-50 to-white';
+            const badgeColor = status === 'Completed'
+              ? 'bg-green-200 text-green-800'
+              : status === 'Voting'
+                ? 'bg-blue-200 text-blue-800'
+                : status === 'Planning'
+                  ? 'bg-yellow-200 text-yellow-800'
+                  : 'bg-gray-200 text-gray-800';
+
+            return (
+              <div
+                key={plan.id}
+                onClick={() => handlePlanClick(plan)}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open plan ${plan.name}`}
+                className={`group relative w-full max-w-xs mx-auto min-h-[350px] h-[350px] flex flex-col justify-between rounded-2xl shadow-md transition-transform duration-150 hover:scale-[1.025] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/40 ${cardBg} p-6 cursor-pointer`}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handlePlanClick(plan); }}
+              >
+                {/* Status badge top right */}
+                <span className={`absolute top-4 right-4 px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeColor} shadow-sm z-10`}>{status}</span>
+                {/* Card content */}
+                <div className="flex-1 flex flex-col justify-start">
+                  <span className="text-xl md:text-2xl font-bold text-gray-900 group-hover:text-primary transition-colors mb-2 pr-8">{plan.name}</span>
+                  {plan.description && (
+                    <p className="text-sm text-gray-500 mb-2 line-clamp-3 pr-2">{plan.description}</p>
                   )}
+                  <span className="text-sm text-gray-700 mt-2">{plan.ideas_count} idea{plan.ideas_count !== 1 && 's'}</span>
                 </div>
-                <CardDescription className="flex items-center text-xs">
-                  Created {formatDistanceToNow(new Date(plan.created_at), { addSuffix: true })}
-                  {plan.creator && (
-                    <>
-                      {' by '}
-                      <span className="font-medium">
-                        {plan.creator.user_metadata?.full_name || plan.creator.email}
-                      </span>
-                    </>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent>
-                {plan.description && (
-                  <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
-                )}
-                <p className="text-sm">
-                  <span className="font-medium">{plan.ideas_count}</span> 
-                  {' idea'}{plan.ideas_count !== 1 && 's'}
-                </p>
-              </CardContent>
-              
-              <CardFooter className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handlePlanClick(plan)}
-                >
-                  Open Board
-                </Button>
-                
-                <div className="flex gap-1">
-                  {/* Only show edit/delete buttons if user is admin or creator */}
-                  {(isAdmin || plan.created_by === userId) && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleToggleArchive(plan)}
-                        title={plan.is_archived ? "Unarchive" : "Archive"}
-                      >
-                        <Archive className="h-4 w-4" />
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEditClick(plan)}
-                        title="Edit"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDeletePlan(plan)}
-                        title="Delete"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
+                {/* Created date bottom right */}
+                <span className="absolute bottom-4 right-4 text-[11px] text-gray-400">{`Created ${formatDistanceToNow(new Date(plan.created_at), { addSuffix: true })}`}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

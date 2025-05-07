@@ -40,8 +40,8 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-muted/30 py-12 text-center pb-16 sm:pb-12">
-      <div className="mobile-container">
+    <footer className="w-full bg-background border-t py-8">
+      <div className="w-full px-4">
         <div className="grid grid-cols-1 gap-10 items-center">
           <div className="space-y-4 flex flex-col items-center">
             <Logo />

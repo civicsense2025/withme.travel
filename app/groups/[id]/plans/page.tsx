@@ -3,21 +3,23 @@ import { Suspense } from 'react';
 import { createServerComponentClient } from '@/utils/supabase/server';
 import { FIELDS } from '@/utils/constants/database';
 import PlansClient from './plans-client';
+import { getGuestToken } from '@/utils/guest';
 
 /**
  * Group Plans Page - Shows all idea boards for a group
  */
 export default async function PlansPage({ params }: { params: { id: string } }) {
+  const awaitedParams = await params;
   const supabase = await createServerComponentClient();
   
   // Get user securely
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  // Fetch the group data to verify it exists and user has access
+  // Fetch the group data to verify it exists
   const { data: group, error } = await supabase
     .from('groups')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', awaitedParams.id)
     .single();
 
   if (error || !group) {
@@ -25,23 +27,43 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
     notFound();
   }
 
-  // Check if user is authenticated
-  if (!user) {
-    redirect(`/login?redirect=/groups/${params.id}/plans`);
-  }
-
-  // Check if user is a member of the group
-  const { data: membership, error: membershipError } = await supabase
-    .from('group_members')
-    .select('*')
-    .eq('group_id', params.id)
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .maybeSingle();
+  // Check if user is authenticated - if not, try to get guest token
+  let membership = null;
+  let isGuest = false;
+  let isAdmin = false;
+  let guestToken = null;
   
-  // If not a member, redirect to group page
-  if (!membership) {
-    redirect(`/groups/${params.id}`);
+  if (user) {
+    // Check if authenticated user is a member of the group
+    const { data: memberData, error: membershipError } = await supabase
+      .from('group_members')
+      .select('*')
+      .eq('group_id', awaitedParams.id)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+    
+    membership = memberData;
+    
+    // If authenticated but not a member, redirect to group page
+    if (!membership) {
+      redirect(`/groups/${awaitedParams.id}`);
+    }
+    
+    // Set admin status for authenticated user
+    isAdmin = membership?.role === 'admin' || membership?.role === 'owner';
+  } else {
+    // Handle guest access
+    guestToken = await getGuestToken();
+    
+    if (!guestToken) {
+      // If no guest token, redirect to login
+      redirect(`/login?redirect=/groups/${awaitedParams.id}/plans`);
+    }
+    
+    isGuest = true;
+    // Guests are not admins
+    isAdmin = false;
   }
 
   // Fetch initial plans to pass to client component - avoid selecting user_metadata directly
@@ -51,11 +73,14 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
       *,
       creator:created_by(
         id,
-        email
+        email,
+        name,
+        avatar_url,
+        username
       ),
       ideas:group_ideas(id)
     `)
-    .eq('group_id', params.id)
+    .eq('group_id', awaitedParams.id)
     .order('created_at', { ascending: false });
   
   if (plansError) {
@@ -67,31 +92,26 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
     ...plan,
     ideas_count: plan.ideas?.length || 0,
     ideas: undefined, // Don't pass all ideas to client, just the count
-    creator: plan.creator ? {
-      ...plan.creator,
-      user_metadata: {} // Add an empty user_metadata object to match expected interface
-    } : undefined
   })) || [];
 
   // Debug logs
   console.log('Plans page rendering with:');
-  console.log('groupId:', params.id);
-  console.log('user:', user?.id);
-  console.log('membership:', membership?.role);
+  console.log('groupId:', awaitedParams.id);
+  console.log('user:', user?.id || 'guest');
+  console.log('isGuest:', isGuest);
+  console.log('membership:', membership?.role || 'none');
   console.log('plans count:', processedPlans.length);
-
-  // Check if user is an admin of the group
-  const isAdmin = membership.role === 'admin' || membership.role === 'owner';
 
   return (
     <Suspense fallback={<div className="flex justify-center p-6">Loading plans...</div>}>
       <PlansClient 
-        groupId={params.id}
+        groupId={awaitedParams.id}
         initialPlans={processedPlans}
         groupName={group.name}
         groupEmoji={group.emoji}
         isAdmin={isAdmin}
-        userId={user.id}
+        userId={user?.id || `guest:${guestToken}`}
+        isGuest={isGuest}
       />
     </Suspense>
   );

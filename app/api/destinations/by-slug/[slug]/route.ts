@@ -14,6 +14,22 @@ export async function GET(
       return NextResponse.json({ error: 'Slug parameter is required' }, { status: 400 });
     }
 
+    // Check if this looks like an image/asset filename request
+    if (slug.match(/\.(jpg|jpeg|png|gif|webp|svg|ico|avif)$/i)) {
+      return NextResponse.json(
+        { error: 'Invalid slug format: Image file extension detected' }, 
+        { status: 400 }
+      );
+    }
+
+    // Check if this is a UUID pattern which is likely an error
+    if (slug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      return NextResponse.json(
+        { error: 'Invalid slug format: UUID detected, expected a slug string' }, 
+        { status: 400 }
+      );
+    }
+
     const sanitizedSlug = sanitizeString(decodeURIComponent(slug));
     const supabase = await createRouteHandlerClient();
 

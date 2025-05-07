@@ -67,12 +67,12 @@ const HeartButton = () => {
 interface DestinationCardProps {
   destination: {
     id: string;
-    city: string;
-    country: string;
+    city: string | null;
+    country: string | null;
     continent: string;
     description: string | null;
     byline?: string | null;
-    highlights?: string[] | null;
+    highlights?: string[] | string | null;
     image_url?: string | null;
     emoji?: string | null;
     image_metadata?: {
@@ -93,10 +93,14 @@ interface DestinationCardProps {
     best_season?: string;
     avg_cost_per_day?: number;
     safety_rating?: number;
+    name?: string;
   };
   href?: string;
   className?: string;
   hideAttributionMobile?: boolean;
+  disableNavigation?: boolean;
+  onClick?: () => void;
+  variant?: 'link' | 'selectable';
 }
 
 export function DestinationCard({
@@ -104,13 +108,19 @@ export function DestinationCard({
   href,
   className = '',
   hideAttributionMobile = false,
+  disableNavigation = false,
+  onClick,
+  variant = 'link',
 }: DestinationCardProps) {
   const [showSneak, setShowSneak] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
   // Destructure destination properties
-  const { city, country, image_url, emoji, image_metadata, highlights, byline } = destination;
+  const { city, country, image_url, emoji, image_metadata, highlights, byline, name } = destination;
+
+  // Use the name field if provided, otherwise fall back to city
+  const displayName = name || city || '';
 
   // Render rating stars helper function
   const renderRating = (rating: number, max: number) => {
@@ -127,8 +137,20 @@ export function DestinationCard({
   };
 
   // Fallback for href if not provided
-  const citySlug = city ? city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : null;
-  const cardHref = href || (citySlug ? `/destinations/${citySlug}` : `/destinations/${destination.id}`);
+  const citySlug = displayName ? displayName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : null;
+  const cardHref = disableNavigation ? undefined : (href || (citySlug ? `/destinations/${citySlug}` : `/destinations/${destination.id}`));
+
+  // Process highlights - convert string to array, or handle null safely
+  let displayHighlights: string[] = [];
+  if (highlights) {
+    if (typeof highlights === 'string') {
+      // Handle string highlights
+      displayHighlights = [highlights]; 
+    } else if (Array.isArray(highlights)) {
+      // Handle array of highlights
+      displayHighlights = highlights.filter(h => typeof h === 'string');
+    }
+  }
 
   // Improved fallback for image if not available
   const imageUrl = (() => {
@@ -138,10 +160,10 @@ export function DestinationCard({
     }
     
     // Handle city names with spaces and special characters for filename
-    const citySlug = city.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+    const slug = displayName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
     
     // Default to jpg extension - we can't check if files exist client-side
-    return `/destinations/${citySlug}.jpg`;
+    return `/destinations/${slug}.jpg`;
   })();
 
   // Handle mouse enter
@@ -163,7 +185,7 @@ export function DestinationCard({
 
   // Generate descriptive alt text
   const generateAltText = () => {
-    const baseAlt = image_metadata?.alt_text || `Scenic view of ${city}, ${country}`;
+    const baseAlt = image_metadata?.alt_text || `Scenic view of ${displayName}, ${country}`;
     const features = [];
 
     if (destination.beach_quality >= 4) features.push('beautiful beaches');
@@ -222,177 +244,74 @@ export function DestinationCard({
     e.stopPropagation();
   };
 
-  // Use the highlights prop directly (or an empty array)
-  const displayHighlights = Array.isArray(highlights) ? highlights : [];
+  // Component for card content to avoid duplication
+  const CardContent = () => (
+    <Card
+      className={`
+        group bg-transparent border-0 overflow-hidden rounded-xl h-full 
+        transition-all duration-500 ease-out
+        hover:shadow-xl hover:scale-[1.02]
+        relative
+        ${className}
+      `}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+    >
+      {/* Image container */}
+      <div className="relative aspect-[3/4] overflow-hidden rounded-xl">
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent z-10"></div>
+        {/* Texture overlay */}
+        <TextureOverlay />
 
-  return (
-    <Link href={cardHref}>
-      <Card
-        className={`
-          group bg-transparent border-0 overflow-hidden rounded-xl h-full 
-          transition-all duration-500 ease-out
-          hover:shadow-xl hover:scale-[1.02]
-          relative
-          ${className}
-        `}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        {/* Image container - Make this the relative parent for the fill Image */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-xl">
-          {/* Gradient overlay - Should be siblings of Image if Image uses fill */}
-          <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent z-10"></div>
-          {/* Texture overlay */}
-          <TextureOverlay />
+        {/* Image Component */}
+        <Image
+          src={imageUrl}
+          alt={altText}
+          width={800}
+          height={1200}
+          className="object-cover w-full h-full"
+          priority={false}
+        />
 
-          {/* Image Component - Reverted back to next/image */}
-          <Image
-            src={imageUrl}
-            alt={altText}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            // priority // Optional: Add priority to load first images faster
-          />
-
-          {/* Other absolute elements should also be siblings */}
-          {/* Destination info */}
-          <div className="absolute bottom-6 left-6 z-20">
-            <h3 className="text-2xl font-bold mb-1 text-white group-hover:translate-y-[-4px] transition-transform duration-300">
-              {emoji && (
-                <span className="mr-2" role="img" aria-label={`${city} emoji`}>
-                  {emoji}
-                </span>
-              )}
-              {city}
-            </h3>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                router.push(`/countries/${country?.toLowerCase().replace(/\s+/g, '-')}`);
-              }}
-              className="text-white/80 text-sm font-medium group-hover:translate-y-[-2px] transition-transform duration-300 delay-75 hover:text-white hover:underline bg-transparent border-0 p-0 cursor-pointer"
-            >
-              {country}
-            </button>
-          </div>
-          {/* Like button */}
-          <div className="absolute top-4 right-4 z-20" onClick={handleLikeClick}>
-            <LikeButton
-              itemId={destination.id}
-              itemType="destination"
-              size="sm"
-              className="shadow-sm"
-            />
-          </div>
-          {/* Attribution button */}
-          {attributionText && (
-            <div
-              className={`absolute bottom-6 right-6 z-20 ${hideAttributionMobile ? 'hidden md:block' : ''}`}
-            >
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      aria-label="Image attribution information"
-                    >
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="left"
-                    sideOffset={5}
-                    className="bg-black/90 text-white border-none shadow-lg max-w-xs"
-                  >
-                    <p
-                      className="text-xs"
-                      dangerouslySetInnerHTML={{ __html: attributionText || '' }}
-                    ></p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+        {/* Destination Info */}
+        <div className="absolute bottom-0 left-0 w-full p-4 z-20 text-white">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-xl md:text-2xl font-semibold mb-1">{displayName}</h3>
+              <p className="text-sm text-white/90 flex items-center">
+                {emoji && <span className="mr-1">{emoji}</span>}
+                {country}
+              </p>
+              {byline && <p className="mt-1 text-sm text-white/80">{byline}</p>}
             </div>
-          )}
-          {/* Sneak peek panel - Needs to be sibling if Image uses fill */}
-          <AnimatePresence>
-            {showSneak && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-                className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent z-30 flex flex-col justify-end p-4 md:p-6"
-              >
-                {/* ... sneak peek content ... */}
-                <div className="space-y-3 md:space-y-4">
-                  {/* Byline Section - Use destination.byline */}
-                  {byline && (
-                    <div>
-                      {/* Removed explicit title, letting the text speak */}
-                      <p className="text-xs md:text-sm text-white/70 italic">{byline}</p>
-                    </div>
-                  )}
-
-                  {/* Highlights Section - Use destination.highlights */}
-                  {displayHighlights.length > 0 && (
-                    <div>
-                      <h4 className="text-base md:text-lg font-semibold text-white mb-1">
-                        Highlights
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5 md:gap-2">
-                        {displayHighlights.map((highlight, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="bg-white/10 text-white border-white/20 text-xs px-1.5 py-0.5 md:px-2 md:py-1"
-                          >
-                            {highlight}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Existing Best Time & Details */}
-                  <div>
-                    <h4 className="text-base md:text-lg font-semibold text-white mb-1">
-                      Best Time to Visit
-                    </h4>
-                    <p className="text-xs md:text-sm text-white/80">
-                      {destination.best_season || 'Year-round'}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    {destination.avg_cost_per_day && (
-                      <div>
-                        <h4 className="text-sm font-medium text-white/80">Daily Budget</h4>
-                        <p className="text-white font-semibold">
-                          ${destination.avg_cost_per_day}/day
-                        </p>
-                      </div>
-                    )}
-                    {destination.safety_rating && (
-                      <div>
-                        <h4 className="text-sm font-medium text-white/80">Safety Rating</h4>
-                        <div className="text-white">
-                          {renderRating(destination.safety_rating, 5)}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <div className="hidden md:block" onClick={handleLikeClick}>
+              <LikeButton itemId={destination.id} itemType="destination" />
+            </div>
+          </div>
         </div>
-      </Card>
-    </Link>
+
+        {/* Image attribution */}
+        {attributionText && (
+          <div
+            className={`
+              absolute bottom-0 right-0 p-1 text-[10px] text-white/70 bg-black/30 rounded-tl 
+              m-1 max-w-[75%] z-20 truncate transition-opacity duration-300
+              ${hideAttributionMobile ? 'hidden md:block' : ''}
+              ${!showSneak ? 'opacity-0 md:group-hover:opacity-100' : 'opacity-100'}
+            `}
+            dangerouslySetInnerHTML={{ __html: attributionText }}
+          />
+        )}
+      </div>
+    </Card>
   );
+
+  // Only wrap in <Link> if variant is 'link', onClick is not provided, and navigation is not disabled
+  if (variant === 'link' && !onClick && !disableNavigation && cardHref) {
+    return <Link href={cardHref}><CardContent /></Link>;
+  }
+  // Otherwise, just render the card (onClick will be handled by CardContent)
+  return <CardContent />;
 }

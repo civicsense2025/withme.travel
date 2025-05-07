@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 
 import { PageHeader } from '@/components/page-header';
+import { Container } from '@/components/container';
 
 // Continent data - same as in the [continent] page
 const CONTINENTS = [
@@ -78,7 +79,7 @@ const itemVariants = {
 
 export default function ContinentsPage() {
   return (
-    <div className="container py-10">
+    <Container size="full">
       <PageHeader
         heading="Explore Continents"
         description="Discover destinations across the world organized by continent"
@@ -152,6 +153,6 @@ export default function ContinentsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </Container>
   );
 }
