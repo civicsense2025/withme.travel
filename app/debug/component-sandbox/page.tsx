@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageDebug, LayoutDebug, DebugBoundary, StateInspector } from '@/components/debug';
-import { ArrowLeft } from 'lucide-react';
-import { Container } from '@/components/container';
+import { ArrowLeft, RefreshCw, Code, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function ComponentSandboxPage() {
   const [count, setCount] = useState(0);
@@ -25,21 +25,127 @@ export default function ComponentSandboxPage() {
     ],
   });
 
+  const resetDemoState = () => {
+    setCount(0);
+    setTestState({
+      name: 'Test User',
+      preferences: {
+        theme: 'dark',
+        notifications: true,
+        language: 'en',
+      },
+      history: [
+        { id: 1, action: 'login', timestamp: new Date().toISOString() },
+        { id: 2, action: 'view_profile', timestamp: new Date().toISOString() },
+      ],
+    });
+  };
+
   return (
-    <Container size="full">
+    <div className="container mx-auto p-4 max-w-5xl">
       <div className="flex items-center mb-6">
         <Link href="/debug" className="mr-2">
           <ArrowLeft className="h-4 w-4 inline-block" />
         </Link>
         <h1 className="text-3xl font-bold">Component Sandbox</h1>
+        
+        <div className="ml-auto">
+          <Button 
+            onClick={resetDemoState} 
+            variant="outline" 
+            className="flex items-center"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Reset Demo State
+          </Button>
+        </div>
       </div>
 
-      <div className="mb-6 bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800 text-sm">
-        <p>
-          This page demonstrates the debug components available in the{' '}
-          <code>@/components/debug</code> directory. Use these tools to debug UI components, layout
-          issues, and state management problems.
-        </p>
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-700 text-sm flex items-start">
+        <div className="flex-shrink-0 mr-3 mt-0.5">
+          <AlertCircle className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="font-semibold">Development Tools</p>
+          <p className="mt-1">
+            This page demonstrates the debug components available in the <code>@/components/debug</code> directory. 
+            Use these tools to debug UI components, layout issues, and state management problems.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center space-x-2">
+              <Code className="h-5 w-5 text-blue-500" />
+              <CardTitle className="text-lg">Debug Components</CardTitle>
+            </div>
+            <CardDescription>
+              Available debugging tools
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center">
+                <Badge variant="outline" className="mr-2">LayoutDebug</Badge>
+                <span>Visualize layout structures</span>
+              </li>
+              <li className="flex items-center">
+                <Badge variant="outline" className="mr-2">ImageDebug</Badge>
+                <span>Inspect image properties</span>
+              </li>
+              <li className="flex items-center">
+                <Badge variant="outline" className="mr-2">StateInspector</Badge>
+                <span>View complex state trees</span>
+              </li>
+              <li className="flex items-center">
+                <Badge variant="outline" className="mr-2">DebugBoundary</Badge>
+                <span>Show component boundaries</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Current Demo State</CardTitle>
+            <CardDescription>
+              Interactive state for examples
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <StateInspector
+              data={{ count, historyCount: testState.history.length }}
+              title="Quick View"
+              expanded={true}
+            />
+          </CardContent>
+          <CardFooter className="pt-0 flex gap-2">
+            <Button onClick={() => setCount(count + 1)} size="sm">
+              Increment Count
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTestState((prev) => ({
+                  ...prev,
+                  history: [
+                    ...prev.history,
+                    {
+                      id: prev.history.length + 1,
+                      action: 'button_click',
+                      timestamp: new Date().toISOString(),
+                    },
+                  ],
+                }));
+              }}
+            >
+              Add History
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
 
       <Tabs defaultValue="layout">
@@ -249,6 +355,6 @@ export default function ComponentSandboxPage() {
           .
         </p>
       </div>
-    </Container>
+    </div>
   );
 }

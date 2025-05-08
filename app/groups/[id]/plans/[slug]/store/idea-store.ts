@@ -38,6 +38,12 @@ export interface GroupIdea {
     siteName?: string;
     url?: string;
   } | null;
+  comment_count?: number; // Number of comments on the idea
+  collaborators?: Array<{
+    id?: string;
+    name?: string;
+    avatar_url?: string;
+  }>; // Users who have collaborated on this idea
 }
 
 interface IdeaStoreState {

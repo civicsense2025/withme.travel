@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, Calendar, DollarSign, MapPin, CheckCircle } from 'lucide-react';
+import { Users, Calendar, DollarSign, MapPin, CheckCircle, MessageSquare, Vote, MapPinned } from 'lucide-react';
 import InviteLinkBox from './InviteLinkBox';
 import { FeatureTabs } from '@/components/FeatureTabs';
+import { Container } from '@/components/container';
 
 const CreateGroupModal = dynamic(() => import('./create-group-modal'), { ssr: false });
 
@@ -194,82 +195,184 @@ const GroupsLandingPage: React.FC = () => {
   const [headline] = useState(() => wittyHeadlines[Math.floor(Math.random() * wittyHeadlines.length)]);
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-8 md:py-12 max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row items-center justify-between w-full gap-8 md:gap-12">
-        {/* Left: Hero Heading, Subheading, Group Title Form */}
-        <div className="flex-1 flex flex-col items-start max-w-xl w-full">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 md:mb-6 tracking-tight text-gradient bg-gradient-to-br from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
-            {headline}
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 md:mb-8">
-            From group brainstorming to perfectly planned trips in minutes. No endless group chats, no stress.
-          </p>
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setError(null);
-              setLoading(true);
-              const form = e.currentTarget as HTMLFormElement & {
-                groupName: { value: string };
-                website: { value: string };
-              };
-              const groupName = form.groupName.value.trim();
-              const website = form.website.value;
-              if (!groupName) {
-                setError('Please enter a group name.');
-                setLoading(false);
-                return;
-              }
-              try {
-                const res = await fetch('/api/groups', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name: groupName, website }),
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Failed to create group.');
-                if (!data.group?.id) throw new Error('No group ID returned.');
-                router.push(`/groups/${data.group.id}`);
-              } catch (err) {
-                setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
-                setLoading(false);
-              }
-            }}
-            className="flex flex-col items-start w-full max-w-md gap-2 md:gap-3"
-          >
-            <label htmlFor="groupName" className="text-base md:text-lg font-semibold mb-1 md:mb-2">
-              Your Group Trip Name
-            </label>
-            {/* Honeypot field for spam bots */}
-            <input
-              type="text"
-              name="website"
-              autoComplete="off"
-              tabIndex={-1}
-              className="hidden"
-            />
-            <input
-              id="groupName"
-              name="groupName"
-              type="text"
-              placeholder="e.g. Summer in Spain"
-              className="mb-2 md:mb-3 px-3 md:px-4 py-2 md:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 w-full text-base md:text-lg shadow-sm"
-              disabled={loading}
-              maxLength={64}
-              required
-            />
-            {error && <div className="text-red-500 text-xs md:text-sm mb-2">{error}</div>}
-            <Button type="submit" size="lg" className="rounded-full px-6 md:px-8 py-2.5 md:py-3 font-bold text-base md:text-lg bg-gradient-to-br from-purple-500 to-pink-400 text-white shadow-lg hover:scale-105 transition-transform">
-              {loading ? 'Creating...' : 'Create Group'}
+    <Container size="full">
+      <main className="flex min-h-screen flex-col w-full bg-white dark:bg-black overflow-hidden">
+        {/* Hero Section with gradient background */}
+        <section className="py-20 w-full bg-gradient-to-br from-blue-400/10 to-teal-400/10">
+          <div className="text-center px-6 md:px-10 max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight bg-gradient-to-br from-blue-600 via-blue-500 to-teal-400 bg-clip-text text-transparent">
+              {headline}
+            </h1>
+            <p className="text-xl md:text-2xl text-muted-foreground mb-12 mx-auto">
+              From group brainstorming to perfectly planned trips in minutes. No endless group chats, no stress.
+            </p>
+            
+            {/* Group creation form */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setError(null);
+                setLoading(true);
+                const form = e.currentTarget as HTMLFormElement & {
+                  groupName: { value: string };
+                  website: { value: string };
+                };
+                const groupName = form.groupName.value.trim();
+                const website = form.website.value;
+                if (!groupName) {
+                  setError('Please enter a group name.');
+                  setLoading(false);
+                  return;
+                }
+                try {
+                  const res = await fetch('/api/groups', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: groupName, website }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || 'Failed to create group.');
+                  if (!data.group?.id) throw new Error('No group ID returned.');
+                  router.push(`/groups/${data.group.id}`);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+                  setLoading(false);
+                }
+              }}
+              className="flex flex-col items-center w-full max-w-md mx-auto gap-4"
+            >
+              {/* Honeypot field for spam bots */}
+              <input
+                type="text"
+                name="website"
+                autoComplete="off"
+                tabIndex={-1}
+                className="hidden"
+              />
+              
+              <div className="w-full">
+                <div className="mb-2">
+                  <label htmlFor="groupName" className="text-lg font-semibold">
+                    Your Group Trip Name
+                  </label>
+                </div>
+                <input
+                  id="groupName"
+                  name="groupName"
+                  type="text"
+                  placeholder="Summer Italy Trip 2025"
+                  className="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-travel-purple"
+                  required
+                />
+                {error && <div className="text-red-500 mt-2 text-sm">{error}</div>}
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full py-6 rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-lg font-medium"
+                disabled={loading}
+              >
+                {loading ? 'Creating group...' : 'Create Free Group'}
+              </Button>
+              
+              <p className="text-muted-foreground text-sm mt-2">
+                No account needed. Invite friends with a link.
+              </p>
+            </form>
+          </div>
+        </section>
+
+        {/* Features Section with clean, spacious design */}
+        <section className="py-32 w-full bg-white dark:bg-black">
+          <div className="text-center px-6 md:px-10 max-w-7xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
+              Plan <span className="text-travel-purple dark:text-travel-purple">Together</span>, Travel Better
+            </h2>
+            <p className="text-xl md:text-2xl text-muted-foreground mb-24 mx-auto max-w-2xl">
+              Everything you need to create amazing group trips without the headaches.
+            </p>
+
+            {/* Features grid with icons */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-12">
+              <div className="flex flex-col items-center">
+                <div className="bg-purple-50 dark:bg-purple-900/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-sm">
+                  <MessageSquare className="text-travel-purple h-12 w-12" />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-medium mb-4">Brainstorm Ideas</h3>
+                <p className="text-lg text-muted-foreground max-w-xs">
+                  Collect everyone's ideas in one place. No more scrolling through endless group chats.
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <div className="bg-purple-50 dark:bg-purple-900/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-sm">
+                  <Vote className="text-travel-purple h-12 w-12" />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-medium mb-4">Vote & Decide</h3>
+                <p className="text-lg text-muted-foreground max-w-xs">
+                  Everyone gets a say. Easily vote on activities, destinations, and timing.
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <div className="bg-purple-50 dark:bg-purple-900/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-sm">
+                  <MapPinned className="text-travel-purple h-12 w-12" />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-medium mb-4">Create Your Trip</h3>
+                <p className="text-lg text-muted-foreground max-w-xs">
+                  Turn your group's favorite ideas into a perfect itinerary that everyone can access.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Demo Section with tab interface */}
+        <section className="py-24 w-full bg-neutral-50 dark:bg-neutral-900">
+          <div className="px-6 md:px-10 max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
+                See How It Works
+              </h2>
+              <p className="text-xl text-muted-foreground mx-auto max-w-2xl">
+                Our collaborative tools make group planning a breeze.
+              </p>
+            </div>
+            
+            <FeatureTabs />
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-32 w-full bg-gradient-to-br from-blue-400/10 to-teal-400/10">
+          <div className="text-center px-6 md:px-10 max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
+              Ready To Start Planning?
+            </h2>
+            <p className="text-xl text-muted-foreground mb-12 mx-auto">
+              Create your first group in seconds. No account required.
+            </p>
+            
+            <Button
+              onClick={() => setModalOpen(true)}
+              size="lg"
+              className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-lg py-6 px-10"
+            >
+              Create a Group Now
             </Button>
-          </form>
-        </div>
-        {/* Right: FeatureTabs Demo */}
-        <div className="flex-1 w-full max-w-xl mt-8 md:mt-0">
-          <FeatureTabs />
-        </div>
-      </div>
-    </div>
+          </div>
+        </section>
+      </main>
+      
+      {/* Create Group Modal */}
+      {modalOpen && (
+        <CreateGroupModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onCreateGroup={(group) => router.push(`/groups/${group.id}`)}
+        />
+      )}
+    </Container>
   );
 };
 

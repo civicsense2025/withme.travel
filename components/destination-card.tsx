@@ -259,7 +259,7 @@ export function DestinationCard({
       onClick={onClick}
     >
       {/* Image container */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-xl">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent z-10"></div>
         {/* Texture overlay */}
@@ -269,24 +269,31 @@ export function DestinationCard({
         <Image
           src={imageUrl}
           alt={altText}
-          width={800}
-          height={1200}
+          width={600}
+          height={800}
           className="object-cover w-full h-full"
           priority={false}
         />
 
         {/* Destination Info */}
-        <div className="absolute bottom-0 left-0 w-full p-4 z-20 text-white">
+        <div className="absolute bottom-0 left-0 w-full p-3 z-20 text-white">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-xl md:text-2xl font-semibold mb-1">{displayName}</h3>
-              <p className="text-sm text-white/90 flex items-center">
+              <h3 className="text-lg md:text-xl font-semibold mb-1 line-clamp-2">{displayName}</h3>
+              <p className="text-xs md:text-sm text-white/90 flex items-center">
                 {emoji && <span className="mr-1">{emoji}</span>}
                 {country}
               </p>
-              {byline && <p className="mt-1 text-sm text-white/80">{byline}</p>}
+              {byline && <p className="mt-1 text-xs text-white/80 line-clamp-1">{byline}</p>}
             </div>
-            <div className="hidden md:block" onClick={handleLikeClick}>
+            {/* Make like button properly clickable with higher z-index and larger hit area */}
+            <div 
+              className="z-30 p-2 -m-2" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
               <LikeButton itemId={destination.id} itemType="destination" />
             </div>
           </div>
@@ -296,7 +303,7 @@ export function DestinationCard({
         {attributionText && (
           <div
             className={`
-              absolute bottom-0 right-0 p-1 text-[10px] text-white/70 bg-black/30 rounded-tl 
+              absolute bottom-0 right-0 p-1 text-[8px] text-white/70 bg-black/30 rounded-tl 
               m-1 max-w-[75%] z-20 truncate transition-opacity duration-300
               ${hideAttributionMobile ? 'hidden md:block' : ''}
               ${!showSneak ? 'opacity-0 md:group-hover:opacity-100' : 'opacity-100'}

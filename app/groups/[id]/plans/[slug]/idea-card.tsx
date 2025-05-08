@@ -7,12 +7,14 @@ import { X, Pencil, MessageCircle, Smile, MoreVertical, Link as LinkIcon } from 
 import { GroupIdea, ColumnId, IdeaPosition } from './store/idea-store';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { EmojiPicker } from 'frimousse';
+import * as Frimousse from 'frimousse';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import IdeaComments from './components/idea-comments';
 import { formatDateRange } from './utils/date-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface IdeaCardProps {
   idea: GroupIdea;
@@ -152,7 +154,13 @@ const IdeaCard = React.memo(function IdeaCard({
   }
 
   return (
-    <div className="idea-card-container flex flex-col">
+    <motion.div 
+      className="idea-card-container flex flex-col"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+    >
       <Card 
         ref={cardRef}
         className={cn(
@@ -248,150 +256,122 @@ const IdeaCard = React.memo(function IdeaCard({
             {/* Reactions bar as compact emoji chips */}
             <div className="flex items-center gap-1">
               {reactions.map(r => (
-                <button
-                  key={r.emoji}
+                <Button 
+                  key={r.emoji} 
+                  variant="ghost" 
+                  size="sm" 
                   className={cn(
-                    'px-1.5 h-5 flex items-center gap-0.5 text-base font-medium transition-all',
-                    r.users.includes(userId) ? 'ring-2 ring-blue-300' : ''
+                    "h-7 px-2 py-1 text-sm rounded-full",
+                    r.users.includes(userId) ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-100"
                   )}
-                  style={{ background: 'none', border: 'none' }}
                   onClick={() => onAddReaction(r.emoji)}
-                  aria-label={`React with ${r.emoji}`}
                 >
-                  <span className="text-sm" aria-hidden="true">{r.emoji}</span>
-                  <span className="text-[10px] text-gray-500 font-semibold">{r.users.length}</span>
-                </button>
+                  <span className="mr-1">{r.emoji}</span>
+                  <span>{r.users.length}</span>
+                </Button>
               ))}
               
-              {/* Add reaction button */}
               <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
                 <PopoverTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-5 w-5 p-0"
-                    aria-label="Add reaction"
-                    style={{ background: 'none', border: 'none' }}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0 rounded-full bg-gray-50 hover:bg-gray-100"
                   >
                     <Smile className="h-4 w-4 text-gray-500" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="p-4 rounded-2xl shadow-lg bg-white/95 border border-gray-100 min-w-[220px] max-w-xs">
-                  <EmojiPicker.Root>
-                    <EmojiPicker.Search className="mb-1 rounded-md bg-gray-100 px-3 py-2 text-base border border-input focus:outline-none focus:ring-2 focus:ring-[hsl(var(--travel-purple))]" />
-                    <EmojiPicker.Viewport className="max-h-40 overflow-y-auto">
-                      <EmojiPicker.Loading className="text-gray-400 text-xs"><Skeleton className="w-full h-6" /></EmojiPicker.Loading>
-                      <EmojiPicker.Empty className="text-gray-400 text-xs">No emoji found.</EmojiPicker.Empty>
-                      <EmojiPicker.List
-                        className="select-none pb-1 grid grid-cols-8 gap-2"
-                        components={{
-                          Emoji: ({ emoji, ...props }) => (
-                            <button
-                              {...props}
-                              className="flex size-8 items-center justify-center rounded-md text-xl hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-[hsl(var(--travel-purple))]"
-                              onClick={() => onAddReaction(emoji.emoji)}
-                              aria-label={`Pick emoji ${emoji.emoji}`}
-                            >
-                              {emoji.emoji}
-                            </button>
-                          ),
-                        }}
-                      />
-                    </EmojiPicker.Viewport>
-                  </EmojiPicker.Root>
-                </PopoverContent>
-              </Popover>
-              
-              {/* Link icon button - moved to footer next to emoji */}
-              <Popover open={linkPopoverOpen} onOpenChange={setLinkPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-5 w-5 p-0"
-                    aria-label="Add link"
-                    style={{ background: 'none', border: 'none' }}
-                  >
-                    <LinkIcon className="h-4 w-4 text-gray-500" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-4 rounded-2xl shadow-lg bg-white/95 border border-gray-100 w-80">
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="link-input" className="text-xs font-medium">Attach a link</label>
-                    <Input
-                      id="link-input"
-                      type="url"
-                      value={linkInput}
-                      onChange={e => setLinkInput(e.target.value)}
-                      placeholder="https://example.com"
-                      className="text-base"
-                    />
-                    <Button
-                      className="mt-2 px-3 py-2 bg-[hsl(var(--travel-purple))] text-purple-900 rounded-2xl disabled:opacity-50 hover:bg-purple-300 focus:ring-2 focus:ring-[hsl(var(--travel-purple))] h-10"
-                      disabled={!isValidUrl(linkInput) || linkLoading}
-                      onClick={async () => {
-                        if (isValidUrl(linkInput)) await fetchLinkMeta(linkInput);
-                      }}
-                    >
-                      {linkLoading ? 'Fetching...' : 'Preview'}
-                    </Button>
-                    {linkError && <div className="text-xs text-red-500">{linkError}</div>}
-                    {linkMeta && (
-                      <div className="mt-2 border rounded p-2 flex gap-2 items-center bg-gray-50">
-                        {linkMeta.image && <img src={linkMeta.image} alt="" className="w-12 h-12 object-cover rounded" />}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-xs truncate">{linkMeta.title}</div>
-                          <div className="text-xs text-gray-500 truncate">{linkMeta.description}</div>
-                          <div className="text-xs text-blue-500 truncate">{linkMeta.siteName || linkMeta.url}</div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        className="flex-1 px-3 py-2 bg-[hsl(var(--travel-purple))] text-purple-900 rounded-2xl disabled:opacity-50 hover:bg-purple-300 focus:ring-2 focus:ring-[hsl(var(--travel-purple))] h-10"
-                        disabled={!linkMeta}
-                        onClick={() => { setLinkPopoverOpen(false); }}
-                      >Save</Button>
-                      <Button
-                        className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-2xl h-10 hover:bg-gray-300"
-                        onClick={() => setLinkPopoverOpen(false)}
-                      >Cancel</Button>
-                    </div>
+                <PopoverContent className="w-auto p-0 shadow-md" align="start">
+                  <div className="grid grid-cols-8 gap-1 p-3">
+                    {["👍", "❤️", "🎉", "👏", "😍", "🙌", "🔥", "⭐"].map(emoji => (
+                      <button
+                        key={emoji}
+                        className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-gray-100"
+                        onClick={() => onAddReaction(emoji)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="border-t p-2">
+                    <div className="text-xs text-muted-foreground text-center">Common reactions</div>
                   </div>
                 </PopoverContent>
               </Popover>
             </div>
             
-            {/* Comments button */}
-            <button 
-              className="flex items-center justify-center h-5 w-5 p-0 z-50" 
-              style={{ background: 'none', border: 'none' }}
-              onClick={() => setShowComments(!showComments)} 
-              aria-label={showComments ? "Hide comments" : "Show comments"}
-              title={showComments ? "Hide comments" : "Show comments"}
-              tabIndex={0}
-            >
-              <MessageCircle className={cn("h-4 w-4", showComments ? "text-primary" : "text-gray-500")} />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Avatar group with tooltips */}
+              <TooltipProvider>
+                <div className="flex -space-x-2 overflow-hidden">
+                  {idea.collaborators && idea.collaborators.slice(0, 3).map((user, i) => (
+                    <Tooltip key={i}>
+                      <TooltipTrigger asChild>
+                        <div className="inline-block h-6 w-6 rounded-full border-2 border-white bg-gray-100 overflow-hidden flex-shrink-0">
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.name || 'Guest user'}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gray-200 text-[10px] font-medium uppercase text-gray-600">
+                              {user.name ? user.name.charAt(0) : 'G'}
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="p-2 text-xs">
+                        {user.name || 'Guest'}
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                  {idea.collaborators && idea.collaborators.length > 3 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-[10px] font-medium">
+                          +{idea.collaborators.length - 3}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="p-2 text-xs">
+                        {idea.collaborators.slice(3).map(u => u.name || 'Guest').join(', ')}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </TooltipProvider>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center gap-1"
+                onClick={() => setShowComments(!showComments)}
+              >
+                <MessageCircle className="h-3.5 w-3.5 text-gray-500" />
+                <span className="text-xs">{idea.comment_count || 0}</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      {/* Show comments inline when expanded - nested under card with margin and styling */}
-      {showComments && (
-        <div className="mt-2 mb-4 ml-4 pl-2 border-l-2 border-gray-200 rounded-bl-xl">
-          <React.Suspense fallback={<Skeleton className="w-full h-10 rounded-md" />}>
-            <IdeaComments 
-              ideaId={idea.id} 
-              userId={userId}
-              isAuthenticated={isAuthenticated}
-              groupId={idea.group_id || groupId}
-              className="pt-2"
-            />
-          </React.Suspense>
-        </div>
-      )}
-    </div>
+      {/* Comments panel */}
+      <AnimatePresence>
+        {showComments && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-2">
+              <IdeaComments ideaId={idea.id} groupId={groupId} userId={userId} isAuthenticated={isAuthenticated} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 });
 

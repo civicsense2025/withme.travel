@@ -21,6 +21,7 @@ const publicPaths = [
   '/continents',
   '/search',
   '/groups',
+  '/groups/*/plans/*', // Add wildcard pattern for group plans
   // Add other public paths as needed
 ];
 
@@ -45,6 +46,7 @@ const publicApiPaths = [
   '/api/mapbox',
   '/api/images',
   '/api/groups',
+  '/api/groups/*/plans/*', // Add API route for group plans
   // Add other public API paths as needed
 ];
 
@@ -113,6 +115,15 @@ export async function middleware(req: NextRequest) {
       // If rate limit is exceeded, rateLimiter returns a Response
       if (rateLimitResult) {
         return rateLimitResult;
+      }
+    }
+
+    // Check for guest token in cookies for group plan paths
+    if (pathname.includes('/plans/') || pathname.includes('/api/groups/') && pathname.includes('/plans/')) {
+      const guestToken = req.cookies.get('guest_token')?.value;
+      if (guestToken) {
+        console.log(`[Middleware] Guest token found for path: ${pathname}`);
+        return NextResponse.next();
       }
     }
 

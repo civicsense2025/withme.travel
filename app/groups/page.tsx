@@ -56,21 +56,7 @@ export default async function GroupsPage() {
 
   return (
     <>
-      {/* Floating banner for guest's groups */}
-      {guestGroups.length > 0 && (
-        <div className="fixed z-50 left-1/2 -translate-x-1/2 top-4 bg-yellow-100 border border-yellow-300 rounded-lg shadow-lg px-6 py-4 flex flex-col items-center gap-2 animate-pulse">
-          <span className="font-semibold text-yellow-900">You have a group in progress!</span>
-          {guestGroups.map(group => (
-            <Link key={group.id} href={`/groups/${group.id}`}>
-              <Button variant="outline" className="mt-1">
-                {group.emoji ? <span className="mr-2">{group.emoji}</span> : null}
-                {group.name || 'Unnamed Group'}
-              </Button>
-            </Link>
-          ))}
-          <span className="text-xs text-yellow-800 mt-1">Bookmark this page to return to your group later!</span>
-        </div>
-      )}
+
       <GroupsLandingPage />
     </>
   );

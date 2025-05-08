@@ -3,10 +3,31 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Logo } from '@/components/logo';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export function Footer() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real application, you would integrate with a service like Plunk here
+    // For now, we'll just simulate a successful subscription
+    if (email) {
+      setSubscribed(true);
+      // Reset after 3 seconds
+      setTimeout(() => {
+        setEmail('');
+        setSubscribed(false);
+      }, 3000);
+    }
+  };
 
   // List of continents
   const continents = [
@@ -16,7 +37,6 @@ export function Footer() {
     'North America',
     'South America',
     'Oceania',
-    'Antarctica',
   ];
 
   // Navigate items for Explore section
@@ -40,34 +60,58 @@ export function Footer() {
   ];
 
   return (
-    <footer className="w-full bg-background border-t py-8">
-      <div className="w-full px-4">
-        <div className="grid grid-cols-1 gap-10 items-center">
-          <div className="space-y-4 flex flex-col items-center">
+    <footer className="w-full bg-background border-t">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+          {/* Logo and subscribe section */}
+          <div className="md:col-span-2 space-y-6">
             <Logo />
-            <p className="text-sm text-muted-foreground max-w-xs">
+            <p className="text-sm text-muted-foreground max-w-md">
               Plan trips with friends without the chaos. Make group travel fun again.
             </p>
+            
+            {/* Email subscription form */}
+            <div className="pt-4">
+              <h3 className="text-sm font-medium mb-2">Get travel inspiration</h3>
+              <form onSubmit={handleSubscribe} className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 max-w-md">
+                <div className="flex-grow">
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="rounded-full w-full"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={subscribed}
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="rounded-full"
+                  disabled={subscribed}
+                >
+                  {subscribed ? (
+                    <motion.span
+                      initial={{ scale: 0.8 }}
+                      animate={{ scale: 1 }}
+                      className="flex items-center"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" /> Subscribed
+                    </motion.span>
+                  ) : (
+                    <>Subscribe <ArrowRight className="ml-1 h-4 w-4" /></>
+                  )}
+                </Button>
+              </form>
+              <p className="text-xs text-muted-foreground mt-2">
+                We respect your privacy and will never share your email.
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="font-semibold text-base lowercase">Continents</h3>
-            <ul className="space-y-3">
-              {continents.map((continent) => (
-                <li key={continent}>
-                  <Link
-                    href={`/continents/${continent.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                  >
-                    {continent.toLowerCase()}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <ul className="space-y-3">
+          {/* Links section */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-medium">Explore</h3>
+            <ul className="space-y-2">
               {exploreLinks.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -88,13 +132,20 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              {legalLinks.map((link) => (
-                <li key={link.href}>
+            </ul>
+          </div>
+
+          {/* Continents section */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-medium">Continents</h3>
+            <ul className="space-y-2">
+              {continents.map((continent) => (
+                <li key={continent}>
                   <Link
-                    href={link.href}
+                    href={`/continents/${continent.toLowerCase().replace(/\s+/g, '-')}`}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
                   >
-                    {link.label}
+                    {continent.toLowerCase()}
                   </Link>
                 </li>
               ))}
@@ -102,20 +153,34 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-border flex flex-col items-center gap-4">
-          <p className="text-sm text-muted-foreground lowercase">
-            © {new Date().getFullYear()} withme.travel. all rights reserved.
-          </p>
+        <div className="mt-12 pt-6 border-t border-border flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <p className="text-xs text-muted-foreground lowercase">
+              © {new Date().getFullYear()} withme.travel. all rights reserved.
+            </p>
+            <div className="flex gap-4">
+              {legalLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors lowercase"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          
           <div className="flex items-center gap-4">
             <Link
               href="https://twitter.com/withmetravel"
               className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Twitter"
             >
-              <span className="sr-only">Twitter</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -130,12 +195,12 @@ export function Footer() {
             <Link
               href="https://instagram.com/withmetravel"
               className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Instagram"
             >
-              <span className="sr-only">Instagram</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"

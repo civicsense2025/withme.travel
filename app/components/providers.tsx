@@ -2,11 +2,18 @@
 
 import { OnbordaProvider } from 'onborda';
 import type { ReactNode } from 'react';
+import { ThemeProvider } from '@/components/theme-provider';
 
-export function Providers({ children }: { children: ReactNode }) {
+type ProvidersProps = {
+  children: ReactNode;
+};
+
+export function Providers({ children }: ProvidersProps) {
   return (
-    <OnbordaProvider>
-      {children}
-    </OnbordaProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <OnbordaProvider>
+        {children}
+      </OnbordaProvider>
+    </ThemeProvider>
   );
 } 

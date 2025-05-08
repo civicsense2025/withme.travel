@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getBrowserClient } from '@/utils/supabase/unified';
+import { clientGuestUtils } from '@/utils/guest';
 
 /**
  * AuthDebugger - Client-side component to help debug authentication issues
@@ -17,6 +18,7 @@ export default function AuthDebugger() {
     session: null as any,
     error: null as any,
     cookies: '',
+    guestToken: null as string | null,
   });
 
   useEffect(() => {
@@ -24,11 +26,16 @@ export default function AuthDebugger() {
       try {
         const supabase = getBrowserClient();
         const { data, error } = await supabase.auth.getSession();
+        
+        // Get guest token from localStorage
+        const guestToken = clientGuestUtils.getToken();
+        
         setAuthState({
           loading: false,
           session: data.session,
           error,
           cookies: document.cookie,
+          guestToken,
         });
       } catch (e) {
         setAuthState({
@@ -36,6 +43,7 @@ export default function AuthDebugger() {
           session: null,
           error: e,
           cookies: document.cookie,
+          guestToken: clientGuestUtils.getToken(),
         });
       }
     }
@@ -53,6 +61,7 @@ export default function AuthDebugger() {
         loading: false,
         session,
         cookies: document.cookie,
+        guestToken: clientGuestUtils.getToken(),
       }));
     });
 
@@ -66,6 +75,7 @@ export default function AuthDebugger() {
   // Count cookies by type
   const cookieCount = authState.cookies.split(';').length;
   const authCookies = authState.cookies.split(';').filter((c) => c.trim().startsWith('sb-')).length;
+  const guestCookies = authState.cookies.split(';').filter((c) => c.trim().startsWith('guest_token')).length;
 
   return (
     <div className="fixed bottom-0 right-0 m-4 p-4 bg-black/80 text-white rounded-lg z-50 max-w-md text-xs">
@@ -77,11 +87,16 @@ export default function AuthDebugger() {
             ? 'Loading...'
             : authState.session
               ? 'Authenticated'
-              : 'Not authenticated'}
+              : authState.guestToken
+                ? 'Guest User'
+                : 'Not authenticated'}
         </div>
         <div>User: {authState.session?.user?.email || 'None'}</div>
+        {authState.guestToken && (
+          <div className="text-green-400">Guest Token: {authState.guestToken.substring(0, 8)}...</div>
+        )}
         <div>
-          Cookies: {cookieCount} total, {authCookies} Supabase
+          Cookies: {cookieCount} total, {authCookies} Supabase, {guestCookies} Guest
         </div>
         <div>
           Session expires:{' '}

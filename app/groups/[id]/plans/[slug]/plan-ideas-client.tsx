@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { ENUMS } from '@/utils/constants/database';
 import { toast } from '@/components/ui/use-toast';
-import { ChevronLeft, PlusCircle, Loader2, MoreVertical } from 'lucide-react';
+import { ChevronLeft, PlusCircle, Loader2, MoreVertical, Info } from 'lucide-react';
 import Link from 'next/link';
 import IdeaCard from './idea-card';
 import { GroupIdea as LocalGroupIdea, IdeaPosition as LocalIdeaPosition, ColumnId as LocalColumnId } from './store/idea-store';
@@ -29,6 +29,9 @@ interface PlanIdeasClientProps {
   isAdmin: boolean;
   isCreator: boolean;
   userId: string;
+  isAuthenticated: boolean;
+  isGuest?: boolean;
+  guestToken?: string | null;
 }
 
 interface AddIdeasDialogProps {
@@ -319,7 +322,10 @@ export default function PlanIdeasClient({
   initialIdeas,
   isAdmin,
   isCreator,
-  userId
+  userId,
+  isAuthenticated,
+  isGuest,
+  guestToken
 }: PlanIdeasClientProps) {
   const router = useRouter();
   const [ideas, setIdeas] = useState<LocalGroupIdea[]>(initialIdeas);
@@ -327,20 +333,27 @@ export default function PlanIdeasClient({
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createIdeaOpen, setCreateIdeaOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   
   const fetchIdeas = async () => {
-    if (!groupId || !planId) return;
     setIsLoading(true);
     try {
       const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas`);
-      const data = await response.json();
-      if (response.ok) {
-        setIdeas(data.ideas || []);
-      } else {
-        throw new Error(data.error || 'Failed to fetch ideas');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ideas: ${response.statusText}`);
       }
-    } catch (err: any) {
-      setError(err.message);
+      
+      const data = await response.json();
+      setIdeas(data.ideas || []);
+    } catch (error) {
+      console.error('Error fetching ideas:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load ideas',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -447,6 +460,50 @@ export default function PlanIdeasClient({
     // For client-side only reordering reflected by `ideas` state, ensure `setIdeas` is called.
   };
 
+  // Add function to create a new idea
+  const createIdea = async (formData: any) => {
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          position: { columnId: formData.type, index: 0 },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create idea');
+      }
+
+      const { idea } = await response.json();
+      
+      // Add the new idea to the list
+      setIdeas(prev => [...prev, idea]);
+      
+      // Close the dialog
+      setCreateIdeaOpen(false);
+      
+      toast({
+        title: 'Success',
+        description: 'Idea created successfully',
+      });
+    } catch (error) {
+      console.error('Error creating idea:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create idea',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="bg-background border-b p-4 sticky top-0 z-10">
@@ -459,22 +516,43 @@ export default function PlanIdeasClient({
             />
             <h1 className="text-xl font-semibold mt-1">{planName}</h1>
           </div>
-          <div className="flex">
-            <CreateIdeaDialog 
-              groupId={groupId}
-              planId={planId}
-              onIdeaCreated={(newIdea: LocalGroupIdea) => {
-                setIdeas(prev => [...prev, newIdea]);
-              }}
-            />
-            <AddIdeasDialog
-              groupId={groupId}
-              planId={planId}
-              onIdeasAdded={handleAddIdeasToPlan}
-            />
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setCreateIdeaOpen(true)} 
+              variant="default"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Idea
+            </Button>
+            {isAuthenticated && (
+              <AddIdeasDialog
+                groupId={groupId}
+                planId={planId}
+                onIdeasAdded={handleAddIdeasToPlan}
+              />
+            )}
           </div>
         </div>
       </div>
+      
+      {isGuest && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 my-4 rounded-md border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center">
+            <Info className="h-5 w-5 text-blue-500 mr-2" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              You're viewing this as a guest. <a href="/signup" className="underline font-medium">Sign up</a> to create an account and keep track of your ideas.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {/* CreateIdeaDialog component */}
+      <CreateIdeaDialog 
+        open={createIdeaOpen}
+        onOpenChange={setCreateIdeaOpen}
+        onSubmit={createIdea}
+        isSubmitting={submitting}
+      />
       
       {/* Ideas list */}
       {isLoading && ideas.length === 0 ? (
@@ -496,7 +574,7 @@ export default function PlanIdeasClient({
                   position={idea.position || { columnId: idea.type as LocalColumnId, index: 0 }}
                   onPositionChange={(newPosition: LocalIdeaPosition) => handlePositionChange(idea.id, newPosition)}
                   userId={userId}
-                  isAuthenticated={true}
+                  isAuthenticated={isAuthenticated}
                   groupId={groupId}
                   selected={selectedIdea?.id === idea.id}
                 />
@@ -550,6 +628,10 @@ export default function PlanIdeasClient({
           <p className="text-sm text-muted-foreground mb-6 max-w-md">
             Start by adding new ideas or importing existing ideas from the group
           </p>
+          <Button onClick={() => setCreateIdeaOpen(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Your First Idea
+          </Button>
         </div>
       )}
       
@@ -557,7 +639,7 @@ export default function PlanIdeasClient({
       {isEditing && selectedIdea && (
         <EditIdeaDialog
           groupId={groupId}
-          planSlug={planId}
+          planSlug={planSlug}
           open={isEditing}
           onOpenChange={setIsEditing}
           idea={selectedIdea}

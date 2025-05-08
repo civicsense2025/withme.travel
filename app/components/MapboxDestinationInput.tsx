@@ -46,30 +46,35 @@ export const MapboxDestinationInput: React.FC<MapboxDestinationInputProps> = ({ 
   }
 
   return (
-    <div className={`relative ${className || ''}`}>
+    <div className={`relative w-full ${className || ''}`}>
       <input
         value={query}
         onChange={handleInput}
         placeholder={placeholder}
-        className="input w-full border rounded px-3 py-2"
+        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
         onFocus={() => query.length > 1 && setShowDropdown(true)}
         onBlur={() => setTimeout(() => setShowDropdown(false), 100)}
         autoComplete="off"
       />
+      {loading && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+        </div>
+      )}
       {showDropdown && results.length > 0 && (
-        <ul className="absolute z-10 left-0 right-0 bg-white border rounded shadow mt-1 max-h-60 overflow-auto">
+        <ul className="absolute z-10 left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-lg mt-2 max-h-72 overflow-auto transition-all duration-200 animate-in fade-in slide-in-from-top-2">
           {results.map((place) => (
             <li
               key={place.id}
-              className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+              className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl flex items-center gap-2"
               onMouseDown={() => handleSelect(place)}
             >
-              {place.place_name}
+              <span className="text-gray-400 text-sm">📍</span>
+              <span>{place.place_name}</span>
             </li>
           ))}
         </ul>
       )}
-      {loading && <div className="absolute right-2 top-2 text-xs text-gray-400">Loading...</div>}
     </div>
   );
 }; 

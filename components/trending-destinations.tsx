@@ -144,11 +144,11 @@ export function TrendingDestinations() {
 
   if (isLoading) {
     return (
-      <div className="flex space-x-4 overflow-hidden w-full">
-        {[...Array(3)].map((_, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, i) => (
           <div
-            key={`skeleton-${i}`}
-            className="aspect-[3/4] rounded-xl overflow-hidden bg-muted animate-pulse w-[calc(50%-8px)] md:w-[calc(33.333%-12px)] flex-shrink-0"
+            key={i}
+            className="aspect-[4/5] bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"
           />
         ))}
       </div>
@@ -202,14 +202,14 @@ export function TrendingDestinations() {
         {shuffledDestinations.map((destination: Destination, index: number) => (
           <CarouselItem
             key={destination.id || `dest-${index}`}
-            className="pl-2 md:pl-4 basis-[50%] md:basis-[33.333%]"
+            className="pl-2 md:pl-4 basis-[50%] sm:basis-[33.333%] md:basis-[25%]"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
                 duration: 0.4,
-                delay: index * 0.15,
+                delay: index * 0.1, // Reduce delay for faster appearance
                 ease: 'easeOut',
               }}
               className="h-full"

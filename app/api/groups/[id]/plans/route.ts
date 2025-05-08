@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { getGuestToken } from '@/utils/guest';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Helper function to generate a URL-friendly slug from a string
+ */
+function generateSlug(name: string): string {
+  // Replace non-alphanumeric characters with hyphens and convert to lowercase
+  let slug = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')  // Remove non-word chars
+    .replace(/[\s_-]+/g, '-')  // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, '');  // Remove leading/trailing hyphens
+  
+  // Ensure we have a value (fallback to a UUID if empty)
+  if (!slug || slug.length < 3) {
+    slug = 'plan-' + uuidv4().substring(0, 8);
+  }
+  
+  return slug;
+}
 
 /**
  * Get all plans for a group
@@ -141,6 +162,27 @@ export async function POST(request: NextRequest, context: { params: { id: string
     return NextResponse.json({ error: 'Missing plan title' }, { status: 400 });
   }
 
+  // Generate a base slug from the plan name
+  let baseSlug = generateSlug(body.name);
+  
+  // Check if the slug already exists for this group
+  const { data: existingSlugs } = await supabase
+    .from('group_idea_plans')
+    .select('slug')
+    .eq('group_id', groupId)
+    .ilike('slug', `${baseSlug}%`);
+  
+  // If the slug exists, add a unique suffix
+  let finalSlug = baseSlug;
+  if (existingSlugs && existingSlugs.length > 0) {
+    // Check if exact match exists
+    const slugsArray = existingSlugs.map(p => p.slug);
+    if (slugsArray.includes(baseSlug)) {
+      // Add a short uuid to make it unique
+      finalSlug = `${baseSlug}-${uuidv4().substring(0, 6)}`;
+    }
+  }
+
   // Insert plan
   const { data: plan, error } = await supabase.from('group_idea_plans').insert({
     group_id: groupId,
@@ -148,10 +190,11 @@ export async function POST(request: NextRequest, context: { params: { id: string
     description: body.description ?? null,
     created_by: user ? user.id : null,
     created_by_guest_token: createdByGuestToken,
-    // ...other fields as needed
+    slug: finalSlug, // Ensure slug is never null
   }).select('*').single();
 
   if (error) {
+    console.error('Error creating plan:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

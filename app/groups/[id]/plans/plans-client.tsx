@@ -422,10 +422,6 @@ export default function PlansClient({
               </DialogContent>
             </Dialog>
           )}
-          
-          <Button variant="outline" onClick={() => router.push(`/groups/${groupId}`)}>
-            Back to Group
-          </Button>
         </div>
       </div>
       
@@ -495,8 +491,8 @@ export default function PlansClient({
                   )}
                   <span className="text-sm text-gray-700 mt-2">{plan.ideas_count} idea{plan.ideas_count !== 1 && 's'}</span>
                 </div>
-                {/* Created date bottom right */}
-                <span className="absolute bottom-4 right-4 text-[11px] text-gray-400">{`Created ${formatDistanceToNow(new Date(plan.created_at), { addSuffix: true })}`}</span>
+                {/* Created date moved to bottom left */}
+                <span className="absolute bottom-4 left-4 text-[11px] text-gray-400">{`Created ${formatDistanceToNow(new Date(plan.created_at), { addSuffix: true })}`}</span>
               </div>
             );
           })}

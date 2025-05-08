@@ -1,5 +1,5 @@
 'use client';
-import { TRIP_ROLES, PERMISSION_STATUSES } from '@/utils/constants/status';
+import { TRIP_ROLES, GROUP_MEMBER_ROLES, PERMISSION_STATUSES } from '@/utils/constants/status';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
@@ -18,6 +18,8 @@ import {
   ChevronDown,
   Import,
   Copy,
+  MoreVertical,
+  Smile,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -66,8 +68,8 @@ function getInitials(name?: string | null): string {
     .substring(0, 2);
 }
 
-// Define TripRole type from the constants
-type TripRole = (typeof TRIP_ROLES)[keyof typeof TRIP_ROLES];
+// Define GroupMemberRole type from the constants
+type GroupMemberRole = (typeof GROUP_MEMBER_ROLES)[keyof typeof GROUP_MEMBER_ROLES];
 
 // Exported MemberProfile
 export interface MemberProfile {
@@ -81,7 +83,7 @@ export interface TripMemberFromSSR {
   id: string;
   trip_id: string;
   user_id: string;
-  role: TripRole; // Use the lowercase TripRole type from constants
+  role: GroupMemberRole; // Use the group member role type
   joined_at: string;
   profiles: MemberProfile | null; // Profiles can be null if join fails
 }
@@ -112,13 +114,13 @@ export function MembersTab({
   initialMembers = [],
 }: MembersTabProps) {
   const { toast } = useToast();
-  const [members, setMembers] = useState<TripMemberFromSSR[]>(initialMembers);
+  const [members, setMembers] = useState<({ flair?: string } & TripMemberFromSSR)[]>(initialMembers);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [newMember, setNewMember] = useState({
     name: '',
     email: '',
-    role: TRIP_ROLES.VIEWER as TripRole,
+    role: TRIP_ROLES.VIEWER as GroupMemberRole,
   });
 
   const isAdmin = [TRIP_ROLES.ADMIN.toUpperCase(), TRIP_ROLES.EDITOR.toUpperCase()].includes(
@@ -126,6 +128,10 @@ export function MembersTab({
   );
 
   const [inviteLink, setInviteLink] = useState('');
+
+  // Add flair to member state
+  const [flairDialog, setFlairDialog] = useState<{ open: boolean; memberId: string | null }>({ open: false, memberId: null });
+  const [flairInput, setFlairInput] = useState('');
 
   // Effect to generate invite link client-side
   useEffect(() => {
@@ -199,7 +205,7 @@ export function MembersTab({
       toast({ title: 'Invitation Sent', description: `Invitation sent to ${newMember.email}.` });
 
       setIsAddMemberOpen(false);
-      setNewMember({ name: '', email: '', role: TRIP_ROLES.VIEWER as TripRole }); // Reset form
+      setNewMember({ name: '', email: '', role: TRIP_ROLES.VIEWER as GroupMemberRole }); // Reset form
     } catch (error: any) {
       console.error('Error sending invitation:', error);
       toast({
@@ -311,6 +317,40 @@ export function MembersTab({
       });
   };
 
+  const handleChangeFlair = (memberId: string, newFlair: string) => {
+    setMembers((prev) => prev.map((m) => m.user_id === memberId ? { ...m, flair: newFlair } : m));
+    setFlairDialog({ open: false, memberId: null });
+    setFlairInput('');
+    toast({ title: 'Flair Updated', description: 'Member flair updated!' });
+  };
+
+  const handleMakeCoPlanner = async (memberId: string) => {
+    try {
+      // Simulate API call
+      setMembers((prev) => prev.map((m) => m.user_id === memberId ? { ...m, role: GROUP_MEMBER_ROLES.ADMIN } : m));
+      toast({ title: 'Role Updated', description: 'Member is now a Co-Planner.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to update role', variant: 'destructive' });
+    }
+  };
+
+  const handleTransferOwnership = async (memberId: string) => {
+    try {
+      // Simulate API call: set this member to owner, demote current owner to admin
+      setMembers((prev) => {
+        const currentOwner = prev.find((m) => m.role === GROUP_MEMBER_ROLES.OWNER);
+        return prev.map((m) =>
+          m.user_id === memberId ? { ...m, role: GROUP_MEMBER_ROLES.OWNER } :
+          m.user_id === currentOwner?.user_id ? { ...m, role: GROUP_MEMBER_ROLES.ADMIN } : m
+        );
+      });
+      toast({ title: 'Ownership Transferred', description: 'Ownership transferred. Please refresh.' });
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to transfer ownership', variant: 'destructive' });
+    }
+  };
+
   // Card for Existing Members
   const MembersListCard = () => (
     <Card>
@@ -322,30 +362,50 @@ export function MembersTab({
         {members.length > 0 ? (
           <ul className="space-y-4">
             {members.map((member) => (
-              <li key={member.user_id} className="flex items-center justify-between">
+              <li key={member.user_id} className="flex items-center justify-between group">
                 <div className="flex items-center space-x-3">
                   <Avatar>
                     <AvatarImage src={member.profiles?.avatar_url ?? undefined} />
                     <AvatarFallback>{getInitials(member.profiles?.name)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium flex items-center gap-1">
                       {member.profiles?.name ?? 'User Profile Not Found'}
+                      {member.flair && <span className="ml-1 text-lg">{member.flair}</span>}
                     </p>
                     <Badge variant="secondary" className="text-xs capitalize">
                       {member.role}
                     </Badge>
                   </div>
                 </div>
-                {canEdit && ( // Assuming 'canEdit' determines if the current user can remove others
-                  (<Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveMember(member.user_id)}
-                    className="text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>)
+                {canEdit && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {member.role !== GROUP_MEMBER_ROLES.OWNER && (
+                        <DropdownMenuItem onClick={() => handleRemoveMember(member.user_id)}>
+                          Remove from group
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => setFlairDialog({ open: true, memberId: member.user_id })}>
+                        Change flair
+                      </DropdownMenuItem>
+                      {member.role !== GROUP_MEMBER_ROLES.ADMIN && member.role !== GROUP_MEMBER_ROLES.OWNER && (
+                        <DropdownMenuItem onClick={() => handleMakeCoPlanner(member.user_id)}>
+                          Make Co-Planner
+                        </DropdownMenuItem>
+                      )}
+                      {member.role !== GROUP_MEMBER_ROLES.OWNER && (
+                        <DropdownMenuItem onClick={() => handleTransferOwnership(member.user_id)}>
+                          Transfer Ownership
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </li>
             ))}
@@ -361,6 +421,29 @@ export function MembersTab({
           </Button>
         </CardFooter>
       )}
+      {/* Flair Dialog */}
+      <Dialog open={flairDialog.open} onOpenChange={(open) => setFlairDialog({ open, memberId: open ? flairDialog.memberId : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Flair</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <Input
+              placeholder="Enter emoji (e.g. 🌟)"
+              value={flairInput}
+              onChange={(e) => setFlairInput(e.target.value)}
+              maxLength={2}
+              className="text-2xl text-center w-24"
+            />
+            <Button onClick={() => flairDialog.memberId && handleChangeFlair(flairDialog.memberId, flairInput)}>
+              Update Flair
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFlairDialog({ open: false, memberId: null })}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 
@@ -476,7 +559,7 @@ export function MembersTab({
               </Label>
               <Select
                 value={newMember.role}
-                onValueChange={(value) => setNewMember({ ...newMember, role: value as TripRole })}
+                onValueChange={(value) => setNewMember({ ...newMember, role: value as GroupMemberRole })}
               >
                 <SelectTrigger id="role" className="col-span-3">
                   <SelectValue>Select role</SelectValue>

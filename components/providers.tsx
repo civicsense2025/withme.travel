@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { SearchProvider } from '@/contexts/search-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { OnbordaProvider } from 'onborda';
 
 const queryClient = new QueryClient();
 
@@ -19,16 +20,18 @@ export function Providers({
   children: ReactNode;
 }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <AuthProvider initialSession={initialSession}>
-        <QueryClientProvider client={queryClient}>
-          <SearchProvider>
-            {children}
-            <Toaster />
-          </SearchProvider>
-        </QueryClientProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <OnbordaProvider>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <AuthProvider initialSession={initialSession}>
+          <QueryClientProvider client={queryClient}>
+            <SearchProvider>
+              {children}
+              <Toaster />
+            </SearchProvider>
+          </QueryClientProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </OnbordaProvider>
   );
 }
 

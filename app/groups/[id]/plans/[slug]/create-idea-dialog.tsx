@@ -1,215 +1,199 @@
 'use client';
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle } from 'lucide-react';
-import { GroupIdea, ColumnId } from './store/idea-store';
-import { DatePicker } from '@/components/ui/date-picker';
-
-interface DateRange {
-  from: Date | null;
-  to: Date | null;
-}
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { useAuth } from '@/components/auth-provider';
+import { useEffect } from 'react';
 
 interface CreateIdeaDialogProps {
-  groupId: string;
-  planId: string;
-  onIdeaCreated: (idea: GroupIdea) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (formData: any) => Promise<void>;
+  isSubmitting: boolean;
 }
 
-export default function CreateIdeaDialog({ 
-  groupId, 
-  planId,
-  onIdeaCreated
+export default function CreateIdeaDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isSubmitting,
 }: CreateIdeaDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<ColumnId>('destination');
-  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
-  const [notes, setNotes] = useState('');
-  
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setType('destination');
-    setDateRange({ from: null, to: null });
-    setNotes('');
-  };
-  
-  const handleCreate = async () => {
-    if (!title.trim()) {
+  const [title, setTitle] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const [ideaType, setIdeaType] = React.useState('');
+  const [link, setLink] = React.useState('');
+  const [notes, setNotes] = React.useState('');
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const isGuest = !user;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title) {
       toast({
-        title: 'Title required',
-        description: 'Please provide a title for your idea',
+        title: 'Error',
+        description: 'Title is required',
         variant: 'destructive',
       });
       return;
     }
     
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          description: description || null,
-          type,
-          start_date: dateRange.from ? dateRange.from.toISOString() : null,
-          end_date: dateRange.to ? dateRange.to.toISOString() : null,
-          notes: notes || null,
-          position: { columnId: type, index: 0 },
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create idea');
-      }
-      
-      const { idea } = await response.json();
-      
-      toast({
-        title: 'Success',
-        description: 'Idea created successfully',
-      });
-      
-      // Call the callback with the new idea
-      onIdeaCreated(idea);
-      
-      // Close dialog and reset form
-      setOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error creating idea:', error);
+    if (!ideaType) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create idea',
+        description: 'Please select an idea type',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
+    
+    const formData = {
+      title,
+      description,
+      type: ideaType,
+      link: link || null,
+      notes: notes || null,
+    };
+    
+    await onSubmit(formData);
   };
   
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setIdeaType('');
+    setLink('');
+    setNotes('');
+  };
+  
+  React.useEffect(() => {
+    if (!open) {
+      resetForm();
+    }
+  }, [open]);
+
   return (
-    <>
-      <Button onClick={() => setOpen(true)}>
-        <PlusCircle className="h-4 w-4 mr-2" />
-        Add Idea
-      </Button>
-      
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New Idea</DialogTitle>
+            <DialogTitle>Add a new idea</DialogTitle>
+            <DialogDescription>
+              {isGuest ? 
+                "Share your idea with the group as a guest. Others can comment and vote on it." :
+                "Share your idea with the group. Everyone can comment and vote on it."}
+            </DialogDescription>
           </DialogHeader>
-          
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="idea-type" className="text-right text-sm font-medium">
-                Type
-              </label>
-              <Select 
-                value={type} 
-                onValueChange={(value) => setType(value as ColumnId)}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="destination">Destination</SelectItem>
-                  <SelectItem value="date">Date</SelectItem>
-                  <SelectItem value="activity">Activity</SelectItem>
-                  <SelectItem value="budget">Budget</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="idea-title" className="text-right text-sm font-medium">
+              <Label htmlFor="title" className="text-right">
                 Title
-              </label>
+              </Label>
               <Input
-                id="idea-title"
+                id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="col-span-3"
-                placeholder="Enter idea title"
+                placeholder="My awesome idea"
+                required
               />
             </div>
-            
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="idea-description" className="text-right text-sm font-medium">
+              <Label htmlFor="type" className="text-right">
+                Type
+              </Label>
+              <Select 
+                value={ideaType} 
+                onValueChange={setIdeaType}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue>{ideaType || "Select idea type"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Idea Types</SelectLabel>
+                    <SelectItem value="place">Place to visit</SelectItem>
+                    <SelectItem value="activity">Activity</SelectItem>
+                    <SelectItem value="accommodation">Accommodation</SelectItem>
+                    <SelectItem value="food">Food & Drink</SelectItem>
+                    <SelectItem value="transport">Transportation</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
                 Description
-              </label>
+              </Label>
               <Textarea
-                id="idea-description"
+                id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="col-span-3"
-                placeholder="Enter a description (optional)"
-                rows={3}
+                placeholder="Tell us more about your idea"
               />
             </div>
-            
-            {type === 'date' && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="date-range" className="text-right text-sm font-medium">
-                  Date Range
-                </label>
-                <div className="col-span-3">
-                  <DatePicker
-                    date={dateRange}
-                    setDate={setDateRange}
-                    placeholder="Select date range"
-                  />
-                </div>
-              </div>
-            )}
-            
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="idea-notes" className="text-right text-sm font-medium">
+              <Label htmlFor="link" className="text-right">
+                Link
+              </Label>
+              <Input
+                id="link"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                className="col-span-3"
+                placeholder="Add a link (optional)"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="notes" className="text-right">
                 Notes
-              </label>
+              </Label>
               <Textarea
-                id="idea-notes"
+                id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="col-span-3"
-                placeholder="Add any additional notes (optional)"
-                rows={2}
+                placeholder="Any additional notes (optional)"
               />
             </div>
+            {isGuest && (
+              <div className="col-span-full pt-2 px-2 text-sm text-muted-foreground">
+                <p>You're adding this idea as a guest. <a href="/signup" className="text-primary underline">Sign up</a> to create an account and manage all your ideas.</p>
+              </div>
+            )}
           </div>
-          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreate} disabled={isLoading || !title.trim()}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Idea'
-              )}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create idea'}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 } 

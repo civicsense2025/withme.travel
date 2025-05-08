@@ -57,7 +57,14 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 260 100% 82%;
-    --radius: 1rem;
+    --radius: 1.5rem;
+    --font-size-base: 1rem;
+    --font-size-h1: 2.5rem;
+    --font-size-h2: 1.8rem;
+    --font-size-h3: 1.4rem;
+    --font-size-h4: 1.2rem;
+    --font-size-h5: 0.9rem;
+    --font-size-h6: 0.7rem;
   }
 
   .dark {
@@ -120,61 +127,158 @@
 
   body {
     @apply bg-background text-foreground;
-    font-size: 15px;
+    font-size: var(--font-size-base);
+    /* Apple-inspired smooth scrolling */
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Mobile-optimized typography */
   h1 {
-    @apply text-2xl md:text-3xl lg:text-4xl font-bold mb-6 leading-normal;
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight tracking-tight;
+    font-size: var(--font-size-h1);
   }
   
   h2 {
-    @apply text-xl md:text-2xl lg:text-3xl font-semibold mb-4 leading-normal;
+    @apply text-2xl md:text-3xl lg:text-4xl font-semibold mb-4 leading-tight tracking-tight;
+    font-size: var(--font-size-h2);
   }
   
   h3 {
-    @apply text-lg md:text-xl font-medium mb-3 leading-normal;
+    @apply text-xl md:text-2xl font-medium mb-3 leading-tight tracking-tight;
+    font-size: var(--font-size-h3);
   }
   
   p {
     @apply leading-relaxed mb-4;
+    font-size: var(--font-size-base);
+  }
+
+  @media (min-width: 600px) {
+    :root {
+      --font-size-base: 1.1rem;
+      --font-size-h1: 2.75rem;
+      --font-size-h2: 2rem;
+    }
+  }
+  @media (min-width: 900px) {
+    :root {
+      --font-size-base: 1.15rem;
+      --font-size-h1: 3.5rem;
+      --font-size-h2: 2.5rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    :root {
+      --font-size-base: 1.2rem;
+      --font-size-h1: 4rem;
+      --font-size-h2: 3rem;
+    }
+  }
+  @media (max-width: 900px) {
+    :root {
+      --font-size-base: 1rem;
+      --font-size-h1: 2.25rem;
+      --font-size-h2: 1.5rem;
+    }
+  }
+  @media (max-width: 600px) {
+    :root {
+      --font-size-base: 0.95rem;
+      --font-size-h1: 1.75rem;
+      --font-size-h2: 1.25rem;
+    }
   }
 }
 
 @layer components {
+  /* Apple-inspired gradient text */
   .gradient-text {
     @apply bg-gradient-to-r from-travel-purple to-travel-blue bg-clip-text text-transparent;
+    background-size: 200% 100%;
+    animation: gradient-shift 8s ease-in-out infinite alternate;
   }
 
   .travel-card {
-    @apply rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300;
-    transform: perspective(1000px) rotateY(0deg);
-    transition: transform 0.5s ease;
+    @apply rounded-3xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), 
+                box-shadow 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    will-change: transform, box-shadow;
   }
 
   .travel-card:hover {
-    transform: perspective(1000px) rotateY(2deg);
+    @apply shadow-xl;
+    transform: translate3d(0, -5px, 0) scale(1.01);
   }
 
   .travel-button {
-    @apply rounded-full px-6 py-2 font-medium transition-all duration-300;
+    @apply rounded-full px-6 py-3 font-medium transition-all;
+    transform: translate3d(0, 0, 0);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background-color 0.3s ease;
+    will-change: transform, box-shadow, background-color;
   }
 
-  .travel-button-primary {
-    @apply bg-travel-purple text-purple-900 hover:bg-purple-300;
+  .travel-button:hover {
+    transform: translate3d(0, -2px, 0) scale(1.02);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 
+                0 8px 10px -6px rgba(0, 0, 0, 0.05);
   }
 
-  .travel-button-secondary {
-    @apply bg-travel-blue text-blue-900 hover:bg-blue-300;
+  .travel-button:active {
+    transform: translate3d(0, 0, 0) scale(0.98);
+    box-shadow: 0 5px 15px -3px rgba(0, 0, 0, 0.1), 
+                0 4px 6px -4px rgba(0, 0, 0, 0.05);
   }
 
-  .travel-button-accent {
-    @apply bg-travel-yellow text-amber-900 hover:bg-amber-300;
+  /* Apple-inspired animations */
+  .animate-appear {
+    animation: appear 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Mobile-friendly container */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-fade-in-stagger > * {
+    opacity: 0;
+    animation: fadeInStagger 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-fade-in-stagger > *:nth-child(1) { animation-delay: 0.1s; }
+  .animate-fade-in-stagger > *:nth-child(2) { animation-delay: 0.2s; }
+  .animate-fade-in-stagger > *:nth-child(3) { animation-delay: 0.3s; }
+  .animate-fade-in-stagger > *:nth-child(4) { animation-delay: 0.4s; }
+  .animate-fade-in-stagger > *:nth-child(5) { animation-delay: 0.5s; }
+
+  .hover-scale {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.03);
+  }
+
+  /* Smooth scroll section transitions */
+  .smooth-scroll-section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .smooth-scroll-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Continue with existing styles... */
   .mobile-container {
-    @apply w-full p-0 max-w-none mx-0;
+    @apply px-4 py-6 md:px-8 md:py-10;
   }
   
   /* Collapsible section for mobile */
@@ -302,25 +406,70 @@
   }
 }
 
-/* Keyframes must be defined globally */
-@keyframes fadeIn {
-  from {
+/* Apple-inspired keyframe animations */
+@keyframes appear {
+  0% {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: scale(0.96);
   }
-  to {
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes pulse-soft {
-  0%,
+@keyframes fadeInStagger {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
   100% {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
   }
   50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Continue with existing animations... */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-soft {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.05);
     opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
   }
 }
 
@@ -552,7 +701,7 @@ body.dragging-active * {
 
 html {
   font-family: var(--font-helvetica-neue), 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 20px;
+  font-size: var(--font-size-base);
 }
 body, button, input, textarea, select {
   font-family: inherit;
@@ -590,5 +739,105 @@ nav a, .nav-link, .navbar a {
   .container {
     padding-left: 2rem !important; /* 32px */
     padding-right: 2rem !important; /* 32px */
+  }
+}
+
+/* --- Responsive Typography & Layout Improvements (sitewide) --- */
+
+@media (max-width: 1535px) {
+  html { font-size: 1rem; }
+}
+@media (max-width: 1279px) {
+  html { font-size: 16px; }
+}
+@media (max-width: 1023px) {
+  html { font-size: 15px; }
+}
+@media (max-width: 900px) {
+  html { font-size: 14px; }
+}
+@media (max-width: 767px) {
+  html { font-size: 13px; }
+}
+@media (max-width: 599px) {
+  html { font-size: 12px; }
+}
+@media (max-width: 479px) {
+  html { font-size: 11px; }
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+}
+@media (min-width: 600px) { h1 { font-size: 2.5rem; } }
+@media (min-width: 900px) { h1 { font-size: 3rem; } }
+@media (min-width: 1280px) { h1 { font-size: 3.5rem; } }
+
+h2 {
+  font-size: var(--font-size-h2);
+}
+@media (min-width: 600px) { h2 { font-size: 1.8rem; } }
+@media (min-width: 900px) { h2 { font-size: 2.2rem; } }
+@media (min-width: 1280px) { h2 { font-size: 2.5rem; } }
+
+p, .responsive-p {
+  font-size: var(--font-size-base);
+}
+@media (min-width: 600px) { p, .responsive-p { font-size: 1.1rem; } }
+@media (min-width: 900px) { p, .responsive-p { font-size: 1.15rem; } }
+@media (min-width: 1280px) { p, .responsive-p { font-size: 1.2rem; } }
+
+/* Card and container max-widths for main UI */
+.card, .main-card, .responsive-card, .main-ui-card, .max-w-lg, .max-w-xl, .max-w-2xl, .max-w-3xl {
+  max-width: 98vw;
+  width: 100%;
+}
+@media (min-width: 480px) {
+  .card, .main-card, .responsive-card, .main-ui-card, .max-w-lg, .max-w-xl, .max-w-2xl, .max-w-3xl {
+    max-width: 420px;
+  }
+}
+@media (min-width: 600px) {
+  .card, .main-card, .responsive-card, .main-ui-card, .max-w-lg, .max-w-xl, .max-w-2xl, .max-w-3xl {
+    max-width: 520px;
+  }
+}
+@media (min-width: 900px) {
+  .card, .main-card, .responsive-card, .main-ui-card, .max-w-lg, .max-w-xl, .max-w-2xl, .max-w-3xl {
+    max-width: 650px;
+  }
+}
+@media (min-width: 1280px) {
+  .card, .main-card, .responsive-card, .main-ui-card, .max-w-lg, .max-w-xl, .max-w-2xl, .max-w-3xl {
+    max-width: 800px;
+  }
+}
+@media (min-width: 1536px) {
+  .card, .main-card, .responsive-card, .main-ui-card, .max-w-lg, .max-w-xl, .max-w-2xl, .max-w-3xl {
+    max-width: 900px;
+  }
+}
+
+/* Responsive container padding for breathing room */
+.container, .main-container, .responsive-container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 600px) {
+  .container, .main-container, .responsive-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+@media (min-width: 900px) {
+  .container, .main-container, .responsive-container {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+@media (min-width: 1280px) {
+  .container, .main-container, .responsive-container {
+    padding-left: 4rem;
+    padding-right: 4rem;
   }
 }

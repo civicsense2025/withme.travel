@@ -28,12 +28,7 @@ export default async function GroupLayout({
 
   return (
     <div className="container mx-auto py-6">
-      <div className="mb-4">
-        <Link href="/groups" className="flex items-center text-sm hover:underline">
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to groups
-        </Link>
-      </div>
+  
       {/* <GroupNavigation groupId={id} /> */}
       <main>{children}</main>
     </div>

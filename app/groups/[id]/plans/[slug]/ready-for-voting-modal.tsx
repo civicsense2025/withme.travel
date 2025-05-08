@@ -19,7 +19,12 @@ import {
   Loader2, 
   ThumbsUp, 
   Users, 
-  ArrowRight
+  ArrowRight,
+  MapPin,
+  Calendar,
+  Activity,
+  DollarSign,
+  FileText
 } from 'lucide-react';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
 import { useToast } from '@/components/ui/use-toast';
@@ -27,6 +32,7 @@ import { useAuth } from '@/components/auth-provider';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { motion } from 'framer-motion';
 import { ColumnId as LocalColumnId } from './store/idea-store';
+import { Progress } from '@/components/ui/progress';
 
 interface ReadyForVotingModalProps {
   onClose: () => void;
@@ -147,6 +153,36 @@ export function ReadyForVotingModal({
     }
   };
   
+  // Calculate if all idea types have at least one idea
+  const allTypesHaveIdeas = Object.values(ideasByType).every(count => count > 0);
+
+  // Calculate progress percentage (0-100)
+  const progressPercentage = Object.values(ideasByType).filter(count => count > 0).length * 20;
+  
+  // Get icon for each idea type
+  const getTypeIcon = (type: LocalColumnId) => {
+    switch (type) {
+      case 'destination': return <MapPin className="h-4 w-4 text-blue-500" />;
+      case 'date': return <Calendar className="h-4 w-4 text-yellow-500" />;
+      case 'activity': return <Activity className="h-4 w-4 text-green-500" />;
+      case 'budget': return <DollarSign className="h-4 w-4 text-orange-500" />;
+      case 'other': return <FileText className="h-4 w-4 text-purple-500" />;
+    }
+  };
+  
+  // Get background color for progress items
+  const getProgressColor = (type: LocalColumnId, isComplete: boolean) => {
+    if (!isComplete) return 'bg-gray-100';
+    
+    switch (type) {
+      case 'destination': return 'bg-blue-100 border-blue-300';
+      case 'date': return 'bg-yellow-100 border-yellow-300';
+      case 'activity': return 'bg-green-100 border-green-300';
+      case 'budget': return 'bg-orange-100 border-orange-300';
+      case 'other': return 'bg-purple-100 border-purple-300';
+    }
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -161,6 +197,55 @@ export function ReadyForVotingModal({
         </DialogHeader>
         
         <div className="space-y-4 py-4">
+          {/* Progress indicator */}
+          <motion.div 
+            className="mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium">Idea Collection Progress</span>
+              <span className="text-sm text-muted-foreground">{progressPercentage}% Complete</span>
+            </div>
+            
+            <Progress value={progressPercentage} className="h-2" />
+            
+            <div className="grid grid-cols-5 gap-2 mt-4">
+              {(['destination', 'date', 'activity', 'budget', 'other'] as LocalColumnId[]).map((type) => {
+                const isComplete = ideasByType[type] > 0;
+                return (
+                  <motion.div
+                    key={type}
+                    className={`flex flex-col items-center p-3 rounded-lg border ${getProgressColor(type, isComplete)}`}
+                    whileHover={{ y: -3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="mb-1">
+                      {getTypeIcon(type)}
+                    </div>
+                    <div className="text-xs font-medium text-center capitalize">
+                      {type}
+                    </div>
+                    <div className="text-xs mt-1">
+                      {isComplete ? (
+                        <Badge variant="outline" className="bg-white">
+                          {ideasByType[type]}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-white text-gray-400">
+                          0
+                        </Badge>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+          
           <div className="flex items-center justify-center space-x-1">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -188,8 +273,8 @@ export function ReadyForVotingModal({
             <CardContent className="p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <h3 className="font-medium">Group Progress</h3>
-                <Badge variant="outline" className="bg-green-50">
-                  Ideas Complete
+                <Badge variant={allTypesHaveIdeas ? "default" : "outline"} className={allTypesHaveIdeas ? "bg-green-50 text-green-700" : ""}>
+                  {allTypesHaveIdeas ? "All Categories Complete" : "Categories In Progress"}
                 </Badge>
               </div>
               
@@ -228,7 +313,7 @@ export function ReadyForVotingModal({
                     <Avatar key={member.id} className="border-2 border-background">
                       <AvatarImage src={member.profiles?.avatar_url} />
                       <AvatarFallback>
-                        {(member.profiles?.full_name || 'U').charAt(0)}
+                        {(member.profiles?.full_name || 'Guest').charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                   ))}
@@ -248,22 +333,23 @@ export function ReadyForVotingModal({
           <div className="rounded-lg border p-4 bg-amber-50">
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-amber-800">Before you continue</h4>
-                <p className="text-sm text-amber-700 mt-1">
-                  Starting the voting phase will invite all group members to vote on the ideas.
-                  Make sure you've added all the ideas you want to include!
-                </p>
+              <div className="text-sm text-amber-700">
+                <p className="font-medium mb-1">What happens next?</p>
+                <p>Moving to voting will allow all group members to vote on favorite ideas. The most popular ideas will be used to create your trip.</p>
               </div>
             </div>
           </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Go Back to Ideas
+          <Button variant="outline" onClick={onClose}>
+            Cancel
           </Button>
-          <Button onClick={handleStartVoting} disabled={isLoading}>
+          <Button 
+            onClick={handleStartVoting}
+            disabled={isLoading || totalIdeas === 0} 
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

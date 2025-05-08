@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, Mail, MessageSquare, Info, Instagram } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Heart, Mail, MessageSquare, Info, Instagram, Coffee, ArrowRight, X } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -108,330 +108,273 @@ export default function SupportPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
       />
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl leading-loose font-bold mb-2">support us</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            help keep withme.travel running and ad-free!
-          </p>
+      <main className="min-h-screen bg-gradient-to-br from-background to-muted relative overflow-hidden font-sans">
+        {/* Animated background shapes */}
+        <div className="absolute inset-0 -z-10 pointer-events-none">
+          <div className="absolute top-[-80px] left-[-80px] w-72 h-72 bg-primary/20 rounded-full blur-3xl opacity-60 animate-float" />
+          <div className="absolute bottom-[-100px] right-[-60px] w-96 h-96 bg-accent/20 rounded-full blur-3xl opacity-50 animate-float-slow" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          {/* Story Column - Left Side */}
-          <div className="md:col-span-8">
-            <h2 className="text-2xl font-semibold mb-6">our story</h2>
-            <div className="prose prose-sm dark:prose-invert">
-              <p className="mb-6">
-                Hey there! We're a small team of travelers who got tired of the endless WhatsApp
-                threads and chaotic spreadsheets that seem to multiply every time we planned a trip
-                with friends. You know the drill - someone loses track of the latest version,
-                another person's email gets buried, and suddenly you're juggling ten different
-                conversations about the same hotel booking.
-              </p>
-              <p className="mb-6">
-                So we thought: what if planning a trip together could actually be... fun? Not just
-                the dreaming-about-it part (though that's great too!), but the nitty-gritty details
-                of figuring out where to stay, what to do, and how to split costs. We wanted to
-                create something that feels less like project management and more like part of the
-                adventure.
-              </p>
-              <p className="mb-6">
-                That's how withme.travel was born - a passion project that grew from our own travel
-                mishaps and "there has to be a better way" moments. We're building the tools we wish
-                we had: simple enough that your not-so-tech-savvy friend can use it, but powerful
-                enough to handle the complexity of group decisions and shared expenses.
-              </p>
-
-              <div className="mt-8 p-6 rounded-lg bg-muted/30 border border-muted">
-                <p className="text-sm leading-relaxed">
-                  <span className="font-medium">a note about money:</span> we believe in keeping
-                  things simple and secure. that's why we don't handle any financial transactions
-                  directly on withme.travel. while we offer Splitwise integration to help you track
-                  and settle expenses after your trip, it's completely optional. all actual money
-                  movements happen through your preferred payment methods outside our platform -
-                  we're just here to help you keep track of who owes what!
-                </p>
-              </div>
-            </div>
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-3 bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent tracking-tight">
+              Support withme.travel
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Help us keep group travel planning free, ad-free, and delightful for everyone
+            </p>
           </div>
 
-          {/* Support Options - Right Side */}
-          <div className="md:col-span-4 space-y-4">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-travel-purple/60 via-travel-purple to-travel-purple/60 rounded-lg blur opacity-50 group-hover:opacity-75 transition duration-300 animate-gradient-xy"></div>
-              <Card className="relative p-6 bg-card hover:bg-muted/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-3">
-                  <Heart className="h-5 w-5 text-travel-purple" />
-                  <h3 className="font-semibold">buy us a coffee</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  help keep our servers running and developers caffeinated! your support keeps group
-                  travel planning free for everyone.
-                </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <a
-                    href="https://venmo.com/u/ginandtanic"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-auto px-2.5 py-1 border-travel-purple/50 text-travel-purple hover:bg-travel-purple/30 hover:text-travel-purple-foreground"
-                    >
-                      venmo
-                    </Button>
-                  </a>
-                  <a href="https://cash.app/$ginandtanic" target="_blank" rel="noopener noreferrer">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-auto px-2.5 py-1 border-travel-purple/50 text-travel-purple hover:bg-travel-purple/30 hover:text-travel-purple-foreground"
-                    >
-                      cash app
-                    </Button>
-                  </a>
-                  <a
-                    href="https://www.paypal.com/paypalme/bktan6"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-auto px-2.5 py-1 border-travel-purple/50 text-travel-purple hover:bg-travel-purple/30 hover:text-travel-purple-foreground"
-                    >
-                      paypal
-                    </Button>
-                  </a>
-                  <a href="mailto:tanmho92@gmail.com?subject=withme.travel%20support%20%F0%9F%92%9C">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-auto px-2.5 py-1 border-travel-purple/50 text-travel-purple hover:bg-travel-purple/30 hover:text-travel-purple-foreground flex items-center gap-1"
-                    >
-                      <Mail className="h-3.5 w-3.5" /> zelle
-                    </Button>
-                  </a>
-                </div>
-                <p className="text-xs text-muted-foreground mb-4">
-                  can't donate? no worries! sharing with friends or a follow helps too:
-                </p>
-                <a
-                  href="https://instagram.com/ginandtanic"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-travel-purple hover:underline"
-                >
-                  <Instagram className="h-4 w-4" />
-                  follow on instagram →
-                </a>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            {/* Story Column - Left Side */}
+            <div className="md:col-span-7">
+              <Card className="rounded-3xl shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-0 overflow-hidden">
+                <CardContent className="p-8">
+                  <h2 className="text-2xl font-bold mb-6">Our Story</h2>
+                  <div className="prose prose-sm dark:prose-invert">
+                    <p className="mb-4">
+                      We created withme.travel after experiencing the chaos of planning trips with friends — 
+                      endless messaging threads, forgotten spreadsheets, and coordination headaches.
+                    </p>
+                    <p className="mb-4">
+                      What if planning together could actually be fun? Not just dreaming about the trip, 
+                      but figuring out all the details with friends without the usual friction.
+                    </p>
+                    <p className="mb-4">
+                      That's our mission: building a platform simple enough for everyone in your group 
+                      but powerful enough to handle all the decisions and details that make group travel special.
+                    </p>
+
+                    <div className="mt-6 p-5 rounded-xl bg-muted/30 border border-muted">
+                      <p className="text-sm leading-relaxed">
+                        <span className="font-medium">About transactions:</span> We don't handle financial 
+                        transactions directly. We offer tools to track expenses, but all money movements 
+                        happen through your preferred payment methods.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             </div>
 
-            <Card className="p-6 transition-all duration-300 hover:shadow-lg hover:bg-muted/50">
-              <div className="flex items-center gap-3 mb-3">
-                <MessageSquare className="h-5 w-5 text-travel-purple" />
-                <h3 className="font-semibold">share your thoughts</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Found a bug? Have an idea? We'd love to hear it! Your feedback shapes what we build
-                next.
-              </p>
-              <a href="#" className="text-sm text-travel-purple hover:underline">
-                send feedback →
-              </a>
-            </Card>
+            {/* Support Options - Right Side */}
+            <div className="md:col-span-5 space-y-5">
+              <Card className="rounded-3xl shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-0 overflow-hidden">
+                <CardContent className="p-8">
+                  <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
+                    <Heart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  
+                  <h3 className="text-xl font-bold mb-3">Support Our Work</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Help us build the best group travel planning experience. Your contribution keeps the servers running and our team creating new features.
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-3 mb-6">
+                    <a
+                      href="https://venmo.com/u/ginandtanic"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-auto px-3 py-2 border-purple-400/50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 rounded-full"
+                      >
+                        Venmo
+                      </Button>
+                    </a>
+                    <a href="https://cash.app/$ginandtanic" target="_blank" rel="noopener noreferrer">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-auto px-3 py-2 border-purple-400/50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 rounded-full"
+                      >
+                        Cash App
+                      </Button>
+                    </a>
+                    <a
+                      href="https://www.paypal.com/paypalme/bktan6"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-auto px-3 py-2 border-purple-400/50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 rounded-full"
+                      >
+                        PayPal
+                      </Button>
+                    </a>
+                    <a href="mailto:tanmho92@gmail.com?subject=withme.travel%20support%20%F0%9F%92%9C">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-auto px-3 py-2 border-purple-400/50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 rounded-full flex items-center gap-1"
+                      >
+                        <Mail className="h-3.5 w-3.5" /> Zelle
+                      </Button>
+                    </a>
+                  </div>
+                  
+                  <button 
+                    className="w-full py-3 flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white text-base font-medium rounded-full transition-colors shadow-md hover:shadow-lg"
+                  >
+                    <Coffee className="h-4 w-4 mr-2" />
+                    <span>Buy us a coffee</span>
+                  </button>
+                  
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Can't donate? Follow us or spread the word:
+                    </p>
+                    <a
+                      href="https://instagram.com/ginandtanic"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-sm text-purple-600 hover:text-purple-700 hover:underline"
+                    >
+                      <Instagram className="h-4 w-4 mr-1" />
+                      Follow on Instagram
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card className="p-6 transition-all duration-300 hover:shadow-lg hover:bg-muted/50">
-              <div className="flex items-center gap-3 mb-3">
-                <Mail className="h-5 w-5 text-travel-purple" />
-                <h3 className="font-semibold">drop us a line</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Questions? Ideas? Just want to say hi? We're real humans who love chatting about
-                travel!
+              <Card className="rounded-3xl shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-0 overflow-hidden">
+                <CardContent className="p-8">
+                  <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
+                    <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  
+                  <h3 className="text-xl font-bold mb-3">Share Your Feedback</h3>
+                  <p className="text-muted-foreground mb-5">
+                    Found a bug? Have an idea? Your insights shape what features we build next.
+                  </p>
+                  
+                  <Button className="w-full py-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg">
+                    Send Feedback <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="mt-16 mb-12">
+            <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+            <div className="max-w-3xl mx-auto bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl p-6">
+              <Accordion type="single" collapsible className="w-full">
+                {faqStructuredData.mainEntity.map((item: any, index: number) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger className="text-left font-medium py-4">
+                      {item.name}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground pb-4">
+                      {item.acceptedAnswer.text}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          </div>
+
+          {/* Contact Form */}
+          <div className="max-w-2xl mx-auto mt-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl overflow-hidden">
+            <div className="p-8">
+              <h2 className="text-2xl font-bold mb-4">Get in Touch</h2>
+              <p className="text-muted-foreground mb-6">
+                Still need help? We'll get back to you as quickly as possible.
               </p>
-              <a href="#" className="text-sm text-travel-purple hover:underline">
-                email us →
-              </a>
-            </Card>
+              
+              {messageStatus === 'success' ? (
+                <div className="flex flex-col items-center py-8">
+                  <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Message Sent!</h3>
+                  <p className="text-center text-muted-foreground">We've received your message and will get back to you soon.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <Label htmlFor="name" className="text-sm font-medium">Your Name</Label>
+                      <Input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        className="mt-1 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email" className="text-sm font-medium">Your Email</Label>
+                      <Input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className="mt-1 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="subject" className="text-sm font-medium">Subject</Label>
+                    <Input
+                      type="text"
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      required
+                      className="mt-1 rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="message" className="text-sm font-medium">Your Message</Label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      rows={5}
+                      value={formData.message}
+                      onChange={handleChange}
+                      required
+                      className="mt-1 rounded-xl"
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full py-6 rounded-full bg-primary hover:bg-primary/90 text-white text-base font-medium shadow-md hover:shadow-lg"
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                  </Button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
-
-        <div className="mt-16 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-semibold mb-6 text-center">common questions</h2>
-
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger>How do I plan a trip?</AccordionTrigger>
-              <AccordionContent>
-                Planning a trip is easy! Use the "Create New Trip" button on your dashboard, set
-                your destination and dates, and start adding itinerary items like flights, hotels,
-                activities, and notes. You can use our search features to find inspiration and
-                places.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-2">
-              <AccordionTrigger>Can I collaborate with friends?</AccordionTrigger>
-              <AccordionContent>
-                Absolutely! WithMe Travel is designed for collaboration. You can invite friends to
-                join your trip, and everyone can contribute to the itinerary, add suggestions, and
-                manage expenses together in real-time.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-3">
-              <AccordionTrigger>How does the budgeting feature work?</AccordionTrigger>
-              <AccordionContent>
-                You can set a target budget for your trip. As you add itinerary items with estimated
-                costs, the app tracks your planned spending. You can also manually log expenses as
-                they happen to compare actual spending against your plan.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-4">
-              <AccordionTrigger>Is my trip data private?</AccordionTrigger>
-              <AccordionContent>
-                By default, trips are private to you and the members you invite. You can choose to
-                share a trip publicly via a unique link if you want. Check our{' '}
-                <Link href="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </Link>{' '}
-                for more details.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-5">
-              <AccordionTrigger>What if I encounter an issue?</AccordionTrigger>
-              <AccordionContent>
-                If you run into any problems or have questions not covered here, please reach out to
-                our support team via the contact form below or email us directly at{' '}
-                <a href="mailto:support@withme.travel" className="text-primary hover:underline">
-                  support@withme.travel
-                </a>
-                .
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-6">
-              <AccordionTrigger>Can I use WithMe Travel offline?</AccordionTrigger>
-              <AccordionContent>
-                Currently, WithMe Travel requires an internet connection for most features,
-                including real-time collaboration and searching for new destinations.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-7">
-              <AccordionTrigger>Do you offer pre-made itineraries?</AccordionTrigger>
-              <AccordionContent>
-                Yes! We have a growing library of itinerary templates created by other travelers and
-                our team. You can browse these templates, customize them, and use them as a starting
-                point for your trip.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-8">
-              <AccordionTrigger>How are destinations suggested?</AccordionTrigger>
-              <AccordionContent>
-                We use a combination of factors including popular travel trends, user interests (if
-                you've shared them during onboarding), and location data to suggest destinations.
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Contact Support</h2>
-          <p className="text-muted-foreground mb-6">
-            Still need help? Fill out the form below, and we'll get back to you as soon as possible.
-          </p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Your Name</Label>
-                <Input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Your Email</Label>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="subject">Subject</Label>
-              <Input
-                type="text"
-                id="subject"
-                name="subject"
-                value={formData.subject}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="message">Your Message</Label>
-              <Textarea
-                id="message"
-                name="message"
-                rows={5}
-                value={formData.message}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Sending...' : 'Send Message'}
-            </Button>
-            {messageStatus && (
-              <p
-                className={`text-sm mt-2 ${messageStatus === 'success' ? 'text-green-600' : 'text-red-600'}`}
-              >
-                {messageStatus === 'success'
-                  ? 'Message sent successfully! We will get back to you soon.'
-                  : messageStatus}
-              </p>
-            )}
-          </form>
-        </section>
-
-        <section className="text-center text-sm text-muted-foreground mt-12">
-          <p>
-            For urgent issues, you can also reach us at{' '}
-            <a href="mailto:support@withme.travel" className="text-primary hover:underline">
-              support@withme.travel
-            </a>
-          </p>
-          <p>We typically respond within 24-48 hours during business days.</p>
-        </section>
-      </div>
+      </main>
+      
+      <style jsx global>{`
+        .animate-float {
+          animation: float 8s ease-in-out infinite alternate;
+        }
+        .animate-float-slow {
+          animation: float 14s ease-in-out infinite alternate;
+        }
+        @keyframes float {
+          0% { transform: translateY(0) scale(1); }
+          100% { transform: translateY(-20px) scale(1.04); }
+        }
+      `}</style>
     </>
   );
 }
-
-// Add this to your globals.css or a new styles file
-/*
-@keyframes gradient-xy {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-gradient-xy {
-  animation: gradient-xy 15s ease infinite;
-  background-size: 200% 200%;
-}
-*/

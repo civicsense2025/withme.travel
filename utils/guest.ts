@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { GuestInfo } from '@/types/group-ideas';
-import { cookies } from 'next/headers';
 
 /**
  * Helper functions for working with guest users
@@ -10,10 +9,22 @@ import { cookies } from 'next/headers';
  * Check if a guest token exists in cookies - safe for server components
  * Must be used in an async context
  */
-export async function getGuestToken(): Promise<string | null> {
+export function getGuestToken(): string | null {
   try {
-    const cookieStore = await cookies();
-    return cookieStore.get('guest_token')?.value || null;
+    // Only import and use server-side cookies when in a server context
+    if (typeof window === 'undefined') {
+      // Dynamic import to prevent errors in client components
+      const { cookies } = require('next/headers');
+      // Get the cookie value - cookies() is synchronous in Next.js
+      const cookieStore = cookies();
+      return cookieStore.get('guest_token')?.value || null;
+    } else {
+      // Client-side fallback using browser cookies
+      return document.cookie
+        .split('; ')
+        .find(row => row.startsWith('guest_token='))
+        ?.split('=')[1] || null;
+    }
   } catch (error) {
     console.error('Error getting guest token:', error);
     return null;
@@ -24,21 +35,32 @@ export async function getGuestToken(): Promise<string | null> {
  * Set a guest token in cookies - safe for server components
  * Must be used in an async context
  */
-export async function setGuestToken(token: string | null = null): Promise<string> {
+export function setGuestToken(token: string | null = null): string {
   // Use existing token or generate a new one
   const guestToken = token || uuidv4();
   
   try {
-    // Set in cookies
-    const cookieStore = await cookies();
-    cookieStore.set({
-      name: 'guest_token',
-      value: guestToken,
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production'
-    });
+    // Server-side vs. client-side cookie setting
+    if (typeof window === 'undefined') {
+      // Dynamic import for server-side
+      const { cookies } = require('next/headers');
+      // Get the cookie store
+      cookies().set({
+        name: 'guest_token',
+        value: guestToken,
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production'
+      });
+    } else {
+      // Client-side cookie setting
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 30); // 30 days
+      document.cookie = `guest_token=${guestToken}; path=/; expires=${expires.toUTCString()}; ${
+        window.location.protocol === 'https:' ? 'secure; ' : ''
+      }`;
+    }
     
     return guestToken;
   } catch (error) {
@@ -50,7 +72,7 @@ export async function setGuestToken(token: string | null = null): Promise<string
 /**
  * Get guest user info from a token
  */
-export async function getGuestInfo(token: string): Promise<GuestInfo | null> {
+export function getGuestInfo(token: string): GuestInfo | null {
   if (!token) return null;
   
   // For now, just return a minimal guest info object
@@ -66,10 +88,16 @@ export async function getGuestInfo(token: string): Promise<GuestInfo | null> {
  * Clear guest token from cookies
  * Must be used in an async context
  */
-export async function clearGuestToken(): Promise<void> {
+export function clearGuestToken(): void {
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete('guest_token');
+    if (typeof window === 'undefined') {
+      // Server-side
+      const { cookies } = require('next/headers');
+      cookies().delete('guest_token');
+    } else {
+      // Client-side
+      document.cookie = 'guest_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
   } catch (error) {
     console.error('Error clearing guest token:', error);
   }

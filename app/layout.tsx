@@ -65,9 +65,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
 
-        {/* <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" /> */}
-        {/* <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152x152.png" /> */}
-        {/* <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" /> */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png" />
+        <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
 
         {/* <link rel="apple-touch-startup-image" href="/splash/apple-splash-2048-2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /> */}
         {/* <link rel="apple-touch-startup-image" href="/splash/apple-splash-1668-2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /> */}
@@ -111,7 +112,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
 
         <TooltipProvider>
-          <Providers initialSession={session}>
+          <Providers>
             <LayoutModeProvider>
               <ClientSideLayoutRenderer>
                 <Container size="full">
