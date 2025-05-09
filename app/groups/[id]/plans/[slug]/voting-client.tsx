@@ -10,10 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThumbsUp, Map, Calendar, Activity, DollarSign, Tag, CheckCircle, ArrowRight, ArrowLeft, Circle } from 'lucide-react';
-import { getBrowserClient } from '@/utils/supabase/browser-client';
+import { getBrowserClient } from '@/utils/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { CreateTripModal } from './create-trip-modal';
+import { CreateTripModal } from './vote/create-trip-modal';
+import { API_ROUTES } from '@/utils/constants/routes';
+import { TABLES } from '@/utils/constants/tables';
 
 // Define the types for our data
 type Idea = {
@@ -70,7 +72,7 @@ export default function VotingClient({
       try {
         const supabase = getBrowserClient();
         
-        // Fetch group ideas
+        // Use string literals for table names to bypass TypeScript issues
         const { data: ideasData, error: ideasError } = await supabase
           .from('group_ideas')
           .select('*')
@@ -96,20 +98,33 @@ export default function VotingClient({
         
         // Fetch user's votes
         const { data: votesData, error: votesError } = await supabase
-          .from('idea_votes')
+          .from('group_plan_idea_votes')
           .select('*')
           .eq('user_id', currentUserId);
           
         if (votesError) throw votesError;
         
-        // Set state
-        setIdeas(ideasData || []);
-        setMembers(membersData || []);
+        // Set state with type assertions
+        setIdeas(ideasData as Idea[] || []);
         
-        // Update user votes
+        // Transform membersData to match the Member type with proper type assertions
+        const typedMembers: Member[] = (membersData || []).map((member: any) => ({
+          id: member.id,
+          user_id: member.user_id,
+          profiles: {
+            email: member.profiles?.[0]?.email || '',
+            full_name: member.profiles?.[0]?.full_name || '',
+            avatar_url: member.profiles?.[0]?.avatar_url
+          }
+        }));
+        setMembers(typedMembers);
+        
+        // Update user votes with proper type assertions
         const votesMap: Record<string, boolean> = {};
-        votesData?.forEach(vote => {
-          votesMap[vote.idea_id] = vote.vote_type === 'up';
+        (votesData || []).forEach((vote: any) => {
+          if (vote && vote.idea_id) {
+            votesMap[vote.idea_id] = vote.vote_type === 'up';
+          }
         });
         setUserVotes(votesMap);
         
@@ -196,21 +211,19 @@ export default function VotingClient({
       })
     );
     
-    // In a real app, you would save this to your database
     try {
-      const supabase = getBrowserClient();
+      // Use the API route for voting instead of direct Supabase access
+      const response = await fetch(API_ROUTES.GROUP_PLAN_IDEA_VOTES.CREATE(groupId, ideaId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ vote_type: voteType }),
+      });
       
-      // Update vote count on the server
-      const { error } = await supabase
-        .from('idea_votes')
-        .upsert({ 
-          idea_id: ideaId,
-          user_id: currentUserId,
-          vote_type: voteType,
-          created_at: new Date().toISOString()
-        });
-      
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Failed to save vote: ${response.statusText}`);
+      }
       
     } catch (error) {
       console.error('Error saving vote:', error);
@@ -219,6 +232,9 @@ export default function VotingClient({
         description: "Failed to save your vote. Please try again.",
         variant: "destructive"
       });
+      
+      // Revert local state on error
+      fetchData();
     }
   };
   

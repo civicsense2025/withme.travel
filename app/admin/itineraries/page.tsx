@@ -1,15 +1,26 @@
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
 import { checkAdminAuth } from '../utils/auth';
-import ItinerariesTable, { Itinerary } from './ItinerariesTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ItineraryTemplatesTable from './ItineraryTemplatesTable';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { TABLES } from '@/utils/constants/tables';
 
 export const metadata = {
-  title: 'Manage Itineraries | Admin Panel',
-  description: 'Manage itinerary templates on withme.travel',
+  title: 'Itineraries Management | Admin Panel',
+  description: 'Manage itinerary templates and configurations on withme.travel',
 };
 
 export default async function AdminItinerariesPage() {
-  const { isAdmin, supabase } = await checkAdminAuth();
+  const { isAdmin, supabase, error } = await checkAdminAuth();
 
   if (!isAdmin) {
     redirect('/login?redirectTo=/admin/itineraries');
@@ -19,35 +30,151 @@ export default async function AdminItinerariesPage() {
     redirect('/login?error=supabase_client_error');
   }
 
-  // Fetch itinerary templates without joining profiles
-  const { data, error } = await supabase
-    .from('itinerary_templates')
+  // Get counts for different itinerary types
+  const { count: templateCount } = await supabase
+    .from(TABLES.ITINERARY_TEMPLATES)
+    .select('*', { count: 'exact', head: true });
+
+  const { data: featuredTemplates, error: featuredError } = await supabase
+    .from(TABLES.ITINERARY_TEMPLATES)
+    .select('*')
+    .eq('is_featured', true)
+    .limit(5);
+
+  // Get all templates for the initial data load (limited to 20)
+  const { data: templates, error: templatesError } = await supabase
+    .from(TABLES.ITINERARY_TEMPLATES)
     .select(`
       id,
       title,
       slug,
-      destination,
+      destination_id,
+      destinations:destination_id (
+        name
+      ),
+      days,
+      duration_days,
+      is_featured,
       created_at,
-      created_by,
-      is_published,
-      days
+      updated_at,
+      created_by
     `)
-    .order('created_at', { ascending: false })
-    .limit(50);
+    .order('updated_at', { ascending: false })
+    .limit(20);
 
-  if (error) {
-    console.error('Error fetching itineraries:', error);
+  if (templatesError) {
+    console.error('Error fetching templates:', templatesError);
+    console.error('Error details:', {
+      message: templatesError.message,
+      hint: templatesError.hint,
+      code: templatesError.code,
+      details: templatesError.details
+    });
   }
 
-  // Convert to the expected format for the table
-  const itineraries: Itinerary[] = (data || []).map(item => ({
-    ...item,
-    profiles: null // No profile data for now
-  }));
+  // Count the total number of template sections and items
+  const { count: sectionsCount } = await supabase
+    .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
+    .select('*', { count: 'exact', head: true });
+
+  const { count: itemsCount } = await supabase
+    .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
+    .select('*', { count: 'exact', head: true });
 
   return (
     <Container>
-      <ItinerariesTable initialData={itineraries} />
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Itineraries Management</h1>
+          <p className="text-gray-500 mt-2">
+            Manage itinerary templates and configurations
+          </p>
+        </div>
+        <Link href="/admin/itineraries/create">
+          <Button>Create Template</Button>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>Total Templates</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{templateCount || 0}</div>
+            <p className="text-sm text-gray-500">Across all destinations</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>Featured Templates</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{featuredTemplates?.length || 0}</div>
+            <p className="text-sm text-gray-500">Highlighted on the platform</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>Template Sections</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{sectionsCount || 0}</div>
+            <p className="text-sm text-gray-500">Days in all templates</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>Template Items</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{itemsCount || 0}</div>
+            <p className="text-sm text-gray-500">Activities across all templates</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="all">All Templates</TabsTrigger>
+          <TabsTrigger value="featured">Featured</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all">
+          <ItineraryTemplatesTable initialData={templates || []} totalCount={templateCount || 0} />
+        </TabsContent>
+        
+        <TabsContent value="featured">
+          <ItineraryTemplatesTable initialData={featuredTemplates || []} totalCount={featuredTemplates?.length || 0} />
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Template Settings</CardTitle>
+              <CardDescription>Global settings for itinerary templates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 mb-4">
+                Configure global settings for itinerary templates, including:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 mb-4">
+                <li>Default visibility settings</li>
+                <li>Template categories and tags</li>
+                <li>Featured template selection criteria</li>
+                <li>Template validation rules</li>
+              </ul>
+              <div className="flex justify-end">
+                <Button variant="outline">Edit Settings</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </Container>
   );
 } 

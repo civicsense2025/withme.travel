@@ -1,168 +1,127 @@
-import { useState, useEffect } from 'react';
-import { Heart } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/hooks/use-auth';
+'use client';
+
 import { useLikes } from '@/hooks/use-likes';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { FirstLikeTour } from '@/components/first-like-tour';
-import { AuthModal } from '@/components/auth-modal';
+import { cn } from '@/lib/utils';
+import { Bookmark, BookmarkCheck } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
-type LikeItemType = 'destination' | 'itinerary' | 'attraction';
+type ItemType = 'destination' | 'itinerary' | 'trip' | 'template';
 
 interface LikeButtonProps {
   itemId: string;
-  itemType: LikeItemType;
-  className?: string;
-  variant?: 'default' | 'icon' | 'outline';
+  itemType: ItemType;
+  initialLiked?: boolean;
+  variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
-  showCount?: boolean;
-  count?: number;
-  onClick?: (isLiked: boolean) => void;
+  iconOnly?: boolean;
+  className?: string;
+  onLikeChange?: (isLiked: boolean) => void;
 }
-
-// Track if this is the first like across the app
-let hasShownFirstLikeTour = false;
 
 export function LikeButton({
   itemId,
   itemType,
-  className = '',
-  variant = 'icon',
-  size = 'md',
-  showCount = false,
-  count,
-  onClick,
+  initialLiked = false,
+  variant = 'ghost',
+  size = 'sm',
+  iconOnly = false,
+  className,
+  onLikeChange,
 }: LikeButtonProps) {
-  const { user } = useAuth();
-  const { isLiked, toggleLike } = useLikes();
-  const [isLikedState, setIsLikedState] = useState<boolean>(false);
-  const [likeCount, setLikeCount] = useState(count || 0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showTour, setShowTour] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-
-  // Initialize the liked state when the component mounts or itemId changes
-  useEffect(() => {
-    if (isLiked) {
-      setIsLikedState(isLiked(itemId));
-    }
-  }, [itemId, isLiked]);
-
-  // Handle like toggle
-  const handleToggleLike = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!user) {
-      setShowAuthModal(true);
+  const { isLiked, isLoading, error, toggleLike, isAuthenticated } = useLikes({
+    itemId,
+    itemType,
+    initialLiked,
+  });
+  
+  const { toast } = useToast();
+  
+  // Handle click with authentication check
+  const handleClick = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save items to your collection.",
+        variant: "destructive",
+      });
       return;
     }
-
-    setIsLoading(true);
+    
     try {
-      const newLikedState = await toggleLike(itemId, itemType);
-      setIsLikedState(newLikedState);
-
-      // Update count if showing count
-      if (showCount && count !== undefined) {
-        setLikeCount((prev) => (newLikedState ? prev + 1 : Math.max(0, prev - 1)));
+      await toggleLike();
+      
+      if (onLikeChange) {
+        onLikeChange(!isLiked);
       }
-
-      // Check if this is the first like and show the tour
-      if (newLikedState && !localStorage.getItem('has-shown-first-like-tour')) {
-        localStorage.setItem('has-shown-first-like-tour', 'true');
-
-        // Only show if we haven't shown it already in this session
-        if (!hasShownFirstLikeTour) {
-          hasShownFirstLikeTour = true;
-          setShowTour(true);
-        }
+      
+      // Show success toast
+      toast({
+        title: isLiked ? "Removed from saved items" : "Saved to your collection",
+        variant: "default",
+      });
+    } catch (err) {
+      // Error is handled in the hook, but we can show a toast here too
+      if (error) {
+        toast({
+          title: "Error",
+          description: error,
+          variant: "destructive",
+        });
       }
-
-      // Call optional onClick handler
-      if (onClick) {
-        onClick(newLikedState);
-      }
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  // Helper to get size class
-  const getSizeClass = () => {
-    switch (size) {
-      case 'sm':
-        return 'h-8 w-8 p-1.5';
-      case 'lg':
-        return 'h-12 w-12 p-2.5';
-      default:
-        return 'h-10 w-10 p-2';
-    }
+  
+  // Size classes
+  const sizeClasses = {
+    sm: 'h-8 w-8',
+    md: 'h-9 w-9',
+    lg: 'h-10 w-10',
   };
-
-  // Helper to get heart icon size
-  const getHeartSize = () => {
-    switch (size) {
-      case 'sm':
-        return 'h-4 w-4';
-      case 'lg':
-        return 'h-6 w-6';
-      default:
-        return 'h-5 w-5';
-    }
+  
+  // Icon sizes
+  const iconSizes = {
+    sm: 'h-4 w-4',
+    md: 'h-5 w-5',
+    lg: 'h-6 w-6',
   };
-
-  // Render based on variant
+  
   return (
-    <>
-      <Button
-        variant={variant === 'icon' ? 'ghost' : variant}
-        size={variant === 'icon' ? 'icon' : 'default'}
-        className={cn(
-          variant === 'icon' && getSizeClass(),
-          'group relative',
-          'bg-white dark:bg-gray-950',
-          'hover:bg-gray-100 dark:hover:bg-gray-900',
-          'border border-gray-200 dark:border-gray-800',
-          'shadow-sm',
-          className
-        )}
-        onClick={handleToggleLike}
-        disabled={isLoading}
-      >
-        {variant === 'icon' ? (
-          <Heart
-            className={cn(
-              getHeartSize(),
-              'transition-all duration-300',
-              isLikedState
-                ? 'fill-red-500 text-red-500'
-                : 'text-gray-500 dark:text-gray-400 group-hover:scale-110 group-hover:text-red-500'
-            )}
-          />
-        ) : (
-          <div className="flex items-center gap-2">
-            <Heart
-              className={cn(
-                'h-4 w-4 transition-colors',
-                isLikedState
-                  ? 'fill-red-500 text-red-500'
-                  : 'text-gray-500 dark:text-gray-400 group-hover:text-red-500'
-              )}
-            />
-            <span className="text-gray-700 dark:text-gray-200">
-              {isLikedState ? 'Liked' : 'Like'}
-            </span>
-            {showCount && <span className="text-gray-500 dark:text-gray-400">({likeCount})</span>}
-          </div>
-        )}
-      </Button>
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
-      {/* First like tour */}
-      {showTour && <FirstLikeTour onClose={() => setShowTour(false)} />}
-    </>
+    <Button
+      variant={variant}
+      size={iconOnly ? 'icon' : 'default'}
+      disabled={isLoading}
+      onClick={handleClick}
+      aria-label={isLiked ? 'Remove from saved items' : 'Save to collection'}
+      className={cn(
+        'group transition-all',
+        iconOnly && sizeClasses[size],
+        className
+      )}
+    >
+      {isLiked ? (
+        <>
+          <BookmarkCheck className={cn(
+            iconSizes[size], 
+            'fill-primary text-primary group-hover:text-primary',
+            !iconOnly && 'mr-2'
+          )} />
+          {!iconOnly && (
+            <span className="whitespace-nowrap">Saved</span>
+          )}
+        </>
+      ) : (
+        <>
+          <Bookmark className={cn(
+            iconSizes[size],
+            'group-hover:fill-primary group-hover:text-primary',
+            !iconOnly && 'mr-2'
+          )} />
+          {!iconOnly && (
+            <span className="whitespace-nowrap">Save</span>
+          )}
+        </>
+      )}
+    </Button>
   );
 }

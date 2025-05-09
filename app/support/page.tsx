@@ -133,23 +133,18 @@ export default function SupportPage() {
                   <h2 className="text-2xl font-bold mb-6">Our Story</h2>
                   <div className="prose prose-sm dark:prose-invert">
                     <p className="mb-4">
-                      We created withme.travel after experiencing the chaos of planning trips with friends — 
-                      endless messaging threads, forgotten spreadsheets, and coordination headaches.
+                    We started withme.travel because we lived the frustration—buried suggestions in group chats, outdated spreadsheets no one could find, and the inevitable "wait, who booked what again?" moments.
                     </p>
                     <p className="mb-4">
-                      What if planning together could actually be fun? Not just dreaming about the trip, 
-                      but figuring out all the details with friends without the usual friction.
+                    We asked ourselves: What if the planning was as enjoyable as the trip itself? What if collecting ideas, making decisions, and keeping track of details actually brought friends closer instead of testing everyone's patience?
                     </p>
                     <p className="mb-4">
-                      That's our mission: building a platform simple enough for everyone in your group 
-                      but powerful enough to handle all the decisions and details that make group travel special.
+                    That's why we're here: building a platform that's intuitive enough for everyone to use but powerful enough to handle the beautiful complexity of traveling together. No more lost details, missed recommendations, or planning fatigue.
                     </p>
 
                     <div className="mt-6 p-5 rounded-xl bg-muted/30 border border-muted">
                       <p className="text-sm leading-relaxed">
-                        <span className="font-medium">About transactions:</span> We don't handle financial 
-                        transactions directly. We offer tools to track expenses, but all money movements 
-                        happen through your preferred payment methods.
+                        <span className="font-medium">About transactions:</span> We don't process financial transactions directly. We provide tools to track expenses, but payments happen through your preferred payment methods.
                       </p>
                     </div>
                   </div>
@@ -167,7 +162,7 @@ export default function SupportPage() {
                   
                   <h3 className="text-xl font-bold mb-3">Support Our Work</h3>
                   <p className="text-muted-foreground mb-6">
-                    Help us build the best group travel planning experience. Your contribution keeps the servers running and our team creating new features.
+                  Help us build the travel planning experience you've always wanted. Your contribution fuels new features and keeps our servers humming while we create something special together.
                   </p>
                   
                   <div className="flex flex-wrap gap-3 mb-6">
@@ -226,7 +221,7 @@ export default function SupportPage() {
                   
                   <div className="mt-4 text-center">
                     <p className="text-sm text-muted-foreground mb-2">
-                      Can't donate? Follow us or spread the word:
+                    Can't donate? Share our story with fellow travelers who've experienced the same planning headaches.
                     </p>
                     <a
                       href="https://instagram.com/ginandtanic"
@@ -249,7 +244,8 @@ export default function SupportPage() {
                   
                   <h3 className="text-xl font-bold mb-3">Share Your Feedback</h3>
                   <p className="text-muted-foreground mb-5">
-                    Found a bug? Have an idea? Your insights shape what features we build next.
+                    
+Spotted a bug? Have a brilliant idea? Your insights directly influence what we build. We're all ears—because the best travel platform comes from real travelers like you.
                   </p>
                   
                   <Button className="w-full py-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg">

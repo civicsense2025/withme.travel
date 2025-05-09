@@ -1,757 +1,163 @@
 'use client';
 
-import { PAGE_ROUTES } from '@/utils/constants/routes';
-import * as React from 'react';
-import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, PlusCircle, LogOut, Moon, Sun, Search } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { PlusCircle, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import UserMenu from './layout/user-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { useTheme } from 'next-themes';
-import { Logo } from '@/components/logo';
-import { useSearch } from '@/contexts/search-context';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { UserNav } from '@/components/layout/user-nav';
-import { ErrorBoundary } from '@sentry/nextjs';
-import { debugAuth, clearAuthData } from '@/lib/hooks/auth-debug';
-import { clearAndRefreshAuthCookies } from '@/utils/auth/session';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { NotificationIndicator } from '@/components/notification-indicator';
 
-// Create a client-only wrapper for the tooltip component
-function ClientOnlyTooltip({ children, text }: { children: React.ReactNode; text: string }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    return setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent>{text}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
-
-// Create a static Skeleton component that renders the same on server and client
-function ClientSkeleton(props: React.ComponentProps<typeof Skeleton>) {
-  const finalClassName = cn('bg-muted', props.className);
-
-  return <div className={finalClassName} style={{ animation: 'none' }} aria-hidden="true" />;
-}
-
-// Create a dedicated NavItem component to handle loading states
-function NavItem({
-  href,
-  isActive,
-  isLoading,
-  children,
-}: {
+interface NavLink {
   href: string;
-  isActive: boolean;
-  isLoading: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="h-5">
-      {isLoading ? (
-        <ClientSkeleton className="h-full w-16 rounded" />
-      ) : (
-        <Link
-          href={href}
-          className={cn(
-            'text-sm font-medium transition-colors lowercase',
-            isActive ? 'text-foreground' : 'text-muted-foreground',
-            'hover:text-purple-500' // Static class instead of dynamic
-          )}
-        >
-          {children}
-        </Link>
-      )}
-    </div>
-  );
+  label: string;
 }
 
-// Loading placeholders with consistent DOM structure
-function LoadingUserNavPlaceholder() {
-  return (
-    <div className="flex items-center gap-4">
-      <div className="h-5 w-16">
-        <ClientSkeleton className="h-full w-full rounded" />
-      </div>
-    </div>
-  );
-}
-
-function LoadingUserAvatarPlaceholder() {
-  const { refreshSession } = useAuth();
-  const [showRefresh, setShowRefresh] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  
-  // Show refresh button after 2 seconds of loading, reset button after 5 seconds
-  useEffect(() => {
-    const refreshTimer = setTimeout(() => {
-      setShowRefresh(true);
-    }, 2000);
-    
-    const resetTimer = setTimeout(() => {
-      setShowReset(true);
-    }, 5000);
-    
-    return () => {
-      clearTimeout(refreshTimer);
-      clearTimeout(resetTimer);
-    };
-  }, []);
-  
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-8 w-8">
-        <Skeleton className="h-full w-full rounded-full animate-pulse" />
-      </div>
-      {showRefresh && (
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => {
-            refreshSession();
-            // Force a page reload after a slight delay if needed
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-          }}
-          className="h-6 w-6 rounded-full animate-pulse"
-          title="Refresh authentication"
-        >
-          <div className="h-4 w-4">↻</div>
-        </Button>
-      )}
-      {showReset && (
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => {
-            // Call our cookie cleanup function
-            clearAndRefreshAuthCookies();
-          }}
-          className="h-6 w-6 rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400"
-          title="Reset auth cookies (use if login stuck)"
-        >
-          <div className="h-4 w-4">🔄</div>
-        </Button>
-      )}
-    </div>
-  );
-}
-
-// Simple fallback component for auth errors
-function AuthErrorFallback() {
-  return (
-    <div className="flex items-center gap-2">
-      <Link href="/login">
-        <Button variant="outline" size="sm" className="lowercase rounded-full">
-          Login
-        </Button>
-      </Link>
-      {process.env.NODE_ENV === 'development' && (
-        <div
-          onClick={() => window.location.reload()}
-          className="text-xs text-muted-foreground underline cursor-pointer"
-        >
-          Reload
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Get profile initials - shared function to ensure consistency
-function getProfileInitials(profile: any, user: any): string {
-  if (profile?.name) {
-    return profile.name
-      .split(' ')
-      .map((part: string) => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  }
-  return user?.email?.charAt(0).toUpperCase() || 'U';
-}
+const navLinks: NavLink[] = [
+  { href: '/trips', label: 'My Trips' },
+  { href: '/destinations', label: 'Destinations' },
+  { href: '/itineraries', label: 'Itineraries' },
+  { href: '/groups', label: 'Groups' },
+];
 
 export function Navbar() {
-  const router = useRouter();
   const pathname = usePathname();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
-  const { user, isLoading, signOut, refreshSession } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  // Combine loading states for consistency
-  // We want to show the UI even if we're loading the auth state
-  // This helps with UI stability and prevents flashing
-  const isLoadingState = isLoading || !hasMounted;
-  const { theme, setTheme } = useTheme();
-  const { openSearch } = useSearch();
-
-  // Mobile detection for responsive behavior
-  const [isMobileView, setIsMobileView] = useState(false);
-
-  // Merged resize effect
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768;
-      setIsMobileView(isMobile);
-
-      // Close menu when viewport becomes desktop
-      if (!isMobile && isMenuOpen) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    // Set initial value
-    handleResize();
-
-    // Add listener
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isMenuOpen]);
-
-  // Add a click handler for closing the menu when clicking outside
-  useEffect(() => {
-    if (!isMenuOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.navbar-menu') && !target.closest('button[aria-label*="menu"]')) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    // Close menu on Escape key press
-    const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    document.addEventListener('keydown', handleEscapeKey);
-
-    return () => {
-      return document.removeEventListener('click', handleClickOutside);
-      document.removeEventListener('keydown', handleEscapeKey);
-    };
-  }, [isMenuOpen]);
-
-  // State to track how long loading has been active
-  const [loadingDuration, setLoadingDuration] = useState(0);
-
-  // Use this ref to track auth state for debugging
-  // const authStateRef = useRef({
-  //   isLoading,
-  //   hasUser: !!user,
-  //   userId: user?.id,
-  //   profileId: profile?.id,
-  // });
-
-  // Update the ref when auth state changes (for debugging)
-  useEffect(() => {
-    // authStateRef.current = {
-    //   isLoading,
-    //   hasUser: !!user,
-    //   userId: user?.id,
-    //   profileId: profile?.id,
-    // };
-    // Log auth state changes for debugging - guard with development check
-    // if (process.env.NODE_ENV === 'development') {
-    //   console.log('[Navbar] Auth state updated:', {
-    //     isLoading,
-    //     hasUser: !!user,
-    //     userId: typeof user?.id === 'string' ? user.id.substring(0, 8) : undefined,
-    //     hasProfile: !!profile,
-    //   });
-    // }
-  }, [isLoading, user]);
-
-  // Set up monitoring for prolonged loading state
-  useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-
-    if (isLoading) {
-      // Start a timer when loading begins
-      timer = setInterval(() => {
-        return setLoadingDuration((prev) => prev + 500);
-      }, 500);
-    } else {
-      // Reset when loading completes
-      setLoadingDuration(0);
-    }
-
-    // Clean up timer
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [isLoading]);
-
-  // Show a retry button if loading takes too long
-  const showRetryButton = loadingDuration > 3000; // 3 seconds
-
-  // Handle manual auth state refresh
-  const handleForceRefresh = useCallback(() => {
-    // if (process.env.NODE_ENV === 'development') {
-    //   console.log('[Navbar] Force refreshing auth state');
-    // }
-
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  }, []);
-
-  const handleSignOut = async () => {
-    return await signOut();
-  };
-
-  const toggleMenu = () => {
-    return setIsMenuOpen((prevState) => !prevState);
-  };
-
-  const closeMenu = () => {
-    return setIsMenuOpen(false);
-  };
-
-  const toggleTheme = () => {
-    return setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const isActive = (path: string) => {
-    return pathname === path;
-  };
-
-  // Dropdown menu width fix: hooks must be at top level
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [menuWidth, setMenuWidth] = useState<number | undefined>(undefined);
-  useLayoutEffect(() => {
-    if (buttonRef.current) {
-      setMenuWidth(buttonRef.current.offsetWidth);
-    }
-  }, []);
+  const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/40 dark:border-border/20 bg-background/95 backdrop-blur-sm w-full">
-      <div className="flex h-16 items-center justify-between py-4 px-3 sm:px-4 md:px-6 w-full">
-        <div className="flex items-center gap-4 md:gap-8">
-          <div className="cursor-pointer font-sans text-2xl font-bold" onClick={() => router.push('/')}>
-            <Logo />
-          </div>
+    <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="w-full flex h-16 items-center justify-between px-4 md:px-8">
+        <Link href="/" className="font-bold text-xl flex items-center">
+          withme.travel
+        </Link>
 
-          {/* Desktop Navigation - hidden on mobile */}
-          <nav className="hidden md:flex gap-6 items-center">
-            {/* Show My Trips link during loading or when user is logged in */}
-            {(isLoadingState || user) && (
-              <NavItem href="/trips" isActive={isActive('/trips')} isLoading={isLoadingState}>
-                My Trips
-              </NavItem>
-            )}
-
-            {/* Add Groups link (always visible) */}
-            <NavItem
-              href="/groups"
-              isActive={isActive('/groups')}
-              isLoading={false}
-            >
-              Groups
-            </NavItem>
-
-            {/* Add Destinations link */}
-            <NavItem
-              href="/destinations"
-              isActive={isActive('/destinations')}
-              isLoading={isLoadingState}
-            >
-              Destinations
-            </NavItem>
-
-            {/* Add Itineraries link */}
-            <NavItem
-              href="/itineraries"
-              isActive={isActive('/itineraries')}
-              isLoading={isLoadingState}
-            >
-              Itineraries
-            </NavItem>
-
-            {/* Support Us link should always be visible */}
-            <NavItem href="/support" isActive={isActive('/support')} isLoading={isLoadingState}>
-              support us
-            </NavItem>
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Search button - hidden on mobile */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={openSearch}
-            aria-label="Open search menu"
-            className="h-8 w-8 rounded-full hidden md:flex"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-
-          {/* Theme toggle - hidden on mobile */}
-          <div className="hidden md:block">
-            <ThemeToggle />
-          </div>
-
-          {/* Plan a trip button - visible on all screens */}
-          <div className="relative">
-            {!isLoadingState && !user && (
-              <div className="relative inline-block">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      ref={buttonRef}
-                      size="sm"
-                      variant="default"
-                      className={cn(
-                        'relative overflow-hidden lowercase rounded-full',
-                        'bg-travel-purple hover:bg-purple-400 text-purple-900',
-                        'text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8',
-                        'before:absolute before:inset-0 before:bg-shimmer-gradient',
-                        'before:bg-no-repeat before:bg-200%',
-                        'before:animate-shimmer',
-                        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple'
-                      )}
-                    >
-                      <span className="relative z-10 flex items-center">
-                        <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                        <span>start planning</span>
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="left-0"
-                    style={menuWidth ? { minWidth: menuWidth } : {}}
-                  >
-                    <DropdownMenuItem asChild>
-                      <Link href="/trips/create">
-                        <ClientOnlyTooltip text="Start a new trip, solo or with friends">
-                          <span className="flex items-center">🧳<span className="ml-2">Plan a Trip</span></span>
-                        </ClientOnlyTooltip>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/groups/create" className="block w-full">
-                        <ClientOnlyTooltip text="Create a collaborative planning group">
-                          <span className="flex items-center">👥<span className="ml-2">Form a Group</span></span>
-                        </ClientOnlyTooltip>
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-            {/* Existing button for signed-in users or loading state */}
-            {(!isLoadingState && user) && (
-              <Link href="/trips/create">
-                <ClientOnlyTooltip text="Plan a new trip">
-                  <Button
-                    className={cn(
-                      'relative overflow-hidden lowercase rounded-full',
-                      'bg-travel-purple hover:bg-purple-400 text-purple-900',
-                      'text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8',
-                      'before:absolute before:inset-0 before:bg-shimmer-gradient',
-                      'before:bg-no-repeat before:bg-200%',
-                      'before:animate-shimmer',
-                      'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple'
-                    )}
-                  >
-                    <span className="relative z-10 flex items-center">
-                      <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                      <span>manage my trips</span>
-                    </span>
-                  </Button>
-                </ClientOnlyTooltip>
+        {/* Centered nav links */}
+        <nav className="hidden md:flex items-center justify-center flex-1 mx-4">
+          <div className="flex items-center space-x-6">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'text-sm font-medium transition-colors hover:text-primary flex items-center',
+                  !isActive(link.href) && 'text-muted-foreground'
+                )}
+              >
+                {link.label}
               </Link>
-            )}
-            {isLoadingState && (
-              <div className="h-7 sm:h-8">
-                <ClientSkeleton className="h-full w-24 sm:w-32 rounded-full" />
-              </div>
-            )}
+            ))}
           </div>
+        </nav>
 
-          {/* Mobile menu toggle - visible only on mobile */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleMenu}
-            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={isMenuOpen}
-            className="h-8 w-8 rounded-full md:hidden"
-          >
-            {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </Button>
-
-          {/* User dropdown - hidden on mobile, now using UserNav component with error boundary */}
-          <div className="hidden md:flex items-center gap-4">
-            <ErrorBoundary fallback={<AuthErrorFallback />}>
-              {isLoadingState ? (
-                <LoadingUserAvatarPlaceholder />
-              ) : user ? <UserNav /> : null}
-            </ErrorBoundary>
-          </div>
+        <div className="hidden md:flex items-center space-x-4">
+          <ThemeToggle />
+          {!isLoading && user && <NotificationIndicator />}
+          {!isLoading && (
+            <Link href={user ? '/trips' : '/login?redirect=/trips/create'}>
+              <Button size="sm" className="rounded-full h-8">
+                <span>{user ? 'Manage My Trips' : 'Plan a Trip'}</span>
+              </Button>
+            </Link>
+          )}
+          <UserMenu />
         </div>
 
-        {/* Add retry button when loading takes too long */}
-        {showRetryButton && isLoadingState && (
-          <div className="absolute top-16 left-0 right-0 bg-amber-100 dark:bg-amber-900 p-2 text-center">
-            <p className="text-xs text-amber-800 dark:text-amber-200">
-              Login status is taking longer than expected.
-              <button onClick={handleForceRefresh} className="underline ml-2 font-medium">
-                Refresh now
-              </button>
-              {process.env.NODE_ENV === 'development' && (
-                <>
-                  <span className="mx-2">|</span>
-                  <button 
-                    onClick={() => {
-                      debugAuth();
-                    }} 
-                    className="underline font-medium"
-                  >
-                    Debug
-                  </button>
-                  <span className="mx-2">|</span>
-                  <button 
-                    onClick={() => {
-                      if (confirm('This will clear all auth data and reload the page. Continue?')) {
-                        clearAuthData();
-                        setTimeout(() => window.location.reload(), 500);
-                      }
-                    }} 
-                    className="underline font-medium text-red-700 dark:text-red-400"
-                  >
-                    Reset Auth
-                  </button>
-                </>
-              )}
-            </p>
-          </div>
-        )}
+        <div className="md:hidden flex items-center gap-2">
+          {!isLoading && user && <NotificationIndicator />}
+          {!isLoading && (
+            <Link href={user ? '/trips' : '/login?redirect=/trips/create'}>
+              <Button size="sm" className="rounded-full h-8">
+                <span className="sr-only md:not-sr-only">{user ? 'Manage Trips' : 'Plan a Trip'}</span>
+                <PlusCircle className="h-4 w-4 md:ml-1 md:mr-0" />
+              </Button>
+            </Link>
+          )}
+          <Button
+            variant="ghost"
+            className="p-2"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {isMenuOpen && (
-          <>
-            {/* Backdrop overlay - increased z-index */}
-            <motion.div
-              key="mobile-menu-backdrop"
-              className="fixed inset-0 z-50 bg-black/70 md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeMenu}
-            />
+      {/* Mobile menu - Use portal to ensure it's mounted properly at the document level */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[9999] flex justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setMobileOpen(false)} 
+          />
+          
+          {/* Slide-in Menu Panel */}
+          <div 
+            className="relative w-4/5 max-w-xs h-screen bg-background border-l border-border flex flex-col z-10 animate-in slide-in-from-right duration-300"
+          >
+            {/* Close Button - Top right */}
+            <div className="absolute top-4 right-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
 
-            {/* Mobile menu */}
-            <motion.div
-              key="mobile-menu-content"
-              className="fixed left-0 right-0 top-16 bottom-0 z-[51] md:hidden border-t bg-background/95 shadow-lg overflow-y-auto navbar-menu"
-              aria-label="Mobile navigation menu"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="container py-6 h-full flex flex-col">
-                {isLoadingState ? (
-                  <div className="pb-6 border-b mb-6">
-                    <div className="h-8 w-full">
-                      <ClientSkeleton className="h-full w-full rounded-full" />
-                    </div>
-                  </div>
-                ) : !user ? (
-                  <div className="pb-6 border-b mb-6">
-                    <Link href="/login?redirect=/trips/create">
-                      <Button
-                        className={cn(
-                          'relative overflow-hidden w-full',
-                          'lowercase rounded-full',
-                          'bg-travel-purple hover:bg-purple-400 text-purple-900',
-                          'text-sm px-3 py-1 h-8',
-                          'before:absolute before:inset-0 before:bg-shimmer-gradient',
-                          'before:bg-no-repeat before:bg-200%',
-                          'before:animate-shimmer',
-                          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple'
-                        )}
-                        onClick={closeMenu}
-                      >
-                        <span className="relative z-10 flex items-center justify-center">
-                          <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                          <span>start planning your trip</span>
-                        </span>
-                      </Button>
-                    </Link>
-                  </div>
-                ) : null}
-
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={() => {
-                    return openSearch();
-                    closeMenu();
-                  }}
-                  className={cn('mb-6 w-full justify-start')}
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-
-                <nav className="flex flex-col space-y-6 flex-grow">
-                  {!isLoadingState && user && (
-                    <>
-                      <Link
-                        href="/trips"
-                        className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
-                          isActive('/trips') ? 'text-foreground' : 'text-muted-foreground'
-                        }`}
-                        onClick={closeMenu}
-                      >
-                        My Trips
-                      </Link>
-                    </>
-                  )}
-
-                  {/* Add Destinations link to mobile menu */}
-                  <Link
-                    href="/destinations"
-                    className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
-                      isActive('/destinations') ? 'text-foreground' : 'text-muted-foreground'
-                    }`}
-                    onClick={closeMenu}
-                  >
-                    Destinations
-                  </Link>
-
-                  {/* Add Itineraries link to mobile menu */}
-                  <Link
-                    href="/itineraries"
-                    className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
-                      isActive('/itineraries') ? 'text-foreground' : 'text-muted-foreground'
-                    }`}
-                    onClick={closeMenu}
-                  >
-                    Itineraries
-                  </Link>
-
-                  <Link
-                    href="/support"
-                    className={`text-sm font-medium transition-colors hover:text-purple-500 lowercase ${
-                      isActive('/support') ? 'text-foreground' : 'text-muted-foreground'
-                    }`}
-                    onClick={closeMenu}
-                  >
-                    support us
-                  </Link>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-sm font-medium lowercase">Theme</span>
-                    <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                      {theme === 'dark' ? (
-                        <Sun className="h-5 w-5" />
-                      ) : (
-                        <Moon className="h-5 w-5" />
-                      )}
-                      <span className="sr-only">Toggle theme</span>
-                    </Button>
-                  </div>
-
-                  <div className="flex-grow"></div>
-
-                  {isLoadingState ? (
-                    <div className="pt-4 mt-auto border-t">
-                      <div className="flex items-center gap-3 p-2">
-                        <div className="h-9 w-9">
-                          <ClientSkeleton className="h-full w-full rounded-full" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <div className="h-4 w-24">
-                            <ClientSkeleton className="h-full w-full rounded" />
-                          </div>
-                          <div className="h-3 w-16">
-                            <ClientSkeleton className="h-full w-full rounded" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    user && (
-                      <div className="pt-4 mt-auto border-t">
-                        <Link
-                          href={PAGE_ROUTES.SETTINGS}
-                          className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
-                          onClick={closeMenu}
-                        >
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage
-                              src={user.profile?.avatar_url || ''}
-                              alt={user?.email || 'User'}
-                            />
-                            <AvatarFallback>
-                              {getProfileInitials(user.profile, user)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col text-sm">
-                            <span className="font-medium truncate">{user?.email}</span>
-                            <span className="text-muted-foreground">view account</span>
-                          </div>
-                        </Link>
-                      </div>
-                    )
-                  )}
-
-                  {!isLoadingState && user && (
-                    <div className="pt-2">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-sm font-medium text-destructive lowercase p-2 hover:bg-destructive/10 focus:bg-destructive/10"
-                        onClick={() => {
-                          return handleSignOut();
-                          closeMenu();
-                        }}
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        log out
-                      </Button>
-                    </div>
-                  )}
-                </nav>
+            {/* Menu Items */}
+            <div className="flex flex-col h-full pt-16 pb-6 px-6">
+              {/* User avatar and menu at the top */}
+              <div className="mb-6">
+                <UserMenu topPosition />
+                {user && <div className="mt-4 flex items-center gap-2">
+                  <NotificationIndicator />
+                  <span className="text-sm text-muted-foreground">Notifications</span>
+                </div>}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              
+              {/* Divider */}
+              <div className="border-t border-muted my-4"></div>
+
+              {/* Navigation Links */}
+              <nav className="flex flex-col gap-6">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'text-base font-medium',
+                      isActive(link.href) ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+
+              {/* Theme Toggle */}
+              <div className="mt-6 flex items-center">
+                <div className="mr-2 text-sm text-muted-foreground">Theme:</div>
+                <ThemeToggle />
+              </div>
+
+              {/* Footer margin to prevent cutoff */}
+              <div className="mt-auto pt-8 pb-4"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -26,6 +26,16 @@
     --travel-peach: 30 100% 82%;
     --travel-peach-foreground: 30 100% 20%;
 
+    /* Command menu variables - light mode (black text) */
+    --cmd-bg-gradient-from: 0 0% 100% / 0.95;
+    --cmd-bg-gradient-via: 0 0% 100% / 0.97;
+    --cmd-bg-gradient-to: 0 0% 100% / 0.95;
+    --cmd-item-hover: 0 0% 0% / 0.05;
+    --cmd-text: 0 0% 0%;
+    --cmd-text-muted: 0 0% 0% / 0.6;
+    --cmd-border: 0 0% 0% / 0.1;
+    --cmd-backdrop-blur: 30px;
+    
     /* Ideas Whiteboard specific variables */
     --whiteboard-bg: var(--background);
     --whiteboard-grid-color: 0, 0, 0;
@@ -79,6 +89,16 @@
     /* Popover styling */
     --popover: 0 0% 5%;
     --popover-foreground: 0 0% 98%;
+
+    /* Command menu variables for dark mode - pure white text */
+    --cmd-bg-gradient-from: 0 0% 0% / 0.95;
+    --cmd-bg-gradient-via: 0 0% 0% / 0.97;
+    --cmd-bg-gradient-to: 0 0% 0% / 0.95;
+    --cmd-item-hover: 255 255 255 / 0.1;
+    --cmd-text: 0 0% 100%;
+    --cmd-text-muted: 0 0% 100% / 0.7;
+    --cmd-border: 255 255 255 / 0.1;
+    --cmd-backdrop-blur: 30px;
 
     /* Update Travel theme foregrounds for dark mode */
     --travel-blue-foreground: 213 100% 85%;
@@ -200,12 +220,55 @@
     animation: gradient-shift 8s ease-in-out infinite alternate;
   }
 
+  /* Command menu styled headings */
+  [cmdk-group-heading] {
+    @apply text-xs uppercase font-semibold tracking-widest;
+    margin-block: 0.75rem 0.25rem;
+    color: hsl(var(--cmd-text-muted));
+    padding-inline: 0.75rem;
+  }
+
+  /* Command menu scrollbar styles */
+  .command-menu-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  
+  .command-menu-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .command-menu-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--cmd-border));
+    border-radius: 20px;
+    border: transparent;
+  }
+  
+  .command-menu-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--cmd-text-muted));
+  }
+
+  /* Apple-style glass effect */
+  .apple-glass {
+    background: linear-gradient(
+      to bottom right,
+      hsl(var(--cmd-bg-gradient-from)),
+      hsl(var(--cmd-bg-gradient-via)),
+      hsl(var(--cmd-bg-gradient-to))
+    );
+    backdrop-filter: blur(var(--cmd-backdrop-blur));
+    border: 1px solid hsl(var(--cmd-border));
+    box-shadow: 
+      0 4px 30px rgba(0, 0, 0, 0.15), 
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+
+  /* Travel card with better shadow */
   .travel-card {
-    @apply rounded-3xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300;
-    transform: translate3d(0, 0, 0) scale(1);
-    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), 
-                box-shadow 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    will-change: transform, box-shadow;
+    @apply bg-card rounded-xl p-6 transition-all duration-300 hover:shadow-lg relative overflow-hidden;
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
+    transform: translateZ(0);
   }
 
   .travel-card:hover {
@@ -347,6 +410,33 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
+  
+  /* Standardized border styles that work well in both light and dark modes */
+  .standard-border {
+    @apply border-neutral-200/30 dark:border-neutral-800/30;
+  }
+  
+  /* Use for top, right, bottom, left borders */
+  .standard-border-t {
+    @apply border-t border-neutral-200/30 dark:border-neutral-800/30;
+  }
+  
+  .standard-border-r {
+    @apply border-r border-neutral-200/30 dark:border-neutral-800/30;
+  }
+  
+  .standard-border-b {
+    @apply border-b border-neutral-200/30 dark:border-neutral-800/30;
+  }
+  
+  .standard-border-l {
+    @apply border-l border-neutral-200/30 dark:border-neutral-800/30;
+  }
+  
+  /* For specific use cases */
+  .standard-border-dashed {
+    @apply border border-dashed border-neutral-200/30 dark:border-neutral-800/30;
+  }
 
   /* Tiptap-inspired utilities */
   .texture-overlay {
@@ -381,24 +471,6 @@
     background-color: white;
     border-radius: 50%;
     animation: sparkle 1.5s ease-in-out infinite;
-  }
-
-  /* Custom scrollbar for the command menu */
-  .command-menu-scrollbar::-webkit-scrollbar {
-    width: 5px;
-  }
-
-  .command-menu-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .command-menu-scrollbar::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.3);
-    border-radius: 20px;
-  }
-
-  .command-menu-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(156, 163, 175, 0.5);
   }
 
   .border-border {
@@ -840,4 +912,41 @@ p, .responsive-p {
     padding-left: 4rem;
     padding-right: 4rem;
   }
+}
+
+/* Add custom drag prevention class */
+.drag-disabled {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: text;
+  user-select: text;  
+  touch-action: manipulation;
+}
+
+.drag-disabled * {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+/* Ensure textareas within drag-disabled containers can still be interacted with normally */
+.drag-disabled textarea,
+.drag-disabled input {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: manipulation;
+}
+
+/* Add cursor styles for drag interactions */
+.dragging-active {
+  cursor: grabbing !important;
+}
+
+/* Only show grab cursor on draggable elements when hovering */
+[data-draggable="true"]:hover {
+  cursor: grab;
+}
+
+/* Always show grabbing cursor on active drag elements */
+[data-draggable="true"].dragging {
+  cursor: grabbing;
 }

@@ -87,25 +87,81 @@ interface VoteWithProfile {
 
 // Validation schemas
 const baseItineraryItemSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().optional(),
+  title: z.string().optional(),
   description: z.string().optional().nullable(),
   start_time: z.string().optional().nullable(),
   end_time: z.string().optional().nullable(),
   item_type: z.string().default('activity'),
-  url: z.string().url().optional().nullable(),
+  url: z.string().optional().nullable(), // Make URL validation less strict
   address: z.string().optional().nullable(),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
   place_id: z.string().optional().nullable(), // Reference to a place
-  destination_id: z.string().uuid().optional().nullable(), // Reference to a destination
+  destination_id: z.string().optional().nullable(), // Reference to a destination
   section_id: z.string().uuid().optional().nullable(), // Optional: Link to a specific section
   day_number: z.number().int().positive().optional().nullable(), // Optional: Link to a day number
   position: z.number().int().optional(), // For ordering within section/day
   data: z.record(z.any()).optional().nullable(), // For flexible custom data
+}).refine(data => data.name || data.title, {
+  message: "Either name or title is required",
+  path: ['title']
 });
 
-const createItineraryItemSchema = baseItineraryItemSchema.omit({ position: true }); // Position is handled separately
-const updateItineraryItemSchema = baseItineraryItemSchema.partial(); // All fields optional for update
+const createItineraryItemSchema = z.object({
+  name: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional().nullable(),
+  start_time: z.string().optional().nullable(),
+  end_time: z.string().optional().nullable(),
+  item_type: z.string().default('activity'),
+  url: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  place_id: z.string().optional().nullable(),
+  destination_id: z.string().optional().nullable(),
+  section_id: z.string().uuid().optional().nullable(),
+  day_number: z.number().int().positive().optional().nullable(),
+  data: z.record(z.any()).optional().nullable(),
+}).refine(data => data.name || data.title, {
+  message: "Either name or title is required",
+  path: ['title']
+}).transform(data => {
+  // If only one of name/title is provided, copy it to the other field
+  const result = { ...data };
+  if (result.title && !result.name) {
+    result.name = result.title;
+  } else if (result.name && !result.title) {
+    result.title = result.name;
+  }
+  return result;
+});
+
+const updateItineraryItemSchema = z.object({
+  name: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional().nullable(),
+  start_time: z.string().optional().nullable(),
+  end_time: z.string().optional().nullable(),
+  item_type: z.string().optional(),
+  url: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  place_id: z.string().optional().nullable(),
+  destination_id: z.string().optional().nullable(),
+  section_id: z.string().uuid().optional().nullable(),
+  day_number: z.number().int().positive().optional().nullable(),
+  position: z.number().int().optional(),
+  data: z.record(z.any()).optional().nullable(),
+}).partial().refine(
+  data => !data.name && !data.title ? true : !!(data.name || data.title),
+  {
+    message: "If updating name/title, at least one must be provided",
+    path: ['title']
+  }
+);
 
 const createItinerarySectionSchema = z.object({
   name: z.string().min(1, 'Section name is required'),
@@ -317,37 +373,96 @@ export async function POST(
 
     // Handle individual item creation
     if (type === 'item') {
-      const validatedData = createItineraryItemSchema.parse(payload);
-      const { data: maxPositionData, error: positionError } = await supabase
-        .from('itinerary_items')
-        .select('position')
-        .eq('trip_id', tripId)
-        .is('section_id', validatedData.section_id ?? null)
-        .order('position', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      try {
+        console.log('Creating item with payload:', JSON.stringify(payload, null, 2));
+        
+        // Pre-process the payload to handle title/name inconsistency
+        if (payload.title && !payload.name) {
+          payload.name = payload.title;
+          console.log('Copying title to name field');
+        } else if (payload.name && !payload.title) {
+          payload.title = payload.name;
+          console.log('Copying name to title field');
+        }
+        
+        // Manually validate that either name or title is present
+        if (!payload.name && !payload.title) {
+          throw new ApiError('Either name or title is required for itinerary items', 400);
+        }
+        
+        // Ensure item_type exists
+        if (!payload.item_type) {
+          payload.item_type = 'activity';
+          console.log('Defaulting item_type to "activity"');
+        }
 
-      if (positionError) {
-        throw new ApiError('Failed to determine item position', 500, positionError);
-      }
-      const nextPosition = (maxPositionData?.position ?? -1) + 1;
-      const { data: newItem, error: insertError } = await supabase
-        .from('itinerary_items')
-        .insert([
-          {
-            ...validatedData,
+        try {
+          const validatedData = createItineraryItemSchema.parse(payload);
+          console.log('Validated data:', JSON.stringify(validatedData, null, 2));
+          
+          const { data: maxPositionData, error: positionError } = await supabase
+            .from('itinerary_items')
+            .select('position')
+            .eq('trip_id', tripId)
+            .filter('section_id', 'is', validatedData.section_id || null)
+            .order('position', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (positionError) {
+            console.error('Position lookup error:', positionError);
+            throw new ApiError('Failed to determine item position', 500, positionError);
+          }
+
+          const nextPosition = (maxPositionData?.position ?? -1) + 1;
+          console.log(`Using position ${nextPosition} for new item`);
+          
+          // Explicitly map the validated data to the database schema fields
+          // Make sure every field is properly typed for the database schema
+          const itemToInsert = {
             trip_id: tripId,
             position: nextPosition,
-          },
-        ])
-        .select()
-        .single();
+            title: validatedData.title || 'Untitled', // Ensure title is always a string
+            description: validatedData.description,
+            item_type: validatedData.item_type || 'activity',
+            start_time: validatedData.start_time,
+            end_time: validatedData.end_time,
+            address: validatedData.address,
+            latitude: validatedData.latitude,
+            longitude: validatedData.longitude,
+            place_id: validatedData.place_id,
+            section_id: validatedData.section_id,
+            day_number: validatedData.day_number,
+            created_by: user.id,
+            status: 'suggested' as const // Explicitly set a status
+          };
+          
+          console.log('Final item data to insert:', JSON.stringify(itemToInsert, null, 2));
+          
+          const { data: newItem, error: insertError } = await supabase
+            .from('itinerary_items')
+            .insert([itemToInsert])
+            .select()
+            .single();
 
-      if (insertError) {
-        throw new ApiError('Failed to create itinerary item', 500, insertError);
+          if (insertError) {
+            console.error('Item insertion error:', insertError);
+            console.error('Error details:', insertError.details);
+            throw new ApiError('Failed to create itinerary item', 500, insertError);
+          }
+
+          return NextResponse.json({ data: newItem });
+        } catch (validationError) {
+          console.error('Validation error:', validationError);
+          if (validationError instanceof z.ZodError) {
+            throw new ApiError(`Validation error: ${validationError.errors.map(e => e.message).join(', ')}`, 400, validationError);
+          }
+          throw validationError;
+        }
+      } catch (itemError) {
+        console.error('Error in item creation:', itemError);
+        throw itemError;
       }
-
-      return NextResponse.json({ data: newItem });
     }
     // Handle section creation
     else if (type === 'section') {
@@ -364,15 +479,20 @@ export async function POST(
         throw new ApiError('Failed to determine section position', 500, positionError);
       }
       const nextPosition = (maxPositionData?.position ?? -1) + 1;
+      
+      // Transform the validated data to match the database schema
+      const sectionToInsert = {
+        trip_id: tripId,
+        title: validatedData.name, // Map name to title
+        description: validatedData.description,
+        day_number: validatedData.day_number || null,
+        date: validatedData.date,
+        position: nextPosition,
+      };
+      
       const { data: newSection, error: insertError } = await supabase
         .from('itinerary_sections')
-        .insert([
-          {
-            ...validatedData,
-            trip_id: tripId,
-            position: nextPosition,
-          },
-        ])
+        .insert([sectionToInsert])
         .select()
         .single();
 

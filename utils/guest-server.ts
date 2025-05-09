@@ -11,9 +11,9 @@ import type { GuestInfo } from '@/types/group-ideas';
 /**
  * Get guest token from server-side cookie
  */
-export function getGuestTokenServer(): string | null {
+export async function getGuestTokenServer(): Promise<string | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     return cookieStore.get('guest_token')?.value || null;
   } catch (error) {
     console.error('Error getting server guest token:', error);
@@ -24,11 +24,11 @@ export function getGuestTokenServer(): string | null {
 /**
  * Set guest token in server-side cookie
  */
-export function setGuestTokenServer(token: string | null = null): string {
+export async function setGuestTokenServer(token: string | null = null): Promise<string> {
   const guestToken = token || uuidv4();
   
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set({
       name: 'guest_token',
       value: guestToken,
@@ -47,9 +47,9 @@ export function setGuestTokenServer(token: string | null = null): string {
 /**
  * Clear guest token from server-side cookie
  */
-export function clearGuestTokenServer(): void {
+export async function clearGuestTokenServer(): Promise<void> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.delete('guest_token');
   } catch (error) {
     console.error('Error clearing server guest token:', error);

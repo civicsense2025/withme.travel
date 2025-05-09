@@ -64,8 +64,9 @@ export default function BudgetSnapshotSidebar({
   const combinedProgress = spentProgress + plannedProgress;
   const overBudget = targetBudget !== null && totalSpent + totalPlanned > targetBudget;
 
+  // Update editedBudget when targetBudget changes or isEditing mode changes
   useEffect(() => {
-    return setEditedBudget(targetBudget?.toString() ?? '');
+    setEditedBudget(targetBudget?.toString() ?? '');
   }, [targetBudget, isEditing]);
 
   const handleSaveClick = async () => {
@@ -88,122 +89,148 @@ export default function BudgetSnapshotSidebar({
   };
 
   const handleCancelClick = () => {
-    return setEditedBudget(targetBudget?.toString() ?? '');
+    setEditedBudget(targetBudget?.toString() ?? '');
     onEditToggle(false);
   };
 
-  const remaining = targetBudget !== null ? targetBudget - totalPlanned : null;
+  // Direct Log Expense button handler to ensure it works
+  const handleLogExpenseClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onLogExpenseClick();
+  }
 
-  const content = (
-    <>
-      {noCardWrapper ? null : (
-        <div className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-1">
-          <span className="text-sm font-medium">Budget Snapshot</span>
-          {canEdit && !isEditing && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onEditToggle(true)}
-            >
-              <Pencil className="h-4 w-4" />
+  // Budget details content
+  const budgetDetailsContent = (
+    <div className="space-y-3">
+      {isEditing ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <Input
+              type="number"
+              value={editedBudget}
+              onChange={(e) => setEditedBudget(e.target.value)}
+              placeholder="Set budget"
+              className="h-8"
+              min="0"
+              step="0.01"
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={handleCancelClick} disabled={isSaving}>
+              Cancel
             </Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={isSaving}>
+              {isSaving ? 
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Saving...</> : 
+                <><Check className="h-4 w-4 mr-1" />Save</>
+              }
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="text-2xl font-bold">
+            {targetBudget !== null ? formatCurrency(targetBudget) : 'No budget set'}
+          </div>
+          {targetBudget !== null && (
+            <>
+              <div className="flex justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Spent: {formatCurrency(totalSpent)}
+                </p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant="outline"
+                        className="bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 cursor-help"
+                      >
+                        Planned: {formatCurrency(totalPlanned)}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Estimated costs from itinerary items</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="relative pt-1">
+                <div className="overflow-hidden h-2 text-xs flex rounded bg-muted">
+                  <div
+                    style={{ width: `${Math.min(spentProgress, 100)}%` }}
+                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
+                    title={`Spent: ${formatCurrency(totalSpent)}`}
+                  ></div>
+                  <div
+                    style={{
+                      width: `${Math.min(plannedProgress, Math.max(0, 100 - spentProgress))}%`,
+                    }}
+                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-orange-400"
+                    title={`Planned: ${formatCurrency(totalPlanned)}`}
+                  ></div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground text-right py-2">
+                {combinedProgress.toFixed(0)}% of budget
+              </p>
+              {overBudget && (
+                <p className="text-xs text-destructive">
+                  Over budget by {formatCurrency(totalSpent + totalPlanned - targetBudget)}
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
-      <div className="px-4">
-        {isEditing ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="number"
-                value={editedBudget}
-                onChange={(e) => setEditedBudget(e.target.value)}
-                placeholder="Set budget"
-                className="h-8"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCancelClick} disabled={isSaving}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSaveClick} disabled={isSaving}>
-                {isSaving ? 'Saving...' : <Check className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="text-2xl font-bold">
-              {targetBudget !== null ? formatCurrency(targetBudget) : 'No budget set'}
-            </div>
-            {targetBudget !== null && (
-              <>
-                <div className="flex justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    Spent: {formatCurrency(totalSpent)}
-                  </p>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant="outline"
-                          className="bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 cursor-help"
-                        >
-                          Planned: {formatCurrency(totalPlanned)}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">Estimated costs from itinerary items</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className="relative pt-1">
-                  <div className="overflow-hidden h-2 text-xs flex rounded bg-muted">
-                    <div
-                      style={{ width: `${Math.min(spentProgress, 100)}%` }}
-                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
-                      title={`Spent: ${formatCurrency(totalSpent)}`}
-                    ></div>
-                    <div
-                      style={{
-                        width: `${Math.min(plannedProgress, Math.max(0, 100 - spentProgress))}%`,
-                      }}
-                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-orange-400"
-                      title={`Planned: ${formatCurrency(totalPlanned)}`}
-                    ></div>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground text-right py-2">
-                  {combinedProgress.toFixed(0)}% of budget
-                </p>
-                {overBudget && (
-                  <p className="text-xs text-destructive">
-                    Over budget by {formatCurrency(totalSpent + totalPlanned - targetBudget)}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="pt-4 border-t px-4 pb-4">
-        {!isEditing && (
-          <Button variant="outline" size="sm" className="w-full" onClick={onLogExpenseClick}>
-            <Plus className="h-4 w-4 mr-2" />
-            Log Expense
-          </Button>
-        )}
-      </div>
+    </div>
+  );
+
+  // Log expense button
+  const logExpenseButton = !isEditing && (
+    <Button variant="outline" size="sm" className="w-full" onClick={onLogExpenseClick}>
+      <Plus className="h-4 w-4 mr-2" />
+      Log Expense
+    </Button>
+  );
+
+  // Title and Edit button
+  const titleAndEditButton = (
+    <>
+      <span className="text-sm font-medium">Budget Snapshot</span>
+      {canEdit && !isEditing && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={() => onEditToggle(true)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )}
     </>
   );
 
+  // Render without card wrapper
   if (noCardWrapper) {
-    return content;
+    return (
+      <>
+        <div className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-1">
+          {titleAndEditButton}
+        </div>
+        <div className="px-4">
+          {budgetDetailsContent}
+        </div>
+        <div className="pt-4 border-t px-4 pb-4">
+          {logExpenseButton}
+        </div>
+      </>
+    );
   }
 
+  // Render with card wrapper
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -219,14 +246,11 @@ export default function BudgetSnapshotSidebar({
           </Button>
         )}
       </CardHeader>
-      <CardContent>{content}</CardContent>
+      <CardContent>
+        {budgetDetailsContent}
+      </CardContent>
       <CardFooter className="pt-4 border-t">
-        {!isEditing && (
-          <Button variant="outline" size="sm" className="w-full" onClick={onLogExpenseClick}>
-            <Plus className="h-4 w-4 mr-2" />
-            Log Expense
-          </Button>
-        )}
+        {logExpenseButton}
       </CardFooter>
     </Card>
   );

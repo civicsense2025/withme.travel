@@ -2,7 +2,7 @@
 
 import { API_ROUTES } from '@/utils/constants/routes';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +25,9 @@ import {
   type SelectProps,
 } from '@/components/ui/select';
 import { CreateTripFromTemplateDialog } from './CreateTripFromTemplateDialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
+import { useAuth } from '@/components/auth-provider';
+import React from 'react';
 
 interface UseTemplateButtonProps {
   templateId: string;
@@ -43,13 +45,39 @@ export function UseTemplateButton({
   const router = useRouter();
   const { toast } = useToast();
   const { trips } = useTrips();
+  const { user } = useAuth();
   const [isLoadingApply, setIsLoadingApply] = useState(false);
   const [isLoadingCreate, setIsLoadingCreate] = useState(false);
   const [showMainDialog, setShowMainDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dialogMinWidth, setDialogMinWidth] = useState<number | undefined>(undefined);
+
+  // When dialog opens, set min width to match button
+  React.useEffect(() => {
+    if (showMainDialog && buttonRef.current) {
+      setDialogMinWidth(buttonRef.current.offsetWidth);
+    }
+  }, [showMainDialog]);
+
+  const handleLoginRedirect = () => {
+    // Store the current URL to redirect back after login
+    const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    router.push(`/login?returnUrl=${returnUrl}`);
+  };
 
   const handleApplyToExisting = async () => {
+    if (!user) {
+      toast({ 
+        title: 'Authentication Required', 
+        description: 'Please log in to use this feature.', 
+        variant: 'destructive' 
+      });
+      handleLoginRedirect();
+      return;
+    }
+
     if (!selectedTripId) {
       toast({ title: 'Select a Trip', description: 'Please choose a trip from the list.' });
       return;
@@ -96,6 +124,16 @@ export function UseTemplateButton({
   };
 
   const handleOpenCreateDialog = () => {
+    if (!user) {
+      toast({ 
+        title: 'Authentication Required', 
+        description: 'Please log in to use this feature.', 
+        variant: 'destructive' 
+      });
+      handleLoginRedirect();
+      return;
+    }
+    
     setShowMainDialog(false);
     setShowCreateDialog(true);
   };
@@ -103,72 +141,106 @@ export function UseTemplateButton({
   return (
     <>
       <Dialog open={showMainDialog} onOpenChange={setShowMainDialog}>
-        <DialogTrigger>
-          <Button className={className} disabled={isLoadingApply || isLoadingCreate}>
+        <DialogTrigger asChild>
+          <Button ref={buttonRef} className={className} disabled={isLoadingApply || isLoadingCreate}>
             Use Template
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Use "{templateTitle}"</DialogTitle>
-            <DialogDescription>
-              Apply this template's itinerary items to one of your trips or create a new trip.
-            </DialogDescription>
-          </DialogHeader>
-          <Tabs defaultValue="apply-existing" className="mt-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="apply-existing">Apply to Existing</TabsTrigger>
-              <TabsTrigger value="create-new">Create New Trip</TabsTrigger>
-            </TabsList>
-            <TabsContent value="apply-existing" className="pt-4">
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Select a trip to add the template items to. Items will be added after the existing
-                  days.
+        <DialogContent
+          className="sm:max-w-md"
+          style={dialogMinWidth ? { minWidth: dialogMinWidth } : undefined}
+        >
+          {/*
+            Ensure dialog is at least as wide as the button for visual consistency.
+            This is set dynamically on open.
+          */}
+          {!user ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Authentication Required</DialogTitle>
+                <DialogDescription>
+                  You need to be logged in to use this template.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 flex flex-col items-center justify-center gap-4">
+                <p className="text-center text-xs text-muted-foreground">
+                  Please log in or create an account to:
+                  <ul className="mt-2 list-disc pl-6">
+                    <li>Create new trips from templates</li>
+                    <li>Apply templates to your existing trips</li>
+                    <li>Save and organize your travel plans</li>
+                  </ul>
                 </p>
-                <Select onValueChange={setSelectedTripId} value={selectedTripId || undefined}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {trips && trips.length > 0 ? (
-                      trips.map((trip) => (
-                        <SelectItem key={trip.id} value={trip.id}>
-                          {trip.title} ({trip.duration_days || '?'} day
-                          {trip.duration_days === 1 ? '' : 's'})
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-trips">No trips available</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={handleApplyToExisting}
-                  disabled={!selectedTripId || isLoadingApply}
-                  className="w-full"
-                >
-                  {isLoadingApply ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Applying...
-                    </>
-                  ) : (
-                    'Apply to Selected Trip'
-                  )}
+                <Button onClick={handleLoginRedirect} className="w-full">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Log In or Sign Up
                 </Button>
               </div>
-            </TabsContent>
-            <TabsContent value="create-new" className="pt-4">
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Create a completely new trip based on this template.
-                </p>
-                <Button onClick={handleOpenCreateDialog} className="w-full">
-                  Create New Trip from Template
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Use "{templateTitle}"</DialogTitle>
+                <DialogDescription>
+                  Apply this template's itinerary items to one of your trips or create a new trip.
+                </DialogDescription>
+              </DialogHeader>
+              <Tabs defaultValue="apply-existing" className="mt-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="apply-existing">Apply to Existing</TabsTrigger>
+                  <TabsTrigger value="create-new">Create New Trip</TabsTrigger>
+                </TabsList>
+                <TabsContent value="apply-existing" className="pt-4">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Select a trip to add the template items to. Items will be added after the existing
+                      days.
+                    </p>
+                    <Select onValueChange={setSelectedTripId} value={selectedTripId || undefined}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {trips && trips.length > 0 ? (
+                          trips.map((trip) => (
+                            <SelectItem key={trip.id} value={trip.id}>
+                              {trip.title} ({trip.duration_days || '?'} day
+                              {trip.duration_days === 1 ? '' : 's'})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-trips">No trips available</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleApplyToExisting}
+                      disabled={!selectedTripId || isLoadingApply}
+                      className="w-full"
+                    >
+                      {isLoadingApply ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Applying...
+                        </>
+                      ) : (
+                        'Apply to Selected Trip'
+                      )}
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="create-new" className="pt-4">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Create a completely new trip based on this template.
+                    </p>
+                    <Button onClick={handleOpenCreateDialog} className="w-full">
+                      Create New Trip from Template
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

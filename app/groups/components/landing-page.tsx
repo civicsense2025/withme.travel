@@ -176,7 +176,6 @@ const totalVotes = demoPoll.options.reduce((sum, o) => sum + o.votes, 0);
 
 const wittyHeadlines = [
   "No more group chat chaos. Plan together, actually get things done.",
-  "Tired of endless DMs? Make group travel planning fun again.",
   "Turn 'who's in?' into 'we're booked!'—together.",
   "Stop arguing in the chat. Start planning for real.",
   "Group trips without the group headaches."

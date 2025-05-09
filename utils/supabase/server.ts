@@ -69,13 +69,19 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value;
+          try {
+            return cookieStore.get(name)?.value;
+          } catch (error) {
+            console.warn(`Error reading cookie ${name}:`, error);
+            return undefined;
+          }
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
             const cookieOptions = convertCookieOptions(name, value, options);
             cookieStore.set(cookieOptions);
           } catch (error) {
+            // Just log but don't throw - this happens during static rendering
             console.warn('Cannot set cookie in this context');
           }
         },
@@ -87,13 +93,16 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
             });
             cookieStore.set(cookieOptions);
           } catch (error) {
+            // Just log but don't throw - this happens during static rendering
             console.warn('Cannot delete cookie in this context');
           }
         },
       },
       auth: {
-        autoRefreshToken: false,
-        persistSession: false
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        flowType: 'pkce'
       }
     });
   } catch (error) {
@@ -108,7 +117,9 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
       },
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        detectSessionInUrl: false,
+        flowType: 'pkce'
       }
     });
   }
@@ -121,7 +132,7 @@ export async function getServerSession() {
   const supabase = await createServerComponentClient();
 
   try {
-    // Get the user securely
+    // Get the user securely through getUser instead of getSession
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) {
       console.error('Error getting user:', error);
@@ -148,13 +159,19 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value;
+          try {
+            return cookieStore.get(name)?.value;
+          } catch (error) {
+            console.warn(`Error reading cookie ${name}:`, error);
+            return undefined;
+          }
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
             const cookieOptions = convertCookieOptions(name, value, options);
             cookieStore.set(cookieOptions);
           } catch (error) {
+            // Just log but don't throw - invalid cookie operations should not crash the app
             console.warn('Cannot set cookie in route handler context');
           }
         },
@@ -166,13 +183,16 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
             });
             cookieStore.set(cookieOptions);
           } catch (error) {
+            // Just log but don't throw - invalid cookie operations should not crash the app
             console.warn('Cannot delete cookie in route handler context');
           }
         },
       },
       auth: {
-        autoRefreshToken: false,
-        persistSession: false
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        flowType: 'pkce'
       }
     });
   } catch (error) {
@@ -187,7 +207,9 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
       },
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        detectSessionInUrl: false,
+        flowType: 'pkce'
       }
     });
   }
@@ -208,34 +230,44 @@ export async function createApiClientWithReqRes(req: NextRequest, res: NextRespo
       },
       set(name: string, value: string, options: CookieOptions) {
         // For setting cookies, we modify the response
-        res.cookies.set({
-          name,
-          value,
-          maxAge: options.maxAge,
-          domain: options.domain,
-          path: options.path,
-          secure: options.secure,
-          httpOnly: options.httpOnly,
-          sameSite: options.sameSite,
-        });
+        try {
+          res.cookies.set({
+            name,
+            value,
+            maxAge: options.maxAge,
+            domain: options.domain,
+            path: options.path,
+            secure: options.secure,
+            httpOnly: options.httpOnly,
+            sameSite: options.sameSite,
+          });
+        } catch (error) {
+          console.warn(`Failed to set cookie ${name}:`, error);
+        }
       },
       remove(name: string, options: CookieOptions) {
         // For removing cookies, set with expired date
-        res.cookies.set({
-          name,
-          value: '',
-          maxAge: 0,
-          domain: options.domain,
-          path: options.path,
-          secure: options.secure,
-          httpOnly: options.httpOnly,
-          sameSite: options.sameSite,
-        });
+        try {
+          res.cookies.set({
+            name,
+            value: '',
+            maxAge: 0,
+            domain: options.domain,
+            path: options.path,
+            secure: options.secure,
+            httpOnly: options.httpOnly,
+            sameSite: options.sameSite,
+          });
+        } catch (error) {
+          console.warn(`Failed to remove cookie ${name}:`, error);
+        }
       },
     },
     auth: {
-      autoRefreshToken: false,
-      persistSession: false
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce'
     }
   });
 }

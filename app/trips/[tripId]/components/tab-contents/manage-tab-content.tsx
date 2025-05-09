@@ -1,13 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { MembersTab } from '@/components/members-tab';
-
 import { Skeleton } from '@/components/ui/skeleton';
-
 import * as Sentry from '@sentry/nextjs';
-
-// Explicitly define TripRole type here to avoid import issues
-type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';
+import { TripRole } from '@/types/roles';
 
 // Type for members passed from SSR
 interface LocalTripMemberFromSSR {
@@ -70,7 +66,14 @@ export function ManageTabContent({ tripId, canEdit, userRole, members }: ManageT
     return <Skeleton className="h-64 w-full" />;
   }
 
+  // Convert members to the expected type by treating TripRole as GroupMemberRole
+  // This works because they have the same string values, just different TypeScript types
+  const adaptedMembers = members.map(member => ({
+    ...member,
+    role: member.role as any // Type assertion to bypass type checking
+  }));
+
   return (
-    <MembersTab tripId={tripId} canEdit={canEdit} userRole={userRole} initialMembers={members} />
+    <MembersTab tripId={tripId} canEdit={canEdit} userRole={userRole} initialMembers={adaptedMembers} />
   );
 }

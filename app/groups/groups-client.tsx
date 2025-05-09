@@ -9,6 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Group, GroupMember } from '@/types/groups';
+import { FriendsList } from '@/components/friends-list';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Friend } from '@/components/friends-list';
 
 // Locally define the detailed Group type based on Supabase query
 type TripCount = { count: number };
@@ -66,15 +70,16 @@ export default function GroupsClientPage({ initialGroups = [] }: GroupsClientPag
         <TabsList>
           <TabsTrigger value="my-groups">My Groups</TabsTrigger>
           <TabsTrigger value="invites">Invites</TabsTrigger>
+          <TabsTrigger value="my-friends">My Friends</TabsTrigger>
         </TabsList>
         <TabsContent value="my-groups" className="mt-6">
           {groups.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No groups yet</h3>
+                <h3 className="text-xl font-semibold mb-2">Time to bring your crew together</h3>
                 <p className="text-muted-foreground mb-4 text-lg">
-                  Create a group to start planning trips with friends or family.
+                Start a travel group and invite the friends you've been promising adventures with. <br /> From weekend getaways to bucket list trips—this is where it happens.
                 </p>
                 <Button onClick={() => setModalOpen(true)}>
                   <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Group
@@ -113,6 +118,19 @@ export default function GroupsClientPage({ initialGroups = [] }: GroupsClientPag
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="my-friends" className="mt-6">
+          <TooltipProvider>
+            <FriendsList
+              title={undefined}
+              emptyMessage="You haven't connected with any friends yet. Join a group or invite friends to get started!"
+              onSelect={undefined}
+              preSelectedFriendIds={[]}
+              alreadyAddedIds={[]}
+              variant="grid"
+              containerClassName="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-6 justify-center"
+            />
+          </TooltipProvider>
         </TabsContent>
       </Tabs>
 

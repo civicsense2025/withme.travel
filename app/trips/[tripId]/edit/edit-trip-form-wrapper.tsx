@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/use-toast';
 // import { TripFocusContainer } from '@/components/trips/trip-focus-container';
 
 // Dynamically import the client component with no SSR
@@ -30,6 +31,12 @@ interface TripFormData {
   end_date?: string | null;
   destination_id?: string | null;
   tags?: string[] | null;
+  cities?: Array<{
+    id: string;
+    name: string;
+    country: string;
+    [key: string]: any;
+  }>;
 }
 
 interface EditTripFormWrapperProps {
@@ -44,14 +51,95 @@ export default function EditTripFormWrapper({
   tripId,
 }: EditTripFormWrapperProps) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async (data: TripFormData) => {
-    console.log('Save data:', data);
+    setIsLoading(true);
+    try {
+      console.log('Save data:', data);
+      
+      // Step 1: Update the trip details
+      const response = await fetch(`/api/trips/${tripId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          start_date: data.start_date,
+          end_date: data.end_date,
+          destination_id: data.destination_id,
+          cover_image_url: data.cover_image_url,
+          privacy_setting: data.privacy_setting,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update trip details');
+      }
+      
+      // Step 2: Update trip cities if provided
+      if (data.cities && data.cities.length > 0) {
+        // Fetch current cities first to determine which ones to add/remove
+        const citiesResponse = await fetch(`/api/trips/${tripId}/cities`);
+        const citiesData = await citiesResponse.json();
+        const currentCities = citiesData.cities || [];
+        
+        // Get current city IDs
+        const currentCityIds = currentCities.map((tc: any) => tc.city_id);
+        
+        // Get new city IDs
+        const newCityIds = data.cities.map(city => city.id);
+        
+        // Find city IDs to add (in new but not in current)
+        const cityIdsToAdd = newCityIds.filter((id: string) => !currentCityIds.includes(id));
+        
+        // Find city IDs to remove (in current but not in new)
+        const cityIdsToRemove = currentCityIds.filter((id: string) => !newCityIds.includes(id));
+        
+        // Remove cities that are no longer in the list
+        for (const cityId of cityIdsToRemove) {
+          await fetch(`/api/trips/${tripId}/cities/${cityId}`, {
+            method: 'DELETE',
+          });
+        }
+        
+        // Add new cities to the trip
+        for (const cityId of cityIdsToAdd) {
+          const cityToAdd = data.cities.find(city => city.id === cityId);
+          if (cityToAdd) {
+            await fetch(`/api/trips/${tripId}/cities`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                city_id: cityId,
+                position: newCityIds.indexOf(cityId), // Use the position from the array
+              }),
+            });
+          }
+        }
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Trip updated successfully',
+      });
+      
+      // After successful save, redirect back to trip page
+      router.push(`/trips/${tripId}`);
 
-    // After successful save, redirect back to trip page
-    router.push(`/trips/${tripId}`);
-
-    return Promise.resolve();
+    } catch (error) {
+      console.error('Error saving trip:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save trip. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClose = () => {

@@ -67,7 +67,7 @@ function DestinationCard({ destination, onUnlike }: { destination: any; onUnlike
               itemType="destination"
               size="sm"
               className="shadow-sm"
-              onClick={(isLiked) => {
+              onClick={(isLiked: boolean) => {
                 if (!isLiked && onUnlike) onUnlike();
               }}
             />
@@ -132,7 +132,7 @@ function ItineraryCard({ itinerary, onUnlike }: { itinerary: any; onUnlike?: () 
             itemType="itinerary"
             size="sm"
             className="shadow-sm"
-            onClick={(isLiked) => {
+            onClick={(isLiked: boolean) => {
               if (!isLiked && onUnlike) onUnlike();
             }}
           />
@@ -160,7 +160,7 @@ function AttractionCard({ attraction, onUnlike }: { attraction: any; onUnlike?: 
             itemType="attraction"
             size="sm"
             className="shadow-sm"
-            onClick={(isLiked) => {
+            onClick={(isLiked: boolean) => {
               if (!isLiked && onUnlike) onUnlike();
             }}
           />

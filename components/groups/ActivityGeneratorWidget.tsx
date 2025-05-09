@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityIdea } from '@/utils/activity-generator';
 import { useActivitySuggestions } from '@/hooks/useActivitySuggestions';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { BUDGET_CATEGORIES, BudgetCategory } from '@/utils/constants/status';
+import type { BudgetCategory } from '@/utils/constants/status';
 
 interface ActivityGeneratorWidgetProps {
   groupId: string;

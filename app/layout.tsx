@@ -14,7 +14,7 @@ import { OfflineNotification } from '@/components/offline-notification';
 import { UpdateNotification } from '@/components/update-notification';
 import Script from 'next/script';
 import { ClientSideProviders } from '@/components/client-side-providers';
-import { Navbar } from '@/components/layout/navbar';
+import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
@@ -23,6 +23,8 @@ import { ClientSideLayoutRenderer } from '@/components/client-side-layout-render
 import { Toaster } from '@/components/ui/toaster';
 import { helveticaNeue } from './fonts';
 import { Container } from '@/components/container';
+import { SearchProvider } from '@/contexts/search-context';
+import { CommandMenu } from '@/components/search/command-menu';
 
 // Define font but don't export it
 const fontSans = FontSans({
@@ -112,21 +114,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
 
         <TooltipProvider>
-          <Providers>
+          <Providers initialSession={session}>
             <LayoutModeProvider>
-              <ClientSideLayoutRenderer>
-                <Container size="full">
-                  {children}
-                </Container>
-              </ClientSideLayoutRenderer>
+              <ClientSideProviders>
+                <ClientSideLayoutRenderer>
+                  <Container size="full">
+                    <SearchProvider>
+                      {children}
+                      <CommandMenu />
+                    </SearchProvider>
+                  </Container>
+                </ClientSideLayoutRenderer>
+                <OfflineNotification />
+                <UpdateNotification />
+                <VercelAnalytics />
+                {/* {process.env.NODE_ENV === 'development' && <AuthTestPanel />} */}
+                {process.env.NODE_ENV === 'development' && <DebugPanel />}
+              </ClientSideProviders>
             </LayoutModeProvider>
-            <ClientSideProviders>
-              <OfflineNotification />
-              <UpdateNotification />
-              <VercelAnalytics />
-              {/* {process.env.NODE_ENV === 'development' && <AuthTestPanel />} */}
-              {process.env.NODE_ENV === 'development' && <DebugPanel />}
-            </ClientSideProviders>
           </Providers>
         </TooltipProvider>
         <Toaster />

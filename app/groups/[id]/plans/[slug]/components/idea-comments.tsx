@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { timeAgo } from '../utils/date-utils';
-import { AuthModal } from '@/components/auth-modal';
+import { AuthModalWithProps } from '@/components/auth-modal';
 
 interface IdeaCommentsProps {
   ideaId: string;
@@ -485,7 +485,7 @@ export default function IdeaComments({ ideaId, userId, className = '', isAuthent
 
   return (
     <>
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <AuthModalWithProps isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <div className={cn('relative mt-2', className)}>
         <div className="">
           <div className="flex items-center justify-between mb-2">

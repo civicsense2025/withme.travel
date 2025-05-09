@@ -26,15 +26,19 @@ export function HeroSection() {
   const router = useRouter();
   const { user } = useAuth() as AuthContextType;
   const [destination, setDestination] = useState('');
+  const [isCreatingTrip, setIsCreatingTrip] = useState(false);
 
   // Define planning types for animation
   const planningTypes = useMemo(
     () => [
-      'group travel planning',
-      'friend trip coordination',
-      'family vacation organizing',
-      'travel spreadsheets',
-      'messaging app chaos',
+      'endless planning threads',
+      'chaotic group decisions',
+      'lost travel suggestions',
+      'scattered trip details',
+      'forgotten must-sees',
+      'conflicting itineraries',
+      'missed recommendations',
+      'buried travel ideas',
     ],
     []
   );
@@ -75,58 +79,86 @@ export function HeroSection() {
     } else if (place && place.name) {
       setDestination(place.name);
     }
+    
+    // Auto-create trip after selecting a location
+    if ((place && place.city) || (place && place.name)) {
+      // Use setTimeout to allow state update to complete first
+      setTimeout(() => {
+        handleCreateTrip();
+      }, 100);
+    }
   };
   
   // Handle direct city selection from the CityBubbles component
   const handleSetDestination = (cityName: string) => {
     setDestination(cityName);
     
-    // Focus the location search input
-    const locationInput = document.querySelector('.location-search-input input');
-    if (locationInput instanceof HTMLInputElement) {
-      locationInput.focus();
-    }
+    // Create a trip immediately after setting the destination
+    setTimeout(() => {
+      handleCreateTrip();
+    }, 100);
   };
 
   const handleCreateTrip = async () => {
-    if (!destination) return;
+    if (!destination || isCreatingTrip) return;
     
     try {
-      // Call the API to create a guest trip with the destination from the search box
+      // Show loading state
+      setIsCreatingTrip(true);
+      console.log('[HeroSection] Creating trip for destination:', destination); // Debug log
+      
+      // Call the API to create a guest trip with the destination
       const response = await fetch('/api/trips/create-guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destination }),
+        body: JSON.stringify({ 
+          destination,
+          customName: `New trip to ${destination}`
+        }),
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to create trip');
+      // Safely parse response JSON
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        console.error('[HeroSection] Failed to parse response JSON:', jsonError);
+        throw new Error('Failed to parse server response');
       }
       
-      const data = await response.json();
-      
-      if (data?.tripId) {
-        // Redirect directly to the new trip
-        router.push(`/trips/${data.tripId}`);
-      } else {
-        // Fallback to the old behavior if needed
-        const citySlug = destination
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-');
+      // Check if we received a tripId even with an error response
+      if (!response.ok) {
+        console.warn('[HeroSection] Server returned error status but checking for valid data:', responseData);
         
-        router.push(`/trips/create?destination=${encodeURIComponent(destination)}`);
+        // If we still got a tripId despite the error, we can use it
+        if (responseData && responseData.tripId) {
+          console.log('[HeroSection] Found valid tripId despite error, proceeding:', responseData.tripId);
+          router.push(`/trips/${responseData.tripId}`);
+          return;
+        }
+        
+        // No valid tripId, throw the error
+        console.error('[HeroSection] Failed to create trip:', responseData);
+        throw new Error(responseData.error || 'Failed to create trip');
+      }
+      
+      console.log('[HeroSection] Trip created successfully:', responseData); // Debug log
+      
+      if (responseData?.tripId) {
+        // Redirect directly to the new trip
+        router.push(`/trips/${responseData.tripId}`);
+      } else {
+        console.error('[HeroSection] No tripId returned from API:', responseData);
+        setIsCreatingTrip(false);
+        throw new Error('No trip ID returned from API');
       }
     } catch (error) {
-      console.error('Error creating trip:', error);
+      console.error('[HeroSection] Error creating trip:', error);
       
-      // Fallback to the old behavior
-      const citySlug = destination
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-');
+      // Re-enable the button after error
+      setIsCreatingTrip(false);
       
-      router.push(`/trips/create?destination=${encodeURIComponent(destination)}`);
+      // Could show a toast error message here
     }
   };
 
@@ -195,7 +227,7 @@ export function HeroSection() {
           className="mb-16"
         >
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-8">
-            <span className="leading-tight">Say Goodbye to the Chaos of</span>
+            <span className="leading-tight">Say goodbye to the chaos of</span>
             <div className="h-[1.2em] overflow-hidden relative mt-2">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
@@ -221,8 +253,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Plan your next adventure together, make decisions easily, and create unforgettable
-            memories.
+            Your crew has great ideas. Now there's finally a place to organize them all.
           </motion.p>
         </motion.div>
 
@@ -233,7 +264,7 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
-          <div className="bg-white dark:bg-black/40 border border-border rounded-3xl p-6 shadow-xl max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-black/40 rounded-3xl p-6 shadow-xl max-w-3xl mx-auto animate-pulse-border relative before:absolute before:inset-0 before:rounded-3xl before:shadow-[0_0_15px_2px_rgba(168,138,250,0.3)] dark:before:shadow-[0_0_15px_3px_rgba(186,165,255,0.4)] before:animate-pulse">
             <div className="flex flex-col space-y-6">
               <div className="flex items-center space-x-3 text-xl font-medium">
                 <MapPin className="h-6 w-6 text-travel-purple" />
@@ -242,12 +273,19 @@ export function HeroSection() {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative location-search-input">
                   <LocationSearch
-                    onLocationSelect={handleLocationSelect}
-                    placeholder="Where to? Try 'Barcelona' or 'Tokyo'"
+                    onLocationSelect={(place) => {
+                      if (place) {
+                        handleLocationSelect(place);
+                      } else {
+                        setDestination('');
+                      }
+                    }}
+                    onClear={() => setDestination('')}
+                    placeholder="Type any destination to start planning"
                     className="rounded-xl py-3 px-4 text-base h-12"
                     containerClassName="w-full"
                     initialValue={destination}
-                    aria-label="Search for a destination"
+                    aria-label="Search for a destination to create a trip"
                     searchIconPosition="right"
                     searchIcon="search"
                   />
@@ -255,24 +293,33 @@ export function HeroSection() {
                 <Button
                   className="px-8 rounded-xl h-12 text-base font-medium flex-shrink-0"
                   onClick={handleCreateTrip}
-                  disabled={!destination}
+                  disabled={!destination || isCreatingTrip}
+                  variant={isCreatingTrip ? "outline" : "default"}
                 >
-                  Plan a Trip
+                  {isCreatingTrip ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating...
+                    </>
+                  ) : 'Create Trip'}
                 </Button>
               </div>
             </div>
           </div>
-          {/* Hand-drawn SVG arrow from the box to the city bubbles */}
+          {/* Hand-drawn SVG arrow from the box to the city bubbles - update to curve downward */}
           <svg
             className="hidden md:block absolute left-1/2 -translate-x-1/2 top-full mt-[-10px]"
             width="180" height="80" viewBox="0 0 180 80" fill="none" xmlns="http://www.w3.org/2000/svg"
             style={{ pointerEvents: 'none' }}
           >
             <path
-              d="M90 10 C90 40, 90 60, 170 70"
+              d="M90 10 C90 40, 130 60, 90 70"
               stroke="#a78bfa" strokeWidth="3" fill="none" strokeLinecap="round" strokeDasharray="6 8"/>
             <path
-              d="M170 70 l-10 -7 m10 7 l-7 10"
+              d="M90 70 l-10 -7 m10 7 l-5 10"
               stroke="#a78bfa" strokeWidth="3" fill="none" strokeLinecap="round"/>
           </svg>
         </motion.div>
@@ -284,7 +331,7 @@ export function HeroSection() {
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.8 }}
         >
-          <h2 className="text-2xl font-medium mb-10 text-center">Or Try One of These Places...</h2>
+          <h2 className="text-2xl font-medium mb-10 text-center">Need inspiration? Check these spots</h2>
           <div className="backdrop-blur-sm rounded-3xl p-5 md:p-6 shadow-sm mx-auto max-w-5xl">
             <Suspense fallback={<div className="h-40 bg-neutral-100 dark:bg-neutral-900 rounded-xl animate-pulse"></div>}>
               <CityBubblesProvider setDestination={handleSetDestination}>

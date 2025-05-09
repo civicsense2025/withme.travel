@@ -1,9 +1,7 @@
 import { redirect } from 'next/navigation';
 import TripsClientPage from './trips-client';
 import { getServerComponentClient } from '@/utils/supabase/unified';
-import { TripsFeedbackButton } from './TripsFeedbackButton';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { TABLES } from '@/utils/constants/tables';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = {
@@ -40,12 +38,12 @@ export default async function TripsPage() {
 
   // Fetch initial trips data for server side rendering
   const { data: tripMembers, error: queryError } = await supabase
-    .from('trip_members') // TODO: Add TRIP_MEMBERS to TABLES constant in @/utils/constants/database
+    .from(TABLES.TRIP_MEMBERS) // Use constant from imported TABLES
     .select(
       `
       role, 
       joined_at,
-      trip:${'trips'} (
+      trip:${TABLES.TRIPS} (
         id, name, start_date, 
         end_date, created_at,
         status, destination_id, destination_name,
@@ -56,11 +54,11 @@ export default async function TripsPage() {
     )
     .eq('user_id', user.id)
     .order('start_date', {
-      foreignTable: 'trips',
+      foreignTable: TABLES.TRIPS,
       ascending: false,
       nullsFirst: false,
     })
-    .order('created_at', { foreignTable: 'trips', ascending: false });
+    .order('created_at', { foreignTable: TABLES.TRIPS, ascending: false });
 
   // Log if there was a query error
   if (queryError) {
@@ -68,18 +66,8 @@ export default async function TripsPage() {
   }
 
   return (
-    <div className="container py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">My Trips</h1>
-        <div className="flex items-center gap-4">
-          <TripsFeedbackButton />
-          <Button asChild>
-            <Link href="/trips/create">Create Trip</Link>
-          </Button>
-        </div>
-      </div>
-      
+    <main>
       <TripsClientPage initialTrips={tripMembers || []} userId={user.id} />
-    </div>
+    </main>
   );
 }

@@ -16,7 +16,7 @@ export async function checkAdminAuth() {
       supabase = await createServerComponentClient();
     }
 
-    // Get the current user securely
+    // Get the current user securely using getUser instead of getSession
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {

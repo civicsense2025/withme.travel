@@ -25,6 +25,9 @@ import { cn } from '@/lib/utils';
 import { ITEM_STATUSES, type ItemStatus } from '@/utils/constants/status';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// Redefine the ItemStatus to include additional values
+type ExtendedItemStatus = ItemStatus | 'active' | 'cancelled';
+
 interface ProfileBasic {
   id: string;
   name: string | null;
@@ -44,7 +47,7 @@ export interface TaskItem {
   id: string;
   title: string;
   description?: string;
-  status: ItemStatus;
+  status: ExtendedItemStatus;
   dueDate?: string | null;
   priority?: 'high' | 'medium' | 'low' | null;
   votes: TaskVotes;
@@ -69,7 +72,7 @@ interface TaskProps {
   /**
    * Callback when an item status is changed
    */
-  onStatusChange?: (itemId: string, newStatus: ItemStatus) => Promise<void>;
+  onStatusChange?: (itemId: string, newStatus: ExtendedItemStatus) => Promise<void>;
   /**
    * Callback when a vote is cast
    */
@@ -186,33 +189,29 @@ export function Task({
     }
   };
 
-  const handleStatusUpdate = async (itemId: string, newStatus: ItemStatus) => {
+  const handleStatusUpdate = async (itemId: string, newStatus: ExtendedItemStatus) => {
+    if (updatingStatusItemId || !onStatusChange) return;
+    
     setUpdatingStatusItemId(itemId);
-    const originalItems = [...items];
-
-    // Optimistically update the UI
-    setItems(items.map((item) => (item.id === itemId ? { ...item, status: newStatus } : item)));
-
+    
     try {
       if (onStatusChange) {
-        await onStatusChange(itemId, newStatus);
-      } else {
-        // Simulate API call if no callback provided
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        await onStatusChange(itemId, newStatus as ItemStatus);
       }
       
-      toast({ 
-        title: 'Status Updated', 
-        description: `Task status set to ${newStatus}.` 
-      });
+      // Update local state for immediate feedback
+      setItems(
+        items.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                status: newStatus,
+              }
+            : item
+        )
+      );
     } catch (error) {
-      // Revert to original state on error
-      setItems(originalItems);
-      toast({
-        title: 'Error Updating Status',
-        description: error instanceof Error ? error.message : 'Could not update task status.',
-        variant: 'destructive',
-      });
+      console.error('Error updating status:', error);
     } finally {
       setUpdatingStatusItemId(null);
     }
@@ -246,7 +245,7 @@ export function Task({
     }
   };
 
-  const getStatusBadge = (status: ItemStatus) => {
+  const getStatusBadge = (status: ExtendedItemStatus) => {
     switch (status) {
       case ITEM_STATUSES.CONFIRMED:
         return (
@@ -267,6 +266,18 @@ export function Task({
         return (
           <Badge variant="outline" className="ml-2">
             <AlertCircle className="h-3 w-3 mr-1" /> Suggested
+          </Badge>
+        );
+      case 'active':
+        return (
+          <Badge variant="outline" className="ml-2 border-blue-600/40 bg-blue-500/10 text-blue-700 dark:text-blue-400">
+            <Clock className="h-3 w-3 mr-1" /> Active
+          </Badge>
+        );
+      case 'cancelled':
+        return (
+          <Badge variant="outline" className="ml-2 border-gray-600/40 bg-gray-500/10 text-gray-700 dark:text-gray-400">
+            <XCircle className="h-3 w-3 mr-1" /> Cancelled
           </Badge>
         );
       default:
@@ -382,6 +393,20 @@ export function Task({
                       >
                         <XCircle className="h-4 w-4 mr-2 text-red-500" />
                         Mark as rejected
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusUpdate(item.id, 'active' as ExtendedItemStatus)}
+                        disabled={updatingStatusItemId === item.id}
+                      >
+                        <Clock className="h-4 w-4 mr-2 text-blue-500" />
+                        Mark as active
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusUpdate(item.id, 'cancelled' as ExtendedItemStatus)}
+                        disabled={updatingStatusItemId === item.id}
+                      >
+                        <XCircle className="h-4 w-4 mr-2 text-gray-500" />
+                        Mark as cancelled
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

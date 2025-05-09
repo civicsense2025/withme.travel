@@ -29,6 +29,7 @@ import type { DateRange } from 'react-day-picker';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
+import CompactBudgetSnapshot from '@/components/trips/compact-budget-snapshot';
 
 // Define helper functions locally
 function getInitials(name?: string | null): string {
@@ -98,6 +99,15 @@ export interface TripHeaderProps {
   privacySetting?: TripPrivacySetting | null;
   extraContent?: React.ReactNode;
   onDatesChange?: (range: { start: string | null; end: string | null }) => void;
+  budgetProps?: {
+    targetBudget: number | null;
+    totalPlanned: number;
+    totalSpent: number;
+    isEditing: boolean;
+    onEditToggle: (isEditing: boolean) => void;
+    onSave: (newBudget: number) => Promise<void>;
+    onLogExpenseClick: () => void;
+  };
 }
 
 // Sub-component to render overlapping member avatars (Minor adjustments for size)
@@ -240,6 +250,7 @@ export function TripHeader({
   privacySetting,
   extraContent,
   onDatesChange,
+  budgetProps,
 }: TripHeaderProps) {
   const [editingDates, setEditingDates] = useState<{ start: string | null; end: string | null }>({
     start: startDate ?? null,
@@ -310,185 +321,149 @@ export function TripHeader({
   }, [startDate, endDate]);
 
   return (
-    <div className="w-full">
-      {/* Cover Image Section with Attribution */}
-      <div className="relative w-full h-48 md:h-64 my-4 rounded-lg overflow-hidden group">
-        <div className="absolute inset-0 bg-muted">
-          {coverImageUrl ? (
-            <Image
-              src={coverImageUrl}
-              alt={`Cover image for trip ${tripName}`}
-              fill
-              style={{ objectFit: 'cover' }}
-              onLoad={() => setImageLoaded(true)}
-              priority
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-sm text-muted-foreground">No cover image</p>
-            </div>
-          )}
-        </div>
-        
-        {/* Image Attribution */}
-        {hasAttribution && imageLoaded && (
-          <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm flex items-center gap-1">
-            <span>Photo{creator ? ` by ${creator}` : ''} on</span>
-            {creatorUrl ? (
-              <a 
-                href={creatorUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-0.5 hover:underline font-medium"
-              >
-                {source === 'unsplash' ? 'Unsplash' : 'Pexels'}
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            ) : (
-              <span className="font-medium">
-                {source === 'unsplash' ? 'Unsplash' : 'Pexels'}
-              </span>
-            )}
-          </div>
-        )}
-        
-        {/* Change Cover Button - Only visible when user can edit */}
+    <div className="relative bg-background z-10">
+      <div
+        className="relative h-[240px] w-full bg-muted overflow-hidden"
+        style={{
+          backgroundImage: coverImageUrl
+            ? `url(${coverImageUrl})`
+            : 'linear-gradient(to right, hsl(var(--primary)/0.2), hsl(var(--primary)/0.1))',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* Add an overlay to darken the image slightly and provide contrast */}
+        <div className="absolute inset-0 bg-black/20" />
+
+        {/* Show Change Cover option on hover when canEdit is true - centered */}
         {canEdit && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity"
+          <div 
+            className="absolute inset-0 opacity-0 hover:opacity-100 flex items-center justify-center bg-black/30 transition-opacity duration-200 cursor-pointer"
             onClick={onChangeCover}
           >
-            <Camera className="mr-2 h-4 w-4" />
-            {coverImageUrl ? 'Change Cover' : 'Add Cover'}
-          </Button>
+            <div className="bg-black/80 text-white py-2 px-4 rounded-md flex items-center">
+              <Camera className="mr-2 h-4 w-4" />
+              <span className="text-sm font-medium">Change Cover</span>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Trip Info Header */}
-      <div className="flex flex-col gap-6 items-start justify-between mb-4">
-        <div className="flex-grow w-full">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between">
-            <div className="mb-4 md:mb-0">
-              <h1 className="text-3xl font-bold tracking-tight">{tripName}</h1>
-              
-              {/* Location */}
-              {destinationName && (
-                <div className="flex items-center mt-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-                  <span>{destinationName}</span>
-                </div>
-              )}
-              
-              {/* Date Range with Inline Editing */}
-              <div className="mt-2">
-                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className={cn(
-                        "justify-start text-left font-normal relative group",
-                        canEdit && "hover:bg-muted",
-                        !startDate && !endDate && "text-muted-foreground"
-                      )}
-                      disabled={!canEdit}
+      <div className="border-b">
+        <div className="container px-4 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight mb-1 flex items-center gap-2">
+                {tripName}
+                {canEdit && (
+                  <Button
+                    onClick={onEdit}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 rounded-full"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span className="sr-only">Edit trip</span>
+                  </Button>
+                )}
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                {members && members.length > 0 && (
+                  <div className="flex items-center">
+                    <MemberAvatars members={members} />
+                    <Button
+                      onClick={onMembers}
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2 text-muted-foreground hover:text-foreground ml-1"
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate || endDate ? (
-                        formatDateRange(startDate, endDate)
-                      ) : (
-                        "Add dates"
-                      )}
+                      <Users className="h-3.5 w-3.5 mr-1" />
+                      {members.length} {members.length === 1 ? 'member' : 'members'}
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <div className="flex flex-col">
-                      <div className="p-2 border-b flex justify-between items-center">
-                        <span className="text-sm font-medium">Select Trip Dates</span>
-                        {canEdit && (
-                          <div className="flex items-center text-muted-foreground">
-                            <Pencil className="h-3 w-3 mr-1" />
-                            <span className="text-xs">Edit</span>
-                          </div>
-                        )}
-                      </div>
-                      <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={startDate ? new Date(startDate) : new Date()}
-                        selected={selectedDateRange}
-                        onSelect={handleDateChange}
-                        numberOfMonths={2}
-                      />
-                      <div className="p-3 border-t text-xs text-center text-muted-foreground">
-                        Click to select your travel dates. Click Save to confirm changes.
-                      </div>
-                      <div className="p-2 border-t flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setDatePickerOpen(false)}
+                  </div>
+                )}
+
+                {/* If datePickerOpen is controlled based on prop... */}
+                {onDatesChange && (
+                  <div className="flex items-center">
+                    <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-muted-foreground hover:text-foreground"
                         >
-                          Cancel
+                          <CalendarIcon className="h-3.5 w-3.5 mr-1" />
+                          {formatDateRange(startDate, endDate)}
                         </Button>
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            if (onDatesChange) {
-                              onDatesChange(editingDates);
-                              setDatePickerOpen(false);
-                              toast({
-                                title: "Dates updated",
-                                description: `Travel dates changed to ${formatDateRange(
-                                  editingDates.start, 
-                                  editingDates.end
-                                )}`,
-                              });
-                            }
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          initialFocus
+                          mode="range"
+                          defaultMonth={
+                            startDate ? new Date(startDate) : endDate ? new Date(endDate) : undefined
+                          }
+                          selected={{
+                            from: startDate ? new Date(startDate) : undefined,
+                            to: endDate ? new Date(endDate) : undefined,
                           }}
-                        >
-                          Save
-                        </Button>
-                      </div>
+                          onSelect={handleDateChange}
+                          numberOfMonths={2}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+
+                {tags && tags.length > 0 && (
+                  <div className="flex items-center">
+                    <Tag className="h-3.5 w-3.5 mr-1" />
+                    <div className="flex flex-wrap gap-1 items-center">
+                      {tags.map((tag) => (
+                        <Badge key={tag.id} variant="outline" className="text-xs">
+                          {tag.name}
+                        </Badge>
+                      ))}
                     </div>
-                  </PopoverContent>
-                </Popover>
+                  </div>
+                )}
               </div>
             </div>
-            
-            {/* Edit Button - Now in its own row on mobile */}
-            {canEdit && (
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={onEdit}
-                  className="md:flex-none flex-1"
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit Trip
-                </Button>
-                
-                {/* Compact Share Button */}
-                <ShareTripButton
-                  privacySetting={privacySetting || null}
-                  slug={slug || null}
-                  tripId={tripId}
-                  className="md:flex-none flex-1"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Extra Content Slot */}
-      {extraContent && (
-        <div className="mb-2">
+            {/* Container for action buttons and budget */}
+            <div className="flex items-center gap-3 self-end">
+              {/* Insert Budget Snapshot Component */}
+              {budgetProps && (
+                <div className="hidden sm:block">
+                  <CompactBudgetSnapshot
+                    targetBudget={budgetProps.targetBudget}
+                    totalPlanned={budgetProps.totalPlanned}
+                    totalSpent={budgetProps.totalSpent}
+                    canEdit={canEdit}
+                    isEditing={budgetProps.isEditing}
+                    onEditToggle={budgetProps.onEditToggle}
+                    onSave={budgetProps.onSave}
+                    onLogExpenseClick={budgetProps.onLogExpenseClick}
+                    tripId={tripId}
+                  />
+                </div>
+              )}
+
+              {/* Share button */}
+              {slug && (
+                <ShareTripButton
+                  tripId={tripId}
+                  slug={slug}
+                  privacySetting={privacySetting || null}
+                />
+              )}
+            </div>
+          </div>
+          
           {extraContent}
         </div>
-      )}
+      </div>
     </div>
   );
 }

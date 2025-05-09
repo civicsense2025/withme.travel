@@ -19,7 +19,7 @@ interface MapboxFeature {
   // Other properties might exist but these are the ones we use
 }
 
-interface MapboxPlace {
+export interface MapboxPlace {
   id: string;
   name: string;
   address: string;

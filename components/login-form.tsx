@@ -12,8 +12,22 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { fadeIn, slideUp, staggerContainer } from '@/utils/animation';
+import { AuthModalContext } from '@/app/context/auth-modal-context';
 
-export function LoginForm() {
+interface LoginFormProps {
+  /** Optional callback function to call when login is successful */
+  onSuccess?: () => void;
+  /** Optional custom text for the primary button */
+  primaryButtonText?: string;
+  /** Optional context for analytics and customization */
+  context?: AuthModalContext;
+}
+
+export function LoginForm({
+  onSuccess,
+  primaryButtonText = 'sign in',
+  context = 'default'
+}: LoginFormProps) {
   const { signIn, isLoading, user, refreshSession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +42,13 @@ export function LoginForm() {
   // Get and process redirect path
   const redirectPath = searchParams?.get('redirect') || '/';
   const [decodedRedirectPath, setDecodedRedirectPath] = useState('/');
+
+  // If user is set, call onSuccess
+  useEffect(() => {
+    if (user && onSuccess) {
+      onSuccess();
+    }
+  }, [user, onSuccess]);
 
   // Check for URL error parameter
   useEffect(() => {
@@ -82,6 +103,9 @@ export function LoginForm() {
 
       // Then try to sign in again
       await signIn(email, password);
+      
+      // Call onSuccess if provided
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Retry login error:', error);
       setLocalError('Login retry failed. Please check your network connection and try again.');
@@ -109,7 +133,8 @@ export function LoginForm() {
       console.log('Attempting sign in...');
 
       await signIn(email, password);
-      // Auth provider will handle the session, and router will redirect in parent component
+      // Call onSuccess if provided (the user check in useEffect will also handle this)
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Login error:', error);
       setRetryCount((prev) => prev + 1);
@@ -264,7 +289,7 @@ export function LoginForm() {
             ) : (
               <>
                 <LogIn className="h-4 w-4" />
-                sign in
+                {primaryButtonText}
               </>
             )}
           </Button>

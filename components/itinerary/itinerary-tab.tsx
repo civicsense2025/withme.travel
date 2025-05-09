@@ -37,18 +37,31 @@ import { useToast } from '@/components/ui/use-toast';
 import { ItineraryDaySection } from './ItineraryDaySection';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, PlusCircle, GripVertical, MapPin, HomeIcon, Car } from 'lucide-react';
+import { Plus, PlusCircle, GripVertical, MapPin, HomeIcon, Car, BedDouble } from 'lucide-react';
 import { SortableItem } from './SortableItem';
 import { CSS, type Transform } from '@dnd-kit/utilities';
-import { QuickAddItemDialog } from './QuickAddItemDialog';
 import { UnscheduledItemsSection } from './UnscheduledItemsSection';
 import { TripDetailsSection } from './TripDetailsSection';
 import { cn } from '@/lib/utils';
 
 import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
+import { motion } from 'framer-motion';
 
-// Dynamically import the MapboxGeocoderComponent to prevent it from being loaded unnecessarily
+// Dynamically import both heavy components
 const MapboxGeocoderComponent = lazy(() => import('@/components/maps/mapbox-geocoder'));
+// Lazy load the QuickAddItemDialog component to reduce initial bundle size
+const QuickAddItemDialog = lazy(() => import('./QuickAddItemDialog').then(mod => ({
+  default: mod.QuickAddItemDialog
+})));
+
+// Loading fallback component for lazy-loaded components
+const LoadingFallback = () => (
+  <div className="p-6 animate-pulse flex flex-col justify-center items-center bg-muted rounded-lg h-[300px]">
+    <div className="w-12 h-12 rounded-full bg-gray-300 mb-4"></div>
+    <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+  </div>
+);
 
 // Define trip roles
 const TRIP_ROLES = {
@@ -89,6 +102,7 @@ interface ItineraryTabProps {
     newPosition: number;
   }) => Promise<void>;
   onSectionReorder: (orderedDayNumbers: (number | null)[]) => Promise<void>;
+  refetchItinerary?: () => Promise<void>;
 }
 
 // Helper function to re-calculate and assign positions after an array modification
@@ -179,9 +193,13 @@ interface SortableSectionProps {
 }
 
 const SortableSection: React.FC<SortableSectionProps> = ({ id, children, disabled }) => {
+  // Force disable dragging for the unscheduled section
+  const isUnscheduled = id === 'unscheduled';
+  const isDisabled = disabled || isUnscheduled;
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
-    disabled,
+    disabled: isDisabled,
     data: {
       type: 'section',
       id,
@@ -201,9 +219,9 @@ const SortableSection: React.FC<SortableSectionProps> = ({ id, children, disable
       <div
         className={cn(
           'section-handle relative mb-2',
-          !disabled && 'cursor-grab active:cursor-grabbing'
+          !isDisabled && 'cursor-grab active:cursor-grabbing'
         )}
-        {...(disabled ? {} : listeners)}
+        {...(isDisabled ? {} : listeners)}
       >
         {children}
       </div>
@@ -211,23 +229,69 @@ const SortableSection: React.FC<SortableSectionProps> = ({ id, children, disable
   );
 };
 
-// Add the global styles at the top as a JSX style block
-const GlobalStyles = () => (
-  <style jsx global>{`
-    body.dragging-active {
-      cursor: grabbing !important;
-    }
-    
-    body.dragging-active * {
-      cursor: grabbing !important;
-    }
-    
-    /* Hide the ghost image that browsers create during drag */
-    [data-dnd-dragging] * {
-      cursor: grabbing !important;
-    }
-  `}</style>
-);
+// Create a custom global style component to control drag/drop appearance and transitions
+const GlobalStyles = () => {
+  return (
+    <style jsx global>{`
+      /* Styles for active dragging state */
+      body.dragging-active {
+        cursor: grabbing !important;
+      }
+      
+      /* Improve sortable item styling */
+      .sortable-item {
+        transition: transform 250ms ease, opacity 200ms ease;
+        transform-origin: center center;
+        position: relative;
+        z-index: 1;
+      }
+      
+      /* Add hover effect for draggable items */
+      [data-draggable="true"]:hover {
+        cursor: grab;
+      }
+      
+      /* Improve drag animation smoothness */
+      .smooth-transition {
+        transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+      
+      /* Add animated connecting lines between day sections */
+      @keyframes dash {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      
+      /* Subtle pulse animation for connector lines */
+      @keyframes pulse-subtle {
+        0% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
+        100% {
+          opacity: 0.3;
+        }
+      }
+      
+      .animate-pulse-subtle {
+        animation: pulse-subtle 2s infinite ease-in-out;
+      }
+      
+      /* Add a subtle highlight to active day section */
+      .day-section-active {
+        box-shadow: 0 0 0 2px var(--primary-500, #7c3aed), 0 0 20px rgba(124, 58, 237, 0.1);
+      }
+      
+      /* Smoother transitions for drag overlay */
+      [data-react-beautiful-dnd-drag-handle] {
+        transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+    `}</style>
+  );
+};
 
 export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   tripId,
@@ -245,6 +309,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
   onAddItem,
   onReorder,
   onSectionReorder,
+  refetchItinerary,
 }) => {
   const { toast } = useToast();
   const [isBrowser, setIsBrowser] = useState(false);
@@ -320,10 +385,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
       
       if (activeData?.type === 'item') {
         setActiveType('item');
-        const foundItem = itineraryItems.find((item) => item.id === active.id);
-        if (foundItem) {
-          setActiveItem(foundItem);
-        }
+        // Directly use find with a condition instead of storing the full array
+        setActiveItem(itineraryItems.find((item) => item.id === active.id) || null);
       } else if (activeData?.type === 'section') {
         setActiveType('section');
       }
@@ -334,76 +397,12 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
     [itineraryItems]
   );
 
-  // Add this cleanup function
-  const handleDragCancel = useCallback(() => {
-    setActiveId(null);
-    setActiveType(null);
-    setActiveItem(null);
-    document.body.classList.remove('dragging-active');
-  }, []);
-
-  // Helper to parse day number from container ID
-  const parseDayNumber = (containerId: string): number | null => {
-    if (containerId === 'unscheduled') return null;
-    if (containerId.startsWith('day-')) {
-      const dayNumberStr = containerId.replace('day-', '');
-      const dayNumber = parseInt(dayNumberStr, 10);
-      return isNaN(dayNumber) ? null : dayNumber;
-    }
-    return null; // Default to unscheduled if can't parse
-  };
-
-  // Handle drag over - check for valid drop target and update UI
-  const handleDragOver = useCallback(
-    (event: DragOverEvent) => {
-      const { active, over } = event;
-      if (!active || !over) return;
-
-      const activeData = active.data.current as any;
-      const overData = over.data.current as any;
-
-      if (!activeData || !overData) return;
-
-      // Item over container
-      if (
-        activeData.type === 'item' &&
-        (overData.type === 'section' || overData.type === 'unscheduled-section' || overData.type === 'day-section' || overData.type === 'container')
-      ) {
-        const itemId = active.id as string;
-        const item = itineraryItems.find((i) => i.id === itemId);
-        if (!item) return;
-
-        // Get the container info from over
-        let overContainerId;
-        if (over.id === 'unscheduled') {
-          overContainerId = 'unscheduled';
-        } else if (typeof over.id === 'string' && over.id.startsWith('day-')) {
-          overContainerId = over.id;
-        } else {
-          return; // Invalid target
-        }
-
-        const newDay = parseDayNumber(overContainerId);
-        if (item.day_number === newDay) return; // No change needed
-
-        // Move the item to the new container (but don't update position yet)
-        setItineraryItems((items) => {
-          const updatedItems = items.map((i) => {
-            if (i.id === itemId) {
-              return { ...i, day_number: newDay };
-            }
-            return i;
-          });
-          return updatedItems;
-        });
-      }
-    },
-    [itineraryItems, setItineraryItems]
-  );
-
   // Handle drag end - finalize positions and save to backend
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
+      // Always remove dragging class at the start of the function
+      document.body.classList.remove('dragging-active');
+      
       const { active, over } = event;
       
       // If nothing is over a target, or no active item, reset state and return
@@ -655,9 +654,11 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
         // Restore original items state on error
         setItineraryItems(originalItemsOnDragStart);
       } finally {
+        // Always clean up states and remove cursor class
         setActiveId(null);
         setActiveType(null);
         setActiveItem(null);
+        document.body.classList.remove('dragging-active');
       }
     },
     [
@@ -669,6 +670,72 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
       toast,
       durationDays
     ]
+  );
+
+  // Add this cleanup function
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    setActiveType(null);
+    setActiveItem(null);
+    // Make sure cursor is reset
+    document.body.classList.remove('dragging-active');
+  }, []);
+
+  // Helper to parse day number from container ID
+  const parseDayNumber = (containerId: string): number | null => {
+    if (containerId === 'unscheduled') return null;
+    if (containerId.startsWith('day-')) {
+      const dayNumberStr = containerId.replace('day-', '');
+      const dayNumber = parseInt(dayNumberStr, 10);
+      return isNaN(dayNumber) ? null : dayNumber;
+    }
+    return null; // Default to unscheduled if can't parse
+  };
+
+  // Handle drag over - check for valid drop target and update UI
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!active || !over) return;
+
+      const activeData = active.data.current as any;
+      const overData = over.data.current as any;
+
+      if (!activeData || !overData) return;
+
+      // Item over container
+      if (
+        activeData.type === 'item' &&
+        (overData.type === 'section' || overData.type === 'unscheduled-section' || overData.type === 'day-section' || overData.type === 'container')
+      ) {
+        const itemId = active.id as string;
+        
+        // Find item directly with a single lookup
+        const item = itineraryItems.find((i) => i.id === itemId);
+        if (!item) return;
+
+        // Get the container info from over
+        let overContainerId;
+        if (over.id === 'unscheduled') {
+          overContainerId = 'unscheduled';
+        } else if (typeof over.id === 'string' && over.id.startsWith('day-')) {
+          overContainerId = over.id;
+        } else {
+          return; // Invalid target
+        }
+
+        const newDay = parseDayNumber(overContainerId);
+        if (item.day_number === newDay) return; // No change needed
+
+        // Use a more efficient state update to avoid recreating the entire array
+        setItineraryItems(items => 
+          items.map(i => 
+            i.id === itemId ? { ...i, day_number: newDay } : i
+          )
+        );
+      }
+    },
+    [itineraryItems]
   );
 
   // Handle opening the quick add dialog for different categories
@@ -710,23 +777,38 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
 
   // Group all items by day/unscheduled for the sections
   const itemsBySection = useMemo(() => {
+    // Create a function to sort items by position more efficiently
+    const sortByPosition = (a: DisplayItineraryItem, b: DisplayItineraryItem) => 
+      (a.position ?? 0) - (b.position ?? 0);
+    
+    // Create a Map to store all the grouped items
     const grouped = new Map<string | number | null, DisplayItineraryItem[]>();
-    // Start with unscheduled items
-    const unscheduledItems = itineraryItems
-      .filter((item) => item.day_number === null)
-      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-
-    grouped.set('unscheduled', unscheduledItems);
-
-    // Then add each day
+    
+    // First, determine all unique day numbers (including null for unscheduled)
+    const dayNumbers = new Set<number | null>(
+      itineraryItems.map(item => item.day_number)
+    );
+    
+    // Make sure "unscheduled" (null) is always included
+    dayNumbers.add(null);
+    
+    // For each day number, filter and sort the items once
+    dayNumbers.forEach(dayNumber => {
+      const itemsForDay = itineraryItems.filter(
+        item => item.day_number === dayNumber
+      ).sort(sortByPosition);
+      
+      // Store in the Map with the appropriate key
+      grouped.set(dayNumber === null ? 'unscheduled' : dayNumber, itemsForDay);
+    });
+    
+    // Make sure every day from 1 to durationDays exists in the Map
     for (let day = 1; day <= durationDays; day++) {
-      const dayItems = itineraryItems
-        .filter((item) => item.day_number === day)
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-
-      grouped.set(day, dayItems);
+      if (!grouped.has(day)) {
+        grouped.set(day, []);
+      }
     }
-
+    
     return grouped;
   }, [itineraryItems, durationDays]);
 
@@ -788,15 +870,46 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
       >
         <GlobalStyles />
         <div className="space-y-6">
-          {/* Unscheduled Items Section with Drop Zone */}
+          {/* Quick actions for adding accommodations and transportation */}
+          {canEdit && (
+            <motion.div 
+              className="flex flex-wrap gap-3 mb-6"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Button 
+                onClick={handleAddAccommodation} 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+              >
+                <BedDouble className="h-4 w-4" />
+                <span>Add Accommodation</span>
+              </Button>
+              <Button 
+                onClick={handleAddTransportation} 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+              >
+                <Car className="h-4 w-4" />
+                <span>Add Transportation</span>
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Unscheduled Items Section with Drop Zone - Always disabled for dragging */}
           <div id="unscheduled" className="scroll-mt-16">
-            <SortableSection id="unscheduled" disabled={!canEdit}>
+            <SortableSection id="unscheduled" disabled={true}>
               <UnscheduledItemsSection
                 items={itemsBySection.get('unscheduled') || []}
                 canEdit={canEdit}
                 onAddItem={handleAddUnscheduledItem}
                 onEditItem={onEditItem}
                 tripId={tripId}
+                containerId={'unscheduled'}
+                refetchItinerary={refetchItinerary}
               />
             </SortableSection>
           </div>
@@ -827,6 +940,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
                         }}
                         durationDays={durationDays}
                         containerId={sectionId}
+                        tripId={tripId}
+                        onItemAdded={refetchItinerary}
                       />
                     </SortableItem>
                   </SortableSection>
@@ -837,34 +952,41 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
         </div>
 
         {/* Drag Overlay - shows the item being dragged */}
-        {isBrowser &&
-          activeItem &&
-          createPortal(
-            <DragOverlay adjustScale={false} dropAnimation={dropAnimation}>
-              <SortableItem
-                id={activeItem.id}
-                containerId={activeItem.day_number ?? 'unscheduled'}
-                layoutId={`sortable-item-${activeItem.id}`}
-                disabled={true}
-              >
-                <ItineraryItemCard item={activeItem} isOverlay={true} />
-              </SortableItem>
-            </DragOverlay>,
-            document.body
-          )}
+        <DragOverlay adjustScale={true} dropAnimation={dropAnimation}>
+          {activeType === 'item' && activeId && activeItem ? (
+            <div className="opacity-80 w-full transform-gpu scale-[0.95] pointer-events-none">
+              <ItineraryItemCard
+                item={activeItem}
+                isOverlay={true}
+                editable={false}
+              />
+            </div>
+          ) : null}
+          {activeType === 'section' && activeId ? (
+            <div className="opacity-80 w-full transform-gpu scale-[0.98] pointer-events-none bg-muted p-4 rounded-lg border shadow-md">
+              <div className="h-20 flex items-center justify-center">
+                <p className="font-medium">Moving section {activeId}</p>
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
-      {/* Quick Add Item Dialog */}
-      <QuickAddItemDialog
-        tripId={tripId}
-        open={isQuickAddDialogOpen}
-        onOpenChange={setIsQuickAddDialogOpen}
-        onItemAdded={handleItemAdded}
-        defaultCategory={quickAddDefaultCategory}
-        dialogTitle={quickAddDialogConfig.title}
-        dialogDescription={quickAddDialogConfig.description}
-        dayNumber={quickAddDay}
-      />
+      {/* Quick Add Dialog */}
+      {isQuickAddDialogOpen && (
+        <Suspense fallback={<LoadingFallback />}>
+          <QuickAddItemDialog
+            isOpen={isQuickAddDialogOpen}
+            onClose={() => setIsQuickAddDialogOpen(false)}
+            title={quickAddDialogConfig.title}
+            description={quickAddDialogConfig.description}
+            tripId={tripId}
+            defaultCategory={quickAddDefaultCategory}
+            dayNumber={quickAddDay}
+            onItemAdded={handleItemAdded}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

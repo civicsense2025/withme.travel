@@ -216,68 +216,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log(chalk.green(`${LOG_PREFIX} Authenticated as user: ${user.id}`));
 
-    // Parse request body
-    let requestBody;
-    try {
-      requestBody = await request.json();
-      console.log(chalk.dim(`${LOG_PREFIX} Request body parsed: ${JSON.stringify(requestBody)}`));
-    } catch (parseError) {
-      console.error(chalk.red(`${LOG_PREFIX} Error parsing request body:`), parseError);
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-    }
-
-    // --- Handle Quick Create Defaults --- START
-    let isQuickCreate = !requestBody.start_date; // Infer quick create if start_date is missing
-
-    // Assign potentially modified variables
-    let {
-      title,
+    // Parse the request body
+    const body = await request.json();
+    
+    const {
+      name,
       description = '',
-      start_date,
-      end_date,
-      destination_id = null, // Default to null initially
-      tags = [],
+      start_date = null,
+      end_date = null,
+      destination_id = null, // Keep for backward compatibility
+      city_id = null, // Add support for the new city_id field
       cover_image_url = null,
-    } = requestBody;
-
-    if (isQuickCreate) {
-      console.log(chalk.cyan(`${LOG_PREFIX} Handling as Quick Create...`));
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      start_date = today.toISOString().split('T')[0]; // Set default start date
-      end_date = tomorrow.toISOString().split('T')[0]; // Set default end date
-      // destination_id remains null unless explicitly provided (or set default if DB requires)
-      console.log(
-        chalk.dim(`${LOG_PREFIX} [Quick Create] Default dates set: ${start_date} to ${end_date}`)
-      );
-      // Ensure destination_id is explicitly null if empty string was passed
-      if (destination_id === '') destination_id = null;
-    } else {
-      // Ensure destination_id is explicitly null if empty string was passed for regular create too
-      if (destination_id === '') destination_id = null;
-    }
-    // --- Handle Quick Create Defaults --- END
+      travelers = [],
+      tags = [],
+    } = body;
 
     // Validate required fields AFTER potentially setting defaults
     // Only title is strictly required for quick create, dates/dest are defaulted.
-    if (!title) {
-      console.error(chalk.yellow(`${LOG_PREFIX} Missing required field: title`));
-      return NextResponse.json({ error: 'Missing required field: title' }, { status: 400 });
+    if (!name) {
+      console.error(chalk.yellow(`${LOG_PREFIX} Missing required field: name`));
+      return NextResponse.json({ error: 'Missing required field: name' }, { status: 400 });
     }
-    // For non-quick create, we still need dates and destination
-    if (!isQuickCreate && (!start_date || !end_date || !destination_id)) {
-      console.error(
-        chalk.yellow(
-          `${LOG_PREFIX} Missing required fields for full create. Provided: start_date=${!!start_date}, end_date=${!!end_date}, destination_id=${!!destination_id}`
-        )
-      );
+
+    // Validate that at least one ID is provided
+    if (!destination_id && !city_id) {
+      console.error(chalk.red(`${LOG_PREFIX} Missing required destination or city ID`));
       return NextResponse.json(
         {
-          error: null,
-          message:
-            'Missing required fields for full trip creation (destination_id, start_date, end_date)',
+          error:
+            'Missing required fields for full trip creation (destination_id or city_id, start_date, end_date)',
         },
         { status: 400 }
       );
@@ -307,7 +274,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       description,
       start_date,
       end_date,
-      destination_id,
+      destination_id, // Keep for backward compatibility
+      city_id: city_id || destination_id, // Use city_id, falling back to destination_id
       cover_image_url,
       created_by: user.id,
       created_at: new Date().toISOString(),
@@ -390,7 +358,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // --- Handle Trip Itinerary --- START
     const itineraryItemData = {
       trip_id: tripId,
-      title: `Visit ${title}`,
+      title: `Visit ${name}`,
       day_number: 1,
       position: 1,
       category: ITINERARY_CATEGORIES.ICONIC_LANDMARKS,

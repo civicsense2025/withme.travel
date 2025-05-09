@@ -1,17 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Smile } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
-const COMMON_EMOJIS = [
-  '✈️', '🏝️', '🌍', '🧳', '🏕️', '🏢', '🚗', '🚂', '🚢', '🚶‍♂️', 
-  '👨‍👩‍👧‍👦', '👯‍♂️', '👫', '👨‍👩‍👧', '👬', '🧭', '🗺️', '🏔️', '🏖️', '🏞️',
-  '🌄', '🌅', '🌇', '🌆', '🌃', '🌉', '🏙️', '🚶‍♀️', '🧗‍♂️', '🏊‍♀️',
-  '🚴‍♂️', '⛷️', '🏄‍♀️', '🏂', '🧘‍♀️', '🎭', '🎪', '🎡', '🎢', '🏛️',
-  '⛩️', '🕌', '⛪', '🕍', '🛕', '🏯', '🏰', '🗽', '🗿', '🌋'
-];
+import { useState } from 'react';
+import { EmojiPicker as FrimousseEmojiPicker } from 'frimousse';
 
 interface EmojiPickerProps {
   value: string | null;
@@ -22,35 +12,33 @@ export default function EmojiPicker({ value, onChange }: EmojiPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 text-lg"
-          aria-label="Select emoji"
-        >
-          {value || <Smile className="h-5 w-5" />}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-2">
-        <div className="grid grid-cols-8 gap-1">
-          {COMMON_EMOJIS.map((emoji) => (
-            <Button
-              key={emoji}
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-lg p-0"
-              onClick={() => {
-                onChange(emoji);
-                setIsOpen(false);
-              }}
-            >
-              {emoji}
-            </Button>
-          ))}
+    <div className="relative">
+      <button
+        type="button"
+        className="h-10 w-10 text-lg rounded-full border border-input bg-background flex items-center justify-center"
+        aria-label="Select emoji"
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        {value || '🙂'}
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 mt-2 bg-background rounded-xl shadow-lg border p-2">
+          <FrimousseEmojiPicker.Root
+            onEmojiSelect={(emoji: any) => {
+              onChange(emoji.emoji);
+              setIsOpen(false);
+            }}
+            locale="en"
+            columns={8}
+            style={{ width: 320 }}
+          >
+            <FrimousseEmojiPicker.Search autoFocus />
+            <FrimousseEmojiPicker.Viewport style={{ maxHeight: 300 }}>
+              <FrimousseEmojiPicker.List />
+            </FrimousseEmojiPicker.Viewport>
+          </FrimousseEmojiPicker.Root>
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 } 

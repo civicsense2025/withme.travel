@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { getGuestToken } from '@/utils/guest';
 import { z } from 'zod';
+import { TABLES } from '@/utils/constants/database';
+import { cookies } from 'next/headers';
+import { Database } from '@/types/database.types';
 
 // Validation schema for creating/updating ideas
 const ideaSchema = z.object({
@@ -24,93 +27,99 @@ const ideaSchema = z.object({
 });
 
 /**
- * GET /api/groups/[id]/ideas
- * Get all ideas for a group, optionally filtered by plan_id
+ * GET /api/groups/[id]/plans/ideas
+ * Retrieves all ideas across all plans for a group
  */
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
+  const groupId = params.id;
+  const supabase = await createRouteHandlerClient();
+
+  // Get authenticated user to verify permissions
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
   try {
-    const supabase = await createRouteHandlerClient();
-    
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-    
-    // Check if user is a member of the group
-    const { data: membership, error: membershipError } = await supabase
-      .from('group_members')
+    // First check if user is a member of this group
+    const { data: memberData, error: memberError } = await supabase
+      .from(TABLES.GROUP_MEMBERS)
       .select('*')
-      .eq('group_id', params.id)
+      .eq('group_id', groupId)
       .eq('user_id', user.id)
+      .eq('status', 'active')
       .maybeSingle();
     
-    if (!membership) {
-      return NextResponse.json(
-        { error: 'Not a member of this group' },
-        { status: 403 }
-      );
+    if (memberError) {
+      console.error('Error checking group membership:', memberError);
+      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
     }
     
-    // Extract query params
-    const url = new URL(request.url);
-    const planId = url.searchParams.get('planId');
-    const selectedOnly = url.searchParams.get('selectedOnly') === 'true';
+    if (!memberData) {
+      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
+    }
     
-    // Build query
-    let query = supabase
-      .from('group_ideas')
+    // Get all plan IDs for this group
+    const { data: plansData, error: plansError } = await supabase
+      .from(TABLES.GROUP_PLANS)
+      .select('id')
+      .eq('group_id', groupId);
+    
+    if (plansError) {
+      console.error('Error fetching group plans:', plansError);
+      return NextResponse.json({ error: 'Error fetching group plans' }, { status: 500 });
+    }
+    
+    const planIds = plansData.map(plan => plan.id);
+    
+    // If no plans exist, return empty array
+    if (planIds.length === 0) {
+      return NextResponse.json({ ideas: [] });
+    }
+    
+    // Fetch all ideas from those plans
+    const { data: ideasData, error: ideasError } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEAS)
       .select(`
         *,
-        creator:created_by(
-          id,
-          email,
-          user_metadata
-        ),
-        votes:group_idea_votes(
-          id,
-          user_id,
-          vote_type
+        votes:${TABLES.GROUP_PLAN_IDEA_VOTES}(
+          vote_type,
+          user_id
         )
       `)
-      .eq('group_id', params.id);
+      .in('plan_id', planIds);
     
-    // Add filters if provided
-    if (planId) {
-      query = query.eq('plan_id', planId);
+    if (ideasError) {
+      console.error('Error fetching ideas:', ideasError);
+      return NextResponse.json({ error: 'Error fetching ideas' }, { status: 500 });
     }
     
-    if (selectedOnly) {
-      query = query.eq('selected', true);
-    }
+    // Process ideas to include vote counts
+    const processedIdeas = ideasData.map(idea => {
+      // Count votes
+      const votesUp = idea.votes?.filter(v => v.vote_type === 'up').length || 0;
+      const votesDown = idea.votes?.filter(v => v.vote_type === 'down').length || 0;
+      
+      // Check if current user has voted
+      const userVote = idea.votes?.find(v => v.user_id === user.id)?.vote_type || null;
+      
+      return {
+        ...idea,
+        votes_up: votesUp,
+        votes_down: votesDown,
+        user_vote: userVote,
+        votes: undefined, // Remove the votes array
+      };
+    });
     
-    // Execute query with proper ordering
-    const { data: ideas, error } = await query
-      .order('position', { ascending: true })
-      .order('created_at', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching ideas:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch ideas' },
-        { status: 500 }
-      );
-    }
-    
-    return NextResponse.json({ ideas: ideas || [] });
+    return NextResponse.json({ ideas: processedIdeas });
   } catch (error) {
-    console.error('Error in group ideas API:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+    console.error('Unexpected error:', error);
+    return NextResponse.json({ error: 'Unexpected error occurred' }, { status: 500 });
   }
 }
 
@@ -123,7 +132,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient<Database>();
     
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -137,7 +146,7 @@ export async function POST(
     
     // Check if user is a member of the group
     const { data: membership, error: membershipError } = await supabase
-      .from('group_members')
+      .from(TABLES.GROUP_MEMBERS)
       .select('*')
       .eq('group_id', params.id)
       .eq('user_id', user.id)
@@ -163,7 +172,7 @@ export async function POST(
     
     // Insert new idea
     const { data: idea, error } = await supabase
-      .from('group_ideas')
+      .from(TABLES.GROUP_PLAN_IDEAS)
       .insert({
         group_id: params.id,
         title: body.name,
@@ -215,7 +224,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient<Database>();
     
     // Get the current user if authenticated
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -247,7 +256,7 @@ export async function PATCH(
       if (!pos.id || !pos.position) return null;
       
       return supabase
-        .from('group_ideas')
+        .from(TABLES.GROUP_PLAN_IDEAS)
         .update({
           position: pos.position
         })

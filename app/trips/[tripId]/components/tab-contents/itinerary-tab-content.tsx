@@ -37,8 +37,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import ImportMapButton from '../../import-map-button';
 import { TripsFeedbackButton } from '@/app/trips/TripsFeedbackButton';
+import { SimplifiedItemForm, BulkItemForm } from '@/components/trips/SimplifiedItemForm';
+import { QuickAddItemDialog } from '@/components/itinerary/QuickAddItemDialog';
 
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -85,6 +86,7 @@ interface ItineraryTabContentProps {
   handleItemStatusChange: (id: string, status: ItemStatus | null) => Promise<void>;
   handleVote: (itemId: string, dayNumber: number | null, voteType: 'up' | 'down') => Promise<void>;
   handleSectionReorder: (orderedDayNumbers: (number | null)[]) => Promise<void>;
+  refetchItinerary?: () => Promise<void>;
 }
 
 // Helper function to format category display names
@@ -120,6 +122,7 @@ export function ItineraryTabContent({
   handleItemStatusChange,
   handleVote,
   handleSectionReorder,
+  refetchItinerary,
 }: ItineraryTabContentProps) {
   // State for tab's filtered items
   const [itineraryItems, setItineraryItems] = useState<DisplayItineraryItem[]>(allItineraryItems);
@@ -216,10 +219,10 @@ export function ItineraryTabContent({
   // Handle add item - open dialog instead of navigating
   const handleAddItem = useCallback(
     (dayNumber: number | null) => {
-      const dayParam = dayNumber === null ? 'unscheduled' : dayNumber;
-      router.push(`/trips/${tripId}/add-item?day=${dayParam}`);
+      setSelectedDayNumber(dayNumber);
+      setIsAddItemDialogOpen(true);
     },
-    [router, tripId]
+    [tripId]
   );
 
   // Handle geocoder result
@@ -229,6 +232,15 @@ export function ItineraryTabContent({
       setTitle(result.text || result.place_name || '');
     }
   }, []);
+
+  // Handle map import button click
+  const handleMapImportClick = useCallback(() => {
+    toast({
+      title: "Coming Soon",
+      description: "The ability to import locations from maps will be available soon!",
+      duration: 3000,
+    });
+  }, [toast]);
 
   // Handle add item form submission
   const handleAddItemSubmit = useCallback(
@@ -408,25 +420,16 @@ export function ItineraryTabContent({
             {/* Fix the nested button issue by using a div with onClick instead */}
             <div 
               className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-              onClick={() => {
-                // Programmatically trigger the ImportMapButton
-                if (importMapButtonRef.current) {
-                  const button = importMapButtonRef.current.querySelector('button');
-                  if (button) button.click();
-                }
-              }}
+              onClick={handleMapImportClick}
             >
               <MapPin className="h-4 w-4 mr-2" />
               Import from Map
-              <div ref={importMapButtonRef} className="hidden">
-                <ImportMapButton tripId={tripId} canEdit={userRole === 'admin' || userRole === 'editor'} />
-              </div>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
       );
     },
-    [handleAddItem, router, tripId, userRole]
+    [handleAddItem, router, tripId, userRole, handleMapImportClick]
   );
 
   // Custom tooltip with proper styling
@@ -454,8 +457,30 @@ export function ItineraryTabContent({
     });
   }, [itineraryItems]);
 
+  // Handle successful item addition
+  const handleItemAdded = useCallback(() => {
+    // Close the dialog
+    setIsAddItemDialogOpen(false);
+    // Reset form state
+    resetAddItemForm();
+    // Refresh itinerary data
+    if (refetchItinerary) {
+      refetchItinerary();
+    }
+  }, [refetchItinerary, resetAddItemForm]);
+
   return (
-    <div className="w-full">
+    <div className="w-full max-w-3xl mx-auto px-4 md:px-0 py-6">
+      {/* Only render these forms if user has appropriate permissions */}
+      {userRole && (userRole === 'admin' || userRole === 'editor' || userRole === 'contributor') && (
+        <div className="mb-6 space-y-3">
+          {/* 
+            Remove duplicated add item forms - these are already rendered 
+            in the UnscheduledItemsSection component inside ItineraryTab 
+          */}
+        </div>
+      )}
+      
       <ItineraryTab
         tripId={tripId}
         itineraryItems={itineraryItems}
@@ -472,153 +497,51 @@ export function ItineraryTabContent({
         onAddItem={handleAddItem}
         onReorder={handleReorder}
         onSectionReorder={handleSectionReorder}
+        refetchItinerary={refetchItinerary}
       />
       
-      {/* Vertical Stepper Component to navigate between sections */}
+      {/* Vertical Stepper Component with improved styling */}
       <VerticalStepper sections={sections} />
 
-      {/* Add TripsFeedbackButton at the bottom of the itinerary */}
-      <div className="mt-12 mb-4">
-        <h3 className="text-xl font-semibold mb-2">Trip Feedback</h3>
-        <p className="text-muted-foreground mb-4">Share your thoughts about this trip with the organizers.</p>
-        <div className="p-4 border rounded-lg shadow-sm bg-card">
-          <div className="flex flex-col space-y-3">
-            <h4 className="font-medium">How was your experience with this trip?</h4>
-            <p className="text-muted-foreground text-sm">Your feedback helps us improve the trip planning experience for everyone.</p>
-            <TripsFeedbackButton variant="default" className="w-full justify-center py-2 mt-2">
-              Share Trip Feedback
-            </TripsFeedbackButton>
-          </div>
-        </div>
+      {/* Improved Trip Feedback section */}
+      <div className="mt-16 pt-8 border-t border-muted">
+        <TripsFeedbackButton />
       </div>
 
-      {/* Edit Item Sheet */}
+      {/* Edit item sheet */}
       <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
-        <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto" side="right">
+        <SheetContent className="sm:max-w-2xl">
           <SheetHeader>
-            <SheetTitle>Edit Itinerary Item</SheetTitle>
+            <SheetTitle>Edit Item</SheetTitle>
           </SheetHeader>
           {currentEditItem && (
-            <div className="py-4">
-              <ItineraryItemForm
-                tripId={tripId}
-                initialData={currentEditItem}
-                dayNumber={currentEditItem.day_number}
-                onSave={handleSaveEditedItem}
-                onClose={() => {
-                  setIsEditSheetOpen(false);
-                  setCurrentEditItem(null);
-                }}
-              />
-            </div>
+            <ItineraryItemForm
+              tripId={tripId}
+              initialData={currentEditItem}
+              dayNumber={currentEditItem.day_number}
+              onSave={() => {
+                setIsEditSheetOpen(false);
+                if (refetchItinerary) {
+                  refetchItinerary();
+                }
+              }}
+              onClose={() => setIsEditSheetOpen(false)}
+            />
           )}
         </SheetContent>
       </Sheet>
 
-      {/* Add Item Dialog */}
-      <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedDayNumber !== null
-                ? `Add Item to Day ${selectedDayNumber}`
-                : 'Add Unscheduled Item'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedDayNumber !== null
-                ? `Add a new item to day ${selectedDayNumber} of your trip.`
-                : 'Add a new item to your unscheduled items list.'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleAddItemSubmit} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title*</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Visit Museum"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="itemCategory">Category*</Label>
-              <Select value={itemCategory} onValueChange={setItemCategory}>
-                <SelectTrigger id="itemCategory">
-                  <SelectValue>{itemCategory || "Select category"}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Iconic Landmarks">Iconic Landmarks</SelectItem>
-                  <SelectItem value="Local Secrets">Local Secrets</SelectItem>
-                  <SelectItem value="Cultural Experiences">Cultural Experiences</SelectItem>
-                  <SelectItem value="Outdoor Adventures">Outdoor Adventures</SelectItem>
-                  <SelectItem value="Food & Drink">Food & Drink</SelectItem>
-                  <SelectItem value="Nightlife">Nightlife</SelectItem>
-                  <SelectItem value="Relaxation">Relaxation</SelectItem>
-                  <SelectItem value="Shopping">Shopping</SelectItem>
-                  <SelectItem value="Group Activities">Group Activities</SelectItem>
-                  <SelectItem value="Day Excursions">Day Excursions</SelectItem>
-                  <SelectItem value="Accommodations">Accommodations</SelectItem>
-                  <SelectItem value="Transportation">Transportation</SelectItem>
-                  <SelectItem value="Flexible Options">Flexible Options</SelectItem>
-                  <SelectItem value="Special Occasions">Special Occasions</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="location">Location</Label>
-                <span className="text-xs text-muted-foreground">(Optional)</span>
-              </div>
-              <Suspense
-                fallback={
-                  <div className="p-2 border rounded text-sm text-muted-foreground">
-                    Loading location search...
-                  </div>
-                }
-              >
-                <div className="p-4 border rounded bg-muted/20">
-                  Location search is available in the full form
-                </div>
-              </Suspense>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="notes">Notes</Label>
-                <span className="text-xs text-muted-foreground">(Optional)</span>
-              </div>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any additional details..."
-              />
-            </div>
-
-            {error && <div className="text-destructive text-sm">{error}</div>}
-
-            <div className="flex justify-between pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsAddItemDialogOpen(false);
-                  resetAddItemForm();
-                }}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Adding...' : 'Add Item'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Use the improved QuickAddItemDialog */}
+      <QuickAddItemDialog
+        tripId={tripId}
+        isOpen={isAddItemDialogOpen}
+        onClose={() => setIsAddItemDialogOpen(false)}
+        onItemAdded={handleItemAdded}
+        defaultCategory={itemCategory}
+        title={selectedDayNumber !== null ? `Add Item to Day ${selectedDayNumber}` : 'Add Unscheduled Item'}
+        description={selectedDayNumber !== null ? `Add a new item to day ${selectedDayNumber} of your trip.` : 'Add a new item to your unscheduled items list.'}
+        dayNumber={selectedDayNumber}
+      />
     </div>
   );
 }

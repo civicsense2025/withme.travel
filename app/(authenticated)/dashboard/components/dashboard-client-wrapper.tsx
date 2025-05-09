@@ -1,21 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 
-/**
- * A simple client component wrapper to ensure client-only components
- * are rendered only in the browser
- */
-export function DashboardClientWrapper({ children }: { children: React.ReactNode }) {
-  const [isMounted, setIsMounted] = useState(false);
+interface DashboardClientWrapperProps {
+  children: ReactNode;
+}
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return <div className="h-[300px] bg-muted animate-pulse rounded-md"></div>;
-  }
-
+export function DashboardClientWrapper({ children }: DashboardClientWrapperProps) {
+  // Simple wrapper component for client components in the dashboard
+  // You can add error boundaries, suspense, or other client-side logic here
   return <>{children}</>;
 }

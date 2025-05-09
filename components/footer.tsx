@@ -60,7 +60,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="w-full bg-background border-t">
+    <footer className="w-full bg-background standard-border-t">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Logo and subscribe section */}
@@ -153,7 +153,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="mt-12 pt-6 standard-border-t flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <p className="text-xs text-muted-foreground lowercase">
               © {new Date().getFullYear()} withme.travel. all rights reserved.

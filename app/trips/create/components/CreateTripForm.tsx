@@ -41,7 +41,7 @@ import { ImageSearchSelector } from '@/components/images/image-search-selector';
 import NextImage from 'next/image';
 import { PlaceSearch } from '@/components/place-search';
 import { useAuth } from '@/components/auth-provider';
-import { AuthModal } from '@/components/auth-modal';
+import { AuthModalWithProps } from '@/components/auth-modal';
 import { ActivitySuggestionsCard } from '@/components/ActivitySuggestionsCard';
 
 // Define the form schema
@@ -240,6 +240,66 @@ const TripSummary = ({
   );
 };
 
+// Add a GroupSelect component after the imports
+// This is a new component for selecting groups
+const GroupSelect = ({ 
+  value, 
+  onChange, 
+  disabled = false 
+}: { 
+  value: string | null; 
+  onChange: (value: string | null) => void;
+  disabled?: boolean;
+}) => {
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/groups');
+        if (response.ok) {
+          const data = await response.json();
+          setGroups(data.groups || []);
+        }
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchGroups();
+  }, []);
+  
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="group_id">Group (Optional)</Label>
+      <Select 
+        value={value || ""} 
+        onValueChange={(val) => onChange(val || null)}
+        disabled={disabled || loading}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select a group (optional)" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">No group</SelectItem>
+          {groups.map((group) => (
+            <SelectItem key={group.id} value={group.id}>
+              {group.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-sm text-muted-foreground">
+        Creating a trip in a group allows all group members to collaborate.
+      </p>
+    </div>
+  );
+};
+
 export function CreateTripForm() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -251,8 +311,11 @@ export function CreateTripForm() {
   const redirectTo = searchParams?.get('redirectTo');
   const { user, isLoading } = useAuth();
 
+  // Extract groupId from search params
+  const groupIdParam = searchParams?.get('groupId');
+  
   // Initialize form
-  const form = useForm<FormValues>({
+  const form = useForm<FormValues & { group_id: string | null }>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
@@ -269,6 +332,7 @@ export function CreateTripForm() {
       trip_emoji: '',
       trip_type: '',
       color_scheme: '',
+      group_id: groupIdParam || null
     },
   });
 
@@ -337,7 +401,7 @@ export function CreateTripForm() {
   const currentCoverImageUrl = watchedValues.cover_image_url;
 
   // Form submission handler
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: FormValues & { group_id: string | null }) => {
     setLoading(true);
     try {
       // Process tags into array
@@ -369,6 +433,8 @@ export function CreateTripForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...values,
+          name: values.title,
+          group_id: values.group_id,
           tags: tagsArray,
           cover_image_url: values.cover_image_url || null,
         }),
@@ -577,7 +643,7 @@ export function CreateTripForm() {
 
                 <CardContent className="p-4 pt-2 space-y-4">
                   {step === 1 && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <div className="space-y-1">
                         <Label htmlFor="template" className="text-sm flex items-center gap-1">
                           <span>🚀 Quick Start</span>
@@ -657,6 +723,20 @@ export function CreateTripForm() {
                           />
                         </div>
                       )}
+
+                      <FormField
+                        control={form.control}
+                        name="group_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <GroupSelect
+                              value={field.value}
+                              onChange={field.onChange}
+                              disabled={loading}
+                            />
+                          </FormItem>
+                        )}
+                      />
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField
@@ -1028,7 +1108,7 @@ export function CreateTripForm() {
         )}
 
         {showAuthModal && (
-          <AuthModal
+          <AuthModalWithProps
             isOpen={showAuthModal}
             onClose={() => {
               // Save current form values

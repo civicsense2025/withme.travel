@@ -1,219 +1,200 @@
-'use client';;
+'use client';
 import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { TABLES } from '@/utils/constants/database-multi-city';
+import { Badge } from '@/components/ui/badge';
 
-type Destination = {
+type City = {
   id: string;
   name: string;
-  city: string;
   country: string;
+  admin_name: string;
   continent: string;
-  popularity: number;
-  likes_count: number;
+  latitude: number;
+  longitude: number;
+  population: number;
+  destinations?: Array<{id: string, name: string}>;
 };
 
-export default function DestinationsTable({ initialData }: { initialData: Destination[] }) {
-  const [destinations, setDestinations] = useState<Destination[]>(initialData);
+interface DestinationsTableProps {
+  initialData: City[];
+  totalCount: number;
+}
+
+export default function DestinationsTable({ initialData, totalCount }: DestinationsTableProps) {
+  const [cities, setCities] = useState<City[]>(initialData);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+  const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
+  
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // When page changes, fetch new data
+  useEffect(() => {
+    const fetchPage = async () => {
+      if (pageIndex === 0 && !searchTerm) return; // Initial page already loaded
+      
+      setIsLoading(true);
+      try {
+        let query = supabase
+          .from(TABLES.CITIES)
+          .select(`
+            id,
+            name,
+            country,
+            admin_name,
+            continent, 
+            latitude,
+            longitude,
+            population,
+            destinations:destinations(id, name)
+          `)
+          .order('name')
+          .range(pageIndex * pageSize, (pageIndex + 1) * pageSize - 1);
+          
+        if (searchTerm) {
+          query = query.or(`name.ilike.%${searchTerm}%,country.ilike.%${searchTerm}%`);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        setCities(data || []);
+      } catch (error) {
+        console.error('Error fetching cities:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPage();
+  }, [pageIndex, pageSize, searchTerm, supabase]);
+
   const columns = [
     {
       header: 'Name',
-      accessor: 'name' as keyof Destination,
+      accessor: 'name' as keyof City,
       sortable: true,
       filterable: true,
-      cell: (value: string, row: Destination) => (
-        <div>
+      cell: (value: string, row: City) => (
+        <div className="flex items-center gap-2">
           <div className="font-medium">
-            {value || row.city || 'Unnamed Location'}
+            {value || 'Unnamed Location'}
           </div>
+          {row.destinations && row.destinations.length > 0 && (
+            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+              {row.destinations.length} destination{row.destinations.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
         </div>
       ),
     },
     {
       header: 'Location',
-      accessor: (row: Destination) => `${row.city ? `${row.city}, ` : ''}${row.country}`,
+      accessor: (row: City) => `${row.admin_name ? `${row.admin_name}, ` : ''}${row.country}`,
       sortable: true,
     },
     {
-      header: 'City',
-      accessor: 'city' as keyof Destination,
+      header: 'Country',
+      accessor: 'country' as keyof City,
       sortable: true,
       filterable: true,
     },
     {
-      header: 'Country',
-      accessor: 'country' as keyof Destination,
+      header: 'Region',
+      accessor: 'admin_name' as keyof City,
       sortable: true,
       filterable: true,
     },
     {
       header: 'Continent',
-      accessor: 'continent' as keyof Destination,
+      accessor: 'continent' as keyof City,
       sortable: true,
       filterable: true,
     },
     {
-      header: 'Popularity',
-      accessor: 'popularity' as keyof Destination,
+      header: 'Population',
+      accessor: 'population' as keyof City,
       sortable: true,
-      cell: (value: number) => value || 'N/A',
-    },
-    {
-      header: 'Likes',
-      accessor: 'likes_count' as keyof Destination,
-      sortable: true,
-      cell: (value: number) => value || 0,
+      cell: (value: number) => value ? value.toLocaleString() : 'N/A',
     },
   ];
 
   const actions = [
     {
-      label: 'Edit',
-      onClick: (rows: Destination[]) => {
+      label: 'View Destinations',
+      onClick: (rows: City[]) => {
         if (rows.length === 1) {
-          router.push(`/admin/destinations/${rows[0].id}`);
+          router.push(`/admin/destinations/city/${rows[0].id}`);
         }
       },
       color: 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300',
     },
     {
-      label: 'Delete',
-      onClick: (rows: Destination[]) => {
-        if (rows.length === 1 && confirm(`Are you sure you want to delete ${rows[0].name || rows[0].city}?`)) {
-          handleDelete(rows[0].id);
+      label: 'Create Destination',
+      onClick: (rows: City[]) => {
+        if (rows.length === 1) {
+          router.push(`/admin/destinations/create?cityId=${rows[0].id}`);
         }
       },
-      color: 'text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300',
+      color: 'text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300',
     },
   ];
 
-  const bulkActions = [
-    {
-      label: 'Export Selected',
-      onClick: (rows: Destination[]) => {
-        handleExport(rows);
-      },
-      color: 'bg-blue-600 hover:bg-blue-700',
-    },
-    {
-      label: 'Delete Selected',
-      onClick: (rows: Destination[]) => {
-        handleBulkDelete(rows);
-      },
-      color: 'bg-red-600 hover:bg-red-700',
-      requiresConfirmation: true,
-      confirmationMessage: 'Are you sure you want to delete the selected destinations? This cannot be undone.',
-    },
-  ];
-
-  const handleDelete = async (id: string) => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('destinations')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Update local state
-      setDestinations((prev) => prev.filter((dest) => dest.id !== id));
-      
-      // Refresh the page
-      router.refresh();
-    } catch (error) {
-      console.error('Error deleting destination:', error);
-      alert('Failed to delete destination');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleBulkDelete = async (rows: Destination[]) => {
-    setIsLoading(true);
-    try {
-      const ids = rows.map((row) => row.id);
-      
-      const { error } = await supabase
-        .from('destinations')
-        .delete()
-        .in('id', ids);
-
-      if (error) throw error;
-
-      // Update local state
-      setDestinations((prev) => prev.filter((dest) => !ids.includes(dest.id)));
-      
-      // Refresh the page
-      router.refresh();
-    } catch (error) {
-      console.error('Error bulk deleting destinations:', error);
-      alert('Failed to delete selected destinations');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleExport = (rows: Destination[]) => {
-    try {
-      // Convert the selected rows to CSV
-      const headers = columns.map((col) => typeof col.accessor === 'string' ? col.accessor : col.header);
-      
-      const csvContent = [
-        headers.join(','),
-        ...rows.map((row) => 
-          columns.map((col) => {
-            const value = typeof col.accessor === 'function' 
-              ? col.accessor(row) 
-              : row[col.accessor as keyof Destination];
-            return `"${value}"`;
-          }).join(',')
-        ),
-      ].join('\n');
-
-      // Create a blob and download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'destinations_export.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error exporting destinations:', error);
-      alert('Failed to export destinations');
-    }
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setPageIndex(0); // Reset to first page
   };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Manage Destinations</h1>
-        <Link 
-          href="/admin/destinations/create" 
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-        >
-          Add Destination
-        </Link>
+        <h1 className="text-3xl font-bold">Manage Cities & Destinations</h1>
+        <div className="flex gap-2">
+          <Link 
+            href="/admin/destinations/create" 
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+          >
+            Add Destination
+          </Link>
+          <input
+            type="text"
+            placeholder="Search cities..."
+            className="px-4 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+        </div>
+      </div>
+      
+      <div className="text-sm text-muted-foreground mb-2">
+        <p>
+          {isLoading 
+            ? 'Loading...' 
+            : `Showing ${cities.length} of ${totalCount.toLocaleString()} cities. Cities with destinations are highlighted.`
+          }
+        </p>
       </div>
 
       <DataTable
-        data={destinations}
+        data={cities}
         columns={columns}
         actions={actions}
-        bulkActions={bulkActions}
         idField="id"
+        pagination={{
+          pageSize,
+          pageIndex,
+          pageCount: Math.ceil(totalCount / pageSize),
+          onPageChange: setPageIndex,
+        }}
       />
     </div>
   );

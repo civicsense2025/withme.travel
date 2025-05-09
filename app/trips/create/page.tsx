@@ -159,9 +159,9 @@ export default function CreateTrip() {
       <div className="py-10">
         <h1 className="text-3xl font-bold mb-8">Create a New Trip</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Trip Form */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-5">
             <Card>
               <CardHeader>
                 <CardTitle>Trip Details</CardTitle>
@@ -216,9 +216,9 @@ export default function CreateTrip() {
                         selectedCities={selectedCities}
                         onChange={handleCitiesChange}
                         disabled={isLoading}
-                        label="Cities to Visit*"
-                        placeholder="Search for cities to add to your trip..."
-                        emptyMessage="Add cities by searching or selecting from popular destinations"
+                        label="Destinations*"
+                        placeholder="Search for places to visit..."
+                        emptyMessage="Find places by searching or click on suggestions from the right"
                       />
                     </div>
 
@@ -247,13 +247,32 @@ export default function CreateTrip() {
             </Card>
           </div>
 
-          {/* Right Column: Popular Destinations */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardContent className="pt-6">
+          {/* Right Column: Inspiration Section */}
+          <div className="lg:col-span-7">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Popular Destinations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6">
+                  <p className="text-muted-foreground mb-4">
+                    Browse popular destinations and click on any that interest you to add them to your trip.
+                  </p>
+                </div>
+
                 <PopularDestinationsCarousel 
-                  onSelect={handleDestinationSelect}
+                  onSelect={(destination) => {
+                    // Convert the destination format to match city format
+                    const city: City = {
+                      id: `temp-${Date.now()}`, // Temporary ID
+                      name: destination.city,
+                      country: destination.country,
+                      emoji: destination.emoji
+                    };
+                    handleDestinationSelect(city);
+                  }}
                 />
+
               </CardContent>
             </Card>
           </div>

@@ -112,45 +112,19 @@ export function DestinationCard({
   onClick,
   variant = 'link',
 }: DestinationCardProps) {
-  const [showSneak, setShowSneak] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
 
   // Destructure destination properties
-  const { city, country, image_url, emoji, image_metadata, highlights, byline, name } = destination;
+  const { city, country, image_url, emoji, name } = destination;
 
   // Use the name field if provided, otherwise fall back to city
   const displayName = name || city || '';
-
-  // Render rating stars helper function
-  const renderRating = (rating: number, max: number) => {
-    if (rating === null || rating === undefined) return 'N/A';
-    const stars = [];
-    for (let i = 0; i < max; i++) {
-      stars.push(
-        <span key={i} className={i < rating ? 'text-yellow-500' : 'text-gray-300'}>
-          ★
-        </span>
-      );
-    }
-    return <div className="flex">{stars}</div>;
-  };
+  const displayLocation = country || '';
 
   // Fallback for href if not provided
   const citySlug = displayName ? displayName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : null;
   const cardHref = disableNavigation ? undefined : (href || (citySlug ? `/destinations/${citySlug}` : `/destinations/${destination.id}`));
-
-  // Process highlights - convert string to array, or handle null safely
-  let displayHighlights: string[] = [];
-  if (highlights) {
-    if (typeof highlights === 'string') {
-      // Handle string highlights
-      displayHighlights = [highlights]; 
-    } else if (Array.isArray(highlights)) {
-      // Handle array of highlights
-      displayHighlights = highlights.filter(h => typeof h === 'string');
-    }
-  }
 
   // Improved fallback for image if not available
   const imageUrl = (() => {
@@ -162,163 +136,147 @@ export function DestinationCard({
     // Handle city names with spaces and special characters for filename
     const slug = displayName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
     
-    // Default to jpg extension - we can't check if files exist client-side
+    // Default to jpg extension
     return `/destinations/${slug}.jpg`;
   })();
 
-  // Handle mouse enter
-  const handleMouseEnter = () => {
-    const timeout = setTimeout(() => {
-      return setShowSneak(true);
-    }, 3000);
-    setHoverTimeout(timeout);
-  };
-
-  // Handle mouse leave
-  const handleMouseLeave = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
-    }
-    setShowSneak(false);
-  };
-
   // Generate descriptive alt text
-  const generateAltText = () => {
-    const baseAlt = image_metadata?.alt_text || `Scenic view of ${displayName}, ${country}`;
-    const features = [];
+  const altText = `${displayName}${displayLocation ? `, ${displayLocation}` : ''}`;
 
-    if (destination.beach_quality >= 4) features.push('beautiful beaches');
-    if (destination.cultural_attractions >= 4) features.push('cultural landmarks');
-    if (destination.outdoor_activities >= 4) features.push('outdoor attractions');
-
-    return features.length > 0 ? `${baseAlt} featuring ${features.join(`, `)}` : baseAlt;
-  };
-
-  const altText = generateAltText();
-
-  // Helper function to create the attribution string with links
-  const createAttributionText = (
-    metadata: DestinationCardProps['destination']['image_metadata']
-  ) => {
-    if (!metadata) return null;
-
-    // Prioritize structured data if available
-    const { photographer_name, photographer_url, source, source_id, url } = metadata;
-
-    if (photographer_name && source) {
-      const sourceName = source.charAt(0).toUpperCase() + source.slice(1); // Capitalize source
-      let sourceLink = url; // Use the direct image URL as default source link
-
-      // Specific source links if needed
-      if (source === 'pexels' && source_id) {
-        sourceLink = `https://www.pexels.com/photo/${source_id}`;
-      } else if (source === 'unsplash' && source_id) {
-        // Assuming Unsplash structure, adjust if needed
-        sourceLink = `https://unsplash.com/photos/${source_id}`;
-      }
-
-      const photographerPart = photographer_url
-        ? `<a href="${photographer_url}" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">${photographer_name}</a>`
-        : photographer_name;
-
-      const sourcePart = sourceLink
-        ? `<a href="${sourceLink}" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">${sourceName}</a>`
-        : sourceName;
-
-      return `Photo by ${photographerPart} on ${sourcePart}`;
+  // Handle card click
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (cardHref && !disableNavigation) {
+      router.push(cardHref);
     }
-
-    // Fallback to existing attribution strings
-    if (metadata.attributionHtml) return metadata.attributionHtml;
-    if (metadata.attribution) return metadata.attribution; // Basic text fallback
-
-    return null; // No attribution available
   };
 
-  const attributionText = createAttributionText(image_metadata);
-
-  // Handle like button click
-  const handleLikeClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Card wrapper component
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (variant === 'selectable' || disableNavigation) {
+      return (
+        <div 
+          className={`group cursor-pointer transition-all duration-300 ${className}`}
+          onClick={handleClick}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {children}
+        </div>
+      );
+    }
+    
+    return (
+      <Link 
+        href={cardHref || '#'}
+        className={`group block transition-all duration-300 ${className}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {children}
+      </Link>
+    );
   };
 
-  // Component for card content to avoid duplication
-  const CardContent = () => (
-    <Card
-      className={`
-        group bg-transparent border-0 overflow-hidden rounded-xl h-full 
-        transition-all duration-500 ease-out
-        hover:shadow-xl hover:scale-[1.02]
-        relative
-        ${className}
-      `}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={onClick}
-    >
-      {/* Image container */}
-      <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent z-10"></div>
-        {/* Texture overlay */}
-        <TextureOverlay />
-
-        {/* Image Component */}
-        <Image
-          src={imageUrl}
-          alt={altText}
-          width={600}
-          height={800}
-          className="object-cover w-full h-full"
-          priority={false}
-        />
-
-        {/* Destination Info */}
-        <div className="absolute bottom-0 left-0 w-full p-3 z-20 text-white">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-lg md:text-xl font-semibold mb-1 line-clamp-2">{displayName}</h3>
-              <p className="text-xs md:text-sm text-white/90 flex items-center">
-                {emoji && <span className="mr-1">{emoji}</span>}
-                {country}
-              </p>
-              {byline && <p className="mt-1 text-xs text-white/80 line-clamp-1">{byline}</p>}
-            </div>
-            {/* Make like button properly clickable with higher z-index and larger hit area */}
-            <div 
-              className="z-30 p-2 -m-2" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+  return (
+    <CardWrapper>
+      <Card className="overflow-hidden rounded-xl md:rounded-2xl border-0 shadow-sm transition-all duration-300 h-full hover:shadow-md">
+        <div className="relative aspect-[3/4] sm:aspect-[4/5] w-full overflow-hidden">
+          {/* Main image */}
+          <motion.div
+            animate={{ scale: isHovered ? 1.05 : 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="absolute inset-0 h-full w-full"
+          >
+            <Image
+              src={imageUrl}
+              alt={altText}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              className="object-cover"
+              loading="lazy"
+              onError={(e) => {
+                const imgElement = e.target as HTMLImageElement;
+                imgElement.src = '/placeholder-destination.jpg';
               }}
-            >
-              <LikeButton itemId={destination.id} itemType="destination" />
+            />
+            
+            {/* Gradient overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            
+            {/* Texture overlay */}
+            <TextureOverlay />
+          </motion.div>
+          
+          {/* Like button */}
+          <div className="absolute top-2 right-2 z-20">
+            <LikeButton
+              itemId={destination.id}
+              itemType="destination"
+              size="sm"
+              className="h-8 w-8 bg-white/10 backdrop-blur-md rounded-full"
+            />
+          </div>
+          
+          {/* Attribution info */}
+          {destination.image_metadata?.attribution && (
+            <div className={`absolute bottom-2 right-2 z-10 ${hideAttributionMobile ? 'hidden md:block' : ''}`}>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="rounded-full bg-black/50 backdrop-blur-md p-1.5 cursor-help">
+                      <Info className="h-3 w-3 text-white/80" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-[220px]">
+                    <p className="text-xs">
+                      {destination.image_metadata.attribution}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
+          
+          {/* Destination info overlay */}
+          <div className="absolute bottom-0 left-0 w-full p-3 sm:p-4 z-10 pointer-events-none">
+            <div className="flex items-start gap-1.5">
+              {emoji && (
+                <span className="text-lg sm:text-xl flex-shrink-0 mt-1">{emoji}</span>
+              )}
+              <div>
+                <h3 className="font-semibold text-base sm:text-lg leading-tight text-white mb-0.5 line-clamp-2">
+                  {displayName}
+                </h3>
+                {displayLocation && (
+                  <p className="text-xs sm:text-sm text-white/90">
+                    {displayLocation}
+                  </p>
+                )}
+                
+                {/* Highlight tags */}
+                {destination.highlights && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {(typeof destination.highlights === 'string' 
+                      ? [destination.highlights] 
+                      : destination.highlights
+                    ).slice(0, 2).map((highlight, i) => (
+                      <Badge 
+                        key={i}
+                        variant="secondary"
+                        className="bg-white/20 hover:bg-white/30 text-white text-[10px] sm:text-xs py-0 px-1.5 h-5 font-normal"
+                      >
+                        {highlight}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Image attribution */}
-        {attributionText && (
-          <div
-            className={`
-              absolute bottom-0 right-0 p-1 text-[8px] text-white/70 bg-black/30 rounded-tl 
-              m-1 max-w-[75%] z-20 truncate transition-opacity duration-300
-              ${hideAttributionMobile ? 'hidden md:block' : ''}
-              ${!showSneak ? 'opacity-0 md:group-hover:opacity-100' : 'opacity-100'}
-            `}
-            dangerouslySetInnerHTML={{ __html: attributionText }}
-          />
-        )}
-      </div>
-    </Card>
+      </Card>
+    </CardWrapper>
   );
-
-  // Only wrap in <Link> if variant is 'link', onClick is not provided, and navigation is not disabled
-  if (variant === 'link' && !onClick && !disableNavigation && cardHref) {
-    return <Link href={cardHref}><CardContent /></Link>;
-  }
-  // Otherwise, just render the card (onClick will be handled by CardContent)
-  return <CardContent />;
 }

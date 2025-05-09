@@ -22,7 +22,7 @@ export const FIELDS = {
     ID: 'id',
     NAME: 'name',
     COUNTRY: 'country',
-    REGION: 'region',
+    ADMIN_NAME: 'admin_name',
     CONTINENT: 'continent',
     LATITUDE: 'latitude',
     LONGITUDE: 'longitude',
@@ -73,7 +73,7 @@ export const QUERY_SNIPPETS = {
       id,
       name,
       country,
-      region,
+      admin_name,
       continent,
       latitude,
       longitude
@@ -113,7 +113,7 @@ export const QUERY_SNIPPETS = {
       id,
       name,
       country,
-      region
+      admin_name
     )
   `,
 };

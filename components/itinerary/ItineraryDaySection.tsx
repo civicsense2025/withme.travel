@@ -12,10 +12,12 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { type ItemStatus } from '@/utils/constants/status';
+import { SimplifiedItemForm } from '@/components/trips/SimplifiedItemForm';
+import { AnimatePresence, motion } from 'framer-motion';
 
-import React, { useState } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 
-// Color palette from city-bubbles.tsx
+// Color palette for day indicators that works well in both light and dark modes 
 const dayColors = [
   'bg-travel-blue text-blue-950 dark:text-blue-50',
   'bg-travel-pink text-pink-950 dark:text-pink-50',
@@ -42,9 +44,12 @@ interface ItineraryDaySectionProps {
   onMoveItem: (itemId: string, targetDay: number | null) => void;
   durationDays: number;
   containerId: string;
+  tripId: string;
+  onItemAdded?: () => void;
 }
 
-export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
+// Using memo with a custom equality function to prevent unnecessary re-renders
+export const ItineraryDaySection = memo(({
   startDate,
   dayNumber,
   items,
@@ -57,7 +62,9 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
   onMoveItem,
   durationDays,
   containerId,
-}) => {
+  tripId,
+  onItemAdded,
+}: ItineraryDaySectionProps) => {
   const { toast } = useToast();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [sectionTitle, setSectionTitle] = useState(
@@ -93,16 +100,19 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
     });
   };
 
-  let formattedDate: string | null = null;
-  if (startDate) {
+  // Use memoization for the date formatting to avoid recomputing on every render
+  const formattedDate = useMemo(() => {
+    if (!startDate) return null;
+    
     try {
       const tripStartDate = parseISO(startDate);
       const currentDayDate = addDays(tripStartDate, dayNumber - 1);
-      formattedDate = format(currentDayDate, 'EEE, MMM d');
+      return format(currentDayDate, 'EEE, MMM d');
     } catch (error) {
       console.error('Error parsing or formatting date:', error);
+      return null;
     }
-  }
+  }, [startDate, dayNumber]);
 
   // Setup droppable area for items with the correct container ID
   const { setNodeRef, isOver } = useDroppable({
@@ -118,13 +128,31 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
     <div
       ref={setNodeRef}
       className={cn(
-        'space-y-4 pt-4 relative',
+        'space-y-4 pt-6 pb-8 px-2 relative mb-10 transition-all duration-300',
         isOver && 'bg-muted/50 ring-2 ring-primary rounded-md p-2'
       )}
     >
-      {/* Section header with title on left and date on right */}
-      <div className="flex items-center justify-between mb-2">
+      {/* Enhanced connector line with animated style */}
+      {dayNumber < durationDays && (
+        <div className="absolute left-6 top-full w-px h-10 z-0">
+          <div className="w-full h-full border-l-2 border-dashed border-muted-foreground/30 animate-pulse-subtle"></div>
+        </div>
+      )}
+      
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
+          <motion.div 
+            className={cn(
+              'flex items-center justify-center w-8 h-8 rounded-full shadow-sm',
+              getDayColor(dayNumber),
+            )}
+            initial={{ scale: 0.9, opacity: 0.5 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span className="font-bold text-sm" aria-label={`Day ${dayNumber}`}>{dayNumber}</span>
+          </motion.div>
+          
           {isEditingTitle ? (
             <div className="flex items-center gap-2">
               <Input
@@ -146,73 +174,126 @@ export const ItineraryDaySection: React.FC<ItineraryDaySectionProps> = ({
               </Button>
             </div>
           ) : (
-            <h2
-              className={`text-2xl font-bold tracking-tight capitalize ${canEdit ? 'cursor-pointer border-b border-dashed border-muted-foreground/50 hover:border-primary/70' : ''}`}
+            <motion.h2
+              className={`text-2xl font-bold tracking-tight capitalize ${canEdit ? 'cursor-pointer standard-border-b border-dashed hover:border-primary/70 transition-colors' : ''}`}
               onClick={() => {
                 if (canEdit) {
                   setIsEditingTitle(true);
                 }
               }}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
             >
               {sectionTitle}
-            </h2>
+            </motion.h2>
           )}
         </div>
 
-        {/* Date badge aligned to the right */}
         {formattedDate && (
-          <Badge
-            variant="secondary"
-            className={cn('font-medium text-sm py-1 px-2.5 border-0', getDayColor(dayNumber))}
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
           >
-            {formattedDate}
-          </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                'font-medium text-sm py-1.5 px-3', 
+                getDayColor(dayNumber)
+              )}
+            >
+              {formattedDate}
+            </Badge>
+          </motion.div>
         )}
       </div>
 
-      {/* Items with additional left padding for nesting */}
-      <div className="space-y-4 pl-4">
+      <div className="space-y-5 pl-10">
         <SortableContext
           items={items.map((item) => item.id)}
           strategy={verticalListSortingStrategy}
           id={containerId}
         >
           {items.length === 0 ? (
-            <div className="min-h-[80px] border border-dashed rounded-md flex items-center justify-center text-muted-foreground">
+            <motion.div 
+              className="min-h-[100px] standard-border-dashed rounded-md flex items-center justify-center text-muted-foreground bg-muted/5 hover:bg-muted/10 transition-colors"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               No items scheduled for this day yet
-            </div>
+            </motion.div>
           ) : (
-            items.map((item) => (
-              <SortableItem 
-                key={item.id} 
-                id={item.id} 
-                disabled={!canEdit} 
-                containerId={containerId}
-              >
-                <ItineraryItemCard 
-                  item={item} 
-                  onDelete={() => onDelete(item.id)}
-                  onEdit={() => onEditItem(item)}
-                  onVote={(type: 'up' | 'down') => onVote(item.id, item.day_number, type)}
-                  onStatusChange={(status: ItemStatus | null) => onStatusChange(item.id, status)}
-                  editable={canEdit}
-                />
-              </SortableItem>
-            ))
+            <AnimatePresence initial={false}>
+              {items.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  layout
+                >
+                  <SortableItem 
+                    key={item.id} 
+                    id={item.id} 
+                    disabled={!canEdit} 
+                    containerId={containerId}
+                  >
+                    <ItineraryItemCard 
+                      item={item} 
+                      onDelete={() => onDelete(item.id)}
+                      onEdit={() => onEditItem(item)}
+                      onVote={(type: 'up' | 'down') => onVote(item.id, item.day_number, type)}
+                      onStatusChange={(status: ItemStatus | null) => onStatusChange(item.id, status)}
+                      editable={canEdit}
+                    />
+                  </SortableItem>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </SortableContext>
 
         {canEdit && (
-          <Button
-            variant="outline"
-            className="w-full border-dashed border-2 hover:border-solid hover:bg-muted/50 py-6 flex items-center justify-center text-muted-foreground"
-            onClick={() => onAddItemToDay()}
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
           >
-            <PlusCircle className="w-5 h-5 mr-2" />
-            Add Item to {sectionTitle}
-          </Button>
+            <SimplifiedItemForm
+              tripId={tripId}
+              dayNumber={dayNumber}
+              onItemAdded={onItemAdded}
+            />
+          </motion.div>
         )}
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function to only re-render when needed
+  // Return true if props are equal (no re-render needed)
+  // Return false if props are different (re-render needed)
+  return (
+    prevProps.dayNumber === nextProps.dayNumber &&
+    prevProps.startDate === nextProps.startDate &&
+    prevProps.canEdit === nextProps.canEdit &&
+    prevProps.durationDays === nextProps.durationDays &&
+    prevProps.containerId === nextProps.containerId &&
+    prevProps.items.length === nextProps.items.length &&
+    // Deep comparison of items array isn't needed for every property
+    // We can check if the item IDs and their positions are the same
+    prevProps.items.every((item, index) => 
+      nextProps.items[index] && 
+      item.id === nextProps.items[index].id &&
+      item.position === nextProps.items[index].position &&
+      item.status === nextProps.items[index].status
+    )
+  );
+});
+
+// Add display name for debugging purposes
+ItineraryDaySection.displayName = 'ItineraryDaySection';

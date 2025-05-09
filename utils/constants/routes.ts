@@ -105,26 +105,61 @@ export const API_ROUTES = {
   REFERRALS: '/api/referrals',
   TRIP_REVIEWS: '/api/trip-reviews',
 
-  // Group idea routes
-  GROUP_IDEAS: {
-    LIST: (groupId: string) => `/api/groups/${groupId}/ideas`,
-    DETAIL: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
-    CREATE: (groupId: string) => `/api/groups/${groupId}/ideas`,
-    UPDATE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
-    DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
-    VOTE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+  // Group routes
+  GROUPS: {
+    LIST: '/api/groups',
+    DETAIL: (id: string) => `/api/groups/${id}`,
+    CREATE: '/api/groups',
+    UPDATE: (id: string) => `/api/groups/${id}`,
+    DELETE: (id: string) => `/api/groups/${id}`,
+    MEMBERS: (id: string) => `/api/groups/${id}/members`,
+    JOIN: (id: string) => `/api/groups/${id}/join`,
+    INVITE: (id: string) => `/api/groups/${id}/invite`
   },
-  GROUP_IDEA_PLANS: {
+  
+  // Group plan routes
+  GROUP_PLANS: {
     LIST: (groupId: string) => `/api/groups/${groupId}/plans`,
     DETAIL: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
     CREATE: (groupId: string) => `/api/groups/${groupId}/plans`,
     UPDATE: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
-    DELETE: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
-    IDEAS: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}/ideas`,
+    DELETE: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`
   },
-  GROUP_IDEA_VOTES: {
+  
+  // Group plan ideas
+  GROUP_PLAN_IDEAS: {
+    LIST: (groupId: string) => `/api/groups/${groupId}/ideas`,
+    DETAIL: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+    CREATE: (groupId: string) => `/api/groups/${groupId}/ideas`,
+    UPDATE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+    DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`
+  },
+  
+  // Group plan idea votes
+  GROUP_PLAN_IDEA_VOTES: {
     CREATE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
-    DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+    DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`
+  },
+
+  // Notification Routes
+  NOTIFICATIONS: {
+    LIST: '/api/notifications',
+    UPDATE: '/api/notifications',
+    PREFERENCES: '/api/notifications/preferences',
+    HISTORY: '/api/notifications/history',
+    COUNT: '/api/notifications/count',
+    DEEP_LINK: '/api/notifications/deep-link',
+    CLICK: '/api/notifications/click',
+    ANALYTICS: '/api/notifications/analytics',
+  },
+
+  // Friends routes
+  FRIENDS: {
+    REQUEST: '/api/friends/request',
+    RESPOND: '/api/friends/respond',
+    REQUESTS: '/api/friends/requests',
+    LIST: '/api/friends/list',
+    UNFRIEND: '/api/friends/unfriend',
   },
 } as const;
 
@@ -155,9 +190,16 @@ export const PAGE_ROUTES = {
   },
   GROUPS: '/groups',
   GROUP: (id: string) => `/groups/${id}`,
-  GROUP_IDEAS: (id: string) => `/groups/${id}/ideas`,
-  GROUP_IDEA_PLANS: (id: string) => `/groups/${id}/plans`,
-  GROUP_IDEA_PLAN: (groupId: string, planId: string) => `/groups/${groupId}/plans/${planId}`,
+  GROUP_PLAN_IDEAS: (id: string) => `/groups/${id}/ideas`,
+  GROUP_PLANS: (id: string) => `/groups/${id}/plans`,
+  GROUP_PLAN: (groupId: string, planId: string) => `/groups/${groupId}/plans/${planId}`,
+
+  // Notification Routes
+  NOTIFICATIONS: {
+    HOME: '/notifications',
+    HISTORY: '/notifications/history',
+    SETTINGS: '/settings/notifications',
+  },
 } as const;
 
 // Route helpers for constructing paths with params

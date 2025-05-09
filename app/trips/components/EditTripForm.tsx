@@ -22,7 +22,8 @@ import { FormDescription, FormField, FormItem, FormLabel, FormControl } from '@/
 import { Database } from '@/types/supabase'; // Import Database type
 import { Loader2 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
-import { Camera } from 'lucide-react';
+import { Camera, MapPin } from 'lucide-react';
+import { CityChipsAutocompleteInput } from '@/components/cities/city-chips-autocomplete-input';
 
 // Lazy load the MapboxGeocoderComponent
 const MapboxGeocoderComponent = lazy(() => import('@/components/maps/mapbox-geocoder'));
@@ -35,6 +36,18 @@ interface GeocoderResult {
   id?: string; // Mapbox ID
   properties?: { address?: string };
   context?: any; // Keep context flexible
+  [key: string]: any;
+}
+
+// Define a City interface for multi-city functionality
+interface City {
+  id: string;
+  name: string;
+  country: string;
+  state_province?: string | null;
+  continent?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   [key: string]: any;
 }
 
@@ -66,6 +79,7 @@ const editTripFormSchema = z.object({
   destination_id: z.string().uuid('Please select a valid destination').nullable().optional(),
   cover_image_url: z.string().url('Must be a valid URL').nullable().optional(),
   privacy_setting: z.enum(['private', 'shared_with_link', 'public']), // Schema uses enum
+  // No need to add cities to schema as we'll manage them separately
 });
 
 // Infer type from the schema
@@ -84,7 +98,7 @@ interface EditTripFormProps {
     tags?: string[];
   };
   initialDestinationName?: string | null;
-  onSave: (data: EditTripFormValues & { destination_id?: string | null }) => void;
+  onSave: (data: EditTripFormValues & { destination_id?: string | null; cities?: City[] }) => void;
   onClose: () => void;
   onChangeCover?: () => void;
 }
@@ -125,6 +139,12 @@ export function EditTripForm({
   );
   const [existingTags, setExistingTags] = useState<Tag[]>([]);
   const [destinationId, setDestinationId] = useState<string | null>(trip.destination_id || null); // Local state for destination ID
+  
+  // State for selected cities (multi-city functionality)
+  const [selectedCities, setSelectedCities] = useState<City[]>([]);
+  
+  // State for loading trip cities
+  const [loadingCities, setLoadingCities] = useState(false);
 
   const formMethods = useForm<EditTripFormValues>({
     resolver: zodResolver(editTripFormSchema),
@@ -168,6 +188,40 @@ export function EditTripForm({
     };
     fetchTags();
   }, [toast]);
+  
+  // Fetch existing cities for this trip on mount
+  useEffect(() => {
+    const fetchTripCities = async () => {
+      if (!trip.id) return;
+      
+      setLoadingCities(true);
+      try {
+        const response = await fetch(`/api/trips/${trip.id}/cities`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch trip cities');
+        }
+        
+        const data = await response.json();
+        if (data.cities && Array.isArray(data.cities)) {
+          setSelectedCities(data.cities.map((city: any) => ({
+            id: city.city?.id,
+            name: city.city?.name || 'Unknown',
+            country: city.city?.country || '',
+            state_province: city.city?.admin_name,
+            ...city.city
+          })).filter((city: City) => city.id));
+        }
+      } catch (error) {
+        console.error('Error fetching trip cities:', error);
+        // Don't show toast here to avoid cluttering UI
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+    
+    fetchTripCities();
+  }, [trip.id]);
 
   // Reset form if trip data changes
   useEffect(() => {
@@ -187,10 +241,11 @@ export function EditTripForm({
   const onSubmit: SubmitHandler<EditTripFormValues> = async (data) => {
     setIsLoading(true);
     try {
-      // Combine form data with the current destinationId state
+      // Combine form data with the current destinationId state and selected cities
       const saveData = {
         ...data,
         destination_id: destinationId,
+        cities: selectedCities,
       };
       console.log('Calling onSave with:', saveData);
       await onSave(saveData);
@@ -288,6 +343,11 @@ export function EditTripForm({
     // Don't await here, just fire off the async logic
     performDestinationLookup(result);
   };
+  
+  // Handle changes to selected cities
+  const handleCitiesChange = (cities: City[]) => {
+    setSelectedCities(cities);
+  };
 
   return (
     <Card>
@@ -364,6 +424,24 @@ export function EditTripForm({
                   <AlertDescription>{lookupError}</AlertDescription>
                 </Alert>
               )}
+            </div>
+            
+            {/* Add multi-city functionality */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <Label>Trip Cities</Label>
+              </div>
+              <CityChipsAutocompleteInput
+                selectedCities={selectedCities}
+                onChange={handleCitiesChange}
+                disabled={isLoading || loadingCities}
+                placeholder="Add cities to your itinerary..."
+                emptyMessage="Add cities you plan to visit on this trip (beyond the primary destination)"
+              />
+              <p className="text-xs text-muted-foreground">
+                Select all cities you plan to visit during this trip. This helps with itinerary planning.
+              </p>
             </div>
 
             <div className="space-y-2">

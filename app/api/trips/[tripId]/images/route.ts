@@ -51,9 +51,9 @@ async function checkTripAccess(
 
     const { data, error } = await supabase
       .from(TRIP_MEMBERS_TABLE)
-      .select('ROLE')
-      .eq('TRIP_ID', tripId)
-      .eq('USER_ID', user.id)
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (error || !data) {
@@ -89,9 +89,9 @@ export async function POST(
     // Check if user has access to this trip
     const { data, error: membershipError } = await supabase
       .from(TRIP_MEMBERS_TABLE)
-      .select('ROLE')
-      .eq('TRIP_ID', tripId)
-      .eq('USER_ID', user.id)
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .single();
 
     if (membershipError || !data) {
@@ -161,12 +161,12 @@ export async function POST(
 
     // Store reference in the database
     const { error: dbError } = await supabase.from(TRIP_IMAGES_TABLE).insert({
-      ['TRIP_ID']: tripId,
-      ['FILE_PATH']: filePath,
-      ['FILE_NAME']: file.name,
-      ['CREATED_BY']: user.id,
-      ['CONTENT_TYPE']: file.type,
-      ['SIZE_BYTES']: file.size,
+      trip_id: tripId,
+      file_path: filePath,
+      file_name: file.name,
+      created_by: user.id,
+      content_type: file.type,
+      size_bytes: file.size,
     });
 
     if (dbError) {
@@ -203,8 +203,8 @@ export async function GET(
     const { data, error } = await supabase
       .from(TRIP_IMAGES_TABLE)
       .select('*')
-      .eq('TRIP_ID', tripId)
-      .order('CREATED_AT', { ascending: false });
+      .eq('trip_id', tripId)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching trip images:', error);

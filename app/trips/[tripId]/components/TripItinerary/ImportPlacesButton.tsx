@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ImportMapButton from '../../import-map-button';
+import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import { useTripData } from '../../context/trip-data-provider';
 import { TRIP_ROLES } from '@/utils/constants/status';
 
 export function ImportPlacesButton() {
   const { tripData } = useTripData();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
 
   // Make sure we're fully mounted on client side before rendering
@@ -14,6 +17,14 @@ export function ImportPlacesButton() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleImportClick = () => {
+    toast({
+      title: "Coming Soon",
+      description: "The ability to import locations from maps will be available soon!",
+      duration: 3000,
+    });
+  };
 
   if (!mounted) return null;
   if (!tripData || !tripData.trip) return null;
@@ -29,7 +40,16 @@ export function ImportPlacesButton() {
   // Only render the import button if the user can edit the trip
   return canEdit ? (
     <div className="trip-itinerary-actions">
-      <ImportMapButton tripId={tripData.trip.id} canEdit={canEdit} />
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="flex items-center gap-2"
+        onClick={handleImportClick}
+        disabled={!canEdit}
+      >
+        <MapPin size={16} />
+        <span>Import from Maps</span>
+      </Button>
     </div>
   ) : null;
 }

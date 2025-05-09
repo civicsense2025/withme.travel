@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Plus, MapPin, Tag, Check, Loader2 } from 'lucide-react';
 import { ENUMS } from '@/utils/constants/database';
+import { BUDGET_CATEGORIES } from '@/utils/constants/status';
 
 interface ActivitySuggestionsProps {
   destinationId: string;
@@ -43,13 +44,12 @@ export function ActivitySuggestions({
 
   const getBudgetCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
-      'FOOD': '🍴 Food',
-      'ACTIVITIES': '🎟️ Activities',
-      'TRANSPORTATION': '🚆 Transport',
-      'SHOPPING': '🛍️ Shopping',
-      'LODGING': '🏨 Lodging',
-      'SERVICES': '✨ Services',
-      'OTHER': '📌 Other'
+      [BUDGET_CATEGORIES.FOOD]: '🍴 Food',
+      [BUDGET_CATEGORIES.ACTIVITIES]: '🎟️ Activities',
+      [BUDGET_CATEGORIES.TRANSPORTATION]: '🚆 Transport',
+      [BUDGET_CATEGORIES.SHOPPING]: '🛍️ Shopping',
+      [BUDGET_CATEGORIES.ACCOMMODATION]: '🏨 Lodging',
+      [BUDGET_CATEGORIES.OTHER]: '📌 Other'
     };
     
     return labels[category] || 'Other';

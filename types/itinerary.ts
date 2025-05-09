@@ -186,3 +186,63 @@ export interface ScrapedUrlData {
   imageUrl: string | null;
   scrapedUrl: string;
 }
+
+/**
+ * Types for itinerary-related functionality
+ */
+
+export interface ItineraryTemplateMetadata {
+  // Basic fields
+  pace?: string;
+  budget?: string;
+  budget_level?: string;
+  travel_style?: string;
+  audience?: string;
+  seasonality?: string;
+  highlights?: string[];
+  rating?: number;
+  
+  // New detailed metadata fields
+  best_for?: string[];
+  languages?: string[];
+  local_tips?: string[];
+  best_seasons?: string[];
+  avoid_seasons?: string[];
+  morning_start?: string;
+  accessibility_level?: string;
+  sustainability_aspects?: string[];
+  estimated_budget_usd_per_day?: number;
+  
+  // Allow for additional fields
+  [key: string]: any;
+}
+
+/**
+ * Interface for an itinerary template with proper typing for metadata
+ */
+export interface ItineraryTemplate {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  destination_id: string;
+  duration_days: number;
+  category: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  is_published: boolean;
+  view_count: number;
+  use_count: number;
+  like_count: number;
+  featured: boolean;
+  cover_image_url: string | null;
+  groupsize: string | null;
+  tags: string[] | null;
+  template_type: 'official' | 'user_created' | 'trip_based' | null;
+  source_trip_id: string | null;
+  version: number;
+  copied_count: number;
+  last_copied_at: string | null;
+  metadata: ItineraryTemplateMetadata | null;
+}

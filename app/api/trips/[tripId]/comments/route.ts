@@ -74,19 +74,19 @@ export async function GET(
       .select(
         `
         *,
-        ${Tables.PROFILES}:${'USER_ID'} (
-          ${'NAME'},
-          ${'AVATAR_URL'}
+        ${Tables.PROFILES}:${'user_id'} (
+          ${'name'},
+          ${'avatar_url'}
         ),
         likes:${Tables.TRIP_COMMENT_LIKES} (
           ${'id'},
-          ${'USER_ID'}
+          ${'user_id'}
         )
       `
       )
-      .eq('TRIP_ID', tripId)
-      .eq('ITEM_ID', itemId)
-      .order('CREATED_AT', { ascending: false });
+      .eq('trip_id', tripId)
+      .eq('item_id', itemId)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
@@ -122,8 +122,8 @@ export async function POST(
     const { data: member, error: memberError } = await supabase
       .from('trip_members')
       .select('id')
-      .eq('TRIP_ID', tripId)
-      .eq('USER_ID', user.id)
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (memberError || !member) {
@@ -131,10 +131,10 @@ export async function POST(
     }
 
     const insertObject = {
-      ['TRIP_ID']: tripId,
-      ['ITEM_ID']: itemId,
-      ['USER_ID']: user.id,
-      ['CONTENT']: content.trim(),
+      trip_id: tripId,
+      item_id: itemId,
+      user_id: user.id,
+      content: content.trim(),
     };
 
     const { data, error } = await supabase
@@ -143,9 +143,9 @@ export async function POST(
       .select(
         `
         *,
-        ${Tables.PROFILES}:${'USER_ID'} (
-          ${'NAME'},
-          ${'AVATAR_URL'}
+        ${Tables.PROFILES}:${'user_id'} (
+          ${'name'},
+          ${'avatar_url'}
         )
       `
       )

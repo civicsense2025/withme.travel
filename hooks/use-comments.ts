@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { type CommentWithUser, type CommentReactionWithUser, type PaginatedCommentsResponse } from '@/types/comments';
 import type { Database } from '@/utils/constants/database';
-import { Constants } from '@/utils/constants/database';
 import { toast } from '@/components/ui/use-toast';
 
 type Vote = Database['public']['Enums']['vote_type'];
@@ -31,7 +30,7 @@ interface UseCommentsResponse {
   removeReaction: (commentId: string, emoji: string) => Promise<boolean>;
 }
 
-export type CommentableContentType = 'trip' | 'destination' | 'itinerary_item' | 'collection' | 'template' | 'group_idea';
+export type CommentableContentType = 'trip' | 'destination' | 'itinerary_item' | 'collection' | 'template' | 'group_idea' | 'group_plan_idea';
 
 /**
  * Custom hook for interacting with the comments API

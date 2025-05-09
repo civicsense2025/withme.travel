@@ -103,13 +103,13 @@ export function VerticalStepper({
     <TooltipProvider>
       {/* Desktop Vertical Stepper */}
       <div className="fixed right-4 top-1/2 transform -translate-y-1/2 z-10 hidden md:block">
-        <div className="flex flex-col items-center space-y-4 rounded-full p-2">
+        <div className="flex flex-col items-center space-y-4 rounded-full p-3 bg-background/80 backdrop-blur-sm standard-border shadow-sm">
           {/* Scroll to top button */}
           {showScrollToTop && (
             <Button
               variant="ghost"
               size="icon"
-              className="w-8 h-8 rounded-full bg-background/80 shadow-sm border border-border/30"
+              className="w-8 h-8 rounded-full bg-background/90 shadow-sm standard-border"
               onClick={handleScrollToTop}
             >
               <ChevronUp className="h-4 w-4" />
@@ -120,11 +120,11 @@ export function VerticalStepper({
           <div className="relative">
             {/* Vertical line connecting all steps */}
             {sections.length > 1 && (
-              <div className="absolute top-4 bottom-4 left-1/2 w-0.5 bg-muted -translate-x-1/2 z-0" />
+              <div className="absolute top-4 bottom-4 left-1/2 w-0.5 bg-primary/20 -translate-x-1/2 z-0" />
             )}
             
             {/* Section indicators */}
-            <div className="flex flex-col items-center space-y-4">
+            <div className="flex flex-col items-center space-y-6">
               {sections.map((section, index) => {
                 const isActive = currentSection === section.id;
                 
@@ -138,11 +138,11 @@ export function VerticalStepper({
                           handleSectionClick(section.id);
                         }}
                         className={cn(
-                          "w-8 h-8 flex items-center justify-center transition-all rounded-full",
-                          "relative z-10 text-xs font-medium",
-                          "border border-border/30 shadow-sm",
+                          "w-10 h-10 flex items-center justify-center transition-all rounded-full",
+                          "relative z-10 text-sm font-medium",
+                          "standard-border shadow-sm",
                           isActive ? 
-                            "bg-primary text-primary-foreground" : 
+                            "bg-primary text-primary-foreground scale-110" : 
                             "bg-background text-muted-foreground hover:bg-primary/10"
                         )}
                       >
@@ -150,7 +150,7 @@ export function VerticalStepper({
                         <span className="sr-only">{section.title}</span>
                       </a>
                     </TooltipTrigger>
-                    <TooltipContent side="left" align="center" className="bg-popover text-popover-foreground text-sm px-3 py-1.5">
+                    <TooltipContent side="left" align="center" className="bg-popover standard-border text-popover-foreground text-sm px-3 py-1.5">
                       {section.title}
                     </TooltipContent>
                   </Tooltip>

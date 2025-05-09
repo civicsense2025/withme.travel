@@ -3,13 +3,15 @@ import { PlusCircle } from 'lucide-react';
 import { createServerComponentClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { FIELDS, ItineraryTemplateMetadata, TABLES } from '@/utils/constants/database';
+import { FIELDS, ItineraryTemplateMetadata, TABLES } from '@/utils/constants/tables';
+import { TABLES as DatabaseTables } from '@/utils/constants/database';
 
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { ClientWrapper } from './client-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { ItineraryTemplateCard } from '@/components/itinerary-template-card';
+import { ClassErrorBoundary } from '@/components/error-boundary';
 
 export const dynamic = 'force-dynamic'; // Ensure dynamic rendering
 export const revalidate = 0; // Disable cache
@@ -40,6 +42,17 @@ export interface Itinerary {
   } | null;
 }
 
+// Simple error fallback component for itineraries section
+const ItinerariesErrorFallback = () => (
+  <div className="p-8 border rounded-lg bg-card/50 text-center">
+    <h3 className="text-xl font-semibold mb-2">Unable to load itineraries</h3>
+    <p className="text-muted-foreground mb-4">There was a problem loading the itineraries. Please try again later.</p>
+    <Button asChild>
+      <Link href="/">Return Home</Link>
+    </Button>
+  </div>
+);
+
 export default async function ItinerariesPage() {
   try {
     // Check if we have a logged-in user
@@ -51,7 +64,7 @@ export default async function ItinerariesPage() {
     let isAdmin = false;
     if (user) {
       const { data: profileData } = await supabase
-        .from(TABLES.PROFILES)
+        .from(DatabaseTables.PROFILES)
         .select('is_admin')
         .eq('id', user.id)
         .single();
@@ -92,9 +105,9 @@ export default async function ItinerariesPage() {
       // No itineraries to display, but don't throw an error - show empty state
       return (
         <div className="container py-8">
-          <h1 className="text-3xl font-bold mb-2">Community Itineraries</h1>
-          <p className="text-muted-foreground mb-8">
-            Discover and save itineraries shared by the WithMe community. Use these templates for your own trips.
+          <h1 className="text-4xl font-medium mb-3">Itineraries</h1>
+          <p className="text-muted-foreground mb-8 max-w-2xl">
+            Ready-made travel plans to inspire your next adventure
           </p>
           
           <div className="flex justify-end mb-8">
@@ -122,80 +135,87 @@ export default async function ItinerariesPage() {
     const draftItineraries = itineraries.filter((i: Itinerary) => !i.is_published);
     
     return (
-      <div className="container py-8">
-        <h1 className="text-3xl font-bold mb-2">Community Itineraries</h1>
-        <p className="text-muted-foreground mb-8">
-          Discover and save itineraries shared by the WithMe community. Use these templates for your own trips.
-        </p>
-        
-        <div className="flex justify-end mb-8">
-          <Link href="/itineraries/submit">
-            <Button size="sm" className="flex items-center">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Submit Itinerary
-            </Button>
-          </Link>
-        </div>
-
-        {/* Pass all itineraries to the client wrapper which will filter for published ones */}
-        <ClientWrapper 
-          itineraries={itineraries} 
-          isAdmin={isAdmin} 
-          userId={user?.id || null}
-        />
-        
-        {/* If the user has drafts, display them in a separate section */}
-        {user && draftItineraries.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-semibold mb-4">Your Draft Itineraries</h2>
-            <p className="text-muted-foreground mb-6">
-              These itineraries are only visible to you until published
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {draftItineraries.map((item: Itinerary) => {
-                // Convert to format expected by ItineraryTemplateCard
-                const itinerary = {
-                  id: item.id,
-                  title: item.title,
-                  description: item.description || '',
-                  image: item.destinations?.featured_image_url || '/images/placeholder-itinerary.jpg',
-                  location: item.destinations ? `${item.destinations.name}, ${item.destinations.country}` : 'Unknown Location',
-                  duration: `${item.duration_days} days`,
-                  tags: item.tags || [],
-                  slug: item.slug,
-                  is_published: false,
-                  author: item.profile,
-                  metadata: item.metadata || {},
-                  // Add required fields for the card component
-                  destinations: [],
-                  duration_days: item.duration_days,
-                  category: 'Other',
-                  created_at: '',
-                  view_count: 0,
-                  use_count: 0,
-                  like_count: 0,
-                  featured: false,
-                  cover_image_url: '',
-                  groupsize: '',
-                };
-                
-                return (
-                  <div key={item.id} className="relative">
-                    <div className="absolute top-2 right-2 z-10">
-                      <span className="bg-yellow-500/90 text-white text-xs font-medium px-2.5 py-0.5 rounded">
-                        Draft
-                      </span>
-                    </div>
-                    <ItineraryTemplateCard 
-                      itinerary={itinerary} 
-                      index={0} 
-                    />
-                  </div>
-                );
-              })}
-            </div>
+      <div className="max-w-screen-2xl mx-auto">
+        <div className="px-6 py-12 text-center">
+          <h1 className="text-6xl font-medium tracking-tight mb-4">Itineraries</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+            Ready-made travel plans to inspire your next adventure
+          </p>
+          
+          <div className="flex justify-center mb-12">
+            <Link href="/itineraries/submit">
+              <Button size="default" className="flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Submit Itinerary
+              </Button>
+            </Link>
           </div>
-        )}
+
+          {/* Wrap client components with error boundaries */}
+          <ClassErrorBoundary fallback={<ItinerariesErrorFallback />}>
+            {/* Pass all itineraries to the client wrapper which will filter for published ones */}
+            <ClientWrapper 
+              itineraries={itineraries} 
+              isAdmin={isAdmin} 
+              userId={user?.id || null}
+            />
+          </ClassErrorBoundary>
+          
+          {/* If the user has drafts, display them in a separate section */}
+          {user && draftItineraries.length > 0 && (
+            <ClassErrorBoundary fallback={<div className="mt-8 p-4 border rounded bg-muted/50">Unable to load draft itineraries</div>}>
+              <div className="mt-12">
+                <h2 className="text-2xl font-semibold mb-4">Your Draft Itineraries</h2>
+                <p className="text-muted-foreground mb-6">
+                  These itineraries are only visible to you until published
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {draftItineraries.map((item: Itinerary) => {
+                    // Convert to format expected by ItineraryTemplateCard
+                    const itinerary = {
+                      id: item.id,
+                      title: item.title,
+                      description: item.description || '',
+                      image: item.destinations?.featured_image_url || '/images/placeholder-itinerary.jpg',
+                      location: item.destinations ? `${item.destinations.name}, ${item.destinations.country}` : 'Unknown Location',
+                      duration: `${item.duration_days} days`,
+                      tags: item.tags || [],
+                      slug: item.slug,
+                      is_published: false,
+                      author: item.profile,
+                      metadata: item.metadata || {},
+                      // Add required fields for the card component
+                      destinations: [],
+                      duration_days: item.duration_days,
+                      category: 'Other',
+                      created_at: '',
+                      view_count: 0,
+                      use_count: 0,
+                      like_count: 0,
+                      featured: false,
+                      cover_image_url: '',
+                      groupsize: '',
+                    };
+                    
+                    return (
+                      <div key={item.id} className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <span className="bg-yellow-500/90 text-white text-xs font-medium px-2.5 py-0.5 rounded">
+                            Draft
+                          </span>
+                        </div>
+                        <ItineraryTemplateCard 
+                          itinerary={itinerary} 
+                          index={0} 
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </ClassErrorBoundary>
+          )}
+        </div>
       </div>
     );
   } catch (error) {

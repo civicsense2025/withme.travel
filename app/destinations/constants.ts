@@ -40,11 +40,33 @@ export interface FetchError {
  */
 export interface Destination {
   id: string;
-  name: string;
-  city: string | null;
-  country: string | null;
-  image_url: string | null;
-  description: string | null;
+  name?: string | null;
+  city?: string | null;
+  country?: string | null;
+  image_url?: string | null;
+  description?: string | null;
+  continent?: string | null;
+  byline?: string | null;
+  highlights?: string[] | string | null;
+  emoji?: string | null;
+  image_metadata?: {
+    alt_text?: string;
+    attribution?: string;
+    attributionHtml?: string;
+    photographer_name?: string;
+    photographer_url?: string;
+    source?: string;
+    source_id?: string;
+    url?: string;
+  } | null;
+  cuisine_rating?: number | null;
+  nightlife_rating?: number | null;
+  cultural_attractions?: number | null;
+  outdoor_activities?: number | null;
+  beach_quality?: number | null;
+  best_season?: string | null;
+  avg_cost_per_day?: number | null;
+  safety_rating?: number | null;
 }
 
 /**

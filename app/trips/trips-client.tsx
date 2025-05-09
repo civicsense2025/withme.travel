@@ -1,14 +1,16 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyTrips } from '@/components/empty-trips';
-import { TripCard } from '@/components/trip-card';
+import EnhancedTripCard from '@/components/trips/EnhancedTripCard';
 import { ClassErrorBoundary } from '@/components/error-boundary';
-import Image from 'next/image';
-
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import type { TripRole } from '@/types/trip';
+import { TripsFeedbackButton } from './TripsFeedbackButton';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { formatDateRange } from '@/utils/lib-utils';
 
 // Type for a trip member row from the database
 interface TripMemberRow {
@@ -57,14 +59,42 @@ export default function TripsClientPage({
   userId: string;
 }) {
   const [refreshKey, setRefreshKey] = useState(0);
+  const { toast } = useToast();
+  const [processError, setProcessError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
-  // Process and sort trips
+  // Process and sort trips with improved error handling
   const trips = useMemo(() => {
+    try {
+      console.log('[TripsClientPage] Processing trips data:', initialTrips);
+      
+      if (!Array.isArray(initialTrips)) {
+        console.error('[TripsClientPage] initialTrips is not an array:', initialTrips);
+        setProcessError('Trip data is not in the expected format');
+        return [];
+      }
+
     // Filter out missing trips
     const valid = initialTrips.filter(
-      (r): r is typeof r & { trip: NonNullable<(typeof r)['trip']> } =>
-        r.trip !== null && typeof r.trip === 'object'
-    );
+        (r): r is typeof r & { trip: NonNullable<(typeof r)['trip']> } => {
+          if (!r || typeof r !== 'object') {
+            console.warn('[TripsClientPage] Invalid trip member row:', r);
+            return false;
+          }
+          
+          if (!r.trip || typeof r.trip !== 'object') {
+            console.warn('[TripsClientPage] Trip is null or not an object:', r);
+            return false;
+          }
+          
+          return true;
+        }
+      );
+
+      if (valid.length === 0 && initialTrips.length > 0) {
+        console.warn('[TripsClientPage] No valid trips found in data');
+        setProcessError('No valid trips found in data');
+      }
 
     // Map to a more convenient format
     const mappedTrips = valid.map(({ role, joined_at, trip }) => ({
@@ -102,38 +132,133 @@ export default function TripsClientPage({
       // Both same side: nearest first if upcoming, most recent first if past
       return aUpcoming ? aDate - bDate : bDate - aDate;
     });
+    } catch (error) {
+      console.error('[TripsClientPage] Error processing trips:', error);
+      setProcessError('Failed to process trip data');
+      return [];
+    }
   }, [initialTrips, userId]);
 
+  // Show toast for any processing errors
+  useEffect(() => {
+    if (processError) {
+      toast({
+        title: 'Trip Display Error',
+        description: processError,
+        variant: 'destructive',
+      });
+    }
+  }, [processError, toast]);
+
+  const upcomingTrips = useMemo(() => {
+    const today = new Date().setHours(0, 0, 0, 0);
+    return trips.filter(trip => 
+      !trip.start_date || new Date(trip.start_date).getTime() >= today
+    );
+  }, [trips]);
+
+  const pastTrips = useMemo(() => {
+    const today = new Date().setHours(0, 0, 0, 0);
+    return trips.filter(trip => 
+      trip.start_date && new Date(trip.start_date).getTime() < today
+    );
+  }, [trips]);
+
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
-      <h1 className="text-4xl md:text-6xl font-bold mb-8 text-center">My Trips</h1>
-      <div className="text-center mb-8">
-        <Link href="/trips/create">
-          <Button size="lg" className="rounded-full">
-            <Plus className="h-5 w-5 mr-2" /> Create New Trip
-          </Button>
-        </Link>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <header className="mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Your Trips</h1>
+        <div className="flex justify-between items-center">
+          <p className="text-muted-foreground">
+            {trips.length === 0 
+              ? "You don't have any trips yet. Create your first adventure!"
+              : `You have ${trips.length} ${trips.length === 1 ? 'trip' : 'trips'}`}
+          </p>
+          <div className="flex items-center gap-3">
+            <TripsFeedbackButton />
+            <Link href="/trips/create">
+              <Button className="rounded-md" size="sm">
+                <Plus className="h-4 w-4 mr-2" /> New Trip
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
       <ClassErrorBoundary
         fallback={
-          <div className="my-8 text-center">
-            <p className="text-destructive">Failed to load trips.</p>
-            <Button className="mt-4" onClick={() => setRefreshKey((k) => k + 1)}>
-              Refresh
+          <div className="my-8 text-center p-8 border border-border rounded-xl">
+            <p className="text-destructive mb-4">There was a problem loading your trips</p>
+            <Button 
+              variant="outline" 
+              className="mt-2" 
+              onClick={() => setRefreshKey((k) => k + 1)}
+            >
+              Try Again
             </Button>
           </div>
         }
       >
-        <div key={refreshKey} className="grid grid-cols-1 gap-6">
+        <div key={refreshKey}>
           {trips.length === 0 ? (
             <EmptyTrips />
           ) : (
-            trips.map((trip, index) => (
-              <TripCard 
-                key={trip.id} 
-                trip={trip} 
-              />
-            ))
+            <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'upcoming' | 'past')} className="w-full">
+              <TabsList className="mb-8">
+                <TabsTrigger value="upcoming">Upcoming Trips</TabsTrigger>
+                <TabsTrigger value="past">Past Trips</TabsTrigger>
+              </TabsList>
+              <TabsContent value="upcoming">
+                {upcomingTrips.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-12">No upcoming trips. Time to plan your next adventure!</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {upcomingTrips.map((trip) => {
+                      // Defensive date checks
+                      const today = new Date();
+                      const start = trip.start_date ? new Date(trip.start_date) : null;
+                      const end = trip.end_date ? new Date(trip.end_date) : null;
+                      const isHappeningNow = !!(start && end && today >= start && today <= end);
+                      return (
+                        <div key={trip.id} className="relative">
+                          {isHappeningNow && (
+                            <div className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-accent-purple text-white font-semibold text-xs shadow-lg animate-pulse">
+                              Happening Now
+                              {start && end && (
+                                <span className="ml-2 font-normal text-white/80">{formatDateRange(trip.start_date!, trip.end_date!)}</span>
+                              )}
+                            </div>
+                          )}
+                          <EnhancedTripCard 
+                            trip={{
+                              ...trip,
+                              memberCount: 1 // Default to 1 (the user)
+                            }} 
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="past">
+                {pastTrips.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-12">No past trips yet. Memories are waiting to be made!</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {pastTrips.map((trip) => (
+                      <EnhancedTripCard 
+                        key={trip.id} 
+                        trip={{
+                          ...trip,
+                          memberCount: 1 // Default to 1 (the user)
+                        }} 
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </ClassErrorBoundary>

@@ -72,19 +72,21 @@ export function TripTabsWrapper({
 
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className={`w-full ${className}`}>
-      {/* Scrollable tabs list with visual overflow indicator on mobile */}
-      <div className="relative w-full mb-6 md:mb-8 overflow-hidden">
-        <TabsList className="flex w-full overflow-x-auto scrollbar-hide snap-x snap-mandatory no-scrollbar">
-          {tabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className="flex-1 min-w-[25%] snap-start text-sm whitespace-nowrap"
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* Centered tabs list with visual overflow indicator on mobile */}
+      <div className="relative w-full mb-4 md:mb-6 overflow-hidden flex justify-center">
+        <div className="max-w-md w-auto overflow-x-auto whitespace-nowrap scrollbar-hide no-scrollbar px-1 md:px-2">
+          <TabsList className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory no-scrollbar">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="whitespace-nowrap px-6"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {/* Subtle fade effect to indicate scrollability */}
         <div className="absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden"></div>
@@ -100,7 +102,7 @@ export function TripTabsWrapper({
           <TabsContent
             key={tab.value}
             value={tab.value}
-            className="mt-6 md:mt-8 transition-all duration-300 ease-in-out"
+            className="transition-all duration-300 ease-in-out"
           >
             {tab.content}
           </TabsContent>

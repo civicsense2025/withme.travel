@@ -346,14 +346,13 @@ export async function GET(
     }
 
     // Get user session and trip data concurrently
-    const [{ data: userData, error: authError }, { data: trip, error: tripError }] =
+    const [{ data: userData, error: authError }, tripResponse] =
       await Promise.all([
         supabase.auth.getUser(),
         supabase
           .from(TRIPS_TABLE)
           .select('*, destination:destinations(*), tags:trip_tags(tags(*))')
           .eq('id', tripId)
-          .single(),
       ]);
 
     // --- Logging Auth --- //
@@ -365,13 +364,20 @@ export async function GET(
 
     const user = userData?.user;
 
-    if (tripError) {
-      console.error('Error fetching trip:', tripError);
-      if (tripError.code === 'PGRST116') {
-        return formatErrorResponse(new TripApiError('Trip not found', 404));
-      }
+    // Handle the case where multiple or no trips were returned
+    if (tripResponse.error) {
+      console.error('Error fetching trip:', tripResponse.error);
       return formatErrorResponse(new TripApiError('Failed to fetch trip data', 500));
     }
+
+    if (!tripResponse.data || tripResponse.data.length === 0) {
+      console.error('Trip not found:', tripId);
+      return formatErrorResponse(new TripApiError('Trip not found', 404));
+    }
+
+    // Take the first trip if multiple were returned
+    const trip = tripResponse.data[0];
+    console.log(`[API /trips/${tripId}] Found trip: ${trip.name}`);
 
     // --- Access Logic --- //
     let hasAccess = false;

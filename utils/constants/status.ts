@@ -118,14 +118,20 @@ export type PresenceStatus = (typeof PRESENCE_STATUSES)[keyof typeof PRESENCE_ST
 
 // ======= NOTIFICATION TYPES =======
 export const NOTIFICATION_TYPES = {
-  TRIP_INVITATION: 'trip_invitation',
+  SYSTEM_MESSAGE: 'system_message',
   TRIP_UPDATE: 'trip_update',
-  NEW_COMMENT: 'new_comment',
+  COMMENT: 'comment',
   MENTION: 'mention',
-  ACCESS_REQUEST: 'access_request',
+  INVITE: 'invite',
+  FRIEND_REQUEST: 'friend_request',
+  ITINERARY_CHANGE: 'itinerary_change',
+  VOTE: 'vote',
+  FOCUS_EVENT: 'focus_event',
+  FRIEND_REQUEST_RECEIVED: 'friend_request_received',
+  FRIEND_REQUEST_ACCEPTED: 'friend_request_accepted',
 } as const;
 
-export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
+export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
 
 // ======= SPLIT TYPES =======
 export const SPLIT_TYPES = {
@@ -323,3 +329,19 @@ export const URL_FORMATS = {
 } as const;
 
 export type UrlFormat = Database['public']['Enums']['url_format'];
+
+// ======= GROUP IDEA TYPES =======
+export const GROUP_PLAN_IDEA_TYPE = {
+  DESTINATION: 'destination',
+  DATE: 'date',
+  ACTIVITY: 'activity',
+  BUDGET: 'budget',
+  OTHER: 'other',
+  QUESTION: 'question',
+  NOTE: 'note',
+  PLACE: 'place'
+} as const;
+
+export type GroupPlanIdeaType = typeof GROUP_PLAN_IDEA_TYPE[keyof typeof GROUP_PLAN_IDEA_TYPE];
+
+// Remove duplicate GroupMemberRole and GroupMemberStatus type definitions

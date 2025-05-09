@@ -26,6 +26,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // import { CursorSettings } from '@/components/presence/cursor-settings';
 import { PageHeader } from '@/components/page-header';
+import { getRoleDisplayName, type UserRole } from '@/types/users';
+import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -38,6 +40,7 @@ export default function SettingsPage() {
     bio: '',
     location: '',
     avatar_url: '',
+    role: '',
   });
 
   const [interests, setInterests] = useState<string[]>([]);
@@ -45,6 +48,12 @@ export default function SettingsPage() {
 
   const [isLoadingUserData, setIsLoadingUserData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Notification preferences state
+  const [notificationPrefs, setNotificationPrefs] = useState<any>(null);
+  const [isLoadingPrefs, setIsLoadingPrefs] = useState(true);
+  const [prefsError, setPrefsError] = useState<string | null>(null);
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -74,6 +83,7 @@ export default function SettingsPage() {
             bio: data.bio || '',
             location: data.location || '',
             avatar_url: data.avatar_url || '',
+            role: data.role || '',
           });
 
           // Handle interests as an array
@@ -94,6 +104,28 @@ export default function SettingsPage() {
       fetchUserData();
     }
   }, [user, toast]);
+
+  // Fetch notification preferences
+  useEffect(() => {
+    async function fetchPrefs() {
+      setIsLoadingPrefs(true);
+      setPrefsError(null);
+      try {
+        const res = await fetch('/api/notifications/preferences');
+        const json = await res.json();
+        if (res.ok && json.preferences) {
+          setNotificationPrefs(json.preferences);
+        } else {
+          setPrefsError(json.error || 'Failed to load notification preferences');
+        }
+      } catch (e: any) {
+        setPrefsError(e.message || 'Failed to load notification preferences');
+      } finally {
+        setIsLoadingPrefs(false);
+      }
+    }
+    fetchPrefs();
+  }, []);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -150,6 +182,35 @@ export default function SettingsPage() {
     }
   };
 
+  // Handle toggle change
+  const handleToggle = (key: string) => (value: boolean) => {
+    setNotificationPrefs((prev: any) => ({ ...prev, [key]: value }));
+  };
+
+  // Save notification preferences
+  const handleSavePrefs = async () => {
+    setIsSavingPrefs(true);
+    setPrefsError(null);
+    try {
+      const res = await fetch('/api/notifications/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences: notificationPrefs }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to update notification preferences');
+      }
+      setNotificationPrefs(json.preferences);
+      toast({ title: 'Notification preferences updated' });
+    } catch (e: any) {
+      setPrefsError(e.message || 'Failed to update notification preferences');
+      toast({ title: 'Error', description: e.message || 'Failed to update notification preferences', variant: 'destructive' });
+    } finally {
+      setIsSavingPrefs(false);
+    }
+  };
+
   // Don't render anything while checking auth
   if (isAuthLoading) {
     return null;
@@ -200,6 +261,13 @@ export default function SettingsPage() {
                     <div>
                       <h3 className="font-medium">{profileData.name || user.email}</h3>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
+                      {profileData.role && (
+                        <p className="text-xs mt-1 flex items-center gap-1.5">
+                          <Badge variant="outline" className="px-2 py-0 h-5">
+                            {getRoleDisplayName(profileData.role as UserRole)}
+                          </Badge>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -294,14 +362,56 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="notifications">
-          {/* Notification settings would go here */}
           <Card>
             <CardHeader>
               <CardTitle>Notifications</CardTitle>
               <CardDescription>Configure how you would like to be notified</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Notification settings coming soon...</p>
+              {isLoadingPrefs ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : prefsError ? (
+                <Alert variant="destructive">
+                  <AlertDescription>{prefsError}</AlertDescription>
+                </Alert>
+              ) : notificationPrefs ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="template_likes">Template Likes</Label>
+                    <Switch
+                      id="template_likes"
+                      checked={!!notificationPrefs.template_likes}
+                      onCheckedChange={handleToggle('template_likes')}
+                      disabled={isSavingPrefs}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="template_comments">Template Comments</Label>
+                    <Switch
+                      id="template_comments"
+                      checked={!!notificationPrefs.template_comments}
+                      onCheckedChange={handleToggle('template_comments')}
+                      disabled={isSavingPrefs}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="admin_alerts">Admin Alerts</Label>
+                    <Switch
+                      id="admin_alerts"
+                      checked={!!notificationPrefs.admin_alerts}
+                      onCheckedChange={() => {}}
+                      disabled
+                    />
+                    <span className="text-xs text-muted-foreground ml-2">Always enabled for transparency</span>
+                  </div>
+                  <Button onClick={handleSavePrefs} disabled={isSavingPrefs} className="mt-4">
+                    {isSavingPrefs ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Save Notification Preferences
+                  </Button>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>

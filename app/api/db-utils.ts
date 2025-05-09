@@ -6,6 +6,7 @@ import { captureException } from '@sentry/nextjs';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import type { ItineraryItemReaction } from '@/types/database.types';
 import type { Comment, CommentWithUser, CommentReaction, CommentReactionWithUser, PaginatedCommentsResponse } from '@/types/comments';
+import { createNotification } from '@/app/api/notifications/service';
 
 // ----- NOTE ON TYPE HANDLING -----
 // This file uses an untyped Supabase client to work around complex TypeScript issues.
@@ -462,6 +463,26 @@ export async function createComment(
       console.error('Error creating comment:', commentError);
       return null;
     }
+
+    // --- Notification trigger for template comments ---
+    if (contentType === 'template') {
+      // Get the template owner
+      const { data: template, error: templateError } = await supabase
+        .from('templates')
+        .select('id, user_id, title')
+        .eq('id', contentId)
+        .single();
+      if (!templateError && template && template.user_id && template.user_id !== userId) {
+        await createNotification({
+          userId: template.user_id,
+          notificationType: 'template_commented',
+          title: 'New comment on your template',
+          content: `Someone commented on your template: ${template.title ?? 'Untitled'}`,
+          metadata: { templateId: template.id },
+        });
+      }
+    }
+    // --- End notification trigger ---
 
     // Get user profile data
     const { data: userData, error: userError } = await supabase

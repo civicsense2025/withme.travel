@@ -96,6 +96,7 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
   const [destination, setDestination] = useState<Destination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreatingTrip, setIsCreatingTrip] = useState(false);
 
   useEffect(() => {
     if (!slug) {
@@ -215,6 +216,33 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
     };
   };
 
+  const handleCreateTrip = async () => {
+    if (!destination) return;
+
+    try {
+      setIsCreatingTrip(true);
+      const response = await fetch(
+        `/api/trips/create?destination_id=${destination.id}&trip_name=${encodeURIComponent(destination.name)}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to create trip');
+      }
+
+      const data = await response.json();
+      router.push(`/trips/${data.trip.id}`);
+    } catch (err: any) {
+      console.error('Error creating trip:', err);
+      toast({
+        title: 'Error creating trip',
+        description: 'Please try again later',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingTrip(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
@@ -265,25 +293,43 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
   const defaultTripName = `${profileName}s trip to ${destination.city}`;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="flex items-center mb-6">
+    <div className="mx-auto">
+      {/* Back navigation */}
+      <div className="max-w-screen-2xl mx-auto px-6 py-4 mb-2">
         <Link href="/destinations">
-          <Button variant="ghost" size="sm" className="gap-1">
+          <Button variant="ghost" size="sm" className="gap-1 text-sm font-normal">
             <ArrowLeft className="h-4 w-4" />
             back to destinations
           </Button>
         </Link>
       </div>
 
-      <div className="relative mb-8 h-64 md:h-96 w-full overflow-hidden rounded-lg shadow-lg">
+      {/* Hero image section with large title overlay */}
+      <div className="relative w-full h-[70vh] mb-16 overflow-hidden">
         <Image
           src={imageData.url}
           alt={imageData.alt}
           fill
           priority
-          sizes="(max-width: 768px) 100vw, 100vw"
+          sizes="100vw"
           className="object-cover"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-12 max-w-screen-2xl mx-auto">
+          <h1 className="text-5xl md:text-6xl font-medium text-white mb-2">{destination.city}</h1>
+          <p className="text-2xl text-white/90 mb-8">{destination.country}</p>
+          <Button
+            onClick={handleCreateTrip}
+            disabled={isCreatingTrip}
+            className="relative overflow-hidden 
+                rounded-full bg-white text-black hover:bg-white/90
+                text-base sm:text-base px-8 py-6 h-12 
+                transition-all duration-300 hover:scale-105 mb-6"
+          >
+            {isCreatingTrip ? 'Creating...' : `Start planning a trip to ${destination.city}`}
+          </Button>
+        </div>
+        
         {imageData.attributionHtml && (
           <div className="absolute bottom-4 right-4 z-10">
             <TooltipProvider delayDuration={100}>
@@ -316,16 +362,15 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        <div className="md:col-span-2 space-y-8">
-          <Card className="group transition-all duration-300 hover:shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-2xl font-bold lowercase">{destination.city}</h2>
-              </div>
+      <div className="max-w-screen-xl mx-auto px-6 pb-24">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="md:col-span-2 space-y-16">
+            {/* Description section */}
+            <div>
+              <h2 className="text-3xl font-medium mb-8">About</h2>
               {destination.description && (
                 <div
-                  className="text-muted-foreground prose prose-sm dark:prose-invert [&>p]:my-4"
+                  className="text-lg text-muted-foreground prose prose-lg dark:prose-invert [&>p]:my-6 leading-relaxed"
                   dangerouslySetInnerHTML={{
                     __html: destination.description.includes('<')
                       ? destination.description
@@ -353,298 +398,190 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
                   }}
                 />
               )}
+            </div>
 
-              {destination.highlights && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-2 lowercase">highlights</h3>
-                  <div
-                    className="prose prose-sm dark:prose-invert [&>p]:my-4"
-                    dangerouslySetInnerHTML={{
-                      __html: destination.highlights.includes('<')
-                        ? destination.highlights
-                        : destination.highlights
-                            .split('\n\n')
-                            .map((block) => {
-                              // Check if this block is a list
-                              if (block.includes('\n') && !block.trim().endsWith('.')) {
-                                const lines = block.split('\n').filter((line) => line.trim());
-                                // If first line ends with a colon, it's likely a list header
-                                const [first, ...rest] = lines;
-                                if (first.trim().endsWith(':')) {
-                                  return `<p>${first}</p><ul>${rest
-                                    .map((item) => `<li>${item.trim()}</li>`)
-                                    .join('')}</ul>`;
-                                }
-                                // Otherwise treat all lines as list items
-                                return `<ul>${lines
+            {/* Highlights section */}
+            {destination.highlights && (
+              <div>
+                <h2 className="text-3xl font-medium mb-8">Highlights</h2>
+                <div
+                  className="text-lg text-muted-foreground prose prose-lg dark:prose-invert [&>p]:my-6 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: destination.highlights.includes('<')
+                      ? destination.highlights
+                      : destination.highlights
+                          .split('\n\n')
+                          .map((block) => {
+                            // Check if this block is a list
+                            if (block.includes('\n') && !block.trim().endsWith('.')) {
+                              const lines = block.split('\n').filter((line) => line.trim());
+                              // If first line ends with a colon, it's likely a list header
+                              const [first, ...rest] = lines;
+                              if (first.trim().endsWith(':')) {
+                                return `<p>${first}</p><ul>${rest
                                   .map((item) => `<li>${item.trim()}</li>`)
                                   .join('')}</ul>`;
                               }
-                              return `<p>${block}</p>`;
-                            })
-                            .join(''),
-                    }}
-                  />
-                </div>
-              )}
+                              // Otherwise treat all lines as list items
+                              return `<ul>${lines
+                                .map((item) => `<li>${item.trim()}</li>`)
+                                .join('')}</ul>`;
+                            }
+                            return `<p>${block}</p>`;
+                          })
+                          .join(''),
+                  }}
+                />
+              </div>
+            )}
 
-              <div className="mt-6 flex flex-wrap gap-2">
+            {/* Tags section */}
+            <div>
+              <h2 className="text-3xl font-medium mb-8">Travel Style</h2>
+              <div className="flex flex-wrap gap-3">
                 {destination.family_friendly && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     Family Friendly
                   </Badge>
                 )}
                 {destination.digital_nomad_friendly >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     Digital Nomad Friendly
                   </Badge>
                 )}
                 {destination.beach_quality !== null && destination.beach_quality >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     Great Beaches
                   </Badge>
                 )}
                 {destination.cultural_attractions >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     Cultural Hotspot
                   </Badge>
                 )}
                 {destination.nightlife_rating >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     Vibrant Nightlife
                   </Badge>
                 )}
                 {destination.outdoor_activities >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     Outdoor Activities
                   </Badge>
                 )}
                 {destination.lgbtq_friendliness >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     LGBTQ+ Friendly
                   </Badge>
                 )}
                 {destination.accessibility >= 4 && (
-                  <Badge variant="outline" className="transition-all duration-300 hover:scale-110">
+                  <Badge variant="outline" className="text-base px-4 py-2 rounded-full transition-all duration-300 hover:scale-110">
                     Accessible
                   </Badge>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {destination && (
-            <DestinationPageAdminEditor destination={destination} />
-          )}
+            {/* Admin editor if required */}
+            {destination && (
+              <DestinationPageAdminEditor destination={destination} />
+            )}
 
-          <DestinationReviews destinationId={destination.id} destinationName={destination.city} />
-        </div>
+            {/* Reviews section */}
+            <DestinationReviews destinationId={destination.id} destinationName={destination.city} />
+          </div>
 
-        <div className="space-y-8">
-          <RelatedItinerariesWidget destinationId={destination.id} />
+          <div className="space-y-12">
+            {/* Itineraries widget */}
+            <RelatedItinerariesWidget destinationId={destination.id} />
 
-          <Card className="group transition-all duration-300 hover:shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold lowercase">at a glance</h2>
-                <Button
-                  className="
-                    relative overflow-hidden
-                    lowercase rounded-full 
-                    bg-gradient-to-r from-travel-purple/80 to-travel-purple 
-                    hover:from-purple-400 hover:to-purple-500
-                    text-white
-                    text-xs sm:text-sm px-2 sm:px-3 py-1 h-7 sm:h-8 
-                    transition-all duration-300 hover:scale-105
-                    before:absolute before:inset-0 before:bg-shimmer-gradient 
-                    before:bg-no-repeat before:bg-200% 
-                    before:animate-shimmer
-                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-travel-purple
-                  "
-                  onClick={() => {
-                    router.push(
-                      `/trips/create?destination_id=${destination.id}&trip_name=${encodeURIComponent(defaultTripName)}`
-                    );
-                  }}
-                >
-                  <span className="relative z-10 flex items-center">
-                    <PlusCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5" />
-                    <span>plan your trip</span>
-                  </span>
-                </Button>
+            {/* Quick facts card */}
+            <div className="bg-muted/30 border rounded-3xl p-8">
+              <h3 className="text-2xl font-medium mb-8">Quick Facts</h3>
+              
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Best Time to Visit</p>
+                    <p className="font-medium">{destination.best_season || 'Any time'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Local Language</p>
+                    <p className="font-medium">{destination.local_language || 'Not specified'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Daily Budget (USD)</p>
+                    <p className="font-medium">
+                      {destination.avg_cost_per_day
+                        ? `$${destination.avg_cost_per_day.toFixed(0)}`
+                        : 'Not specified'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Utensils className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Food Scene</p>
+                    <div className="mt-1">{renderRating(destination.cuisine_rating)}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Camera className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Cultural Attractions</p>
+                    <div className="mt-1">{renderRating(destination.cultural_attractions)}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Safety Rating</p>
+                    <div className="mt-1">{renderRating(destination.safety_rating)}</div>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="transition-all duration-300 hover:scale-105">
-                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4" /> Best Time to Visit
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{destination.best_season}</p>
-                </div>
-                <div className="transition-all duration-300 hover:scale-105">
-                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <DollarSign className="h-4 w-4" /> Average Daily Cost
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    ${destination.avg_cost_per_day} USD
-                  </p>
-                </div>
-                <div className="transition-all duration-300 hover:scale-105">
-                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Globe className="h-4 w-4" /> Local Language
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{destination.local_language}</p>
-                </div>
-                <div className="transition-all duration-300 hover:scale-105">
-                  <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <MapPin className="h-4 w-4" /> Time Zone
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{destination.time_zone}</p>
-                </div>
-              </div>
-
+              
+              {/* Tourism website link */}
               {destination.tourism_website && (
                 <div className="mt-8">
                   <a
                     href={destination.tourism_website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 transition-all duration-300 hover:translate-x-1"
+                    className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    <Globe className="h-4 w-4" />
                     Official Tourism Website
+                    <svg
+                      className="ml-1 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
                   </a>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          <Card className="group transition-all duration-300 hover:shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-xl font-bold lowercase">city ratings</h2>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground">
-                        <Info className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        Ratings are based on aggregated user reviews and WithMe.travel data
-                        analysis.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  {
-                    icon: <Utensils className="h-4 w-4" />,
-                    label: 'Cuisine',
-                    value: destination.cuisine_rating,
-                  },
-                  {
-                    icon: <Camera className="h-4 w-4" />,
-                    label: 'Cultural Attractions',
-                    value: destination.cultural_attractions,
-                  },
-                  {
-                    icon: <Moon className="h-4 w-4" />,
-                    label: 'Nightlife',
-                    value: destination.nightlife_rating,
-                  },
-                  {
-                    icon: <Sun className="h-4 w-4" />,
-                    label: 'Outdoor Activities',
-                    value: destination.outdoor_activities,
-                  },
-                  {
-                    icon: <Shield className="h-4 w-4" />,
-                    label: 'Safety',
-                    value: destination.safety_rating,
-                  },
-                  {
-                    icon: <Train className="h-4 w-4" />,
-                    label: 'Public Transportation',
-                    value: destination.public_transportation,
-                  },
-                  {
-                    icon: <Walking className="h-4 w-4" />,
-                    label: 'Walkability',
-                    value: destination.walkability,
-                  },
-                  {
-                    icon: <Wifi className="h-4 w-4" />,
-                    label: 'Wi-Fi Connectivity',
-                    value: destination.wifi_connectivity,
-                  },
-                  {
-                    icon: <Heart className="h-4 w-4" />,
-                    label: 'LGBTQ+ Friendliness',
-                    value: destination.lgbtq_friendliness,
-                  },
-                  {
-                    icon: <Accessibility className="h-4 w-4" />,
-                    label: 'Accessibility',
-                    value: destination.accessibility,
-                  },
-                  {
-                    icon: <Leaf className="h-4 w-4" />,
-                    label: 'Eco-Friendly Options',
-                    value: destination.eco_friendly_options,
-                  },
-                  {
-                    icon: <Instagram className="h-4 w-4" />,
-                    label: 'Instagram-Worthy Spots',
-                    value: destination.instagram_worthy_spots,
-                  },
-                  {
-                    icon: <Briefcase className="h-4 w-4" />,
-                    label: 'Digital Nomad Friendly',
-                    value: destination.digital_nomad_friendly,
-                  },
-                ].map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center p-2 rounded-lg transition-all duration-300 hover:bg-muted/50"
-                  >
-                    <span className="text-sm flex items-center gap-1 text-muted-foreground">
-                      {item.icon} {item.label}
-                    </span>
-                    {renderRating(item.value)}
-                  </div>
-                ))}
-
-                <div className="flex justify-between items-center p-2 rounded-lg transition-all duration-300 hover:bg-muted/50">
-                  <span className="text-sm flex items-center gap-1 text-muted-foreground">
-                    <Users className="h-4 w-4" /> Family Friendly
-                  </span>
-                  <span
-                    className={`text-sm ${destination.family_friendly ? 'text-green-600' : 'text-red-600'}`}
-                  >
-                    {destination.family_friendly ? 'Yes' : 'No'}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-xl font-bold mb-4">Popular in {destination.city}</h2>
-              <div className="space-y-4">
-                <Skeleton className="h-20 w-full rounded-md" />
-                <Skeleton className="h-20 w-full rounded-md" />
-                <Skeleton className="h-20 w-full rounded-md" />
-              </div>
-              <div className="mt-4 text-center">
-                <Button variant="link">View All Attractions</Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>

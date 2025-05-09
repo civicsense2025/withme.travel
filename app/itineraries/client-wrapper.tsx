@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -8,9 +8,14 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ItineraryFilters } from '@/components/itinerary-filters';
 import { ItineraryTemplateCard } from '@/components/itinerary-template-card';
-import { staggerContainer } from '@/utils/animation';
-import { ItineraryTemplateMetadata } from '@/utils/constants/database';
+import { ItineraryTemplateMetadata } from '@/utils/constants/tables';
 import { Badge } from '@/components/ui/badge';
+
+// Define a minimal Destination type
+interface Destination {
+  id: string;
+  name: string;
+}
 
 // Updated interface based on API response structure
 interface Itinerary {
@@ -40,98 +45,181 @@ interface Itinerary {
 
 interface ClientWrapperProps {
   itineraries: Itinerary[];
-  isAdmin?: boolean;
-  userId?: string | null;
+  isAdmin: boolean;
+  userId: string | null;
 }
 
-export function ClientWrapper({ itineraries, isAdmin = false, userId = null }: ClientWrapperProps) {
-  // Filter to only show published itineraries (drafts are handled in the parent component)
-  const publishedItineraries = itineraries.filter(i => i.is_published);
-  
-  // Transform itineraries to match ItineraryTemplateCard expected format
-  const formattedItineraries = publishedItineraries.map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description || '',
-    image: item.destinations?.featured_image_url || '/images/placeholder-itinerary.jpg',
-    location: item.destinations ? `${item.destinations.name}, ${item.destinations.country}` : 'Unknown Location',
-    duration: `${item.duration_days} days`,
-    tags: item.tags || [],
-    slug: item.slug,
-    is_published: item.is_published,
-    author: item.profile, // Use profile as author
-    metadata: item.metadata || {},
-    // Add required fields for the card component
-    destinations: [],
-    duration_days: item.duration_days,
-    category: 'Other',
-    created_at: '',
-    view_count: 0,
-    use_count: 0,
-    like_count: 0,
-    featured: false,
-    cover_image_url: '',
-    groupsize: '',
-  }));
+// Memoized wrapper component
+const ClientWrapperContent = memo(({ 
+  itineraries = [], 
+  isAdmin = false, 
+  userId = null 
+}: ClientWrapperProps) => {
+  const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
+  const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const destinations = itineraries
-    .map(i => i.destinations)
-    .filter(d => d !== null && d !== undefined)
-    .filter((d, i, self) => self.findIndex(x => x?.id === d?.id) === i); // Remove duplicates
+  // Memoize visible itineraries to avoid recalculation on every render
+  const visibleItineraries = useMemo(() => {
+    return itineraries.filter(
+      (item) => item.is_published || isAdmin || (userId && item.created_by === userId)
+    );
+  }, [itineraries, isAdmin, userId]);
+
+  // Memoize filter options to prevent recalculation
+  const { allDurations, allDestinations, allTags } = useMemo(() => {
+    const durations = Array.from(
+      new Set(visibleItineraries.map((i) => `${i.duration_days} days`))
+    ).sort((a, b) => parseInt(a) - parseInt(b));
+
+    const destinations = Array.from(
+      new Set(
+        visibleItineraries
+          .filter((i) => i.destinations?.name)
+          .map((i) => i.destinations?.name || '')
+      )
+    ).sort();
+
+    const tags = Array.from(
+      new Set(visibleItineraries.flatMap((i) => i.tags || []))
+    ).filter(Boolean).sort();
+
+    return { allDurations: durations, allDestinations: destinations, allTags: tags };
+  }, [visibleItineraries]);
+
+  // Memoize filtered and sorted itineraries
+  const sortedItineraries = useMemo(() => {
+    // Apply filters
+    const filtered = visibleItineraries.filter((item) => {
+      // Duration filter
+      if (selectedDuration && `${item.duration_days} days` !== selectedDuration) {
+        return false;
+      }
+
+      // Destination filter
+      if (selectedDestination && item.destinations?.name !== selectedDestination) {
+        return false;
+      }
+
+      // Tags filter (must match all selected tags)
+      if (selectedTags.length > 0) {
+        const itemTags = item.tags || [];
+        return selectedTags.every((tag) => itemTags.includes(tag));
+      }
+
+      return true;
+    });
+
+    // Apply sorting - newest first
+    return [...filtered].sort((a, b) => {
+      // Sort by ID if no creation date is available
+      return b.id.localeCompare(a.id);
+    });
+  }, [visibleItineraries, selectedDuration, selectedDestination, selectedTags]);
+
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
+  // Clear all filters handler
+  const handleClearFilters = () => {
+    setSelectedDuration(null);
+    setSelectedDestination(null);
+    setSelectedTags([]);
+  };
+  
+  // Memoize the itinerary card data to prevent recreation on each render
+  const itineraryCards = useMemo(() => {
+    return sortedItineraries.map((item, index) => {
+      // Convert to format expected by ItineraryTemplateCard
+      const itinerary = {
+        id: item.id,
+        title: item.title,
+        description: item.description || '',
+        image: item.destinations?.featured_image_url || '/images/placeholder-itinerary.jpg',
+        location: item.destinations ? `${item.destinations.name}, ${item.destinations.country}` : 'Unknown Location',
+        duration: `${item.duration_days} days`,
+        tags: item.tags || [],
+        slug: item.slug,
+        is_published: item.is_published,
+        author: item.profile,
+        metadata: item.metadata || {},
+        // Add required fields for the card component
+        destinations: [], // Empty array is fine here since we're not using it
+        duration_days: item.duration_days,
+        category: 'Other',
+        created_at: '',
+        view_count: 0,
+        use_count: 0,
+        like_count: 0,
+        featured: false,
+        cover_image_url: '',
+        groupsize: '',
+      };
+      
+      return (
+        <motion.div key={item.id} variants={item as any} layout>
+          <ItineraryTemplateCard 
+            itinerary={itinerary} 
+            index={index} 
+          />
+        </motion.div>
+      );
+    });
+  }, [sortedItineraries, item]);
 
   return (
-    <>
-      <motion.div
-        className="mb-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-      >
-        {/* Display admin status if the user is an admin */}
-        {isAdmin && (
-          <div className="mb-4">
-            <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800">
-              Admin User
-            </Badge>
-            <span className="ml-2 text-sm text-muted-foreground">
-              You can see all itineraries, including unpublished ones.
-            </span>
-          </div>
-        )}
-        
-        <ItineraryFilters destinations={destinations} />
-      </motion.div>
+    <div>
+      <div className="sticky top-16 z-10 bg-background/80 backdrop-blur-md mb-10 py-4">
+        <ItineraryFilters
+          durations={allDurations}
+          destinations={allDestinations}
+          tags={allTags}
+          selectedDuration={selectedDuration}
+          selectedDestination={selectedDestination}
+          selectedTags={selectedTags}
+          onDurationChange={setSelectedDuration}
+          onDestinationChange={setSelectedDestination}
+          onTagsChange={setSelectedTags}
+        />
+      </div>
 
-      {formattedItineraries.length === 0 ? (
-        <motion.div
-          className="text-center py-16"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <h3 className="text-xl font-semibold mb-2">No itineraries found</h3>
-          <p className="text-muted-foreground mb-6">
-            Be the first to share your travel plans with the community!
-          </p>
-          <Button asChild>
-            <Link href="/itineraries/submit" className="flex items-center gap-2">
-              <PlusCircle className="h-4 w-4" />
-              Submit Your Itinerary
-            </Link>
+      {sortedItineraries.length === 0 ? (
+        <div className="text-center py-20">
+          <h3 className="text-2xl font-medium mb-4">No itineraries match your filters</h3>
+          <p className="text-muted-foreground mb-8">Try adjusting your filter criteria</p>
+          <Button variant="outline" onClick={handleClearFilters}>
+            Clear Filters
           </Button>
-        </motion.div>
+        </div>
       ) : (
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          variants={staggerContainer}
+          variants={container}
           initial="hidden"
-          animate="visible"
+          animate="show"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
+          layout
         >
-          {formattedItineraries.map((itinerary, index) => (
-            <ItineraryTemplateCard key={itinerary.id} index={index} itinerary={itinerary} />
-          ))}
+          {itineraryCards}
         </motion.div>
       )}
-    </>
+    </div>
   );
+});
+
+// The exported component - a small wrapper that forwards props to the memoized component
+export function ClientWrapper(props: ClientWrapperProps) {
+  return <ClientWrapperContent {...props} />;
 }

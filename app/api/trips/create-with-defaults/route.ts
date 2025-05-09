@@ -57,6 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       start_date,
       end_date,
       destination_id,
+      city_id = null,
       destination_name,
       cover_image_url = null,
       travelers_count = 1,
@@ -69,8 +70,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Trip name is required' }, { status: 400 });
     }
 
-    if (!destination_id) {
-      return NextResponse.json({ error: 'Destination is required' }, { status: 400 });
+    if (!destination_id && !city_id) {
+      return NextResponse.json({ error: 'Destination or City is required' }, { status: 400 });
     }
 
     // Calculate duration days
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       start_date: start_date || null,
       end_date: end_date || null,
       created_by: user.id,
+      city_id: city_id || destination_id,
       destination_id: destination_id,
       cover_image_url: cover_image_url,
       duration_days: durationDays,

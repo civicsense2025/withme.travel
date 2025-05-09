@@ -65,6 +65,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   const openSearch = () => {
     setIsSearchOpen(true);
+    console.log('Opening search menu');
   };
 
   const closeSearch = () => {

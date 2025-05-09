@@ -9,14 +9,14 @@ import type { GuestInfo } from '@/types/group-ideas';
  * Check if a guest token exists in cookies - safe for server components
  * Must be used in an async context
  */
-export function getGuestToken(): string | null {
+export async function getGuestToken(): Promise<string | null> {
   try {
     // Only import and use server-side cookies when in a server context
     if (typeof window === 'undefined') {
       // Dynamic import to prevent errors in client components
       const { cookies } = require('next/headers');
-      // Get the cookie value - cookies() is synchronous in Next.js
-      const cookieStore = cookies();
+      // Get the cookie value - cookies() must be awaited in Next.js
+      const cookieStore = await cookies();
       return cookieStore.get('guest_token')?.value || null;
     } else {
       // Client-side fallback using browser cookies

@@ -1,174 +1,159 @@
-import { getServerComponentClient } from '@/utils/supabase/unified';
-import { notFound, redirect } from 'next/navigation';
-import { Suspense } from 'react';
-import { TRIP_ROLES } from '@/utils/constants/status';
-import { VerticalStepper } from '@/components/itinerary/VerticalStepper';
-import { MobileStepper } from '@/components/itinerary/MobileStepper';
-import { Metadata, ResolvingMetadata } from 'next';
-import { createServerComponentClient } from '@/utils/supabase/server';
-import { getOpenGraphImageForTrip } from '@/lib/hooks/use-og-image';
+import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { TABLES } from '@/utils/constants/database';
-
-import type { Database } from '@/types/database.types';
-// Import TABLES but use type assertion
-import type { TripRole } from '@/types/trip';
 import TripPageClientWrapper from './trip-page-client-wrapper';
+import { createServerComponentClient } from '@/utils/supabase/server';
+import { getOpenGraphImageForTrip } from '@/lib/hooks/use-og-image';
 
-// Define a more complete type for TABLES
-type ExtendedTables = {
-  TRIP_MEMBERS: string;
-  TRIPS: string;
-  USERS: string;
-  ITINERARY_ITEMS: string;
-  ITINERARY_SECTIONS: string;
-  DESTINATIONS: string;
-  [key: string]: string;
+type TripParams = {
+  params: Promise<{
+    tripId: string;
+  }>;
 };
 
-// Use the extended type with the existing TABLES constant
-const Tables = TABLES as unknown as ExtendedTables;
-
-// Define trip data interface
-interface TripData {
-  id: string;
-  name: string;
-  description?: string;
-  destination_id?: string;
-  destinations?: {
-    city?: string;
-    country?: string;
-    image_url?: string;
-  };
-  cover_image_url?: string;
-}
-
-// Add metadata generation for trip pages
-export async function generateMetadata(
-  { params }: { params: Promise<{ tripId: string }> },
-  parent: ResolvingMetadata
-): Promise<Metadata> {
+// Define metadata for the page
+export async function generateMetadata({ params }: TripParams): Promise<Metadata> {
   try {
-    const { tripId } = await params;
+    const resolvedParams = await params;
+    const tripId = resolvedParams.tripId;
+    console.log(`[Metadata] Generating for trip: ${tripId}`);
+    
     const supabase = await createServerComponentClient();
-
-    // Fetch trip data for metadata
-    const { data: trip, error } = await supabase
+    const { data, error } = await supabase
       .from(TABLES.TRIPS)
-      .select(`id, name, description, destination_id, cover_image_url, destinations:${TABLES.DESTINATIONS}(city, country, image_url)`)
-      .eq('id', tripId)
-      .single();
+      .select('id, name, description')
+      .eq('id', tripId);
 
-    if (error || !trip) {
-      console.error('Error fetching trip for metadata:', error);
+    if (error) {
+      console.log(`[Metadata] Error fetching trip: ${error?.message || 'Unknown error'}`);
       return {
         title: 'Trip | WithMe Travel',
-        description: 'Plan and organize your trip with WithMe Travel'
+        description: 'Plan your trip with WithMe Travel'
       };
     }
+    
+    if (!data || data.length === 0) {
+      console.log(`[Metadata] Trip not found: ${tripId}`);
+      return {
+        title: 'Trip | WithMe Travel',
+        description: 'Plan your trip with WithMe Travel'
+      };
+    }
+    
+    // Take the first trip if multiple were returned
+    const trip = data[0];
 
-    const tripData = trip as unknown as TripData;
-    
-    // Create metadata title and description
-    const title = `${tripData.name} | WithMe Travel`;
-    const description = tripData.description
-      ? tripData.description.substring(0, 160)
-      : `Plan your trip to ${tripData.destinations?.city || 'your destination'} with WithMe Travel`;
-      
-    // Generate OG images
-    const ogImages = getOpenGraphImageForTrip({
-      tripId,
-      bgColor: '#4A90E2'
-    });
-    
-    // Return metadata object
     return {
-      title,
-      description,
+      title: `${trip.name} | WithMe Travel`,
+      description: trip.description || 'Plan your trip with WithMe Travel',
       openGraph: {
-        title: tripData.name,
-        description,
-        images: ogImages,
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: tripData.name,
-        description,
-        images: ogImages.map(img => img.url),
+        title: trip.name,
+        description: trip.description || 'Plan your trip with WithMe Travel',
+        images: getOpenGraphImageForTrip({ tripId, bgColor: '#4A90E2' }),
       }
     };
-  } catch (error) {
-    console.error('Error generating trip metadata:', error);
+  } catch (error: any) {
+    console.error(`[Metadata] Error: ${error?.message || 'Unknown error'}`);
     return {
       title: 'Trip | WithMe Travel',
-      description: 'Plan and organize your trip with WithMe Travel'
+      description: 'Plan your trip with WithMe Travel'
     };
   }
 }
 
-export default async function TripPage({ params }: { params: Promise<{ tripId: string }> }) {
-  const { tripId } = await params;
+// Main page component
+export default async function TripPage({ params }: TripParams) {
+  const resolvedParams = await params;
+  const tripId = resolvedParams.tripId;
+  console.log(`[TripPage] Loading trip: ${tripId}`);
   
-  // Get server component client
-  const supabase = await createServerComponentClient();
-  
-  // Get cookies for guest token check
-  const cookieStore = await cookies();
-  const guestTripToken = cookieStore.get('guest_trip_token')?.value;
-  
-  // Check authentication status
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-  
-  // First check if the trip exists
-  const { data: trip, error: tripError } = await supabase
-    .from(TABLES.TRIPS)
-    .select('id, name, created_by, guest_token')
-    .eq('id', tripId)
-    .single();
-  
-  if (tripError) {
-    console.error('Trip not found:', tripError);
-    redirect(`/trips?error=${encodeURIComponent('Trip not found')}`);
-  }
-  
-  // Determine if this is a guest-created trip the current guest can access
-  const isGuestCreator = !user && trip.guest_token && guestTripToken === trip.guest_token;
-  
-  // Now check if the user has access to this trip
-  if (!user && !isGuestCreator) {
-    // If not authenticated and not a guest creator, redirect to login
-    redirect(`/login?redirectTo=${encodeURIComponent(`/trips/${tripId}`)}`);
-  }
-  
-  // If authenticated, check if user is a member of the trip
+  let trip = null;
+  let canView = false;
   let canEdit = false;
-  
-  if (user) {
-    const { data: membership, error: membershipError } = await supabase
-      .from('trip_members')
-      .select('role')
-      .eq('trip_id', tripId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+  let isGuestCreator = false;
+  let errorMessage = '';
+
+  try {
+    const supabase = await createServerComponentClient();
     
-    if (membershipError) {
-      console.error('Error checking trip membership:', membershipError);
-    }
+    // Get user if available
+    const { data: { user } } = await supabase.auth.getUser();
     
-    // User can edit if they are a member with admin or editor role
-    if (membership && (membership.role === 'admin' || membership.role === 'editor')) {
-      canEdit = true;
-    } else if (trip.created_by === user.id) {
-      // User is the creator but might not be in trip_members yet
-      canEdit = true;
+    // First try to get the trip data
+    const { data: tripData, error: tripError } = await supabase
+      .from(TABLES.TRIPS)
+      .select('*')
+      .eq('id', tripId);
+      
+    if (tripError) {
+      console.log(`[TripPage] Error fetching trip: ${tripError.message}`);
+      errorMessage = `Error fetching trip: ${tripError.message}`;
+    } else if (!tripData || tripData.length === 0) {
+      console.log(`[TripPage] Trip not found: ${tripId}`);
+      errorMessage = `Trip not found: ${tripId}`;
+      return notFound(); // Return 404 immediately if trip doesn't exist
+    } else {
+      // Take the first trip if multiple were returned
+      trip = tripData[0];
+      console.log(`[TripPage] Found trip: ${trip.name}`);
+      
+      // Check if user is logged in and is the creator
+      if (user && trip.created_by === user.id) {
+        console.log(`[TripPage] User ${user.id} is the creator`);
+        canView = true;
+        canEdit = true;
+      } else {
+        // Check for guest token using the parse method which is more reliable
+        const cookiesStr = cookies().toString();
+        const guestTokenMatch = cookiesStr.match(/guest_user_id=([^;]+)/);
+        const guestToken = guestTokenMatch ? guestTokenMatch[1] : null;
+        
+        console.log(`[TripPage] Checking guest token: ${guestToken}`);
+        
+        if (guestToken) {
+          try {
+            // First check if the trip has a guest_token field that matches directly
+            if (trip.guest_token === guestToken || trip.guest_token_text === guestToken) {
+              console.log(`[TripPage] Guest token matches directly on trip record`);
+              canView = true;
+              canEdit = true;
+              isGuestCreator = true;
+            } else {
+              // Then check the guest_tokens table
+              const { data: guestRows, error: guestError } = await supabase
+                .from('guest_tokens')
+                .select('*')
+                .eq('trip_id', tripId)
+                .eq('token', guestToken);
+                
+              if (guestError) {
+                console.log(`[TripPage] Error checking guest token: ${guestError.message || 'Unknown error'}`);
+              } else if (guestRows && guestRows.length > 0) {
+                console.log(`[TripPage] Found ${guestRows.length} matching guest tokens`);
+                canView = true;
+                canEdit = true;
+                isGuestCreator = true;
+              }
+            }
+          } catch (tokenError: any) {
+            console.error(`[TripPage] Error checking guest token: ${tokenError?.message || 'Unknown error'}`);
+          }
+        }
+      }
     }
-  } else if (isGuestCreator) {
-    // Guest creators can edit their trips
-    canEdit = true;
+  } catch (error: any) {
+    console.error(`[TripPage] Error: ${error?.message || 'Unknown error'}`);
+    errorMessage = `Error: ${error?.message || 'Unknown error'}`;
   }
+
+  // If user doesn't have access, return 404
+  if (!canView) {
+    console.log(`[TripPage] Access denied for trip ${tripId}`);
+    return notFound();
+  }
+
+  console.log(`[TripPage] Rendering trip ${tripId}, canEdit=${canEdit}, isGuestCreator=${isGuestCreator}`);
   
   return (
     <div className="min-h-screen">

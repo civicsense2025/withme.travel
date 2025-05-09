@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import IdeasWhiteboard from './ideas-whiteboard';
 import { useIdeasPresenceContext } from './context/ideas-presence-context';
 import { useAuth } from '@/components/auth-provider';
@@ -16,6 +17,7 @@ interface IdeasClientProps {
 
 export default function IdeasClient({ groupId, initialIdeas, groupName, isAuthenticated }: IdeasClientProps) {
   const { setFullscreen } = useLayoutMode();
+  const params = useParams();
 
   // Enable fullscreen mode when component mounts, disable when unmounts
   useEffect(() => {
@@ -37,6 +39,8 @@ export default function IdeasClient({ groupId, initialIdeas, groupName, isAuthen
             groupId={groupId} 
             groupName={groupName}
             isAuthenticated={isAuthenticated}
+            planSlug={params?.slug as string}
+            planId={params?.slug as string}
           />
         </Card>
       </div>

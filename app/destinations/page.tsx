@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/page-header';
 import { SEO, LAYOUT } from './constants';
 import DestinationsClient from './destinations-client';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { FIELDS } from '@/utils/constants/database';
+import { FIELDS } from '@/utils/constants/tables';
 
 // Mark as a dynamic route for fresh data
 export const dynamic = 'force-dynamic';
@@ -42,53 +42,64 @@ interface Destination {
   country: string;
   image_url: string;
   description: string;
+  continent?: string;
+  emoji?: string;
+}
+
+// Type assertion for Supabase data
+interface DestinationData {
+  id: string;
+  name?: string;
+  city?: string;
+  country?: string;
+  image_url?: string;
+  description?: string;
 }
 
 /**
  * Fetch all destinations from Supabase, selecting only the fields we need.
  */
-async function fetchAllDestinations(): Promise<Destination[]> {
+async function fetchAllDestinations(): Promise<any[]> {
   const supabase = await createServerComponentClient();
+  console.log('[fetchAllDestinations] Fetching destinations from Supabase');
+  
   const { data, error } = await supabase
     .from('destinations')
     .select([
       'id',
-      'name',
+      'name', 
       'city',
       'country',
       'image_url',
-      'description'
+      'continent',
+      'emoji'
     ].join(','))
     .order('country', { ascending: true })
     .order('city', { ascending: true });
 
-  if (error || !Array.isArray(data)) {
-    // In production, you might want to log this
+  if (error) {
+    console.error('[fetchAllDestinations] Error fetching destinations:', error);
     return [];
   }
 
-  function isDestination(item: any): item is Destination {
-    return (
-      typeof item === 'object' &&
-      item !== null &&
-      typeof item.id === 'string' &&
-      typeof item.name === 'string'
-    );
+  if (!Array.isArray(data)) {
+    console.error('[fetchAllDestinations] Data is not an array:', data);
+    return [];
   }
 
-  return data.reduce<Destination[]>((acc, item) => {
-    if (isDestination(item)) {
-      acc.push({
-        id: item.id,
-        name: item.name,
-        city: item.city ?? '',
-        country: item.country ?? '',
-        image_url: item.image_url ?? '',
-        description: item.description ?? '',
-      });
-    }
-    return acc;
-  }, []);
+  console.log(`[fetchAllDestinations] Fetched ${data.length} destinations from Supabase`);
+  
+  // Log the first item to see its structure
+  if (data.length > 0) {
+    console.log(`[fetchAllDestinations] First raw item: ${JSON.stringify(data[0])}`);
+    
+    // Check if continent exists on each item
+    const hasContinentCount = data.filter((item: any) => item.continent).length;
+    console.log(`[fetchAllDestinations] ${hasContinentCount} out of ${data.length} destinations have continent field`);
+  }
+
+  // Simply return the raw data from Supabase
+  return data;
 }
 
 /**
@@ -99,12 +110,19 @@ async function fetchAllDestinations(): Promise<Destination[]> {
  */
 export default async function DestinationsPage() {
   const destinations: Destination[] = await fetchAllDestinations();
+  console.log(`[DestinationsPage] Fetched ${destinations.length} destinations`);
+  
+  // Log the first few destinations for debugging
+  if (destinations.length > 0) {
+    console.log(`[DestinationsPage] First destination: ${JSON.stringify(destinations[0])}`);
+  }
+  
   return (
     <main>
-      <PageHeader
-        heading="Discover Amazing Places"
-        description="Explore destinations from around the world and start planning your next adventure."
-      />
+      <div className="container max-w-screen-2xl py-12 text-center">
+        <h1 className="text-6xl font-medium tracking-tight mb-4">Explore Destinations</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Find your next adventure</p>
+      </div>
 
       <Suspense fallback={<LoadingFallback />}>
         <DestinationsClient destinations={destinations} />

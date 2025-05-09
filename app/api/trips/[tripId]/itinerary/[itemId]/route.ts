@@ -57,9 +57,9 @@ async function checkTripAccess(
 ): Promise<{ allowed: boolean; error?: string; status?: number; role?: string }> {
   const { data: member, error } = await supabase
     .from(TRIP_MEMBERS_TABLE)
-    .select('ROLE')
-    .eq('TRIP_ID', tripId)
-    .eq('USER_ID', userId)
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (error) {
@@ -143,7 +143,7 @@ export async function DELETE(
       .from(ITINERARY_ITEMS_TABLE)
       .delete()
       .eq('id', itemId)
-      .eq('TRIP_ID', tripId);
+      .eq('trip_id', tripId);
 
     if (deleteError) {
       console.error('Error deleting item:', deleteError);
@@ -187,7 +187,7 @@ export async function GET(
       .from(ITINERARY_ITEMS_TABLE)
       .select('*')
       .eq('id', itemId)
-      .eq('TRIP_ID', tripId)
+      .eq('trip_id', tripId)
       .maybeSingle();
 
     if (fetchError) {
@@ -270,7 +270,7 @@ export async function PUT(
       .from(ITINERARY_ITEMS_TABLE)
       .update(updateData)
       .eq('id', itemId)
-      .eq('TRIP_ID', tripId)
+      .eq('trip_id', tripId)
       .select('*')
       .single();
 

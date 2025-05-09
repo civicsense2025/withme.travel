@@ -1,7 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, MapPin } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { MapPin } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Define interfaces for the component types
@@ -72,7 +71,7 @@ function formatTime(timeString: string | null): string {
 
 // Item component
 const ItemDisplay = ({ item, index }: { item: ItineraryTemplateItem; index: number }) => (
-  <div className="p-4 border-b last:border-b-0">
+  <div className="p-4 border-b border-gray-200 dark:border-gray-800 last:border-b-0 min-h-[6rem]">
     <div className="flex justify-between items-start gap-4">
       <div className="flex gap-3">
         <div className="bg-muted rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center">
@@ -133,56 +132,16 @@ export function ItineraryTemplateDisplay({ template, sections }: ItineraryTempla
 
   return (
     <div className="space-y-8">
-      {/* Template Header */}
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">{template.title}</h1>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <CalendarDays className="h-4 w-4" />
-            <span className="text-sm">
-              {template.duration_days} {template.duration_days === 1 ? 'day' : 'days'}
-            </span>
-          </div>
-
-          {template.destination && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span className="text-sm">
-                {template.destination.city}, {template.destination.country}
-              </span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span className="text-sm">Last updated {formatDate(template.updated_at)}</span>
-          </div>
-        </div>
-
-        {template.tags && template.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {template.tags.map((tag) => (
-              <Badge key={tag} variant="outline">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {template.description && (
-          <p className="text-muted-foreground mt-2">{template.description}</p>
-        )}
-      </div>
-
       {/* Day Sections using Tabs */}
       {sortedSections.length > 0 ? (
         <Tabs defaultValue={defaultTabValue} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            {' '}
-            {/* Adjust grid-cols based on typical max days? Or make scrollable? */}
+          <TabsList className="w-full">
             {sortedSections.map((section) => (
-              <TabsTrigger key={section.id} value={section.id}>
+              <TabsTrigger 
+                key={section.id} 
+                value={section.id}
+                className="min-h-[3rem]"
+              >
                 {/* Use section.title if available, otherwise default to Day X */}
                 {section.title || `Day ${section.day_number}`}
               </TabsTrigger>
@@ -190,9 +149,9 @@ export function ItineraryTemplateDisplay({ template, sections }: ItineraryTempla
           </TabsList>
 
           {sortedSections.map((section) => (
-            <TabsContent key={section.id} value={section.id} className="mt-4">
+            <TabsContent key={section.id} value={section.id}>
               {/* We can wrap content in a Card if desired, or just list items */}
-              <Card>
+              <Card className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
                 <CardContent className="p-0">
                   {section.items
                     .sort((a, b) => a.item_order - b.item_order)
@@ -200,7 +159,7 @@ export function ItineraryTemplateDisplay({ template, sections }: ItineraryTempla
                       <ItemDisplay key={item.id} item={item} index={idx} />
                     ))}
                   {section.items.length === 0 && (
-                    <div className="p-6 text-sm text-muted-foreground italic text-center">
+                    <div className="p-6 text-sm text-muted-foreground italic text-center min-h-[10rem] flex items-center justify-center">
                       No activities planned for this day yet.
                     </div>
                   )}
@@ -210,7 +169,7 @@ export function ItineraryTemplateDisplay({ template, sections }: ItineraryTempla
           ))}
         </Tabs>
       ) : (
-        <Card>
+        <Card className="rounded-xl border border-gray-200 dark:border-gray-800">
           <CardContent className="p-8 text-center">
             <p className="text-muted-foreground">
               This itinerary doesn't have any days or activities planned yet.

@@ -54,8 +54,8 @@ export async function GET(
     const { data: userMembership, error: membershipError } = await supabase
       .from(TRIP_MEMBERS_TABLE)
       .select('role')
-      .eq('TRIP_ID', tripId)
-      .eq('USER_ID', user.id)
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (membershipError) {
@@ -90,7 +90,7 @@ export async function GET(
         profiles(*)
       `
       )
-      .eq('TRIP_ID', tripId);
+      .eq('trip_id', tripId);
 
     if (error) {
       console.error('Error fetching members:', error);

@@ -19,16 +19,24 @@ export const TABLES = {
   FORM_COLLABORATORS: 'form_collaborators',
   FORM_TEMPLATES: 'form_templates',
   FORMS: 'forms',
-  GROUP_IDEAS: 'group_ideas',
-  GROUP_IDEA_COMMENTS: 'group_idea_comments',
-  GROUP_IDEA_REACTIONS: 'group_idea_reactions',
+  GROUPS: 'groups',
+  GROUP_MEMBERS: 'group_members',
+  GROUP_PLANS: 'group_plans',
+  GROUP_PLAN_IDEAS: 'group_plan_ideas',
+  GROUP_PLAN_IDEA_COMMENTS: 'group_plan_idea_comments',
+  GROUP_PLAN_IDEA_REACTIONS: 'group_plan_idea_reactions',
+  GROUP_PLAN_IDEA_VOTES: 'group_plan_idea_votes',
   GROUP_PLAN_EVENTS: 'group_plan_events',
+  GUEST_TOKENS: 'guest_tokens',
   IMAGE_METADATA: 'image_metadata',
   INVITATIONS: 'invitations',
   ITINERARY_ITEM_COMMENTS: 'itinerary_item_comments',
   ITINERARY_ITEM_REACTIONS: 'itinerary_item_reactions',
   ITINERARY_ITEMS: 'itinerary_items',
   ITINERARY_TEMPLATES: 'itinerary_templates',
+  ITINERARY_TEMPLATE_SECTIONS: 'itinerary_template_sections',
+  ITINERARY_TEMPLATE_ITEMS: 'itinerary_template_items',
+  NOTIFICATION_PREFERENCES: 'notification_preferences',
   NOTIFICATIONS: 'notifications',
   ONBOARDING_PREFERENCES: 'onboarding_preferences',
   ONBOARDING_TOUR_COMPLETIONS: 'onboarding_tour_completions',
@@ -59,8 +67,28 @@ export const TABLES = {
   USER_TESTING_SIGNUPS: 'user_testing_signups',
   USER_TRAVEL: 'user_travel',
   VALIDATION_LOGS: 'validation_logs',
-  VOTES: 'votes'
-};
+  VOTES: 'votes',
+  GROUP_GUEST_MEMBERS: 'group_guest_members',
+  GROUP_IDEAS: 'group_ideas',
+  IMAGES: 'images',
+  ITEM_TAGS: 'item_tags',
+  LIKES: 'likes',
+  LOCATIONS: 'locations',
+  MEMBERS: 'members',
+  MESSAGES: 'messages',
+  METADATA: 'metadata',
+  PAYMENT_METHODS: 'payment_methods',
+  PERMISSIONS: 'permissions',
+  PRIVACY_SETTINGS: 'privacy_settings',
+  SEARCH_HISTORY: 'search_history',
+  SESSIONS: 'sessions',
+  SETTINGS: 'settings',
+  SUBSCRIPTIONS: 'subscriptions',
+  TEMPLATE_ITEMS: 'template_items',
+  TRAVEL_PREFERENCES: 'travel_preferences',
+  USER_TRIP_VOTES: 'user_trip_votes',
+  USERS: 'users'
+} as const;
 
 /**
  * Common database field names
@@ -86,6 +114,39 @@ export const FIELDS = {
     END_DATE: 'end_date',
     CREATED_BY: 'created_by',
     DESTINATION_ID: 'destination_id'
+  },
+  GROUPS: {
+    ID: 'id',
+    NAME: 'name',
+    DESCRIPTION: 'description',
+    CREATED_BY: 'created_by',
+    SLUG: 'slug',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at'
+  },
+  GROUP_PLAN_IDEAS: {
+    ID: 'id',
+    GROUP_ID: 'group_id',
+    CREATED_BY: 'created_by',
+    GUEST_TOKEN: 'guest_token',
+    TYPE: 'type',
+    TITLE: 'title',
+    DESCRIPTION: 'description',
+    POSITION: 'position',
+    VOTES_UP: 'votes_up',
+    VOTES_DOWN: 'votes_down',
+    SELECTED: 'selected',
+    META: 'meta',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at'
+  },
+  GROUP_PLAN_IDEA_COMMENTS: {
+    IDEA_ID: 'idea_id',
+    USER_ID: 'user_id'
+  },
+  GROUP_PLAN_IDEA_REACTIONS: {
+    IDEA_ID: 'idea_id',
+    USER_ID: 'user_id'
   }
 };
 
@@ -99,7 +160,7 @@ export const ENUMS = {
     ITINERARY_ITEM: 'itinerary_item',
     COLLECTION: 'collection',
     TEMPLATE: 'template',
-    GROUP_IDEA: 'group_idea'
+    GROUP_PLAN_IDEA: 'group_plan_idea'
   },
   TRIP_ROLES: {
     ADMIN: 'admin',
@@ -117,6 +178,20 @@ export const ENUMS = {
     TRIP_COVER: 'trip_cover',
     USER_AVATAR: 'user_avatar',
     TEMPLATE_COVER: 'template_cover'
+  },
+  GROUP_PLAN_IDEA_TYPE: {
+    DESTINATION: 'destination',
+    DATE: 'date',
+    ACTIVITY: 'activity',
+    BUDGET: 'budget',
+    OTHER: 'other',
+    QUESTION: 'question',
+    NOTE: 'note',
+    PLACE: 'place'
+  },
+  VOTE_TYPE: {
+    UP: 'up',
+    DOWN: 'down'
   }
 };
 
@@ -129,7 +204,7 @@ export type CommentableContentType =
   | 'itinerary_item' 
   | 'collection' 
   | 'template'
-  | 'group_idea';
+  | 'group_plan_idea';
 
 /**
  * Interface for itinerary template metadata

@@ -12,7 +12,8 @@ import { TABLES as MULTI_CITY_TABLES } from '@/utils/constants/database-multi-ci
 // Combine the tables from both sources
 const TABLES = {
   ...CORE_TABLES,
-  ...MULTI_CITY_TABLES
+  ...MULTI_CITY_TABLES,
+  GROUP_TRIPS: 'group_trips'
 };
 
 // Define table and field constants
@@ -186,10 +187,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { 
       name, 
       destination_id, 
+      city_id = null,
       start_date, 
       end_date, 
       cities = [],
       website, // Honeypot field
+      group_id = null, // Add group_id parameter
     } = body;
     
     // Honeypot check
@@ -203,6 +206,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Trip name is required" }, { status: 400 });
     }
 
+    // If group_id is provided, verify user is a member of the group
+    if (group_id && user) {
+      const { data: membership, error: membershipError } = await supabase
+        .from(TABLES.GROUP_MEMBERS)
+        .select('*')
+        .eq('group_id', group_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (membershipError || !membership) {
+        return NextResponse.json(
+          { error: 'You are not a member of this group' },
+          { status: 403 }
+        );
+      }
+    }
+
     let tripId: string | null = null;
     let newTrip: any = null;
     
@@ -210,6 +230,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const trip = {
       name,
       destination_id: destination_id || null,
+      city_id: city_id || destination_id || null, // Use city_id with fallback to destination_id
       start_date: start_date || null,
       end_date: end_date || null,
       created_by: user?.id || null,
@@ -247,13 +268,71 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
     
     if (tripError) {
-      console.error("Error creating trip:", tripError);
-      return NextResponse.json({ error: "Failed to create trip" }, { status: 500 });
+      console.error('Error creating trip:', tripError);
+      return NextResponse.json({ error: 'Failed to create trip' }, { status: 500 });
     }
     
     newTrip = tripData;
     tripId = tripData.id;
     
+    // If user is authenticated, add them as admin
+    if (user) {
+      // Add trip membership
+      const { error: membershipError } = await supabase
+        .from('trip_members')
+        .insert({
+          trip_id: tripId,
+          user_id: user.id,
+          role: TRIP_ROLES.ADMIN,
+        });
+      
+      if (membershipError) {
+        console.error('Error adding trip membership:', membershipError);
+        // Continue even if membership creation fails
+      }
+    }
+
+    // If group_id is provided, associate trip with group
+    if (group_id && tripId) {
+      const { error: groupTripError } = await supabase
+        .from('group_trips')
+        .insert({
+          group_id,
+          trip_id: tripId,
+          created_by: user?.id || null,
+          created_by_guest_token: guestToken
+        });
+      
+      if (groupTripError) {
+        console.error('Error associating trip with group:', groupTripError);
+        // Continue even if group association fails
+      }
+
+      // If user is in the group, add all group members to the trip
+      if (user) {
+        // Get all group members
+        const { data: groupMembers, error: membersError } = await supabase
+          .from(TABLES.GROUP_MEMBERS)
+          .select('user_id, role')
+          .eq('group_id', group_id);
+
+        if (!membersError && groupMembers && groupMembers.length > 0) {
+          // Add each group member to the trip
+          const tripMemberships = groupMembers
+            .filter(member => member.user_id !== user.id) // Skip the creator who is already added
+            .map(member => ({
+              trip_id: tripId,
+              user_id: member.user_id,
+              role: member.role === 'admin' ? TRIP_ROLES.EDITOR : TRIP_ROLES.VIEWER
+            }));
+
+          if (tripMemberships.length > 0) {
+            await supabase.from('trip_members').insert(tripMemberships);
+          }
+        }
+      }
+    }
+
     // If cities are provided, add them to the trip
     if (tripId && cities && cities.length > 0) {
       for (let i = 0; i < cities.length; i++) {

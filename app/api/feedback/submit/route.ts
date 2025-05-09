@@ -2,112 +2,128 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { SubmitResponsesSchema } from '@/app/components/feedback/types';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
+import { Database } from '@/types/database.types';
+import { TABLES } from '@/utils/constants/database';
+
+// Schema for validating feedback submissions
+const feedbackSubmissionSchema = z.object({
+  formId: z.string(),
+  responses: z.array(
+    z.object({
+      questionId: z.string(),
+      value: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.array(z.string()),
+        z.null()
+      ])
+    })
+  ),
+  metadata: z.record(z.any()).optional(),
+});
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // Parse the request body
     const body = await request.json();
     
-    // Validate the request data using Zod
-    const validationResult = SubmitResponsesSchema.safeParse(body);
+    // Validate request body
+    const validatedData = feedbackSubmissionSchema.safeParse(body);
     
-    if (!validationResult.success) {
-      console.error('Validation error:', validationResult.error);
+    if (!validatedData.success) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid request data',
-          details: validationResult.error.flatten()
-        }, 
+        { error: 'Invalid request data', details: validatedData.error.format() },
         { status: 400 }
       );
     }
+
+    const { formId, responses, metadata } = validatedData.data;
     
-    const { formId, sessionId, responses, metadata } = validationResult.data;
-    
-    // Create a Supabase client
+    // Initialize Supabase client
     const supabase = await createRouteHandlerClient();
     
-    // Get the authenticated user if available
+    // Get the user if authenticated
     const { data: { user } } = await supabase.auth.getUser();
     
-    // Create or retrieve a response session
-    let activeSessionId = sessionId;
-    
-    if (!activeSessionId) {
-      // Create a new response session
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('feedback_sessions')
-        .insert({
-          form_id: formId,
-          respondent_id: user?.id || null,
-          metadata: {
-            user_agent: request.headers.get('user-agent'),
-            referrer: request.headers.get('referer'),
-            ip_address: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip'),
-            ...metadata
-          }
-        })
-        .select('id')
-        .single();
+    // Create a response session record
+    const { data: responseSession, error: sessionError } = await supabase
+      .from(TABLES.FORMS)
+      .insert({
+        form_id: formId,
+        user_id: user?.id || null,
+        submission_date: new Date().toISOString(),
+        metadata: metadata || {},
+        status: 'completed'
+      })
+      .select('id')
+      .single();
       
-      if (sessionError) {
-        console.error('Error creating feedback session:', sessionError);
-        return NextResponse.json(
-          { success: false, error: 'Failed to create feedback session' },
-          { status: 500 }
-        );
-      }
-      
-      activeSessionId = sessionData.id;
-    }
-    
-    // Store each response
-    const responsesToInsert = responses.map(response => ({
-      session_id: activeSessionId,
-      question_id: response.questionId,
-      value: response.value,
-      respondent_id: user?.id || null,
-    }));
-    
-    const { error: responsesError } = await supabase
-      .from('feedback_responses')
-      .insert(responsesToInsert);
-    
-    if (responsesError) {
-      console.error('Error storing feedback responses:', responsesError);
+    if (sessionError) {
+      console.error('Error creating response session:', sessionError);
       return NextResponse.json(
-        { success: false, error: 'Failed to store feedback responses' },
+        { error: 'Failed to create response session' },
         { status: 500 }
       );
     }
     
-    // Update the session as completed
-    const { error: updateSessionError } = await supabase
-      .from('feedback_sessions')
-      .update({ completed_at: new Date().toISOString() })
-      .eq('id', activeSessionId);
+    // Insert individual responses
+    const responseRecords = responses.map(response => ({
+      session_id: responseSession.id,
+      question_id: response.questionId,
+      response_value: response.value,
+      form_id: formId,
+    }));
     
-    if (updateSessionError) {
-      console.warn('Error updating feedback session:', updateSessionError);
-      // Non-critical, continue
+    const { error: responsesError } = await supabase
+      .from(TABLES.FORM_TEMPLATES)
+      .insert(responseRecords);
+      
+    if (responsesError) {
+      console.error('Error saving responses:', responsesError);
+      return NextResponse.json(
+        { error: 'Failed to save responses' }, 
+        { status: 500 }
+      );
     }
     
-    // Return success response
+    // Optionally create an entry in the feedback table as well for legacy support
+    const mainQuestion = responses.find(r => r.questionId === 'missing-features' || r.questionId.includes('feedback'));
+    const ratingQuestion = responses.find(r => r.questionId === 'satisfaction' || r.questionId.includes('rating'));
+    
+    if (mainQuestion) {
+      const { error: feedbackError } = await supabase
+        .from(TABLES.FEEDBACK)
+        .insert({
+          user_id: user?.id || null,
+          form_id: formId,
+          content: String(mainQuestion.value || ''),
+          rating: ratingQuestion ? Number(ratingQuestion.value || 0) : null,
+          type: 'feature_request',
+          status: 'new',
+          metadata: {
+            source: 'form_submission',
+            form_id: formId,
+            session_id: responseSession.id,
+            responses: responses.map(r => ({ questionId: r.questionId, value: r.value }))
+          }
+        });
+        
+      if (feedbackError) {
+        console.error('Error creating feedback entry:', feedbackError);
+        // Continue anyway since the main form responses were saved
+      }
+    }
+    
     return NextResponse.json({
       success: true,
-      sessionId: activeSessionId,
-      message: 'Feedback submitted successfully'
+      sessionId: responseSession.id
     });
     
   } catch (error) {
     console.error('Error processing feedback submission:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to process feedback', 
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

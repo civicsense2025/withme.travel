@@ -1,166 +1,129 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/lib/hooks/use-auth';
-import { useToast } from '@/components/ui/use-toast';
+'use client';
 
-type LikeItemType = 'destination' | 'itinerary' | 'attraction';
+import { useState, useEffect, useCallback } from 'react';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 
-interface Like {
+type ItemType = 'destination' | 'itinerary' | 'trip' | 'template';
+
+interface UseLikesOptions {
+  itemId: string;
+  itemType: ItemType;
+  initialLiked?: boolean;
+}
+
+// Type for a like response item
+interface LikeItem {
   id: string;
   user_id: string;
   item_id: string;
-  item_type: LikeItemType;
+  item_type: string;
   created_at: string;
 }
 
-export function useLikes() {
-  const { user, isLoading: isAuthLoading } = useAuth();
-  const { toast } = useToast();
-  const [likes, setLikes] = useState<Like[]>([]);
-  const [likedItemIds, setLikedItemIds] = useState<Set<string>>(new Set());
+export function useLikes({ itemId, itemType, initialLiked = false }: UseLikesOptions) {
+  const [isLiked, setIsLiked] = useState(initialLiked);
   const [isLoading, setIsLoading] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const hasFetched = useRef<string | null>(null); // store user id
-
-  // Memoized fetchLikes
-  const fetchLikes = useCallback(async () => {
-    if (!user) {
-      setLikes([]);
-      setLikedItemIds(new Set());
-      hasFetched.current = null;
-      return;
-    }
-    // Only fetch if we haven't already for this user
-    if (hasFetched.current === user.id) return;
-    hasFetched.current = user.id;
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/likes', {
-        credentials: 'include',
-      });
-      if (response.status === 401) {
-        setLikes([]);
-        setLikedItemIds(new Set());
-        return;
-      }
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch likes');
-      }
-      const responseData = await response.json();
-      const likesData = responseData.data || [];
-      setLikes(likesData);
-      setLikedItemIds(new Set(likesData.map((like: Like) => like.item_id)));
-    } catch (error) {
-      console.error('Error fetching likes:', error);
-      if (user) {
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch likes. Please try again later.',
-          variant: 'destructive',
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, toast]);
-
-  // Only fetch likes when user ID changes, with debounce
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Check authentication status on mount
   useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    if (!isAuthLoading && user) {
-      // Reset hasFetched if user changes
-      if (hasFetched.current !== user.id) {
-        hasFetched.current = null;
+    async function checkAuth() {
+      try {
+        const supabase = getBrowserClient();
+        const { data } = await supabase.auth.getUser();
+        setIsAuthenticated(!!data.user);
+      } catch (err) {
+        console.error('Error checking auth status:', err);
+        setIsAuthenticated(false);
       }
-      debounceRef.current = setTimeout(() => {
-        fetchLikes();
-      }, 300);
-    } else if (!user && !isAuthLoading) {
-      setLikes([]);
-      setLikedItemIds(new Set());
-      hasFetched.current = null;
     }
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+    
+    checkAuth();
+  }, []);
+  
+  // Fetch initial like status if user is authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !itemId) return;
+    
+    const checkLikeStatus = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/likes?itemType=${itemType}&itemId=${itemId}`);
+        const data = await response.json();
+        
+        // Check if this item is in user's likes
+        if (response.ok && Array.isArray(data.data)) {
+          const isItemLiked = data.data.some((like: LikeItem) => 
+            like.item_id === itemId && like.item_type === itemType
+          );
+          setIsLiked(isItemLiked);
+        }
+      } catch (err) {
+        console.error('Error checking like status:', err);
+        setError('Failed to check if item is liked');
+      } finally {
+        setIsLoading(false);
       }
     };
-  }, [user?.id, isAuthLoading, fetchLikes]);
-
-  // Check if an item is liked
-  const isLiked = (itemId: string) => {
-    return likedItemIds.has(itemId);
-  };
-
-  // Toggle like status for an item
-  const toggleLike = async (itemId: string, itemType: LikeItemType): Promise<boolean> => {
-    if (!user) return false;
-
-    const currentlyLiked = isLiked(itemId);
-
+    
+    checkLikeStatus();
+  }, [itemId, itemType, isAuthenticated]);
+  
+  const toggleLike = useCallback(async () => {
+    if (!isAuthenticated) {
+      setError('You must be signed in to save items');
+      return;
+    }
+    
+    if (!itemId) {
+      setError('No item specified');
+      return;
+    }
+    
     try {
-      if (currentlyLiked) {
-        // Unlike
+      setIsLoading(true);
+      
+      if (isLiked) {
+        // Remove like
         const response = await fetch(`/api/likes?itemId=${itemId}&itemType=${itemType}`, {
           method: 'DELETE',
-          credentials: 'include',
         });
-
+        
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to unlike item');
+          throw new Error('Failed to remove from saved items');
         }
-
-        setLikes((prev) => prev.filter((like) => like.item_id !== itemId));
-        setLikedItemIds((prev) => {
-          const next = new Set(prev);
-          next.delete(itemId);
-          return next;
-        });
-
-        return false;
       } else {
-        // Like
+        // Add like
         const response = await fetch('/api/likes', {
           method: 'POST',
-          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            itemId,
-            itemType,
-          }),
+          body: JSON.stringify({ itemId, itemType }),
         });
-
+        
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to like item');
+          throw new Error('Failed to save item');
         }
-
-        const newLike = await response.json();
-        setLikes((prev) => [...prev, newLike]);
-        setLikedItemIds((prev) => new Set([...prev, itemId]));
-
-        return true;
       }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update like status. Please try again later.',
-        variant: 'destructive',
-      });
-      return currentlyLiked;
+      
+      // Update local state
+      setIsLiked(!isLiked);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error toggling like:', err);
+      setError(err.message || 'Failed to update saved status');
+    } finally {
+      setIsLoading(false);
     }
-  };
-
+  }, [itemId, itemType, isLiked, isAuthenticated]);
+  
   return {
-    likes,
     isLiked,
+    isLoading,
+    error,
     toggleLike,
-    isLoading: isLoading || isAuthLoading,
+    isAuthenticated
   };
 }

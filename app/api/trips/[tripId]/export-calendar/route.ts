@@ -68,8 +68,8 @@ export async function POST(
     const { data: member, error: memberError } = await supabase
       .from('trip_members')
       .select()
-      .eq('TRIP_ID', tripId)
-      .eq('USER_ID', session.user.id)
+      .eq('trip_id', tripId)
+      .eq('user_id', session.user.id)
       .maybeSingle();
 
     if (memberError || !member) {
@@ -82,7 +82,7 @@ export async function POST(
     // Get trip details
     const { data: trip, error: tripError } = await supabase
       .from('trips')
-      .select(`${'NAME'}, ${'START_DATE'}, ${'END_DATE'}`)
+      .select(`name, start_date, end_date`)
       .eq('id', tripId)
       .single();
 
@@ -98,11 +98,11 @@ export async function POST(
     let query = supabase
       .from(TABLES.ITINERARY_ITEMS)
       .select('*')
-      .eq('TRIP_ID', tripId);
+      .eq('trip_id', tripId);
 
     // Filter by selected days if applicable
     if (exportOption === 'selected' && selectedDays && selectedDays.length > 0) {
-      query = query.in('DATE', selectedDays);
+      query = query.in('date', selectedDays);
     }
 
     const { data: items, error: itemsError } = await query;

@@ -112,27 +112,23 @@ export function FeatureTabs() {
   return (
     <div className="w-full max-w-5xl mx-auto">
       <Tabs value={tab} onValueChange={setTab} className="flex flex-col md:flex-row gap-6">
-        <TabsList className="flex md:flex-col h-auto bg-transparent p-0 space-y-1 md:w-60 flex-shrink-0">
-          {[
-            { key: 'expenses', label: 'Group Expenses', icon: <DollarSign className="h-4 w-4 mr-1 text-blue-500" /> },
-            { key: 'poll', label: 'Group Poll', icon: <BarChart2 className="h-4 w-4 mr-1 text-blue-400" /> }
-          ].map((t) => (
-            <TabsTrigger
-              key={t.key}
-              value={t.key}
-              className={
-                `flex items-center justify-start px-4 py-3 rounded-xl font-medium text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full
-                ${t.key === 'expenses' ?
-                  'data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-100 data-[state=active]:to-cyan-50 data-[state=active]:text-blue-900 hover:bg-blue-50' :
-                  'data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-100 data-[state=active]:to-teal-50 data-[state=active]:text-blue-900 hover:bg-blue-50'}
-                data-[state=inactive]:text-muted-foreground`
-              }
-            >
-              {t.icon}
-              <span className="ml-2">{t.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="w-full overflow-x-auto whitespace-nowrap scrollbar-hide no-scrollbar px-1 md:px-2">
+          <TabsList className="flex md:flex-col h-auto space-y-1 md:w-60 flex-shrink-0 border-0">
+            {[
+              { key: 'expenses', label: 'Group Expenses', icon: <DollarSign className="h-4 w-4 mr-1 text-blue-500" /> },
+              { key: 'poll', label: 'Group Poll', icon: <BarChart2 className="h-4 w-4 mr-1 text-blue-400" /> }
+            ].map((t) => (
+              <TabsTrigger
+                key={t.key}
+                value={t.key}
+                className="flex items-center justify-start px-4 py-3 text-base font-medium w-full data-[state=inactive]:text-muted-foreground"
+              >
+                {t.icon}
+                <span className="ml-2">{t.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
         
         <div className="relative flex-1 min-h-[340px] flex items-stretch">
           <AnimatePresence mode="wait" initial={false}>
@@ -201,25 +197,27 @@ export function FeatureTabs() {
                         </svg>
                       )}
                       
-                      {/* Settle up tooltip */}
-                      <motion.div
-                        ref={tooltipRef}
-                        className="absolute top-full right-0 mt-2 p-2 bg-blue-600 text-white text-xs font-medium rounded-lg shadow-lg z-10 flex items-center"
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ 
-                          opacity: showTooltip ? 1 : 0,
-                          y: showTooltip ? 0 : -5
-                        }}
-                        transition={{ duration: 0.3, delay: 0.2 }}
-                      >
-                        <span>Tap to settle up</span>
-                        <ArrowRight className="h-3 w-3 ml-1" />
-                        <motion.div
-                          className="absolute w-2 h-2 bg-blue-600 rotate-45 top-0 right-4 -translate-y-1/2"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: showTooltip ? 1 : 0 }}
-                        />
-                      </motion.div>
+                      {/* Explanatory tooltip */}
+                      {showTooltip && (
+                        <motion.div 
+                          ref={tooltipRef}
+                          className="absolute -bottom-3 md:top-1/2 md:right-[110%] md:transform md:-translate-y-1/2 bg-zinc-900 text-white p-2 md:p-3 rounded-lg shadow-xl max-w-[250px] z-10"
+                          initial={{ opacity: 0, scale: 0.85, y: showTooltip ? 5 : 0 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.2 }}
+                          style={{ 
+                            transformOrigin: 'bottom right' 
+                          }}
+                        >
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-5 w-5 text-yellow-300 flex-shrink-0 mt-1" />
+                            <p className="text-xs font-medium">
+                              Split this equally? You owe <span className="font-bold">${(total / 3).toFixed(2)}</span> each!
+                            </p>
+                          </div>
+                          <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-4 h-4 bg-zinc-900 hidden md:block"></div>
+                        </motion.div>
+                      )}
                     </div>
                   </Card>
                 </motion.div>
@@ -239,38 +237,44 @@ export function FeatureTabs() {
                     <div className="mb-4 font-semibold">Where should we go next?</div>
                     <div className="space-y-3">
                       {pollVotes.map((poll, index) => (
-                        <div key={poll.id} className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm">{poll.option}</span>
+                        <div key={poll.id} className="relative">
+                          <div className="flex justify-between items-center mb-0.5">
+                            <span className="font-medium">{poll.option}</span>
                             <motion.span 
+                              className="font-bold text-sm" 
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
-                              className="ml-2 text-xs text-muted-foreground flex items-center"
+                              transition={{ delay: index * 0.3 + 0.5 }}
                             >
-                              <motion.span>{poll.animatedVotes}</motion.span>
-                              <span className="ml-1">vote{poll.animatedVotes !== 1 ? 's' : ''}</span>
+                              {poll.animatedVotes} votes
                             </motion.span>
                           </div>
-                          <div className="relative h-2 rounded-full bg-blue-100 overflow-hidden">
+                          <div className="h-3 w-full bg-white/50 rounded-full overflow-hidden shadow-inner">
                             <motion.div 
-                              className="absolute left-0 top-0 h-full rounded-full bg-teal-400"
+                              className={`h-full rounded-full ${index === 0 ? 'bg-blue-500' : index === 1 ? 'bg-teal-500' : 'bg-violet-500'}`}
                               initial={{ width: '0%' }}
                               animate={{ width: `${poll.animatedPercentage}%` }}
-                              transition={{ duration: 1, delay: index * 0.2, ease: 'easeOut' }}
+                              transition={{ 
+                                duration: 1.5,
+                                delay: index * 0.3,
+                                ease: [0.34, 1.56, 0.64, 1]
+                              }}
                             />
                           </div>
                         </div>
                       ))}
                     </div>
                     
-                    {/* Vote animation indicator */}
                     <motion.div 
-                      className="mt-4 flex items-center justify-center text-xs text-teal-600 font-medium bg-teal-50 p-2 rounded-full"
+                      className="mt-6 flex justify-end"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 2 }}
+                      transition={{ delay: 2.5 }}
                     >
-                      <span>✓ 8 members have voted</span>
+                      <button className="flex items-center gap-1 text-sm font-medium text-blue-700 hover:text-blue-800 transition-colors group">
+                        Cast your vote
+                        <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
                     </motion.div>
                   </Card>
                 </motion.div>

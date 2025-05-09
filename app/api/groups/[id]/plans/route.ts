@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/tables';
 import { getGuestToken } from '@/utils/guest';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -61,7 +62,7 @@ export async function GET(
       }
       // Check membership for authenticated users
       const { data: membership } = await supabase
-        .from('group_members')
+        .from(TABLES.GROUP_MEMBERS)
         .select('*')
         .eq('group_id', groupId)
         .eq('user_id', user.id)
@@ -78,7 +79,7 @@ export async function GET(
     const includeArchived = url.searchParams.get('include_archived') === 'true';
     // Fetch plans with creators - Select only fields that exist in the profiles table
     let query = supabase
-      .from('group_idea_plans')
+      .from(TABLES.GROUP_PLANS)
       .select(`
         *,
         creator:created_by(
@@ -87,7 +88,7 @@ export async function GET(
           avatar_url,
           username
         ),
-        ideas:group_ideas(id)
+        ideas:${TABLES.GROUP_PLAN_IDEAS}(id)
       `)
       .eq('group_id', groupId);
     // Filter out archived plans unless explicitly requested
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest, context: { params: { id: string
   
   // Check if the slug already exists for this group
   const { data: existingSlugs } = await supabase
-    .from('group_idea_plans')
+    .from(TABLES.GROUP_PLANS)
     .select('slug')
     .eq('group_id', groupId)
     .ilike('slug', `${baseSlug}%`);
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest, context: { params: { id: string
   }
 
   // Insert plan
-  const { data: plan, error } = await supabase.from('group_idea_plans').insert({
+  const { data: plan, error } = await supabase.from(TABLES.GROUP_PLANS).insert({
     group_id: groupId,
     name: body.name,
     description: body.description ?? null,

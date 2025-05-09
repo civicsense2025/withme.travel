@@ -85,31 +85,37 @@ function UserNavContent() {
           <DropdownMenuItem asChild>
             <Link href="/trips">
               <Map className="mr-2 h-4 w-4" />
-              <span className="lowercase">my trips</span>
+              <span className="capitalize">My Trips</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/itineraries">
               <Map className="mr-2 h-4 w-4" />
-              <span className="lowercase">itineraries</span>
+              <span className="capitalize">Itineraries</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/saved">
               <Bookmark className="mr-2 h-4 w-4" />
-              <span className="lowercase">saved items</span>
+              <span className="capitalize">Saved Items</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={PAGE_ROUTES.SETTINGS}>
               <User className="mr-2 h-4 w-4" />
-              <span className="lowercase">account</span>
+              <span className="capitalize">Account</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/travel-map">
               <MapPin className="mr-2 h-4 w-4" />
-              <span className="lowercase">travel map</span>
+              <span className="capitalize">Travel Map</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/support">
+              <span className="mr-2 text-sm">❤️</span>
+              <span className="capitalize">Support Us</span>
             </Link>
           </DropdownMenuItem>
           {isAdmin && (
@@ -129,7 +135,7 @@ function UserNavContent() {
           className="text-destructive focus:text-destructive focus:bg-destructive/10"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span className="lowercase">Log out</span>
+          <span className="capitalize">Log Out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

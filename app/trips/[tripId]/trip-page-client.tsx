@@ -1,4 +1,4 @@
-'use client';;
+'use client';
 import { PAGE_ROUTES, API_ROUTES } from '@/utils/constants/routes';
 import {
   ITINERARY_CATEGORIES,
@@ -108,7 +108,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ShareTripButton } from '@/components/trips/ShareTripButton';
-import { TripHeader, type TripHeaderProps, type MemberWithProfile } from '@/components/trip-header';
+import { type MemberWithProfile } from '@/components/trip-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { type TravelInfo, type TravelTimesResult, calculateTravelTimes } from '@/lib/mapbox';
 import {
@@ -161,6 +161,7 @@ import * as Sentry from '@sentry/nextjs';
 // Context providers
 
 // Custom hooks
+import { extractNotificationContext } from '@/utils/notification-deeplinks';
 
 // Tab content components
 
@@ -176,7 +177,11 @@ import type { TripMember } from './context/trip-data-provider';
 import BudgetSnapshotSidebar from '@/components/trips/budget-snapshot-sidebar';
 import TripSidebarContent from '@/components/trips/trip-sidebar-content';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import { AuthModal } from '@/components/auth-modal';
+import { AuthModalWithProps } from '@/components/auth-modal';
+import CompactBudgetSnapshot from '@/components/trips/compact-budget-snapshot';
+import TripTourController from './trip-tour-controller';
+import { TripHeader } from '@/components/trip-header';
+
 // Types
 
 // Local utility functions to avoid import issues
@@ -269,6 +274,7 @@ export interface TripPageClientProps {
   tripId: string;
   canEdit: boolean;
   isGuestCreator?: boolean;
+  setClientFunctions?: (functions: any) => void;
 }
 
 // --- Utility Functions --- //
@@ -371,7 +377,12 @@ const compareItemArrays = (arr1: DisplayItineraryItem[], arr2: DisplayItineraryI
 };
 
 // --- Main Client Component --- //
-export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: TripPageClientProps) {
+export function TripPageClient({ 
+  tripId, 
+  canEdit, 
+  isGuestCreator = false, 
+  setClientFunctions 
+}: TripPageClientProps) {
   // --- All hooks must be called at the top, before any return ---
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const { toast } = useToast();
@@ -379,7 +390,7 @@ export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: Trip
   const pathname = usePathname(); // Defined using hook
   const searchParams = useSearchParams();
   const supabase = createClient();
-  const { user } = useAuth(); // AppUser type from AuthProvider
+  const { user, isLoading: isAuthLoading } = useAuth(); // AppUser type from AuthProvider
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Get data from context
@@ -395,6 +406,25 @@ export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: Trip
     refetchMembers,
     optimisticUpdate,
   } = contextData;
+
+  // Add notification context extraction
+  const notificationContext = useMemo(() => {
+    if (searchParams && typeof extractNotificationContext === 'function') {
+      return extractNotificationContext(searchParams);
+    }
+    return null;
+  }, [searchParams]);
+
+  // Add state to track highlight references
+  const [highlightedRefs, setHighlightedRefs] = useState<{[key: string]: HTMLElement | null}>({});
+
+  // Function to register elements for highlighting
+  const registerHighlightRef = useCallback((id: string, element: HTMLDivElement | null) => {
+    setHighlightedRefs(prev => ({
+      ...prev,
+      [id]: element
+    }));
+  }, []);
 
   // --- Add Logging --- //
   useEffect(() => {
@@ -446,6 +476,7 @@ export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: Trip
 
   // Add state for access requests
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
+  const [showAccessRequests, setShowAccessRequests] = useState(false);
 
   // New Expense Form State
   const [newExpense, setNewExpense] = useState({
@@ -455,6 +486,79 @@ export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: Trip
     date: new Date().toISOString().split('T')[0],
     paidById: '',
   });
+
+  // Show auth prompt for guest creators who aren't logged in
+  const handleGuestAction = useCallback(() => {
+    if (isGuestCreator && !user) {
+      setShowAuthModal(true);
+      return true; // Action was blocked
+    }
+    return false; // Action can proceed
+  }, [isGuestCreator, user]);
+
+  // Handle tab navigation
+  const handleTabClick = useCallback((idx: number, tabValue: string) => {
+    setActiveTab(tabValue);
+    if (tabRefs.current[idx]) {
+      tabRefs.current[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [setActiveTab]);
+
+  // Handle edit trip actions
+  const handleEditTripClick = useCallback(() => {
+    // Check if this is a guest user who needs to login first
+    if (handleGuestAction()) return;
+
+    setIsEditTripSheetOpen(true);
+  }, [handleGuestAction, setIsEditTripSheetOpen]);
+
+  const handleMembersClick = useCallback(() => {
+    setActiveTab('members');
+  }, [setActiveTab]);
+
+  // Handle cover image click
+  const handleCoverImageClick = useCallback(() => {
+    // Check if this is a guest user who needs to login first
+    if (handleGuestAction()) return;
+    
+    setIsImageSelectorOpen(true);
+  }, [handleGuestAction, setIsImageSelectorOpen]);
+  
+  // Handle date changes
+  const handleDateChange = useCallback((range: { start: string | null; end: string | null }) => {
+    if (handleGuestAction()) return;
+    
+    if (!tripId) return;
+    
+    // Update trip dates via API
+    fetch(API_ROUTES.TRIP_DETAILS(tripId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        start_date: range.start,
+        end_date: range.end
+      }),
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to update dates');
+      return response.json();
+    })
+    .then(() => {
+      toast({
+        title: 'Trip dates updated',
+        description: 'Your trip dates have been successfully updated.',
+      });
+      refetchTrip();
+    })
+    .catch(error => {
+      console.error('Error updating trip dates:', error);
+      toast({
+        title: 'Error updating dates',
+        description: 'There was a problem updating your trip dates. Please try again.',
+        variant: 'destructive',
+      });
+    });
+  }, [handleGuestAction, refetchTrip, toast, tripId]);
 
   // --- Derived State --- //
   const durationDays = tripData?.trip?.duration_days ?? 0;
@@ -617,32 +721,43 @@ export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: Trip
     setEditedPlaylistUrl(playlistUrl);
   }, [playlistUrl]);
 
-  // Fetch access requests if user is admin
+  // Effect to fetch access requests
   useEffect(() => {
-    if (userRole === 'admin') {
+    if (userRole === TRIP_ROLES.ADMIN && tripId) {
       const fetchAccessRequests = async () => {
         try {
-          const response = await fetch(API_ROUTES.PERMISSION_REQUESTS(tripId));
-          if (response.ok) {
-            const { data } = await response.json();
-            setAccessRequests(data || []);
-          } else if (response.status === 401) {
-            // Silently handle unauthorized errors
-            console.log('User lacks permission to fetch access requests');
-            setAccessRequests([]);
-          } else {
-            console.error('Failed to fetch access requests:', response.statusText);
+          const response = await fetch(API_ROUTES.PERMISSION_REQUESTS(tripId), {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              // Add any required authentication headers if needed
+            },
+            credentials: 'include', // Include cookies for auth
+          });
+          
+          if (!response.ok) {
+            // If unauthorized or other error, just log it but don't show error to user
+            if (response.status === 401) {
+              console.log("User not authorized to view access requests");
+              return;
+            }
+            throw new Error(`Error fetching access requests: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            setAccessRequests(data);
+            if (data.length > 0) {
+              setShowAccessRequests(true);
+            }
           }
         } catch (error) {
-          console.error('Error fetching access requests:', error);
-          // Don't show toast for errors in this background fetch
-          setAccessRequests([]);
+          console.error("Error fetching access requests:", error);
+          // Don't show error toast to avoid disrupting the user experience
         }
       };
+
       fetchAccessRequests();
-    } else {
-      // If user is not admin, ensure access requests are empty
-      setAccessRequests([]);
     }
   }, [tripId, userRole]);
 
@@ -1373,6 +1488,7 @@ export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: Trip
               }
               handleReorder={handleReorder}
               handleSectionReorder={handleSectionReorder}
+              refetchItinerary={refetchItinerary}
             />
           </ErrorBoundary>
         ),
@@ -1554,386 +1670,128 @@ export function TripPageClient({ tripId, canEdit, isGuestCreator = false }: Trip
     );
   }
 
+  // Expose methods to parent component
+  useEffect(() => {
+    if (setClientFunctions) {
+      setClientFunctions({
+        handleCoverImageClick,
+        handleSaveBudget,
+        setIsAddExpenseOpen,
+        setIsEditingBudget,
+        handleEditTripClick,
+        handleMembersClick
+      });
+    }
+  }, [
+    setClientFunctions, 
+    handleCoverImageClick, 
+    handleSaveBudget, 
+    setIsAddExpenseOpen, 
+    setIsEditingBudget, 
+    handleEditTripClick, 
+    handleMembersClick
+  ]);
+
   // --- Main JSX --- //
-  const handleTabClick = (idx: number, tabValue: string) => {
-    setActiveTab(tabValue);
-    if (tabRefs.current[idx]) {
-      tabRefs.current[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
-  };
-
-  // Show auth prompt for guest creators who aren't logged in
-  const handleGuestAction = useCallback(() => {
-    if (isGuestCreator && !user) {
-      setShowAuthModal(true);
-      return true; // Action was blocked
-    }
-    return false; // Action can proceed
-  }, [isGuestCreator, user]);
-
-  const handleEditTripClick = () => {
-    // Check if this is a guest user who needs to login first
-    if (handleGuestAction()) return;
-    
-    setIsEditTripSheetOpen(true);
-  };
-
-  const handleCoverImageClick = () => {
-    // Check if this is a guest user who needs to login first
-    if (handleGuestAction()) return;
-    
-    setIsImageSelectorOpen(true);
-  };
-
   return (
-    <TooltipProvider>
-      <div className="min-h-screen flex flex-col bg-background container mx-auto px-4">
-        <TripHeader
-          tripId={tripId}
-          tripName={tripName}
-          startDate={tripData.trip.start_date}
-          endDate={tripData.trip.end_date}
-          coverImageUrl={coverImageUrl}
-          canEdit={canEdit}
-          onEdit={handleEditTripClick}
-          onChangeCover={handleCoverImageClick}
-          onMembers={() => setActiveTab('manage')}
-          isSaving={isSavingCover}
-          privacySetting={privacySetting}
-          slug={tripData.trip.public_slug}
-          members={tripData.members ? adaptMembersToWithProfile(tripData.members) : []}
-          tags={tripTags}
-          extraContent={
-            <div className="flex items-center gap-2">
-              {/* Any additional components can go here, but not another Share button */}
-            </div>
-          }
-        />
+    <TripDataProvider initialData={{tripId}}>
+      <TripTourController tripId={tripId} />
+      <div className="min-h-screen pb-20">
+        {accessRequests.length > 0 && userRole === TRIP_ROLES.ADMIN && (
+          <div className="container mx-auto px-4 mt-4">
+            <Alert variant="default" className="bg-muted/50">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Access Requests</AlertTitle>
+              <AlertDescription>
+                {accessRequests.length} {accessRequests.length === 1 ? 'person' : 'people'} requested
+                access to this trip.{' '}
+                <Button
+                  variant="link" 
+                  className="p-0 h-auto font-medium"
+                  onClick={() => setShowAccessRequests(true)}
+                >
+                  View Requests
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
-        {/* Main Content Area - Remove container styles from here */}
-        <div className="flex-grow py-6">
-          {/* Change from grid to 2-column flex layout below header */}
-          <div className="flex flex-col md:flex-row gap-6 relative">
-            {/* Sidebar - Make it sticky */}
-            <div className="w-full md:w-[300px] flex-shrink-0 space-y-6 md:sticky md:top-24 self-start">
-              {/* Budget Snapshot Collapsible: single wrapper, toggle only on mobile */}
-              <CollapsibleSection
-                title="Budget Snapshot"
-                defaultOpen={true}
-                hideToggleOnDesktop
-                className="mb-4"
-              >
-                <BudgetSnapshotSidebar
-                  targetBudget={tripBudget}
-                  totalPlanned={totalPlannedExpenses}
-                  totalSpent={totalSpent}
-                  canEdit={canEdit}
-                  isEditing={isEditingBudget}
-                  onEditToggle={setIsEditingBudget}
-                  onSave={handleSaveBudget}
-                  onLogExpenseClick={() => setIsAddExpenseOpen(true)}
-                  noCardWrapper={true}
-                />
-              </CollapsibleSection>
-
-              {/* Trip Details Collapsible: single wrapper, toggle only on mobile */}
-              <CollapsibleSection
-                title="Trip Details"
-                defaultOpen={true}
-                hideToggleOnDesktop
-                className="mb-4"
-              >
-                <TripSidebarContent
-                  description={tripDescription}
-                  privacySetting={privacySetting}
-                  startDate={tripData.trip.start_date}
-                  endDate={tripData.trip.end_date}
-                  tags={tripTags}
-                  canEdit={canEdit}
-                  userRole={userRole}
-                  accessRequests={accessRequests}
-                  members={tripData.members ? adaptMembersToWithProfile(tripData.members) : []}
-                  onEdit={handleEditTripClick}
-                  onManageAccessRequest={handleManageAccessRequest}
-                  noCardWrapper={true}
-                />
-              </CollapsibleSection>
-            </div>
-
-            {/* Main Content Area - Flex-grow to take remaining space */}
-            <div className="flex-grow">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="mb-4 w-full justify-start overflow-x-auto whitespace-nowrap scroll-snap-x px-1">
-                  {tabs.map((tab, idx) => (
-                    <TabsTrigger
-                      key={tab.value}
-                      value={tab.value}
-                      ref={el => { tabRefs.current[idx] = el; }}
-                      onClick={() => handleTabClick(idx, tab.value)}
-                      className="scroll-snap-align-center"
-                    >
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {tabs.map((tab) => (
-                  <TabsContent key={tab.value} value={tab.value} className="min-h-[400px]">
-                    {tab.content}
-                  </TabsContent>
+        <div className="flex-grow py-6 max-w-4xl mx-auto px-4 w-full">
+          <div className="w-full space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4 w-full justify-start overflow-x-auto whitespace-nowrap scroll-snap-x px-1">
+                {tabs.map((tab, idx) => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    ref={el => { tabRefs.current[idx] = el; }}
+                    onClick={() => handleTabClick(idx, tab.value)}
+                    className="scroll-snap-align-center"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
                 ))}
-              </Tabs>
-            </div>
+              </TabsList>
+              {tabs.map((tab) => (
+                <TabsContent key={tab.value} value={tab.value} className="min-h-[400px]">
+                  {tab.content}
+                </TabsContent>
+              ))}
+            </Tabs>
           </div>
         </div>
+      </div>
 
-        {/* --- Dialogs and Sheets --- */}
-        <Dialog open={isEditTripSheetOpen} onOpenChange={setIsEditTripSheetOpen}>
-          <DialogContent className="sm:max-w-md overflow-y-auto max-h-[95vh]">
-            <DialogHeader>
-              <DialogTitle>Edit Trip Details</DialogTitle>
-              <DialogDescription>Make changes to your trip details.</DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <EditTripForm
-                trip={{
-                  id: tripData.trip.id,
-                  name: tripName,
-                  privacy_setting: privacySetting,
-                  start_date: tripData.trip.start_date || null,
-                  end_date: tripData.trip.end_date || null,
-                  tags: tripTags.map((tag) => tag.name) || [],
-                  destination_id: tripData.trip.destination_id || null,
-                  cover_image_url: coverImageUrl,
-                }}
-                initialDestinationName={tripData.trip.destination_name || null}
-                onSave={handleSaveTripDetails}
-                onClose={() => setIsEditTripSheetOpen(false)}
-                onChangeCover={handleCoverImageClick}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
-          <DialogContent className="sm:max-w-md lg:max-w-xl overflow-y-auto max-h-[95vh]">
-            <DialogHeader>
-              <DialogTitle>Add Expense</DialogTitle>
-              <DialogDescription>
-                Log a new expense and split it among trip members
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <form className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="expense-amount">Amount</Label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                        $
-                      </span>
-                      <Input
-                        id="expense-amount"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="pl-7"
-                        required
-                      />
+      <Dialog open={showAccessRequests} onOpenChange={setShowAccessRequests}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Access Requests</DialogTitle>
+            <DialogDescription>
+              Review access requests for this trip
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto mt-4">
+            {accessRequests.length > 0 ? (
+              accessRequests.map((request) => (
+                <div key={request.id} className="flex flex-col space-y-2 mb-4 p-4 border rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Avatar>
+                      <AvatarImage src={request.user?.avatar_url || ''} />
+                      <AvatarFallback>{getInitials(request.user?.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{request.user?.name || 'Unknown User'}</p>
+                      <p className="text-sm text-muted-foreground">{request.user?.email || ''}</p>
                     </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="expense-date">Date</Label>
-                    <Input
-                      id="expense-date"
-                      type="date"
-                      defaultValue={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="expense-description">Description</Label>
-                  <Input
-                    id="expense-description"
-                    placeholder="What was this expense for?"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="expense-category">Category</Label>
-                    <Select>
-                      <SelectTrigger id="expense-category">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="accommodation">Accommodation</SelectItem>
-                        <SelectItem value="food">Food & Drinks</SelectItem>
-                        <SelectItem value="transportation">Transportation</SelectItem>
-                        <SelectItem value="activities">Activities</SelectItem>
-                        <SelectItem value="shopping">Shopping</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="paid-by">Paid by</Label>
-                    <Select>
-                      <SelectTrigger id="paid-by">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tripData.members.map(member => {
-                          const profile = member.profile;
-                          const name = profile?.name || profile?.email || 'User';
-                          return (
-                            <SelectItem key={member.user_id} value={member.user_id}>
-                              {name}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Split Method</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 px-2">
-                            <Info className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Equal: Split evenly among members<br/>
-                            Percentage: Split by custom percentages<br/>
-                            Unequal: Enter custom amounts for each person
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="flex items-center space-x-4">
+                  {request.message && (
+                    <p className="text-sm mt-2 bg-muted p-3 rounded-md">{request.message}</p>
+                  )}
+                  <div className="flex justify-end gap-2 mt-2">
                     <Button 
-                      type="button" 
-                      variant="outline"
-                      className="flex-1 border-2 bg-muted/30"
-                      onClick={() => {}}
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleManageAccessRequest(request.id, false)}
                     >
-                      <DivideIcon className="h-4 w-4 mr-2" />
-                      Equal
+                      Reject
                     </Button>
                     <Button 
-                      type="button" 
-                      variant="outline"
-                      className="flex-1" 
-                      onClick={() => {}}
+                      size="sm"
+                      onClick={() => handleManageAccessRequest(request.id, true)}
                     >
-                      <PercentIcon className="h-4 w-4 mr-2" />
-                      Percentage
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      className="flex-1" 
-                      onClick={() => {}}
-                    >
-                      <SplitIcon className="h-4 w-4 mr-2" />
-                      Unequal
+                      Approve
                     </Button>
                   </div>
                 </div>
-
-                <div className="border rounded-md p-4 bg-muted/30">
-                  <h4 className="text-sm font-medium mb-3">Split equally among all members</h4>
-                  <div className="space-y-3">
-                    {tripData.members.slice(0, 5).map(member => {
-                      const profile = member.profile;
-                      const name = profile?.name || profile?.email || 'User';
-                      
-                      return (
-                        <div key={member.user_id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={profile?.avatar_url || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{name}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium">$0.00</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    
-                    {tripData.members.length > 5 && (
-                      <Button variant="link" className="text-xs p-0 h-auto">
-                        +{tripData.members.length - 5} more members
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </form>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddExpenseOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="button">Save Expense</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Change Image Selector to a Dialog instead of Sheet */}
-        <Dialog open={isImageSelectorOpen} onOpenChange={setIsImageSelectorOpen}>
-          <DialogContent className="sm:max-w-xl w-[90vw] md:w-full overflow-y-auto max-h-[95vh]">
-            <DialogHeader>
-              <DialogTitle>Select Cover Image</DialogTitle>
-              <DialogDescription>
-                Choose an image from Unsplash, Pexels, or upload your own.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <ImageSearchSelector
-                isOpen={isImageSelectorOpen} // Pass state to manage internal reset
-                onClose={() => setIsImageSelectorOpen(false)}
-                onImageSelect={(url, position) => {
-                  handleCoverImageSelect(url);
-                  // Note: Position adjustment might need separate handling if required
-                }}
-                initialSearchTerm={tripName} // Use trip name as initial search
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <MobileStepper
-          sections={itinerarySections}
-          currentSection={activeSection}
-          currentIndex={currentIndex}
-          showScrollToTop={showScrollToTop}
-          goToPrevSection={goToPrevSection}
-          goToNextSection={goToNextSection}
-          handleSectionClick={handleSectionClick}
-          handleScrollToTop={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        />
-
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-        />
-      </div>
-    </TooltipProvider>
+              ))
+            ) : (
+              <p className="text-center py-4 text-muted-foreground">No pending access requests</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </TripDataProvider>
   );
 }
+

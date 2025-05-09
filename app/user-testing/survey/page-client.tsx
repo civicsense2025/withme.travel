@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { TABLES } from '@/utils/constants/tables';
+import Link from 'next/link';
 
 // Survey question types
 type SurveyQuestion = {
@@ -215,7 +216,7 @@ export default function UserTestingSurveyClient() {
       case 'text':
         return (
           <div className="w-full max-w-xl mx-auto">
-            <Label htmlFor={question.id} className="text-lg font-medium mb-2 block">
+            <Label htmlFor={question.id} className="text-lg font-medium mb-3 block text-gray-800 dark:text-gray-200">
               {question.label} {question.required && <span className="text-red-400">*</span>}
             </Label>
             <Textarea
@@ -224,7 +225,7 @@ export default function UserTestingSurveyClient() {
               onChange={(e) => handleChange(question.id, e.target.value)}
               placeholder={question.placeholder}
               required={question.required}
-              className="w-full h-32 rounded-xl bg-white/90 border border-gray-300 focus:ring-2 focus:ring-purple-400"
+              className="w-full h-36 rounded-xl bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-800 shadow-sm focus:ring-2 focus:ring-primary dark:focus:ring-primary dark:text-white resize-none"
             />
           </div>
         );
@@ -232,7 +233,7 @@ export default function UserTestingSurveyClient() {
       case 'single_choice':
         return (
           <div className="w-full max-w-xl mx-auto">
-            <Label className="text-lg font-medium mb-4 block">
+            <Label className="text-lg font-medium mb-5 block text-gray-800 dark:text-gray-200">
               {question.label} {question.required && <span className="text-red-400">*</span>}
             </Label>
             <RadioGroup 
@@ -241,11 +242,15 @@ export default function UserTestingSurveyClient() {
               className="space-y-3"
             >
               {question.options?.map((option) => (
-                <div key={option.value} className="flex items-center space-x-3 rounded-lg border border-gray-200 p-4 hover:bg-gray-50">
-                  <RadioGroupItem value={option.value} id={`${question.id}-${option.value}`} />
+                <div key={option.value} className="flex items-center space-x-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
+                  <RadioGroupItem 
+                    value={option.value} 
+                    id={`${question.id}-${option.value}`} 
+                    className="text-purple-600 dark:text-purple-400 border-gray-400 dark:border-gray-600"
+                  />
                   <Label 
                     htmlFor={`${question.id}-${option.value}`}
-                    className="flex-1 cursor-pointer"
+                    className="cursor-pointer text-gray-700 dark:text-gray-300 select-none"
                   >
                     {option.label}
                   </Label>
@@ -258,28 +263,27 @@ export default function UserTestingSurveyClient() {
       case 'multiple_choice':
         return (
           <div className="w-full max-w-xl mx-auto">
-            <Label className="text-lg font-medium mb-4 block">
+            <Label className="text-lg font-medium mb-5 block text-gray-800 dark:text-gray-200">
               {question.label} {question.required && <span className="text-red-400">*</span>}
             </Label>
             <div className="space-y-3">
               {question.options?.map((option) => {
-                const values = Array.isArray(responses[question.id]) 
-                  ? responses[question.id] as string[] 
-                  : [];
-                const isChecked = values.includes(option.value);
+                const values = (responses[question.id] as string[]) || [];
+                const checked = values.includes(option.value);
                 
                 return (
-                  <div key={option.value} className="flex items-center space-x-3 rounded-lg border border-gray-200 p-4 hover:bg-gray-50">
+                  <div key={option.value} className="flex items-center space-x-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
                     <Checkbox 
                       id={`${question.id}-${option.value}`}
-                      checked={isChecked}
+                      checked={checked}
                       onCheckedChange={(checked) => 
                         handleMultipleChoice(question.id, option.value, checked as boolean)
                       }
+                      className="text-purple-600 dark:text-purple-400 border-gray-400 dark:border-gray-600"
                     />
                     <Label 
                       htmlFor={`${question.id}-${option.value}`}
-                      className="flex-1 cursor-pointer"
+                      className="cursor-pointer text-gray-700 dark:text-gray-300 select-none"
                     >
                       {option.label}
                     </Label>
@@ -298,10 +302,26 @@ export default function UserTestingSurveyClient() {
   // Display loading state
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-purple-100 via-yellow-50 to-pink-100">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-700">Loading survey...</p>
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted dark:from-black dark:to-gray-950">
+        {/* Simple navbar */}
+        <header className="w-full py-4 px-4 md:px-8 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <Link href="/" className="font-bold text-xl text-gray-900 dark:text-white flex items-center">
+              withme.travel
+            </Link>
+            <Link href="/user-testing">
+              <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-300">
+                Back to Signup
+              </Button>
+            </Link>
+          </div>
+        </header>
+        
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-8 rounded-xl shadow-lg">
+            <Loader2 className="h-10 w-10 animate-spin text-purple-600 dark:text-purple-400 mx-auto mb-4" />
+            <p className="text-gray-700 dark:text-gray-300 font-medium">Loading survey...</p>
+          </div>
         </div>
       </main>
     );
@@ -310,16 +330,37 @@ export default function UserTestingSurveyClient() {
   // Display error if survey couldn't be loaded
   if (!loading && !survey) {
     return (
-      <main className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-purple-100 via-yellow-50 to-pink-100">
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6">
-            <h1 className="text-xl font-bold text-red-600 mb-2">Something went wrong</h1>
-            <p className="text-gray-700 mb-4">We couldn't load the survey. Please try again later.</p>
-            <Button onClick={() => router.push('/user-testing')}>
-              Return to Registration
-            </Button>
-          </CardContent>
-        </Card>
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted dark:from-black dark:to-gray-950">
+        {/* Simple navbar */}
+        <header className="w-full py-4 px-4 md:px-8 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <Link href="/" className="font-bold text-xl text-gray-900 dark:text-white flex items-center">
+              withme.travel
+            </Link>
+            <Link href="/user-testing">
+              <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-300">
+                Back to Signup
+              </Button>
+            </Link>
+          </div>
+        </header>
+        
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-xl mx-auto rounded-3xl shadow-lg bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-100 dark:border-gray-800">
+            <CardContent className="p-8 md:p-10 flex flex-col items-center">
+              <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Survey Not Found</h1>
+              <p className="text-gray-700 dark:text-gray-300 text-center mb-6">
+                We couldn't find the survey you're looking for. Please try again or contact support.
+              </p>
+              <Button 
+                onClick={() => router.push('/user-testing')}
+                className="rounded-full bg-gradient-to-r from-purple-400 via-pink-300 to-yellow-300 text-white font-bold px-6 py-3"
+              >
+                Return to Signup
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     );
   }
@@ -327,157 +368,182 @@ export default function UserTestingSurveyClient() {
   // Display success message after submission
   if (success) {
     return (
-      <main className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-purple-100 via-yellow-50 to-pink-100">
-        <Card className="w-full max-w-lg mx-auto rounded-3xl shadow-2xl bg-white/80 backdrop-blur-md border-0">
-          <CardContent className="p-8 md:p-10 flex flex-col items-center">
-            <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Thanks for sharing!</h1>
-            <p className="text-center text-gray-700 mb-6">
-              Your responses will help us build a better travel planning experience for everyone.
-              We'll be in touch soon with more information about the user testing program.
-            </p>
-            <Button
-              onClick={() => router.push('/')}
-              className="rounded-full bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-400 text-white font-bold text-lg py-3 mt-2 shadow-lg hover:scale-105 transition-transform"
-            >
-              Explore WithMe.Travel
-            </Button>
-          </CardContent>
-        </Card>
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted dark:from-black dark:to-gray-950">
+        {/* Simple navbar */}
+        <header className="w-full py-4 px-4 md:px-8 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <Link href="/" className="font-bold text-xl text-gray-900 dark:text-white flex items-center">
+              withme.travel
+            </Link>
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-300">
+                Return to Home
+              </Button>
+            </Link>
+          </div>
+        </header>
+        
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-xl mx-auto rounded-3xl shadow-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-100 dark:border-gray-800">
+            <CardContent className="p-8 md:p-12 flex flex-col items-center">
+              <div className="w-20 h-20 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900 mb-8">
+                <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+              </div>
+              
+              <h1 className="text-3xl font-bold mb-6 text-center dark:text-white">Thank You!</h1>
+              <p className="text-center text-gray-700 dark:text-gray-300 mb-8 text-lg">
+                Your feedback is incredibly valuable as we build the future of group travel planning. We'll be in touch soon with updates!
+              </p>
+              
+              <div className="w-full space-y-8 mb-8">
+                <div className="border border-gray-200 dark:border-gray-800 rounded-2xl p-6 bg-gray-50 dark:bg-gray-900">
+                  <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Support Our Journey</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="flex flex-col space-y-2">
+                      <h3 className="font-medium text-gray-700 dark:text-gray-300">Share with Friends</h3>
+                      <div className="flex flex-wrap gap-3">
+                        <Button variant="outline" className="rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 dark:text-green-400"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 8.2c-.8-.5-1.8-.8-2.6-.9-.9-.1-1.9 0-2.6.3"></path><path d="M19 8a7 7 0 0 0-7-7"></path><path d="M15 2c1 0 2.1.4 2.8 1.2"></path><path d="M2 12v-2a2 2 0 0 1 2-2h6"></path><path d="M18 11.2c.1.5.2 1 .2 1.8a8 8 0 0 1-2.9 6.2"></path><path d="M22 12v2a2 2 0 0 1-2 2h-6"></path><path d="M15 22a7 7 0 0 1-7-7"></path><path d="M9 17c-1 0-2.1-.4-2.8-1.2"></path></svg>
+                          WhatsApp
+                        </Button>
+                        <Button variant="outline" className="rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                          Email
+                        </Button>
+                        <Button variant="outline" className="rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                          LinkedIn
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Support Our Development</h3>
+                      <Button className="rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 w-full">
+                        Make a Donation
+                      </Button>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                        Donations help us build better travel experiences for everyone
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={() => router.push('/')}
+                variant="outline" 
+                className="rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                Return to Homepage
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     );
   }
 
+  // Render the survey
   return (
-    <main className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-purple-100 via-yellow-50 to-pink-100 relative overflow-hidden font-sans py-8">
-      {/* Animated background shapes */}
-      <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[-80px] left-[-80px] w-72 h-72 bg-gradient-to-br from-purple-300 via-pink-200 to-yellow-200 rounded-full blur-3xl opacity-60 animate-float" />
-        <div className="absolute bottom-[-100px] right-[-60px] w-96 h-96 bg-gradient-to-tr from-yellow-200 via-pink-100 to-purple-200 rounded-full blur-3xl opacity-50 animate-float-slow" />
-      </div>
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted dark:from-black dark:to-gray-950">
+      {/* Simple navbar */}
+      <header className="w-full py-4 px-4 md:px-8 border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <Link href="/" className="font-bold text-xl text-gray-900 dark:text-white flex items-center">
+            withme.travel
+          </Link>
+          <Link href="/user-testing">
+            <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-300">
+              Back to Signup
+            </Button>
+          </Link>
+        </div>
+      </header>
       
-      <Card className="w-full max-w-2xl mx-auto rounded-3xl shadow-2xl bg-white/80 backdrop-blur-md border-0 p-0">
-        <CardContent className="p-8 md:p-10 flex flex-col items-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-center mb-3 bg-gradient-to-br from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent tracking-tight">
-            {survey?.title}
-          </h1>
-          
-          <p className="text-lg text-center text-gray-700 mb-8">{survey?.description}</p>
-          
-          {/* Progress indicator */}
-          <div className="w-full mb-8">
-            <div className="flex justify-between mb-2 text-sm text-gray-500">
-              <span>Question {currentStep + 1} of {survey?.questions.length}</span>
-              <span>{Math.round(((currentStep + 1) / (survey?.questions.length || 1)) * 100)}% complete</span>
-            </div>
-            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-purple-400 to-pink-400" 
-                style={{ width: `${((currentStep + 1) / (survey?.questions.length || 1)) * 100}%` }} 
-              />
-            </div>
-          </div>
-          
-          {/* Contact info collection (shown only on first step) */}
-          {currentStep === 0 && !email && (
-            <div className="w-full max-w-md mb-8 p-4 bg-purple-50 rounded-xl">
-              <h2 className="font-semibold text-purple-900 mb-3">Your contact information</h2>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="email" className="text-sm font-medium mb-1 block">
-                    Email address <span className="text-red-400">*</span>
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="rounded-lg bg-white/90"
-                    autoComplete="email"
-                  />
+      <div className="flex-1 p-4 pt-10 md:pt-16">
+        <div className="max-w-3xl mx-auto">
+          <Card className="rounded-3xl shadow-lg bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-100 dark:border-gray-800">
+            <CardContent className="p-6 md:p-8">
+              {/* Survey header */}
+              <div className="mb-8 text-center">
+                <h1 className="text-2xl md:text-3xl font-bold mb-3 text-gray-900 dark:text-white">
+                  {survey?.title || 'Survey'}
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {survey?.description || 'Please complete this survey'}
+                </p>
+              </div>
+
+              {/* Progress indicator */}
+              <div className="mb-8">
+                <div className="h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300 ease-in-out" 
+                    style={{ width: `${((currentStep + 1) / (survey?.questions.length || 1)) * 100}%` }}
+                  ></div>
                 </div>
-                <div>
-                  <Label htmlFor="name" className="text-sm font-medium mb-1 block">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="rounded-lg bg-white/90"
-                    autoComplete="name"
-                  />
+                <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 text-right">
+                  Question {currentStep + 1} of {survey?.questions.length || 0}
                 </div>
               </div>
-            </div>
-          )}
-          
-          {/* Current question */}
-          {renderQuestion()}
-          
-          {/* Error message */}
-          {error && (
-            <div className="text-red-500 text-sm mt-4 text-center">
-              {error}
-            </div>
-          )}
-          
-          {/* Navigation buttons */}
-          <div className="flex justify-between w-full mt-8">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 0 || submitting}
-              className="rounded-xl border-2 border-gray-300"
-            >
-              Previous
-            </Button>
-            
-            {currentStep < (survey?.questions.length || 0) - 1 ? (
-              <Button
-                type="button"
-                onClick={handleNext}
-                disabled={submitting}
-                className="rounded-xl bg-purple-200 text-purple-900 hover:bg-purple-300"
-              >
-                Next
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="rounded-xl bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-400 text-white hover:opacity-90"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit'
+
+              {/* Form */}
+              <form onSubmit={handleSubmit}>
+                {/* Current question */}
+                <div className="mb-8">
+                  {renderQuestion()}
+                </div>
+
+                {/* Error message */}
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 dark:bg-gray-900/80 border border-red-100 dark:border-red-900/50 rounded-lg text-red-500 dark:text-red-400 text-sm">
+                    {error}
+                  </div>
                 )}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <style jsx global>{`
-        .animate-float {
-          animation: float 8s ease-in-out infinite alternate;
-        }
-        .animate-float-slow {
-          animation: float 14s ease-in-out infinite alternate;
-        }
-        @keyframes float {
-          0% { transform: translateY(0) scale(1); }
-          100% { transform: translateY(-20px) scale(1.04); }
-        }
-      `}</style>
+
+                {/* Navigation buttons */}
+                <div className="flex justify-between mt-8">
+                  <Button
+                    type="button"
+                    onClick={handlePrevious}
+                    disabled={currentStep === 0}
+                    variant="outline"
+                    className="rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 px-5"
+                  >
+                    Back
+                  </Button>
+                  
+                  {currentStep < (survey?.questions.length || 0) - 1 ? (
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      className="rounded-xl bg-gradient-to-r from-purple-400 to-pink-500 text-white px-5"
+                    >
+                      Next
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={submitting}
+                      className="rounded-xl bg-gradient-to-r from-purple-400 to-pink-500 text-white px-5"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        'Submit'
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </main>
   );
 } 

@@ -8,6 +8,11 @@ import { CalendarDays, MapPin, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useToast } from './ui/use-toast';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { ChevronRight } from 'lucide-react';
+import { LikeButton } from './like-button';
+import { UseTemplateButton } from './use-template-button';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 
 interface ItineraryDay {
   day: number;
@@ -70,6 +75,7 @@ export function ItineraryTemplateDetail({
   const [tripTitle, setTripTitle] = useState<string>(`Trip to ${template.destinations.name}`);
   const [isUseDialogOpen, setIsUseDialogOpen] = useState<boolean>(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState<boolean>(false);
+  const creator = template.users;
 
   const handleLike = async () => {
     try {
@@ -164,6 +170,38 @@ export function ItineraryTemplateDetail({
         />
         {/* Add gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+      </div>
+
+      {/* About the creator section */}
+      {creator && (
+        <div className="flex items-center gap-4 mt-4 mb-2">
+          <Avatar>
+            <AvatarImage src={creator.avatar_url} alt={creator.full_name} />
+            <AvatarFallback>{creator.full_name?.[0] || '?'}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium text-lg">{creator.full_name}</div>
+            <div className="text-muted-foreground text-sm">Creator</div>
+          </div>
+        </div>
+      )}
+
+      {/* Actions row: Like/Save and Use Template */}
+      <div className="flex flex-col sm:flex-row gap-3 w-full mb-4">
+        <LikeButton
+          itemId={template.id}
+          itemType="template"
+          initialLiked={isLiked}
+          variant="outline"
+          size="md"
+          className="w-full sm:w-auto"
+        />
+        <UseTemplateButton
+          templateId={template.id}
+          templateSlug={template.slug}
+          templateTitle={template.title}
+          className="w-full flex justify-between items-center px-4 py-2 font-semibold text-base"
+        />
       </div>
 
       {/* Placeholder for the rest of the content */}
