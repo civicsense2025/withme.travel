@@ -19,7 +19,7 @@
     @apply bg-gray-50 dark:bg-gray-900/20;
   }
   .idea-card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4;
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1;
   }
   .add-idea-button {
     @apply w-full flex items-center gap-2 px-4 py-2 rounded-md border border-dashed border-gray-300 dark:border-gray-700 bg-transparent dark:bg-transparent hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition;

@@ -17,7 +17,8 @@ import {
   Trash2,
   Layout,
   Eye,
-  EyeOff
+  EyeOff,
+  CheckCircle
 } from 'lucide-react';
 import { 
   Tooltip,
@@ -41,11 +42,13 @@ interface WhiteboardControlsProps {
   onClearAll?: () => void;
   onAutoArrange?: () => void;
   onToggleCursors: () => void;
+  onStartVoting?: () => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   isCollaboratorsVisible: boolean;
   isFilterVisible: boolean;
   isCursorsVisible: boolean;
+  isReadyForVoting?: boolean;
   activeUsers: number;
 }
 
@@ -58,11 +61,13 @@ export function WhiteboardControls({
   onClearAll,
   onAutoArrange,
   onToggleCursors,
+  onStartVoting,
   onZoomIn,
   onZoomOut,
   isCollaboratorsVisible,
   isFilterVisible,
   isCursorsVisible,
+  isReadyForVoting = false,
   activeUsers = 0
 }: WhiteboardControlsProps) {
   const {
@@ -235,6 +240,32 @@ export function WhiteboardControls({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+
+      {/* Start Voting button */}
+      {onStartVoting && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isReadyForVoting ? "default" : "ghost"}
+                size="icon"
+                onClick={onStartVoting}
+                disabled={!isReadyForVoting}
+                className={`h-8 w-8 rounded-full transition-all ${
+                  isReadyForVoting 
+                    ? 'bg-primary text-primary-foreground relative after:absolute after:inset-0 after:rounded-full after:animate-pulse after:bg-blue-500/30 after:blur-md after:-z-10' 
+                    : 'text-foreground hover:bg-muted'
+                }`}
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p className="text-xs">Start Voting</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
 
       {/* More options dropdown */}
       <DropdownMenu>

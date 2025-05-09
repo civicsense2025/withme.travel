@@ -183,6 +183,14 @@ export function ReadyForVotingModal({
     }
   };
 
+  // Add this CSS for the glow effect
+  const glowButtonClass = `
+    relative
+    bg-gradient-to-r from-blue-500 to-blue-600 
+    hover:from-blue-600 hover:to-blue-700
+    after:absolute after:inset-0 after:rounded-md after:animate-pulse after:bg-blue-500/30 after:blur-md after:-z-10
+  `;
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -348,7 +356,7 @@ export function ReadyForVotingModal({
           <Button 
             onClick={handleStartVoting}
             disabled={isLoading || totalIdeas === 0} 
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+            className={glowButtonClass}
           >
             {isLoading ? (
               <>

@@ -348,3 +348,62 @@ All endpoints require authentication for write actions.
 ---
 
 For more details, see the code in `components/comments/`, `hooks/use-comments.ts`, and the API route handlers in `app/api/comments/`.
+
+## Images Storage
+
+This project now automatically stores metadata for images from Unsplash and Pexels APIs in the `images` table. 
+This provides several benefits:
+
+- Tracks image usage across the platform
+- Stores photographer attribution information
+- Enables filtering/searching of previously used images
+- Helps maintain proper attribution for third-party images
+
+### Implementation Details
+
+1. Every image search through the `/api/image-search/(unsplash|pexels)` endpoints now automatically saves metadata to the Supabase `images` table
+2. The `ImageSelector` component has been updated to pass full image metadata, not just the URL
+3. Components can now display proper attribution for photographers
+
+### Running the Test Script
+
+To test the image storage functionality:
+
+```bash
+# Make sure you have the following in your .env.local:
+# UNSPLASH_ACCESS_KEY
+# PEXELS_API_KEY
+# SUPABASE_SERVICE_ROLE_KEY
+# TEST_USER_JWT
+
+# Run the test script
+npm run test:images
+```
+
+### Setting Up the Database 
+
+Run the following SQL commands in your Supabase SQL editor:
+
+```sql
+-- Create the images table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.images (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  external_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  url TEXT,
+  image_url TEXT NOT NULL,
+  thumb_url TEXT,
+  alt_text TEXT,
+  photographer TEXT,
+  photographer_url TEXT,
+  width INTEGER,
+  height INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  
+  -- Add a unique constraint on external_id and source to prevent duplicates
+  CONSTRAINT unique_external_image UNIQUE (external_id, source)
+);
+
+-- See scripts/create_images_table.sql for the complete SQL
+```

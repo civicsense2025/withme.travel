@@ -3,6 +3,7 @@ import React from 'react';
 import { useLayoutMode } from '@/app/context/layout-mode-context';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
+import { cn } from '@/lib/utils';
 
 interface ClientSideLayoutRendererProps {
   children: React.ReactNode;
@@ -15,9 +16,11 @@ export function ClientSideLayoutRenderer({ children }: ClientSideLayoutRendererP
     return (
       <div
         id="main-content"
-        className="w-screen h-screen min-h-screen bg-background overflow-hidden font-sans text-lg"
+        className={cn(
+          "flex flex-col w-full h-screen min-h-screen bg-background overflow-hidden font-sans text-lg max-w-none",
+          "fullscreen-layout"
+        )}
         tabIndex={-1}
-        style={{ margin: 0, padding: 0 }}
       >
         {children}
       </div>

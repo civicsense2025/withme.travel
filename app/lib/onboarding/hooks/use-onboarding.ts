@@ -42,6 +42,113 @@ interface UseOnboardingOptions {
   isGuest?: boolean;
 }
 
+// Add a non-hook function to safely check tour completion
+// This can be called from anywhere, including inside async functions
+export async function checkTourCompletionStatus(
+  tourId: string, 
+  options?: UseOnboardingOptions
+): Promise<boolean> {
+  // Return false for guest users
+  if (options?.isGuest) {
+    return false;
+  }
+  
+  try {
+    // First try localStorage as a quick check
+    if (typeof localStorage !== 'undefined') {
+      const tourCompleted = localStorage.getItem(`tour-completed-${tourId}`);
+      if (tourCompleted === 'true') {
+        return true;
+      }
+    }
+    
+    // Then try to check the database
+    if (typeof window !== 'undefined') {
+      const supabase = getBrowserClient();
+      
+      // Get the current user
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
+      
+      if (!user) {
+        return false;
+      }
+      
+      // Query the onboarding_tour_completions table
+      const { data: completionData, error } = await supabase
+        .from(TABLES.ONBOARDING_TOUR_COMPLETIONS)
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tour_id', tourId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        console.error('Error checking tour completion:', error);
+        return false;
+      }
+      
+      return !!completionData;
+    }
+  } catch (error) {
+    console.error('Error in checkTourCompletionStatus:', error);
+  }
+  
+  return false;
+}
+
+// Add a function to mark tour as completed
+export async function markTourAsCompleted(
+  tourId: string,
+  isSkipped = false,
+  options?: UseOnboardingOptions
+): Promise<boolean> {
+  try {
+    // Always save to localStorage for persistence
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`tour-completed-${tourId}`, 'true');
+    }
+    
+    // Skip database storage for guest users
+    if (options?.isGuest) {
+      return true;
+    }
+    
+    // Then save to the database
+    if (typeof window !== 'undefined') {
+      const supabase = getBrowserClient();
+      
+      // Get the current user
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
+      
+      if (!user) {
+        return false;
+      }
+      
+      // Insert or update the completion record
+      const { error } = await supabase
+        .from(TABLES.ONBOARDING_TOUR_COMPLETIONS)
+        .upsert({
+          user_id: user.id,
+          tour_id: tourId,
+          completed_at: new Date().toISOString(),
+          is_skipped: isSkipped,
+        });
+      
+      if (error) {
+        console.error('Error marking tour as completed:', error);
+        return false;
+      }
+      
+      return true;
+    }
+  } catch (error) {
+    console.error('Error in markTourAsCompleted:', error);
+  }
+  
+  return false;
+}
+
 export function useOnboarding(tourId: string, options?: UseOnboardingOptions) {
   const { startTour, endTour, currentTour } = useTour();
   const [state, setState] = useState<OnboardingState>({

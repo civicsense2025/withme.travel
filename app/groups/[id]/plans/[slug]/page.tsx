@@ -22,12 +22,12 @@ export default async function PlanPage({ params: rawParams }: PlanPageProps) {
   // Get current user session or guest token
   const { data: { user } } = await supabase.auth.getUser();
   
-  // Use synchronous getGuestToken (no await needed)
-  let guestToken = getGuestToken();
+  // Use async getGuestToken
+  let guestToken = await getGuestToken();
   
   // If no user and no guest token, create a new guest token
   if (!user && !guestToken) {
-    guestToken = setGuestToken();
+    guestToken = await setGuestToken();
   }
 
   // Check if group exists and user has access to it (member, admin, or guest)
@@ -43,7 +43,7 @@ export default async function PlanPage({ params: rawParams }: PlanPageProps) {
   
   // Get the plan by slug
   const { data: plan } = await supabase
-    .from('group_idea_plans')
+    .from('group_plans')
     .select('*')
     .eq('group_id', groupId)
     .eq('slug', planSlug)
@@ -55,7 +55,9 @@ export default async function PlanPage({ params: rawParams }: PlanPageProps) {
 
   // Check user's membership or if guest token is the creator of this plan
   const isGuest = !user && !!guestToken;
-  const isCreator = user ? plan.created_by === user.id : plan.created_by_guest_token === guestToken;
+  const isCreator = user 
+    ? plan.created_by === user.id 
+    : plan.guest_token === guestToken;
   const isAdmin = user && group.members?.some((member: any) => member.user_id === user.id && member.role === 'admin');
   const isGroupMember = user && group.members?.some((member: any) => member.user_id === user.id);
 

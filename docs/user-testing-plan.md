@@ -203,9 +203,88 @@ Our initial user research survey covers these key areas:
 
 This structure allows us to segment users by experience level, understand their current workflows, identify pain points, and prioritize feature development.
 
-## 4. What We're Trying to Learn
+## 4. Alpha Testing User Flows
 
-### 4.1 Key Research Questions
+This section outlines the key user flows that alpha testers should focus on. The goal is to cover the core functionalities of withme.travel and gather feedback on their usability, intuitiveness, and overall experience.
+
+### Flow 1: User Registration & Initial Setup
+1.  Navigate to the user testing signup page (`/user-testing`).
+2.  Complete the signup form with your name and email.
+3.  Proceed to the post-signup survey (`/user-testing/survey`).
+4.  Answer all questions in the survey.
+5.  Verify account creation (e.g., via email if applicable, or by successfully landing on a dashboard/home page).
+
+### Flow 2: Trip Creation & Basic Management
+1.  Log in to your account.
+2.  Find and click the "Create Trip" button (or similar).
+3.  Enter a name for your trip (e.g., "Summer Roadtrip").
+4.  Select or input a primary destination for the trip.
+5.  Set start and end dates for the trip.
+6.  Save the trip.
+7.  From the trip dashboard or settings, find the option to invite members.
+8.  Invite at least one other (test) user to the trip via their email.
+9.  (Optional) If role assignment is available, try changing a member's role (e.g., from Viewer to Editor).
+
+### Flow 3: Collaborative Itinerary Building
+1.  Open a trip you have created or been invited to.
+2.  Navigate to the itinerary section.
+3.  **Add an activity:**
+    *   Find an option to "Add Activity," "Add Event," or similar.
+    *   Provide details for the activity (e.g., name: "Visit Eiffel Tower", date, time, notes).
+    *   Save the activity to the itinerary.
+4.  **Add a place:**
+    *   Look for an option to "Add Place," "Find Location," or similar.
+    *   Search for a specific place (e.g., a restaurant, museum, or landmark).
+    *   Select a place from the search results to add it to the itinerary.
+    *   (Optional) Add date/time or notes for this place.
+5.  **Edit an item:**
+    *   Select an existing activity or place in the itinerary.
+    *   Modify some of its details (e.g., change the time, add a note).
+    *   Save the changes.
+6.  **Vote on an item (if available):**
+    *   If there's a voting feature for suggested items, try upvoting or downvoting a suggested item.
+
+### Flow 4: Group Communication (Comments & Reactions)
+1.  Open a trip or a specific itinerary item within a trip.
+2.  **Add a comment:**
+    *   Find the comments section.
+    *   Write and submit a new comment (e.g., "This looks fun!" or "What time should we book this for?").
+3.  **Reply to a comment:**
+    *   Find an existing comment and use the reply function.
+    *   Submit your reply.
+4.  **Add a reaction:**
+    *   If emoji reactions are available, add a reaction to a comment or an itinerary item.
+
+### Flow 5: Exploring Destination Content
+1.  Navigate to a section for browsing destinations or use a search bar to find a specific city/destination.
+2.  Select a destination to view its profile page.
+3.  Read through the content provided (e.g., descriptions, tips, local information).
+4.  Pay attention to the style, tone, and authenticity of the content.
+5.  (Optional) If there's a map or points of interest highlighted, interact with them.
+
+### Flow 6: Using Map Features
+1.  Within a trip's itinerary or planning section, find a map view if available.
+2.  If you've added places to your itinerary, check if they appear on the map.
+3.  Try searching for a new place directly from the map interface (if possible).
+4.  Interact with map markers or place information cards.
+
+### Flow 7: User Profile and Settings (Basic)
+1.  Navigate to your user profile page.
+2.  Check if your information (name, email) is displayed correctly.
+3.  (Optional) If available, try updating your profile (e.g., changing your display name or uploading an avatar).
+4.  Explore any available user settings (e.g., notification preferences), noting their clarity and ease of use.
+
+### Flow 8: (If Applicable) Budgeting & Expense Tracking - Alpha Preview
+*This flow is for features that might be in early alpha.*
+1.  If a trip has a budgeting or expenses section, navigate to it.
+2.  Attempt to add a new budget item (e.g., "Flights", "Accommodation") with an estimated cost.
+3.  (Optional) If expense tracking is available, try adding a specific expense and (if possible) splitting it or assigning it to members.
+
+Testers are encouraged to deviate from these flows if they discover other features or encounter issues, and to provide feedback on any part of their experience.
+
+## 5. What We're Trying to Learn
+
+### 5.1 Key Research Questions
 
 1. **User Behavior & Needs**
    - What are the most common challenges in group travel planning?
@@ -240,7 +319,7 @@ This structure allows us to segment users by experience level, understand their 
    - What technical issues are most disruptive to the experience?
    - How does system responsiveness affect task completion?
 
-### 4.2 Learning Hypotheses
+### 5.2 Learning Hypotheses
 
 1. **Primary Hypothesis**: Users struggle most with coordination and consensus building in group travel planning, not with finding destinations or activities.
 
@@ -251,9 +330,9 @@ This structure allows us to segment users by experience level, understand their 
    - Users will prefer integrated chat over external communication tools
    - Visual decision-making tools will accelerate consensus building
 
-## 5. Data Analysis Approach
+## 6. Data Analysis Approach
 
-### 5.1 Analysis Framework
+### 6.1 Analysis Framework
 
 We've implemented a multi-layered approach to analyzing user testing data:
 
@@ -285,7 +364,7 @@ We've implemented a multi-layered approach to analyzing user testing data:
    - Consensus-building process evaluation
    - Role distribution in group planning
 
-### 5.2 Analysis Tools & Techniques
+### 6.2 Analysis Tools & Techniques
 
 1. **Quantitative Tools**
    - Supabase analytics dashboard
@@ -308,7 +387,7 @@ We've implemented a multi-layered approach to analyzing user testing data:
    - Product requirement derivation
    - Prioritization sessions with stakeholders
 
-### 5.3 Key Metrics for Success
+### 6.3 Key Metrics for Success
 
 We'll evaluate the success of our testing program through these metrics:
 
@@ -330,9 +409,9 @@ We'll evaluate the success of our testing program through these metrics:
    - Reduction in support queries on tested features
    - Increase in positive sentiment on improved features
 
-## 6. Product Development Rubric
+## 7. Product Development Rubric
 
-### 6.1 Insight Classification Framework
+### 7.1 Insight Classification Framework
 
 We use the following framework to classify and prioritize user testing insights:
 
@@ -364,7 +443,7 @@ We use the following framework to classify and prioritize user testing insights:
    - Affects tertiary features
    - Impacts very few users
 
-### 6.2 Decision-Making Matrix
+### 7.2 Decision-Making Matrix
 
 For each identified issue or opportunity, we evaluate:
 
@@ -378,7 +457,7 @@ Where:
 - **Strategic Alignment**: Alignment with business goals (1-5)
 - **Implementation Complexity**: Development effort required (1-5)
 
-### 6.3 Implementation Timeline Guidelines
+### 7.3 Implementation Timeline Guidelines
 
 Based on priority scoring:
 
@@ -406,7 +485,7 @@ Based on priority scoring:
    - Consider addressing in hackathons
    - Track cumulative impact of low-priority issues
 
-### 6.4 Feature Development Cycle
+### 7.4 Feature Development Cycle
 
 For new features identified through user testing:
 
@@ -440,9 +519,9 @@ For new features identified through user testing:
    - Document learnings
    - Plan next iteration
 
-## 7. User-Centered Philosophy for Social Features
+## 8. User-Centered Philosophy for Social Features
 
-### 7.1 Core Principles
+### 8.1 Core Principles
 
 Our approach to incorporating user feedback and building social features is guided by these principles:
 
@@ -476,7 +555,7 @@ Our approach to incorporating user feedback and building social features is guid
    - Maintain data integrity
    - Create predictable social mechanisms
 
-### 7.2 Public Idea Incorporation Framework
+### 8.2 Public Idea Incorporation Framework
 
 We've developed a systematic approach to incorporating public ideas into our product development:
 
@@ -515,7 +594,7 @@ We've developed a systematic approach to incorporating public ideas into our pro
    - Recognize community influence
    - Demonstrate responsiveness to feedback
 
-### 7.3 Social Feature Design Principles
+### 8.3 Social Feature Design Principles
 
 When designing features that facilitate social interaction, we adhere to these principles:
 
@@ -549,7 +628,7 @@ When designing features that facilitate social interaction, we adhere to these p
    - Design for trip memorabilia
    - Support pre- and post-trip engagement
 
-## 8. Implementation & Analysis Timeline
+## 9. Implementation & Analysis Timeline
 
 ### Phase 1: Research Infrastructure (Complete)
 - ✅ Create database schema for user testing
@@ -579,7 +658,7 @@ When designing features that facilitate social interaction, we adhere to these p
 - ⏳ Refine based on validation testing
 - ⏳ Plan implementation phases
 
-## 9. Conclusion & Next Steps
+## 10. Conclusion & Next Steps
 
 Our comprehensive user testing approach combines quantitative data collection, qualitative feedback, behavioral analysis, and structured decision-making frameworks. This system ensures that WithMe.Travel is built on genuine user needs rather than assumptions.
 

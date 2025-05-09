@@ -83,12 +83,16 @@ export function useIdeasTourController(isGuest?: boolean) {
           return;
         }
         
-        // For authenticated users, import and use the onboarding hook
+        // For authenticated users, check tour completion
         try {
-          const { useOnboarding } = await import('@/app/lib/onboarding/hooks/use-onboarding');
-          const { hasCompletedTour } = useOnboarding(TOUR_ID, { isGuest });
+          // FIXED: Don't call the hook inside this function
+          // Instead, import and use our non-hook function
+          const { checkTourCompletionStatus } = await import('@/app/lib/onboarding/hooks/use-onboarding');
           
+          // Check tour completion status using our safe function
+          const hasCompletedTour = await checkTourCompletionStatus(TOUR_ID, { isGuest });
           setHasCompletedTour(hasCompletedTour);
+          
           if (!hasCompletedTour) {
             setShowOnborda(true);
             if (groupId && planSlug) {
@@ -100,6 +104,7 @@ export function useIdeasTourController(isGuest?: boolean) {
               });
             }
           }
+          
           setIsLoading(false);
         } catch (error) {
           console.error('Error in tour controller:', error);
@@ -115,15 +120,37 @@ export function useIdeasTourController(isGuest?: boolean) {
   }, [isMounted, params, searchParams, isGuest]);
 
   // Handler to close the tour and mark as complete
-  const handleCloseTour = useCallback(() => {
+  const handleCloseTour = useCallback(async () => {
     setShowOnborda(false);
     setHasCompletedTour(true);
     
-    // Save completion status to localStorage for persistence
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(`tour-completed-${TOUR_ID}`, 'true');
+    // Track that the tour was completed
+    const groupId = params?.id as string;
+    const planSlug = params?.slug as string;
+    
+    if (groupId && planSlug) {
+      trackPlanEvent({
+        groupId,
+        planId: planSlug,
+        eventType: PLAN_EVENT_TYPES.TOUR_COMPLETE,
+        eventData: { automatic: false }
+      }).catch(error => {
+        console.warn('Failed to track tour completion event:', error);
+      });
     }
-  }, []);
+    
+    try {
+      // Use our non-hook function to mark tour as completed
+      const { markTourAsCompleted } = await import('@/app/lib/onboarding/hooks/use-onboarding');
+      await markTourAsCompleted(TOUR_ID, false, { isGuest });
+    } catch (error) {
+      console.error('Error marking tour as completed:', error);
+      // Still save to localStorage as fallback
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(`tour-completed-${TOUR_ID}`, 'true');
+      }
+    }
+  }, [isGuest, params]);
 
   return { showOnborda, setShowOnborda, handleCloseTour, isLoading };
 }

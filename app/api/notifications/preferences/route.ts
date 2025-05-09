@@ -1,10 +1,11 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { TABLES } from '@/utils/constants/database';
+import { createHash } from 'crypto';
 
 // Simple in-memory rate limiter
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute window
-const MAX_REQUESTS_PER_WINDOW = 5; // 5 requests per minute
+const MAX_REQUESTS_PER_WINDOW = 20; // 20 requests per minute per user
 
 interface RateLimitRecord {
   count: number;
@@ -33,13 +34,21 @@ function checkRateLimit(userId: string): boolean {
   return false;
 }
 
+// Clean up the rate limit map periodically to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  rateLimitMap.forEach((record, key) => {
+    if (now - record.windowStart > RATE_LIMIT_WINDOW * 2) {
+      rateLimitMap.delete(key);
+    }
+  });
+}, 5 * 60 * 1000); // Run cleanup every 5 minutes
+
 // GET user notification preferences
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const supabase = await createRouteHandlerClient();
   
   try {
-    console.log('[API] GET /api/notifications/preferences: Starting request');
-    
     // Authenticate the user
     const { data: userData, error: authError } = await supabase.auth.getUser();
     
@@ -58,13 +67,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Check rate limit
     if (!checkRateLimit(userId)) {
       console.warn(`[API] Rate limit exceeded for user ${userId} on GET /api/notifications/preferences`);
-      return NextResponse.json(
+      
+      const response = NextResponse.json(
         { error: 'Too many requests, please try again later' },
         { status: 429 }
       );
+      
+      response.headers.set('Retry-After', '60');
+      return response;
     }
-    
-    console.log(`[API] Notification Preferences - Looking up preferences for user: ${userId}`);
     
     // Get user preferences
     const { data, error } = await supabase
@@ -74,12 +85,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .single();
     
     if (error) {
-      console.log('[API] Notification Preferences - Database query error or no preferences found:', error);
-      
       // If no preferences exist, create default ones
       if (error.code === 'PGRST116') { // No rows returned
-        console.log('[API] Notification Preferences - Creating default preferences for user');
-        
         const defaultPrefs = {
           user_id: userId,
           email_enabled: true,
@@ -117,8 +124,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           );
         }
         
-        console.log('[API] Notification Preferences - Successfully created default preferences');
-        return NextResponse.json({ preferences: newPrefs });
+        // Generate ETag for the new preferences
+        const prefsHash = createHash('md5').update(JSON.stringify(newPrefs)).digest('hex');
+        const etag = `"preferences-${userId}-${prefsHash}"`;
+        
+        const response = NextResponse.json({ preferences: newPrefs });
+        response.headers.set('ETag', etag);
+        response.headers.set('Cache-Control', 'private, max-age=300'); // 5 minutes
+        
+        return response;
       }
       
       console.error('[API] Error fetching notification preferences:', error);
@@ -128,8 +142,28 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
     
-    console.log('[API] Notification Preferences - Successfully fetched preferences');
-    return NextResponse.json({ preferences: data });
+    // Generate ETag for the preferences
+    const prefsHash = createHash('md5').update(JSON.stringify(data)).digest('hex');
+    const etag = `"preferences-${userId}-${prefsHash}"`;
+    
+    // Check if client already has this version
+    const ifNoneMatch = request.headers.get('If-None-Match');
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304, // Not Modified
+        headers: {
+          'ETag': etag,
+          'Cache-Control': 'private, max-age=300' // 5 minutes
+        }
+      });
+    }
+    
+    // Return preferences with caching headers
+    const response = NextResponse.json({ preferences: data });
+    response.headers.set('ETag', etag);
+    response.headers.set('Cache-Control', 'private, max-age=300'); // 5 minutes
+    
+    return response;
   } catch (err) {
     console.error('[API] Unexpected error in notification preferences:', err);
     return NextResponse.json(
@@ -144,8 +178,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   const supabase = await createRouteHandlerClient();
   
   try {
-    console.log('[API] PUT /api/notifications/preferences: Starting request');
-    
     // Authenticate the user
     const { data: userData, error: authError } = await supabase.auth.getUser();
     
@@ -174,7 +206,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     let body;
     try {
       body = await request.json();
-      console.log(`[API] Notification Preferences PUT - Request body:`, body);
     } catch (error) {
       console.error('[API] Notification Preferences PUT - Invalid request body:', error);
       return NextResponse.json(
@@ -192,7 +223,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       
     if (checkError && checkError.code === 'PGRST116') {
       // Create preferences if they don't exist
-      console.log('[API] Notification Preferences PUT - Creating preferences since they don\'t exist');
       const defaultPrefs = {
         user_id: userId,
         email_enabled: true,
@@ -225,8 +255,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         );
       }
       
-      console.log('[API] Notification Preferences PUT - Successfully created preferences');
-      return NextResponse.json({ preferences: newPrefs });
+      return NextResponse.json({ preferences: newPrefs, created: true });
     } else if (checkError) {
       console.error('[API] Error checking for existing preferences:', checkError);
       return NextResponse.json(
@@ -235,14 +264,16 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       );
     }
     
-    console.log('[API] Notification Preferences PUT - Updating existing preferences');
+    // Update preferences with a timestamp
+    const updates = {
+      ...body.preferences,
+      updated_at: new Date().toISOString()
+    };
+    
     // Update preferences
     const { data, error } = await supabase
       .from(TABLES.NOTIFICATION_PREFERENCES)
-      .update({ 
-        ...(body.preferences || {}),
-        updated_at: new Date().toISOString() 
-      })
+      .update(updates)
       .eq('user_id', userId)
       .select()
       .single();
@@ -255,10 +286,17 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       );
     }
     
-    console.log('[API] Notification Preferences PUT - Successfully updated preferences');
-    return NextResponse.json({ preferences: data });
+    // Return updated preferences with a new ETag
+    const prefsHash = createHash('md5').update(JSON.stringify(data)).digest('hex');
+    const etag = `"preferences-${userId}-${prefsHash}"`;
+    
+    const response = NextResponse.json({ preferences: data, updated: true });
+    response.headers.set('ETag', etag);
+    response.headers.set('Cache-Control', 'private, max-age=300'); // 5 minutes
+    
+    return response;
   } catch (err) {
-    console.error('[API] Unexpected error updating notification preferences:', err);
+    console.error('[API] Unexpected error in PUT notification preferences:', err);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

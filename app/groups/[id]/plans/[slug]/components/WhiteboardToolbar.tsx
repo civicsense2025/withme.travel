@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Grid, Search, Lightbulb, X, Filter, Plane } from 'lucide-react';
+import { Plus, Grid, Search, Lightbulb, X, Filter, Plane, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -9,18 +9,36 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ActivityGeneratorWidget } from '@/components/groups/ActivityGeneratorWidget';
 import { useWhiteboardContext } from '../context/whiteboard-context';
 import { ConvertToTripModal } from './ConvertToTripModal';
+import { cn } from '@/lib/utils';
 
 interface WhiteboardToolbarProps {
   groupId: string;
   planId: string;
+  onStartVoting?: () => void;
+  isReadyForVoting?: boolean;
+  readyForVotingDisabled?: boolean;
 }
 
-export function WhiteboardToolbar({ groupId, planId }: WhiteboardToolbarProps) {
+export function WhiteboardToolbar({ 
+  groupId, 
+  planId, 
+  onStartVoting,
+  isReadyForVoting = false,
+  readyForVotingDisabled = false 
+}: WhiteboardToolbarProps) {
   const { addIdea, destination, searchIdeas, viewMode, setViewMode } = useWhiteboardContext();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActivityGenerator, setShowActivityGenerator] = useState<boolean>(false);
   const [isActivityGeneratorCollapsed, setIsActivityGeneratorCollapsed] = useState<boolean>(true);
   const [convertToTripModalOpen, setConvertToTripModalOpen] = useState<boolean>(false);
+
+  // Add this CSS for the glow effect
+  const glowButtonClass = `
+    relative
+    bg-gradient-to-r from-blue-500 to-blue-600 
+    hover:from-blue-600 hover:to-blue-700
+    after:absolute after:inset-0 after:rounded-lg after:animate-pulse after:bg-blue-500/30 after:blur-md after:-z-10
+  `;
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -79,13 +97,14 @@ export function WhiteboardToolbar({ groupId, planId }: WhiteboardToolbarProps) {
         </Button>
         
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
-          className="flex-shrink-0"
-          onClick={() => setConvertToTripModalOpen(true)}
+          className={cn("flex-shrink-0", isReadyForVoting ? glowButtonClass : "")}
+          onClick={onStartVoting}
+          disabled={readyForVotingDisabled}
         >
-          <Plane className="h-4 w-4 mr-2" />
-          Create Trip
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Ready for Voting
         </Button>
         
         <div className="ml-auto flex items-center gap-2">

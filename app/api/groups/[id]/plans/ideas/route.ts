@@ -32,8 +32,10 @@ const ideaSchema = z.object({
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  // Properly await params before using them
+  const params = await context.params;
   const groupId = params.id;
   const supabase = await createRouteHandlerClient();
 
@@ -129,10 +131,14 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const supabase = await createRouteHandlerClient<Database>();
+    // Properly await params before using them
+    const params = await context.params;
+    const groupId = params.id;
+    
+    const supabase = await createRouteHandlerClient();
     
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -148,7 +154,7 @@ export async function POST(
     const { data: membership, error: membershipError } = await supabase
       .from(TABLES.GROUP_MEMBERS)
       .select('*')
-      .eq('group_id', params.id)
+      .eq('group_id', groupId)
       .eq('user_id', user.id)
       .maybeSingle();
     
@@ -174,7 +180,7 @@ export async function POST(
     const { data: idea, error } = await supabase
       .from(TABLES.GROUP_PLAN_IDEAS)
       .insert({
-        group_id: params.id,
+        group_id: groupId,
         title: body.name,
         description: body.description,
         type: body.type,
@@ -224,18 +230,18 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createRouteHandlerClient<Database>();
+    const supabase = await createRouteHandlerClient();
     
     // Get the current user if authenticated
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     // Get guest token if not authenticated
-    const guestToken = user ? null : await getGuestToken();
+    // const guestToken = user ? null : await getGuestToken();
     
     // Require either user auth or guest token
-    if (userError || (!user && !guestToken)) {
+    if (userError || !user) {
       return NextResponse.json(
-        { error: userError?.message || 'Authentication or guest token required to update ideas' },
+        { error: userError?.message || 'Authentication required to update ideas' },
         { status: 401 }
       );
     }

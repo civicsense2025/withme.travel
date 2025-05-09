@@ -31,9 +31,10 @@ type ItineraryTemplate = {
 interface ItineraryTemplatesTableProps {
   initialData: ItineraryTemplate[];
   totalCount: number;
+  sections: any[];
 }
 
-export default function ItineraryTemplatesTable({ initialData, totalCount }: ItineraryTemplatesTableProps) {
+export default function ItineraryTemplatesTable({ initialData, totalCount, sections }: ItineraryTemplatesTableProps) {
   const [templates, setTemplates] = useState<ItineraryTemplate[]>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
@@ -45,6 +46,15 @@ export default function ItineraryTemplatesTable({ initialData, totalCount }: Iti
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  // Group sections by template_id for fast lookup
+  const sectionsByTemplate: Record<string, any[]> = {};
+  (sections || []).forEach((section) => {
+    if (!sectionsByTemplate[section.template_id]) {
+      sectionsByTemplate[section.template_id] = [];
+    }
+    sectionsByTemplate[section.template_id].push(section);
+  });
 
   // When page changes, fetch new data
   useEffect(() => {
@@ -134,6 +144,25 @@ export default function ItineraryTemplatesTable({ initialData, totalCount }: Iti
         if (city) return city;
         if (country) return country;
         return 'No city';
+      },
+    },
+    {
+      header: 'Sections',
+      accessor: (row: ItineraryTemplate) => row.id,
+      cell: (value: string) => {
+        const templateSections = sectionsByTemplate[value] || [];
+        if (templateSections.length === 0) return <span className="text-gray-400">No sections</span>;
+        return (
+          <div className="flex flex-col gap-1">
+            {templateSections
+              .sort((a, b) => a.day_number - b.day_number)
+              .map((section) => (
+                <span key={section.id} className="text-xs text-gray-700 dark:text-gray-300">
+                  Day {section.day_number}: {section.title || <em>Untitled</em>}
+                </span>
+              ))}
+          </div>
+        );
       },
     },
     {

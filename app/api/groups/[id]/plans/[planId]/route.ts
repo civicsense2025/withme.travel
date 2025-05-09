@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/database';
 
 /**
  * Get a specific plan with ideas
@@ -26,8 +27,8 @@ export async function GET(
     const { data: membership } = await supabase
       .from('group_members')
       .select('*')
-      .eq('GROUP_ID', params.id)
-      .eq('USER_ID', user.id)
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (!membership) {
@@ -39,22 +40,18 @@ export async function GET(
     
     // Fetch the plan with all related data
     const { data: plan, error } = await supabase
-      .from('group_idea_plans')
+      .from(TABLES.GROUP_PLANS)
       .select(`
         *,
-        creator:${'CREATED_BY'}(
-          id, 
-          email
-        ),
-        group:${'GROUP_ID'}(
+        creator:created_by(
           id,
           name,
           emoji
         ),
-        ideas:${'group_ideas'}(*)
+        ideas:${TABLES.GROUP_PLAN_IDEAS}(*)
       `)
       .eq('id', params.planId)
-      .eq('GROUP_ID', params.id)
+      .eq('group_id', params.id)
       .single();
     
     if (error) {
@@ -123,7 +120,7 @@ export async function PUT(
     
     // Check if user is the creator of the plan
     const { data: plan } = await supabase
-      .from('group_idea_plans')
+      .from(TABLES.GROUP_PLANS)
       .select('created_by')
       .eq('id', params.planId)
       .single();
@@ -151,18 +148,18 @@ export async function PUT(
     
     // Update the plan
     const { data: updatedPlan, error } = await supabase
-      .from('group_idea_plans')
+      .from(TABLES.GROUP_PLANS)
       .update({
-        ['NAME']: body.name,
-        ['DESCRIPTION']: body.description || null,
-        ['UPDATED_AT']: new Date().toISOString(),
+        name: body.name,
+        description: body.description || null,
+        updated_at: new Date().toISOString(),
         // Only update archive status if it's included in the request
         ...(body.is_archived !== undefined 
           ? { is_archived: body.is_archived } 
           : {})
       })
       .eq('id', params.planId)
-      .eq('GROUP_ID', params.id)
+      .eq('group_id', params.id)
       .select()
       .single();
     
@@ -226,7 +223,7 @@ export async function DELETE(
     
     // Check if user is the creator of the plan
     const { data: plan } = await supabase
-      .from('group_idea_plans')
+      .from(TABLES.GROUP_PLANS)
       .select('created_by')
       .eq('id', params.planId)
       .single();
@@ -243,10 +240,10 @@ export async function DELETE(
     
     // Delete the plan (cascades to ideas by RLS)
     const { error } = await supabase
-      .from('group_idea_plans')
+      .from(TABLES.GROUP_PLANS)
       .delete()
       .eq('id', params.planId)
-      .eq('GROUP_ID', params.id);
+      .eq('group_id', params.id);
     
     if (error) {
       console.error('Error deleting plan:', error);

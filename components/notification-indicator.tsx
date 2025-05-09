@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNotificationCount } from '@/contexts/notification-count-context';
 import { Bell } from 'lucide-react';
-import { Popover, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Lazy load notification content to avoid loading it until needed
 const NotificationPopoverContent = dynamic(
@@ -19,7 +20,7 @@ const NotificationPopoverContent = dynamic(
 
 function NotificationLoadingPlaceholder() {
   return (
-    <div className="w-[380px] p-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
+    <div className="w-[380px] p-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none">
       <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/50">
         <div className="h-5 w-24 bg-muted rounded animate-pulse"></div>
         <div className="h-5 w-16 bg-muted rounded animate-pulse"></div>
@@ -41,7 +42,15 @@ function NotificationLoadingPlaceholder() {
 
 export function NotificationIndicator() {
   const [open, setOpen] = useState(false);
+  const [hasLoadedContent, setHasLoadedContent] = useState(false);
   const { unreadCount } = useNotificationCount();
+
+  // Only load notification content when the popover is opened
+  useEffect(() => {
+    if (open && !hasLoadedContent) {
+      setHasLoadedContent(true);
+    }
+  }, [open, hasLoadedContent]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -64,8 +73,16 @@ export function NotificationIndicator() {
         </Button>
       </PopoverTrigger>
       
-      {/* Only load content when popover is open */}
-      {open && <NotificationPopoverContent onOpen={setOpen} />}
+      {/* Only render content when popover is open and content needs to be loaded */}
+      <PopoverContent className="w-[380px] p-0" align="end">
+        {open && (
+          hasLoadedContent ? (
+            <NotificationPopoverContent onOpen={setOpen} />
+          ) : (
+            <NotificationLoadingPlaceholder />
+          )
+        )}
+      </PopoverContent>
     </Popover>
   );
 }

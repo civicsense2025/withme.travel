@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fullscreen layout override - add this new rule */
+.fullscreen-layout {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden !important;
+}
+
+/* More aggressive fullscreen mode that affects all parent containers */
+html.force-fullscreen,
+html.force-fullscreen body,
+html.force-fullscreen #__next,
+html.force-fullscreen main,
+html.force-fullscreen div[id="main-content"],
+html.force-fullscreen div[class*="container"] {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+}
+
 @layer base {
   :root {
     /* Base theme variables */

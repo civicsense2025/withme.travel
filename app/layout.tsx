@@ -118,7 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <LayoutModeProvider>
               <ClientSideProviders>
                 <ClientSideLayoutRenderer>
-                  <Container size="full">
+                  <Container size="full" className="p-0 m-0 max-w-none">
                     <SearchProvider>
                       {children}
                       <CommandMenu />

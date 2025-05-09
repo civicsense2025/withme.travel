@@ -47,6 +47,7 @@ export function FriendsList({
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>(preSelectedFriendIds);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFriends();
@@ -54,20 +55,37 @@ export function FriendsList({
 
   const fetchFriends = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
+      console.log('Fetching friends from:', API_ROUTES.FRIENDS.LIST);
       const response = await fetch(API_ROUTES.FRIENDS.LIST);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch friends');
+        const errorText = await response.text();
+        console.error('Friends list API error:', response.status, errorText);
+        throw new Error(`Failed to fetch friends: ${response.status} ${errorText}`);
       }
+      
       const data = await response.json();
-      setFriends(data.data.friends || []);
-    } catch (error: any) {
+      console.log('Friends data received:', data);
+      
+      // Safely handle the data with proper type checking
+      if (data?.success && Array.isArray(data.data?.friends)) {
+        setFriends(data.data.friends || []);
+      } else {
+        console.error('Unexpected data format from friends API:', data);
+        setFriends([]);
+      }
+    } catch (error) {
       console.error('Error fetching friends:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch friends');
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to load friends',
-        variant: 'destructive',
+        title: "Couldn't load friends",
+        description: "There was a problem loading your friends. Please try again later.",
+        variant: "destructive",
       });
+      setFriends([]);
     } finally {
       setIsLoading(false);
     }
@@ -139,10 +157,34 @@ export function FriendsList({
 
   if (isLoading) {
     return (
-      <div className="p-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-        <p className="mt-2 text-muted-foreground">Loading friends...</p>
-      </div>
+      <>
+        {title && <h3 className="text-lg font-medium mb-4">{title}</h3>}
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </>
+    );
+  }
+  
+  if (error) {
+    return (
+      <>
+        {title && <h3 className="text-lg font-medium mb-4">{title}</h3>}
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg mb-4">
+            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => fetchFriends()}
+            className="mt-2"
+          >
+            <Loader2 className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </div>
+      </>
     );
   }
 

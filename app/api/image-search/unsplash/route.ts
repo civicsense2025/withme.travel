@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/tables';
 
 // Unsplash API endpoint
 const UNSPLASH_API_URL = 'https://api.unsplash.com/search/photos';
@@ -46,6 +47,29 @@ export async function GET(request: Request) {
     }
     
     const data = await response.json();
+
+    // Save each image to the images table (if not already present)
+    if (Array.isArray(data.results)) {
+      for (const photo of data.results) {
+        try {
+          await supabase.from(TABLES.IMAGES).upsert({
+            external_id: photo.id,
+            source: 'unsplash',
+            url: photo.links?.html,
+            image_url: photo.urls?.regular,
+            thumb_url: photo.urls?.thumb,
+            alt_text: photo.alt_description || photo.description || null,
+            photographer: photo.user?.name,
+            photographer_url: photo.user?.links?.html,
+            width: photo.width,
+            height: photo.height,
+            created_at: new Date().toISOString(),
+          }, { onConflict: 'external_id,source' });
+        } catch (err) {
+          console.error('Failed to upsert Unsplash image:', err);
+        }
+      }
+    }
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Error searching Unsplash:', error);

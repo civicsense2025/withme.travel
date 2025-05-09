@@ -47,9 +47,9 @@ export default function TemplateEditor({
   const [slug, setSlug] = useState(template.slug || '');
   const [description, setDescription] = useState(template.description || '');
   const [destinationId, setDestinationId] = useState(template.destination_id || '');
-  const [days, setDays] = useState(template.days || template.duration_days || 1);
+  const [days, setDays] = useState(template.duration_days || 1);
   const [isFeatured, setIsFeatured] = useState(template.is_featured || false);
-  const [coverImage, setCoverImage] = useState(template.cover_image || '');
+  const [coverImage, setCoverImage] = useState(template.cover_image_url || '');
   const [isLoading, setIsLoading] = useState(false);
   const [sections, setSections] = useState<TemplateSection[]>(initialSections || []);
   const [items, setItems] = useState<TemplateItem[]>(initialItems || []);
@@ -76,7 +76,7 @@ export default function TemplateEditor({
           days,
           duration_days: days,
           is_featured: isFeatured,
-          cover_image: coverImage,
+          cover_image_url: coverImage,
           updated_at: new Date().toISOString(),
         })
         .eq('id', template.id);
@@ -106,8 +106,8 @@ export default function TemplateEditor({
     setItems(updatedItems);
   };
 
-  const handleImageSelect = (imageUrl: string) => {
-    setCoverImage(imageUrl);
+  const handleImageSelect = (imageMeta: { url: string }) => {
+    setCoverImage(imageMeta.url);
   };
 
   return (
@@ -160,7 +160,7 @@ export default function TemplateEditor({
                   <Label htmlFor="destination">Destination</Label>
                   <Select value={destinationId} onValueChange={setDestinationId}>
                     <SelectTrigger id="destination">
-                      <SelectValue placeholder="Select a destination" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {destinations.map((destination) => (

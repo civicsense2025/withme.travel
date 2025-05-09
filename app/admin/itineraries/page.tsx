@@ -52,9 +52,7 @@ export default async function AdminItinerariesPage() {
       destinations:destination_id (
         name
       ),
-      days,
       duration_days,
-      is_featured,
       created_at,
       updated_at,
       created_by
@@ -70,6 +68,20 @@ export default async function AdminItinerariesPage() {
       code: templatesError.code,
       details: templatesError.details
     });
+  }
+
+  // Fetch all sections for these templates
+  const templateIds = (templates || []).map(t => t.id);
+  let sections: any[] = [];
+  if (templateIds.length > 0) {
+    const { data: fetchedSections, error: sectionsError } = await supabase
+      .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
+      .select('*')
+      .in('template_id', templateIds);
+    if (sectionsError) {
+      console.error('Error fetching template sections:', sectionsError);
+    }
+    sections = fetchedSections || [];
   }
 
   // Count the total number of template sections and items
@@ -145,11 +157,53 @@ export default async function AdminItinerariesPage() {
         </TabsList>
         
         <TabsContent value="all">
-          <ItineraryTemplatesTable initialData={templates || []} totalCount={templateCount || 0} />
+          <ItineraryTemplatesTable
+            initialData={(templates || []).map(t => ({
+              ...t,
+              slug: t.slug ?? '',
+              destinations:
+                'destinations' in t &&
+                t.destinations &&
+                typeof t.destinations === 'object' &&
+                t.destinations !== null &&
+                'name' in t.destinations
+                  ? {
+                      city: null,
+                      country: null,
+                      name: (t.destinations as any).name ?? null,
+                    }
+                  : { city: null, country: null, name: null },
+              created_at: t.created_at ?? '',
+              updated_at: t.updated_at ?? '',
+            }))}
+            totalCount={templateCount || 0}
+            sections={sections}
+          />
         </TabsContent>
         
         <TabsContent value="featured">
-          <ItineraryTemplatesTable initialData={featuredTemplates || []} totalCount={featuredTemplates?.length || 0} />
+          <ItineraryTemplatesTable
+            initialData={(featuredTemplates || []).map(t => ({
+              ...t,
+              slug: t.slug ?? '',
+              destinations:
+                'destinations' in t &&
+                t.destinations &&
+                typeof t.destinations === 'object' &&
+                t.destinations !== null &&
+                'name' in t.destinations
+                  ? {
+                      city: null,
+                      country: null,
+                      name: (t.destinations as any).name ?? null,
+                    }
+                  : { city: null, country: null, name: null },
+              created_at: t.created_at ?? '',
+              updated_at: t.updated_at ?? '',
+            }))}
+            totalCount={featuredTemplates?.length || 0}
+            sections={sections}
+          />
         </TabsContent>
         
         <TabsContent value="settings">

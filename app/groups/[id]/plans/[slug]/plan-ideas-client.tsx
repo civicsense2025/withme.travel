@@ -514,14 +514,16 @@ export default function PlanIdeasClient({
               groupName={groupName} 
               planName={planName} 
             />
-            <h1 className="text-xl font-semibold mt-1">{planName}</h1>
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mt-1">{planName}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button 
               onClick={() => setCreateIdeaOpen(true)} 
               variant="default"
+              size="sm"
+              className="h-8"
             >
-              <PlusCircle className="h-4 w-4 mr-2" />
+              <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
               Add Idea
             </Button>
             {isAuthenticated && (

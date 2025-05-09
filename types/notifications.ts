@@ -61,6 +61,7 @@ export interface Notification {
   notification_type: NotificationType;
   priority: NotificationPriority;
   read_at?: string | null;
+  read?: boolean;
   action_url?: string | null;
   metadata?: Record<string, any> | null;
   sender?: NotificationSender | null;

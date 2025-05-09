@@ -23,9 +23,17 @@ import {
 } from '@/components/ui/tabs';
 import { ImageIcon, Loader, X, Upload, Search } from 'lucide-react';
 
+interface ImageMeta {
+  url: string;
+  alt?: string;
+  photographer?: string;
+  photographerUrl?: string;
+  source?: 'unsplash' | 'pexels';
+}
+
 interface ImageSelectorProps {
   selectedImage: string;
-  onImageSelect: (url: string) => void;
+  onImageSelect: (meta: ImageMeta) => void;
 }
 
 export default function ImageSelector({ selectedImage, onImageSelect }: ImageSelectorProps) {
@@ -75,8 +83,8 @@ export default function ImageSelector({ selectedImage, onImageSelect }: ImageSel
     }
   };
 
-  const handleSelectImage = (imageUrl: string) => {
-    onImageSelect(imageUrl);
+  const handleSelectImage = (meta: ImageMeta) => {
+    onImageSelect(meta);
     setIsDialogOpen(false);
   };
 
@@ -102,7 +110,13 @@ export default function ImageSelector({ selectedImage, onImageSelect }: ImageSel
         .getPublicUrl(data.path);
       
       // Update with image URL
-      onImageSelect(urlData.publicUrl);
+      onImageSelect({
+        url: urlData.publicUrl,
+        alt: undefined,
+        photographer: undefined,
+        photographerUrl: undefined,
+        source: undefined,
+      });
       
       toast({
         title: 'Success',
@@ -135,7 +149,13 @@ export default function ImageSelector({ selectedImage, onImageSelect }: ImageSel
               variant="destructive"
               size="icon"
               className="absolute top-2 right-2"
-              onClick={() => onImageSelect('')}
+              onClick={() => onImageSelect({
+                url: '',
+                alt: undefined,
+                photographer: undefined,
+                photographerUrl: undefined,
+                source: undefined,
+              })}
             >
               <X size={16} />
             </Button>
@@ -150,7 +170,7 @@ export default function ImageSelector({ selectedImage, onImageSelect }: ImageSel
       
       <div className="flex flex-col sm:flex-row gap-2 mt-2">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger>
+          <DialogTrigger asChild>
             <Button variant="outline" className="flex-1">
               <Search size={16} className="mr-2 h-4 w-4" />
               Search Images
@@ -203,21 +223,29 @@ export default function ImageSelector({ selectedImage, onImageSelect }: ImageSel
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[500px] overflow-y-auto">
-                  {searchResults.map((image: any) => (
-                    <div 
-                      key={image.id} 
-                      className="relative h-40 cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => handleSelectImage(image.urls.regular)}
-                    >
-                      <Image
-                        src={image.urls.small}
-                        alt={image.alt_description || 'Unsplash image'}
-                        fill
-                        style={{ objectFit: 'cover' }}
-                        className="rounded-md"
-                      />
-                    </div>
-                  ))}
+                  {searchResults
+                    .filter((image: any) => image?.urls && image.urls.small && image.urls.regular)
+                    .map((image: any) => (
+                      <div 
+                        key={image.id} 
+                        className="relative h-40 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => handleSelectImage({
+                          url: image.urls.regular,
+                          alt: image.alt_description || 'Unsplash image',
+                          photographer: image.user?.name,
+                          photographerUrl: image.user?.links?.html,
+                          source: 'unsplash',
+                        })}
+                      >
+                        <Image
+                          src={image.urls.small}
+                          alt={image.alt_description || 'Unsplash image'}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                          className="rounded-md"
+                        />
+                      </div>
+                    ))}
                 </div>
                 
                 {searchResults.length === 0 && !isSearching && (
@@ -257,21 +285,29 @@ export default function ImageSelector({ selectedImage, onImageSelect }: ImageSel
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[500px] overflow-y-auto">
-                  {searchResults.map((image: any) => (
-                    <div 
-                      key={image.id} 
-                      className="relative h-40 cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => handleSelectImage(image.src.large)}
-                    >
-                      <Image
-                        src={image.src.medium}
-                        alt={image.photographer || 'Pexels image'}
-                        fill
-                        style={{ objectFit: 'cover' }}
-                        className="rounded-md"
-                      />
-                    </div>
-                  ))}
+                  {searchResults
+                    .filter((image: any) => image?.src && image.src.medium && image.src.large)
+                    .map((image: any) => (
+                      <div 
+                        key={image.id} 
+                        className="relative h-40 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => handleSelectImage({
+                          url: image.src.large,
+                          alt: image.photographer || 'Pexels image',
+                          photographer: image.photographer,
+                          photographerUrl: image.url,
+                          source: 'pexels',
+                        })}
+                      >
+                        <Image
+                          src={image.src.medium}
+                          alt={image.photographer || 'Pexels image'}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                          className="rounded-md"
+                        />
+                      </div>
+                    ))}
                 </div>
                 
                 {searchResults.length === 0 && !isSearching && (

@@ -96,6 +96,10 @@ export default function GroupDetailClient({
     type: 'DESTINATION', 
     plan_id: null 
   });
+  const [newPlanData, setNewPlanData] = useState({ 
+    name: '', 
+    description: '' 
+  });
   const { toast } = useToast();
   
   useEffect(() => {
@@ -320,30 +324,46 @@ export default function GroupDetailClient({
   const handleAddPlan = async () => {
     try {
       setIsLoading(true);
+      
       const res = await fetch(`/api/groups/${group.id}/plans`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: `New Plan (${new Date().toLocaleDateString()})`,
-          description: '',
+          name: newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`,
+          description: newPlanData.description || '',
         }),
       });
       
-      if (!res.ok) {
-        throw new Error('Failed to create plan');
-      }
-      
       const data = await res.json();
       
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create plan');
+      }
+      
+      // Refresh plans list
+      const plansRes = await fetch(`/api/groups/${group.id}/plans`);
+      if (plansRes.ok) {
+        const plansData = await plansRes.json();
+        setPlans(plansData.plans || []);
+      }
+      
+      // Reset form
+      setNewPlanData({ name: '', description: '' });
+      
+      toast({
+        title: 'Success',
+        description: 'Plan created successfully',
+      });
+      
       // Navigate to the new plan
-      router.push(`/groups/${group.id}/plans/${data.plan.id}`);
+      router.push(`/groups/${group.id}/plans/${data.plan.slug}`);
     } catch (error) {
       console.error('Error creating plan:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create plan. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to create plan. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -358,20 +378,22 @@ export default function GroupDetailClient({
     try {
       setIsLoading(true);
       
-      const res = await fetch(`/api/groups/${group.id}/plans/${newIdeaData.plan_id || 'ideas'}`, {
+      const res = await fetch(`/api/groups/${group.id}/plans/ideas`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: newIdeaData.title,
-          description: newIdeaData.description,
+          name: newIdeaData.title,
           type: newIdeaData.type,
+          description: newIdeaData.description,
+          plan_id: newIdeaData.plan_id,
         }),
       });
       
       if (!res.ok) {
-        throw new Error('Failed to create idea');
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create idea');
       }
       
       // Refresh ideas
@@ -393,7 +415,7 @@ export default function GroupDetailClient({
       console.error('Error creating idea:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add idea. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to add idea. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -676,7 +698,7 @@ export default function GroupDetailClient({
                     ) : plans && plans.length > 0 ? (
                       <div className="space-y-4">
                         {plans.map((plan) => (
-                          <Link href={`/groups/${group.id}/plans/${plan.id}`} key={plan.id}>
+                          <Link href={`/groups/${group.id}/plans/${plan.slug}`} key={plan.id}>
                             <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                               <div className="w-12 h-12 rounded-md overflow-hidden bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <Lightbulb className="h-6 w-6 text-primary/70" />

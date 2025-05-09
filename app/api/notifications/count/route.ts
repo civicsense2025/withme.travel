@@ -7,10 +7,6 @@ const rateLimit = new Map<string, { count: number, timestamp: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute window
 const MAX_REQUESTS_PER_WINDOW = 5; // 5 requests per minute per user
 
-// Simple cache for notification counts
-const countCache = new Map<string, { count: number, timestamp: number }>();
-const CACHE_TTL = 30 * 1000; // 30 seconds cache TTL
-
 /**
  * Lightweight GET route handler for fetching notification counts
  * Performance-optimized to only count unread notifications
@@ -61,20 +57,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     rateLimit.set(rateKey, { count: 1, timestamp: now });
   }
   
-  // Check cache first
-  const cachedResult = countCache.get(userId);
-  if (cachedResult && now - cachedResult.timestamp < CACHE_TTL) {
-    // Return cached count
-    const response = NextResponse.json({
-      unreadCount: cachedResult.count,
-      cached: true
-    });
-    
-    // Add cache headers
-    response.headers.set('Cache-Control', 'private, max-age=30'); // 30 seconds
-    return response;
-  }
-  
   try {
     // Only get unread notification count - more performant
     const { count, error } = await supabase
@@ -93,22 +75,36 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     
     const unreadCount = count || 0;
     
-    // Update cache
-    countCache.set(userId, { count: unreadCount, timestamp: now });
+    // Generate ETag for conditional requests
+    const etag = `"notification-count-${userId}-${unreadCount}"`;
     
+    // Check if client already has this version
+    const ifNoneMatch = request.headers.get('If-None-Match');
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304, // Not Modified
+        headers: {
+          'ETag': etag,
+          'Cache-Control': 'private, max-age=30'
+        }
+      });
+    }
+    
+    // Return count with caching headers
     const response = NextResponse.json({
       unreadCount: unreadCount
     });
     
     // Add cache headers
+    response.headers.set('ETag', etag);
     response.headers.set('Cache-Control', 'private, max-age=30'); // 30 seconds
     
     return response;
   } catch (err) {
     console.error('Unexpected error fetching notification counts:', err);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
+      { unreadCount: 0 }, // Return 0 as fallback
+      { status: 200 } // Return 200 with fallback data instead of 500
     );
   }
 }

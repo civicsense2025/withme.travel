@@ -11,7 +11,8 @@ interface PageProps {
   };
 }
 
-export default async function TemplateDetailPage({ params }: PageProps) {
+export default async function TemplateDetailPage(props: PageProps) {
+  const params = await props.params;
   const { slug } = params;
   const { isAdmin, supabase, error } = await checkAdminAuth();
 
@@ -36,14 +37,12 @@ export default async function TemplateDetailPage({ params }: PageProps) {
         id,
         name
       ),
-      days,
       duration_days,
-      is_featured,
       created_at,
       updated_at,
       created_by,
       metadata,
-      cover_image
+      cover_image_url
     `)
     .eq('slug', slug)
     .single();
@@ -86,18 +85,52 @@ export default async function TemplateDetailPage({ params }: PageProps) {
     console.error('Error fetching template items:', itemsError);
   }
 
+  // Defensive mapping for types
+  const safeTemplate = {
+    ...template,
+    slug: template.slug ?? '',
+    description: template.description ?? '',
+    cover_image_url: template.cover_image_url ?? '',
+    destinations: template.destinations
+      ? { ...template.destinations, name: template.destinations.name ?? '' }
+      : { id: '', name: '' },
+    created_at: template.created_at ?? '',
+    updated_at: template.updated_at ?? '',
+    metadata:
+      typeof template.metadata === 'object' && template.metadata !== null
+        ? template.metadata
+        : undefined,
+  };
+
+  const safeDestinations = (destinations || []).map((d: any) => ({
+    id: d.id,
+    name: d.name ?? '',
+  }));
+
+  const safeSections = (sections || []).map((s: any) => ({
+    ...s,
+    title: s.title ?? '',
+  }));
+
+  const safeItems = (items || []).map((item: any) => ({
+    ...item,
+    section_id:
+      typeof item.section_id === 'number' && item.section_id !== null
+        ? String(item.section_id)
+        : item.section_id ?? '',
+  }));
+
   return (
     <Container>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Edit Template: {template.title}</h1>
+          <h1 className="text-2xl font-bold">Edit Template: {safeTemplate.title}</h1>
         </div>
-        
-        <TemplateEditor 
-          template={template} 
-          destinations={destinations || []} 
-          sections={sections || []}
-          items={items || []}
+        <TemplateEditor
+          template={safeTemplate}
+          destinations={safeDestinations}
+          sections={safeSections}
+          items={safeItems}
         />
       </div>
     </Container>

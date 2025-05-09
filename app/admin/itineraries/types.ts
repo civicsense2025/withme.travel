@@ -24,14 +24,13 @@ export interface TemplateData {
     id: string;
     name: string;
   } | null;
-  days?: number;
   duration_days?: number;
   is_featured?: boolean;
   created_at: string;
   updated_at?: string;
   created_by?: string;
   metadata?: TemplateMetadata;
-  cover_image?: string;
+  cover_image_url?: string;
 }
 
 export interface TemplateSection {

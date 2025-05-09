@@ -2,6 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { createClient } from '@/utils/supabase/client';
+import { API_ROUTES } from '@/utils/constants/routes';
+import { getWithExpiry, setWithExpiry, initCacheCleaner } from '@/utils/local-storage-cache';
+import { getUnreadCountCache, setUnreadCountCache, isUnreadCountCacheValid } from '@/utils/notification-state';
 
 interface NotificationCountContextType {
   unreadCount: number;
@@ -11,135 +15,195 @@ interface NotificationCountContextType {
 
 const NotificationCountContext = createContext<NotificationCountContextType | undefined>(undefined);
 
-// Cache state and timestamps
-interface CountCache {
-  count: number;
-  timestamp: number;
-}
-
 // Constants for caching and retry
-const CACHE_TTL = 30000; // 30 seconds cache TTL
-const MAX_RETRIES = 3;
-const RETRY_DELAY_BASE = 2000; // Start with 2 seconds
+const CACHE_KEY = 'notification_count_cache';
+const CACHE_TTL = 60000; // 1 minute
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+const CIRCUIT_BREAKER_INTERVAL = 5000; // 5 seconds
 
-export function NotificationCountProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+export const NotificationCountProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const cache = useRef<CountCache | null>(null);
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const retryCountRef = useRef(0);
+  const { user } = useAuth();
+  const supabase = createClient();
+  const etagRef = useRef<string | null>(null);
+  const retryAttemptsRef = useRef(0);
+  const visibilityListenerAddedRef = useRef(false);
+  const lastFetchTimestampRef = useRef(0);
   const fetchInProgressRef = useRef(false);
   
-  // Clear the fetch timeout
-  const clearFetchTimeout = () => {
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-      fetchTimeoutRef.current = null;
-    }
-  };
-  
-  // Debounced fetch function
-  const debouncedFetch = useCallback(() => {
-    clearFetchTimeout();
-    fetchTimeoutRef.current = setTimeout(refreshUnreadCount, 300);
-  }, []);
-  
-  const refreshUnreadCount = useCallback(async () => {
+  /**
+   * Fetches the unread notification count with proper caching and error handling
+   */
+  const fetchUnreadCount = useCallback(async (forceRefresh = false) => {
     if (!user) {
       setUnreadCount(0);
       return;
     }
 
-    // Check if we already have a fetch in progress
+    // Circuit breaker: Only allow one fetch every 5 seconds
+    const now = Date.now();
+    if (!forceRefresh && now - lastFetchTimestampRef.current < CIRCUIT_BREAKER_INTERVAL) {
+      return;
+    }
     if (fetchInProgressRef.current) {
       return;
     }
-    
-    // Check if we have a valid cache entry
-    if (cache.current && (Date.now() - cache.current.timestamp) < CACHE_TTL) {
-      setUnreadCount(cache.current.count);
-      return;
-    }
-    
-    fetchInProgressRef.current = true;
-    setIsLoading(true);
-    
-    try {
-      const response = await fetch('/api/notifications/count', {
-        headers: { 
-          'x-requested-with': 'XMLHttpRequest',
-          'Cache-Control': 'max-age=30' // Tell browsers to cache for 30 seconds
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch count: ${response.status}`);
+
+    // Use shared cache if valid
+    if (!forceRefresh && isUnreadCountCacheValid()) {
+      const cache = getUnreadCountCache();
+      if (cache) {
+        setUnreadCount(cache.count);
+        setIsLoading(false);
+        return;
       }
-      
+    }
+
+    fetchInProgressRef.current = true;
+    lastFetchTimestampRef.current = now;
+    setIsLoading(true);
+
+    try {
+      const headers: HeadersInit = {};
+      if (etagRef.current) {
+        headers['If-None-Match'] = etagRef.current;
+      }
+      const response = await fetch(API_ROUTES.NOTIFICATIONS_COUNT, { headers });
+      if (response.status === 304) {
+        const cache = getUnreadCountCache();
+        if (cache) {
+          setUnreadCount(cache.count);
+          setIsLoading(false);
+          fetchInProgressRef.current = false;
+          return;
+        }
+      }
+      if (response.status === 429) {
+        // Rate limited, do not retry
+        setIsLoading(false);
+        fetchInProgressRef.current = false;
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(`Error fetching notification count: ${response.status}`);
+      }
+      const newEtag = response.headers.get('ETag');
+      if (newEtag) {
+        etagRef.current = newEtag;
+      }
       const data = await response.json();
       const count = data.unreadCount || 0;
-      
-      // Update the count and cache
       setUnreadCount(count);
-      cache.current = {
-        count,
-        timestamp: Date.now()
-      };
-      
-      // Reset retry count on success
-      retryCountRef.current = 0;
+      setUnreadCountCache(count);
     } catch (error) {
       console.error('Failed to fetch notification count:', error);
-      
-      // Only retry if we haven't exceeded max retries
-      if (retryCountRef.current < MAX_RETRIES) {
-        const delay = RETRY_DELAY_BASE * Math.pow(2, retryCountRef.current);
-        retryCountRef.current++;
-        console.log(`Retrying notification count fetch in ${delay}ms, attempt ${retryCountRef.current}`);
-        
-        setTimeout(debouncedFetch, delay);
-      }
+      // Do not auto-retry to avoid cascading failures
     } finally {
       setIsLoading(false);
       fetchInProgressRef.current = false;
     }
-  }, [user, debouncedFetch]);
+  }, [user]);
   
-  // Fetch count on mount, when user changes
-  useEffect(() => {
-    if (user) {
-      refreshUnreadCount();
-    }
+  /**
+   * Public method to refresh the unread count
+   */
+  const refreshUnreadCount = useCallback(async () => {
+    await fetchUnreadCount(true);
+  }, [fetchUnreadCount]);
+  
+  /**
+   * Set up tab visibility listener
+   */
+  const setupVisibilityListener = useCallback(() => {
+    if (visibilityListenerAddedRef.current) return;
     
-    // Clean up any pending timeouts
-    return () => {
-      clearFetchTimeout();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Refresh count when tab becomes visible
+        fetchUnreadCount(true);
+      }
     };
-  }, [user, refreshUnreadCount]);
+    
+    // Add event listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    visibilityListenerAddedRef.current = true;
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      visibilityListenerAddedRef.current = false;
+    };
+  }, [fetchUnreadCount]);
   
-  // Set up polling at a reasonable interval (2 minutes)
+  /**
+   * Initial setup
+   */
+  useEffect(() => {
+    // Initialize cache cleaner 
+    const cleanupCacheInterval = initCacheCleaner();
+    
+    // Set up visibility listener
+    const cleanupVisibilityListener = setupVisibilityListener();
+    
+    // Initial fetch
+    fetchUnreadCount();
+    
+    return () => {
+      cleanupCacheInterval();
+      if (cleanupVisibilityListener) cleanupVisibilityListener();
+    };
+  }, [fetchUnreadCount, setupVisibilityListener]);
+  
+  /**
+   * Set up realtime subscription for notifications
+   */
   useEffect(() => {
     if (!user) return;
     
-    const interval = setInterval(refreshUnreadCount, 120000); // 2 minutes
+    // Listen to notification table changes for the current user
+    const channel = supabase
+      .channel('notification-count-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // Refresh the count when a notification changes
+          fetchUnreadCount(true);
+        }
+      )
+      .subscribe();
     
     return () => {
-      clearInterval(interval);
+      supabase.removeChannel(channel);
     };
-  }, [user, refreshUnreadCount]);
+  }, [user, supabase, fetchUnreadCount]);
+  
+  // Create the context value
+  const contextValue: NotificationCountContextType = {
+    unreadCount,
+    refreshUnreadCount,
+    isLoading,
+  };
   
   return (
-    <NotificationCountContext.Provider value={{ unreadCount, refreshUnreadCount, isLoading }}>
+    <NotificationCountContext.Provider value={contextValue}>
       {children}
     </NotificationCountContext.Provider>
   );
-}
+};
 
-export function useNotificationCount() {
+export const useNotificationCount = (): NotificationCountContextType => {
   const context = useContext(NotificationCountContext);
+  
   if (context === undefined) {
     throw new Error('useNotificationCount must be used within a NotificationCountProvider');
   }
+  
   return context;
-} 
+}; 

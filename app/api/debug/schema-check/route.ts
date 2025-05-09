@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/service-role';
 import { TABLES } from '@/utils/constants/tables';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { NextRequest } from 'next/server';
 
 // Define a more complete type for TABLES that includes missing properties
 type ExtendedTables = typeof TABLES & {
   [key: string]: string;
 };
+
+// Use the extended type with the existing TABLES constant
+const Tables = TABLES as unknown as ExtendedTables;
 
 export const dynamic = 'force-dynamic';
 
@@ -159,247 +164,49 @@ interface SchemaWarning {
   actual?: string;
 }
 
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
-    const url = new URL(request.url);
-    const detail = url.searchParams?.get('detail') === 'true';
-    const validateEnums = url.searchParams?.get('validateEnums') === 'true';
+    const supabase = await createRouteHandlerClient();
 
-    // List of core tables and enums from our constants
-    const coreTablesFromConstants = Object.values(TABLES) as string[];
-    const coreEnumsFromConstants = validateEnums ? [] : []; // We'll implement enum validation in a future update
+    // Check if user is authenticated and is admin
+    const { data: userData, error: userError } = await supabase.auth.getUser();
 
-    // Fetch detected tables and their columns
-    const { data: tableData, error: tableError } = await supabase.rpc('execute_sql', {
-      query: TABLE_INFO_SQL,
-    });
-
-    // Get enum types and values
-    const { data: enumData, error: enumError } = await supabase.rpc('execute_sql', {
-      query: ENUM_INFO_SQL,
-    });
-
-    // Get foreign key relationships
-    const { data: foreignKeyData, error: foreignKeyError } = await supabase.rpc('execute_sql', {
-      query: FOREIGN_KEY_SQL,
-    });
-
-    // Get index information
-    const { data: indexData, error: indexError } = await supabase.rpc('execute_sql', {
-      query: INDEX_INFO_SQL,
-    });
-
-    if (tableError || enumError || foreignKeyError || indexError) {
-      // Log the specific error
-      console.error(
-        'Database schema query error:',
-        tableError || enumError || foreignKeyError || indexError
-      );
-      throw new Error(
-        `Database schema query failed: ${
-          tableError?.message ||
-          enumError?.message ||
-          foreignKeyError?.message ||
-          indexError?.message
-        }`
-      );
+    if (userError || !userData.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Process table data into structured format
-    const tables: Record<string, TableInfo> = {};
-    const detectedTableNames: string[] = [];
-    const warnings: SchemaWarning[] = [];
+    // Get profiles table schema
+    const { data: profilesSchema, error: profilesError } = await supabase
+      .from('information_schema.columns')
+      .select('column_name, data_type, is_nullable, column_default')
+      .eq('table_name', Tables.PROFILES);
 
-    if (tableData && Array.isArray(tableData)) {
-      // First pass: collect all tables and their columns
-      tableData.forEach((row: any) => {
-        const tableName = row.table_name as string;
-        if (!detectedTableNames.includes(tableName)) {
-          detectedTableNames.push(tableName);
-        }
-
-        if (!tables[tableName]) {
-          tables[tableName] = {
-            columns: [],
-            hasPrimaryKey: false,
-            primaryKeyColumns: [],
-          };
-        }
-
-        tables[tableName].columns.push({
-          name: row.column_name as string,
-          type: row.data_type as string,
-          nullable: (row.is_nullable as string) === 'YES',
-          default: row.column_default as string | null,
-          maxLength: row.character_maximum_length as number | null,
-          precision: row.numeric_precision as number | null,
-          scale: row.numeric_scale as number | null,
-          udtName: row.udt_name as string | null,
-        });
-      });
+    if (profilesError) {
+      return NextResponse.json({ error: profilesError.message }, { status: 500 });
     }
 
-    // Process enum data
-    const enums: Record<string, string[]> = {};
-    const detectedEnumNames: string[] = [];
+    // Get a sample profile for reference
+    const { data: sampleProfile, error: sampleError } = await supabase
+      .from(Tables.PROFILES)
+      .select('*')
+      .limit(1)
+      .single();
 
-    if (enumData && Array.isArray(enumData)) {
-      enumData.forEach((row: any) => {
-        const enumName = row.enum_name as string;
-        const enumValue = row.enum_value as string;
+    // Check if travel_personality and travel_squad columns exist in the profiles table
+    const hasTravelPersonality = profilesSchema.some(col => col.column_name === 'travel_personality');
+    const hasTravelSquad = profilesSchema.some(col => col.column_name === 'travel_squad');
 
-        if (!detectedEnumNames.includes(enumName)) {
-          detectedEnumNames.push(enumName);
-        }
-
-        if (!enums[enumName]) {
-          enums[enumName] = [];
-        }
-
-        enums[enumName].push(enumValue);
-      });
-    }
-
-    // Process foreign key data
-    const foreignKeys: Record<string, ForeignKeyRelation[]> = {};
-
-    if (foreignKeyData && Array.isArray(foreignKeyData)) {
-      foreignKeyData.forEach((row: any) => {
-        const tableName = row.table_name as string;
-
-        if (!foreignKeys[tableName]) {
-          foreignKeys[tableName] = [];
-        }
-
-        foreignKeys[tableName].push({
-          column: row.column_name as string,
-          referencesTable: row.foreign_table_name as string,
-          referencesColumn: row.foreign_column_name as string,
-          onUpdate: row.update_rule as string,
-          onDelete: row.delete_rule as string,
-        });
-      });
-    }
-
-    // Process index data
-    const indexes: Record<string, IndexInfo[]> = {};
-
-    if (indexData && Array.isArray(indexData)) {
-      // Group by index name to collect all columns
-      const indexMap = new Map<
-        string,
-        {
-          tableName: string;
-          columns: string[];
-          isUnique: boolean;
-          isPrimary: boolean;
-        }
-      >();
-
-      indexData.forEach((row: any) => {
-        const indexName = row.index_name as string;
-        const tableName = row.table_name as string;
-        const columnName = row.column_name as string;
-        const isUnique = row.is_unique as boolean;
-        const isPrimary = row.is_primary as boolean;
-
-        const key = `${tableName}:${indexName}`;
-
-        if (!indexMap.has(key)) {
-          indexMap.set(key, {
-            tableName,
-            columns: [],
-            isUnique,
-            isPrimary,
-          });
-        }
-
-        const index = indexMap.get(key)!;
-        index.columns.push(columnName);
-
-        // Update table with primary key info
-        if (isPrimary && tables[tableName]) {
-          tables[tableName].hasPrimaryKey = true;
-          tables[tableName].primaryKeyColumns.push(columnName);
-        }
-      });
-
-      // Convert map to record
-      for (const [key, value] of indexMap.entries()) {
-        const tableName = value.tableName;
-
-        if (!indexes[tableName]) {
-          indexes[tableName] = [];
-        }
-
-        indexes[tableName].push({
-          name: key.split(':')[1],
-          columns: value.columns,
-          isUnique: value.isUnique,
-          isPrimary: value.isPrimary,
-        });
-      }
-    }
-
-    // Find missing tables
-    const missingTables = coreTablesFromConstants.filter(
-      (table) => !detectedTableNames.includes(table)
-    );
-
-    // Find missing enums if validation is requested
-    const missingEnums = validateEnums
-      ? coreEnumsFromConstants.filter((enumName) => !detectedEnumNames.includes(enumName))
-      : [];
-
-    // Check for tables without primary keys
-    for (const tableName of detectedTableNames) {
-      const tableInfo = tables[tableName];
-      if (!tableInfo.hasPrimaryKey) {
-        warnings.push({
-          type: 'missing_index',
-          table: tableName,
-          message: `Table ${tableName} does not have a primary key`,
-        });
-      }
-    }
-
-    // Generate constants file content if requested
-    let generatedConstants: string | undefined = undefined;
-    if (detail) {
-      generatedConstants = generateConstantsFile(tables, enums, foreignKeys, indexes);
-    }
-
-    const result: SchemaCheckResult = {
-      missingTables,
-      detectedTables: detectedTableNames,
-      checkedTables: coreTablesFromConstants,
-      success: missingTables.length === 0 && (!validateEnums || missingEnums.length === 0),
-      ...(validateEnums && { missingEnums }),
-      warnings,
-      detail: detail
-        ? {
-            tables,
-            enums,
-            foreignKeys,
-            indexes,
-            warnings,
-            generatedConstants,
-          }
-        : undefined,
-    };
-
-    return NextResponse.json(result, { status: 200 });
-  } catch (error) {
-    console.error('Error checking schema:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to check database schema',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        success: false,
+    return NextResponse.json({
+      schema: {
+        profilesColumns: profilesSchema,
+        hasTravelPersonality,
+        hasTravelSquad,
       },
-      { status: 500 }
-    );
+      sampleData: sampleProfile || null,
+      sampleError: sampleError?.message || null,
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message, stack: error.stack }, { status: 500 });
   }
 }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { TABLES } from '@/utils/constants/database';
 import { getGuestToken } from '@/utils/guest';
 import { v4 as uuidv4 } from 'uuid';
 

@@ -96,7 +96,7 @@ export default function PlansClient({
   const loadPlans = async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_ROUTES.GROUP_IDEA_PLANS.LIST(groupId));
+      const response = await fetch(API_ROUTES.GROUP_PLANS.LIST(groupId));
       
       if (!response.ok) {
         throw new Error('Failed to load plans');
@@ -128,7 +128,7 @@ export default function PlansClient({
     
     try {
       setCreating(true);
-      const response = await fetch(API_ROUTES.GROUP_IDEA_PLANS.CREATE(groupId), {
+      const response = await fetch(API_ROUTES.GROUP_PLANS.CREATE(groupId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,33 +143,9 @@ export default function PlansClient({
       
       const { plan } = await response.json();
       
-      // Add the new plan to state
-      setPlans(prev => [
-        {
-          ...plan,
-          ideas_count: 0,
-          creator: {
-            id: userId,
-            // These will be populated on reload
-            email: '',
-            user_metadata: {}
-          }
-        },
-        ...prev
-      ]);
-      
-      // Reset form and close dialog
-      setName('');
-      setDescription('');
-      setCreateDialogOpen(false);
-      
-      toast({
-        title: 'Success',
-        description: 'Plan created successfully',
-      });
-      
-      // Reload plans from server to get the complete data
-      loadPlans();
+      // Redirect to the new plan's page using the slug
+      router.push(`/groups/${groupId}/plans/${plan.slug}`);
+      return;
     } catch (err: any) {
       console.error('Error creating plan:', err);
       setFormError(err.message || 'Failed to create plan');
@@ -193,7 +169,7 @@ export default function PlansClient({
     try {
       setCreating(true);
       const response = await fetch(
-        API_ROUTES.GROUP_IDEA_PLANS.UPDATE(groupId, currentPlan.id), 
+        API_ROUTES.GROUP_PLANS.UPDATE(groupId, currentPlan.id), 
         {
           method: 'PUT',
           headers: {
@@ -246,7 +222,7 @@ export default function PlansClient({
   const handleToggleArchive = async (plan: Plan) => {
     try {
       const response = await fetch(
-        API_ROUTES.GROUP_IDEA_PLANS.UPDATE(groupId, plan.id), 
+        API_ROUTES.GROUP_PLANS.UPDATE(groupId, plan.id), 
         {
           method: 'PUT',
           headers: {
@@ -300,7 +276,7 @@ export default function PlansClient({
     
     try {
       const response = await fetch(
-        API_ROUTES.GROUP_IDEA_PLANS.DELETE(groupId, plan.id), 
+        API_ROUTES.GROUP_PLANS.DELETE(groupId, plan.id), 
         {
           method: 'DELETE',
         }

@@ -37,7 +37,7 @@ export default function CreateTemplateForm({ destinations }: CreateTemplateFormP
     title: '',
     description: '',
     destination_id: '',
-    days: '3', // Default to 3 days
+    duration_days: '3', // Default to 3 days
   });
   
   const supabase = createBrowserClient(
@@ -107,7 +107,7 @@ export default function CreateTemplateForm({ destinations }: CreateTemplateFormP
           title: formData.title,
           description: formData.description,
           destination_id: formData.destination_id,
-          days: parseInt(formData.days),
+          duration_days: parseInt(formData.duration_days),
           slug,
           created_by: user.id,
           updated_at: new Date().toISOString(),
@@ -182,7 +182,7 @@ export default function CreateTemplateForm({ destinations }: CreateTemplateFormP
                 required
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a destination" />
+                  <SelectValue>Select a destination</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {destinations.map((destination) => (
@@ -195,12 +195,12 @@ export default function CreateTemplateForm({ destinations }: CreateTemplateFormP
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="days">Number of Days</Label>
+              <Label htmlFor="duration_days">Number of Days</Label>
               <Input
-                id="days"
-                name="days"
+                id="duration_days"
+                name="duration_days"
                 type="number"
-                value={formData.days}
+                value={formData.duration_days}
                 onChange={handleInputChange}
                 min={1}
                 max={30}

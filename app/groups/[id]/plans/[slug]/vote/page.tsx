@@ -80,22 +80,20 @@ export default async function VotingPage({ params }: { params: Promise<{ id: str
     .eq('status', 'active');
 
   return (
-    <div className="container mx-auto py-6">
-      <VotingClient 
-        groupId={id}
-        groupName={group.name}
-        initialIdeas={ideas || []}
-        members={(members || []).map(member => ({
-          id: member.id,
-          user_id: member.user_id,
-          profiles: {
-            email: member.profiles[0]?.email || '',
-            full_name: member.profiles[0]?.full_name || '',
-            avatar_url: member.profiles[0]?.avatar_url
-          }
-        }))}
-        currentUserId={user.id}
-      />
-    </div>
+    <VotingClient 
+      groupId={id}
+      groupName={group.name}
+      initialIdeas={ideas || []}
+      members={(members || []).map(member => ({
+        id: member.id,
+        user_id: member.user_id,
+        profiles: {
+          email: member.profiles[0]?.email || '',
+          full_name: member.profiles[0]?.full_name || '',
+          avatar_url: member.profiles[0]?.avatar_url
+        }
+      }))}
+      currentUserId={user.id}
+    />
   );
 } 

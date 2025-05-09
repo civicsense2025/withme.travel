@@ -387,6 +387,7 @@ export function CreateItineraryClient() {
                   placeholder="e.g., Barcelona: Architecture, Culture & Coastal Vibes - 5 Days"
                   value={itinerary.title}
                   onChange={handleTitleChange}
+                  required
                 />
               </div>
 
@@ -398,10 +399,9 @@ export function CreateItineraryClient() {
                   value={itinerary.slug}
                   onChange={(e) => setItinerary({ ...itinerary, slug: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  This will be used in the URL: withme.travel/itineraries/
-                  {itinerary.slug || 'your-slug'}
-                </p>
+                <span className="text-xs text-muted-foreground">
+                  This will be used in the URL: withme.travel/itineraries/{itinerary.slug || 'your-slug'}
+                </span>
               </div>
 
               <div className="space-y-2">
@@ -434,9 +434,9 @@ export function CreateItineraryClient() {
                       <SelectValue>Select duration</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 21].map((days) => (
-                        <SelectItem key={days} value={days.toString()}>
-                          {days} {days === 1 ? 'day' : 'days'}
+                      {[...Array(30)].map((_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()}>
+                          {i + 1} {i === 0 ? 'day' : 'days'}
                         </SelectItem>
                       ))}
                     </SelectContent>

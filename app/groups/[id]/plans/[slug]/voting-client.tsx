@@ -347,36 +347,29 @@ export default function VotingClient({
   
   return (
     <motion.div 
-      className="flex flex-col space-y-8"
+      className="flex flex-col space-y-8 p-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">{groupName} - Vote on Ideas</h1>
-          <p className="text-muted-foreground">Choose your favorite ideas for this trip</p>
-        </div>
+      <div className="flex justify-end items-center gap-3">
+        <Button 
+          variant="outline" 
+          onClick={() => router.push(`/groups/${groupId}/plans/${planSlug}`)}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Ideas
+        </Button>
         
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => router.push(`/groups/${groupId}/plans/${planSlug}`)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Ideas
-          </Button>
-          
-          <Button 
-            variant="default" 
-            onClick={() => setShowCreateTripModal(true)}
-            disabled={votingProgress < 50}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-          >
-            Create Trip
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
+        <Button 
+          variant="default" 
+          onClick={() => setShowCreateTripModal(true)}
+          disabled={votingProgress < 50}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+        >
+          Create Trip
+          <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
       </div>
       
       {/* Voting progress card with animations */}

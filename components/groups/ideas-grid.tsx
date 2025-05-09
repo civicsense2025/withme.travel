@@ -72,7 +72,7 @@ export function IdeasGrid({
         {
           event: '*',
           schema: 'public',
-          table: 'group_ideas',
+          table: 'group_plan_ideas',
           filter: `plan_id=eq.${planId}`
         },
         () => {
@@ -168,7 +168,7 @@ export function IdeasGrid({
   // Loading state
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Ideas</h2>
           <div className="flex gap-2">
@@ -207,7 +207,7 @@ export function IdeasGrid({
   // Empty state
   if (ideas.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Ideas</h2>
           <CreateIdeaDialog
@@ -238,7 +238,7 @@ export function IdeasGrid({
   // No results after filtering
   if (filteredIdeas.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Ideas</h2>
           <CreateIdeaDialog
@@ -250,18 +250,20 @@ export function IdeasGrid({
         
         <div className="flex flex-wrap gap-4 mb-6 justify-between">
           <div className="flex-1 max-w-sm">
-            <Input
-              placeholder="Search ideas..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full"
-              prefix={<Search className="h-4 w-4 mr-2 text-muted-foreground" />}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search ideas..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10"
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Filter by type" />
+                <span>{typeFilter === 'all' ? 'All Types' : formatIdeaType(typeFilter)}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
@@ -278,7 +280,7 @@ export function IdeasGrid({
             
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Sort by" />
+                <span>{formatSortBy(sortBy)}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="newest">Newest</SelectItem>
@@ -309,7 +311,7 @@ export function IdeasGrid({
 
   // Normal state with results
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Ideas ({filteredIdeas.length})</h2>
         <CreateIdeaDialog
@@ -334,7 +336,7 @@ export function IdeasGrid({
         <div className="flex gap-2">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Filter by type" />
+              <span>{typeFilter === 'all' ? 'All Types' : formatIdeaType(typeFilter)}</span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
@@ -351,7 +353,7 @@ export function IdeasGrid({
           
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Sort by" />
+              <span>{formatSortBy(sortBy)}</span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="newest">Newest</SelectItem>
@@ -364,16 +366,32 @@ export function IdeasGrid({
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        className="
+          grid
+          w-full
+          h-[calc(100vh-150px)]
+          overflow-y-auto
+          pb-6
+          gap-x-8 gap-y-8
+          grid-cols-1
+          sm:grid-cols-2
+          md:grid-cols-3
+          lg:grid-cols-5
+        "
+        style={{ gridAutoColumns: 'minmax(280px, 1fr)' }}
+      >
         {paginatedIdeas.map((idea) => (
-          <IdeaCard
-            key={idea.id}
-            idea={idea}
-            groupId={groupId}
-            planId={planId}
-            isAuthenticated={isAuthenticated}
-            onVote={handleVote}
-          />
+          <div className="flex flex-col h-full px-4 min-w-[280px]">
+            <IdeaCard
+              key={idea.id}
+              idea={idea}
+              groupId={groupId}
+              planId={planId}
+              isAuthenticated={isAuthenticated}
+              onVote={handleVote}
+            />
+          </div>
         ))}
       </div>
       
@@ -407,4 +425,28 @@ export function IdeasGrid({
       )}
     </div>
   );
-} 
+}
+
+// Helper function to format the idea type for display
+const formatIdeaType = (type: string) => {
+  if (type === 'all') return 'All Types';
+  return type.charAt(0).toUpperCase() + type.slice(1);
+};
+
+// Helper function to format the sort by value for display
+const formatSortBy = (sortBy: string) => {
+  switch (sortBy) {
+    case 'newest':
+      return 'Newest';
+    case 'oldest':
+      return 'Oldest';
+    case 'most_upvotes':
+      return 'Most Upvoted';
+    case 'most_downvotes':
+      return 'Most Downvoted';
+    case 'alphabetical':
+      return 'A-Z';
+    default:
+      return 'Sort by';
+  }
+}; 

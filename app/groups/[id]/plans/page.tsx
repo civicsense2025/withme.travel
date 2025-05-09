@@ -68,7 +68,7 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
 
   // Fetch initial plans to pass to client component - avoid selecting user_metadata directly
   const { data: plans, error: plansError } = await supabase
-    .from('group_idea_plans')
+    .from('group_plans')
     .select(`
       *,
       creator:created_by(
@@ -90,8 +90,23 @@ export default async function PlansPage({ params }: { params: { id: string } }) 
   // Process plans to include idea count
   const processedPlans = plans?.map(plan => ({
     ...plan,
+    group_id: plan.group_id ?? '',
+    id: plan.id ?? '',
+    name: plan.name ?? '',
+    slug: plan.slug ?? '',
+    created_by: plan.created_by ?? '',
+    created_at: plan.created_at ?? '',
+    updated_at: plan.updated_at ?? '',
     ideas_count: plan.ideas?.length || 0,
     ideas: undefined, // Don't pass all ideas to client, just the count
+    is_archived: plan.is_archived ?? false,
+    creator: plan.creator
+      ? {
+          id: plan.creator.id ?? '',
+          email: plan.creator.email ?? '',
+          user_metadata: {},
+        }
+      : { id: '', email: '', user_metadata: {} },
   })) || [];
 
   // Debug logs

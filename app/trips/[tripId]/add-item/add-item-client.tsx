@@ -36,7 +36,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FormControl, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import GoogleMapsUrlImport from '../google-maps-url-import';
 
 // Define a local formatError function since it's not available in utils
 function formatError(error: any): string {
