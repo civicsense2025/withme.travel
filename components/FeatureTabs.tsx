@@ -115,8 +115,8 @@ export function FeatureTabs() {
         <div className="w-full overflow-x-auto whitespace-nowrap scrollbar-hide no-scrollbar px-1 md:px-2">
           <TabsList className="flex md:flex-col h-auto space-y-1 md:w-60 flex-shrink-0 border-0">
             {[
-              { key: 'expenses', label: 'Group Expenses', icon: <DollarSign className="h-4 w-4 mr-1 text-blue-500" /> },
-              { key: 'poll', label: 'Group Poll', icon: <BarChart2 className="h-4 w-4 mr-1 text-blue-400" /> }
+              { key: 'expenses', label: 'Group Expenses', icon: <DollarSign className="h-4 w-4 mr-1 text-travel-purple" /> },
+              { key: 'poll', label: 'Group Poll', icon: <BarChart2 className="h-4 w-4 mr-1 text-travel-purple" /> }
             ].map((t) => (
               <TabsTrigger
                 key={t.key}
@@ -141,7 +141,7 @@ export function FeatureTabs() {
                   transition={{ duration: 0.25, type: 'spring', bounce: 0.2 }}
                   className="relative"
                 >
-                  <Card className="p-5 bg-gradient-to-br from-blue-100/80 to-cyan-50/80 backdrop-blur-sm rounded-2xl shadow-md border border-blue-100">
+                  <Card className="p-5 bg-white dark:bg-black border-2 border-black dark:border-zinc-800 rounded-2xl shadow-md">
                     <p className="text-xs text-muted-foreground mb-4 font-medium">Track and split costs with your group</p>
                     <div className="space-y-2 relative">
                       {expenseData.map((expense, index) => (
@@ -153,7 +153,7 @@ export function FeatureTabs() {
                             x: visibleExpenses.includes(expense.id) ? 0 : -10
                           }}
                           transition={{ duration: 0.3, delay: 0.1 }}
-                          className="flex justify-between items-center py-1.5 px-2 rounded-lg bg-white/70 backdrop-blur-sm shadow-sm"
+                          className="flex justify-between items-center py-1.5 px-2 rounded-lg bg-white dark:bg-zinc-900 border border-black/20 dark:border-zinc-700 shadow-sm"
                         >
                           <span className="font-medium">{expense.label} <span className="text-xs text-muted-foreground">(by {expense.payer})</span></span>
                           <span className="font-bold">${expense.amount.toFixed(2)}</span>
@@ -164,13 +164,13 @@ export function FeatureTabs() {
                     <div className="relative mt-4">
                       <motion.div 
                         ref={totalRef}
-                        className="flex justify-end items-center p-2 rounded-lg bg-white/90 backdrop-blur-sm shadow-sm"
+                        className="flex justify-end items-center p-2 rounded-lg bg-white dark:bg-zinc-900 border border-black/20 dark:border-zinc-700 shadow-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: showTotal ? 1 : 0 }}
                         transition={{ duration: 0.4 }}
                       >
                         <span className="text-sm font-bold mr-1">Total:</span>
-                        <span className="text-lg font-bold text-teal-700">${total.toFixed(2)}</span>
+                        <span className="text-lg font-bold text-travel-purple">${total.toFixed(2)}</span>
                       </motion.div>
                       
                       {/* Circle animation */}
@@ -182,7 +182,7 @@ export function FeatureTabs() {
                         >
                           <motion.path
                             d={circlePath}
-                            stroke="#0d9488" /* teal-600 */
+                            stroke="var(--color-travel-purple)" /* Use CSS var for theme compatibility */
                             strokeWidth="2"
                             fill="none"
                             initial={{ pathLength: 0 }}
@@ -201,7 +201,7 @@ export function FeatureTabs() {
                       {showTooltip && (
                         <motion.div 
                           ref={tooltipRef}
-                          className="absolute -bottom-3 md:top-1/2 md:right-[110%] md:transform md:-translate-y-1/2 bg-zinc-900 text-white p-2 md:p-3 rounded-lg shadow-xl max-w-[250px] z-10"
+                          className="absolute -bottom-3 md:top-1/2 md:right-[110%] md:transform md:-translate-y-1/2 bg-black dark:bg-zinc-800 text-white p-2 md:p-3 rounded-lg shadow-xl max-w-[250px] z-10"
                           initial={{ opacity: 0, scale: 0.85, y: showTooltip ? 5 : 0 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           transition={{ duration: 0.4, delay: 0.2 }}
@@ -210,12 +210,12 @@ export function FeatureTabs() {
                           }}
                         >
                           <div className="flex items-start gap-2">
-                            <AlertCircle className="h-5 w-5 text-yellow-300 flex-shrink-0 mt-1" />
+                            <AlertCircle className="h-5 w-5 text-travel-purple flex-shrink-0 mt-1" />
                             <p className="text-xs font-medium">
                               Split this equally? You owe <span className="font-bold">${(total / 3).toFixed(2)}</span> each!
                             </p>
                           </div>
-                          <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-4 h-4 bg-zinc-900 hidden md:block"></div>
+                          <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-4 h-4 bg-black dark:bg-zinc-800 hidden md:block"></div>
                         </motion.div>
                       )}
                     </div>
@@ -232,7 +232,7 @@ export function FeatureTabs() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.25, type: 'spring', bounce: 0.2 }}
                 >
-                  <Card className="p-5 bg-gradient-to-br from-blue-100/80 to-teal-50/80 backdrop-blur-sm rounded-2xl shadow-md border border-blue-100">
+                  <Card className="p-5 bg-white dark:bg-black border-2 border-black dark:border-zinc-800 rounded-2xl shadow-md">
                     <p className="text-xs text-muted-foreground mb-4 font-medium">Vote on destinations, dates, and more</p>
                     <div className="mb-4 font-semibold">Where should we go next?</div>
                     <div className="space-y-3">
@@ -249,9 +249,9 @@ export function FeatureTabs() {
                               {poll.animatedVotes} votes
                             </motion.span>
                           </div>
-                          <div className="h-3 w-full bg-white/50 rounded-full overflow-hidden shadow-inner">
+                          <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden shadow-inner border border-black/10 dark:border-zinc-700">
                             <motion.div 
-                              className={`h-full rounded-full ${index === 0 ? 'bg-blue-500' : index === 1 ? 'bg-teal-500' : 'bg-violet-500'}`}
+                              className="h-full rounded-full bg-travel-purple"
                               initial={{ width: '0%' }}
                               animate={{ width: `${poll.animatedPercentage}%` }}
                               transition={{ 
@@ -271,7 +271,7 @@ export function FeatureTabs() {
                       animate={{ opacity: 1 }}
                       transition={{ delay: 2.5 }}
                     >
-                      <button className="flex items-center gap-1 text-sm font-medium text-blue-700 hover:text-blue-800 transition-colors group">
+                      <button className="flex items-center gap-1 text-sm font-medium text-travel-purple hover:text-purple-700 dark:hover:text-purple-300 transition-colors group">
                         Cast your vote
                         <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                       </button>

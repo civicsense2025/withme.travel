@@ -3,12 +3,13 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { TABLES } from '@/utils/constants/database';
 
-// GET handler to fetch all reactions for an item
+// GET handler to fetch all reactions for an itinerary item
 export async function GET(
   req: NextRequest,
-  { params }: { params: { tripId: string; itemId: string } }
+  context: { params: { tripId: string; itemId: string } }
 ) {
-  const { tripId, itemId } = params;
+  const tripId = context.params.tripId;
+  const itemId = context.params.itemId;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -36,7 +37,7 @@ export async function GET(
       );
     }
 
-    // Fetch all reactions for this item
+    // Fetch all reactions for this itinerary item
     const { data: reactions, error } = await supabase
       .from('itinerary_item_reactions')
       .select(`
@@ -44,12 +45,12 @@ export async function GET(
         emoji,
         user_id,
         created_at,
-        profiles:user_id (
+        profiles:user_id!fk_itinerary_item_reactions_profiles (
           name,
           avatar_url
         )
       `)
-      .eq('item_id', itemId)
+      .eq('itinerary_item_id', itemId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -79,9 +80,10 @@ export async function GET(
 // POST handler for adding/removing a reaction
 export async function POST(
   req: NextRequest,
-  { params }: { params: { tripId: string; itemId: string } }
+  context: { params: { tripId: string; itemId: string } }
 ) {
-  const { tripId, itemId } = params;
+  const tripId = context.params.tripId;
+  const itemId = context.params.itemId;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -123,7 +125,7 @@ export async function POST(
     const { data: existingReaction } = await supabase
       .from('itinerary_item_reactions')
       .select('id')
-      .eq('item_id', itemId)
+      .eq('itinerary_item_id', itemId)
       .eq('user_id', user.id)
       .eq('emoji', emoji)
       .maybeSingle();
@@ -147,7 +149,7 @@ export async function POST(
       const { error: insertError } = await supabase
         .from('itinerary_item_reactions')
         .insert({
-          item_id: itemId,
+          itinerary_item_id: itemId,
           user_id: user.id,
           emoji
         });
@@ -169,12 +171,12 @@ export async function POST(
         emoji,
         user_id,
         created_at,
-        profiles:user_id (
+        profiles:user_id!fk_itinerary_item_reactions_profiles (
           name,
           avatar_url
         )
       `)
-      .eq('item_id', itemId)
+      .eq('itinerary_item_id', itemId)
       .order('created_at', { ascending: false });
 
     if (error) {

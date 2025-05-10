@@ -30,7 +30,7 @@ export async function GET(
   { params }: { params: { tripId: string } }
 ) {
   try {
-    const tripId = params.tripId;
+    const { tripId } = await params;
     const supabase = await createRouteHandlerClient();
     
     // Check if user is a trip member
@@ -64,7 +64,7 @@ export async function POST(
   { params }: { params: { tripId: string } }
 ) {
   try {
-    const tripId = params.tripId;
+    const { tripId } = await params;
     const supabase = await createRouteHandlerClient();
     
     // Check if user is a trip member with edit permission
@@ -147,7 +147,7 @@ export async function PATCH(
   { params }: { params: { tripId: string } }
 ) {
   try {
-    const tripId = params.tripId;
+    const { tripId } = await params;
     const supabase = await createRouteHandlerClient();
     
     // Check if user is a trip member with edit permission
@@ -206,7 +206,7 @@ export async function DELETE(
   { params }: { params: { tripId: string } }
 ) {
   try {
-    const tripId = params.tripId;
+    const { tripId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const formId = searchParams.get('formId');
     

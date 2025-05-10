@@ -61,6 +61,7 @@ export async function GET(request: Request) {
             width: photo.width,
             height: photo.height,
             created_at: new Date().toISOString(),
+            created_by: user.id
           }, { onConflict: 'external_id,source' });
         } catch (err) {
           console.error('Failed to upsert Pexels image:', err);

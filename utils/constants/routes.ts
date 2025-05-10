@@ -77,13 +77,13 @@ export const API_ROUTES = {
   DEBUG_AUTH_STATUS: '/api/debug/auth-status',
   GOOGLE_MAPS_PARSE: '/api/google-maps/parse',
 
-  // Template routes
-  TEMPLATES: '/api/templates',
-  TEMPLATE_DETAILS: (id: string) => `/api/templates/${id}`,
-  TEMPLATE_SECTIONS: (id: string) => `/api/templates/${id}/sections`,
-  TEMPLATE_ITEMS: (templateId: string, sectionId: string) =>
-    `/api/templates/${templateId}/sections/${sectionId}/items`,
-  VALIDATE_TEMPLATE: (id: string) => `/api/templates/${id}/validate`,
+  // Template routes - UPDATED NAMES
+  ITINERARY_TEMPLATES: '/api/itineraries',
+  ITINERARY_TEMPLATE_DETAILS: (id: string) => `/api/itineraries/${id}`,
+  ITINERARY_TEMPLATE_SECTIONS: (id: string) => `/api/itineraries/${id}/sections`,
+  ITINERARY_TEMPLATE_ITEMS: (templateId: string, sectionId: string) =>
+    `/api/itineraries/${templateId}/sections/${sectionId}/items`,
+  VALIDATE_ITINERARY_TEMPLATE: (id: string) => `/api/itineraries/${id}/validate`,
 
   // Place routes
   PLACES: '/api/places',
@@ -161,6 +161,17 @@ export const API_ROUTES = {
     LIST: '/api/friends/list',
     UNFRIEND: '/api/friends/unfriend',
   },
+
+  // Research routes
+  RESEARCH: {
+    CREATE_STUDY: '/api/admin/research/create-study',
+    GENERATE_LINK: '/api/admin/research/generate-link',
+    EXPORT_DATA: '/api/admin/research/export-data',
+    SUBMIT_RESPONSE: '/api/research/submit-response',
+    TRACK_EVENT: '/api/research/track-event',
+    SESSION_INFO: '/api/research/session-info',
+    GET_SURVEYS: '/api/research/surveys',
+  },
 } as const;
 
 // Page Routes - All frontend navigation paths
@@ -185,7 +196,7 @@ export const PAGE_ROUTES = {
     DASHBOARD: '/admin',
     USERS: '/admin/users',
     TRIPS: '/admin/trips',
-    TEMPLATES: '/admin/templates',
+    ITINERARY_TEMPLATES: '/admin/itineraries', // Updated from TEMPLATES
     DESTINATIONS: '/admin/destinations',
   },
   GROUPS: '/groups',

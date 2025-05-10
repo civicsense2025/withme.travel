@@ -9,7 +9,9 @@ import { Toaster } from '@/components/ui/toaster';
 import { SearchProvider } from '@/contexts/search-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OnbordaProvider } from 'onborda';
-import { NotificationProvider } from '@/contexts/notification-context';
+// Comment out notification imports
+// import { NotificationProvider } from '@/contexts/notification-context';
+// import { NotificationCountProvider } from '@/contexts/notification-count-context';
 
 const queryClient = new QueryClient();
 
@@ -26,10 +28,15 @@ export function Providers({
         <AuthProvider initialSession={initialSession}>
           <QueryClientProvider client={queryClient}>
             <SearchProvider>
-              <NotificationProvider>
-                {children}
-                <Toaster />
-              </NotificationProvider>
+              {/* Comment out notification providers */}
+              {/* <NotificationCountProvider>
+                <NotificationProvider>
+                  {children}
+                  <Toaster />
+                </NotificationProvider>
+              </NotificationCountProvider> */}
+              {children}
+              <Toaster />
             </SearchProvider>
           </QueryClientProvider>
         </AuthProvider>

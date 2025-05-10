@@ -3,6 +3,7 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { createBrowserClient } from '@supabase/ssr';
 import type { Session } from '@supabase/supabase-js';
 import { LogOut } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 enum MenuStatus {
   LOADING = 'LOADING',
@@ -46,6 +48,8 @@ interface UserMenuProps {
 
 export default function UserMenu({ serverSession = null, topPosition = false }: UserMenuProps) {
   const { user, isLoading, signOut } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
   const [status, setStatus] = React.useState<MenuStatus>(
     isLoading ? MenuStatus.LOADING : user ? MenuStatus.LOGGED_IN : MenuStatus.LOGGED_OUT
   );
@@ -67,6 +71,7 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
     try {
       await signOut();
       setMenuOpen(false);
+      router.push('/?justLoggedOut=1');
     } catch (err: any) {
       setSignOutError(err.message);
       setStatus(MenuStatus.LOGGED_IN);
@@ -80,8 +85,8 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
   if (status === MenuStatus.LOGGED_OUT) {
     return (
       <Link href="/login">
-        <Button variant="outline" className="h-8 px-3 rounded-full text-sm">
-          🚪 Sign In
+        <Button variant="outline" className="h-8 px-3 rounded-full ghost text-sm">
+          Sign In
         </Button>
       </Link>
     );
@@ -98,60 +103,57 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
   const isAdmin = false;
 
   if (topPosition) {
-    // Mobile view - expanded display
+    // Mobile view - avatar/email toggles menu
     return (
-      <div className="w-full">
-        {/* User info row */}
-        <div className="flex items-center gap-3">
+      <div className="w-full relative flex flex-col mt-2 mb-2">
+        {/* User info row (toggle) */}
+        <button
+          className="flex items-center gap-3 w-full py-2 focus:outline-none"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="user-mobile-menu"
+        >
           <Avatar className="h-10 w-10">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback>{getInitials(displayName, email)}</AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
+          <div className="flex flex-col text-left">
             <span className="text-sm font-medium truncate">{displayName}</span>
             {email && <span className="text-xs text-gray-500 truncate">{email}</span>}
           </div>
-        </div>
-        
-        {/* Menu items */}
-        {menuOpen && (
+          <span className="ml-auto text-lg">{menuOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {/* Menu links in a scrollable area, only when open */}
+        <div
+          className={`flex-1 min-h-0 overflow-y-auto pb-8 transition-all duration-500 ease-in-out ${menuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
+          id="user-mobile-menu"
+          aria-hidden={!menuOpen}
+        >
           <div className="mt-4 flex flex-col space-y-4 pl-2">
-            <Link href="/trips" className="text-sm">🧳 My Trips</Link>
-            <Link href="/saved" className="text-sm">💾 Saved</Link>
-            <Link href="/settings" className="text-sm">👤 Account</Link>
-            <Link href="/travel-map" className="text-sm">🗺️ Travel Map</Link>
-            {isAdmin && (
-              <Link href="/admin/dashboard" className="text-sm">🛠️ Admin Panel</Link>
-            )}
-            <Link href="/support" className="text-sm">🆘 Support</Link>
-            <Link href="/contribute" className="text-sm">🤝 Contribute</Link>
+            {[
+              { href: '/trips', label: '🧳 My Trips' },
+              { href: '/saved', label: '💾 Saved' },
+              { href: '/settings', label: '👤 Account' },
+              { href: '/travel-map', label: '🗺️ Travel Map' },
+              ...(isAdmin ? [{ href: '/admin/dashboard', label: '🛠️ Admin Panel' }] : []),
+              { href: '/support', label: '🤝 Contribute' },
+            ].map((item, idx) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-sm transition-all duration-500"
+                style={{
+                  transitionDelay: menuOpen ? `${idx * 60 + 80}ms` : `${(6 - idx) * 40}ms`,
+                  opacity: menuOpen ? 1 : 0,
+                  transform: menuOpen ? 'translateY(0)' : 'translateY(-16px)',
+                }}
+                onClick={() => setMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
-        )}
-        
-        {/* Toggle button */}
-        <div className="mt-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs w-full justify-between"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {menuOpen ? 'Hide menu' : 'Show menu'}
-            <span className="ml-1">{menuOpen ? '↑' : '↓'}</span>
-          </Button>
-        </div>
-        
-        {/* Logout button at the bottom of mobile menu */}
-        <div className="mt-auto">
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            className="mt-4 w-full"
-            onClick={handleSignOut}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Log out
-          </Button>
         </div>
       </div>
     );

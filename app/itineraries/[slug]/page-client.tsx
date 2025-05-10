@@ -29,6 +29,7 @@ import {
 import { useAuth } from '@/components/auth-provider';
 import { ItineraryMetadataSection } from '@/components/itinerary/itinerary-metadata-section';
 import DestinationDetails from '@/components/destinations/destination-details';
+import { ImageAttribution } from '@/components/images';
 
 // Define types to match the server component and database schema
 interface ItineraryTemplateItem {
@@ -326,36 +327,20 @@ export default function ItineraryTemplatePageClient({
           </motion.div>
         </div>
 
-        {/* Image attribution tooltip */}
-        {imageAttribution && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    aria-label="Image attribution information"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="left"
-                  sideOffset={5}
-                  className="bg-black/90 text-white border-none shadow-lg max-w-xs"
-                >
-                  <p
-                    className="text-xs"
-                    dangerouslySetInnerHTML={{ __html: imageAttribution }}
-                  ></p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+        {/* Image attribution */}
+        {template.destination?.image_metadata && (
+          <ImageAttribution 
+            image={{
+              alt_text: template.destination.image_metadata.alt_text,
+              attribution_html: template.destination.image_metadata.attributionHtml,
+              photographer: template.destination.image_metadata.photographer_name,
+              photographer_url: template.destination.image_metadata.photographer_url,
+              source: template.destination.image_metadata.source,
+              external_id: template.destination.image_metadata.source_id,
+              url: template.destination.image_metadata.url
+            }}
+            variant="info-icon"
+          />
         )}
       </div>
 

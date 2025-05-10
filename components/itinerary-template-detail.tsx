@@ -13,6 +13,7 @@ import { ChevronRight } from 'lucide-react';
 import { LikeButton } from './like-button';
 import { UseTemplateButton } from './use-template-button';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
+import { ImageAttribution } from './images';
 
 interface ItineraryDay {
   day: number;
@@ -51,6 +52,16 @@ interface ItineraryTemplateDetailProps {
       image_url: string;
       latitude: number;
       longitude: number;
+      image_metadata?: {
+        alt_text?: string;
+        attribution?: string;
+        attributionHtml?: string;
+        photographer_name?: string;
+        photographer_url?: string;
+        source?: string;
+        source_id?: string;
+        url?: string;
+      };
     };
     users: {
       id: string;
@@ -163,13 +174,29 @@ export function ItineraryTemplateDetail({
             template.destinations.image_url ||
             '/placeholder.svg?height=800&width=1200&query=travel destination'
           }
-          alt={template.title}
+          alt={template.destinations.image_metadata?.alt_text || template.title}
           fill
           className="object-cover"
           priority
         />
         {/* Add gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        
+        {/* Add image attribution */}
+        {template.destinations.image_metadata && (
+          <ImageAttribution 
+            image={{
+              alt_text: template.destinations.image_metadata.alt_text,
+              attribution_html: template.destinations.image_metadata.attributionHtml,
+              photographer: template.destinations.image_metadata.photographer_name,
+              photographer_url: template.destinations.image_metadata.photographer_url,
+              source: template.destinations.image_metadata.source,
+              external_id: template.destinations.image_metadata.source_id,
+              url: template.destinations.image_metadata.url
+            }}
+            variant="info-icon"
+          />
+        )}
       </div>
 
       {/* About the creator section */}

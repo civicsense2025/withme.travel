@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { createBrowserClient } from '@supabase/ssr';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Users, MessageSquare, Globe, FileText, Settings } from 'lucide-react';
+import { Users, Globe, FileText, MessageSquare } from 'lucide-react';
 import { AdminStatsCard } from '@/app/admin/components/AdminStatsCard';
-import { ActivitySummary } from '@/app/admin/components/ActivitySummary';
-import { TabbledFeedback } from '@/app/admin/components/TabbledFeedback';
+import { AdminDebugPanel } from '@/app/admin/components/AdminDebugPanel';
+import { TABLES } from '@/utils/constants/database';
 
 interface StatsData {
   totalUsers: number;
@@ -20,6 +19,11 @@ interface StatsData {
 export default function AdminDashboardPage() {
   const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -101,14 +105,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Monitor your site's performance and manage content
-        </p>
-      </div>
-
+    <div className="space-y-8">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           // Skeleton loader for stats
@@ -130,37 +127,11 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Activity Summary
-            </CardTitle>
-            <CardDescription>
-              Recent administrative actions and system activity
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ActivitySummary />
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              User Feedback & Responses
-            </CardTitle>
-            <CardDescription>
-              Latest user feedback and survey responses
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TabbledFeedback />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Admin Debug Panel */}
+      <AdminDebugPanel 
+        title="System Diagnostics"
+        description="Connected database status and system information"
+      />
     </div>
   );
 } 

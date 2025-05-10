@@ -6,9 +6,8 @@ import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
 import { TooltipProvider } from '@/components/ui/tooltip';
-// Remove the direct imports
-// import { Analytics } from '@vercel/analytics/react';
-// import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { VercelAnalytics } from './vercel-analytics';
 import { OfflineNotification } from '@/components/offline-notification';
 import { UpdateNotification } from '@/components/update-notification';
@@ -25,6 +24,8 @@ import { helveticaNeue } from './fonts';
 import { Container } from '@/components/container';
 import { SearchProvider } from '@/contexts/search-context';
 import { CommandMenu } from '@/components/search/command-menu';
+import { ResearchProvider } from '@/contexts/research-context';
+import { SurveyModal, WelcomeModal, ResearchIndicator } from '@/components/research';
 
 // Define font but don't export it
 const fontSans = FontSans({
@@ -115,26 +116,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         <TooltipProvider>
           <Providers initialSession={session}>
-            <LayoutModeProvider>
-              <ClientSideProviders>
-                <ClientSideLayoutRenderer>
-                  <Container size="full" className="p-0 m-0 max-w-none">
-                    <SearchProvider>
-                      {children}
-                      <CommandMenu />
-                    </SearchProvider>
-                  </Container>
-                </ClientSideLayoutRenderer>
-                <OfflineNotification />
-                <UpdateNotification />
-                <VercelAnalytics />
-                {/* {process.env.NODE_ENV === 'development' && <AuthTestPanel />} */}
-                {process.env.NODE_ENV === 'development' && <DebugPanel />}
-              </ClientSideProviders>
-            </LayoutModeProvider>
+            <ResearchProvider>
+              <LayoutModeProvider>
+                <ClientSideProviders>
+                  <ClientSideLayoutRenderer>
+                    {children}
+                    <CommandMenu />
+                  </ClientSideLayoutRenderer>
+                  <OfflineNotification />
+                  <UpdateNotification />
+                  <VercelAnalytics />
+                  {/* {process.env.NODE_ENV === 'development' && <AuthTestPanel />} */}
+                  {process.env.NODE_ENV === 'development' && <DebugPanel />}
+                  <SurveyModal />
+                  <WelcomeModal />
+                  <ResearchIndicator />
+                </ClientSideProviders>
+              </LayoutModeProvider>
+            </ResearchProvider>
           </Providers>
         </TooltipProvider>
         <Toaster />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

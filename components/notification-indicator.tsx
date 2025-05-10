@@ -40,10 +40,22 @@ function NotificationLoadingPlaceholder() {
   );
 }
 
+/**
+ * Safe version of the notification indicator that doesn't require the context
+ */
 export function NotificationIndicator() {
   const [open, setOpen] = useState(false);
   const [hasLoadedContent, setHasLoadedContent] = useState(false);
-  const { unreadCount } = useNotificationCount();
+  
+  // Use try-catch to prevent errors when context is missing
+  let unreadCount = 0;
+  try {
+    const context = useNotificationCount();
+    unreadCount = context.unreadCount;
+  } catch (error) {
+    // If context is missing, just use 0 as the default
+    unreadCount = 0;
+  }
 
   // Only load notification content when the popover is opened
   useEffect(() => {

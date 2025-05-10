@@ -31,7 +31,7 @@ interface ImageResult {
 interface ImageSearchSelectorProps {
   isOpen: boolean;
   onClose: () => void;
-  onImageSelect: (imageUrl: string, position: number) => void;
+  onImageSelect: (imageUrl: string, position: number, metadata?: any) => void;
   initialSearchTerm?: string;
 }
 
@@ -57,6 +57,7 @@ export function ImageSearchSelector({
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [currentPosition, setCurrentPosition] = useState(50);
+  const [activeImage, setActiveImage] = useState<ImageResult | null>(null);
 
   const searchImages = useCallback(
     async (
@@ -129,25 +130,26 @@ export function ImageSearchSelector({
     }
   };
 
-  const handleSelect = (url: string) => {
-    // Instead of just setting selectedImageUrl, trigger the preview step
-    setPreviewImageUrl(url);
-    setCurrentPosition(50); // Reset position on new selection
+  const handleSelect = (img: ImageResult) => {
+    setPreviewImageUrl(img.url);
+    setActiveImage(img);
+    setCurrentPosition(50); // Reset position slider
     setIsPreviewing(true);
-    setSelectedImageUrl(null); // Clear primary selection when entering preview
   };
 
   const handleConfirm = () => {
-    if (isPreviewing && previewImageUrl) {
-      // If in preview mode, call onImageSelect with URL and position
-      onImageSelect(previewImageUrl, currentPosition);
-      onClose(); // Close after confirming from preview
-    }
-    // Remove the old logic for confirming directly from grid selection
-    /* else if (selectedImageUrl) { 
-      onImageSelect(selectedImageUrl, 50); // Default to 50 if confirming without preview? (Decide flow)
+    if (previewImageUrl) {
+      const metadata = activeImage ? {
+        sourceUrl: activeImage.photographerUrl,
+        sourceName: activeTab === 'unsplash' ? 'Unsplash' : activeTab === 'pexels' ? 'Pexels' : 'Custom Upload',
+        photographer: activeImage.photographer,
+        photographerUrl: activeImage.photographerUrl,
+        alt: activeImage.description
+      } : undefined;
+      
+      onImageSelect(previewImageUrl, currentPosition, metadata);
       onClose();
-    } */
+    }
   };
 
   // Reset state when dialog closes - include preview state
@@ -175,28 +177,26 @@ export function ImageSearchSelector({
   }, [isOpen, initialSearchTerm]);
 
   const renderResults = (results: ImageResult[]) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {results.map((img) => (
         <button
           key={img.id}
           className={`relative aspect-video overflow-hidden rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${selectedImageUrl === img.url ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-          onClick={() => handleSelect(img.url)}
+          onClick={() => handleSelect(img)}
         >
           <Image
             src={img.thumbUrl}
             alt={img.description}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
             className="object-cover transition-transform hover:scale-105"
-            loading="lazy"
           />
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 text-xs text-white">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
             <a
               href={img.photographerUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()} // Prevent button click when clicking link
-              className="hover:underline truncate"
+              className="text-xs text-white hover:underline"
+              onClick={(e) => e.stopPropagation()} // Prevent handleSelect when clicking on photographer
             >
               {img.photographer}
             </a>

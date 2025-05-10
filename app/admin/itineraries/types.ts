@@ -23,14 +23,34 @@ export interface TemplateData {
   destinations?: {
     id: string;
     name: string;
+    city?: string | null;
+    country?: string | null;
   } | null;
   duration_days?: number;
-  is_featured?: boolean;
+  category?: string;
+  featured?: boolean;
+  is_published?: boolean;
+  is_draft?: boolean;
+  view_count?: number;
+  use_count?: number;
+  like_count?: number;
   created_at: string;
   updated_at?: string;
   created_by?: string;
-  metadata?: TemplateMetadata;
+  profiles?: {
+    id: string;
+    username?: string | null;
+    name?: string | null;
+  } | null;
   cover_image_url?: string;
+  groupsize?: string;
+  tags?: string[];
+  template_type?: string;
+  source_trip_id?: string;
+  version?: number;
+  copied_count?: number;
+  last_copied_at?: string;
+  metadata?: TemplateMetadata;
 }
 
 export interface TemplateSection {

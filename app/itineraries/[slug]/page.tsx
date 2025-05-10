@@ -84,6 +84,7 @@ interface ClientItineraryTemplate {
   tags: string[];
   created_by: string;
   metadata: Record<string, any>;
+  cover_image_url: string;
   destination?: {
     id: string;
     city: string;
@@ -178,22 +179,23 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
     id: tmpl.id,
     title: tmpl.title,
     description: tmpl.description,
-    slug: tmpl.slug,
+    slug: tmpl.slug || '',
     destination_id: tmpl.destination_id,
     duration_days: tmpl.duration_days,
-    created_at: tmpl.created_at,
-    updated_at: tmpl.updated_at,
-    is_published: tmpl.is_published,
-    view_count: tmpl.view_count,
-    like_count: tmpl.like_count,
+    created_at: tmpl.created_at || '',
+    updated_at: tmpl.updated_at || '',
+    is_published: tmpl.is_published === true,
+    view_count: tmpl.view_count || 0,
+    like_count: tmpl.like_count || 0,
     created_by: tmpl.created_by,
     tags: tmpl.tags || [],
-    metadata: tmpl.metadata || {},
+    metadata: tmpl.metadata ? (typeof tmpl.metadata === 'object' ? tmpl.metadata : {}) : {},
+    cover_image_url: tmpl.cover_image_url || '',
     destination: tmpl.destinations
       ? {
           id: tmpl.destinations.id,
-          city: tmpl.destinations.city,
-          country: tmpl.destinations.country,
+          city: tmpl.destinations.city ?? '',
+          country: tmpl.destinations.country ?? '',
           image_url: tmpl.destinations.image_url,
         }
       : undefined,
@@ -202,7 +204,7 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
   // We need to reconstruct sections from the flat list of items
   const sectionsMap = new Map<string, ClientItineraryTemplateSection>();
 
-  (allItems || []).forEach((item: ItineraryTemplateItem) => {
+  (allItems || []).forEach((item: any) => {
     // Attempt to find or create a section based on day number.
     // NOTE: This assumes items have a 'day' property. We might need section_id if not.
     // Also, we don't have section titles here!

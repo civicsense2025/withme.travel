@@ -49,22 +49,21 @@ export function Footer() {
     exploreLinks.push({ href: '/trips', label: 'My Trips' });
   }
 
-  const companyLinks = [{ href: '/support', label: 'Support Us' }];
+  const companyLinks = [
+    { href: '/support', label: 'Support Us' },
+    { href: '/terms', label: 'Terms of Service' },
+    { href: '/privacy', label: 'Privacy Policy' },
+  ];
   if (isAdmin) {
     companyLinks.push({ href: '/admin', label: 'Admin' });
   }
 
-  const legalLinks = [
-    { href: '/terms', label: 'Terms of Service' },
-    { href: '/privacy', label: 'Privacy Policy' },
-  ];
-
   return (
     <footer className="w-full bg-background standard-border-t">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="max-w-[2000px] mx-auto px-4 sm:px-6 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* Logo and subscribe section */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="space-y-6">
             <Logo />
             <p className="text-sm text-muted-foreground max-w-md">
               Plan trips with friends without the chaos. Make group travel fun again.
@@ -108,7 +107,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links section */}
+          {/* Explore section */}
           <div className="space-y-6">
             <h3 className="text-sm font-medium">Explore</h3>
             <ul className="space-y-2">
@@ -116,17 +115,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-              {companyLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors capitalize"
                   >
                     {link.label}
                   </Link>
@@ -135,17 +124,17 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Continents section */}
+          {/* Company section */}
           <div className="space-y-6">
-            <h3 className="text-sm font-medium">Continents</h3>
+            <h3 className="text-sm font-medium">Company</h3>
             <ul className="space-y-2">
-              {continents.map((continent) => (
-                <li key={continent}>
+              {companyLinks.map((link) => (
+                <li key={link.href}>
                   <Link
-                    href={`/continents/${continent.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors lowercase"
+                    href={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors capitalize"
                   >
-                    {continent.toLowerCase()}
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -154,23 +143,9 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-6 standard-border-t flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <p className="text-xs text-muted-foreground lowercase">
-              © {new Date().getFullYear()} withme.travel. all rights reserved.
-            </p>
-            <div className="flex gap-4">
-              {legalLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors lowercase"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-          
+          <p className="text-xs text-muted-foreground lowercase">
+            © {new Date().getFullYear()} withme.travel. All rights reserved.
+          </p>
           <div className="flex items-center gap-4">
             <Link
               href="https://twitter.com/withmetravel"

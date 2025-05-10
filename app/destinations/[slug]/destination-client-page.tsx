@@ -40,6 +40,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { AuthContextType } from '@/components/auth-provider';
 import { RelatedItinerariesWidget } from '@/components/destinations/related-itineraries-widget';
 import { DestinationPageAdminEditor } from '@/components/admin';
+import { ImageAttribution } from '@/components/images';
 
 interface Destination {
   id: string;
@@ -331,34 +332,18 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
         </div>
         
         {imageData.attributionHtml && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    aria-label="Image attribution information"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="left"
-                  sideOffset={5}
-                  className="bg-black/90 text-white border-none shadow-lg max-w-xs"
-                >
-                  <p
-                    className="text-xs"
-                    dangerouslySetInnerHTML={{ __html: imageData.attributionHtml || '' }}
-                  ></p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+          <ImageAttribution 
+            image={{
+              alt_text: imageData.alt,
+              attribution_html: imageData.attributionHtml,
+              photographer: destination?.image_metadata?.photographer_name,
+              photographer_url: destination?.image_metadata?.photographer_url,
+              source: destination?.image_metadata?.source,
+              external_id: destination?.image_metadata?.source_id,
+              url: destination?.image_metadata?.url
+            }}
+            variant="info-icon"
+          />
         )}
       </div>
 

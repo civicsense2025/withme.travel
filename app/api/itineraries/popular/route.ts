@@ -15,14 +15,10 @@ export async function GET() {
       .from('itinerary_templates')
       .select(`
         *,
-        author:created_by_profile (
+        profiles:created_by (
           id,
-          full_name,
+          name,
           avatar_url
-        ),
-        destinations:itinerary_template_destinations (
-          destination_id,
-          name
         )
       `)
       .eq('is_published', true)
@@ -38,29 +34,33 @@ export async function GET() {
     }
 
     // Transform the data to match the expected format
-    const transformedItineraries = itineraries.map(itinerary => ({
-      id: itinerary.id,
-      title: itinerary.title,
-      description: itinerary.description || '',
-      image: itinerary.cover_image_url || '',
-      location: itinerary.location || 'Various locations',
-      duration: `${itinerary.duration_days} days`,
-      tags: itinerary.tags || [],
-      slug: itinerary.slug,
-      is_published: itinerary.is_published,
-      author: itinerary.author,
-      destinations: itinerary.destinations || [],
-      duration_days: itinerary.duration_days,
-      category: itinerary.category || 'Itinerary',
-      created_at: itinerary.created_at,
-      view_count: itinerary.view_count || 0,
-      use_count: itinerary.use_count || 0,
-      like_count: itinerary.like_count || 0,
-      featured: itinerary.featured || false,
-      cover_image_url: itinerary.cover_image_url || '',
-      groupsize: itinerary.groupsize || '1-4',
-      metadata: itinerary.metadata || {}
-    }));
+    const transformedItineraries = itineraries.map(itinerary => {
+      // No destinations field anymore, so just use fallback
+      let location = 'Various locations';
+
+      return {
+        id: itinerary.id,
+        title: itinerary.title,
+        description: itinerary.description || '',
+        image: itinerary.cover_image_url || '',
+        location: location, // Always fallback for now
+        duration: `${itinerary.duration_days} days`,
+        tags: itinerary.tags || [],
+        slug: itinerary.slug,
+        is_published: itinerary.is_published,
+        author: itinerary.profiles, // Updated to use profiles
+        duration_days: itinerary.duration_days,
+        category: itinerary.category || 'Itinerary',
+        created_at: itinerary.created_at,
+        view_count: itinerary.view_count || 0,
+        use_count: itinerary.use_count || 0,
+        like_count: itinerary.like_count || 0,
+        featured: itinerary.featured || false,
+        cover_image_url: itinerary.cover_image_url || '',
+        groupsize: itinerary.groupsize || '1-4',
+        metadata: itinerary.metadata || {}
+      }
+    });
 
     return NextResponse.json({ itineraries: transformedItineraries });
   } catch (error) {

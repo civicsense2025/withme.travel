@@ -64,7 +64,7 @@ export default function LoginPage() {
 
       // Add small delay for UI feedback
       const timer = setTimeout(() => {
-        return router.push(safeRedirectPath);
+        return router.push('/dashboard?justLoggedIn=1');
       }, 300);
 
       return () => clearTimeout(timer);
@@ -124,20 +124,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md flex flex-col">
-        <div className="md:hidden mb-6">
-          <AuthSellingPoints />
+    <div className="min-h-screen flex flex-col items-center bg-background pt-10 md:pt-16">
+      <div className="w-full flex flex-col items-center" style={{ maxWidth: 400 }}>
+        {/* Move AuthSellingPoints above card for all screen sizes, reduce margin */}
+        <div className="mb-4 mt-0">
+          <AuthSellingPoints small />
         </div>
 
-        <Card className="border border-border/10 dark:border-border/10 shadow-xl dark:shadow-2xl dark:shadow-black/20">
+        <Card className="border border-border/10 dark:border-border/10 shadow-2xl dark:shadow-2xl dark:shadow-black/20 rounded-2xl p-2">
           <CardHeader className="space-y-3">
-            <CardTitle className="text-2xl font-bold text-center">welcome back!</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-2xl font-semibold text-center">Welcome back</CardTitle>
+            <CardDescription className="text-center text-base">
               {loginContext ? (
-                <>sign in {loginContext}</>
+                <>Sign in {loginContext}</>
               ) : (
-                <>sign in to continue planning your adventures</>
+                <>Sign in to continue planning your adventures</>
               )}
             </CardDescription>
           </CardHeader>
@@ -152,20 +153,16 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2">
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">don't have an account?</span>{' '}
+              <span className="text-muted-foreground">Don't have an account?</span>{' '}
               <Link
                 href={`/signup${redirectPath !== '/' ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`}
                 className="text-primary hover:underline"
               >
-                sign up
+                Sign Up
               </Link>
             </div>
           </CardFooter>
         </Card>
-
-        <div className="hidden md:block mt-8">
-          <AuthSellingPoints />
-        </div>
       </div>
     </div>
   );

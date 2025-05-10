@@ -132,10 +132,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Trip,
-  ItineraryItem,
-  ItinerarySection as DbItinerarySection,
-} from '@/types/database.types';
-import {
   ManualDbExpense,
   UnifiedExpense,
   ItinerarySection,
@@ -464,6 +460,7 @@ export function TripPageClient({
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isSavingCover, setIsSavingCover] = useState(false);
   const [isSavingPlaylistUrl, setIsSavingPlaylistUrl] = useState(false);
+  const [managingRequestId, setManagingRequestId] = useState<string | null>(null);
 
   // Re-add editedPlaylistUrl state, initialized from context
   const [editedPlaylistUrl, setEditedPlaylistUrl] = useState(tripData?.trip?.playlist_url ?? null);
@@ -730,33 +727,32 @@ export function TripPageClient({
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              // Add any required authentication headers if needed
             },
-            credentials: 'include', // Include cookies for auth
+            credentials: 'include',
           });
           
-          if (!response.ok) {
-            // If unauthorized or other error, just log it but don't show error to user
-            if (response.status === 401) {
-              console.log("User not authorized to view access requests");
-              return;
-            }
-            throw new Error(`Error fetching access requests: ${response.status}`);
+          if (response.status === 401) {
+            // Silently ignore permission errors - user might not have sufficient permissions
+            setAccessRequests([]);
+            return;
           }
           
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            setAccessRequests(data);
-            if (data.length > 0) {
-              setShowAccessRequests(true);
-            }
+          if (!response.ok) {
+            // Handle other errors silently too
+            console.log(`Error fetching access requests: ${response.status}`);
+            setAccessRequests([]);
+            return;
           }
+          
+          const { data } = await response.json();
+          setAccessRequests(data || []);
         } catch (error) {
-          console.error("Error fetching access requests:", error);
-          // Don't show error toast to avoid disrupting the user experience
+          // Catch and handle errors silently
+          console.log('Could not fetch access requests');
+          setAccessRequests([]);
         }
       };
-
+      
       fetchAccessRequests();
     }
   }, [tripId, userRole]);
@@ -767,35 +763,48 @@ export function TripPageClient({
   const handleManageAccessRequest = useCallback(
     async (requestId: string, approve: boolean) => {
       try {
+        setManagingRequestId(requestId);
+        
         const response = await fetch(`${API_ROUTES.PERMISSION_REQUESTS(tripId)}/${requestId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ status: approve ? 'approved' : 'rejected' }),
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update access request');
+        
+        if (response.status === 401) {
+          // Silently handle permission errors
+          console.log('Insufficient permissions to manage access requests');
+          return;
         }
-
+        
+        if (!response.ok) {
+          // Handle other errors silently
+          console.log(`Error managing access request: ${response.status}`);
+          return;
+        }
+        
         // Remove the processed request from the local state
         setAccessRequests((prev) => prev.filter((req) => req.id !== requestId));
-        toast({ title: `Request ${approve ? 'approved' : 'rejected'}` });
+        
+        toast({ 
+          title: approve ? 'Access Granted' : 'Access Denied',
+          description: `The user's request has been ${approve ? 'approved' : 'rejected'}.`
+        });
 
         // Optionally refetch members if approved, to ensure the new member appears
         if (approve) {
           refetchMembers();
         }
       } catch (error) {
-        console.error('Failed to manage access request:', error);
-        toast({
-          title: 'Error',
-          description: formatError(error, 'Could not update access request'),
-          variant: 'destructive',
-        });
+        // Handle errors silently
+        console.log('Could not manage access request');
+      } finally {
+        setManagingRequestId(null);
       }
     },
-    [tripId, toast, refetchMembers]
+    [tripId, toast, refetchMembers, setManagingRequestId]
   );
 
   const handleSaveTripDetails = useCallback(
@@ -1791,6 +1800,69 @@ export function TripPageClient({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Edit Trip Sheet */}
+      <Sheet open={isEditTripSheetOpen} onOpenChange={setIsEditTripSheetOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Edit Trip Details</SheetTitle>
+            <SheetDescription>
+              Update your trip information below
+            </SheetDescription>
+          </SheetHeader>
+          
+          {tripData?.trip && (
+            <div className="mt-6">
+              <EditTripForm
+                trip={{
+                  id: tripData.trip.id,
+                  name: tripData.trip.name || '',
+                  start_date: tripData.trip.start_date,
+                  end_date: tripData.trip.end_date,
+                  destination_id: tripData.trip.destination_id,
+                  cover_image_url: tripData.trip.cover_image_url,
+                  privacy_setting: tripData.trip.privacy_setting as TripPrivacySetting,
+                  tags: tripData.tags || []
+                }}
+                onSave={async (values: EditTripFormValues) => {
+                  try {
+                    const response = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(values),
+                    });
+                    
+                    if (!response.ok) {
+                      throw new Error('Failed to update trip details');
+                    }
+                    
+                    toast({
+                      title: 'Trip updated',
+                      description: 'Trip details have been updated successfully',
+                    });
+                    
+                    await refetchTrip();
+                    setIsEditTripSheetOpen(false);
+                  } catch (error) {
+                    toast({
+                      title: 'Error',
+                      description: formatError(error as Error),
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                onClose={() => setIsEditTripSheetOpen(false)}
+              />
+            </div>
+          )}
+          
+          <SheetFooter className="pt-4">
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </TripDataProvider>
   );
 }

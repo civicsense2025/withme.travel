@@ -54,9 +54,11 @@ interface TripWithMemberInfo {
 export default function TripsClientPage({
   initialTrips,
   userId,
+  isGuest = false,
 }: {
   initialTrips: any[];
-  userId: string;
+  userId?: string;
+  isGuest?: boolean;
 }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
@@ -107,7 +109,7 @@ export default function TripsClientPage({
       destination_id: trip.destination_id ?? undefined,
       destination_name: trip.destination_name ?? undefined,
       cover_image_url: trip.cover_image_url ?? undefined,
-      created_by: trip.created_by ?? userId,
+      created_by: trip.created_by ?? userId ?? 'guest',
       is_public: trip.is_public,
       privacy_setting: trip.privacy_setting ?? undefined,
       description: trip.description ?? undefined,
@@ -167,42 +169,65 @@ export default function TripsClientPage({
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       <header className="mb-12">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Your Trips</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+          {isGuest ? 'Plan Your Trip' : 'Your Trips'}
+        </h1>
         <div className="flex justify-between items-center">
           <p className="text-muted-foreground">
             {trips.length === 0 
-              ? "You don't have any trips yet. Create your first adventure!"
-              : `You have ${trips.length} ${trips.length === 1 ? 'trip' : 'trips'}`}
+              ? isGuest 
+                ? "Start planning your adventure with friends" 
+                : "You don't have any trips yet. Create your first adventure!"
+              : isGuest
+                ? `You have ${trips.length} shared ${trips.length === 1 ? 'trip' : 'trips'}`
+                : `You have ${trips.length} ${trips.length === 1 ? 'trip' : 'trips'}`}
           </p>
           <div className="flex items-center gap-3">
             <TripsFeedbackButton />
-            <Link href="/trips/create">
+            <Link href={isGuest ? "/login?redirectTo=/trips/create" : "/trips/create"}>
               <Button className="rounded-md" size="sm">
-                <Plus className="h-4 w-4 mr-2" /> New Trip
+                <Plus className="h-4 w-4 mr-2" /> {isGuest ? 'Sign Up & Plan' : 'New Trip'}
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      <ClassErrorBoundary
-        fallback={
-          <div className="my-8 text-center p-8 border border-border rounded-xl">
-            <p className="text-destructive mb-4">There was a problem loading your trips</p>
-            <Button 
-              variant="outline" 
-              className="mt-2" 
-              onClick={() => setRefreshKey((k) => k + 1)}
-            >
-              Try Again
-            </Button>
+      {/* If empty and guest, show guest welcome message */}
+      {trips.length === 0 && isGuest ? (
+        <div className="py-8 px-6 border-2 border-black dark:border-zinc-800 rounded-2xl bg-white dark:bg-black text-center">
+          <h2 className="text-2xl font-bold mb-4">Welcome to withme.travel</h2>
+          <p className="mb-6 max-w-2xl mx-auto">
+            Plan, organize, and collaborate on trips with friends. Sign up to create
+            your first trip and invite others to join your adventure.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/login">
+              <Button variant="outline" className="rounded-full">Log In</Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="rounded-full">Sign Up Free</Button>
+            </Link>
           </div>
-        }
-      >
-        <div key={refreshKey}>
-          {trips.length === 0 ? (
-            <EmptyTrips />
-          ) : (
+        </div>
+      ) : trips.length === 0 ? (
+        <EmptyTrips />
+      ) : (
+        <ClassErrorBoundary
+          fallback={
+            <div className="my-8 text-center p-8 border border-border rounded-xl">
+              <p className="text-destructive mb-4">There was a problem loading your trips</p>
+              <Button 
+                variant="outline" 
+                className="mt-2" 
+                onClick={() => setRefreshKey((k) => k + 1)}
+              >
+                Try Again
+              </Button>
+            </div>
+          }
+        >
+          <div key={refreshKey}>
             <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'upcoming' | 'past')} className="w-full">
               <TabsList className="mb-8">
                 <TabsTrigger value="upcoming">Upcoming Trips</TabsTrigger>
@@ -259,9 +284,9 @@ export default function TripsClientPage({
                 )}
               </TabsContent>
             </Tabs>
-          )}
-        </div>
-      </ClassErrorBoundary>
+          </div>
+        </ClassErrorBoundary>
+      )}
     </div>
   );
 }

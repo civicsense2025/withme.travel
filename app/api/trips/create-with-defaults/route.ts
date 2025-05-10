@@ -3,15 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import chalk from 'chalk';
 import { ITINERARY_CATEGORIES, TRIP_ROLES } from '@/utils/constants/status';
-
-// Define table names directly as string constants
-const TABLES = {
-  TRIPS: 'trips',
-  TRIP_MEMBERS: 'trip_members',
-  USERS: 'users',
-  ITINERARY_ITEMS: 'itinerary_items',
-  ITINERARY_SECTIONS: 'itinerary_sections',
-};
+import { TABLES } from '@/utils/constants/database';
 
 const LOG_PREFIX = '[Trip Create API]';
 
@@ -100,7 +92,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     const { data: newTrip, error: tripError } = await supabaseAdmin
-      .from('trips')
+      .from(TABLES.TRIPS)
       .insert([tripData])
       .select()
       .single();
@@ -123,7 +115,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     const { error: memberError } = await supabaseAdmin
-      .from('trip_members')
+      .from(TABLES.TRIP_MEMBERS)
       .insert([memberData]);
 
     if (memberError) {
@@ -145,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (sections.length > 0) {
       const { error: sectionsError } = await supabaseAdmin
-        .from(TABLES.ITINERARY_SECTIONS)
+        .from('itinerary_sections')
         .insert(sections);
 
       if (sectionsError) {

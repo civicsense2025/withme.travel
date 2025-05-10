@@ -25,7 +25,7 @@ interface LoginFormProps {
 
 export function LoginForm({
   onSuccess,
-  primaryButtonText = 'sign in',
+  primaryButtonText = 'Sign In',
   context = 'default'
 }: LoginFormProps) {
   const { signIn, isLoading, user, refreshSession } = useAuth();
@@ -212,19 +212,13 @@ export function LoginForm({
         <Button
           type="button"
           variant="outline"
-          className="w-full flex items-center gap-2 h-10 lowercase"
+          className="w-full flex items-center gap-2 h-12 rounded-full bg-white border border-gray-200 shadow-sm text-base font-semibold text-gray-900 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+          aria-label="Sign in with Google"
           onClick={handleGoogleSignIn}
           disabled={isLoading}
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-            <g transform="matrix(1, 0, 0, 1, 0, 0)">
-              <path
-                d="M21.35,11.1H12v3.73h5.41c-0.5,2.43-2.73,4.17-5.41,4.17c-3.3,0-6-2.7-6-6s2.7-6,6-6c1.56,0,2.98,0.6,4.07,1.58L20.07,5c-1.97-1.84-4.58-2.96-7.43-2.96c-5.52,0-10,4.48-10,10s4.48,10,10,10c5.67,0,9.4-4.01,9.4-9.65c0-0.58-0.05-1.15-0.15-1.71C21.8,11.58,21.35,11.1,21.35,11.1z"
-                fill="#4285F4"
-              ></path>
-            </g>
-          </svg>
-          sign in with google
+          <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" className="mr-2"><g><path fill="#4285F4" d="M24 9.5c3.54 0 6.36 1.53 7.82 2.81l5.77-5.62C34.5 3.7 29.74 1.5 24 1.5 14.98 1.5 7.09 7.6 3.88 15.09l6.91 5.37C12.5 15.13 17.77 9.5 24 9.5z"/><path fill="#34A853" d="M46.1 24.5c0-1.64-.15-3.22-.43-4.74H24v9.24h12.4c-.54 2.9-2.18 5.36-4.66 7.04l7.18 5.59C43.91 37.13 46.1 31.3 46.1 24.5z"/><path fill="#FBBC05" d="M10.79 28.46A14.5 14.5 0 019.5 24c0-1.56.27-3.07.76-4.46l-6.91-5.37A23.94 23.94 0 001.5 24c0 3.77.9 7.34 2.49 10.46l6.8-6z"/><path fill="#EA4335" d="M24 46.5c6.48 0 11.92-2.15 15.89-5.87l-7.18-5.59c-2 1.36-4.56 2.16-8.71 2.16-6.23 0-11.5-5.63-13.21-13.04l-6.8 6C7.09 40.4 14.98 46.5 24 46.5z"/></g></svg>
+          Sign in with Google
         </Button>
       </motion.div>
 
@@ -233,43 +227,39 @@ export function LoginForm({
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground lowercase">
+          <span className="bg-background px-2 text-muted-foreground">
             or continue with
           </span>
         </div>
       </motion.div>
 
-      <motion.form onSubmit={handleSubmit} className="space-y-4" variants={slideUp}>
+      <motion.form onSubmit={handleSubmit} className="space-y-4" variants={slideUp} aria-label="Sign in form">
         <motion.div variants={fadeIn} className="space-y-2">
-          <Label htmlFor="email">email</Label>
+          <Label htmlFor="email" className="sr-only">Email</Label>
           <Input
             id="email"
             type="email"
-            placeholder="hello@example.com"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="h-10 rounded-xl px-4 text-base shadow-sm"
+            aria-label="Email address"
           />
         </motion.div>
         <motion.div variants={fadeIn} className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">password</Label>
-            <Link
-              href="/forgot-password"
-              className="text-xs text-primary hover:underline lowercase"
-            >
-              forgot password?
-            </Link>
-          </div>
+          <Label htmlFor="password" className="sr-only">Password</Label>
           <div className="relative">
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
+              className="h-10 rounded-xl px-4 text-base shadow-sm"
+              aria-label="Password"
             />
             <Button
               type="button"
@@ -277,15 +267,26 @@ export function LoginForm({
               size="icon"
               className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
+          <div className="mt-2">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-primary hover:underline"
+              tabIndex={0}
+              aria-label="Forgot Password?"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </motion.div>
         <motion.div variants={fadeIn} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-          <Button type="submit" className="w-full gap-1 lowercase" disabled={isLoading}>
+          <Button type="submit" className="w-full gap-1 h-10 rounded-full text-base font-semibold shadow-md" disabled={isLoading} aria-label="Sign In">
             {isLoading ? (
-              'signing in...'
+              'Signing In...'
             ) : (
               <>
                 <LogIn className="h-4 w-4" />

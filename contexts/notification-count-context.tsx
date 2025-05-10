@@ -4,8 +4,13 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useAuth } from '@/lib/hooks/use-auth';
 import { createClient } from '@/utils/supabase/client';
 import { API_ROUTES } from '@/utils/constants/routes';
-import { getWithExpiry, setWithExpiry, initCacheCleaner } from '@/utils/local-storage-cache';
-import { getUnreadCountCache, setUnreadCountCache, isUnreadCountCacheValid } from '@/utils/notification-state';
+import { initCacheCleaner } from '@/utils/local-storage-cache';
+import { 
+  getUnreadCountCache, 
+  setUnreadCountCache, 
+  isUnreadCountCacheValid,
+  setupStorageListener
+} from '@/utils/notification-state';
 
 interface NotificationCountContextType {
   unreadCount: number;
@@ -15,50 +20,63 @@ interface NotificationCountContextType {
 
 const NotificationCountContext = createContext<NotificationCountContextType | undefined>(undefined);
 
-// Constants for caching and retry
-const CACHE_KEY = 'notification_count_cache';
-const CACHE_TTL = 60000; // 1 minute
-const MAX_RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 2000; // 2 seconds
-const CIRCUIT_BREAKER_INTERVAL = 5000; // 5 seconds
+// Constants for timing and retry
+const CIRCUIT_BREAKER_INTERVAL = 10000; // 10 seconds between API calls
+const MAX_RETRY_ATTEMPTS = 2;
+const RETRY_DELAY = 3000; // 3 seconds
 
 export const NotificationCountProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const supabase = createClient();
   const etagRef = useRef<string | null>(null);
   const retryAttemptsRef = useRef(0);
-  const visibilityListenerAddedRef = useRef(false);
   const lastFetchTimestampRef = useRef(0);
   const fetchInProgressRef = useRef(false);
+  const supabaseClientRef = useRef<ReturnType<typeof createClient> | null>(null);
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
+  
+  // Initialize Supabase client once
+  useEffect(() => {
+    if (!supabaseClientRef.current) {
+      supabaseClientRef.current = createClient();
+    }
+    
+    // Initialize cache cleaner
+    const cleanupCacheInterval = initCacheCleaner();
+    
+    return () => {
+      cleanupCacheInterval();
+    };
+  }, []);
   
   /**
-   * Fetches the unread notification count with proper caching and error handling
+   * Fetches the unread notification count with circuit breaker pattern
    */
   const fetchUnreadCount = useCallback(async (forceRefresh = false) => {
-    if (!user) {
+    if (!user?.id) {
       setUnreadCount(0);
       return;
     }
 
-    // Circuit breaker: Only allow one fetch every 5 seconds
-    const now = Date.now();
-    if (!forceRefresh && now - lastFetchTimestampRef.current < CIRCUIT_BREAKER_INTERVAL) {
-      return;
-    }
-    if (fetchInProgressRef.current) {
-      return;
-    }
-
-    // Use shared cache if valid
+    // Performance optimization: Use cached value if valid (unless forced refresh)
     if (!forceRefresh && isUnreadCountCacheValid()) {
       const cache = getUnreadCountCache();
       if (cache) {
         setUnreadCount(cache.count);
-        setIsLoading(false);
         return;
       }
+    }
+    
+    // Circuit breaker pattern: Prevent frequent API calls
+    const now = Date.now();
+    if (!forceRefresh && now - lastFetchTimestampRef.current < CIRCUIT_BREAKER_INTERVAL) {
+      return;
+    }
+    
+    // Prevent concurrent fetches
+    if (fetchInProgressRef.current) {
+      return;
     }
 
     fetchInProgressRef.current = true;
@@ -66,11 +84,15 @@ export const NotificationCountProvider: React.FC<React.PropsWithChildren<{}>> = 
     setIsLoading(true);
 
     try {
+      // Prepare conditional request with ETag
       const headers: HeadersInit = {};
       if (etagRef.current) {
         headers['If-None-Match'] = etagRef.current;
       }
+      
       const response = await fetch(API_ROUTES.NOTIFICATIONS_COUNT, { headers });
+      
+      // Handle 304 Not Modified - use cached data
       if (response.status === 304) {
         const cache = getUnreadCountCache();
         if (cache) {
@@ -80,26 +102,48 @@ export const NotificationCountProvider: React.FC<React.PropsWithChildren<{}>> = 
           return;
         }
       }
+      
+      // Handle rate limiting
       if (response.status === 429) {
-        // Rate limited, do not retry
+        // Rate limited, use cached data if available
+        const cache = getUnreadCountCache();
+        if (cache) {
+          setUnreadCount(cache.count);
+        }
         setIsLoading(false);
         fetchInProgressRef.current = false;
         return;
       }
+      
       if (!response.ok) {
         throw new Error(`Error fetching notification count: ${response.status}`);
       }
+      
+      // Update ETag for future conditional requests
       const newEtag = response.headers.get('ETag');
       if (newEtag) {
         etagRef.current = newEtag;
       }
+      
       const data = await response.json();
       const count = data.unreadCount || 0;
+      
       setUnreadCount(count);
       setUnreadCountCache(count);
+      retryAttemptsRef.current = 0;
     } catch (error) {
       console.error('Failed to fetch notification count:', error);
-      // Do not auto-retry to avoid cascading failures
+      
+      // Retry with exponential backoff
+      if (retryAttemptsRef.current < MAX_RETRY_ATTEMPTS) {
+        retryAttemptsRef.current++;
+        const backoffDelay = RETRY_DELAY * Math.pow(2, retryAttemptsRef.current - 1);
+        
+        setTimeout(() => {
+          fetchInProgressRef.current = false;
+          fetchUnreadCount(false);
+        }, backoffDelay);
+      }
     } finally {
       setIsLoading(false);
       fetchInProgressRef.current = false;
@@ -114,77 +158,95 @@ export const NotificationCountProvider: React.FC<React.PropsWithChildren<{}>> = 
   }, [fetchUnreadCount]);
   
   /**
-   * Set up tab visibility listener
+   * Setup for cross-tab communication
    */
-  const setupVisibilityListener = useCallback(() => {
-    if (visibilityListenerAddedRef.current) return;
+  useEffect(() => {
+    const cleanup = setupStorageListener((count) => {
+      setUnreadCount(count);
+    });
+    
+    return cleanup;
+  }, []);
+  
+  /**
+   * Tab visibility handler
+   */
+  useEffect(() => {
+    if (!user?.id) return;
     
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Refresh count when tab becomes visible
-        fetchUnreadCount(true);
+        // Only refresh when becoming visible and cache is invalid/old
+        if (!isUnreadCountCacheValid()) {
+          fetchUnreadCount(true);
+        }
       }
     };
     
-    // Add event listener
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    visibilityListenerAddedRef.current = true;
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      visibilityListenerAddedRef.current = false;
     };
-  }, [fetchUnreadCount]);
+  }, [user, fetchUnreadCount]);
   
   /**
-   * Initial setup
+   * Initial fetch and setup
    */
   useEffect(() => {
-    // Initialize cache cleaner 
-    const cleanupCacheInterval = initCacheCleaner();
+    if (!user?.id) {
+      setUnreadCount(0);
+      return;
+    }
     
-    // Set up visibility listener
-    const cleanupVisibilityListener = setupVisibilityListener();
+    // Get cached value if available
+    if (isUnreadCountCacheValid()) {
+      const cache = getUnreadCountCache();
+      if (cache) {
+        setUnreadCount(cache.count);
+      }
+    }
     
-    // Initial fetch
+    // Then fetch fresh data
     fetchUnreadCount();
     
-    return () => {
-      cleanupCacheInterval();
-      if (cleanupVisibilityListener) cleanupVisibilityListener();
-    };
-  }, [fetchUnreadCount, setupVisibilityListener]);
-  
-  /**
-   * Set up realtime subscription for notifications
-   */
-  useEffect(() => {
-    if (!user) return;
+    // Set up realtime subscription
+    if (supabaseClientRef.current) {
+      // Clean up any existing channel
+      if (channelRef.current) {
+        supabaseClientRef.current.removeChannel(channelRef.current);
+      }
+      
+      // Set up new channel
+      const channel = supabaseClientRef.current
+        .channel(`count:${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            // Only refresh when cache is invalid to prevent excessive API calls
+            if (!isUnreadCountCacheValid()) {
+              fetchUnreadCount(true);
+            }
+          }
+        )
+        .subscribe();
+      
+      channelRef.current = channel;
+    }
     
-    // Listen to notification table changes for the current user
-    const channel = supabase
-      .channel('notification-count-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          // Refresh the count when a notification changes
-          fetchUnreadCount(true);
-        }
-      )
-      .subscribe();
-    
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current && supabaseClientRef.current) {
+        supabaseClientRef.current.removeChannel(channelRef.current);
+      }
     };
-  }, [user, supabase, fetchUnreadCount]);
+  }, [user, fetchUnreadCount]);
   
-  // Create the context value
   const contextValue: NotificationCountContextType = {
     unreadCount,
     refreshUnreadCount,

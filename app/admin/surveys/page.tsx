@@ -97,6 +97,12 @@ export default function SurveysPage() {
         </Link>
       </div>
 
+      <div className="flex justify-end mb-6">
+        <Link href="/admin/surveys/create">
+          <Button>Create New Survey</Button>
+        </Link>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>All Surveys</CardTitle>

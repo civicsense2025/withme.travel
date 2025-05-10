@@ -2,20 +2,10 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ITINERARY_CATEGORIES, TRIP_ROLES } from '@/utils/constants/status';
+import { TABLES } from '@/utils/constants/database';
 import chalk from 'chalk';
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
-
-// Define table names directly as string constants
-const TABLES = {
-  TRIPS: 'trips',
-  TRIP_MEMBERS: 'trip_members',
-  USERS: 'users',
-  ITINERARY_ITEMS: 'itinerary_items',
-  ITINERARY_SECTIONS: 'itinerary_sections',
-  CITIES: 'cities',
-  DESTINATIONS: 'destinations',
-};
 
 const LOG_PREFIX = '[Guest Trip Create API]';
 
@@ -34,7 +24,7 @@ function generateUUID() {
 async function upsertRealUserProfile(supabaseAdmin: any, user: any) {
   if (!user?.id) throw new Error('No user id');
   return supabaseAdmin
-    .from('profiles')
+    .from(TABLES.PROFILES)
     .upsert([
       {
         id: user.id,
@@ -79,7 +69,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Find or create city in the cities table
     const { data: cities, error: cityError } = await supabaseAdmin
-      .from(TABLES.CITIES)
+      .from('cities')
       .select('id, name, country')
       .ilike('name', `%${destination}%`)
       .limit(1);
@@ -103,7 +93,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Create a new city entry
       console.log(chalk.yellow(`${LOG_PREFIX} City not found, creating new entry...`));
       const { data: newCity, error: createCityError } = await supabaseAdmin
-        .from(TABLES.CITIES)
+        .from('cities')
         .insert([{ name: destination }])
         .select()
         .single();
@@ -157,14 +147,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (isGuest) {
       // Check if guest profile already exists
       const { data: existingProfile } = await supabaseAdmin
-        .from('profiles')
+        .from(TABLES.PROFILES)
         .select('id')
         .eq('id', userId)
         .single();
 
       if (!existingProfile) {
         const { error: insertProfileError } = await supabaseAdmin
-          .from('profiles')
+          .from(TABLES.PROFILES)
           .insert([
             {
               id: userId,
@@ -221,7 +211,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }));
 
     let { data: newTrip, error: tripError } = await supabaseAdmin
-      .from('trips')
+      .from(TABLES.TRIPS)
       .insert([tripData])
       .select()
       .single();
@@ -250,7 +240,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         })));
         
         const { data: retryTrip, error: retryError } = await supabaseAdmin
-          .from('trips')
+          .from(TABLES.TRIPS)
           .insert([simplifiedTripData])
           .select()
           .single();
@@ -278,7 +268,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       try {
         // Option 1: Try to update the trip with guest_token if the column exists
         const { error: updateError } = await supabaseAdmin
-          .from('trips')
+          .from(TABLES.TRIPS)
           .update({ guest_token_text: guestToken }) // Use a text field name that won't conflict with UUID columns
           .eq('id', newTripId);
           
@@ -288,7 +278,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           // Option 2: Store in guest_tokens table if it exists
           console.log(chalk.dim(`${LOG_PREFIX} Trying to store in guest_tokens table...`));
           const { error: tokenError } = await supabaseAdmin
-            .from('guest_tokens')
+            .from(TABLES.GUEST_TOKENS)
             .insert([{ 
               trip_id: newTripId,
               user_id: userId,
@@ -377,7 +367,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (sections.length > 0) {
       const { error: sectionsError } = await supabaseAdmin
-        .from(TABLES.ITINERARY_SECTIONS)
+        .from('itinerary_sections')
         .insert(sections);
 
       if (sectionsError) {

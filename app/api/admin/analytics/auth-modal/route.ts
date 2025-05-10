@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import type { CookieOptions } from '@supabase/ssr';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 
 /**
  * POST handler for auth modal analytics
@@ -19,24 +17,7 @@ export async function POST(request: Request) {
     }
 
     // Create Supabase client
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          async get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          async set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options });
-          },
-          async remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options, maxAge: 0 });
-          },
-        },
-      }
-    );
+    const supabase = await createRouteHandlerClient();
 
     // Authenticate user - only admins can read this data, but anyone can write
     const { data: userData } = await supabase.auth.getUser();
@@ -44,22 +25,50 @@ export async function POST(request: Request) {
     // Timestamp the event
     const timestamp = new Date().toISOString();
     
-    // Store the analytics event
-    const { error } = await supabase
-      .from('auth_modal_analytics')
-      .insert({
-        event_name: event,
-        event_data: eventData || {},
-        user_id: userData?.user?.id || null, // Track the user if they're logged in
-        timestamp,
-        url: eventData?.path || null,
-        ab_test_variant: eventData?.abTestVariant || 'control',
-        context: eventData?.context || 'default',
-      });
+    // Create table if it doesn't exist
+    try {
+      // Check if table exists
+      const { count, error: checkError } = await supabase
+        .from('auth_modal_analytics')
+        .select('*', { count: 'exact', head: true });
+      
+      // If we got a 400/404 error, table likely doesn't exist
+      if (checkError && (checkError.code === '42P01' || checkError.message.includes('relation "auth_modal_analytics" does not exist'))) {
+        console.log('Auth modal analytics table does not exist. Data will be logged but not stored.');
+        // Just log the event but don't try to store it
+        console.log('Auth modal event:', { event, eventData, userId: userData?.user?.id, timestamp });
+        return NextResponse.json({ success: true, message: 'Event logged' });
+      }
+    } catch (err) {
+      // Table check failed, just log and continue
+      console.warn('Failed to check auth_modal_analytics table:', err);
+    }
+    
+    // Try to store the analytics event
+    try {
+      const { error } = await supabase
+        .from('auth_modal_analytics')
+        .insert({
+          event_name: event,
+          event_data: eventData || {},
+          user_id: userData?.user?.id || null, // Track the user if they're logged in
+          timestamp,
+          url: eventData?.path || null,
+          ab_test_variant: eventData?.abTestVariant || 'control',
+          context: eventData?.context || 'default',
+        });
 
-    if (error) {
-      console.error('Error storing auth modal analytics:', error);
-      return NextResponse.json({ error: 'Failed to store analytics data' }, { status: 500 });
+      if (error) {
+        console.error('Error storing auth modal analytics:', error);
+        // Log the event data since we couldn't store it
+        console.log('Auth modal event data (not stored):', { event, eventData });
+        return NextResponse.json({ success: true, message: 'Event logged but not stored' });
+      }
+    } catch (insertError) {
+      console.error('Exception storing auth modal analytics:', insertError);
+      // Log the event data since we couldn't store it
+      console.log('Auth modal event data (not stored):', { event, eventData });
+      return NextResponse.json({ success: true, message: 'Event logged but not stored' });
     }
 
     return NextResponse.json({ success: true });
@@ -80,24 +89,7 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     // Create Supabase client
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          async get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          async set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options });
-          },
-          async remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options, maxAge: 0 });
-          },
-        },
-      }
-    );
+    const supabase = await createRouteHandlerClient();
 
     // Authenticate user
     const { data: userData, error: authError } = await supabase.auth.getUser();
@@ -117,6 +109,36 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Check if the analytics table exists
+    try {
+      const { count, error: checkError } = await supabase
+        .from('auth_modal_analytics')
+        .select('*', { count: 'exact', head: true });
+      
+      if (checkError && (checkError.code === '42P01' || checkError.message.includes('relation "auth_modal_analytics" does not exist'))) {
+        // Table doesn't exist, return empty data
+        return NextResponse.json({
+          totalEvents: 0,
+          eventCounts: {},
+          contextCounts: {},
+          variantCounts: {},
+          contextByVariant: {},
+          conversionByVariant: {
+            'control': { opens: 0, successes: 0, rate: 0 },
+            'variant-a': { opens: 0, successes: 0, rate: 0 },
+            'variant-b': { opens: 0, successes: 0, rate: 0 },
+          },
+          timeRange: {
+            from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            to: new Date().toISOString(),
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to check auth_modal_analytics table:', err);
+      // Continue anyway and let the next query fail if the table doesn't exist
+    }
+
     // Fetch analytics data - last 30 days by default
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -128,6 +150,28 @@ export async function GET() {
       .gte('timestamp', thirtyDaysAgo.toISOString());
 
     if (summaryError) {
+      console.error('Error fetching analytics data:', summaryError);
+      
+      if (summaryError.code === '42P01' || summaryError.message.includes('relation "auth_modal_analytics" does not exist')) {
+        // Table doesn't exist, return empty data
+        return NextResponse.json({
+          totalEvents: 0,
+          eventCounts: {},
+          contextCounts: {},
+          variantCounts: {},
+          contextByVariant: {},
+          conversionByVariant: {
+            'control': { opens: 0, successes: 0, rate: 0 },
+            'variant-a': { opens: 0, successes: 0, rate: 0 },
+            'variant-b': { opens: 0, successes: 0, rate: 0 },
+          },
+          timeRange: {
+            from: thirtyDaysAgo.toISOString(),
+            to: new Date().toISOString(),
+          }
+        });
+      }
+      
       return NextResponse.json(
         { error: 'Failed to fetch analytics data' },
         { status: 500 }

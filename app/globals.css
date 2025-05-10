@@ -976,3 +976,4 @@ p, .responsive-p {
 [data-draggable="true"].dragging {
   cursor: grabbing;
 }
+/* Add utility class for header spacing adjustment */ .content-with-header { padding-top: 1rem; }

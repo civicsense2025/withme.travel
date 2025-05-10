@@ -7,13 +7,31 @@ import { useEffect, useState } from 'react';
 import { initializeErrorLogging } from '@/utils/error-logger';
 import { initPerformanceMonitoring } from '@/utils/web-vitals';
 import { GlobalErrorBoundary } from '@/components/global-error-boundary';
-import { NotificationProvider } from '@/contexts/notification-context';
-import { NotificationCountProvider } from '@/contexts/notification-count-context';
-import { NotificationRealtimeListener } from '@/components/notification-realtime-listener';
+// Comment out notification imports
+// import { NotificationProvider } from '@/contexts/notification-context';
+// import { NotificationCountProvider } from '@/contexts/notification-count-context';
+// import { NotificationRealtimeListener } from '@/components/notification-realtime-listener';
 import { usePathname } from 'next/navigation';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Analytics } from '@vercel/analytics/react';
+import { useAuth } from '@/lib/hooks/use-auth';
+
+/**
+ * Notification system component that conditionally renders only the realtime listener
+ */
+/*
+function NotificationSystem() {
+  const { user, isLoading } = useAuth();
+  
+  // Only render the realtime listener if user is authenticated
+  if (isLoading || !user) {
+    return null;
+  }
+  
+  return <NotificationRealtimeListener />;
+}
+*/
 
 /**
  * Client-side providers that ensure client-only components
@@ -22,8 +40,6 @@ import { Analytics } from '@vercel/analytics/react';
 export function ClientSideProviders({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
-  // Skip authentication for pages that don't need it
-  const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/signup');
 
   useEffect(() => {
     setIsMounted(true);
@@ -55,13 +71,16 @@ export function ClientSideProviders({ children }: { children: React.ReactNode })
           enableSystem
           disableTransitionOnChange
         >
-          <NotificationCountProvider>
+          {/* Comment out notification providers */}
+          {/* <NotificationCountProvider>
             <NotificationProvider>
-              <NotificationRealtimeListener />
+              <NotificationSystem />
               {children}
               <Toaster />
             </NotificationProvider>
-          </NotificationCountProvider>
+          </NotificationCountProvider> */}
+          {children}
+          <Toaster />
           <AuthModal />
           <Analytics />
         </ThemeProvider>

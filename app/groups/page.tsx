@@ -47,17 +47,16 @@ export default async function GroupsPage() {
   if (guestToken) {
     const { data: groupLinks } = await supabase
       .from('group_guest_members')
-      .select('group_id, groups!inner(id, name, emoji)')
+      .select('group_id, groups!inner(id, name, emoji, visibility, created_at)')
       .eq('guest_token', guestToken);
     if (groupLinks && groupLinks.length > 0) {
       guestGroups = groupLinks.map(link => link.groups);
+      
+      // If guest has groups, show the client page with their groups
+      return <GroupsClientPage initialGroups={guestGroups} isGuest={true} />;
     }
   }
 
-  return (
-    <>
-
-      <GroupsLandingPage />
-    </>
-  );
+  // No user and no guest groups, show the landing page
+  return <GroupsLandingPage />;
 } 

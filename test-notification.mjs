@@ -1,0 +1,1 @@
+export {}; import("./components/notification-indicator.tsx").then(mod => console.log("Component loads without context:", !!mod.NotificationIndicator)).catch(err => console.error("Error loading component:", err));

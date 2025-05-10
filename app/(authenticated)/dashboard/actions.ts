@@ -364,9 +364,37 @@ export async function getSavedContent(userId: string, limit: number = 4) {
     let itineraryResults: any[] = [];
     if (likedItineraries && likedItineraries.length > 0) {
       const itineraryIds = likedItineraries.map(like => like.item_id);
+      
+      // Using the same pattern as in app/itineraries/page.tsx
       const { data: itineraryData, error: itinDataError } = await supabase
-        .from('itinerary_templates')  // Use string literal instead of TABLES.ITINERARY_TEMPLATES
-        .select('id, title, destination_name, image_url, slug')
+        .from('itinerary_templates')
+        .select(`
+          id, 
+          title, 
+          description,
+          slug, 
+          destination_id,
+          duration_days,
+          created_by,
+          is_published,
+          tags,
+          metadata,
+          cover_image_url,
+          destination_name,
+          image_url,
+          profile: created_by (
+            id,
+            name,
+            avatar_url
+          ),
+          destinations: destination_id (
+            id,
+            name,
+            country,
+            state,
+            featured_image_url
+          )
+        `)
         .in('id', itineraryIds);
         
       if (itinDataError) {

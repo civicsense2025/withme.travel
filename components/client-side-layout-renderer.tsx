@@ -30,13 +30,17 @@ export function ClientSideLayoutRenderer({ children }: ClientSideLayoutRendererP
   // Regular layout: Navbar, container, Footer
   return (
     <>
-      <div className="w-full font-sans text-lg">
+      <div className="w-full font-sans text-lg flex flex-col min-h-screen">
         <Navbar />
-        <div id="main-content" className="min-h-[calc(100vh-4rem-4rem)] w-full px-4 md:px-8 font-sans text-lg" tabIndex={-1}>
+        <main 
+          id="main-content" 
+          className="flex-grow w-full px-0 pt-0 pb-6 font-sans text-lg" 
+          tabIndex={-1}
+        >
           {children}
-        </div>
+        </main>
+        <Footer />
       </div>
-      <Footer />
     </>
   );
 }

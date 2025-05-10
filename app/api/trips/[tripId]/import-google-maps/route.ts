@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@/utils/supabase/route-handler-client';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { convertToItineraryItems, parseGoogleMapsList } from '@/utils/googleMapsParser';
 import { TABLES } from '@/utils/constants/database';
 

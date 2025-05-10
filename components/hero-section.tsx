@@ -180,7 +180,7 @@ export function HeroSection() {
   return (
     <section
       aria-label="Main welcome section"
-      className="relative pt-6 md:pt-12 lg:pt-16 pb-32 md:pb-40 lg:pb-48 px-6 md:px-10 flex flex-col items-center justify-center w-full"
+      className="relative pt-6 md:pt-12 lg:pt-16 pb-16 md:pb-20 lg:pb-24 px-6 md:px-10 flex flex-col items-center justify-center w-full"
     >
       <script
         type="application/ld+json"
@@ -226,29 +226,32 @@ export function HeroSection() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="mb-16"
         >
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-8">
-            <span className="leading-tight">Say goodbye to the chaos of</span>
-            <div className="h-[1.2em] overflow-hidden relative mt-2">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 sm:mb-8 break-words text-balance text-center w-full">
+            {/* First line: wraps naturally on mobile */}
+            <span className="flex flex-row flex-wrap items-center justify-center gap-2 leading-tight w-full text-center">
+                <span>👋 Wave goodbye to</span>
+            </span>
+            {/* Animated text: always on its own line, large and bold */}
+            <span className="block w-full text-center font-bold text-travel-blue text-3xl sm:text-4xl md:text-5xl lg:text-6xl mt-2 min-h-[2.5rem]">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={currentPlanningTypeIndex}
-                  className="text-travel-blue absolute inset-0 flex items-center justify-center leading-tight"
                   initial={{ y: 60, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -60, opacity: 0 }}
                   transition={{
                     duration: 0.6,
-                    ease: [0.32, 0.72, 0, 1], // Custom easing for Apple-like smooth motion
+                    ease: [0.32, 0.72, 0, 1],
                   }}
                 >
                   {planningTypes[currentPlanningTypeIndex]}
                 </motion.span>
               </AnimatePresence>
-            </div>
+            </span>
           </h1>
 
           <motion.p 
-            className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto text-center"
+            className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto text-center mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -259,7 +262,7 @@ export function HeroSection() {
 
         {/* Create Trip Form - Concise version similar to the create trip form */}
         <motion.div 
-          className="w-full mb-20 hero-search-form relative"
+          className="w-full mb-20 hero-search-form relative p-4 sm:p-6 rounded-2xl sm:rounded-3xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
@@ -331,7 +334,7 @@ export function HeroSection() {
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.8 }}
         >
-          <h2 className="text-2xl font-medium mb-10 text-center">Need inspiration? Check these spots</h2>
+          <h2 className="text-2xl font-medium my-12 text-center">Need inspiration? Check these spots</h2>
           <div className="backdrop-blur-sm rounded-3xl p-5 md:p-6 shadow-sm mx-auto max-w-5xl">
             <Suspense fallback={<div className="h-40 bg-neutral-100 dark:bg-neutral-900 rounded-xl animate-pulse"></div>}>
               <CityBubblesProvider setDestination={handleSetDestination}>

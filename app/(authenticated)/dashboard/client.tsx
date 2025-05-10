@@ -20,6 +20,9 @@ import { ActiveTripsList } from './components/active-trips-list';
 import { TravelStatCards } from './components/travel-stat-cards';
 import { SavedContentGrid } from './components/saved-content-grid';
 import { PopularItineraries } from '@/components/popular-itineraries';
+import { useToast } from '@/hooks/use-toast';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 // Dashboard data structure from server actions
 interface DashboardData {
@@ -61,6 +64,21 @@ export default function DashboardClient({
     savedContent, 
     activeTrips 
   } = dashboardData;
+
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (searchParams?.get('justLoggedIn') === '1') {
+      toast({ title: 'Welcome back!' });
+      // Remove the param from the URL (replaceState to avoid extra navigation)
+      const params = new URLSearchParams(window.location.search);
+      params.delete('justLoggedIn');
+      const newUrl = window.location.pathname + (params.toString() ? `?${params}` : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams, toast]);
 
   return (
     <main className="container py-8 md:py-12">
@@ -219,10 +237,9 @@ export default function DashboardClient({
               </CardHeader>
               <CardContent className="pt-2">
                 <Tabs defaultValue="trips" className="w-full">
-                  <TabsList className="w-full grid grid-cols-3 mb-4">
+                  <TabsList className="w-full grid grid-cols-2 mb-4">
                     <TabsTrigger value="trips">My Trips</TabsTrigger>
                     <TabsTrigger value="saved">Saved</TabsTrigger>
-                    <TabsTrigger value="discover">Discover</TabsTrigger>
                   </TabsList>
                   
                   {/* My Trips Tab */}
@@ -249,6 +266,17 @@ export default function DashboardClient({
                         </div>
                       )}
                     </Suspense>
+
+                    {recentTrips.length === 0 && (
+                      <div className="text-center p-6 border rounded-lg bg-muted/20">
+                        <p className="text-muted-foreground">You haven't created any trips yet.</p>
+                        <Button asChild className="mt-4">
+                          <Link href="/trips/create">
+                            Create your first trip
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
                   </TabsContent>
                   
                   {/* Saved Content Tab */}
@@ -257,7 +285,7 @@ export default function DashboardClient({
                       fallback={
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {[...Array(4)].map((_, i) => (
-                            <SkeletonCard key={i} />
+                            <div key={i} className="h-32 md:h-64 bg-muted animate-pulse rounded-lg"></div>
                           ))}
                         </div>
                       }
@@ -265,35 +293,42 @@ export default function DashboardClient({
                       <SavedContentGrid savedContent={savedContent} />
                     </Suspense>
                   </TabsContent>
-                  
-                  {/* Discover Tab */}
-                  <TabsContent value="discover" className="space-y-4">
-                    <h3 className="text-lg font-semibold mb-2">Trending Destinations</h3>
-                    <Suspense
-                      fallback={<div className="h-[350px] bg-muted animate-pulse rounded-md"></div>}
-                    >
-                      <TrendingDestinations />
-                    </Suspense>
-                    
-                    {/* Add Popular Itineraries Section */}
-                    <div className="mt-8">
-                      <h3 className="text-lg font-semibold mb-4">Popular Itineraries</h3>
-                      <Suspense
-                        fallback={
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            {[...Array(3)].map((_, i) => (
-                              <div key={i} className="h-64 bg-muted animate-pulse rounded-xl"></div>
-                            ))}
-                          </div>
-                        }
-                      >
-                        <DashboardClientWrapper>
-                          <PopularItineraries />
-                        </DashboardClientWrapper>
-                      </Suspense>
-                    </div>
-                  </TabsContent>
                 </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Discover Section - Added as a separate section */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl font-bold">Discover</CardTitle>
+                <CardDescription>
+                  Explore popular itineraries and destinations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Trending Destinations */}
+                <h3 className="text-lg font-semibold mb-3">Trending Destinations</h3>
+                <Suspense
+                  fallback={<div className="h-[350px] bg-muted animate-pulse rounded-md mb-8"></div>}
+                >
+                  <TrendingDestinations />
+                </Suspense>
+                
+                {/* Popular Itineraries */}
+                <h3 className="text-lg font-semibold mb-3 mt-8">Popular Itineraries</h3>
+                <Suspense
+                  fallback={
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-64 bg-muted animate-pulse rounded-lg"></div>
+                      ))}
+                    </div>
+                  }
+                >
+                  <DashboardClientWrapper>
+                    <PopularItineraries />
+                  </DashboardClientWrapper>
+                </Suspense>
               </CardContent>
             </Card>
           </div>

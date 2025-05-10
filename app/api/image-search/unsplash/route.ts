@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { TABLES } from '@/utils/constants/database';
 
 // Unsplash API endpoint
 const UNSPLASH_API_URL = 'https://api.unsplash.com/search/photos';
@@ -16,14 +16,14 @@ export async function GET(request: Request) {
     }
     
     // Check for API key
-    const unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY;
-    if (!unsplashAccessKey) {
+    const unsplashApiKey = process.env.UNSPLASH_ACCESS_KEY;
+    if (!unsplashApiKey) {
       return NextResponse.json(
         { error: 'Unsplash API key is not configured' }, 
         { status: 500 }
       );
     }
-
+    
     // Ensure the user is authenticated
     const supabase = await createRouteHandlerClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -34,10 +34,10 @@ export async function GET(request: Request) {
     
     // Search Unsplash API
     const response = await fetch(
-      `${UNSPLASH_API_URL}?query=${encodeURIComponent(query)}&per_page=15`, 
+      `${UNSPLASH_API_URL}?query=${encodeURIComponent(query)}&per_page=15`,
       {
         headers: {
-          'Authorization': `Client-ID ${unsplashAccessKey}`,
+          'Authorization': `Client-ID ${unsplashApiKey}`,
         },
       }
     );
@@ -64,6 +64,7 @@ export async function GET(request: Request) {
             width: photo.width,
             height: photo.height,
             created_at: new Date().toISOString(),
+            created_by: user.id
           }, { onConflict: 'external_id,source' });
         } catch (err) {
           console.error('Failed to upsert Unsplash image:', err);

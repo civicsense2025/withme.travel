@@ -17,18 +17,18 @@ interface Destination {
   name: string;
 }
 
-// Updated interface based on API response structure
+// Updated interface based on API response structure - ensuring slug is a string
 interface Itinerary {
   id: string;
   title: string;
-  slug: string;
+  slug: string; // This must be a string now
   description: string | null;
   destination_id: string;
   duration_days: number;
   created_by: string;
   is_published: boolean;
   tags: string[];
-  metadata: ItineraryTemplateMetadata;
+  metadata: ItineraryTemplateMetadata | null; // Allow null metadata
   profile?: {
     id: string;
     name: string | null;
@@ -152,10 +152,16 @@ const ClientWrapperContent = memo(({
         location: item.destinations ? `${item.destinations.name}, ${item.destinations.country}` : 'Unknown Location',
         duration: `${item.duration_days} days`,
         tags: item.tags || [],
-        slug: item.slug,
+        slug: item.slug, // Already enforced as a string in our interface
         is_published: item.is_published,
         author: item.profile,
-        metadata: item.metadata || {},
+        metadata: item.metadata || {
+          title: '',
+          description: '',
+          days: 0,
+          destination: '',
+          tags: []
+        },
         // Add required fields for the card component
         destinations: [], // Empty array is fine here since we're not using it
         duration_days: item.duration_days,

@@ -2,11 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, BedDouble, Car } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { DroppableContainer } from '@/components/itinerary/DroppableContainer';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   DndContext, 
   DragOverlay,
@@ -24,10 +24,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
+import { DisplayItineraryItem } from '@/types/itinerary';
+import { useRouter } from 'next/navigation';
 
 interface LogisticsTabContentProps {
   tripId: string;
   canEdit: boolean;
+  refetchItinerary?: () => Promise<void>;
 }
 
 // Define types for the logistics items
@@ -60,13 +64,15 @@ const formTemplates: Omit<LogisticsItem, 'id'>[] = [
   }
 ];
 
-export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabContentProps) {
+export default function LogisticsTabContent({ tripId, canEdit, refetchItinerary }: LogisticsTabContentProps) {
   const [items, setItems] = useState<LogisticsItem[]>([]);
+  const [forms, setForms] = useState<any[]>([]);
   const [activeItem, setActiveItem] = useState<LogisticsItem | null>(null);
   const [isFormTemplatesOpen, setIsFormTemplatesOpen] = useState(false);
   const [isAccommodationDialogOpen, setIsAccommodationDialogOpen] = useState(false);
   const [isTransportationDialogOpen, setIsTransportationDialogOpen] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Set up DnD sensors
   const sensors = useSensors(
@@ -83,6 +89,32 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
     }),
     useSensor(KeyboardSensor)
   );
+
+  // Function to fetch forms from the API
+  const fetchForms = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/trips/${tripId}/forms`);
+      if (!response.ok) {
+        throw new Error('Failed to load trip forms');
+      }
+      
+      const data = await response.json();
+      setItems(prevItems => [...prevItems, ...data.forms.map((form: any) => ({
+        id: form.id,
+        type: 'form',
+        title: form.title,
+        description: form.description,
+        form_type: form.form_type,
+      }))]);
+    } catch (error) {
+      console.error('Failed to load trip forms:', error);
+      toast({
+        title: 'Error loading trip forms',
+        description: 'Could not load forms. Please try again later.',
+        variant: 'destructive',
+      });
+    }
+  }, [tripId, toast]);
 
   // Load items on mount
   useEffect(() => {
@@ -108,6 +140,11 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
 
     fetchItems();
   }, [tripId, toast]);
+
+  // Load forms on mount
+  useEffect(() => {
+    fetchForms();
+  }, [fetchForms]);
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
@@ -138,25 +175,25 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
     if (active.data?.current?.type === 'template' && active.data.current.template) {
       try {
         const template = active.data.current.template;
-        const newItem: LogisticsItem = {
-          id: `${template.type}-${Date.now()}`, // Temporary ID until API creates one
-          ...template
-        };
         
-        // Add item to the state
-        setItems(prevItems => [...prevItems, newItem]);
-        
-        // This would be an API call in production
-        // const response = await fetch(`${API_ROUTES.TRIPS}/${tripId}/logistics`, {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(newItem)
-        // });
-        
-        toast({
-          title: 'Item added',
-          description: `${template.title} has been added.`,
-        });
+        if (template.type === 'form') {
+          // Handle form template differently - add through API
+          await handleFormTemplateSelect(template);
+        } else {
+          // For other templates, use the existing logic
+          const newItem: LogisticsItem = {
+            id: `${template.type}-${Date.now()}`, // Temporary ID until API creates one
+            ...template
+          };
+          
+          // Add item to the state
+          setItems(prevItems => [...prevItems, newItem]);
+          
+          toast({
+            title: 'Item added',
+            description: `${template.title} has been added.`,
+          });
+        }
       } catch (error) {
         console.error('Failed to add item:', error);
         toast({
@@ -168,13 +205,198 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
     }
   };
 
+  // Helper function to add accommodation to trip itinerary
+  const addAccommodationToItinerary = useCallback(async (accommodationData: {
+    title: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => {
+    try {
+      // Create itinerary item
+      const response = await fetch(`${API_ROUTES.TRIP_ITINERARY(tripId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: accommodationData.title,
+          description: accommodationData.description || '',
+          location: accommodationData.location,
+          category: ITINERARY_CATEGORIES.ACCOMMODATIONS,
+          day_number: null, // Unscheduled initially
+          start_time: accommodationData.startDate ? new Date(accommodationData.startDate).toISOString() : null,
+          end_time: accommodationData.endDate ? new Date(accommodationData.endDate).toISOString() : null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add accommodation to itinerary');
+      }
+
+      // Show success message
+      toast({
+        title: 'Accommodation added',
+        description: 'Your accommodation has been added to the trip itinerary.',
+      });
+
+      // Refresh itinerary
+      if (refetchItinerary) {
+        await refetchItinerary();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error adding accommodation to itinerary:', error);
+      toast({
+        title: 'Error adding accommodation',
+        description: 'There was a problem adding your accommodation. Please try again.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [tripId, toast, refetchItinerary]);
+
+  // Helper function to add transportation to trip itinerary
+  const addTransportationToItinerary = useCallback(async (transportationData: {
+    title: string;
+    departureLocation?: string;
+    arrivalLocation?: string;
+    departureDate?: string;
+    arrivalDate?: string;
+    description?: string;
+  }) => {
+    try {
+      // Format location as departure to arrival
+      const location = transportationData.departureLocation && transportationData.arrivalLocation 
+        ? `${transportationData.departureLocation} to ${transportationData.arrivalLocation}`
+        : transportationData.departureLocation || transportationData.arrivalLocation;
+
+      // Create itinerary item
+      const response = await fetch(`${API_ROUTES.TRIP_ITINERARY(tripId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: transportationData.title,
+          description: transportationData.description || '',
+          location: location,
+          category: ITINERARY_CATEGORIES.TRANSPORTATION,
+          day_number: null, // Unscheduled initially
+          start_time: transportationData.departureDate ? new Date(transportationData.departureDate).toISOString() : null,
+          end_time: transportationData.arrivalDate ? new Date(transportationData.arrivalDate).toISOString() : null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add transportation to itinerary');
+      }
+
+      // Show success message
+      toast({
+        title: 'Transportation added',
+        description: 'Your transportation has been added to the trip itinerary.',
+      });
+
+      // Refresh itinerary
+      if (refetchItinerary) {
+        await refetchItinerary();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error adding transportation to itinerary:', error);
+      toast({
+        title: 'Error adding transportation',
+        description: 'There was a problem adding your transportation. Please try again.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [tripId, toast, refetchItinerary]);
+
+  // Helper function to add a form to the trip
+  const addFormToTrip = useCallback(async (formData: {
+    title: string;
+    description?: string;
+    form_type: string;
+  }) => {
+    try {
+      // Create form
+      const response = await fetch(`/api/trips/${tripId}/forms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description || '',
+          status: 'published',
+          visibility: 'members',
+          form_type: formData.form_type || 'general',
+          allow_anonymous: false,
+          settings: {},
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to add form');
+      }
+
+      const result = await response.json();
+
+      // Show success message
+      toast({
+        title: 'Form added',
+        description: 'Your form has been added to the trip.',
+      });
+      
+      // Refresh the form list
+      fetchForms();
+      
+      return result.form;
+    } catch (error) {
+      console.error('Error adding form to trip:', error);
+      toast({
+        title: 'Error adding form',
+        description: 'There was a problem adding your form. Please try again.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  }, [tripId, toast]);
+
+  // Handle form template selection
+  const handleFormTemplateSelect = async (template: Omit<LogisticsItem, 'id'>) => {
+    try {
+      // Add loading state
+      toast({
+        title: 'Adding form...',
+        description: `Creating ${template.title} form.`,
+      });
+      
+      await addFormToTrip({
+        title: template.title,
+        description: template.description,
+        form_type: template.type === 'form' ? 'general' : template.type,
+      });
+      
+      // Close the template selection
+      setIsFormTemplatesOpen(false);
+    } catch (error) {
+      console.error('Failed to add form template:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add form template. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Function to render form templates selection
   const renderFormTemplates = () => {
     if (!isFormTemplatesOpen) return null;
     
     return (
-      <Card className="mt-2">
-        <CardHeader>
+      <Card className="mt-2 border-primary/20">
+        <CardHeader className="pb-2">
           <CardTitle className="text-lg">Select a Form Template</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-2">
@@ -189,12 +411,18 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
                   template: template
                 }));
               }}
-              className="p-3 border rounded cursor-pointer hover:bg-accent transition-colors"
+              onClick={() => handleFormTemplateSelect(template)}
+              className="p-3 border rounded cursor-pointer hover:bg-accent hover:shadow-sm transition-all flex items-start gap-3"
               data-type="template"
               data-template={JSON.stringify(template)}
             >
-              <h4 className="font-medium">{template.title}</h4>
-              <p className="text-sm text-muted-foreground">{template.description}</p>
+              <div className="p-2 bg-primary/10 rounded-full">
+                <PlusCircle className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-medium">{template.title}</h4>
+                <p className="text-sm text-muted-foreground">{template.description}</p>
+              </div>
             </div>
           ))}
         </CardContent>
@@ -215,6 +443,15 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
     </Card>
   );
 
+  // Handle navigation to the itinerary tab
+  const navigateToItinerary = () => {
+    // Navigate to the itinerary tab using the window location
+    // Since we know the tab is accessed via URL parameter ?tab=itinerary
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('tab', 'itinerary');
+    router.push(currentUrl.toString());
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -228,6 +465,7 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
             <h3 className="text-2xl font-semibold">Trip Forms</h3>
             {canEdit && (
               <Button 
+                id="add-form-button"
                 size="sm" 
                 variant="outline" 
                 className="gap-1"
@@ -248,8 +486,35 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
             className="min-h-[150px]"
             disabled={!canEdit}
           >
-            {items.filter(item => item.type === 'form').map(renderItem)}
-            {items.filter(item => item.type === 'form').length === 0 && (
+            {forms.length > 0 ? (
+              <div className="space-y-2">
+                {forms.map((form) => (
+                  <Card key={form.id} className="mb-2 hover:border-primary/50 transition-colors duration-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{form.title}</h4>
+                          {form.description && <p className="text-sm text-muted-foreground">{form.description}</p>}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            // In a real implementation, this would navigate to the form editor or viewer
+                            toast({
+                              title: "Coming Soon",
+                              description: "Form editing and responses will be available soon!",
+                            });
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
               <EmptyFormsPlaceholder canEdit={canEdit} />
             )}
           </DroppableContainer>
@@ -266,7 +531,7 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
                 className="gap-1"
                 onClick={() => setIsAccommodationDialogOpen(true)}
               >
-                <PlusCircle className="h-4 w-4" />
+                <BedDouble className="h-4 w-4" />
                 <span>Add Accommodation</span>
               </Button>
             )}
@@ -295,7 +560,7 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
                 className="gap-1"
                 onClick={() => setIsTransportationDialogOpen(true)}
               >
-                <PlusCircle className="h-4 w-4" />
+                <Car className="h-4 w-4" />
                 <span>Add Transportation</span>
               </Button>
             )}
@@ -351,25 +616,57 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
           </div>
           <DialogFooter>
             <Button 
-              onClick={() => {
-                // Add accommodation item
+              variant="outline"
+              className="mr-2"
+              onClick={() => setIsAccommodationDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                // Get form values
+                const title = (document.getElementById('accommodation-name') as HTMLInputElement)?.value || 'New Accommodation';
+                const location = (document.getElementById('accommodation-location') as HTMLInputElement)?.value;
+                const startDate = (document.getElementById('check-in') as HTMLInputElement)?.value;
+                const endDate = (document.getElementById('check-out') as HTMLInputElement)?.value;
+                const description = (document.getElementById('accommodation-notes') as HTMLTextAreaElement)?.value;
+                
+                // Add to local state
                 const newItem: LogisticsItem = {
                   id: `accommodation-${Date.now()}`,
                   type: 'accommodation',
-                  title: (document.getElementById('accommodation-name') as HTMLInputElement)?.value || 'New Accommodation',
-                  location: (document.getElementById('accommodation-location') as HTMLInputElement)?.value,
-                  startDate: (document.getElementById('check-in') as HTMLInputElement)?.value,
-                  endDate: (document.getElementById('check-out') as HTMLInputElement)?.value,
-                  description: (document.getElementById('accommodation-notes') as HTMLTextAreaElement)?.value,
+                  title,
+                  location,
+                  startDate,
+                  endDate,
+                  description,
                 };
                 
                 setItems(prev => [...prev, newItem]);
+                
+                // Add to itinerary
+                const success = await addAccommodationToItinerary({
+                  title,
+                  location,
+                  startDate,
+                  endDate,
+                  description,
+                });
+                
                 setIsAccommodationDialogOpen(false);
                 
-                toast({
-                  title: 'Accommodation added',
-                  description: 'Your accommodation has been added to the trip.',
-                });
+                if (success) {
+                  // Ask if the user wants to go to the itinerary to see the item
+                  toast({
+                    title: 'Accommodation added to itinerary',
+                    description: 'Would you like to view it in the itinerary?',
+                    action: (
+                      <Button variant="outline" size="sm" onClick={navigateToItinerary}>
+                        View Itinerary
+                      </Button>
+                    ),
+                  });
+                }
               }}
             >
               Add Accommodation
@@ -416,25 +713,59 @@ export default function LogisticsTabContent({ tripId, canEdit }: LogisticsTabCon
           </div>
           <DialogFooter>
             <Button 
-              onClick={() => {
-                // Add transportation item
+              variant="outline"
+              className="mr-2"
+              onClick={() => setIsTransportationDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                // Get form values
+                const title = (document.getElementById('transportation-type') as HTMLInputElement)?.value || 'New Transportation';
+                const departureLocation = (document.getElementById('departure-location') as HTMLInputElement)?.value;
+                const arrivalLocation = (document.getElementById('arrival-location') as HTMLInputElement)?.value;
+                const departureDate = (document.getElementById('departure-date') as HTMLInputElement)?.value;
+                const arrivalDate = (document.getElementById('arrival-date') as HTMLInputElement)?.value;
+                const description = (document.getElementById('transportation-notes') as HTMLTextAreaElement)?.value;
+                
+                // Add to local state
                 const newItem: LogisticsItem = {
                   id: `transportation-${Date.now()}`,
                   type: 'transportation',
-                  title: (document.getElementById('transportation-type') as HTMLInputElement)?.value || 'New Transportation',
-                  description: (document.getElementById('transportation-notes') as HTMLTextAreaElement)?.value,
-                  location: `${(document.getElementById('departure-location') as HTMLInputElement)?.value || ''} to ${(document.getElementById('arrival-location') as HTMLInputElement)?.value || ''}`,
-                  startDate: (document.getElementById('departure-date') as HTMLInputElement)?.value,
-                  endDate: (document.getElementById('arrival-date') as HTMLInputElement)?.value,
+                  title,
+                  location: `${departureLocation || ''} to ${arrivalLocation || ''}`,
+                  startDate: departureDate,
+                  endDate: arrivalDate,
+                  description,
                 };
                 
                 setItems(prev => [...prev, newItem]);
+                
+                // Add to itinerary
+                const success = await addTransportationToItinerary({
+                  title,
+                  departureLocation,
+                  arrivalLocation,
+                  departureDate,
+                  arrivalDate,
+                  description,
+                });
+                
                 setIsTransportationDialogOpen(false);
                 
-                toast({
-                  title: 'Transportation added',
-                  description: 'Your transportation has been added to the trip.',
-                });
+                if (success) {
+                  // Ask if the user wants to go to the itinerary to see the item
+                  toast({
+                    title: 'Transportation added to itinerary',
+                    description: 'Would you like to view it in the itinerary?',
+                    action: (
+                      <Button variant="outline" size="sm" onClick={navigateToItinerary}>
+                        View Itinerary
+                      </Button>
+                    ),
+                  });
+                }
               }}
             >
               Add Transportation
@@ -451,12 +782,25 @@ function EmptyFormsPlaceholder({ canEdit }: { canEdit: boolean }) {
   return (
     <Card>
       <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+        <div className="mb-4 p-3 rounded-full bg-primary/10">
+          <PlusCircle className="h-6 w-6 text-primary" />
+        </div>
         <p className="text-muted-foreground mb-4">No forms have been added to this trip yet.</p>
         {canEdit && (
-          <p className="text-sm text-muted-foreground">
-            Forms help you collect information from trip participants, such as dietary restrictions,
-            emergency contacts, or travel preferences.
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Forms help you collect information from trip participants, such as dietary restrictions,
+              emergency contacts, or travel preferences.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="mt-2"
+              onClick={() => document.getElementById('add-form-button')?.click()}
+            >
+              Add your first form
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -471,6 +815,7 @@ function EmptyAccommodationPlaceholder({ canEdit }: { canEdit: boolean }) {
         {canEdit && (
           <p className="text-sm text-muted-foreground">
             Add hotels, Airbnbs, or other places where you'll be staying during your trip.
+            These will also appear in your trip itinerary.
           </p>
         )}
       </CardContent>
@@ -486,6 +831,7 @@ function EmptyTransportationPlaceholder({ canEdit }: { canEdit: boolean }) {
         {canEdit && (
           <p className="text-sm text-muted-foreground">
             Add flights, train tickets, rental cars, or other transportation details for your trip.
+            These will also appear in your trip itinerary.
           </p>
         )}
       </CardContent>

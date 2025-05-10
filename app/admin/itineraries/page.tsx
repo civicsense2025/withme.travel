@@ -1,234 +1,234 @@
-import { redirect } from 'next/navigation';
-import { Container } from '@/components/container';
-import { checkAdminAuth } from '../utils/auth';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React from 'react';
 import ItineraryTemplatesTable from './ItineraryTemplatesTable';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import ItinerariesTable from './ItinerariesTable';
+import { createServerComponentClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/tables';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
+import { Info } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
-export const metadata = {
-  title: 'Itineraries Management | Admin Panel',
-  description: 'Manage itinerary templates and configurations on withme.travel',
-};
+interface AdminItineraryPageProps {
+  searchParams: {
+    show?: string;
+  };
+}
 
-export default async function AdminItinerariesPage() {
-  const { isAdmin, supabase, error } = await checkAdminAuth();
+/**
+ * Fetch itinerary templates for the templates table
+ */
+async function fetchTemplates() {
+  const supabase = await createServerComponentClient();
 
-  if (!isAdmin) {
-    redirect('/login?redirectTo=/admin/itineraries');
+  try {
+    const { data, error } = await supabase
+      .from(TABLES.ITINERARY_TEMPLATES)
+      .select(`
+        id,
+        title,
+        slug,
+        description,
+        destination_id,
+        created_by,
+        created_at,
+        is_published,
+        destinations (
+          id,
+          name,
+          city,
+          country
+        ),
+        profiles:created_by (
+          id,
+          username,
+          name
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching templates:', error);
+      throw error;
+    }
+    
+    console.log(`Successfully fetched ${data?.length || 0} templates`);
+    if (data && data.length > 0) {
+      console.log('First template sample:', {
+        id: data[0].id,
+        title: data[0].title
+      });
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch templates:', error);
+    return [];
   }
+}
 
-  if (!supabase) {
-    redirect('/login?error=supabase_client_error');
-  }
-
-  // Get counts for different itinerary types
-  const { count: templateCount } = await supabase
-    .from(TABLES.ITINERARY_TEMPLATES)
-    .select('*', { count: 'exact', head: true });
-
-  const { data: featuredTemplates, error: featuredError } = await supabase
-    .from(TABLES.ITINERARY_TEMPLATES)
-    .select('*')
-    .eq('is_featured', true)
-    .limit(5);
-
-  // Get all templates for the initial data load (limited to 20)
-  const { data: templates, error: templatesError } = await supabase
-    .from(TABLES.ITINERARY_TEMPLATES)
-    .select(`
-      id,
-      title,
-      slug,
-      destination_id,
-      destinations:destination_id (
-        name
-      ),
-      duration_days,
-      created_at,
-      updated_at,
-      created_by
-    `)
-    .order('updated_at', { ascending: false })
-    .limit(20);
-
-  if (templatesError) {
-    console.error('Error fetching templates:', templatesError);
-    console.error('Error details:', {
-      message: templatesError.message,
-      hint: templatesError.hint,
-      code: templatesError.code,
-      details: templatesError.details
-    });
-  }
-
-  // Fetch all sections for these templates
-  const templateIds = (templates || []).map(t => t.id);
-  let sections: any[] = [];
-  if (templateIds.length > 0) {
-    const { data: fetchedSections, error: sectionsError } = await supabase
+/**
+ * Fetch sections for all templates
+ */
+async function fetchSections() {
+  const supabase = await createServerComponentClient();
+  
+  try {
+    console.log(`Fetching all template sections`);
+    const { data, error } = await supabase
       .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
       .select('*')
-      .in('template_id', templateIds);
-    if (sectionsError) {
-      console.error('Error fetching template sections:', sectionsError);
+      .order('day_number', { ascending: true });
+      
+    if (error) {
+      console.error(`Error fetching sections:`, error);
+      return [];
     }
-    sections = fetchedSections || [];
+    
+    console.log(`Found ${data?.length || 0} total sections`);
+    return data || [];
+  } catch (error) {
+    console.error(`Error in fetchSections:`, error);
+    return [];
   }
+}
 
-  // Count the total number of template sections and items
-  const { count: sectionsCount } = await supabase
-    .from(TABLES.ITINERARY_TEMPLATE_SECTIONS)
-    .select('*', { count: 'exact', head: true });
+/**
+ * Fetch items for all sections
+ */
+async function fetchItems() {
+  const supabase = await createServerComponentClient();
+  try {
+    console.log(`Fetching all template items`);
+    const { data, error } = await supabase
+      .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
+      .select('*')
+      .order('day', { ascending: true })
+      .order('position', { ascending: true });
+    if (error) {
+      console.error(`Error fetching items:`, error);
+      return [];
+    }
+    console.log(`Found ${data?.length || 0} total items`);
+    return data || [];
+  } catch (error) {
+    console.error(`Error in fetchItems:`, error);
+    return [];
+  }
+}
 
-  const { count: itemsCount } = await supabase
-    .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
-    .select('*', { count: 'exact', head: true });
+/**
+ * Admin Itineraries Page - Shows itinerary templates and published itineraries
+ */
+export default async function AdminItinerariesPage({ searchParams }: AdminItineraryPageProps) {
+  const params = await searchParams;
+  const activeTab = params.show || 'templates';
+  const templates = await fetchTemplates();
+  const sections = await fetchSections();
+  const items = await fetchItems();
+
+  // Nest items under their corresponding sections
+  const sectionsWithItems = sections.map((section: any) => ({
+    ...section,
+    items: items.filter((item: any) => {
+      // section.id can be string or number, item.section_id can be string or number
+      return String(item.section_id) === String(section.id);
+    })
+  }));
+
+  console.log('Fetching templates using table:', TABLES.ITINERARY_TEMPLATES);
+  console.log('Fetching sections using table:', TABLES.ITINERARY_TEMPLATE_SECTIONS);
+  console.log('Template count:', templates.length);
+  console.log('Total sections count:', sections.length);
+
+  // Count the templates by their published status
+  const publishedCount = templates.filter((t: any) => t.is_published).length;
+  const draftCount = templates.filter((t: any) => !t.is_published).length;
 
   return (
-    <Container>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Itineraries Management</h1>
-          <p className="text-gray-500 mt-2">
-            Manage itinerary templates and configurations
-          </p>
-        </div>
+    <div className="container py-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight mb-4">Itinerary Management</h1>
         <Link href="/admin/itineraries/create">
-          <Button>Create Template</Button>
+          <Button>Create New Template</Button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Total Templates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{templateCount || 0}</div>
-            <p className="text-sm text-gray-500">Across all destinations</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Featured Templates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{featuredTemplates?.length || 0}</div>
-            <p className="text-sm text-gray-500">Highlighted on the platform</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Template Sections</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{sectionsCount || 0}</div>
-            <p className="text-sm text-gray-500">Days in all templates</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Template Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{itemsCount || 0}</div>
-            <p className="text-sm text-gray-500">Activities across all templates</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info size={18} />
+            Table Name Reference
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p>
+            Template table is using: <code className="bg-white dark:bg-black p-1 rounded">{TABLES.ITINERARY_TEMPLATES}</code>
+          </p>
+          <p>
+            Template sections table is using: <code className="bg-white dark:bg-black p-1 rounded">{TABLES.ITINERARY_TEMPLATE_SECTIONS}</code>
+          </p>
+          <p>
+            Template items table is using: <code className="bg-white dark:bg-black p-1 rounded">{TABLES.ITINERARY_TEMPLATE_ITEMS}</code>
+          </p>
+        </CardContent>
+      </Card>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="all">All Templates</TabsTrigger>
-          <TabsTrigger value="featured">Featured</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="all">
-          <ItineraryTemplatesTable
-            initialData={(templates || []).map(t => ({
-              ...t,
-              slug: t.slug ?? '',
-              destinations:
-                'destinations' in t &&
-                t.destinations &&
-                typeof t.destinations === 'object' &&
-                t.destinations !== null &&
-                'name' in t.destinations
-                  ? {
-                      city: null,
-                      country: null,
-                      name: (t.destinations as any).name ?? null,
-                    }
-                  : { city: null, country: null, name: null },
-              created_at: t.created_at ?? '',
-              updated_at: t.updated_at ?? '',
-            }))}
-            totalCount={templateCount || 0}
-            sections={sections}
-          />
-        </TabsContent>
-        
-        <TabsContent value="featured">
-          <ItineraryTemplatesTable
-            initialData={(featuredTemplates || []).map(t => ({
-              ...t,
-              slug: t.slug ?? '',
-              destinations:
-                'destinations' in t &&
-                t.destinations &&
-                typeof t.destinations === 'object' &&
-                t.destinations !== null &&
-                'name' in t.destinations
-                  ? {
-                      city: null,
-                      country: null,
-                      name: (t.destinations as any).name ?? null,
-                    }
-                  : { city: null, country: null, name: null },
-              created_at: t.created_at ?? '',
-              updated_at: t.updated_at ?? '',
-            }))}
-            totalCount={featuredTemplates?.length || 0}
-            sections={sections}
-          />
-        </TabsContent>
-        
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Template Settings</CardTitle>
-              <CardDescription>Global settings for itinerary templates</CardDescription>
+      <Alert className="mb-6">
+        <AlertTitle>Template Management</AlertTitle>
+        <AlertDescription>
+          This section allows you to manage itinerary templates that users can apply to their trips.
+          Templates can be created, edited, and published for users to discover.
+        </AlertDescription>
+      </Alert>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-4">
+          <Card className="w-60">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Templates</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500 mb-4">
-                Configure global settings for itinerary templates, including:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 mb-4">
-                <li>Default visibility settings</li>
-                <li>Template categories and tags</li>
-                <li>Featured template selection criteria</li>
-                <li>Template validation rules</li>
-              </ul>
-              <div className="flex justify-end">
-                <Button variant="outline">Edit Settings</Button>
-              </div>
+              <div className="text-2xl font-bold">{templates.length}</div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-    </Container>
-  );
+          <Card className="w-60">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Published</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{publishedCount}</div>
+            </CardContent>
+          </Card>
+          <Card className="w-60">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Drafts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{draftCount}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue={activeTab} className="w-full">
+          <TabsList>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="itineraries">Published Itineraries</TabsTrigger>
+          </TabsList>
+          <TabsContent value="templates" className="py-4">
+            <ItineraryTemplatesTable 
+              initialData={templates as any} 
+              totalCount={templates.length} 
+              sectionsWithItems={sectionsWithItems} 
+            />
+          </TabsContent>
+          <TabsContent value="itineraries" className="py-4">
+            <ItinerariesTable initialData={[]} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
 } 

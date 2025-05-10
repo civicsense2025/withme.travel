@@ -112,6 +112,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(redirectTo.toString());
     }
 
+    // Handle terms acceptance if present in URL
+    const termsAccepted = requestUrl.searchParams?.get('terms_accepted');
+    if (termsAccepted === 'true') {
+      try {
+        console.log('[Auth Callback] Recording terms acceptance');
+        // Get the user session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Update user metadata to record terms acceptance
+          await supabase.auth.updateUser({
+            data: {
+              terms_accepted: true,
+              terms_accepted_at: new Date().toISOString()
+            }
+          });
+          console.log('[Auth Callback] Terms acceptance recorded for user');
+        }
+      } catch (termsError) {
+        console.error('[Auth Callback] Error recording terms acceptance:', termsError);
+        // Continue with redirect even if terms recording fails
+      }
+    }
+
     // Set additional headers to prevent caching of this response
     const headers = new Headers();
     headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');

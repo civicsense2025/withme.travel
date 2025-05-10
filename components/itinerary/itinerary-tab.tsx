@@ -643,7 +643,6 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
             });
           }
         }
-
       } catch (err) {
         console.error('Error during drag end:', err);
         toast({
@@ -954,7 +953,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
         {/* Drag Overlay - shows the item being dragged */}
         <DragOverlay adjustScale={true} dropAnimation={dropAnimation}>
           {activeType === 'item' && activeId && activeItem ? (
-            <div className="opacity-80 w-full transform-gpu scale-[0.95] pointer-events-none">
+            <div className="opacity-90 w-full transform-gpu scale-[0.98] pointer-events-none shadow-xl rounded-lg ring-2 ring-primary/50 border border-primary/20 bg-background">
               <ItineraryItemCard
                 item={activeItem}
                 isOverlay={true}
@@ -963,9 +962,12 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({
             </div>
           ) : null}
           {activeType === 'section' && activeId ? (
-            <div className="opacity-80 w-full transform-gpu scale-[0.98] pointer-events-none bg-muted p-4 rounded-lg border shadow-md">
-              <div className="h-20 flex items-center justify-center">
-                <p className="font-medium">Moving section {activeId}</p>
+            <div className="opacity-95 w-full transform-gpu scale-[0.98] pointer-events-none bg-background p-4 rounded-lg border-2 border-primary/30 shadow-lg">
+              <div className="flex items-center gap-2 p-2">
+                <div className="w-1.5 h-12 bg-primary/70 rounded-full animate-pulse"></div>
+                <div className="h-12 flex items-center justify-center">
+                  <p className="font-medium">Moving Day {activeId}</p>
+                </div>
               </div>
             </div>
           ) : null}

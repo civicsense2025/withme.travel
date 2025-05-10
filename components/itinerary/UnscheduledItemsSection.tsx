@@ -42,14 +42,16 @@ class ErrorBoundary extends React.Component<{
 
 interface UnscheduledItemsSectionProps {
   items: DisplayItineraryItem[];
-  onVote: (itemId: string, dayNumber: number | null, voteType: 'up' | 'down') => void;
-  onStatusChange: (id: string, status: ItemStatus | null) => Promise<void>;
-  onDelete: (id: string) => void;
+  onVote?: (itemId: string, dayNumber: number | null, voteType: 'up' | 'down') => void;
+  onStatusChange?: (id: string, status: ItemStatus | null) => Promise<void>;
+  onDelete?: (id: string) => void;
   canEdit: boolean;
-  onEditItem: (item: DisplayItineraryItem) => void;
+  onEditItem: (item: DisplayItineraryItem) => void | Promise<void>;
   onAddItem: () => void;
-  onMoveItem: (itemId: string, targetDay: number | null) => void;
+  onMoveItem?: (itemId: string, targetDay: number | null) => void;
   tripId: string;
+  containerId: string;
+  refetchItinerary?: () => Promise<void>;
 }
 
 // Memoize the entire component
@@ -62,7 +64,9 @@ export const UnscheduledItemsSection = memo(({
   onEditItem,
   onAddItem,
   onMoveItem,
-  tripId
+  tripId,
+  containerId,
+  refetchItinerary
 }: UnscheduledItemsSectionProps) => {
   const router = useRouter();
   const { toast } = useToast();
@@ -184,10 +188,10 @@ export const UnscheduledItemsSection = memo(({
                       <ItineraryItemCard
                         key={item.id}
                         item={item}
-                        onDelete={() => onDelete(item.id)}
+                        onDelete={onDelete ? () => onDelete(item.id) : undefined}
                         onEdit={() => onEditItem(item)}
-                        onVote={(type: 'up' | 'down') => onVote(item.id, null, type)}
-                        onStatusChange={(status: ItemStatus | null) => onStatusChange(item.id, status)}
+                        onVote={onVote ? (type: 'up' | 'down') => onVote(item.id, null, type) : undefined}
+                        onStatusChange={onStatusChange ? (status: ItemStatus | null) => onStatusChange(item.id, status) : undefined}
                         editable={canEdit}
                       />
                     </SortableItem>

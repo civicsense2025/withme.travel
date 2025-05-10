@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
-interface Itinerary {
+/**
+ * Type for an itinerary template, matching the structure from the itinerary_templates table.
+ */
+interface ItineraryTemplate {
   id: string;
   title: string;
   description: string;
-  image: string;
+  image?: string;
   location: string;
-  duration: string;
+  duration?: string;
   tags: string[];
   slug: string;
   is_published: boolean;
@@ -30,94 +33,46 @@ interface Itinerary {
   like_count: number;
   featured: boolean;
   cover_image_url: string;
-  groupsize: string;
+  groupsize?: string;
   metadata: any;
+  image_metadata?: any;
 }
 
 export function PopularItineraries() {
-  const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [itineraries, setItineraries] = useState<ItineraryTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPopularItineraries() {
       try {
-        const response = await fetch('/api/itineraries/popular');
+        setLoading(true);
+        setError(null);
+
+        // Use the correct endpoint for popular itineraries
+        const response = await fetch('/api/itineraries/popular', {
+          cache: 'no-store',
+          next: { revalidate: 0 },
+        });
+
         if (!response.ok) {
-          throw new Error('Failed to fetch popular itineraries');
+          throw new Error(`Failed to fetch itinerary templates: ${response.statusText}`);
         }
+
         const data = await response.json();
-        setItineraries(data.itineraries || []);
+
+        // Defensive: ensure we have an array of itineraries
+        const templates: ItineraryTemplate[] = Array.isArray(data.itineraries)
+          ? data.itineraries
+          : Array.isArray(data)
+            ? data
+            : [];
+
+        setItineraries(templates);
       } catch (error) {
-        console.error('Error fetching popular itineraries:', error);
-        // Set some default itineraries as fallback
-        setItineraries([
-          {
-            id: '1',
-            title: 'Weekend in Paris',
-            description: 'Explore the City of Light in 48 hours',
-            image: '/images/paris.jpg',
-            location: 'Paris, France',
-            duration: '3 days',
-            tags: ['City Break', 'Romantic'],
-            slug: 'weekend-in-paris',
-            is_published: true,
-            duration_days: 3,
-            category: 'City Break',
-            created_at: new Date().toISOString(),
-            view_count: 1245,
-            use_count: 87,
-            like_count: 156,
-            featured: true,
-            cover_image_url: '/images/paris.jpg',
-            groupsize: '2-4',
-            metadata: {},
-            destinations: []
-          },
-          {
-            id: '2',
-            title: 'Tokyo Adventure',
-            description: 'Experience the blend of tradition and futurism',
-            image: '/images/tokyo.jpg',
-            location: 'Tokyo, Japan',
-            duration: '7 days',
-            tags: ['Adventure', 'Cultural'],
-            slug: 'tokyo-adventure',
-            is_published: true,
-            duration_days: 7,
-            category: 'Adventure',
-            created_at: new Date().toISOString(),
-            view_count: 890,
-            use_count: 65,
-            like_count: 134,
-            featured: true,
-            cover_image_url: '/images/tokyo.jpg',
-            groupsize: '1-2',
-            metadata: {},
-            destinations: []
-          },
-          {
-            id: '3',
-            title: 'New York City Explorer',
-            description: 'The ultimate guide to exploring NYC',
-            image: '/images/nyc.jpg',
-            location: 'New York, USA',
-            duration: '5 days',
-            tags: ['Urban', 'Shopping'],
-            slug: 'nyc-explorer',
-            is_published: true,
-            duration_days: 5,
-            category: 'Urban',
-            created_at: new Date().toISOString(),
-            view_count: 1120,
-            use_count: 78,
-            like_count: 145,
-            featured: true,
-            cover_image_url: '/images/nyc.jpg',
-            groupsize: '2-6',
-            metadata: {},
-            destinations: []
-          }
-        ]);
+        console.error('Error fetching itinerary templates:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load itineraries');
+        setItineraries([]);
       } finally {
         setLoading(false);
       }
@@ -136,14 +91,58 @@ export function PopularItineraries() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center p-6 border rounded-lg bg-muted/20">
+        <p className="text-muted-foreground">Unable to load itineraries.</p>
+        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (itineraries.length === 0) {
+    return (
+      <div className="text-center p-6 border rounded-lg bg-muted/20">
+        <p className="text-muted-foreground">No itineraries available at the moment.</p>
+        <Button variant="outline" asChild className="mt-4">
+          <Link href="/itineraries">
+            Browse all itineraries
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {itineraries.map((itinerary, index) => (
-          <ItineraryTemplateCard key={itinerary.id} itinerary={itinerary} index={index} />
-        ))}
+        {itineraries.map((itinerary, index) => {
+          // Create a properly formatted itinerary object compatible with ItineraryTemplateCard props
+          const formattedItinerary = {
+            ...itinerary,
+            // Ensure all required fields are provided with defaults
+            image: itinerary.image || itinerary.cover_image_url || '/images/placeholder-itinerary.jpg',
+            duration: itinerary.duration || `${itinerary.duration_days || 0} days`,
+            groupsize: itinerary.groupsize || '',
+            // These properties might be undefined or missing but are required by the card component
+            category: itinerary.category || 'Other',
+            use_count: itinerary.use_count || 0,
+            featured: itinerary.featured || false,
+            metadata: itinerary.metadata || {}
+          };
+          
+          return (
+            <ItineraryTemplateCard
+              key={itinerary.id} 
+              itinerary={formattedItinerary}
+              index={index} 
+            />
+          );
+        })}
       </div>
-      
       <div className="flex justify-center mt-6">
         <Button variant="outline" asChild>
           <Link href="/itineraries">
@@ -154,4 +153,4 @@ export function PopularItineraries() {
       </div>
     </div>
   );
-} 
+}

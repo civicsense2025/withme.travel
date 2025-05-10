@@ -51,7 +51,8 @@ export const SortableItem: React.FC<SortableItemProps> = ({
 
   const style: React.CSSProperties = {
     transform: CSS.Translate.toString(transform),
-    transition,
+    transition: transition || 'transform 200ms cubic-bezier(0.25, 1, 0.5, 1)',
+    zIndex: isDragging ? 50 : 'auto',
   };
 
   // When dragging, add the dragging class to body for global cursor control
@@ -76,11 +77,21 @@ export const SortableItem: React.FC<SortableItemProps> = ({
       style={style}
       className={cn(
         'sortable-item focus:outline-none',
-        isDragging && 'z-10 opacity-50',
-        !isDisabled && 'relative'
+        isDragging ? 'z-50 opacity-70 scale-[1.02] shadow-xl' : 'opacity-100 scale-100',
+        !isDisabled && 'relative',
+        !isDisabled && !isDragging && 'hover:shadow-md transition-shadow duration-200',
       )}
       data-draggable={!isDisabled}
+      data-dragging={isDragging || undefined}
     >
+      {/* Add a visual indicator for draggable items when not disabled */}
+      {!isDisabled && (
+        <div className={cn(
+          'absolute -left-1 top-0 bottom-0 w-1 bg-primary rounded-l-md opacity-0 transition-opacity duration-200',
+          !isDragging && 'group-hover:opacity-50',
+          isDragging && 'opacity-100'
+        )} />
+      )}
       {children}
     </div>
   );

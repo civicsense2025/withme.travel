@@ -46,7 +46,17 @@ export default function NotificationPopoverContent({ onOpen }: NotificationPopov
   const supabase = createClient();
   const { user } = useAuth();
   const etagRef = useRef<string | null>(null);
-  const { refreshUnreadCount } = useNotificationCount();
+  
+  // Safely access the notification count context
+  let refreshUnreadCount: () => Promise<void> = async () => {};
+  try {
+    const notificationCountContext = useNotificationCount();
+    refreshUnreadCount = notificationCountContext.refreshUnreadCount;
+  } catch (error) {
+    console.error('Failed to access notification count context:', error);
+    // Use no-op function as fallback
+    refreshUnreadCount = async () => {};
+  }
   
   // Function to fetch notifications with pagination and caching
   const fetchNotifications = useCallback(async (pageToFetch: number, reset = false) => {

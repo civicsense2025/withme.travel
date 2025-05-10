@@ -1,3 +1,6 @@
+// Replace the 'use client' directive since this is a server component and update the catch block
+// Remove the 'use client' directive at the top of the file since this should be a server component
+
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import { createServerComponentClient } from '@/utils/supabase/server';
@@ -12,6 +15,7 @@ import { ClientWrapper } from './client-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { ItineraryTemplateCard } from '@/components/itinerary-template-card';
 import { ClassErrorBoundary } from '@/components/error-boundary';
+import RefreshFallback from './refresh-fallback';
 
 export const dynamic = 'force-dynamic'; // Ensure dynamic rendering
 export const revalidate = 0; // Disable cache
@@ -20,14 +24,14 @@ export const revalidate = 0; // Disable cache
 export interface Itinerary {
   id: string;
   title: string;
-  slug: string;
+  slug: string | null;
   description: string | null;
   destination_id: string;
   duration_days: number;
   created_by: string;
-  is_published: boolean;
-  tags: string[];
-  metadata: ItineraryTemplateMetadata;
+  is_published: boolean | null;
+  tags: string[] | null;
+  metadata: ItineraryTemplateMetadata | null;
   profile?: {
     id: string;
     name: string | null;
@@ -56,7 +60,6 @@ const ItinerariesErrorFallback = () => (
 export default async function ItinerariesPage() {
   try {
     // Check if we have a logged-in user
-    const cookieStore = cookies();
     const supabase = await createServerComponentClient();
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -64,45 +67,114 @@ export default async function ItinerariesPage() {
     let isAdmin = false;
     if (user) {
       const { data: profileData } = await supabase
-        .from(DatabaseTables.PROFILES)
+        .from('profiles')
         .select('is_admin')
         .eq('id', user.id)
         .single();
-      
       isAdmin = profileData?.is_admin || false;
     }
     
     console.log(`[Itineraries Page] User authenticated: ${!!user}, Admin: ${isAdmin}`);
     
-    // Fetch itineraries from our API endpoint (which handles auth status internally)
-    console.log('[Itineraries Page] Fetching itineraries from API');
-    
-    // Construct the API URL safely
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const apiUrl = `${baseUrl}/api/itineraries`;
-    
-    const itinerariesResponse = await fetch(apiUrl, {
-      cache: 'no-store',
-      next: { revalidate: 0 }, // Disable caching
-    });
-
-    if (!itinerariesResponse.ok) {
-      console.error('[Itineraries Page] Failed to fetch itineraries:', itinerariesResponse.statusText);
-      throw new Error(`Failed to fetch itineraries: ${itinerariesResponse.statusText}`);
+    // Fetch itineraries directly from Supabase
+    let query = supabase
+      .from('itinerary_templates')
+      .select('*, destinations(*)')
+      .order('created_at', { ascending: false });
+    let data;
+    let templatesError;
+    if (user) {
+      if (isAdmin) {
+        // Admin users can see all templates
+        const result = await query;
+        data = result.data;
+        templatesError = result.error;
+      } else {
+        // Regular authenticated users: show published templates + their drafts
+        const result = await query.or(
+          `is_published.eq.true,created_by.eq.${user.id}`
+        );
+        data = result.data;
+        templatesError = result.error;
+      }
+    } else {
+      // For unauthenticated users: only show published templates
+      const result = await query.eq('is_published', true);
+      data = result.data;
+      templatesError = result.error;
     }
 
-    const { data: itineraries } = await itinerariesResponse.json();
-    
-    // Log how many we received and their types
-    if (itineraries) {
-      const publishedCount = itineraries.filter((i: Itinerary) => i.is_published).length;
-      const draftCount = itineraries.filter((i: Itinerary) => !i.is_published).length;
-      console.log(`[Itineraries Page] Received ${itineraries.length} itineraries (${publishedCount} published, ${draftCount} drafts)`);
+    if (!data || templatesError) {
+      console.error('[Itineraries Page] Error fetching itineraries:', templatesError);
+      return <RefreshFallback />;
     }
 
-    if (!itineraries || itineraries.length === 0) {
+    // Define a type assertion function to properly convert database records to our Itinerary type
+    function assertAsItinerary(item: any): Itinerary {
+      return {
+        id: item.id,
+        title: item.title || '',
+        slug: item.slug || '',
+        description: item.description,
+        destination_id: item.destination_id || '',
+        duration_days: item.duration_days || 0,
+        created_by: item.created_by || '',
+        is_published: item.is_published === true,
+        tags: item.tags || [],
+        metadata: item.metadata ? 
+          (typeof item.metadata === 'object' ? 
+            {
+              title: typeof item.metadata.title === 'string' ? item.metadata.title : '',
+              description: typeof item.metadata.description === 'string' ? item.metadata.description : '',
+              days: typeof item.metadata.days === 'number' ? item.metadata.days : 0,
+              destination: typeof item.metadata.destination === 'string' ? item.metadata.destination : '',
+              tags: Array.isArray(item.metadata.tags) ? item.metadata.tags : []
+            } : null) : null,
+        profile: item.profile,
+        destinations: item.destinations,
+      };
+    }
+
+    // Process data to match our Itinerary interface
+    let processedItineraries: Itinerary[] = [];
+
+    // Associate author profiles with templates
+    if (data.length > 0) {
+      const creatorIds = Array.from(new Set(data.map(t => t.created_by)));
+      if (creatorIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url')
+          .in('id', creatorIds);
+          
+        if (!profilesError && profilesData) {
+          const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+          // Add profile data to each template
+          data = data.map(template => ({
+            ...template,
+            profile: profilesMap.get(template.created_by) || null
+          }));
+        }
+      }
+      
+      // Convert to our Itinerary interface and ensure slug is always a string
+      processedItineraries = data.map(item => {
+        const itinerary = assertAsItinerary(item);
+        // Always enforce slug as a string - this is crucial for the client wrapper
+        itinerary.slug = itinerary.slug || '';
+        return itinerary;
+      });
+    }
+
+    // Log how many we processed
+    const publishedCount = processedItineraries.filter(i => i.is_published).length;
+    const draftCount = processedItineraries.filter(i => !i.is_published).length;
+    console.log(`[Itineraries Page] Processed ${processedItineraries.length} itineraries (${publishedCount} published, ${draftCount} drafts)`);
+
+    // Early return if no itineraries
+    if (processedItineraries.length === 0) {
       console.log('[Itineraries Page] No itineraries found');
-      // No itineraries to display, but don't throw an error - show empty state
+      // Show empty state
       return (
         <div className="container py-8">
           <h1 className="text-4xl font-medium mb-3">Itineraries</h1>
@@ -130,10 +202,10 @@ export default async function ItinerariesPage() {
       );
     }
 
-    // Group itineraries into published and drafts
-    const publishedItineraries = itineraries.filter((i: Itinerary) => i.is_published);
-    const draftItineraries = itineraries.filter((i: Itinerary) => !i.is_published);
-    
+    // Split into published and drafts
+    const publishedItineraries = processedItineraries.filter(i => i.is_published);
+    const draftItineraries = processedItineraries.filter(i => !i.is_published);
+
     return (
       <div className="max-w-screen-2xl mx-auto">
         <div className="px-6 py-12 text-center">
@@ -153,9 +225,9 @@ export default async function ItinerariesPage() {
 
           {/* Wrap client components with error boundaries */}
           <ClassErrorBoundary fallback={<ItinerariesErrorFallback />}>
-            {/* Pass all itineraries to the client wrapper which will filter for published ones */}
             <ClientWrapper 
-              itineraries={itineraries} 
+              // Type assertion is safe because we've ensured all properties match
+              itineraries={processedItineraries as any} 
               isAdmin={isAdmin} 
               userId={user?.id || null}
             />
@@ -179,11 +251,17 @@ export default async function ItinerariesPage() {
                       image: item.destinations?.featured_image_url || '/images/placeholder-itinerary.jpg',
                       location: item.destinations ? `${item.destinations.name}, ${item.destinations.country}` : 'Unknown Location',
                       duration: `${item.duration_days} days`,
-                      tags: item.tags || [],
-                      slug: item.slug,
+                      tags: item.tags ?? [],
+                      slug: item.slug || '',
                       is_published: false,
                       author: item.profile,
-                      metadata: item.metadata || {},
+                      metadata: {
+                        title: item.metadata?.title || '',
+                        description: item.metadata?.description || '',
+                        days: item.metadata?.days || 0,
+                        destination: item.metadata?.destination || '',
+                        tags: item.metadata?.tags || []
+                      },
                       // Add required fields for the card component
                       destinations: [],
                       duration_days: item.duration_days,
@@ -194,21 +272,11 @@ export default async function ItinerariesPage() {
                       like_count: 0,
                       featured: false,
                       cover_image_url: '',
-                      groupsize: '',
+                      groupsize: ''
                     };
                     
                     return (
-                      <div key={item.id} className="relative">
-                        <div className="absolute top-2 right-2 z-10">
-                          <span className="bg-yellow-500/90 text-white text-xs font-medium px-2.5 py-0.5 rounded">
-                            Draft
-                          </span>
-                        </div>
-                        <ItineraryTemplateCard 
-                          itinerary={itinerary} 
-                          index={0} 
-                        />
-                      </div>
+                      <ItineraryTemplateCard key={item.id} itinerary={itinerary} />
                     );
                   })}
                 </div>

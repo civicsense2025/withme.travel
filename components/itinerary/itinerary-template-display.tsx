@@ -41,6 +41,16 @@ interface ItineraryTemplate {
     city: string;
     country: string;
     image_url: string | null;
+    image_metadata?: {
+      alt_text?: string;
+      attribution?: string;
+      attributionHtml?: string;
+      photographer_name?: string;
+      photographer_url?: string;
+      source?: string;
+      source_id?: string;
+      url?: string;
+    };
   };
 }
 

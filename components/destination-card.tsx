@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { LikeButton } from '@/components/like-button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { ImageAttribution } from '@/components/images';
 
 // SVG texture overlay for gradients
 const TextureOverlay = () => (
@@ -141,7 +142,7 @@ export function DestinationCard({
   })();
 
   // Generate descriptive alt text
-  const altText = `${displayName}${displayLocation ? `, ${displayLocation}` : ''}`;
+  const altText = destination.image_metadata?.alt_text || `${displayName}${displayLocation ? `, ${displayLocation}` : ''}`;
 
   // Handle card click
   const handleClick = () => {
@@ -220,23 +221,20 @@ export function DestinationCard({
           </div>
           
           {/* Attribution info */}
-          {destination.image_metadata?.attribution && (
-            <div className={`absolute bottom-2 right-2 z-10 ${hideAttributionMobile ? 'hidden md:block' : ''}`}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="rounded-full bg-black/50 backdrop-blur-md p-1.5 cursor-help">
-                      <Info className="h-3 w-3 text-white/80" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="left" className="max-w-[220px]">
-                    <p className="text-xs">
-                      {destination.image_metadata.attribution}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+          {destination.image_metadata && (
+            <ImageAttribution 
+              image={{
+                alt_text: destination.image_metadata.alt_text,
+                attribution_html: destination.image_metadata.attributionHtml,
+                photographer: destination.image_metadata.photographer_name,
+                photographer_url: destination.image_metadata.photographer_url,
+                source: destination.image_metadata.source,
+                external_id: destination.image_metadata.source_id,
+                url: destination.image_metadata.url
+              }} 
+              variant="info-icon"
+              className={hideAttributionMobile ? 'hidden md:block' : ''}
+            />
           )}
           
           {/* Destination info overlay */}

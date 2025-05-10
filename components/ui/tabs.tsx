@@ -40,8 +40,8 @@ const TabsTrigger = React.forwardRef<
     <TabsPrimitive.Trigger
       ref={ref}
       className={cn(
-        'relative bg-transparent border-0 px-2 md:px-4 py-2 text-base font-medium text-muted-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-travel-purple focus-visible:z-10 whitespace-nowrap',
-        'data-[state=active]:text-travel-purple data-[state=active]:border-b-2 data-[state=active]:border-travel-purple',
+        'relative bg-transparent border-0 px-2 md:px-4 py-2 text-lg md:text-xl font-light text-muted-foreground opacity-70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-travel-purple focus-visible:z-10 whitespace-nowrap',
+        'data-[state=active]:text-travel-purple data-[state=active]:border-b-4 data-[state=active]:border-travel-purple data-[state=active]:font-extrabold data-[state=active]:opacity-100 data-[state=inactive]:font-normal data-[state=inactive]:opacity-50',
         className
       )}
       tabIndex={0}

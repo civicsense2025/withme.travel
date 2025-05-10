@@ -196,13 +196,21 @@ const GroupsLandingPage: React.FC = () => {
   return (
     <Container size="full">
       <main className="flex min-h-screen flex-col w-full bg-white dark:bg-black overflow-hidden">
-        {/* Hero Section with gradient background */}
-        <section className="py-20 w-full bg-gradient-to-br from-blue-400/10 to-teal-400/10">
+        {/* Hero Section with clean background */}
+        <section className="py-24 w-full bg-white dark:bg-black">
           <div className="text-center px-6 md:px-10 max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight bg-gradient-to-br from-blue-600 via-blue-500 to-teal-400 bg-clip-text text-transparent">
-              {headline}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight">
+              {headline.split(' ').map((word, i, arr) => (
+                <React.Fragment key={i}>
+                  {i === arr.length - 1 ? (
+                    <span className="text-travel-purple">{word}</span>
+                  ) : (
+                    word
+                  )}{' '}
+                </React.Fragment>
+              ))}
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-12 mx-auto">
+            <p className="text-xl md:text-2xl text-muted-foreground mb-16 mx-auto">
               From group brainstorming to perfectly planned trips in minutes. No endless group chats, no stress.
             </p>
             
@@ -248,129 +256,136 @@ const GroupsLandingPage: React.FC = () => {
                 tabIndex={-1}
                 className="hidden"
               />
-              
-              <div className="w-full">
-                <div className="mb-2">
-                  <label htmlFor="groupName" className="text-lg font-semibold">
-                    Your Group Trip Name
-                  </label>
-                </div>
+              <div className="flex flex-col sm:flex-row w-full gap-2">
                 <input
-                  id="groupName"
-                  name="groupName"
                   type="text"
-                  placeholder="Summer Italy Trip 2025"
-                  className="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-travel-purple"
+                  name="groupName"
+                  placeholder="Name your group (e.g., Italy Squad 2024)"
                   required
+                  className="flex-1 h-14 px-5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-black text-black dark:text-white text-lg focus:outline-none focus:ring-2 focus:ring-travel-purple"
                 />
-                {error && <div className="text-red-500 mt-2 text-sm">{error}</div>}
+                <Button
+                  type="submit"
+                  className="h-14 px-8 rounded-full bg-travel-purple hover:bg-purple-400 text-white font-medium text-lg"
+                  disabled={loading}
+                >
+                  {loading ? 'Creating...' : 'Create Group'}
+                </Button>
               </div>
-              
-              <Button
-                type="submit"
-                className="w-full py-6 rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-lg font-medium"
-                disabled={loading}
-              >
-                {loading ? 'Creating group...' : 'Create Free Group'}
-              </Button>
-              
-              <p className="text-muted-foreground text-sm mt-2">
-                No account needed. Invite friends with a link.
-              </p>
+              {error && <p className="text-red-500 text-sm">{error}</p>}
             </form>
           </div>
         </section>
 
-        {/* Features Section with clean, spacious design */}
-        <section className="py-32 w-full bg-white dark:bg-black">
-          <div className="text-center px-6 md:px-10 max-w-7xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
-              Plan <span className="text-travel-purple dark:text-travel-purple">Together</span>, Travel Better
-            </h2>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-24 mx-auto max-w-2xl">
-              Everything you need to create amazing group trips without the headaches.
-            </p>
+        {/* Features Demo Section */}
+        <section className="py-24 w-full bg-zinc-50 dark:bg-zinc-900">
+          <div className="px-6 md:px-10 max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+                Plan together, <span className="text-travel-purple">travel better</span>
+              </h2>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+                Every tool your group needs to turn trip ideas into reality—without the chaos.
+              </p>
+            </div>
 
-            {/* Features grid with icons */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-12">
-              <div className="flex flex-col items-center">
-                <div className="bg-purple-50 dark:bg-purple-900/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-sm">
-                  <MessageSquare className="text-travel-purple h-12 w-12" />
-                </div>
-                <h3 className="text-2xl md:text-3xl font-medium mb-4">Brainstorm Ideas</h3>
-                <p className="text-lg text-muted-foreground max-w-xs">
-                  Collect everyone's ideas in one place. No more scrolling through endless group chats.
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-center">
-                <div className="bg-purple-50 dark:bg-purple-900/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-sm">
-                  <Vote className="text-travel-purple h-12 w-12" />
-                </div>
-                <h3 className="text-2xl md:text-3xl font-medium mb-4">Vote & Decide</h3>
-                <p className="text-lg text-muted-foreground max-w-xs">
-                  Everyone gets a say. Easily vote on activities, destinations, and timing.
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-center">
-                <div className="bg-purple-50 dark:bg-purple-900/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-sm">
-                  <MapPinned className="text-travel-purple h-12 w-12" />
-                </div>
-                <h3 className="text-2xl md:text-3xl font-medium mb-4">Create Your Trip</h3>
-                <p className="text-lg text-muted-foreground max-w-xs">
-                  Turn your group's favorite ideas into a perfect itinerary that everyone can access.
-                </p>
-              </div>
+            {/* FeatureTabs component */}
+            <FeatureTabs />
+
+            {/* Features Grid */}
+            <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-12">
+              {[
+                {
+                  icon: <Vote className="h-10 w-10 text-travel-purple" />,
+                  title: 'Group Polls',
+                  description: 'Vote on destinations, dates, and activities to make decisions everyone feels good about.'
+                },
+                {
+                  icon: <DollarSign className="h-10 w-10 text-travel-purple" />,
+                  title: 'Split Expenses',
+                  description: 'Track who paid for what and settle up easily—no more math headaches.'
+                },
+                {
+                  icon: <MapPinned className="h-10 w-10 text-travel-purple" />,
+                  title: 'Collaborative Map',
+                  description: 'Pin and discover places you all want to visit, with easy visualization.'
+                }
+              ].map((feature, index) => (
+                <Card key={index} className="border-2 border-black dark:border-zinc-800 bg-white dark:bg-black rounded-2xl shadow-sm">
+                  <CardContent className="p-6 flex flex-col items-center text-center">
+                    <div className="mb-4 bg-zinc-50 dark:bg-zinc-800 w-16 h-16 rounded-full flex items-center justify-center">
+                      {feature.icon}
+                    </div>
+                    <CardTitle className="text-xl mb-2">{feature.title}</CardTitle>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Demo Section with tab interface */}
-        <section className="py-24 w-full bg-neutral-50 dark:bg-neutral-900">
-          <div className="px-6 md:px-10 max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
-                See How It Works
-              </h2>
-              <p className="text-xl text-muted-foreground mx-auto max-w-2xl">
-                Our collaborative tools make group planning a breeze.
-              </p>
+        {/* Testimonials Section */}
+        <section className="py-24 w-full">
+          <div className="text-center px-6 md:px-10 max-w-4xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+              Travelers <span className="text-travel-purple">love</span> our groups
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground mb-16 max-w-2xl mx-auto">
+              See how travel groups are making trip planning stress-free.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[
+                {
+                  quote: "Planning our Bali trip was a breeze instead of a nightmare. Everyone could contribute ideas and vote.",
+                  author: "Jamie S.",
+                  trip: "Bali, 8 friends"
+                },
+                {
+                  quote: "No more 'who owes what' drama. We tracked expenses in real-time and everyone paid their fair share.",
+                  author: "Michael T.",
+                  trip: "Europe, 4 couples"
+                }
+              ].map((testimonial, index) => (
+                <Card key={index} className="bg-white dark:bg-black text-left p-6 border-2 border-black dark:border-zinc-800 rounded-2xl shadow-sm">
+                  <CardContent className="p-0">
+                    <p className="text-lg mb-4">"{testimonial.quote}"</p>
+                    <div className="font-medium">{testimonial.author}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.trip}</div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            
-            <FeatureTabs />
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-32 w-full bg-gradient-to-br from-blue-400/10 to-teal-400/10">
+        <section className="py-24 w-full border-t border-zinc-200 dark:border-zinc-800">
           <div className="text-center px-6 md:px-10 max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
-              Ready To Start Planning?
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+              Start your group, <span className="text-travel-purple">start the adventure</span>
             </h2>
-            <p className="text-xl text-muted-foreground mb-12 mx-auto">
-              Create your first group in seconds. No account required.
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 mx-auto">
+              It takes less than a minute to create your first group.
             </p>
-            
-            <Button
+            <Button 
+              size="lg" 
               onClick={() => setModalOpen(true)}
-              size="lg"
-              className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-lg py-6 px-10"
+              className="rounded-full bg-travel-purple hover:bg-purple-400 text-white text-lg py-6 px-10"
             >
-              Create a Group Now
+              Create a Travel Group
             </Button>
           </div>
         </section>
       </main>
-      
+
       {/* Create Group Modal */}
-      {modalOpen && (
-        <CreateGroupModal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onCreateGroup={(group) => router.push(`/groups/${group.id}`)}
-        />
-      )}
+      <CreateGroupModal 
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreateGroup={(group) => router.push(`/groups/${group.id}`)}
+      />
     </Container>
   );
 };

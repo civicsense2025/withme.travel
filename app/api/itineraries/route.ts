@@ -42,10 +42,24 @@ async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = await createRouteHandlerClient();
   console.log('[API] GET /api/itineraries - Starting request');
-
+  console.log(`[API] Request URL: ${request.url}`);
+  console.log(`[API] Request headers: ${JSON.stringify(Object.fromEntries(request.headers))}`);
+  
   try {
+    console.log('[API] Creating Supabase route handler client');
+    let supabase;
+    try {
+      supabase = await createRouteHandlerClient();
+      console.log('[API] Supabase client created successfully');
+    } catch (clientError) {
+      console.error('[API] Failed to create Supabase client:', clientError);
+      return NextResponse.json({ 
+        error: 'Database connection failed', 
+        details: clientError instanceof Error ? clientError.message : 'Unknown error' 
+      }, { status: 500 });
+    }
+
     // Get user for authorization 
     const {
       data: { user },

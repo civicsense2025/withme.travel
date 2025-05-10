@@ -1,5 +1,5 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 interface RouteParams {
   params: {
@@ -11,8 +11,8 @@ interface RouteParams {
  * GET /api/admin/surveys/[surveyId]
  * Fetch a specific survey definition
  */
-export async function GET(request: Request, { params }: RouteParams) {
-  const { surveyId } = params;
+export async function GET(request: NextRequest, params: RouteParams) {
+  const surveyId = params.params.surveyId;
   
   if (!surveyId) {
     return NextResponse.json(
@@ -24,9 +24,9 @@ export async function GET(request: Request, { params }: RouteParams) {
   try {
     const supabase = await createRouteHandlerClient();
 
-    // Verify user is authenticated and is an admin
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Verify user is authenticated and is an admin - use getUser instead of getSession
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -37,7 +37,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     const { data: adminCheck, error: adminCheckError } = await supabase
       .from('profiles')
       .select('is_admin')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (adminCheckError || !adminCheck?.is_admin) {

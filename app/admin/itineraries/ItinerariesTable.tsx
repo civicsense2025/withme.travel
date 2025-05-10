@@ -96,7 +96,11 @@ export default function ItinerariesTable({ initialData }: ItinerariesTableProps)
       label: 'Edit',
       onClick: (rows: Itinerary[]) => {
         if (rows.length === 1) {
-          router.push(`/admin/itineraries/${rows[0].id}`);
+          if (rows[0].slug) {
+            router.push(`/admin/itineraries/${rows[0].slug}`);
+          } else {
+            router.push(`/admin/itineraries/edit/${rows[0].id}`);
+          }
         }
       },
       color: 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300',

@@ -225,7 +225,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (!user) return;
     
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(`notifications:${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -575,9 +575,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Refresh when the tab becomes visible again
-        refreshNotifications();
-        fetchPreferences(false);
+        // Check if the cache is still valid before refreshing
+        const cachedData = getWithExpiry<{notifications: Notification[], hasMore: boolean}>(NOTIFICATIONS_CACHE_KEY);
+        if (!cachedData) {
+          // Only refresh when cache is invalid to reduce API calls
+          refreshNotifications();
+          fetchPreferences(false);
+        }
       }
     };
     
@@ -591,11 +595,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // Polling: Increase interval to 5 minutes, only poll when tab is visible
   useEffect(() => {
     if (!user) return;
+    
+    // Only poll every 5 minutes instead of constantly
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        refreshNotifications();
+        // Check if cache is invalid before making API calls
+        const cachedData = getWithExpiry<{notifications: Notification[], hasMore: boolean}>(NOTIFICATIONS_CACHE_KEY);
+        if (!cachedData) {
+          refreshNotifications();
+        }
       }
     }, 300000); // 5 minutes
+    
     return () => clearInterval(interval);
   }, [user, refreshNotifications]);
   

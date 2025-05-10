@@ -92,7 +92,7 @@ export default function ItineraryTemplateEditor({ template, sections: initialSec
     
     try {
       // Update the template basic info
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from(TABLES.ITINERARY_TEMPLATES)
         .update({
           title: templateData.title,
@@ -101,9 +101,12 @@ export default function ItineraryTemplateEditor({ template, sections: initialSec
           is_published: templateData.is_published,
           // Add other fields as needed
         })
-        .eq('id', templateData.id);
+        .eq('id', templateData.id)
+        .select()
+        .single(); // Ensures only one row is returned
 
       if (error) throw error;
+      if (!data) throw new Error('No template data returned from Supabase.');
       
       setSuccessMessage('Template saved successfully');
       router.refresh();

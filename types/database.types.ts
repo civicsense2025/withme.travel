@@ -5612,6 +5612,42 @@ export type Database = {
           },
         ]
       }
+      research_studies: {
+        Row: import("@/types/research").ResearchStudy;
+        Insert: Partial<import("@/types/research").ResearchStudy>;
+        Update: Partial<import("@/types/research").ResearchStudy>;
+        Relationships: [];
+      };
+      research_participants: {
+        Row: import("@/types/research").ResearchParticipant;
+        Insert: Partial<import("@/types/research").ResearchParticipant>;
+        Update: Partial<import("@/types/research").ResearchParticipant>;
+        Relationships: [];
+      };
+      research_triggers: {
+        Row: import("@/types/research").ResearchTrigger;
+        Insert: Partial<import("@/types/research").ResearchTrigger>;
+        Update: Partial<import("@/types/research").ResearchTrigger>;
+        Relationships: [];
+      };
+      milestone_triggers: {
+        Row: import("@/types/research").MilestoneTrigger;
+        Insert: Partial<import("@/types/research").MilestoneTrigger>;
+        Update: Partial<import("@/types/research").MilestoneTrigger>;
+        Relationships: [];
+      };
+      surveys: {
+        Row: import("@/types/research").Survey;
+        Insert: Partial<import("@/types/research").Survey>;
+        Update: Partial<import("@/types/research").Survey>;
+        Relationships: [];
+      };
+      research_events: {
+        Row: import("@/types/research").ResearchEvent;
+        Insert: Partial<import("@/types/research").ResearchEvent>;
+        Update: Partial<import("@/types/research").ResearchEvent>;
+        Relationships: [];
+      };
     }
     Views: {
       admin_onboarding_analytics: {

@@ -15,14 +15,14 @@ export function Container({ children, className, size = 'lg' }: ContainerProps) 
     <div
       className={cn(
         size === 'full'
-          ? 'w-full max-w-none' // No padding/margins for full size
+          ? 'w-full max-w-none px-0' // No padding/margins for full size
           : 'w-full mx-auto px-4 sm:px-6 md:px-8',
         {
           'max-w-screen-sm': size === 'sm',
           'max-w-screen-md': size === 'md',
           'max-w-screen-lg': size === 'lg',
           'max-w-screen-xl': size === 'xl',
-          'max-w-[1280px]': size === 'wide',
+          'max-w-[2000px]': size === 'wide',
           'max-w-none': size === 'full',
           'fullscreen-layout': needsFullscreen, // Using the boolean variable now
         },

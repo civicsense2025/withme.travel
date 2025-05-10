@@ -1,409 +1,314 @@
-# WithMe.Travel - Group Trip Planning Made Easy
+# withme.travel - Where Group Travel Dreams Come True Together
 
-WithMe.Travel is a collaborative platform for planning and organizing group trips. Our goal is to become the "Partiful" of group trip planning—focusing on speed, ease of use, intuitiveness, and reliability rather than competing on feature quantity.
+[![Next.js](https://img.shields.io/badge/Next.js-15.0-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-18.0-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-2.0-green)](https://supabase.io/)
 
-## 📚 Documentation
+## 🌍 Our Journey
 
-All documentation is organized in the `docs/` directory:
+withme.travel was born from a simple truth: planning trips with friends should be as fun as the adventures themselves. We've built the world's most delightful and collaborative group travel planning platform—where real-time collaboration meets authentic local content and powerful logistics tools.
 
-- [**Main Documentation**](docs/DOCUMENTATION.md) - Complete overview of the application
-- [**Authentication System**](docs/authentication.md) - Details about our Supabase authentication implementation
-- [**API Routes & Server/Client Components Guide**](docs/api-routes-server-client.md) - How API Routes, RSC, and Client Components work together
-- [**Constants Guide**](docs/constants-guide.md) - Guidelines for managing codebase constants
-- [**Content Guide**](docs/CONTENT_GUIDE.md) - Guidelines for creating authentic city profiles
-- [**Codebase Structure**](docs/CODEBASE_STRUCTURE.md) - Overview of project organization
-- [**Database Structure**](docs/database_structure.md) - Database schema and relationships
-- [**Itinerary Template Structure**](docs/ITINERARY_TEMPLATE_STRUCTURE.md) - How trip templates are organized
-- [**Mobile Style Guide**](docs/mobile-style-guide.md) - Visual guidelines for the Expo mobile app
-- [**Collaboration Features**](docs/collaboration-features.md) - Guide to real-time collaboration features
-- [**Focus Mode**](docs/focus-mode.md) - Documentation for the trip focus mode
-- [**Offline Support**](docs/offline-support.md) - Details about service worker and offline capabilities
-- [**Implementation Plan**](docs/implementation_plan.md) - Roadmap for new features
-- [**Adaptation Plan**](docs/adaptation-plan.md) - Plan for adjusting to new requirements
-- [**Next.js Best Practices**](docs/nextjs-best-practices.md) - Technical guidelines for Next.js
-- [**Next.js 15 Migration Guide**](docs/nextjs15-migration.md) - Critical changes when upgrading to Next.js 15
-- [**Changelog**](docs/CHANGELOG.md) - Comprehensive change history
+**Our mission:** Make planning trips with friends as seamless, joyful and connected as the trips themselves.
 
-## ✨ Project Status
+## 💫 The withme.travel Experience
 
-The authentication system, leveraging Supabase and `@supabase/ssr`, is now stable and robust after a recent overhaul. Previous issues related to refresh tokens and client/server state mismatches have been resolved. Database interactions consistently use constants from `utils/constants/database.ts` for better type safety and maintainability. Trip hooks have been restructured, and the trip creation/editing flows have been improved. A visual style guide for the upcoming mobile app is available.
+### For Travelers
 
-The project now includes extensive real-time collaboration features including presence awareness, cursor tracking, focus mode, and voting/polling systems. We've also added client-side activity timelines and notifications to enhance the collaborative experience.
+Imagine you and your friends are planning a trip to Kyoto. Here's how withme.travel transforms that experience:
 
-## 🚀 Core Features
+1. **Create a Trip** - Set up your Kyoto adventure in seconds, invite friends, and set basic parameters.
+2. **Collaborate in Real-Time** - See who's online, track cursors as friends browse the same sections, and feel the energy of planning together.
+3. **Build Your Itinerary Together** - Add activities, vote on preferences, and watch as your perfect trip takes shape. Our smart Itinerary Builder handles everything from scheduling to map visualization.
+4. **Make Decisions as a Group** - Enter Focus Mode when it's time to decide on an accommodation or activity, with real-time voting and discussion.
+5. **Stay in Sync** - Get notifications when someone comments on your suggestion or adds a must-see temple to the itinerary.
+6. **Travel with Confidence** - Access all your plans offline, share expenses, and keep everyone on the same page during your adventure.
 
-### Content Sharing & Personalization
+### For Destination Experts
 
-- **Content Layering**: Original content, shared content, generated content, customized versions
-- **Attribution Tracking**: Original source tracking, attribution metadata, content lineage
-- **Travel Preferences**: Styles (adventurous, relaxed, cultural, etc.), pace preferences, budget ranges
-- **Sharing Features**: Item copying, customization support, attribution preservation
+Our platform also serves content creators and travel experts:
 
-### Trip Planning & Collaboration
+1. **Create Authentic Guides** - Share your local knowledge through our city profiles and itinerary templates.
+2. **Build a Following** - Gain visibility as travelers use and love your recommendations.
+3. **Provide Value** - Help groups discover hidden gems and authentic experiences they wouldn't find elsewhere.
 
-- **Trip Creation**: Multi-step form with essential details, dates, travelers, vibe, budget, and privacy settings (recently improved flow).
-- **Itinerary Building**: Add places, notes, and links with drag-and-drop reordering (basic structure).
-- **Member Management**: Role-based permissions (admin, editor, contributor, viewer), invite system.
-- **Real-time Collaboration**: See who's editing, cursor tracking, focus mode, comments, vote on items.
-- **Focus Mode**: Collaborative session mode for group decision making.
-- **Voting System**: Create polls and vote on trip decisions.
-- **Activity Timeline**: Track changes and updates to trip plans.
-- **Offline Support**: Service worker implementation for basic offline functionality.
+## 🧩 Core Platform Components
 
-### Technical Highlights
+Our platform integrates these key systems to create a seamless experience:
 
-- **Modern Stack**: Next.js 15, React 18, TypeScript, Tailwind CSS, Shadcn/ui
-- **Authentication**: Secure and stable login with email/password or Google Sign-In using `@supabase/ssr`.
-- **Database**: Robust schema with Row Level Security (RLS) policies and standardized constants.
-- **SEO Optimization**: Canonical URLs, meta tags, structured data
-- **Constants Management**: Centralized and typed constants following `docs/constants-guide.md`.
-- **Mobile Ready**: Design system defined in `docs/mobile-style-guide.md`.
-- **Error Handling**: Comprehensive error tracking with Sentry integration.
-- **Performance Monitoring**: Web Vitals tracking and custom metrics.
+### 🔐 Authentication & User Management
+- **Secure Authentication** with Supabase, supporting email/password and social login
+- **User Profiles** with travel preferences, history, and connections
+- **Guest Access** for trying the platform before signing up
 
-## 🛠️ Technology Stack
+### ✈️ Trip Management & Collaboration
+- **Trip Creation Flow** with multi-step form and intuitive UX
+- **Member Management** with role-based permissions (admin, editor, contributor, viewer)
+- **Real-time Presence** showing who's online and what they're viewing
+- **Focus Mode** for collaborative decision-making
+- **Activity Timeline** tracking all trip updates and changes
 
-- **Frontend**: Next.js 15, React 18, TypeScript, Tailwind CSS, Framer Motion
-- **UI Components**: Shadcn/ui (customized Radix UI components)
-- **Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
-- **State Management**: React Context, custom hooks (considering Zustand/Redux Toolkit for future complex needs)
-- **Deployment**: Vercel
-- **Monitoring**: Sentry for error tracking and performance monitoring
+### 📋 Itinerary Planning System
+- **Collaborative Itinerary Builder** with drag-and-drop organization
+- **Place Search & Integration** using Google Maps and Mapbox
+- **Day & Timeline Visualization** for perfectly balanced schedules
+- **Voting System** for group decision-making on activities and places
+- **Offline Access** for referencing plans during travel
 
-## 📅 Changelog
+### 💬 Communication Layer
+- **Universal Comment System** for discussions on any content type
+- **Emoji Reactions** for quick feedback across the platform
+- **Notifications** for keeping everyone informed of important updates
+- **In-context Commenting** tied directly to itinerary items and decisions
 
-### Timeline Navigation
+### 🏙️ Content & Recommendations
+- **City Profiles** with authentic insider knowledge
+- **Itinerary Templates** for jumpstarting your planning
+- **Activity Suggestions** based on group preferences
+- **Local Insights** from destination experts
 
-| Date                                                                | Major Changes                                      |
-| ------------------------------------------------------------------- | -------------------------------------------------- |
-| [2025-05-01](#2025-05-01---constants-refactoring--docs-update)      | Constants Refactoring & Documentation Update       |
-| [2025-04-30](#2025-04-30---trip-hooks-restructuring)                | Trip Hooks Restructuring                           |
-| [2025-04-29](#2025-04-29---authentication--trip-management)         | Authentication Overhaul, Trip Creation & Editing   |
-| [2025-04-27](#2025-04-27---core-refactoring--component-development) | Core Refactoring & UI Components                   |
-| [2025-04-24](#2025-04-24---destination--search-features)            | Destination Pages, Search Functionality, Trip Tags |
-| [Full Changelog](docs/CHANGELOG.md)                                 | Comprehensive change history                       |
+### 👥 Group Planning Features
+- **Group Creation & Management** - Create groups independent of trips for ongoing travel planning
+- **Group Plan Ideas** - Share and vote on destination ideas, dates, and activities
+- **Collaborative Decision Making** - Tools to help groups reach consensus on destinations and dates
+- **Group Members Management** - Add, remove, and manage group member roles and permissions
 
-### [2025-05-01] - Constants Refactoring & Docs Update
+## 🗺️ Content Paths & Resources
 
-- Refactored `utils/constants/database.ts` to remove aliases (`DB_TABLES` -> `TABLES`, etc.) and use direct exports for improved clarity and type safety.
-- Added backward-compatibility exports for `DB_*` constants.
-- Defined database-related types explicitly within `database.ts` to resolve import issues.
-- Created `docs/constants-guide.md` detailing the new structure and usage rules.
-- Created `docs/api-routes-server-client.md` explaining the usage of API Routes, Server Components, and Client Components with Supabase clients (`createApiRouteClient`, `createServerComponentClient`, `getBrowserClient`).
-- Updated `README.md`, `docs/authentication.md`, and `docs/nextjs-best-practices.md` to reference the new API/component guide and reflect current Supabase client usage patterns.
-- Updated `README.md`, `docs/authentication.md`, and other documentation files to reflect current project status and stable authentication.
+### Trip & Itinerary Resources
+- **Trip Dashboard**: `/trips/[id]`
+- **Itinerary Builder**: `/trips/[id]/itinerary`
+- **Group Budget Tracker**: `/trips/[id]/budget`
+- **Trip Members**: `/trips/[id]/members`
+- **Trip Notes**: `/trips/[id]/notes`
+- **Focus Sessions**: `/trips/[id]/focus/[sessionId]`
 
-### [2025-04-30] - Trip Hooks Restructuring
+### Destination Content
+- **Destination Profiles**: `/destinations/[slug]`
+- **City Guides**: `/cities/[slug]`
+- **Country Profiles**: `/countries/[slug]`
+- **Continent Overviews**: `/continents/[slug]`
 
-#### Trip Hooks Restructuring
+### Template Resources
+- **Template Library**: `/templates`
+- **Template Details**: `/templates/[slug]`
+- **Template Builder**: `/admin/itineraries/create`
 
-- Created and updated `app/trips/[tripId]/hooks/index.ts` to centralize hook exports
-- Ensured correct exports for `use-trip-budget`, `use-trip-itinerary`, `use-trip-mutations`, `use-trip-presence`, and `use-trip-sheets`
-- Fixed linter errors for missing import hooks
+### Group Features
+- **Groups Dashboard**: `/groups`
+- **Group Overview**: `/groups/[id]`
+- **Group Plan Ideas**: `/groups/[id]/ideas`
+- **Group Plans**: `/groups/[id]/plans/[planId]`
 
-### [2025-04-29] - Authentication & Trip Management
+### User Resources
+- **User Profile**: `/user/profile`
+- **Friends & Connections**: `/user/friends`
+- **Travel Preferences**: `/user/preferences`
+- **Saved Trips**: `/user/trips`
 
-#### Authentication Overhaul
+### Administrative Resources
+- **Admin Dashboard**: `/admin`
+- **Content Management**: `/admin/content`
+- **Destination Management**: `/admin/destinations`
+- **Itinerary Management**: `/admin/itineraries`
+- **User Management**: `/admin/users`
+- **Analytics Dashboard**: `/admin/analytics`
 
-- Implemented dedicated API routes (`/api/auth/...`) using Supabase server client
-- Refactored `AuthProvider` with improved state management and error handling
-- Added `AuthErrorBoundary` component for graceful error recovery
-- Fixed race conditions and timing issues in auth state updates
-- Improved session refresh reliability and resource cleanup
+## ⚙️ Technical Architecture
 
-#### Trip Creation & Editing
+withme.travel is built with a modern, performance-focused stack:
 
-- Backend: Validated inputs, enhanced error messages in `create_trip_with_owner` SQL function
-- Frontend: Built multi-step create form (`/trips/create`) with validation
-- Fixed "Edit Trip" button visibility and 404 on edit page
+### Frontend
+- **Next.js 15** with App Router for blazing fast performance
+- **React 18** with Server Components for optimal rendering
+- **TypeScript** for robust type safety across the codebase
+- **Tailwind CSS** with shadcn/ui components for beautiful, consistent UI
+- **Supabase Client SDK** (@supabase/ssr) for real-time data
 
-### [2025-04-27] - Core Refactoring & Component Development
+### Backend
+- **Supabase PostgreSQL** database with Row Level Security
+- **Supabase Auth** for authentication and authorization
+- **Supabase Realtime** for live collaboration features
+- **Next.js API Routes** for server-side logic and third-party integrations
+- **Type-safe constants** for database tables and fields
 
-#### Core Refactoring & Stability
+### Infrastructure
+- **Vercel** for global deployment and edge functions
+- **Sentry** for error monitoring and performance tracking
+- **Service Worker** for offline capabilities
 
-- Types: Overhauled core types (`User`, `Trip`, etc.) and Supabase types
-- Constants: Updated `utils/constants.ts` extensively
-- Supabase Client: Modernized client using `@supabase/ssr`
-- API/SSR: Corrected client usage and parameter handling
-- Routing: Resolved dynamic route conflicts
+## 📱 Mobile & Cross-Platform
+- **Responsive Web Design** for all screen sizes
+- **Progressive Web App** capabilities for installation
+- **Offline Mode** for travel without connectivity
+- **Native Mobile App** (coming soon)
 
-#### UI Components
+## 🚀 Latest Achievements
 
-- Created reusable `LocationSearch` component
-- Simplified `CityBubbles` animation
-- Built `LikeButton` component for content interaction
-- Created `DestinationReviews` component
+We've recently enhanced withme.travel with these powerful capabilities:
 
-### [2025-04-24] - Destination & Search Features
+- **Real-time Collaboration Engine** - See who's online, track cursors as friends browse the same sections, and collaborate in real-time.
+- **Universal Comment System** - Comment on any content type with a consistent, intuitive interface.
+- **Focus Mode** - A dedicated collaboration space for making group decisions efficiently.
+- **Activity Timeline & Notifications** - Stay informed of all trip changes and updates.
+- **Offline Support** - Access your trip plans even without an internet connection.
+- **Authenticated API Architecture** - Robust, type-safe API routes with proper authentication.
+- **Group Planning Features** - Create groups independent of trips for ongoing travel planning.
 
-#### Destination Pages
+## 📈 Roadmap Highlights
 
-- Backend: Created API endpoints for destination data
-- Frontend: Built destination detail page with loading/error states
-- Added components for destination images, descriptions, and badges
+We're continuously enhancing withme.travel, with these exciting features on the horizon:
 
-#### Search Functionality
+- **Enhanced AI Recommendations** - Smarter activity suggestions based on group preferences
+- **Mobile Apps** - Native iOS and Android experiences
+- **Integration Ecosystem** - Connections with your favorite travel services
+- **Advanced Expense Sharing** - More powerful budget tracking and cost splitting
+- **Group Messaging** - In-app communication channels
+- **Travel Booking Integration** - Direct booking capabilities for flights, accommodations, and activities
+- **Trip Memory Albums** - Collaborative photo and memory sharing during and after trips
 
-- Backend: Started development of search logic
-- Frontend: Built initial search page structure
+## 🧠 Design Philosophy
 
-#### Trip Tag Management
+withme.travel is built on these core principles:
 
-- Added `tags` and `trip_tags` database tables
-- Created `TagInput` component with autocomplete
-- Implemented API routes for tag fetching and synchronization
+1. **Real-time by Default** - Collaboration is instantaneous and intuitive
+2. **Authentic Content** - Local perspectives over generic tourist information
+3. **Minimizing Friction** - Reducing clicks and complexity at every step
+4. **Performance First** - Blazing fast experience on all devices
+5. **Beautiful Simplicity** - Powerful features with intuitive interfaces
+6. **Privacy by Design** - Granular controls over sharing and information visibility
+7. **Group Consensus** - Tools that help groups make decisions without conflict
 
-## 🚦 Feature Status
-
-### 🚀 Core Focus (Actively Developing/Refining):
-
-- ✅ **Authentication & Authorization**: Foundational system is robust (post-overhaul).
-- ✅ **Trip Creation & Editing**: Core backend/frontend flows implemented and refined.
-- ✅ **Constants & Core Structure**: Refactored for clarity and type safety.
-- ✅ **Real-time Collaboration**: Implemented presence awareness, cursor tracking, section awareness.
-- ✅ **Focus Mode**: Added collaborative session mode for group decision making.
-- ✅ **Voting & Polling**: Implemented system for group decision making in trips.
-- ✅ **Activity Timeline & Notifications**: Added tracking and alerting for trip activities.
-- 🚧 **Itinerary Building & Management**: Basic structure exists; improving UX/UI.
-- 🚧 **Member Management**: Basic invite/access checks functional; needs UI refinement.
-- 📝 **Mobile App Development**: Style guide created; implementation ongoing.
-- ✅ **Error Monitoring**: Implemented Sentry for error tracking and performance monitoring.
-- ✅ **Offline Support**: Added service worker and offline capabilities.
-
-### ⏳ Lower Priority / Deferred Features:
-
-- **📉 Expense Tracking / Splitwise:** Splitwise integration removed. Native expense tracking/payment deeplinks tabled for now.
-- **📉 Standalone Destination Pages:** Functional but not a current focus (`/destinations/[city]`).
-- **📉 Global Search Functionality:** Basic backend/frontend started, but deferred.
-- **📉 Like/Save Functionality:** Components exist, but backend/integration deferred.
-- **📉 Destination Reviews:** Components exist, but backend/integration deferred.
-- **📉 Public Itinerary Templates:** Frontend page exists, but data source/management deferred.
-
-## 🔮 Future Enhancements
-
-1. Machine learning for preference prediction
-2. Advanced content recommendation engine
-3. Social graph integration
-4. Enhanced analytics and reporting
-5. API rate limiting and quotas
-6. Mobile application development
-
-## 🏁 Getting Started
+## 🛠️ Development Setup
 
 ### Prerequisites
-
-- Node.js 16+ (for local development)
-- Supabase account (for authentication and database)
+- Node.js 18+ (we recommend using nvm)
+- pnpm package manager
+- Supabase account & CLI
 
 ### Installation
 
 1. Clone the repository:
-
    ```bash
    git clone https://github.com/yourusername/withme.travel.git
    cd withme.travel
    ```
 
 2. Install dependencies:
-
    ```bash
-   npm install
-   # or
    pnpm install
    ```
 
 3. Set up environment variables:
-
    ```bash
-   # Create .env.local file with:
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   cp .env.example .env.local
+   # Edit .env.local with your Supabase credentials
    ```
 
-4. Run the development server:
-
+4. Start the development server:
    ```bash
-   npm run dev
-   # or
    pnpm dev
    ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## \U0001F91D Contributing
+## 🤝 Contributing
 
-Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and submission process.
 
-## \U0001F4C4 License
+## 📖 Documentation
+
+### Core Documentation
+- [Authentication System](docs/authentication.md)
+- [API Routes & Server/Client Components Guide](docs/api-routes-server-client.md)
+- [Constants Guide](docs/constants-guide.md)
+- [Content Guide](docs/CONTENT_GUIDE.md)
+- [Codebase Structure](docs/CODEBASE_STRUCTURE.md)
+- [Next.js Best Practices](docs/nextjs-best-practices.md)
+- [TypeScript Best Practices](docs/typescript-best-practices.md)
+- [Visual Styling Guide](docs/visual-styling-guide.md)
+
+### Feature-Specific Documentation
+- [Focus Session Context](docs/focus-session-context.md)
+- [Collaboration Features](docs/collaboration-features.md)
+- [Notification System Guide](docs/notification-system-guide.md)
+- [Offline Support](docs/offline-support.md)
+- [Itinerary Optimizations](docs/ITINERARY_OPTIMIZATIONS.md)
+- [Itinerary Template Structure](docs/ITINERARY_TEMPLATE_STRUCTURE.md)
+
+### Development Resources
+- [Performance Optimizations](docs/performance-optimizations.md)
+- [Database Structure](docs/database_structure.md)
+- [Testing Guide](docs/testing.md)
+- [Full Documentation Index](docs/DOCUMENTATION.md)
+
+## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Documentation
+## ❓ Frequently Asked Questions
 
-- [Authentication System](docs/AUTHENTICATION.md) - Comprehensive documentation of our auth system
-- [Content Guidelines](docs/CONTENT-GUIDELINES.md) - Guidelines for creating destination content
-- [Next.js Best Practices](docs/BEST-PRACTICES.md) - Technical guidelines for working with Next.js
-- [Next.js 15 Migration Guide](docs/nextjs15-migration.md) - Guide for upgrading to Next.js 15
-- [API Documentation](docs/API.md) - API endpoints and usage examples
-- [Debugging Common Issues](docs/debugging.md) - Solutions for common issues like button nesting and authentication
+### General Questions
 
-## 📝 Content Quality & Style Guide Summary
+**Q: What makes withme.travel different from other travel planning tools?**  
+A: Unlike other platforms, withme.travel focuses specifically on group travel planning with real-time collaboration at its core. We combine collaborative tools, authentic local content, and a seamless trip planning experience all in one place.
 
-This section summarizes the key principles for content, primarily focusing on city profiles but applicable broadly where relevant. The full guide is available at [docs/CONTENT_GUIDE.md](docs/CONTENT_GUIDE.md).
+**Q: Is withme.travel free to use?**  
+A: Yes! Our core planning features are free for all users. We offer premium features for enhanced collaboration, additional storage, and advanced tools for frequent travelers.
 
-### Core Principles
+**Q: Can I use withme.travel on my phone?**  
+A: Absolutely! Our platform is fully responsive and works on any device. We also support offline access so you can reference your plans even without internet connection.
 
-- **Authentic Insider Perspective**: Write as a well-traveled friend sharing genuine insights and local knowledge. Balance appreciation with honesty about challenges.
-- **Conversational Warmth**: Use casual, engaging, and natural language. Vary sentence structure and incorporate local flavor where appropriate.
-- **Distinctive Character**: Adapt writing style to match the unique personality of each city or topic.
-- **Organic Structure**: Let content flow naturally, avoiding rigid or formulaic paragraph structures.
+### Trip Planning
 
-### Key Elements
+**Q: How many people can I invite to plan a trip?**  
+A: You can invite up to 20 people to collaborate on a single trip. Everyone can contribute ideas, vote on activities, and help shape the perfect itinerary.
 
-- **Specific Local References**: Include named places, streets, neighborhoods, and local details.
-- **Sensory Experience**: Use vivid sensory details (sights, sounds, smells) to bring locations to life.
-- **Authentic Local Experience**: Capture community dynamics, local rhythms, and use active, vibrant language.
+**Q: Can I plan multiple trips at the same time?**  
+A: Yes! You can create and manage multiple trips simultaneously. Your dashboard shows all your active trips and their planning status.
 
-### Style & Tone
+**Q: How do we decide where to go and what to do?**  
+A: Our voting system lets everyone in your group express preferences, while Focus Mode helps you make final decisions efficiently. You can vote on dates, destinations, accommodations, and activities.
 
-- **Balance**: Mix practical info with atmosphere, history with trends, iconic spots with hidden gems.
-- **Tone**: Avoid overly promotional language. Aim for warmth, helpfulness, enthusiasm balanced with honesty, and humor where appropriate. Align with the "friendly organizer" brand voice.
+**Q: What if some of my friends don't want to create an account?**  
+A: No problem! You can invite them as guests with a special link, allowing them to view and contribute to trip planning without creating a full account.
 
-### Quality Standards
+### Trip Management
 
-- **Markers**: Specific local references, authentic terminology, balanced perspective (positive/challenges), conversational flow.
-- **Avoid**: Generic clichés, formal tone, rigid structure, exclusively positive portrayals, lack of specific detail.
+**Q: Can I control who can edit our trip details?**  
+A: Yes, as a trip creator you can assign different roles to members: Admin (full control), Editor (can modify most things), Contributor (can suggest and comment), or Viewer (read-only access).
 
-Refer to the full [Content Guide](docs/CONTENT_GUIDE.md) for detailed guidelines, HTML structure requirements, and brand alignment details.
+**Q: How do I know when someone makes changes to our trip?**  
+A: Our notification system alerts you when important changes happen, while the Activity Timeline shows a complete history of all updates. You'll also see real-time indicators when friends are online and editing.
 
-## Itinerary Templates
+**Q: Can we track our trip budget together?**  
+A: Yes! The budget tracker lets you add estimated costs for all activities, accommodations, and transportation. Everyone can see the running total and contribute to expense tracking.
 
-### Fixing Missing Sections in Templates
+**Q: What happens to our trip plans during the actual trip?**  
+A: Your entire itinerary is available offline, so you can access it even without internet. You can also make real-time adjustments during your trip as plans evolve.
 
-If you encounter templates without sections (like the "Traditional Kyoto: 4-Day Cultural Immersion" template), you can run the fix script to create the required sections and items:
+### Content & Templates
 
-```bash
-# Connect to your database and run the SQL script
-psql $DATABASE_URL -f migrations/fix_kyoto_template.sql
-```
+**Q: Where does withme.travel's destination information come from?**  
+A: Our city guides and local tips come from experienced travelers and local experts who share authentic, insider knowledge—not generic tourist information.
 
-This will create the necessary sections and sample itinerary items for the template to display properly. You can use this pattern to create/fix other templates as needed.
+**Q: Can I create my own trip templates to share?**  
+A: Yes! You can save any trip as a template and share it with friends or the wider withme.travel community.
 
-## 🗨️ Universal Comment System
+**Q: How do I find inspiration for places to visit?**  
+A: Browse our curated city guides, explore trending destinations, or check out popular itinerary templates from other travelers to spark ideas for your next adventure.
 
-WithMe Travel now supports a universal, reusable comment system for all major content types (ideas, destinations, itinerary items, trips, images, notes, etc). This system is:
-- **Type-safe** and fully documented
-- **API-driven** with REST endpoints for CRUD, reactions, and replies
-- **Expandable** to new content types
-- **UI-ready** with accessible, compact React components
+### Technical Support
 
-### Usage in React
+**Q: What if I encounter a problem while using withme.travel?**  
+A: Our help center provides tutorials and troubleshooting guides. You can also contact support through the in-app chat or by emailing help@withme.travel.
 
-```tsx
-import { CommentsList } from '@/components/comments';
+**Q: Is my trip data secure and private?**  
+A: Absolutely. We use industry-standard encryption, and you control exactly who has access to your trip plans. Your data is never sold to third parties.
 
-// Example for an itinerary item
-<CommentsList contentType="itinerary_item" contentId={item.id} />
-
-// For a group idea
-<CommentsList contentType="group_idea" contentId={idea.id} />
-```
-
-- `contentType` must be one of: `destination`, `group_idea`, `itinerary_item`, `trip`, `image`, `note`
-- `contentId` is the UUID of the item being commented on
-
-### API Endpoints
-
-- `GET /api/comments?contentType=...&contentId=...` — List comments (with pagination)
-- `POST /api/comments` — Create a comment
-- `PUT /api/comments/[id]` — Edit a comment
-- `DELETE /api/comments/[id]` — Delete (soft) a comment
-- `GET /api/comments/[id]/replies` — List replies to a comment
-- `GET /api/comments/[id]/reactions` — List reactions for a comment
-- `POST /api/comments/[id]/reactions` — Add a reaction
-- `DELETE /api/comments/[id]/reactions?emoji=...` — Remove a reaction
-
-All endpoints require authentication for write actions.
-
-### Database & Schema
-- See `supabase/migrations/20254626123456_comments_schema.sql` for schema, triggers, and RLS policies.
-- All comments are stored in a single `comments` table, with polymorphic `content_type` and `content_id` fields.
-- Reactions are stored in `comment_reactions`.
-
-### Expansion Plan
-- To add a new commentable type, add it to the `ENUMS.CONTENT_TYPES` in `utils/constants/database.ts` and update the API validation.
-- The UI and API will automatically support new types.
-
-### Architecture Overview
-- **Types:** See `types/comments.ts` for all interfaces and type safety.
-- **API:** See `app/api/comments/` for endpoints.
-- **Hooks:** Use `useComments` from `hooks/use-comments.ts` for all comment logic in React.
-- **Components:** Use `CommentsList`, `CommentItem`, and `CommentForm` from `components/comments/`.
-
-### Example: Adding Comments to a Destination
-```tsx
-<CommentsList contentType="destination" contentId={destination.id} />
-```
+**Q: Can I export my trip plans to other formats?**  
+A: Yes! You can export your itinerary to PDF, Google Calendar, or Apple Calendar for easy reference during your trip.
 
 ---
 
-For more details, see the code in `components/comments/`, `hooks/use-comments.ts`, and the API route handlers in `app/api/comments/`.
-
-## Images Storage
-
-This project now automatically stores metadata for images from Unsplash and Pexels APIs in the `images` table. 
-This provides several benefits:
-
-- Tracks image usage across the platform
-- Stores photographer attribution information
-- Enables filtering/searching of previously used images
-- Helps maintain proper attribution for third-party images
-
-### Implementation Details
-
-1. Every image search through the `/api/image-search/(unsplash|pexels)` endpoints now automatically saves metadata to the Supabase `images` table
-2. The `ImageSelector` component has been updated to pass full image metadata, not just the URL
-3. Components can now display proper attribution for photographers
-
-### Running the Test Script
-
-To test the image storage functionality:
-
-```bash
-# Make sure you have the following in your .env.local:
-# UNSPLASH_ACCESS_KEY
-# PEXELS_API_KEY
-# SUPABASE_SERVICE_ROLE_KEY
-# TEST_USER_JWT
-
-# Run the test script
-npm run test:images
-```
-
-### Setting Up the Database 
-
-Run the following SQL commands in your Supabase SQL editor:
-
-```sql
--- Create the images table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.images (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  external_id TEXT NOT NULL,
-  source TEXT NOT NULL,
-  url TEXT,
-  image_url TEXT NOT NULL,
-  thumb_url TEXT,
-  alt_text TEXT,
-  photographer TEXT,
-  photographer_url TEXT,
-  width INTEGER,
-  height INTEGER,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  
-  -- Add a unique constraint on external_id and source to prevent duplicates
-  CONSTRAINT unique_external_image UNIQUE (external_id, source)
-);
-
--- See scripts/create_images_table.sql for the complete SQL
-```
+**withme.travel** – Transforming group trip planning from stress to success, one collaborative adventure at a time.

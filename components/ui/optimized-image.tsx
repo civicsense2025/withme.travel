@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { imageService, ImageType, ImageMetadata, ImageOptions } from '@/lib/services/image-service';
+import { ImageAttribution } from '@/components/images';
 
 interface OptimizedImageProps extends Omit<React.ComponentProps<typeof Image>, 'src' | 'alt'> {
   metadata?: ImageMetadata | null;
@@ -10,6 +11,7 @@ interface OptimizedImageProps extends Omit<React.ComponentProps<typeof Image>, '
   fallbackText: string;
   imageOptions?: ImageOptions;
   showAttribution?: boolean;
+  attributionStyle?: 'overlay' | 'info-icon';
   priority?: boolean;
   sizes?: string;
 }
@@ -24,6 +26,7 @@ export function OptimizedImage({
   fallbackText,
   imageOptions,
   showAttribution = false,
+  attributionStyle = 'info-icon',
   priority = false,
   sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
   className,
@@ -31,12 +34,15 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
   // Get the optimized image URL with fallback
   const imageUrl = imageService.getImageUrlWithFallback(metadata, type, fallbackText, imageOptions);
+  
+  // Use proper alt text from metadata or fallback
+  const altText = metadata?.alt_text || fallbackText;
 
   return (
     <div className="relative">
       <Image
         src={imageUrl}
-        alt={metadata?.alt_text || fallbackText}
+        alt={altText}
         className={className}
         placeholder="blur"
         blurDataURL={metadata?.blur_data_url || PLACEHOLDER_BLUR}
@@ -48,14 +54,11 @@ export function OptimizedImage({
       />
 
       {/* Show attribution if requested and available */}
-      {showAttribution && (metadata?.attributionHtml || metadata?.attribution) && (
-        <div className="absolute bottom-0 right-0 p-1 text-xs text-white/60 bg-black/30 rounded-tl">
-          {metadata.attributionHtml ? (
-            <span dangerouslySetInnerHTML={{ __html: metadata.attributionHtml }}></span>
-          ) : (
-            metadata.attribution
-          )}
-        </div>
+      {showAttribution && metadata && (
+        <ImageAttribution 
+          image={metadata} 
+          variant={attributionStyle} 
+        />
       )}
     </div>
   );

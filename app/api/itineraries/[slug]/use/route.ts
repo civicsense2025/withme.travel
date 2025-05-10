@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { TABLES } from '@/utils/constants/database';
 
 export async function POST(
   request: NextRequest,
@@ -88,14 +89,16 @@ export async function POST(
     console.log(`[DEBUG] Created new trip: ${trip.id}`);
 
     // Add the user as a member with admin role
-    const { error: memberError } = await supabase.from('trip_members').insert({
+    const { error: memberError } = await supabase.from(TABLES.MEMBERS).insert({
       trip_id: trip.id,
       user_id: user.id,
       role: 'admin',
+      status: 'active'
     });
 
     if (memberError) {
       console.error('[CRITICAL] Error adding creator as trip member:', memberError);
+      console.error(`[DEBUG] Trip ID: ${trip.id}, User ID: ${user.id}`);
       return NextResponse.json(
         { error: `Trip created, but failed to add you as a member: ${memberError.message}` },
         { status: 500 }
@@ -103,8 +106,10 @@ export async function POST(
     }
 
     // Fetch template sections (or items directly if sections fail)
-    let templateSections = template.itinerary_template_sections || [];
-    if (templateSections.length === 0) {
+    let templateSections: any[] = [];
+    if (template && Array.isArray(template.sections)) {
+      templateSections = template.sections;
+    } else {
       console.log(
         '[DEBUG] No sections found via join, fetching items directly for template:',
         template.id
@@ -209,7 +214,7 @@ export async function POST(
 
     // Increment the template usage count (non-critical)
     try {
-      await supabase.rpc('increment_template_uses', { template_id: template.id });
+      await supabase.rpc('increment_template_use_count', { template_id: template.id });
       console.log(`[DEBUG] Incremented usage count for template ${template.id}`);
     } catch (rpcError) {
       console.error('[DEBUG] Could not increment template uses:', rpcError);

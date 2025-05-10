@@ -105,7 +105,8 @@ export default async function TripPage({ params }: TripParams) {
         canEdit = true;
       } else {
         // Check for guest token using the parse method which is more reliable
-        const cookiesStr = cookies().toString();
+        const cookieStore = await cookies();
+        const cookiesStr = cookieStore.toString();
         const guestTokenMatch = cookiesStr.match(/guest_user_id=([^;]+)/);
         const guestToken = guestTokenMatch ? guestTokenMatch[1] : null;
         
@@ -114,7 +115,11 @@ export default async function TripPage({ params }: TripParams) {
         if (guestToken) {
           try {
             // First check if the trip has a guest_token field that matches directly
-            if (trip.guest_token === guestToken || trip.guest_token_text === guestToken) {
+            // Use type assertion with 'as any' to bypass strict typing since these fields 
+            // may exist at runtime but are not in the TypeScript type definition
+            const tripAny = trip as any;
+            if ((tripAny.guest_token && tripAny.guest_token === guestToken) || 
+                (tripAny.guest_token_text && tripAny.guest_token_text === guestToken)) {
               console.log(`[TripPage] Guest token matches directly on trip record`);
               canView = true;
               canEdit = true;

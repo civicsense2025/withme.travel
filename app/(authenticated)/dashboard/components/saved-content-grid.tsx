@@ -18,7 +18,9 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
   const { destinations, itineraries } = savedContent;
   console.log('Rendering saved content:', { destinations, itineraries });
 
-  const hasContent = destinations.length > 0 || itineraries.length > 0;
+  const hasDestinations = destinations && destinations.length > 0;
+  const hasItineraries = itineraries && itineraries.length > 0;
+  const hasContent = hasDestinations || hasItineraries;
 
   if (!hasContent) {
     return (
@@ -39,12 +41,12 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue={destinations.length > 0 ? "destinations" : "itineraries"} className="w-full">
+      <Tabs defaultValue={hasDestinations ? "destinations" : "itineraries"} className="w-full">
         <TabsList className="w-full grid grid-cols-2 mb-2">
-          <TabsTrigger value="destinations" disabled={destinations.length === 0}>
+          <TabsTrigger value="destinations" disabled={!hasDestinations}>
             Destinations
           </TabsTrigger>
-          <TabsTrigger value="itineraries" disabled={itineraries.length === 0}>
+          <TabsTrigger value="itineraries" disabled={!hasItineraries}>
             Itineraries
           </TabsTrigger>
         </TabsList>
@@ -108,17 +110,17 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {itineraries.map((itin) => (
               <Card key={itin.id} className="overflow-hidden hover:shadow-md transition-shadow h-[180px]">
-                <Link href={`/itineraries/${itin.templates?.slug || itin.item_id}`} className="block h-full">
+                <Link href={`/itineraries/${itin.slug || itin.id}`} className="block h-full">
                   <div className="relative h-full">
                     {/* Background image */}
                     <div className="absolute inset-0">
-                      {itin.templates?.image_url ? (
+                      {itin.cover_image_url || itin.image_url ? (
                         <img 
-                          src={itin.templates.image_url} 
-                          alt={itin.templates.title} 
+                          src={itin.cover_image_url || itin.image_url} 
+                          alt={itin.title} 
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            console.log(`Image failed to load: ${itin.templates.image_url}`);
+                            console.log(`Image failed to load: ${itin.cover_image_url || itin.image_url}`);
                             const imgElement = e.target as HTMLImageElement;
                             imgElement.src = '/images/placeholder-itinerary.jpg';
                           }}
@@ -138,8 +140,12 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
                         <span className="text-sm">Saved itinerary</span>
                       </div>
-                      <h3 className="text-xl font-bold text-white">{itin.templates?.title || 'Unknown Itinerary'}</h3>
-                      <p className="text-white/80 text-sm">{itin.templates?.destination_name || 'Unknown Destination'}</p>
+                      <h3 className="text-xl font-bold text-white">{itin.title || 'Unknown Itinerary'}</h3>
+                      <p className="text-white/80 text-sm">
+                        {itin.destination_name || 
+                          (itin.destinations && `${itin.destinations.name}, ${itin.destinations.country}`) || 
+                          'Unknown Destination'}
+                      </p>
                     </div>
                   </div>
                 </Link>

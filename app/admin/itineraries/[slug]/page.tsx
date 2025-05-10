@@ -4,6 +4,14 @@ import { checkAdminAuth } from '../../utils/auth';
 import { TABLES } from '@/utils/constants/tables';
 import { notFound } from 'next/navigation';
 import TemplateEditor from '../components/TemplateEditor';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, Clock, MapPin, Pencil } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { formatDate } from '@/utils/text-utils';
 
 interface PageProps {
   params: {
@@ -78,7 +86,7 @@ export default async function TemplateDetailPage(props: PageProps) {
     .from(TABLES.ITINERARY_TEMPLATE_ITEMS)
     .select('*')
     .eq('template_id', template.id)
-    .order('day_number', { ascending: true })
+    .order('day', { ascending: true })
     .order('position', { ascending: true });
 
   if (itemsError) {
@@ -120,17 +128,176 @@ export default async function TemplateDetailPage(props: PageProps) {
         : item.section_id ?? '',
   }));
 
+  // Organize items by section/day for easier display
+  const itemsByDay: Record<number, any[]> = {};
+  safeItems.forEach(item => {
+    const day = item.day || 1;
+    if (!itemsByDay[day]) {
+      itemsByDay[day] = [];
+    }
+    itemsByDay[day].push(item);
+  });
+
   return (
     <Container>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Edit Template: {safeTemplate.title}</h1>
+          <h1 className="text-2xl font-bold">Template: {safeTemplate.title}</h1>
+          <Link href={`/admin/itineraries/${safeTemplate.slug}/metadata`}>
+            <Button>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Template
+            </Button>
+          </Link>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left column */}
+          <div className="md:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Template Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {safeTemplate.cover_image_url && (
+                  <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
+                    <Image
+                      src={safeTemplate.cover_image_url}
+                      alt={safeTemplate.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Destination</h3>
+                  <p className="flex items-center mt-1">
+                    <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                    {safeTemplate.destinations?.name || 'No destination'}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Duration</h3>
+                  <p className="flex items-center mt-1">
+                    <CalendarDays className="h-4 w-4 mr-1 text-gray-400" />
+                    {safeTemplate.duration_days || '?'} days
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>
+                  <p className="mt-1">
+                    {safeTemplate.updated_at 
+                      ? formatDate(safeTemplate.updated_at, { year: 'numeric', month: 'short', day: 'numeric' }) 
+                      : 'Never'}
+                  </p>
+                </div>
+
+                {safeTemplate.description && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Description</h3>
+                    <p className="mt-1 text-sm">{safeTemplate.description}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right column - Sections and items */}
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader className="border-b">
+                <CardTitle>Itinerary Content</CardTitle>
+                <CardDescription>
+                  {safeSections.length} days, {safeItems.length} activities
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-0">
+                <Tabs defaultValue="day-1" className="w-full">
+                  <TabsList className="px-6 py-2 overflow-x-auto flex w-full justify-start space-x-2">
+                    {safeSections.map((section) => (
+                      <TabsTrigger
+                        key={section.id}
+                        value={`day-${section.day_number}`}
+                        className="flex-shrink-0"
+                      >
+                        Day {section.day_number}
+                      </TabsTrigger>
+                    ))}
+                    {safeSections.length === 0 && <div className="px-4 py-2 text-sm text-gray-500">No days defined</div>}
+                  </TabsList>
+
+                  {safeSections.map((section) => (
+                    <TabsContent
+                      key={section.id}
+                      value={`day-${section.day_number}`}
+                      className="px-6 py-4"
+                    >
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold">
+                          Day {section.day_number}: {section.title}
+                        </h3>
+                        {section.date && (
+                          <p className="text-sm text-gray-500">{section.date}</p>
+                        )}
+                      </div>
+
+                      {(itemsByDay[section.day_number] || []).length > 0 ? (
+                        <div className="space-y-6">
+                          {(itemsByDay[section.day_number] || []).map((item, index) => (
+                            <div key={item.id} className="border rounded-lg p-4 relative">
+                              <div className="flex items-start">
+                                <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0 mr-4">
+                                  {index + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-medium">{item.title}</h4>
+                                  {item.description && (
+                                    <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                  )}
+                                  <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
+                                    {(item.start_time || item.end_time) && (
+                                      <span className="flex items-center">
+                                        <Clock className="h-4 w-4 mr-1" />
+                                        {item.start_time && item.end_time 
+                                          ? `${item.start_time} - ${item.end_time}`
+                                          : item.start_time || item.end_time}
+                                      </span>
+                                    )}
+                                    {item.location && (
+                                      <span className="flex items-center">
+                                        <MapPin className="h-4 w-4 mr-1" />
+                                        {item.location}
+                                      </span>
+                                    )}
+                                    {item.category && (
+                                      <Badge variant="outline" className="ml-1">
+                                        {item.category}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center text-gray-500">
+                          <p>No activities for this day</p>
+                        </div>
+                      )}
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         <TemplateEditor
           template={safeTemplate}
-          destinations={safeDestinations}
-          sections={safeSections}
-          items={safeItems}
         />
       </div>
     </Container>

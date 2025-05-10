@@ -243,6 +243,7 @@ export default function TemplateSectionsEditor({
             .single();
           
           if (error) throw error;
+          if (!data) throw new Error('No section data returned from Supabase.');
           
           // Update the ID in our local state
           section.id = data.id;

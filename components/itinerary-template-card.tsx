@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ItineraryTemplateMetadata } from '@/utils/constants/tables';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { ImageAttribution } from '@/components/images';
 
 interface ItineraryTemplateCardProps {
   itinerary: {
@@ -37,6 +38,16 @@ interface ItineraryTemplateCardProps {
     cover_image_url: string;
     groupsize: string;
     metadata: ItineraryTemplateMetadata;
+    image_metadata?: {
+      alt_text?: string;
+      attribution?: string;
+      attributionHtml?: string;
+      photographer_name?: string;
+      photographer_url?: string;
+      source?: string;
+      source_id?: string;
+      url?: string;
+    };
   };
   index?: number;
 }
@@ -45,7 +56,8 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
   const [isHovered, setIsHovered] = useState(false);
   
   // Calculate fallback or placeholder image
-  const imageUrl = itinerary.image || itinerary.cover_image_url || '/images/placeholder-itinerary.jpg';
+  // Always prefer cover_image_url for the main display, fallback to placeholder if missing
+  const imageUrl = itinerary.cover_image_url || '/images/placeholder-itinerary.jpg';
 
   // Get author initials from name or use placeholder
   const authorInitials = itinerary.author?.name
@@ -79,9 +91,10 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="h-full w-full"
             >
+              {/* Display the cover_image_url as the main image for the itinerary template */}
               <Image
-                src={imageUrl}
-                alt={itinerary.title}
+                src={itinerary.cover_image_url || '/images/placeholder-itinerary.jpg'}
+                alt={`${itinerary.title} cover`}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
@@ -92,6 +105,23 @@ export function ItineraryTemplateCard({ itinerary, index = 0 }: ItineraryTemplat
                 }}
               />
             </motion.div>
+            
+            {/* Add image attribution */}
+            {itinerary.image_metadata && (
+              <ImageAttribution 
+                image={{
+                  alt_text: itinerary.image_metadata.alt_text,
+                  attribution_html: itinerary.image_metadata.attributionHtml,
+                  photographer: itinerary.image_metadata.photographer_name,
+                  photographer_url: itinerary.image_metadata.photographer_url,
+                  source: itinerary.image_metadata.source,
+                  external_id: itinerary.image_metadata.source_id,
+                  url: itinerary.image_metadata.url
+                }}
+                variant="info-icon"
+                className="z-20"
+              />
+            )}
             
             {/* Minimalist overlay for status */}
             {!itinerary.is_published && (

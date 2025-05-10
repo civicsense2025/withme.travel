@@ -46,11 +46,13 @@ export const TABLES = {
   POLL_VOTES: 'poll_votes',
   POLLS: 'polls',
   PROFILES: 'profiles',
+  RESEARCH_STUDIES: 'research_studies',
+  RESEARCH_PARTICIPANTS: 'research_participants',
+  RESEARCH_TRIGGERS: 'research_triggers',
+  RESEARCH_EVENTS: 'research_events',
   SURVEY_DEFINITIONS: 'survey_definitions',
   SURVEY_RESPONSES: 'survey_responses',
   TAGS: 'tags',
-  TEMPLATES: 'templates',
-  TEMPLATE_SECTIONS: 'template_sections',
   TRAVEL_STYLES: 'travel_styles',
   TRIP_ACTIVITY_LOG: 'trip_activity_log',
   TRIP_COLLABORATIONS: 'trip_collaborations',
@@ -84,10 +86,9 @@ export const TABLES = {
   SESSIONS: 'sessions',
   SETTINGS: 'settings',
   SUBSCRIPTIONS: 'subscriptions',
-  TEMPLATE_ITEMS: 'template_items',
   TRAVEL_PREFERENCES: 'travel_preferences',
   USER_TRIP_VOTES: 'user_trip_votes',
-  USERS: 'users'
+  USERS: 'profiles'
 } as const;
 
 /**

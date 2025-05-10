@@ -31,10 +31,10 @@ type ItineraryTemplate = {
 interface ItineraryTemplatesTableProps {
   initialData: ItineraryTemplate[];
   totalCount: number;
-  sections: any[];
+  sectionsWithItems: any[];
 }
 
-export default function ItineraryTemplatesTable({ initialData, totalCount, sections }: ItineraryTemplatesTableProps) {
+export default function ItineraryTemplatesTable({ initialData, totalCount, sectionsWithItems }: ItineraryTemplatesTableProps) {
   const [templates, setTemplates] = useState<ItineraryTemplate[]>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
@@ -47,14 +47,51 @@ export default function ItineraryTemplatesTable({ initialData, totalCount, secti
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // Debug the sections array received from parent component
+  console.log('ItineraryTemplatesTable received sections count:', sectionsWithItems?.length || 0);
+  if (sectionsWithItems && sectionsWithItems.length > 0) {
+    console.log('First section in the array:', sectionsWithItems[0]);
+    
+    // Check if template_id field exists in sections
+    const hasTemplateId = sectionsWithItems.every(section => 'template_id' in section);
+    console.log('All sections have template_id field:', hasTemplateId);
+    
+    if (!hasTemplateId) {
+      console.error('Some sections are missing template_id field!');
+      // Log keys of a sample section to see what fields are actually available
+      console.log('Available fields in first section:', Object.keys(sectionsWithItems[0]));
+    }
+  }
+
   // Group sections by template_id for fast lookup
   const sectionsByTemplate: Record<string, any[]> = {};
-  (sections || []).forEach((section) => {
-    if (!sectionsByTemplate[section.template_id]) {
-      sectionsByTemplate[section.template_id] = [];
+  (sectionsWithItems || []).forEach((section) => {
+    const templateId = section.template_id;
+    if (!templateId) {
+      console.warn('Section missing template_id:', section);
+    } else {
+      if (!sectionsByTemplate[templateId]) {
+        sectionsByTemplate[templateId] = [];
+      }
+      sectionsByTemplate[templateId].push(section);
     }
-    sectionsByTemplate[section.template_id].push(section);
   });
+  
+  // Debug the grouped sections
+  console.log('Templates with sections:', Object.keys(sectionsByTemplate).length);
+  console.log('First few template IDs with sections:', Object.keys(sectionsByTemplate).slice(0, 5));
+  
+  // Check if template IDs in sections match template IDs in templates
+  const templateIds = new Set(templates.map(t => t.id));
+  const sectionTemplateIds = new Set(Object.keys(sectionsByTemplate));
+  const matchingIds = new Set([...templateIds].filter(id => sectionTemplateIds.has(id)));
+  console.log('Template IDs in both templates and sections:', matchingIds.size);
+  
+  if (matchingIds.size === 0) {
+    console.error('No matching template IDs between templates and sections!');
+    console.log('Sample template ID:', templates.length > 0 ? templates[0].id : 'No templates');
+    console.log('Sample section template_id:', sectionsWithItems.length > 0 ? sectionsWithItems[0].template_id : 'No sections');
+  }
 
   // When page changes, fetch new data
   useEffect(() => {
@@ -151,6 +188,12 @@ export default function ItineraryTemplatesTable({ initialData, totalCount, secti
       accessor: (row: ItineraryTemplate) => row.id,
       cell: (value: string) => {
         const templateSections = sectionsByTemplate[value] || [];
+        
+        // Debug each template's sections when rendering
+        if (value && !sectionsByTemplate[value]) {
+          console.log(`No sections found for template ID: ${value}`);
+        }
+        
         if (templateSections.length === 0) return <span className="text-gray-400">No sections</span>;
         return (
           <div className="flex flex-col gap-1">
@@ -228,7 +271,11 @@ export default function ItineraryTemplatesTable({ initialData, totalCount, secti
       label: 'Edit Template',
       onClick: (rows: ItineraryTemplate[]) => {
         if (rows.length === 1) {
-          router.push(`/admin/itineraries/edit/${rows[0].id}`);
+          if (rows[0].slug) {
+            router.push(`/admin/itineraries/${rows[0].slug}`);
+          } else {
+            router.push(`/admin/itineraries/edit/${rows[0].id}`);
+          }
         }
       },
       color: 'text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300',

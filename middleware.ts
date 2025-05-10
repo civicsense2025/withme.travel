@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { Database } from '@/types/database.types';
 import { rateLimit, RateLimitOptions } from '@/utils/middleware/rate-limit';
+import { GROUP_VISIBILITY } from '@/utils/constants/status';
 
 // Define public paths that don't require authentication
 const publicPaths = [
@@ -21,6 +22,7 @@ const publicPaths = [
   '/continents',
   '/search',
   '/groups',
+  '/trips',
   '/groups/*/plans/*', // Add wildcard pattern for group plans
   // Add other public paths as needed
 ];
@@ -39,6 +41,7 @@ const publicApiPaths = [
   '/api/auth/clear-cookies',
   '/api/auth/me',
   '/api/auth/callback',
+  '/api/trips',
   '/api/trips/public',
   '/api/itineraries',
   '/api/destinations',
@@ -184,12 +187,12 @@ export async function middleware(req: NextRequest) {
       try {
         const { data: group } = await supabase
           .from('groups')
-          .select('visibility, public_ideas_board')
+          .select('visibility')
           .eq('id', groupId)
           .single();
           
         // If group is public, allow access
-        if (group && (group.visibility === 'public' || group.public_ideas_board)) {
+        if (group && group.visibility === GROUP_VISIBILITY.PUBLIC) {
           console.log(`[Middleware] Allowing public access to group: ${groupId}`);
           return res;
         }
