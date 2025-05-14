@@ -63,7 +63,7 @@ const DEMO_CITIES = [
  * Displays the main hero area for the trips page with a two-column layout.
  */
 const HeroSection: React.FC = () => (
-  <section className="w-full flex justify-center py-8 px-4">
+  <section className="w-full flex justify-center py-8 px-4 bg-black">
     <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
       {/* Left: Heading, subheading, CTA */}
       <div className="text-left md:text-left">

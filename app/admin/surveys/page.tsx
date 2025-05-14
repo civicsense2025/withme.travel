@@ -19,13 +19,14 @@ import { format } from 'date-fns';
 
 interface SurveyDefinition {
   id: string;
-  survey_id: string;
-  title: string;
+  name: string;
   description: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
   response_count: number;
+  type: string;
+  config?: any;
 }
 
 export default function SurveysPage() {
@@ -128,8 +129,8 @@ export default function SurveysPage() {
               ) : (
                 surveys.map((survey) => (
                   <TableRow key={survey.id}>
-                    <TableCell className="font-medium">{survey.title}</TableCell>
-                    <TableCell>{survey.survey_id}</TableCell>
+                    <TableCell className="font-medium">{survey.name}</TableCell>
+                    <TableCell>{survey.id}</TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -145,7 +146,7 @@ export default function SurveysPage() {
                     <TableCell>{format(new Date(survey.created_at), 'MMM d, yyyy')}</TableCell>
                     <TableCell>{format(new Date(survey.updated_at), 'MMM d, yyyy')}</TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/admin/surveys/${survey.survey_id}`}>
+                      <Link href={`/admin/surveys/${survey.id}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="mr-2 h-4 w-4" />
                           View

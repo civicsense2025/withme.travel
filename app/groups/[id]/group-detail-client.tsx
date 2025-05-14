@@ -90,6 +90,7 @@ import {
 } from '@/components/ui/table';
 import { ENUMS } from '@/utils/constants/database';
 import { useToast } from '@/components/ui/use-toast';
+import { useResearchTracking } from '@/hooks/use-research-tracking';
 
 interface GroupDetailClientProps {
   group: Group;
@@ -161,6 +162,7 @@ export default function GroupDetailClient({
     description: '',
   });
   const { toast } = useToast();
+  const { trackEvent } = useResearchTracking();
 
   // Compose the full member list: active members, creator, guest
   const fullMembers = useMemo(() => {
@@ -422,6 +424,24 @@ export default function GroupDetailClient({
         throw new Error(data.error || 'Failed to create plan');
       }
 
+      // Track successful plan creation
+      try {
+        await trackEvent('group_plan_created', {
+          groupId: group.id, 
+          planId: data.plan?.id || 'unknown',
+          planName: newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`,
+          hasDescription: !!newPlanData.description,
+          groupName: group.name,
+          memberCount: fullMembers.length || 0,
+          source: 'group-detail',
+          route: `/groups/${group.id}`,
+          component: 'GroupDetailClient'
+        });
+      } catch (trackingError) {
+        // Don't let tracking failures affect user experience
+        console.error('Failed to track group_plan_created event:', trackingError);
+      }
+
       // Refresh plans list
       const plansRes = await fetch(`/api/groups/${group.id}/plans`);
       if (plansRes.ok) {
@@ -452,6 +472,20 @@ export default function GroupDetailClient({
           error instanceof Error ? error.message : 'Failed to create plan. Please try again.',
         variant: 'destructive',
       });
+
+      // Optional: Track failed plan creation for UX analysis
+      try {
+        await trackEvent('group_plan_creation_failed', {
+          groupId: group.id,
+          planName: newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          source: 'group-detail',
+          route: `/groups/${group.id}`,
+          component: 'GroupDetailClient'
+        });
+      } catch (trackingError) {
+        console.error('Failed to track group_plan_creation_failed event:', trackingError);
+      }
     } finally {
       setIsLoading(false);
       setShowAddPlan(false);

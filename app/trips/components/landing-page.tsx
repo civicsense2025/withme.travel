@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlaneTakeoff, Globe, Users2, Calendar, MapPin } from 'lucide-react';
+import { MapPin, Calendar, Users, PlaneTakeoff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { MultiCitySelector } from '@/components/trips/multi-city-selector';
 import { useTheme } from 'next-themes';
@@ -124,11 +124,88 @@ function HeroSection({
  */
 const TripsLandingPage: React.FC = () => {
   return (
-    <div className="w-full">
-      <HeroSection cities={DEMO_CITIES} />
-      <FeaturesSection />
-      <TestimonialsSection />
-      <CtaSection />
+    <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="flex flex-col items-center text-center mb-16">
+        <h1 className="text-4xl md:text-5xl font-bold mb-6">Plan your perfect trip together</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mb-8">
+          Create, organize, and share your travel plans with friends. Collaborate in real-time and
+          make your group trip planning as enjoyable as the journey itself.
+        </p>
+        <div className="flex flex-wrap gap-4 justify-center">
+          <Link href="/signup">
+            <Button size="lg" className="rounded-full px-8">
+              Sign Up Free
+            </Button>
+          </Link>
+          <Link href="/trips/create?guest=true">
+            <Button variant="outline" size="lg" className="rounded-full px-8">
+              Try as Guest
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4 bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center">
+              <MapPin className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Discover Destinations</h3>
+            <p className="text-muted-foreground">
+              Find popular destinations with authentic local insights and travel recommendations.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4 bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Build Itineraries</h3>
+            <p className="text-muted-foreground">
+              Create flexible day-by-day plans with activities, accommodations, and transportation.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4 bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Collaborate Easily</h3>
+            <p className="text-muted-foreground">
+              Invite friends to join your trip, add ideas, and vote on activities in real-time.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4 bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center">
+              <PlaneTakeoff className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Travel With Confidence</h3>
+            <p className="text-muted-foreground">
+              Access your plans offline, share updates, and keep everyone on the same page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="text-center">
+        <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to start planning?</h2>
+        <p className="text-muted-foreground mb-8">
+          Join thousands of travelers who have made their group trips unforgettable with withme.travel
+        </p>
+        <Link href="/signup">
+          <Button size="lg" className="rounded-full px-8">
+            Start Planning Now
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

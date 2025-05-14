@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { TABLES } from '@/utils/constants/tables';
+import { FORM_TABLES } from '@/utils/constants/tables';
 
 interface RouteParams {
   params: {
@@ -12,85 +13,119 @@ interface RouteParams {
  * GET /api/admin/surveys/[surveyId]/responses
  * Fetch all responses for a specific survey
  */
-export async function GET(request: NextRequest, params: RouteParams): Promise<NextResponse> {
-  const surveyId = params.params.surveyId;
-  const searchParams = request.nextUrl.searchParams;
-  const page = parseInt(searchParams.get('page') || '1');
-  const pageSize = parseInt(searchParams.get('pageSize') || '100'); // Default to 100 items per page
-
-  if (!surveyId) {
-    return NextResponse.json({ error: 'Survey ID is required' }, { status: 400 });
-  }
-
+export async function GET(
+  request: Request,
+  { params }: { params: { surveyId: string } }
+): Promise<NextResponse> {
   try {
     const supabase = await createRouteHandlerClient();
+    const surveyId = params.surveyId;
+    const url = new URL(request.url);
+    
+    // Optional pagination parameters
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
+    
+    // Calculate offset
+    const offset = (page - 1) * pageSize;
 
-    // Verify user is authenticated and is an admin
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    if (!surveyId) {
+      return NextResponse.json(
+        { error: 'Survey ID is required' },
+        { status: 400 }
+      );
     }
 
-    // Check if user is an admin
-    const { data: adminCheck, error: adminCheckError } = await supabase
-      .from(TABLES.PROFILES)
+    // Verify the user is an admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You must be logged in' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
 
-    if (adminCheckError || !adminCheck?.is_admin) {
-      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    if (profileError || !profile || !profile.is_admin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
     }
 
     // Check if survey exists
-    const { data: surveyExists, error: surveyCheckError } = await supabase
-      .from(TABLES.SURVEY_DEFINITIONS)
-      .select('survey_id')
-      .eq('survey_id', surveyId)
+    const { data: survey, error: surveyError } = await supabase
+      .from(FORM_TABLES.FORMS)
+      .select('id, name')
+      .eq('id', surveyId)
       .single();
 
-    if (surveyCheckError && surveyCheckError.code === 'PGRST116') {
-      return NextResponse.json({ error: 'Survey not found' }, { status: 404 });
+    if (surveyError || !survey) {
+      return NextResponse.json(
+        { error: 'Survey not found' },
+        { status: 404 }
+      );
     }
 
-    // Calculate pagination
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-
-    // Get the survey responses with pagination
-    const {
-      data: responses,
-      error: responsesError,
-      count,
-    } = await supabase
-      .from(TABLES.SURVEY_RESPONSES)
-      .select('*', { count: 'exact' })
-      .eq('survey_id', surveyId)
+    // Fetch responses with pagination
+    const { data: responses, error: responsesError } = await supabase
+      .from(FORM_TABLES.FORM_RESPONSES)
+      .select('*, profiles:user_id(name, email, avatar_url)')
+      .eq('form_id', surveyId)
       .order('created_at', { ascending: false })
-      .range(from, to);
+      .range(offset, offset + pageSize - 1);
+
+    // Get total count for pagination
+    const { count, error: countError } = await supabase
+      .from(FORM_TABLES.FORM_RESPONSES)
+      .select('id', { count: 'exact', head: true })
+      .eq('form_id', surveyId);
 
     if (responsesError) {
-      console.error('Error fetching survey responses:', responsesError);
-      return NextResponse.json({ error: 'Failed to fetch survey responses' }, { status: 500 });
+      console.error('Error fetching responses:', responsesError);
+      return NextResponse.json(
+        { error: 'Failed to fetch responses' },
+        { status: 500 }
+      );
     }
 
-    // Calculate total pages
-    const totalPages = count ? Math.ceil(count / pageSize) : 0;
+    // Transform responses to include user information
+    const transformedResponses = responses.map(response => {
+      const { profiles, ...rest } = response;
+      return {
+        ...rest,
+        user: profiles,
+      };
+    });
 
+    // Return responses with pagination info
     return NextResponse.json({
-      responses,
+      responses: transformedResponses,
       pagination: {
-        currentPage: page,
+        total: count || 0,
+        page,
         pageSize,
-        totalItems: count,
-        totalPages,
+        totalPages: Math.ceil((count || 0) / pageSize),
       },
+      survey: {
+        id: survey.id,
+        name: survey.name
+      }
     });
   } catch (error) {
-    console.error('Exception in GET /api/admin/surveys/[surveyId]/responses:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    console.error('Error in survey responses API route:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

@@ -26,7 +26,8 @@ const meta = {
 } satisfies Meta<typeof TabbledFeedback>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+
+type Story = StoryObj<typeof TabbledFeedback>;
 
 export const Default: Story = {
   args: {},
@@ -40,21 +41,31 @@ export const Default: Story = {
           responses: [
             {
               id: '1',
-              survey_id: 'survey-1',
-              name: 'John Smith',
-              email: 'john@example.com',
-              completed_at: new Date().toISOString(),
-              source: 'Email',
-              survey_title: 'Travel Preferences Survey',
+              form_id: 'form-1',
+              user_id: 'user-123',
+              status: 'completed',
+              data: {
+                name: 'John Smith',
+                email: 'john@example.com',
+                feedback: 'Great application, very intuitive!'
+              },
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              form_name: 'Travel Preferences Survey'
             },
             {
               id: '2',
-              survey_id: 'survey-2',
-              name: 'Maria Garcia',
-              email: 'maria@example.com',
-              completed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-              source: 'Website',
-              survey_title: 'User Experience Feedback',
+              form_id: 'form-2',
+              user_id: 'user-456',
+              status: 'in_progress',
+              data: {
+                fullName: 'Maria Garcia',
+                email: 'maria@example.com',
+                rating: 4
+              },
+              created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+              updated_at: null,
+              form_name: 'User Experience Feedback'
             },
           ],
         },

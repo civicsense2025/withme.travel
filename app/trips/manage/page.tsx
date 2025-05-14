@@ -7,8 +7,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { getGuestToken } from '@/utils/guest';
 import { Metadata } from 'next';
 import { requireAuthOrGuest } from '@/utils/auth/route-helpers';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { TripTabs } from '../components/TripTabs';
 
 // We need to tell search engines not to index this authenticated page
 export const metadata: Metadata = {
@@ -41,6 +40,22 @@ export default async function TripsManagePage() {
 
   // Get the Supabase client
   const supabase = await getServerSupabase();
+
+  // Fetch user profile for personalization
+  let userProfile = null;
+  if (user) {
+    try {
+      const { data: profile } = await supabase
+        .from(TABLES.PROFILES)
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      userProfile = profile;
+    } catch (error) {
+      console.error('[TripsManagePage] Error fetching user profile:', error);
+    }
+  }
 
   // If user is authenticated, fetch their trips
   if (user) {
@@ -80,20 +95,18 @@ export default async function TripsManagePage() {
           <PageHeader
             title="My Trips"
             description="Manage your travel adventures"
-            className="mb-6"
+            className="mb-4"
             centered={true}
-            actions={
-              <a href="/trips/create">
-                <Button className="flex items-center rounded-full">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Trip
-                </Button>
-              </a>
-            }
           />
         }
       >
-        <TripsClientPage initialTrips={formattedTrips} userId={user.id} />
+        <div className="max-w-3xl mx-auto">
+          <TripTabs 
+            initialTrips={formattedTrips} 
+            userId={user.id} 
+            userProfile={userProfile}
+          />
+        </div>
       </PageContainer>
     );
   }
@@ -136,20 +149,18 @@ export default async function TripsManagePage() {
               <PageHeader
                 title="My Trips"
                 description="Manage your travel adventures"
-                className="mb-6"
+                className="mb-4"
                 centered={true}
-                actions={
-                  <a href="/trips/create">
-                    <Button className="flex items-center rounded-full">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Create Trip
-                    </Button>
-                  </a>
-                }
               />
             }
           >
-            <TripsClientPage initialTrips={guestTrips} isGuest={true} />
+            <div className="max-w-3xl mx-auto">
+              <TripTabs
+                initialTrips={guestTrips}
+                isGuest={true}
+                userProfile={null}
+              />
+            </div>
           </PageContainer>
         );
       }
@@ -164,13 +175,13 @@ export default async function TripsManagePage() {
       header={
         <PageHeader
           title="My Trips"
-          description="No trips found"
-          className="mb-6"
+          description="Start planning your trips"
+          className="mb-4"
           centered={true}
         />
       }
     >
-      <div className="text-center p-8">
+      <div className="max-w-3xl mx-auto text-center p-8">
         <p className="mb-4">You don't have any trips yet.</p>
         <a href="/trips/create" className="text-blue-500 hover:underline">
           Create your first trip

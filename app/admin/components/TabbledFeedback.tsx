@@ -22,12 +22,13 @@ interface FeedbackItem {
 
 interface SurveyResponse {
   id: string;
-  survey_id: string;
-  name: string | null;
-  email: string | null;
-  completed_at: string | null;
-  source: string | null;
-  survey_title: string;
+  form_id: string;
+  user_id: string | null;
+  status: string | null;
+  data: any;
+  created_at: string;
+  updated_at: string | null;
+  form_name: string;
 }
 
 export function TabbledFeedback() {
@@ -97,6 +98,26 @@ export function TabbledFeedback() {
     } catch (error) {
       return 'Invalid date';
     }
+  };
+
+  // Helper to get user name from response data
+  const getUserName = (response: SurveyResponse) => {
+    // Try to get name from response data
+    if (response.data && typeof response.data === 'object') {
+      // Look for common name fields in the response data
+      const nameField = response.data.name || 
+                         response.data.fullName || 
+                         response.data.user_name || 
+                         response.data.userName;
+      
+      if (nameField) return nameField;
+    }
+    
+    // Fallback to first initial if we have a user_id
+    if (response.user_id) return response.user_id.substring(0, 1).toUpperCase();
+    
+    // Default fallback
+    return 'A';
   };
 
   if (isLoading) {
@@ -176,31 +197,36 @@ export function TabbledFeedback() {
         {surveyResponses.length > 0 ? (
           surveyResponses.map((response) => (
             <Link
-              href={`/admin/surveys/${response.survey_id}/responses/${response.id}`}
+              href={`/admin/surveys/${response.form_id}/responses/${response.id}`}
               key={response.id}
               className="block"
             >
               <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback>{(response.name || 'A').charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{getUserName(response).charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
-                    <p className="text-sm font-medium">{response.name || 'Anonymous'}</p>
+                    <p className="text-sm font-medium">
+                      {response.user_id ? 'User ' + response.user_id.substring(0, 8) : 'Anonymous'}
+                    </p>
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {response.completed_at ? formatDate(response.completed_at) : 'Not completed'}
+                      {formatDate(response.created_at)}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                    Responded to <span className="font-medium">{response.survey_title}</span>
+                    Responded to <span className="font-medium">{response.form_name}</span>
                   </p>
                   <div className="mt-1">
                     <Badge variant="outline" className="text-xs">
-                      {response.source || 'Direct'}
+                      {Object.keys(response.data || {}).length} answers
                     </Badge>
-                    {response.completed_at ? (
-                      <Badge variant="secondary" className="text-xs ml-2">
-                        Completed
+                    {response.status ? (
+                      <Badge 
+                        variant={response.status === 'completed' ? 'secondary' : 'outline'} 
+                        className="text-xs ml-2"
+                      >
+                        {response.status.charAt(0).toUpperCase() + response.status.slice(1)}
                       </Badge>
                     ) : (
                       <Badge

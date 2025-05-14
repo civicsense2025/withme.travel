@@ -1,5 +1,7 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { TABLES } from '@/utils/constants/tables';
+import { FORM_TABLES } from '@/utils/constants/tables';
 
 /**
  * GET /api/admin/surveys/create/responses
@@ -18,28 +20,29 @@ export async function GET(request: Request) {
 
     // Verify user is authenticated and is an admin
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     // Check if user is an admin
     const { data: adminCheck, error: adminCheckError } = await supabase
-      .from('profiles')
+      .from(TABLES.PROFILES)
       .select('is_admin')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (adminCheckError || !adminCheck?.is_admin) {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
     }
 
-    // Get the survey responses
+    // Get the form responses
     const { data: responses, error: responsesError } = await supabase
-      .from('survey_responses')
+      .from(FORM_TABLES.FORM_RESPONSES)
       .select('*')
-      .eq('survey_id', surveyId)
+      .eq('form_id', surveyId)
       .order('created_at', { ascending: false });
 
     if (responsesError) {
@@ -64,8 +67,9 @@ export async function POST(request: Request) {
 
     // Get the authenticated user (can be null for anonymous responses)
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
     // Parse the request body
     const body = await request.json();
@@ -75,13 +79,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Survey ID and responses are required' }, { status: 400 });
     }
 
-    // Create the survey response
-    const { data: surveyResponse, error: responseError } = await supabase
-      .from('survey_responses')
+    // Create the form response
+    const { data: formResponse, error: responseError } = await supabase
+      .from(FORM_TABLES.FORM_RESPONSES)
       .insert({
-        survey_id: surveyId,
-        user_id: session?.user?.id || null,
-        responses: responses,
+        form_id: surveyId,
+        user_id: user?.id || null,
+        data: responses,
+        status: 'completed'
       })
       .select()
       .single();
@@ -94,7 +99,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: 'Survey response submitted successfully',
-      response: surveyResponse,
+      response: formResponse,
     });
   } catch (error) {
     console.error('Exception in POST /api/admin/surveys/create/responses:', error);

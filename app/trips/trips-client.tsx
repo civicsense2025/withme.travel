@@ -134,7 +134,7 @@ export default function TripsClientPage({
   // Empty state when no trips exist
   if (trips.length === 0) {
     return (
-      <div className="mt-12 flex flex-col items-center p-8 bg-card rounded-xl border shadow-sm">
+      <div className="mt-6 flex flex-col items-center p-8 bg-card rounded-xl border shadow-sm">
         <h2 className="text-2xl font-semibold mb-4">No Trips Yet</h2>
         <p className="text-muted-foreground text-center mb-8 max-w-md">
           Start planning your next adventure. Create a trip to manage itineraries, invite friends,
@@ -150,9 +150,9 @@ export default function TripsClientPage({
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div>
       {/* Filter and search controls */}
-      <div className="flex flex-wrap gap-4 items-center mb-8 mt-8 justify-center">
+      <div className="flex flex-wrap gap-4 items-center mb-8 justify-center">
         <div className="relative w-full max-w-md mx-auto">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -198,49 +198,71 @@ export default function TripsClientPage({
         {Object.entries(groupedTrips).map(([dateGroup, tripsInGroup]) => (
           <div key={dateGroup}>
             <div className="flex items-center mb-4">
-              <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
-              <h2 className="text-xl font-medium">{dateGroup}</h2>
+              <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">{dateGroup}</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {tripsInGroup.map((tripMember) => (
-                <div key={tripMember.trip.id} className="relative group">
-                  <Link href={`/trips/${tripMember.trip.id}`} className="block h-full">
-                    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md dark:hover:shadow-lg dark:shadow-none dark:hover:border-primary/30 hover:translate-y-[-2px]">
-                      <div className="aspect-video relative bg-muted overflow-hidden">
-                        {tripMember.trip.cover_image_url ? (
-                          <img
-                            src={tripMember.trip.cover_image_url}
-                            alt={tripMember.trip.name}
-                            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            No image
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-5">
-                        <h3 className="text-xl font-medium mb-2 line-clamp-1">
-                          {tripMember.trip.name}
-                        </h3>
-                        <p className="text-muted-foreground mb-3 text-sm line-clamp-1">
-                          {tripMember.trip.destination_name || 'No destination set'}
+                <Link
+                  key={tripMember.trip.id}
+                  href={`/trips/${tripMember.trip.id}`}
+                  className="no-underline"
+                >
+                  <Card className="h-full hover:shadow-md transition-shadow duration-200 overflow-hidden">
+                    <div
+                      className={`relative h-32 bg-cover bg-center ${
+                        !tripMember.trip.cover_image_url ? 'bg-muted' : ''
+                      }`}
+                      style={
+                        tripMember.trip.cover_image_url
+                          ? { backgroundImage: `url(${tripMember.trip.cover_image_url})` }
+                          : {}
+                      }
+                    >
+                      {!tripMember.trip.cover_image_url && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-4xl">✈️</span>
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="p-4">
+                      <div className="mb-2">
+                        <p className="text-xs text-muted-foreground">
+                          {tripMember.role.toUpperCase()}
                         </p>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4 mr-1" />
+                      </div>
+                      <h3 className="text-lg font-bold line-clamp-1 mb-1">
+                        {tripMember.trip.name}
+                      </h3>
+                      {tripMember.trip.destination_name && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {tripMember.trip.destination_name}
+                        </p>
+                      )}
+                      {(tripMember.trip.start_date || tripMember.trip.end_date) && (
+                        <div className="flex items-center text-xs">
+                          <Calendar className="h-3 w-3 mr-1" />
                           <span>
                             {tripMember.trip.start_date
-                              ? new Date(tripMember.trip.start_date).toLocaleDateString()
-                              : 'No dates set'}
+                              ? new Date(tripMember.trip.start_date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })
+                              : 'TBD'}{' '}
+                            -{' '}
                             {tripMember.trip.end_date
-                              ? ` - ${new Date(tripMember.trip.end_date).toLocaleDateString()}`
-                              : ''}
+                              ? new Date(tripMember.trip.end_date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })
+                              : 'TBD'}
                           </span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>

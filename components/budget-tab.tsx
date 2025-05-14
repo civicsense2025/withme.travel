@@ -85,6 +85,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useResearchTracking } from '@/hooks/use-research-tracking';
 
 // Define ManualDbExpense type locally (if not imported)
 interface ManualDbExpense {
@@ -131,6 +132,7 @@ export function BudgetTab({
   initialMembers,
 }: BudgetTabProps) {
   const { toast } = useToast();
+  const { trackEvent } = useResearchTracking();
   const [newExpense, setNewExpense] = useState({
     title: '',
     amount: '',
@@ -303,21 +305,77 @@ export function BudgetTab({
     // This would be replaced with an actual API call
     console.log('Submitting new expense:', newExpense);
 
-    // Mock success (replace with actual API logic)
-    toast({
-      title: 'Expense added',
-      description: `Added ${newExpense.title} for ${formatCurrency(Number(newExpense.amount))}`,
-    });
+    try {
+      // Mock API call (replace with actual API call)
+      // const response = await fetch(`/api/trips/${tripId}/expenses`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(newExpense),
+      // });
+      // const result = await response.json();
+      // if (!response.ok) throw new Error(result.error || 'Failed to add expense');
+      
+      // Mock success (replace with actual API logic)
+      const mockResult = { 
+        id: `expense-${Date.now()}`,
+        ...newExpense
+      };
 
-    // Reset form
-    setNewExpense({
-      title: '',
-      amount: '',
-      category: '',
-      paid_by: '',
-      date: new Date().toISOString().split('T')[0],
-    });
-    setIsAddingInline(false);
+      // Track successful expense addition
+      try {
+        await trackEvent('budget_item_added', {
+          tripId,
+          expenseId: mockResult.id,
+          title: newExpense.title,
+          amount: parseFloat(newExpense.amount) || 0,
+          category: newExpense.category,
+          paid_by: newExpense.paid_by,
+          date: newExpense.date,
+          source: 'budget-tab',
+          component: 'BudgetTab',
+          isDemo: true // Since this is currently a mock implementation
+        });
+      } catch (trackingError) {
+        console.error('Failed to track budget_item_added event:', trackingError);
+      }
+
+      toast({
+        title: 'Expense added',
+        description: `Added ${newExpense.title} for ${formatCurrency(Number(newExpense.amount))}`,
+      });
+
+      // Reset form
+      setNewExpense({
+        title: '',
+        amount: '',
+        category: '',
+        paid_by: '',
+        date: new Date().toISOString().split('T')[0],
+      });
+      setIsAddingInline(false);
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add expense',
+        variant: 'destructive'
+      });
+
+      // Optional: Track failed expense addition
+      try {
+        await trackEvent('budget_item_addition_failed', {
+          tripId,
+          title: newExpense.title,
+          amount: parseFloat(newExpense.amount) || 0,
+          category: newExpense.category,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          source: 'budget-tab',
+          component: 'BudgetTab'
+        });
+      } catch (trackingError) {
+        console.error('Failed to track budget_item_addition_failed event:', trackingError);
+      }
+    }
   };
 
   // Define loading (can be made dynamic later if needed)

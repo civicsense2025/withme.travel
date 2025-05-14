@@ -110,6 +110,21 @@ export default function CommentsList({
           ...prev,
           [commentId]: [...(prev[commentId] || []), reaction],
         }));
+
+        // Track successful reaction addition
+        try {
+          await trackEvent('comment_reacted', {
+            commentId,
+            emoji,
+            action: 'add',
+            contentType,
+            contentId,
+            source: 'comments-list',
+            component: 'CommentsList'
+          });
+        } catch (trackingError) {
+          console.error('Failed to track comment_reacted event:', trackingError);
+        }
       }
     } catch (error) {
       console.error('Error adding reaction:', error);
@@ -128,6 +143,21 @@ export default function CommentsList({
             (r) => !(r.user_id === 'currentUser' && r.emoji === emoji)
           ),
         }));
+
+        // Track successful reaction removal
+        try {
+          await trackEvent('comment_reacted', {
+            commentId,
+            emoji,
+            action: 'remove',
+            contentType,
+            contentId,
+            source: 'comments-list',
+            component: 'CommentsList'
+          });
+        } catch (trackingError) {
+          console.error('Failed to track comment_reacted event:', trackingError);
+        }
       }
     } catch (error) {
       console.error('Error removing reaction:', error);

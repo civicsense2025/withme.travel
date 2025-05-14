@@ -18,6 +18,8 @@ import {
 import InviteLinkBox from './InviteLinkBox';
 import { FeatureTabs } from '@/components/FeatureTabs';
 import { Container } from '@/components/container';
+import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CreateGroupModal = dynamic(() => import('./create-group-modal'), { ssr: false });
 
@@ -190,6 +192,8 @@ const wittyHeadlines = [
   'Group trips without the group headaches.',
 ];
 
+const BOUNCE_EMOJIS = ['💃', '��', '👰‍♂️', '🤵'];
+
 /**
  * GroupsLandingPage is the public landing for /groups when not logged in.
  * It showcases the value of group trip planning and encourages quick group creation.
@@ -270,24 +274,29 @@ const GroupsLandingPage: React.FC = () => {
                 tabIndex={-1}
                 className="hidden"
               />
-              <div className="flex flex-col sm:flex-row w-full gap-2">
+              <div className="flex flex-col w-full gap-2">
                 <input
                   type="text"
                   name="groupName"
                   placeholder="Name your group (e.g., Italy Squad 2024)"
                   required
-                  className="flex-1 h-14 px-5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-black text-black dark:text-white text-lg focus:outline-none focus:ring-2 focus:ring-travel-purple"
+                  className="flex-1 h-16 px-5 py-4 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-black text-black dark:text-white text-lg focus:outline-none focus:ring-2 focus:ring-travel-purple"
                 />
-                <Button
-                  type="submit"
-                  className="h-14 px-8 rounded-full bg-travel-purple hover:bg-purple-400 text-white font-medium text-lg"
-                  disabled={loading}
-                >
-                  {loading ? 'Creating...' : 'Create Group'}
-                </Button>
               </div>
+              <Button
+                type="submit"
+                className="h-16 px-10 rounded-full bg-gradient-to-r from-travel-purple to-purple-400 hover:from-purple-400 hover:to-travel-purple text-white font-medium text-lg w-full relative overflow-visible"
+                disabled={loading}
+              >
+                {loading ? 'Creating...' : 'Create Group'}
+              </Button>
               {error && <p className="text-red-500 text-sm">{error}</p>}
             </form>
+
+            {/* Emoji explosion at the bottom of hero section */}
+            <div className="flex justify-center mt-10">
+              <HeroEmojiExplosion variant="people-bounce" size={40} />
+            </div>
           </div>
         </section>
 

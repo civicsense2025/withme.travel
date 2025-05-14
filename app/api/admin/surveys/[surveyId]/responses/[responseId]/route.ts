@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { TABLES } from '@/utils/constants/tables';
+import { FORM_TABLES } from '@/utils/constants/tables';
 
 interface RouteParams {
   params: {
@@ -43,12 +44,12 @@ export async function GET(request: NextRequest, params: RouteParams) {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
     }
 
-    // Get the survey response
+    // Get the form response
     const { data: response, error: responseError } = await supabase
-      .from(TABLES.SURVEY_RESPONSES)
+      .from(FORM_TABLES.FORM_RESPONSES)
       .select('*')
       .eq('id', responseId)
-      .eq('survey_id', surveyId)
+      .eq('form_id', surveyId)
       .single();
 
     if (responseError) {

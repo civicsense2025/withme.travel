@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Logo } from '@/components/logo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { SendHorizonal, CheckCircle } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
 
 export function FooterLogoAndSubscribe() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const isValidEmail = email && email.includes('@') && email.includes('.');
+  const footerRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(footerRef, { margin: '-10% 0px -10% 0px', amount: 0.2 });
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    if (isValidEmail) {
       setSubscribed(true);
       setTimeout(() => {
         setEmail('');
@@ -21,44 +24,50 @@ export function FooterLogoAndSubscribe() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={footerRef}>
       <Logo />
       <p className="text-sm text-muted-foreground max-w-md">
-        Plan trips with friends without the chaos. Make group travel fun again.
+        Join thousands of travelers who've ditched chaotic group chats for seamless, collaborative trip planning.
       </p>
-      <div className="pt-4">
-        <h3 className="text-sm font-medium mb-2">Get travel inspiration</h3>
+      <div className="pt-2">
         <form
           onSubmit={handleSubscribe}
-          className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 max-w-md"
+          className="max-w-md relative"
         >
-          <div className="flex-grow">
-            <Input
-              type="email"
-              placeholder="your@email.com"
-              className="rounded-full w-full"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={subscribed}
-            />
-          </div>
-          <Button type="submit" className="rounded-full" disabled={subscribed}>
+          <Input
+            type="email"
+            placeholder={email ? '' : 'Get travel inspiration & planning tips'}
+            className={`rounded-full w-full h-8 text-sm pl-4 pr-9 transition-shadow duration-300 ${inView ? 'ring-2 ring-blue-400/60 ring-offset-2 animate-[pulse-glow_2s_ease-in-out_infinite]' : ''}`}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={subscribed}
+            aria-label="Email for subscription"
+            autoComplete="email"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
             {subscribed ? (
               <motion.span
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
-                className="flex items-center"
+                className="text-green-500"
               >
-                <CheckCircle className="h-4 w-4 mr-1" /> Subscribed
+                <CheckCircle className="h-4 w-4" />
               </motion.span>
             ) : (
-              <>
-                Subscribe <ArrowRight className="ml-1 h-4 w-4" />
-              </>
+              <Button 
+                type="submit" 
+                size="icon" 
+                variant="ghost" 
+                className={`h-6 w-6 p-0 ${isValidEmail ? 'text-blue-500 hover:text-blue-600' : 'text-gray-300'}`} 
+                disabled={!isValidEmail}
+                title="Subscribe"
+              >
+                <SendHorizonal className="h-4 w-4" />
+              </Button>
             )}
-          </Button>
+          </div>
         </form>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-muted-foreground mt-1.5">
           We respect your privacy and will never share your email.
         </p>
       </div>

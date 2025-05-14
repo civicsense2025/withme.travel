@@ -5,31 +5,35 @@ export type EventType =
   | 'trip_created'
   | 'trip_updated'
   | 'trip_deleted'
+  | 'trip_creation_failed'
   // Itinerary actions
   | 'itinerary_item_added'
   | 'itinerary_item_updated'
   | 'itinerary_item_deleted'
+  | 'itinerary_item_creation_failed'
   | 'itinerary_voted'
   // Group actions
   | 'group_created'
   | 'group_member_added'
   | 'group_member_removed'
+  | 'group_plan_created'
+  | 'group_plan_creation_failed'
   // Comment & reaction actions
   | 'comment_posted'
   | 'comment_reacted'
-  // Focus mode
-  | 'focus_mode_started'
-  | 'focus_mode_ended'
+  | 'comment_reaction_failed'
   // Budget actions
   | 'budget_item_added'
   | 'budget_item_updated'
   | 'budget_item_deleted'
+  | 'budget_item_addition_failed'
   // Feedback & survey
   | 'feedback_submitted'
   | 'survey_started'
   | 'survey_completed'
   | 'survey_step_completed'
   | 'survey_question_answered'
+  | 'survey_submission_failed'
   // Onboarding & feature
   | 'onboarding_completed'
   | 'feature_discovered'

@@ -70,7 +70,33 @@ export function CreateTripFromTemplateDialog({
 
       setCreatedTripId(result.trip_id);
       toast({ title: 'Trip Created!', description: 'Your new trip is ready.' });
-      trackEvent('trip_created', { tripId: result.trip_id, templateSlug });
+
+      // Track both the template usage and trip creation events
+      try {
+        // Track that a template was used to create a trip
+        await trackEvent('template_used', { 
+          templateSlug,
+          templateTitle,
+          tripId: result.trip_id,
+          hasStartDate: !!startDate,
+          source: 'template-dialog',
+          component: 'CreateTripFromTemplateDialog'
+        });
+        
+        // Track the trip creation event
+        await trackEvent('trip_created', { 
+          tripId: result.trip_id, 
+          title: tripName,
+          startDate: startDate ? format(startDate, 'yyyy-MM-dd') : null,
+          createdFromTemplate: true,
+          templateSlug,
+          templateTitle,
+          source: 'template-dialog',
+          component: 'CreateTripFromTemplateDialog'
+        });
+      } catch (trackingError) {
+        console.error('Failed to track template/trip events:', trackingError);
+      }
 
       // Add a small delay to ensure the research tracking is complete
       setTimeout(() => {
@@ -84,6 +110,19 @@ export function CreateTripFromTemplateDialog({
         description: error.message || 'Could not create trip.',
         variant: 'destructive',
       });
+      
+      // Track the failure event
+      try {
+        await trackEvent('trip_creation_failed', {
+          templateSlug,
+          templateTitle,
+          error: error.message || 'Unknown error',
+          source: 'template-dialog',
+          component: 'CreateTripFromTemplateDialog'
+        });
+      } catch (trackingError) {
+        console.error('Failed to track trip_creation_failed event:', trackingError);
+      }
     } finally {
       setIsLoading(false);
     }

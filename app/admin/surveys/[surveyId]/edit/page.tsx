@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import {
   Card,
@@ -25,6 +25,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { PlusCircle, Trash2, ArrowLeft, Save } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface SurveyField {
   id: string;
@@ -34,17 +35,72 @@ interface SurveyField {
   options?: string[];
 }
 
-export default function CreateSurveyPage() {
+interface Survey {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string;
+  config: {
+    fields: SurveyField[];
+  };
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  response_count?: number;
+}
+
+export default function EditSurveyPage() {
   const router = useRouter();
+  const params = useParams();
   const { toast } = useToast();
+  const surveyId = params.surveyId as string;
+  
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const [surveyName, setSurveyName] = useState('');
   const [surveyDescription, setSurveyDescription] = useState('');
+  const [isActive, setIsActive] = useState(true);
   const [fields, setFields] = useState<SurveyField[]>([]);
+  
   const [currentFieldLabel, setCurrentFieldLabel] = useState('');
   const [currentFieldType, setCurrentFieldType] = useState('text');
   const [currentFieldRequired, setCurrentFieldRequired] = useState(false);
   const [currentFieldOptions, setCurrentFieldOptions] = useState('');
+
+  useEffect(() => {
+    const fetchSurvey = async () => {
+      setIsLoading(true);
+      
+      try {
+        const response = await fetch(`/api/admin/surveys/${surveyId}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch survey');
+        }
+        
+        const data = await response.json();
+        const survey = data.survey as Survey;
+        
+        // Populate form fields with survey data
+        setSurveyName(survey.name);
+        setSurveyDescription(survey.description || '');
+        setIsActive(survey.is_active);
+        setFields(survey.config.fields || []);
+      } catch (err) {
+        console.error('Error fetching survey:', err);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (surveyId) {
+      fetchSurvey();
+    }
+  }, [surveyId]);
 
   const addField = () => {
     if (!currentFieldLabel) {
@@ -102,15 +158,14 @@ export default function CreateSurveyPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/admin/surveys', {
-        method: 'POST',
+      const response = await fetch(`/api/admin/surveys/${surveyId}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: surveyName,
           description: surveyDescription,
-          type: 'survey',
           config: {
             fields: fields.map(field => ({
               id: field.id,
@@ -120,23 +175,23 @@ export default function CreateSurveyPage() {
               options: field.options || [],
             })),
           },
-          is_active: true,
+          is_active: isActive,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create survey');
+        throw new Error(error.error || 'Failed to update survey');
       }
 
       toast({
         title: 'Success',
-        description: 'Survey created successfully',
+        description: 'Survey updated successfully',
       });
 
-      router.push('/admin/surveys');
+      router.push(`/admin/surveys/${surveyId}`);
     } catch (error) {
-      console.error('Error creating survey:', error);
+      console.error('Error updating survey:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'An unknown error occurred',
@@ -147,14 +202,36 @@ export default function CreateSurveyPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary"></div>
+          <p className="text-base text-muted-foreground">Loading survey...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+          <p className="text-destructive text-lg">Error: {error}</p>
+          <Button onClick={() => router.push('/admin/surveys')}>Back to Surveys</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader
-          title="Create Survey"
-          description="Create a new user testing survey with custom questions"
+          title="Edit Survey"
+          description="Update survey details and questions"
         />
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.push(`/admin/surveys/${surveyId}`)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
@@ -164,7 +241,7 @@ export default function CreateSurveyPage() {
         <Card>
           <CardHeader>
             <CardTitle>Survey Details</CardTitle>
-            <CardDescription>Define the basic information for your survey</CardDescription>
+            <CardDescription>Update basic information for your survey</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -185,6 +262,14 @@ export default function CreateSurveyPage() {
                 placeholder="Enter survey description"
                 rows={4}
               />
+            </div>
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="active"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+              <Label htmlFor="active">Active</Label>
             </div>
           </CardContent>
         </Card>
@@ -295,14 +380,19 @@ export default function CreateSurveyPage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(`/admin/surveys/${surveyId}`)}
+          >
+            Cancel
+          </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? (
-              <>Creating Survey...</>
+              <>Saving Changes...</>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Create Survey
+                Save Changes
               </>
             )}
           </Button>
@@ -310,4 +400,4 @@ export default function CreateSurveyPage() {
       </Card>
     </div>
   );
-}
+} 

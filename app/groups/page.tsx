@@ -54,21 +54,7 @@ export default async function GroupsPage() {
 
   // No user and no guest groups, show the landing page
   return (
-    <PageContainer
-      header={
-        <Section>
-          <div className="text-center">
-            <Heading level={1} size="large" align="center">
-              Groups
-            </Heading>
-            <Text variant="large" className="text-muted-foreground max-w-2xl mx-auto">
-              Create and manage travel groups with friends and family.
-            </Text>
-          </div>
-        </Section>
-      }
-    >
-      <GroupsLandingPage />
-    </PageContainer>
+    
+    <GroupsLandingPage />
   );
 }

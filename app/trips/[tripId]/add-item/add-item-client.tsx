@@ -36,6 +36,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FormControl, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useResearchTracking } from '@/hooks/use-research-tracking';
 
 // Define a local formatError function since it's not available in utils
 function formatError(error: any): string {
@@ -75,6 +76,7 @@ export function AddItineraryItemClient({
   const router = useRouter();
   const { toast } = useToast();
   const [date, setDate] = useState<Date>();
+  const { trackEvent } = useResearchTracking();
   const [selectedPlace, setSelectedPlace] = useState<GeocoderResult | null>(
     initialDestination
       ? {
@@ -140,6 +142,25 @@ export function AddItineraryItemClient({
         throw new Error(result.error || 'Failed to add item. Please check the details.');
       }
 
+      // Track the successful itinerary item creation
+      try {
+        await trackEvent('itinerary_item_added', {
+          tripId,
+          itemId: result.id || 'unknown',
+          title: newItemData.title,
+          itemType: newItemData.type,
+          date: newItemData.date,
+          hasLocation: !!selectedPlace,
+          hasCost: !!newItemData.estimated_cost,
+          source: 'add-item-client',
+          route: `/trips/${tripId}/add-item`,
+          component: 'AddItineraryItemClient'
+        });
+      } catch (trackingError) {
+        // Don't let tracking failures affect the user experience
+        console.error('Failed to track itinerary_item_added event:', trackingError);
+      }
+
       toast({
         title: 'Item Added!',
         description: `${newItemData.title} has been added to the itinerary.`,
@@ -157,6 +178,21 @@ export function AddItineraryItemClient({
         description: errMsg,
         variant: 'destructive',
       });
+
+      // Optional: Track failed item creation for UX analysis
+      try {
+        await trackEvent('itinerary_item_creation_failed', {
+          tripId,
+          title: newItemData.title,
+          itemType: newItemData.type,
+          error: errMsg,
+          source: 'add-item-client',
+          route: `/trips/${tripId}/add-item`,
+          component: 'AddItineraryItemClient'
+        });
+      } catch (trackingError) {
+        console.error('Failed to track itinerary_item_creation_failed event:', trackingError);
+      }
     } finally {
       setIsSubmitting(false);
     }

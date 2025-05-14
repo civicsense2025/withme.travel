@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { Survey, SurveyQuestion } from '../../../../../types/research';
 import { TABLES } from '@/utils/constants/tables';
+import { FORM_TABLES } from '@/utils/constants/tables';
 // NOTE: All survey_definitions logic is commented out because the table was removed from the schema.
 // import { TABLES } from '@/utils/constants/tables';
 
@@ -32,58 +33,92 @@ const SurveySchema = z.object({
  * GET /api/admin/surveys/[surveyId]
  * Fetch a specific survey definition
  */
-export async function GET(request: NextRequest, params: RouteParams): Promise<NextResponse> {
-  const surveyId = params.params.surveyId;
-
-  if (!surveyId) {
-    return NextResponse.json({ error: 'Survey ID is required' }, { status: 400 });
-  }
-
+export async function GET(
+  request: Request,
+  { params }: { params: { surveyId: string } }
+) {
   try {
     const supabase = await createRouteHandlerClient();
+    const surveyId = params.surveyId;
 
-    // Verify user is authenticated and is an admin - use getUser instead of getSession
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    if (!surveyId) {
+      return NextResponse.json(
+        { error: 'Survey ID is required' },
+        { status: 400 }
+      );
     }
 
-    // Check if user is an admin
-    const { data: adminCheck, error: adminCheckError } = await supabase
-      .from(TABLES.PROFILES)
+    // Verify the user is an admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You must be logged in' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
 
-    if (adminCheckError || !adminCheck?.is_admin) {
-      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    if (profileError || !profile || !profile.is_admin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
     }
 
-    // Get the survey definition
-    // .from(TABLES.SURVEY_DEFINITIONS) // Table removed from schema
+    // Fetch the survey
     const { data: survey, error: surveyError } = await supabase
-      .from(TABLES.SURVEY_DEFINITIONS)
+      .from(FORM_TABLES.FORMS)
       .select('*')
-      .eq('survey_id', surveyId)
+      .eq('id', surveyId)
       .single();
 
     if (surveyError) {
       console.error('Error fetching survey:', surveyError);
-
-      if (surveyError.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Survey not found' }, { status: 404 });
-      }
-
-      return NextResponse.json({ error: 'Failed to fetch survey' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to fetch survey' },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ survey });
+    if (!survey) {
+      return NextResponse.json(
+        { error: 'Survey not found' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch response count
+    const { count: responseCount, error: countError } = await supabase
+      .from(FORM_TABLES.FORM_RESPONSES)
+      .select('*', { count: 'exact', head: true })
+      .eq('form_id', surveyId);
+
+    if (countError) {
+      console.error(`Error counting responses for survey ${surveyId}:`, countError);
+    }
+
+    // Return the survey with response count
+    return NextResponse.json({
+      survey: {
+        ...survey,
+        response_count: responseCount || 0
+      }
+    });
   } catch (error) {
-    console.error('Exception in GET /api/admin/surveys/[surveyId]:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    console.error('Error in survey detail API route:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -91,59 +126,94 @@ export async function GET(request: NextRequest, params: RouteParams): Promise<Ne
  * PATCH /api/admin/surveys/[surveyId]
  * Update a survey definition
  */
-export async function PATCH(request: NextRequest, params: RouteParams): Promise<NextResponse> {
-  const surveyId = params.params.surveyId;
-  if (!surveyId) {
-    return NextResponse.json({ error: 'Survey ID is required' }, { status: 400 });
-  }
-  let body: Partial<Survey>;
+export async function PATCH(
+  request: Request,
+  { params }: { params: { surveyId: string } }
+) {
   try {
-    body = await request.json();
-  } catch (e) {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
-  const parseResult = SurveySchema.safeParse(body);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: 'Validation failed', details: parseResult.error.flatten() },
-      { status: 400 }
-    );
-  }
-  try {
+    const surveyId = params.surveyId;
     const supabase = await createRouteHandlerClient();
+
+    // Verify the user is an admin
     const {
       data: { user },
-      error: userError,
     } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You must be logged in' },
+        { status: 401 }
+      );
     }
-    const { data: adminCheck, error: adminCheckError } = await supabase
-      .from(TABLES.PROFILES)
+
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
-    if (adminCheckError || !adminCheck?.is_admin) {
-      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
-    }
-    // Update the survey definition
-    const { error: updateError } = await supabase
-      .from(TABLES.SURVEY_DEFINITIONS)
-      .update({
-        title: body.title,
-        description: body.description,
-        questions: body.questions ? JSON.stringify(body.questions) : undefined,
-      })
-      .eq('survey_id', surveyId);
-    if (updateError) {
+
+    if (profileError || !profile || !profile.is_admin) {
       return NextResponse.json(
-        { error: 'Failed to update survey', details: updateError.message },
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Get update data from request body
+    const updateData = await request.json();
+
+    // Validate required fields
+    if (!updateData.name) {
+      return NextResponse.json(
+        { error: 'Survey name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if survey exists
+    const { data: existingSurvey, error: checkError } = await supabase
+      .from(FORM_TABLES.FORMS)
+      .select('id')
+      .eq('id', surveyId)
+      .single();
+
+    if (checkError || !existingSurvey) {
+      return NextResponse.json(
+        { error: 'Survey not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update the survey
+    const { data: updatedSurvey, error: updateError } = await supabase
+      .from(FORM_TABLES.FORMS)
+      .update({
+        name: updateData.name,
+        description: updateData.description,
+        config: updateData.config,
+        is_active: updateData.is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', surveyId)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      console.error('Error updating survey:', updateError);
+      return NextResponse.json(
+        { error: 'Failed to update survey' },
         { status: 500 }
       );
     }
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json({ survey: updatedSurvey });
   } catch (error) {
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    console.error('Error in survey update API route:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -151,41 +221,76 @@ export async function PATCH(request: NextRequest, params: RouteParams): Promise<
  * DELETE /api/admin/surveys/[surveyId]
  * Delete a survey definition
  */
-export async function DELETE(request: NextRequest, params: RouteParams): Promise<NextResponse> {
-  const surveyId = params.params.surveyId;
-  if (!surveyId) {
-    return NextResponse.json({ error: 'Survey ID is required' }, { status: 400 });
-  }
+export async function DELETE(
+  request: Request,
+  { params }: { params: { surveyId: string } }
+) {
   try {
+    const surveyId = params.surveyId;
     const supabase = await createRouteHandlerClient();
+
+    // Verify the user is an admin
     const {
       data: { user },
-      error: userError,
     } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You must be logged in' },
+        { status: 401 }
+      );
     }
-    const { data: adminCheck, error: adminCheckError } = await supabase
-      .from(TABLES.PROFILES)
+
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
-    if (adminCheckError || !adminCheck?.is_admin) {
-      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
-    }
-    // Delete the survey definition
-    const { error: deleteError } = await supabase
-      .from(TABLES.SURVEY_DEFINITIONS)
-      .delete()
-      .eq('survey_id', surveyId);
-    if (deleteError) {
+
+    if (profileError || !profile || !profile.is_admin) {
       return NextResponse.json(
-        { error: 'Failed to delete survey', details: deleteError.message },
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Check if survey exists
+    const { data: existingSurvey, error: checkError } = await supabase
+      .from(FORM_TABLES.FORMS)
+      .select('id')
+      .eq('id', surveyId)
+      .single();
+
+    if (checkError || !existingSurvey) {
+      return NextResponse.json(
+        { error: 'Survey not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the survey
+    const { error: deleteError } = await supabase
+      .from(FORM_TABLES.FORMS)
+      .delete()
+      .eq('id', surveyId);
+
+    if (deleteError) {
+      console.error('Error deleting survey:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to delete survey' },
         { status: 500 }
       );
     }
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json({ 
+      message: 'Survey deleted successfully' 
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    console.error('Error in survey delete API route:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

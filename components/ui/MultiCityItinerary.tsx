@@ -243,17 +243,18 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
   const getCityButtonStyle = (city: City): React.CSSProperties => {
     const isActive = activeCity === city.id;
     return {
+      minWidth: 110, // Fixed min width to prevent jump
+      boxSizing: 'border-box',
       background: isActive
         ? getColorToken('SURFACE', currentTheme)
         : getExtendedToken('BUTTON_BG'),
       color: isActive
         ? getColorToken('PRIMARY', currentTheme)
         : getExtendedToken('BUTTON_TEXT'),
-      border: isActive
-        ? `2px solid ${getColorToken('PRIMARY', currentTheme)}`
-        : `1px solid ${getColorToken('BORDER', currentTheme)}`,
+      border: `2px solid ${isActive ? getColorToken('PRIMARY', currentTheme) : 'transparent'}`,
       boxShadow: isActive ? getExtendedToken('SHADOW_MD') : undefined,
-      fontWeight: isActive ? 600 : 500,
+      fontWeight: 600, // Always bold to prevent jump
+      opacity: isActive ? 1 : 0.85,
       transition: 'all 0.18s',
     };
   };
@@ -344,6 +345,31 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
     color: getColorToken('MUTED', currentTheme),
   });
 
+  // Animation variants for staggered entry/exit
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.13,
+        staggerDirection: 1,
+      },
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        staggerChildren: 0.10,
+        staggerDirection: -1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 400, damping: 32 } },
+    exit: { opacity: 0, y: -16, transition: { duration: 0.18 } },
+  };
+
   // --- RENDER ---
   return (
     <div
@@ -390,7 +416,7 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
         </CardHeader>
 
         <CardContent className="pb-0" style={getSurfaceStyle()}>
-          <div className="flex space-x-2 mb-6 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex space-x-3 mb-6 overflow-x-auto pb-4 scrollbar-hide">
             {cities.map((city) => (
               <button
                 key={city.id}
@@ -415,62 +441,57 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
                   <motion.div
                     key={city.id}
                     className="space-y-3"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
                   >
-                    <div className="space-y-3">
-                      {city.items.map((item, idx) => (
-                        <motion.div
-                          key={item.id}
-                          className="p-4 rounded-lg border transition-all hover:shadow-sm"
-                          style={getItemCardStyle()}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.1 }}
-                        >
-                          <div className="flex justify-between items-start gap-3">
-                            <div className="flex items-start gap-3">
-                              <div
-                                className="rounded-full p-2 flex-shrink-0 text-xl"
-                                style={getPlusButtonStyle(city.id)}
-                              >
-                                {getItemTypeIcon(item.type)}
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-base" style={getLabelStyle()}>
-                                  {item.name}
-                                </h4>
-                                <div
-                                  className="flex items-center text-xs mt-1"
-                                  style={getMutedTextStyle()}
-                                >
-                                  
-                                  {item.time}
-                                </div>
-                              </div>
-                            </div>
+                    {city.items.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        className="p-4 rounded-lg border transition-all hover:shadow-sm"
+                        style={getItemCardStyle()}
+                        variants={itemVariants}
+                      >
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex items-start gap-3">
                             <div
-                              className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium"
-                              style={getMutedBadgeStyle()}
+                              className="rounded-full p-2 flex-shrink-0 text-xl"
+                              style={getPlusButtonStyle(city.id)}
                             >
-                              <span className="mr-0.5">💗</span>
-                              {item.votes}
+                              {getItemTypeIcon(item.type)}
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-base" style={getLabelStyle()}>
+                                {item.name}
+                              </h4>
+                              <div
+                                className="flex items-center text-xs mt-1"
+                                style={getMutedTextStyle()}
+                              >
+                                {item.time}
+                              </div>
                             </div>
                           </div>
-                        </motion.div>
-                      ))}
-
-                      {city.items.length === 0 && (
-                        <div
-                          className="text-center py-8"
-                          style={getEmptyStateStyle()}
-                        >
-                          <p>No activities added yet.</p>
+                          <div
+                            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium"
+                            style={getMutedBadgeStyle()}
+                          >
+                            <span className="mr-0.5">💗</span>
+                            {item.votes}
+                          </div>
                         </div>
-                      )}
-                    </div>
+                      </motion.div>
+                    ))}
+                    {city.items.length === 0 && (
+                      <motion.div
+                        className="text-center py-8"
+                        style={getEmptyStateStyle()}
+                        variants={itemVariants}
+                      >
+                        <p>No activities added yet.</p>
+                      </motion.div>
+                    )}
                   </motion.div>
                 ))}
             </AnimatePresence>

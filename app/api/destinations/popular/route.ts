@@ -1,37 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLE_NAMES } from '@/utils/constants/tables';
+import { TABLES } from '@/utils/constants/tables';
 
 /**
  * GET endpoint to retrieve popular destinations
  *
- * @param {NextRequest} request - The incoming request
+ * @param {NextRequest} req - The incoming request
  * @returns {NextResponse} Response with popular destinations
  */
-export async function GET(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
-  const limit = Number(request.nextUrl.searchParams.get('limit')) || 10;
-  const page = Number(request.nextUrl.searchParams.get('page')) || 1;
-  const offset = (page - 1) * limit;
-
+export async function GET(req: NextRequest) {
   try {
-    // Get most popular destinations
-    const { data, error } = await supabase
-      .from(TABLE_NAMES.DESTINATIONS)
-      .select('*')
-      .eq('is_popular', true)
+    const searchParams = req.nextUrl.searchParams;
+    const interests = searchParams.get('interests');
+    const homeLocation = searchParams.get('homeLocation');
+    
+    const supabase = await createRouteHandlerClient();
+    
+    // Base query to get popular destinations
+    let query = supabase
+      .from(TABLES.DESTINATIONS)
+      .select('id, name, slug, description, city, country, region, continent, emoji, image_url')
       .eq('is_active', true)
-      .order('popularity_score', { ascending: false })
-      .range(offset, offset + limit - 1);
-
+      .order('popularity_score', { ascending: false });
+    
+    // Apply interest filtering if provided
+    if (interests) {
+      const interestArray = interests.split(',').map(i => i.trim());
+      if (interestArray.length > 0) {
+        // Use the interests to find destinations with matching tags
+        query = query.contains('tags', interestArray);
+      }
+    }
+    
+    // Apply region filtering based on home location if provided
+    if (homeLocation) {
+      // Find destinations in different regions than the home location
+      // This is a simplified example - a real implementation might use
+      // location proximity or more sophisticated matching
+      query = query.neq('city', homeLocation);
+    }
+    
+    // Limit results
+    query = query.limit(12);
+    
+    const { data: destinations, error } = await query;
+    
     if (error) {
       console.error('Error fetching popular destinations:', error);
-      return NextResponse.json({ error: 'Failed to fetch destinations' }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    return NextResponse.json({ destinations: data || [] });
+    
+    // Transform data to include byline
+    const formattedDestinations = destinations.map(dest => ({
+      id: dest.id,
+      name: dest.city || dest.name,
+      slug: dest.slug,
+      emoji: dest.emoji || '🌍',
+      byline: dest.country || dest.region || dest.continent,
+      image_url: dest.image_url
+    }));
+    
+    return NextResponse.json({ 
+      destinations: formattedDestinations 
+    });
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    console.error('Error in popular destinations API:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch popular destinations' }, 
+      { status: 500 }
+    );
   }
 }

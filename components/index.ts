@@ -38,6 +38,11 @@ export { AuthModal } from './auth-modal';
 export { PresenceIndicator } from './presence-indicator';
 export { ThemeToggle } from './theme-toggle';
 
+// Task and Todo components
+export { Task } from './Task';
+export { Todo } from './Todo';
+export { TodoList } from './TodoList';
+
 // Feedback components
 export { FirstLikeTour } from './first-like-tour';
 
