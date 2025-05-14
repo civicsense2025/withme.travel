@@ -1,0 +1,203 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+// MDC (Markdown Constants) for Cursor to have access to withme.travel constants
+
+/*
+This file contains constants in markdown format for Cursor to have access to.
+It should be synchronized with the real constants in utils/constants/*.ts
+*/
+
+## Database Table Constants
+```typescript
+/**
+ * Constants for database table names
+ */
+export const TABLES = {
+  ACCESS_REQUESTS: 'access_requests',
+  ALBUMS: 'albums',
+  BUDGET_ITEMS: 'budget_items',
+  COLLABORATIVE_NOTES: 'collaborative_notes',
+  COLLABORATIVE_SESSIONS: 'collaborative_sessions',
+  CONTENT_CUSTOMIZATIONS: 'content_customizations',
+  CONTENT_QUALITY_METRICS: 'content_quality_metrics',
+  CONTENT_SHARING_HISTORY: 'content_sharing_history',
+  CONTENT_SLUGS: 'content_slugs',
+  DESTINATION_TAGS: 'destination_tags',
+  DESTINATIONS: 'destinations',
+  EXPENSES: 'expenses',
+  FEEDBACK: 'feedback',
+  FOCUS_SESSIONS: 'focus_sessions',
+  FORM_COLLABORATORS: 'form_collaborators',
+  FORM_TEMPLATES: 'form_templates',
+  FORMS: 'forms',
+  GROUPS: 'groups',
+  GROUP_MEMBERS: 'group_members',
+  GROUP_PLANS: 'group_plans',
+  GROUP_PLAN_IDEAS: 'group_plan_ideas',
+  GROUP_PLAN_IDEA_COMMENTS: 'group_plan_idea_comments',
+  GROUP_PLAN_IDEA_REACTIONS: 'group_plan_idea_reactions',
+  GROUP_PLAN_IDEA_VOTES: 'group_plan_idea_votes',
+  GUEST_TOKENS: 'guest_tokens',
+  GROUP_GUEST_MEMBERS: 'group_guest_members',
+  IMAGES: 'images',
+  INVITATIONS: 'invitations',
+  ITINERARY_ITEMS: 'itinerary_items',
+  ITINERARY_ITEM_VOTES: 'itinerary_item_votes',
+  ITEM_TAGS: 'item_tags',
+  LIKES: 'likes',
+  LOCATIONS: 'locations',
+  MEMBERS: 'members',
+  MESSAGES: 'messages',
+  METADATA: 'metadata',
+  NOTIFICATIONS: 'notifications',
+  PAYMENT_METHODS: 'payment_methods',
+  PERMISSIONS: 'permissions',
+  PLACES: 'places',
+  PRIVACY_SETTINGS: 'privacy_settings',
+  PROFILES: 'profiles',
+  SEARCH_HISTORY: 'search_history',
+  SESSIONS: 'sessions',
+  SETTINGS: 'settings',
+  SUBSCRIPTIONS: 'subscriptions',
+  TAGS: 'tags',
+  TEMPLATES: 'templates',
+  TEMPLATE_ITEMS: 'template_items',
+  TEMPLATE_SECTIONS: 'template_sections',
+  TRAVEL_PREFERENCES: 'travel_preferences',
+  TRIPS: 'trips',
+  USER_TRIP_VOTES: 'user_trip_votes',
+  USERS: 'users'
+};
+
+/**
+ * Database enum types
+ */
+export const ENUMS = {
+  CONTENT_TYPE: {
+    TRIP: 'trip',
+    DESTINATION: 'destination',
+    ITINERARY_ITEM: 'itinerary_item',
+    COLLECTION: 'collection',
+    TEMPLATE: 'template',
+    GROUP_PLAN_IDEA: 'group_plan_idea'
+  },
+  TRIP_ROLES: {
+    ADMIN: 'admin',
+    EDITOR: 'editor',
+    VIEWER: 'viewer',
+    CONTRIBUTOR: 'contributor'
+  },
+  ITEM_STATUS: {
+    SUGGESTED: 'suggested',
+    CONFIRMED: 'confirmed',
+    REJECTED: 'rejected'
+  },
+  IMAGE_TYPE: {
+    DESTINATION: 'destination',
+    TRIP_COVER: 'trip_cover',
+    USER_AVATAR: 'user_avatar',
+    TEMPLATE_COVER: 'template_cover'
+  },
+  GROUP_PLAN_IDEA_TYPE: {
+    DESTINATION: 'destination',
+    DATE: 'date',
+    ACTIVITY: 'activity',
+    BUDGET: 'budget',
+    OTHER: 'other',
+    QUESTION: 'question',
+    NOTE: 'note',
+    PLACE: 'place'
+  },
+  GROUP_MEMBER_ROLES: {
+    ADMIN: 'admin',
+    MEMBER: 'member'
+  }
+};
+
+/**
+ * Types for commentable content
+ */
+export type CommentableContentType = 
+  | 'trip' 
+  | 'destination' 
+  | 'itinerary_item' 
+  | 'collection' 
+  | 'template'
+  | 'group_plan_idea';
+```
+
+## Route Constants
+```typescript
+// Group routes - API_ROUTES
+GROUP_PLAN_IDEAS: {
+  LIST: (groupId: string) => `/api/groups/${groupId}/ideas`,
+  DETAIL: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+  CREATE: (groupId: string) => `/api/groups/${groupId}/ideas`,
+  UPDATE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+  DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}`,
+  VOTE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+},
+GROUP_PLANS: {
+  LIST: (groupId: string) => `/api/groups/${groupId}/plans`,
+  DETAIL: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
+  CREATE: (groupId: string) => `/api/groups/${groupId}/plans`,
+  UPDATE: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
+  DELETE: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}`,
+  IDEAS: (groupId: string, planId: string) => `/api/groups/${groupId}/plans/${planId}/ideas`,
+},
+GROUP_PLAN_IDEA_VOTES: {
+  CREATE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+  DELETE: (groupId: string, ideaId: string) => `/api/groups/${groupId}/ideas/${ideaId}/vote`,
+},
+
+// Group routes - PAGE_ROUTES
+GROUP_PLAN_IDEAS: (id: string) => `/groups/${id}/ideas`,
+GROUP_PLANS: (id: string) => `/groups/${id}/plans`,
+GROUP_PLAN: (groupId: string, planId: string) => `/groups/${groupId}/plans/${planId}`,
+```
+
+## Status Constants
+```typescript
+// ======= GROUP PLAN IDEA TYPES =======
+export const GROUP_PLAN_IDEA_TYPE = {
+  DESTINATION: 'destination',
+  DATE: 'date',
+  ACTIVITY: 'activity',
+  BUDGET: 'budget',
+  OTHER: 'other',
+  QUESTION: 'question',
+  NOTE: 'note',
+  PLACE: 'place'
+} as const;
+
+export type GroupPlanIdeaType = typeof GROUP_PLAN_IDEA_TYPE[keyof typeof GROUP_PLAN_IDEA_TYPE];
+
+// ======= VOTE TYPES =======
+export const VOTE_TYPE = {
+  UP: 'up',
+  DOWN: 'down'
+} as const;
+
+export type VoteType = typeof VOTE_TYPE[keyof typeof VOTE_TYPE];
+
+// ======= GROUP MEMBER ROLES =======
+export const GROUP_MEMBER_ROLES = {
+  ADMIN: 'admin',
+  MEMBER: 'member',
+} as const;
+
+export type GroupMemberRole = typeof GROUP_MEMBER_ROLES[keyof typeof GROUP_MEMBER_ROLES];
+
+// ======= GROUP MEMBER STATUSES =======
+export const GROUP_MEMBER_STATUSES = {
+  ACTIVE: 'active',
+  INVITED: 'invited',
+  REMOVED: 'removed',
+  LEFT: 'left',
+} as const;
+
+export type GroupMemberStatus = typeof GROUP_MEMBER_STATUSES[keyof typeof GROUP_MEMBER_STATUSES];
+```

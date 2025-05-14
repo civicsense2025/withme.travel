@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Use our components, design systems, and other visual styling guides from Storybook before creating new components or styles -- if it exists, use it. If not, create it.

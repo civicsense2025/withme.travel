@@ -1,0 +1,17 @@
+{
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "excludeFiles": "components/trips/trip-presence-indicator.tsx, mobile/*",
+        "installCommand": "pnpm install"
+      }
+    }
+  ],
+  "build": {
+    "env": {
+      "ENABLE_VC_BUILD": "1"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+import { Meta, Title } from '@storybook/blocks';
+
+<Meta title="Features/Index" />
+
+# Feature Components
+
+This section contains feature-specific components and composite components that are used across the withme.travel platform.
+
+## Categories
+
+- **Itinerary**: ItineraryCard, ItineraryPage, etc.
+- **Trip**: TripCreationForm, TripCard, etc.
+- **Content**: ContentBlock, Section, etc.
+- **Calendar**: CalendarView, DateRangePicker, etc.
+- **Review**: ReviewList, ReviewCard, etc.
+- **Weather**: WeatherForecast, etc.
+- **Facts**: QuickFactsCard, HighlightsList, etc.
+
+## Usage Guidelines
+
+Feature components:
+
+1. **Combine core UI elements**: Most feature components are compositions of core UI components
+2. **Focus on specific use cases**: Each component addresses a specific user need
+3. **Maintain consistency**: Use the same patterns across similar features
+4. **Stay adaptable**: Feature components should work in various contexts and viewports
+5. **Optimize for collaboration**: Many feature components involve multi-user interactions
+
+## Implementation
+
+When implementing feature components:
+
+1. Use the established Core UI components as building blocks
+2. Document prop interfaces thoroughly
+3. Consider all states: loading, error, empty, and populated
+4. Handle mobile and desktop layouts appropriately
+5. Test with realistic data and edge cases

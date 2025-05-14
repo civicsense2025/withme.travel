@@ -1,0 +1,297 @@
+import {
+  Meta,
+  Title,
+  IconGallery,
+  IconItem,
+  ColorPalette,
+  ColorItem,
+  Typeset,
+} from '@storybook/blocks';
+
+<Meta title="Design System/Index" />
+
+# withme.travel Design System
+
+Welcome to the withme.travel Design System. This system provides the foundation for creating consistent, accessible, and beautiful user experiences across our travel planning platform.
+
+## Foundation
+
+Our design system is built on a set of core foundations that inform all of our components and patterns.
+
+### Color System
+
+Our color system is built around a primary purple palette with complementary accent colors and a comprehensive set of neutral tones for UI elements. All colors meet WCAG 2.1 AA accessibility standards for contrast.
+
+#### Primary Palette
+
+<ColorPalette>
+  <ColorItem
+    title="Primary"
+    subtitle="Brand colors"
+    colors={{
+      50: '#f5f3ff',
+      100: '#ede9fe',
+      200: '#ddd6fe',
+      300: '#c4b5fd',
+      400: '#a78bfa',
+      500: '#8b5cf6',
+      600: '#7c3aed',
+      700: '#6d28d9',
+      800: '#5b21b6',
+      900: '#4c1d95',
+      950: '#2e1065',
+    }}
+  />
+</ColorPalette>
+
+#### UI Palettes
+
+<ColorPalette>
+  <ColorItem
+    title="Gray"
+    subtitle="Neutral tones for UI and text"
+    colors={{
+      50: '#f9fafb',
+      100: '#f3f4f6',
+      200: '#e5e7eb',
+      300: '#d1d5db',
+      400: '#9ca3af',
+      500: '#6b7280',
+      600: '#4b5563',
+      700: '#374151',
+      800: '#1f2937',
+      900: '#111827',
+      950: '#030712',
+    }}
+  />
+</ColorPalette>
+
+#### Semantic Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Status Colors"
+    subtitle="For feedback and state"
+    colors={{
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      info: '#3b82f6',
+    }}
+  />
+</ColorPalette>
+
+#### Color Applications
+
+- **Text Colors**: Use grayscale for most text, with primary colors for emphasis or interactive elements
+- **Background Colors**: Use light grays for subtle backgrounds, white for content areas
+- **Interactive Elements**: Use primary colors for buttons, links, and other interactive elements
+- **Decorative Elements**: Use accent colors for illustrations, graphics, and decorative elements
+- **Status Indicators**: Use semantic colors consistently for status indicators
+
+### Typography
+
+Our typography system is designed for clarity and readability across all devices. We use a primary sans-serif font for all UI elements and text.
+
+#### Font Stack
+
+- **Primary**: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif
+- **Fallback**: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif
+
+#### Type Scale
+
+<Typeset
+  fontSizes={[
+    '0.75rem',
+    '0.875rem',
+    '1rem',
+    '1.125rem',
+    '1.25rem',
+    '1.5rem',
+    '1.875rem',
+    '2.25rem',
+    '3rem',
+  ]}
+  fontWeight={400}
+  sampleText="Travel makes one modest. You see what a tiny place you occupy in the world."
+  fontFamily="'Inter', sans-serif"
+/>
+
+#### Font Weights
+
+- **Regular (400)**: Body text, secondary information
+- **Medium (500)**: Emphasis, subheadings, UI elements
+- **Semibold (600)**: Navigation, buttons, important UI elements
+- **Bold (700)**: Headings, critical information
+
+#### Line Heights
+
+- **Tight (1.25)**: Headings, short text
+- **Normal (1.5)**: Body text, paragraphs
+- **Loose (1.75)**: Large text blocks, improved readability
+
+### Spacing
+
+Our spacing system follows an 8-pixel grid that creates consistent rhythm across the interface.
+
+#### Spacing Scale
+
+| Token | Rem     | Pixels | Example Use             |
+| ----- | ------- | ------ | ----------------------- |
+| 0     | 0       | 0px    | No spacing, collapse    |
+| 1     | 0.25rem | 4px    | Minimal spacing (icons) |
+| 2     | 0.5rem  | 8px    | Tight spacing (text)    |
+| 3     | 0.75rem | 12px   | Compact elements        |
+| 4     | 1rem    | 16px   | Standard spacing        |
+| 5     | 1.25rem | 20px   | Medium spacing          |
+| 6     | 1.5rem  | 24px   | Element separation      |
+| 8     | 2rem    | 32px   | Section spacing         |
+| 10    | 2.5rem  | 40px   | Large sections          |
+| 12    | 3rem    | 48px   | Major section dividers  |
+| 16    | 4rem    | 64px   | Page sections           |
+| 20    | 5rem    | 80px   | Major page sections     |
+| 24    | 6rem    | 96px   | Hero spacing            |
+
+#### Spacing Principles
+
+- **Consistent**: Maintain consistent spacing for similar elements
+- **Hierarchical**: Use larger spacing to separate major sections
+- **Proportional**: Scale spacing based on screen size
+- **Intentional**: Use spacing to create visual hierarchy and relationships
+
+### Responsive Breakpoints
+
+Our responsive system is designed to adapt gracefully across a wide range of devices.
+
+#### Breakpoint Scale
+
+| Name | Width     | Typical Device                           |
+| ---- | --------- | ---------------------------------------- |
+| xs   | < 640px   | Mobile phones (portrait)                 |
+| sm   | >= 640px  | Mobile phones (landscape), small tablets |
+| md   | >= 768px  | Tablets (portrait)                       |
+| lg   | >= 1024px | Tablets (landscape), small laptops       |
+| xl   | >= 1280px | Laptops, desktops                        |
+| 2xl  | >= 1536px | Large desktops, monitors                 |
+
+#### Responsive Guidelines
+
+- **Mobile-First**: Design for mobile devices first, then enhance for larger screens
+- **Fluid Layout**: Use flexible grids and containers that adapt to screen size
+- **Consistent Experience**: Maintain consistent functionality across devices
+- **Optimize Interactions**: Adapt interaction patterns for touch vs. mouse input
+
+### Border Radius
+
+Our border radius system provides consistent rounding across the interface.
+
+| Token | Value          | Example Use            |
+| ----- | -------------- | ---------------------- |
+| none  | 0              | Straight edges, tables |
+| sm    | 0.125rem (2px) | Small elements         |
+| md    | 0.25rem (4px)  | Form inputs, buttons   |
+| lg    | 0.5rem (8px)   | Cards, modals          |
+| xl    | 0.75rem (12px) | Large cards            |
+| 2xl   | 1rem (16px)    | Feature cards          |
+| full  | 9999px         | Pills, badges, avatars |
+
+### Elevation
+
+Our elevation system uses shadows to create depth and hierarchy.
+
+| Token       | Example Use                         |
+| ----------- | ----------------------------------- |
+| shadow-none | Flat elements, disabled states      |
+| shadow-sm   | Subtle elevation, cards             |
+| shadow-md   | Modals, dropdowns                   |
+| shadow-lg   | Popovers, menus                     |
+| shadow-xl   | Dialogs, feature cards              |
+| shadow-2xl  | Maximum elevation, featured content |
+
+## Design Principles
+
+Our design system is guided by five core principles:
+
+### 1. Authentic & Friendly
+
+Our designs feel personal and conversational, not corporate or generic. We use plain language, approachable visuals, and a tone that's helpful and human.
+
+### 2. Speed & Simplicity
+
+We prioritize intuitive flows and quick interactions. Our interfaces load quickly, respond immediately to user actions, and make complex travel planning feel straightforward.
+
+### 3. Collaborative by Default
+
+All core experiences are designed with multiple users in mind. We build features that make it easy for people to plan together, share ideas, and coordinate travel activities.
+
+### 4. Balanced & Genuine
+
+We reflect both the excitement of travel and the practical aspects of planning. Our design balances inspiration with useful tools that help people make real travel plans.
+
+### 5. Responsive & Inclusive
+
+We ensure a consistent experience across all devices and accessibility for all users. Our interfaces adapt to different screen sizes, devices, and browsing contexts.
+
+## Accessibility Standards
+
+Our design system follows WCAG 2.1 AA standards to ensure our platform is accessible to all users.
+
+### Key Requirements
+
+- **Color Contrast**: We maintain a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text and UI components
+- **Keyboard Navigation**: All interactive elements are accessible via keyboard
+- **Screen Readers**: We use semantic HTML and ARIA attributes to ensure screen reader compatibility
+- **Focus Indicators**: All interactive elements have visible focus states
+- **Text Resizing**: Our interfaces remain usable when text is resized up to 200%
+- **Alternative Text**: All images and icons that convey meaning include appropriate alt text
+- **Motion & Animation**: Users can reduce or disable non-essential motion
+
+## Component Categories
+
+Our design system components are organized into the following categories:
+
+### 1. Foundation
+
+Core visual elements and tokens that make up our design language:
+
+- **Colors**: Brand, UI, and semantic colors
+- **Typography**: Font scale, weights, headings
+- **Spacing**: Grid system, margins, paddings
+- **Borders & Radius**: Edge treatments
+- **Shadows & Elevation**: Depth system
+- **Motion**: Animation and transition patterns
+
+### 2. Core UI
+
+Basic building blocks for user interfaces:
+
+- **Inputs**: Button, Input, Select, Checkbox, Radio, Switch
+- **Layout**: Card, Container, Grid, Box, Divider
+- **Feedback**: Alert, Toast, Badge, Progress
+- **Navigation**: Tabs, Pagination, Breadcrumb, Links
+- **Overlay**: Dialog, Drawer, Popover, Tooltip
+
+### 3. Travel Components
+
+Domain-specific components for travel planning:
+
+- **Destination**: DestinationCard, AttractionsGrid
+- **Itinerary**: ItineraryItem, TimelineView
+- **Trip**: TripCard, TripSummary
+- **Maps**: LocationPicker, RouteMap
+
+### 4. Group Features
+
+Components specific to collaborative planning:
+
+- **Collaboration**: CollaborationTools, LivePresence
+- **Voting**: PollCreator, VotingInterface
+- **Sharing**: SharingControls, PermissionsEditor
+
+### 5. Layout Components
+
+Components for page structure and navigation:
+
+- **Navigation**: Navbar, Sidebar, Footer
+- **Page Layouts**: Dashboard, Profile, Settings
+- **Responsive**: MobileDrawer, AdaptiveGrid

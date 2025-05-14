@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+“Whenever you generate or modify Supabase-related imports, use only @supabase/ssr. If you encounter any import from @supabase/auth-helpers-nextjs, treat it as invalid—automatically replace it with the equivalent API from @supabase/ssr and flag the change. For example,
+
+diff
+Copy
+Edit
+- import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
++ import { createServerComponentClient } from '@supabase/ssr'
+Ensure all Supabase helper functions (browser, server-component, route-handler, middleware) come exclusively from @supabase/ssr. ”

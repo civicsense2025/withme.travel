@@ -1,0 +1,543 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# AI Engineering Standards & Code Organization Guidelines
+
+## Core Principles
+
+1. **Consistency Above All**: Follow established patterns in the codebase even when introducing new features
+2. **Maximize Readability**: Code should be intuitive and self-documenting with precise naming
+3. **Logical Organization**: Group related functionality and maintain clear section boundaries
+4. **Document Intent**: Explain the "why" not just the "what" in comments and documentation
+5. **Type Safety First**: Leverage TypeScript's type system for maximum compile-time validation
+
+## File Structure & Organization
+
+### File Headers
+Every file must begin with a consistent header:
+
+```typescript
+/**
+ * [Module Name/Purpose]
+ * 
+ * [Brief description of the file's purpose]
+ * [Additional context about how this file relates to the broader system]
+ * 
+ * @module [module-name]
+ */
+```
+
+### Logical Section Divisions
+Divide files into clear logical sections with header comments:
+
+```typescript
+// ============================================================================
+// [SECTION NAME IN UPPERCASE]
+// ============================================================================
+```
+
+### Code Organization Rules
+
+1. **Domain-Based Grouping**: Group related code by domain/feature, not by technical type
+2. **Order of Definitions**:
+   - Types/Interfaces
+   - Constants
+   - Helper Functions
+   - Hooks (React)
+   - Components/Classes
+   - Exports
+
+3. **Imports Organization**:
+   ```typescript
+   // External libraries
+   import React from 'react';
+   import { useQuery } from 'react-query';
+   
+   // Internal modules
+   import { AppConfig } from '@/config';
+   import { useAuth } from '@/hooks';
+   
+   // Types/interfaces
+   import type { User, AuthState } from '@/types';
+   
+   // Relative imports from current module
+   import { ProfileCard } from './ProfileCard';
+   import './styles.css';
+   ```
+
+## TypeScript Conventions
+
+### Type Definitions
+
+1. **Explicit Types**: Prefer explicit types over inference for function parameters and return values
+   ```typescript
+   // ✅ Good
+   function calculateTotal(items: CartItem[]): number {
+     return items.reduce((sum, item) => sum + item.price, 0);
+   }
+   
+   // ❌ Avoid
+   function calculateTotal(items) {
+     return items.reduce((sum, item) => sum + item.price, 0);
+   }
+   ```
+
+2. **Interface vs Type**:
+   - Use `interface` for object shapes that may be extended
+   - Use `type` for unions, primitives, or objects that won't be extended
+   - Use consistent naming: `PascalCase` for both
+
+3. **Union & Intersection Types**: Use explicit parentheses for complex types
+   ```typescript
+   type Result = (Success | Error) & { timestamp: string };
+   ```
+
+4. **Enums**: Prefer union types for simple enums; use `const enum` for numeric enums
+   ```typescript
+   // Simple string options
+   type ButtonVariant = 'primary' | 'secondary' | 'danger';
+   
+   // Numeric enum with computed values
+   const enum HttpStatus {
+     OK = 200,
+     Created = 201,
+     BadRequest = 400
+   }
+   ```
+
+### Type Safety
+
+1. **No `any`**: Avoid using `any` type; use `unknown` or proper type definitions instead
+2. **Null Handling**: Use `undefined` for optional values, `null` for intentionally empty values
+3. **Non-null Assertions**: Avoid `!` operator; use proper null checks instead
+4. **Type Guards**: Create explicit type guards for runtime type checking
+   ```typescript
+   function isUser(value: unknown): value is User {
+     return (
+       typeof value === 'object' && 
+       value !== null &&
+       'id' in value &&
+       'name' in value
+     );
+   }
+   ```
+
+### Type Documentation
+
+1. **JSDoc for Types**: Document complex types with JSDoc comments
+   ```typescript
+   /**
+    * Represents a user in the system
+    * @property id - Unique identifier
+    * @property name - User's display name
+    * @property role - User's permission level
+    */
+   interface User {
+     id: string;
+     name: string;
+     role: UserRole;
+   }
+   ```
+
+2. **Property Comments**: Add inline comments for non-obvious properties
+   ```typescript
+   interface ConfigOptions {
+     /** Maximum number of concurrent requests */
+     maxConnections: number;
+     /** Time in ms before request timeout */
+     timeout: number;
+     /** Whether to use secure connections only */
+     secure: boolean;
+   }
+   ```
+
+## Function & Component Organization
+
+### Function Structure
+
+1. **Single Responsibility**: Each function should do one thing well
+2. **Function Size**: Keep functions under 30 lines when possible
+3. **Parameter Count**: Limit to 3 parameters; use object destructuring for more
+4. **Early Returns**: Use early returns to reduce nesting
+   ```typescript
+   // ✅ Good
+   function processUser(user: User | null): string {
+     if (!user) return 'No user found';
+     if (!user.isActive) return 'User is inactive';
+     
+     return `Processing ${user.name}`;
+   }
+   
+   // ❌ Avoid
+   function processUser(user: User | null): string {
+     if (user) {
+       if (user.isActive) {
+         return `Processing ${user.name}`;
+       } else {
+         return 'User is inactive';
+       }
+     } else {
+       return 'No user found';
+     }
+   }
+   ```
+
+### Function Documentation
+
+1. **JSDoc Headers**: Document functions with JSDoc comments
+   ```typescript
+   /**
+    * Calculates the total price including tax
+    * 
+    * @param items - Cart items to calculate
+    * @param taxRate - Tax rate as decimal (e.g., 0.07 for 7%)
+    * @returns Total price with tax applied
+    */
+   function calculateTotalWithTax(items: CartItem[], taxRate: number): number {
+     // Implementation
+   }
+   ```
+
+2. **Implementation Comments**: Add implementation details for complex logic
+   ```typescript
+   function optimizeRoute(stops: Location[]): Location[] {
+     // Use nearest neighbor algorithm for initial route
+     const initialRoute = nearestNeighbor(stops);
+     
+     // Apply 2-opt optimization to improve the route
+     // This swaps pairs of stops to remove route crossings
+     return twoOptOptimization(initialRoute);
+   }
+   ```
+
+## React Component Standards
+
+### Component Structure
+
+1. **Functional Components**: Use function components with hooks
+2. **Props Typing**: Always define explicit prop interfaces
+   ```typescript
+   interface ButtonProps {
+     label: string;
+     onClick: () => void;
+     variant?: 'primary' | 'secondary';
+     disabled?: boolean;
+   }
+   
+   function Button({ label, onClick, variant = 'primary', disabled = false }: ButtonProps) {
+     // Implementation
+   }
+   ```
+
+3. **Component Organization**:
+   ```typescript
+   // Imports
+   
+   // Types
+   interface ComponentProps {}
+   
+   // Helper functions
+   function helperFunction() {}
+   
+   // Hook for complex logic
+   function useComponentLogic() {}
+   
+   // Main component
+   export function Component(props: ComponentProps) {}
+   ```
+
+### State Management
+
+1. **State Colocation**: Keep state as close as possible to where it's used
+2. **Custom Hooks**: Extract complex state logic into custom hooks
+3. **Context Usage**: Document context providers and consumers clearly
+
+## Error Handling
+
+1. **Explicit Error Types**: Define and use specific error types
+   ```typescript
+   class ApiError extends Error {
+     constructor(
+       message: string,
+       public statusCode: number,
+       public data?: unknown
+     ) {
+       super(message);
+       this.name = 'ApiError';
+     }
+   }
+   ```
+
+2. **Error Boundaries**: Use error boundaries in React components
+3. **Async Error Handling**: Always handle promise rejections with try/catch or .catch()
+
+## Constants & Configuration
+
+1. **Central Constants**: Define domain constants in dedicated files
+2. **Naming Conventions**: 
+   - `UPPER_SNAKE_CASE` for true constants
+   - `PascalCase` for enumerated values
+   - `camelCase` for configuration that might change
+
+3. **Configuration Structure**:
+   ```typescript
+   export const API_ENDPOINTS = {
+     USERS: {
+       LIST: '/api/users',
+       DETAIL: (id: string) => `/api/users/${id}`,
+       CREATE: '/api/users',
+     },
+     PRODUCTS: {
+       // ...
+     },
+   } as const;
+   ```
+
+## Testing Standards
+
+1. **Test Organization**: Structure tests to mirror the code they test
+2. **Test Naming**: Use descriptive test names that explain the expected behavior
+3. **Test Coverage**: Aim for 80%+ coverage of business logic
+4. **Test Types**:
+   - Unit tests for pure functions and isolated components
+   - Integration tests for connected components
+   - E2E tests for critical user flows
+
+## Documentation
+
+1. **README Files**: Every project and major module should have a README
+2. **API Documentation**: Generate API docs from JSDoc comments
+3. **Architecture Diagrams**: Include visual representations for complex systems
+4. **Code Examples**: Provide usage examples for reusable components
+
+## Code Review Checklist
+
+- [ ] Code follows organizational structure guidelines
+- [ ] Proper JSDoc comments are present
+- [ ] No `any` types or unsafe type assertions
+- [ ] Functions and components have single responsibilities
+- [ ] Error handling is comprehensive
+- [ ] Tests cover the new/modified code
+- [ ] No console.log statements or commented-out code
+- [ ] Documentation is updated to reflect changes
+- [ ] Performance considerations are addressed
+
+## AI Assistant Guidelines
+
+When using AI assistants for code generation:
+
+1. **Specify Structure Requirements**: Ask for logical section organization
+2. **Request Documentation**: Explicitly ask for JSDoc comments
+3. **Define Type Safety Level**: Request strict TypeScript practices
+4. **Provide Context**: Share related code and explain the broader system
+5. **Review AI Output**: Always review generated code for adherence to standards
+
+## Examples of Well-Structured Files
+
+### Type Definitions
+
+```typescript
+/**
+ * User Domain Types
+ * 
+ * Core type definitions for user-related entities and operations.
+ * These types are used throughout the authentication and user management systems.
+ */
+
+// ============================================================================
+// USER ENTITIES
+// ============================================================================
+
+/**
+ * User profile information
+ */
+export interface User {
+  /** Unique identifier */
+  id: string;
+  /** User's display name */
+  name: string;
+  /** User's email address */
+  email: string;
+  /** URL to user's avatar image */
+  avatarUrl?: string;
+  /** When the user was created */
+  createdAt: Date;
+  /** User's permission role */
+  role: UserRole;
+}
+
+/**
+ * User permission levels
+ */
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
+// ============================================================================
+// AUTHENTICATION TYPES
+// ============================================================================
+
+/**
+ * Authentication credentials for login
+ */
+export interface Credentials {
+  /** User's email address */
+  email: string;
+  /** User's password (plain text for request only) */
+  password: string;
+  /** Whether to persist the session */
+  rememberMe?: boolean;
+}
+
+// ... more type definitions
+```
+
+### Utility Functions
+
+```typescript
+/**
+ * Date Formatting Utilities
+ * 
+ * Helper functions for consistent date formatting throughout the application.
+ * These utilities wrap the date-fns library with our application-specific formats.
+ */
+
+import { format, parseISO, isValid, differenceInDays } from 'date-fns';
+
+// ============================================================================
+// DATE CONSTANTS
+// ============================================================================
+
+export const DATE_FORMATS = {
+  /** Example: January 1, 2023 */
+  LONG: 'MMMM d, yyyy',
+  /** Example: Jan 1, 2023 */
+  MEDIUM: 'MMM d, yyyy',
+  /** Example: 01/01/2023 */
+  SHORT: 'MM/dd/yyyy',
+  /** Example: Jan 1 */
+  MONTH_DAY: 'MMM d',
+  /** Example: 13:45 */
+  TIME: 'HH:mm',
+} as const;
+
+// ============================================================================
+// FORMATTING FUNCTIONS
+// ============================================================================
+
+/**
+ * Formats a date using the application's standard long format
+ * 
+ * @param date - Date to format (Date object or ISO string)
+ * @returns Formatted date string or empty string if invalid
+ */
+export function formatLongDate(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  
+  if (!isValid(dateObj)) return '';
+  
+  return format(dateObj, DATE_FORMATS.LONG);
+}
+
+// ... more functions
+```
+
+### React Component
+
+```typescript
+/**
+ * User Profile Card
+ * 
+ * Displays user information in a card format with optional actions.
+ * Used in the user directory and team management pages.
+ */
+
+import React from 'react';
+import { Avatar, Card, Button } from '@/components/ui';
+import { useUserActions } from '@/hooks/users';
+import type { User, UserActionPermission } from '@/types/user';
+
+// ============================================================================
+// COMPONENT PROPS & TYPES
+// ============================================================================
+
+export interface UserProfileCardProps {
+  /** User to display */
+  user: User;
+  /** Whether to show action buttons */
+  showActions?: boolean;
+  /** Handler for when the card is clicked */
+  onClick?: (user: User) => void;
+  /** Additional CSS class names */
+  className?: string;
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Determines which actions current user can perform on the target user
+ */
+function getUserPermissions(user: User): UserActionPermission[] {
+  // Implementation
+  return [];
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+/**
+ * Card component that displays user information with optional actions
+ */
+export function UserProfileCard({
+  user,
+  showActions = false,
+  onClick,
+  className = '',
+}: UserProfileCardProps) {
+  const { handleEdit, handleDelete } = useUserActions();
+  const permissions = getUserPermissions(user);
+  
+  const handleClick = () => {
+    if (onClick) onClick(user);
+  };
+  
+  return (
+    <Card className={`user-profile-card ${className}`} onClick={handleClick}>
+      <div className="user-profile-header">
+        <Avatar src={user.avatarUrl} name={user.name} />
+        <h3>{user.name}</h3>
+      </div>
+      
+      <div className="user-profile-details">
+        <p>{user.email}</p>
+        <span className="user-role">{user.role}</span>
+      </div>
+      
+      {showActions && permissions.includes('edit') && (
+        <div className="user-profile-actions">
+          <Button 
+            variant="secondary" 
+            onClick={() => handleEdit(user)}
+          >
+            Edit
+          </Button>
+          
+          {permissions.includes('delete') && (
+            <Button 
+              variant="danger"
+              onClick={() => handleDelete(user.id)}
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+```

@@ -1,0 +1,273 @@
+import { Meta, Unstyled, ColorPalette, ColorItem } from '@storybook/blocks';
+import { tokens } from '@/utils/constants/design-system';
+
+<Meta title="Design System/Overview" />
+
+# withme.travel Design System
+
+Welcome to the withme.travel Design System. This comprehensive resource provides the guidelines, components, and patterns needed to build consistent, accessible, and beautiful user experiences within our travel planning platform.
+
+## Design Principles
+
+Our design system is built around five core principles:
+
+### 1. Intuitive & Accessible
+
+Our interfaces should be easy to understand and use for everyone, including users with disabilities. We design with accessibility in mind from the start, not as an afterthought.
+
+### 2. Collaborative by Design
+
+Our platform is built for collaboration, and our design system reflects this by ensuring components work well in collaborative contexts and support multi-user interactions.
+
+### 3. Responsive & Adaptable
+
+Our components adapt seamlessly across devices and screen sizes, ensuring a consistent experience whether on desktop, tablet, or mobile.
+
+### 4. Travel-Focused
+
+Our design system is tailored specifically for travel planning, with components and patterns that address the unique needs and contexts of travel experiences.
+
+### 5. Consistent & Cohesive
+
+We maintain visual and functional consistency across the platform, using a unified design language that creates a cohesive experience.
+
+## Design Tokens
+
+Design tokens are the foundational elements of our design system, ensuring consistency across the platform.
+
+### Colors
+
+Our color system is built around a primary brand color with complementary accent colors and a range of neutral tones.
+
+<ColorPalette>
+  <ColorItem
+    title="Primary"
+    subtitle="Brand color"
+    colors={{
+      50: '#f5f3ff',
+      100: '#ede9fe',
+      200: '#ddd6fe',
+      300: '#c4b5fd',
+      400: '#a78bfa',
+      500: '#8b5cf6',
+      600: '#7c3aed',
+      700: '#6d28d9',
+      800: '#5b21b6',
+      900: '#4c1d95',
+      950: '#2e1065',
+    }}
+  />
+  <ColorItem
+    title="Gray"
+    subtitle="Neutral tones"
+    colors={{
+      50: '#f9fafb',
+      100: '#f3f4f6',
+      200: '#e5e7eb',
+      300: '#d1d5db',
+      400: '#9ca3af',
+      500: '#6b7280',
+      600: '#4b5563',
+      700: '#374151',
+      800: '#1f2937',
+      900: '#111827',
+      950: '#030712',
+    }}
+  />
+  <ColorItem
+    title="Accent"
+    subtitle="Highlight color"
+    colors={{
+      teal: '#14b8a6',
+      blue: '#3b82f6',
+      indigo: '#6366f1',
+      pink: '#ec4899',
+      amber: '#f59e0b',
+    }}
+  />
+  <ColorItem
+    title="Semantic"
+    subtitle="Status colors"
+    colors={{
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      info: '#3b82f6',
+    }}
+  />
+</ColorPalette>
+
+### Typography
+
+Our typography system uses a modern, readable font family with a consistent scale and limited set of weights.
+
+| Level | Font Size | Line Height | Weight | Usage               |
+| ----- | --------- | ----------- | ------ | ------------------- |
+| h1    | 2.25rem   | 2.5rem      | 700    | Page titles         |
+| h2    | 1.875rem  | 2.25rem     | 700    | Section headings    |
+| h3    | 1.5rem    | 2rem        | 600    | Subsection headings |
+| h4    | 1.25rem   | 1.75rem     | 600    | Component headings  |
+| body1 | 1rem      | 1.5rem      | 400    | Main body text      |
+| body2 | 0.875rem  | 1.25rem     | 400    | Secondary text      |
+| small | 0.75rem   | 1rem        | 400    | Captions and labels |
+
+### Spacing
+
+Our spacing system follows an 8px grid with additional values for fine-tuning.
+
+| Token    | Value          | Purpose                |
+| -------- | -------------- | ---------------------- |
+| space-0  | 0              | No spacing             |
+| space-1  | 0.25rem (4px)  | Minimal spacing        |
+| space-2  | 0.5rem (8px)   | Compact elements       |
+| space-3  | 0.75rem (12px) | Tight spacing          |
+| space-4  | 1rem (16px)    | Standard spacing       |
+| space-6  | 1.5rem (24px)  | Related elements       |
+| space-8  | 2rem (32px)    | Section spacing        |
+| space-12 | 3rem (48px)    | Large section spacing  |
+| space-16 | 4rem (64px)    | Major section dividers |
+
+### Border Radius
+
+Consistent border radius values create a cohesive visual language.
+
+| Token       | Value          | Purpose           |
+| ----------- | -------------- | ----------------- |
+| radius-none | 0              | No rounding       |
+| radius-sm   | 0.125rem (2px) | Subtle rounding   |
+| radius-md   | 0.25rem (4px)  | Default rounding  |
+| radius-lg   | 0.5rem (8px)   | Cards, buttons    |
+| radius-xl   | 0.75rem (12px) | Featured elements |
+| radius-2xl  | 1rem (16px)    | Modal dialogs     |
+| radius-full | 9999px         | Pills, badges     |
+
+### Shadows
+
+Elevation in the interface is created with consistent shadow values.
+
+| Token      | Value                                                                     | Purpose           |
+| ---------- | ------------------------------------------------------------------------- | ----------------- |
+| shadow-sm  | 0 1px 2px 0 rgba(0, 0, 0, 0.05)                                           | Subtle elevation  |
+| shadow-md  | 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)     | Cards, dropdowns  |
+| shadow-lg  | 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)   | Modals, popovers  |
+| shadow-xl  | 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) | Elevated content  |
+| shadow-2xl | 0 25px 50px -12px rgba(0, 0, 0, 0.25)                                     | Maximum elevation |
+
+## Component Structure
+
+Our components are organized into a logical hierarchy:
+
+### Core UI
+
+Basic building blocks and UI components:
+
+- **Inputs**: Button, Input, Select, Checkbox, etc.
+- **Layout**: Card, Grid, Container, Divider, etc.
+- **Feedback**: Alert, Toast, Progress, etc.
+- **Navigation**: Tabs, Pagination, Breadcrumb, etc.
+- **Overlay**: Dialog, Drawer, Popover, etc.
+
+### Features
+
+Feature-specific components or composite components:
+
+- **Itinerary**: ItineraryCard, ItineraryList, etc.
+- **Trip**: TripCard, TripForm, etc.
+- **Group Planning**: CollaborationTools, VotingSystem, etc.
+- **Destination**: DestinationCard, AttractionList, etc.
+
+### Page Layouts
+
+Components for structuring pages:
+
+- **Navigation**: Navbar, Sidebar, Footer, etc.
+- **Page Templates**: Dashboard, Profile, Settings, etc.
+- **Responsive Patterns**: MobileMenu, ResponsiveGrid, etc.
+
+## Accessibility Guidelines
+
+Our design system follows WCAG 2.1 AA standards to ensure our platform is accessible to all users.
+
+### Key Requirements
+
+- **Color Contrast**: Maintain a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text
+- **Keyboard Navigation**: All interactive elements must be accessible via keyboard
+- **Screen Readers**: Components include appropriate ARIA attributes and semantic HTML
+- **Focus Indicators**: Visible focus states for keyboard navigation
+- **Text Resizing**: Interface remains usable when text is resized up to 200%
+- **Motion & Animation**: Provide options to reduce motion where applicable
+
+### Accessibility Checklist
+
+When creating components, ensure they meet these criteria:
+
+- [ ] Uses semantic HTML elements
+- [ ] Includes appropriate ARIA attributes
+- [ ] Maintains sufficient color contrast
+- [ ] Supports keyboard navigation
+- [ ] Works with screen readers
+- [ ] Provides visible focus states
+- [ ] Handles text resizing appropriately
+- [ ] Respects user motion preferences
+- [ ] Includes alt text for images and icons
+
+## Theming
+
+Our design system supports both light and dark modes through CSS variables and Tailwind themes.
+
+### Theme Implementation
+
+Components should:
+
+1. Use color tokens from our theme system rather than hardcoded values
+2. Test in both light and dark modes
+3. Ensure sufficient contrast in both modes
+4. Use the `useTheme` hook when needed for theme detection
+
+### Color Usage Guidelines
+
+- Use primary colors for main actions and brand elements
+- Use accent colors sparingly for highlighting important information
+- Use semantic colors consistently for status and feedback (error, success, etc.)
+- Use neutral colors for most UI elements and text
+
+## Getting Started with Development
+
+### Using Components
+
+Import components from their respective locations:
+
+```tsx
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+
+function MyComponent() {
+  return (
+    <Card>
+      <h2>Example Form</h2>
+      <Input placeholder="Enter your name" />
+      <Button>Submit</Button>
+    </Card>
+  );
+}
+```
+
+### Creating New Components
+
+When creating new components:
+
+1. Follow the existing directory structure
+2. Use TypeScript for type safety
+3. Include comprehensive prop documentation
+4. Create stories for all variants and states
+5. Ensure accessibility compliance
+6. Test in both light and dark modes
+7. Make components responsive by default
+
+## Resources
+
+- [Component Documentation](?path=/docs/core-ui-index--docs): Detailed documentation for all components
+- [Design Tokens](?path=/docs/design-system-tokens--docs): Complete list of design tokens
+- [Accessibility Guidelines](?path=/docs/design-system-accessibility--docs): Detailed accessibility guidance
+- [Component Examples](?path=/docs/examples-index--docs): Example implementations of common patterns

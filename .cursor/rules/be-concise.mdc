@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Be as concise as possible and biased towards implementation while being targeted and informative in your responses. Be targeted but also think systematically so your concision is informed and nuance and takes the codebase into consideration.

@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+In all user flows that we build, reduce as many clicks as possible to get them to complete their job to do: keep them on the same page, use dialogs, pre-fill information from other places. The more convenience and work we can take out for them, the better!

@@ -1,0 +1,209 @@
+import { Meta, Story, Canvas } from '@storybook/addon-docs';
+import { Controls, Description, Primary } from '@storybook/addon-docs';
+import { Button } from '../button';
+
+<Meta
+  title="Design System/Components/Button"
+  component={Button}
+  parameters={{
+    viewMode: 'docs',
+    previewTabs: {
+      canvas: { hidden: true },
+    },
+  }}
+/>
+
+# Button
+
+Buttons allow users to trigger actions or events with a single click. They communicate calls to action and allow users to interact with the application.
+
+## Overview
+
+<Canvas>
+  <Story id="core-ui-inputs-button--primary" />
+</Canvas>
+
+## Usage Guidelines
+
+- Use buttons for important actions that require user interaction
+- Use the appropriate button variant to indicate the action's priority
+- Include clear, concise text that describes the action being performed
+- Consider accessibility in your button implementation
+
+### When to use
+
+Buttons are ideal for:
+
+- Primary actions (form submission, confirmation)
+- Secondary actions (cancellation, alternative options)
+- Navigation actions (next/previous page, view more)
+- Toggle actions (show/hide content, enable/disable features)
+
+### Best practices
+
+- Use primary variant for the main action in a form or section
+- Limit the number of primary buttons on a single page
+- Use disabled state only when the action is temporarily unavailable
+- Provide visual feedback for interactions (hover, active states)
+- Ensure button text clearly indicates what will happen when clicked
+- Use icons to enhance understanding, not replace text
+
+## Anatomy
+
+The Button component consists of several parts:
+
+1. **Container**: The clickable area with background, border, and spacing
+2. **Content**: The text and/or icons that communicate the action
+3. **Visual states**: Different appearances based on interaction state (hover, focus, active)
+
+## Variants
+
+Buttons come in several variants to suit different contexts:
+
+<Canvas>
+  <Story id="core-ui-inputs-button--sizes" />
+</Canvas>
+
+### Primary
+
+Use the primary variant for the main action in a form or section. It should represent the most important action available.
+
+### Secondary
+
+Use the secondary variant for alternative actions that are less important than the primary action.
+
+### Outline
+
+Use the outline variant for secondary actions that don't need to be emphasized but should still be visible.
+
+### Ghost
+
+Use the ghost variant for the least important actions, typically used in toolbars or card actions.
+
+### Accent
+
+Use the accent variant to highlight important actions that don't fit into the primary/secondary hierarchy.
+
+## States
+
+Buttons have the following states:
+
+<Canvas>
+  <Story id="core-ui-inputs-button--interactive" />
+</Canvas>
+
+- **Default**: The normal, resting state of the button
+- **Hover**: When the user hovers over the button
+- **Focus**: When the button is focused via keyboard or programmatically
+- **Active**: When the button is being clicked or tapped
+- **Disabled**: When the button is not interactive
+- **Loading**: When the action is being processed
+
+## Sizes
+
+Buttons come in different sizes for different contexts:
+
+<Canvas>
+  <Story id="core-ui-inputs-button--sizes" />
+</Canvas>
+
+- **Small**: For UI-dense areas or secondary actions
+- **Medium**: The standard button size for most contexts
+- **Large**: For prominent calls to action or touch-friendly interfaces
+
+## Width options
+
+Buttons can have different width settings:
+
+<Canvas>
+  <Story id="core-ui-inputs-button--full-width" />
+</Canvas>
+
+- **Auto**: The button's width is determined by its content (default)
+- **Full**: The button spans the full width of its container
+
+## Accessibility
+
+Buttons follow accessibility best practices:
+
+- Supports keyboard navigation (Tab to focus, Enter/Space to activate)
+- Includes appropriate ARIA attributes for screen readers
+- Maintains sufficient color contrast (WCAG AA compliant)
+- Provides visual focus indicators
+- Communicates loading and disabled states to assistive technologies
+
+### Keyboard Interactions
+
+| Key         | Action                             |
+| ----------- | ---------------------------------- |
+| Tab         | Moves focus to the button          |
+| Enter/Space | Activates the button               |
+| Esc         | Blurs the button (if it has focus) |
+
+## API Reference
+
+<Controls />
+
+## Integration
+
+### Usage with React
+
+```tsx
+import { Button } from '@/components/ui/button';
+
+function MyComponent() {
+  return (
+    <Button variant="primary" size="md" onClick={() => console.log('Button clicked')}>
+      Click me
+    </Button>
+  );
+}
+```
+
+### With icons
+
+```tsx
+import { Button } from '@/components/ui/button';
+import { Plus, ArrowRight } from 'lucide-react';
+
+function IconButtons() {
+  return (
+    <>
+      <Button leftIcon={<Plus size={16} />}>Add item</Button>
+
+      <Button rightIcon={<ArrowRight size={16} />}>Next step</Button>
+    </>
+  );
+}
+```
+
+### Loading state
+
+```tsx
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+
+function LoadingButton() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleClick = async () => {
+    setIsLoading(true);
+    // Perform async action
+    await someAsyncFunction();
+    setIsLoading(false);
+  };
+
+  return (
+    <Button loading={isLoading} loadingText="Submitting..." onClick={handleClick}>
+      Submit
+    </Button>
+  );
+}
+```
+
+## Related
+
+- **Link**: Use for navigation to different routes or pages
+- **IconButton**: Use for icon-only button actions
+- **ToggleButton**: Use for toggling a state on/off
+- **ButtonGroup**: Use for related button actions

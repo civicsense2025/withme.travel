@@ -1,0 +1,113 @@
+import { Meta, Title } from '@storybook/blocks';
+
+<Meta title="Migration Guide" />
+
+# Storybook Migration Guide
+
+This guide outlines how to update existing story files to match our new Storybook organization.
+
+## New Category Structure
+
+Our Storybook is now organized into five main sections:
+
+1. **Design System**: Core foundations
+2. **Core UI**: Reusable UI components
+3. **Features**: Feature-specific components
+4. **Product Marketing**: Marketing/landing pages
+5. **App Layout**: Navigation and containers
+
+## How to Update Story Files
+
+For each `.stories.tsx` file, update the `title` in the Meta configuration to match our new structure:
+
+```tsx
+// Before
+const meta: Meta<typeof YourComponent> = {
+  title: 'Foundation/YourComponent', // Old structure
+  component: YourComponent,
+  // ...
+};
+
+// After
+const meta: Meta<typeof YourComponent> = {
+  title: 'Core UI/Inputs/YourComponent', // New structure
+  component: YourComponent,
+  // ...
+};
+```
+
+## Component Mapping to New Categories
+
+Use this guide to determine the appropriate category for your component:
+
+### Design System
+
+- Typography components
+- Color/theme demos
+- Icon components
+- Design token showcases
+
+### Core UI
+
+- Buttons, inputs, forms → `Core UI/Inputs`
+- Cards, dividers, containers → `Core UI/Layout`
+- Alerts, toasts, progress → `Core UI/Feedback`
+- Tabs, pagination, breadcrumbs → `Core UI/Navigation`
+- Dialogs, drawers, popovers → `Core UI/Overlay`
+- Tables, badges, avatars → `Core UI/Data Display`
+
+### Features
+
+- Itinerary-related → `Features/Itinerary`
+- Trip-related → `Features/Trip`
+- Content display → `Features/Content`
+- Calendar/date components → `Features/Calendar`
+- Reviews → `Features/Review`
+- Weather → `Features/Weather`
+- Facts/highlights → `Features/Facts`
+
+### Product Marketing
+
+- Hero sections → `Product Marketing/Hero`
+- Feature highlights → `Product Marketing/Features`
+- Testimonials → `Product Marketing/Testimonials`
+- Pricing → `Product Marketing/Pricing`
+- Call-to-actions → `Product Marketing/CTA`
+- About/Team → `Product Marketing/About`
+
+### App Layout
+
+- Navigation bars, menus → `App Layout/Navigation`
+- Page containers → `App Layout/Page Containers`
+- User menus/profiles → `App Layout/User Interface`
+- App shells → `App Layout/App Shell`
+- Responsive layouts → `App Layout/Responsive Patterns`
+
+## Example Updates
+
+Here are some specific examples for files in our codebase:
+
+- `components/layout/navbar.stories.tsx` → `App Layout/Navigation/Navbar`
+- `components/trips/trip-card.stories.tsx` → `Features/Trip/TripCard`
+- `components/itinerary/ItineraryItemCard.stories.tsx` → `Features/Itinerary/ItineraryItemCard`
+- `app/components/feedback/FeedbackDialog.stories.tsx` → `Features/Feedback/FeedbackDialog`
+- `stories/admin/AdminSidebar.stories.tsx` → `App Layout/Navigation/AdminSidebar`
+
+## Guidelines for New Components
+
+When creating new components:
+
+1. Place them in the appropriate directory based on their function
+2. Create a `.stories.tsx` file with the appropriate title following our category structure
+3. Add proper documentation and examples
+4. Consider adding controls for all important props
+5. Include the `tags: ['autodocs']` setting if you want automatic documentation generation
+
+## Testing Your Updates
+
+After updating story files:
+
+1. Run Storybook with `pnpm storybook`
+2. Verify your component appears in the correct category
+3. Check that all examples and documentation render correctly
+4. Test controls and interactions to ensure they work as expected

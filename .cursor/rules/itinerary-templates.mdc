@@ -1,0 +1,192 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+The relationship between the itinerary_templates, itinerary_template_sections, and itinerary_template_items tables is hierarchical, where each template can have multiple sections, and each section can have multiple items. Here’s a detailed breakdown of the relationships, including the columns used for joining, and how to connect this on the front end.
+
+Table Relationships
+itinerary_templates
+
+Primary Key: id (uuid)
+Foreign Key: created_by (uuid) - references profiles(id)
+Columns: title, description, is_published, etc.
+itinerary_template_sections
+
+Primary Key: id (bigint)
+Foreign Key: template_id (uuid) - references itinerary_templates(id)
+Foreign Key: created_by (uuid) - references profiles(id)
+Columns: day_number, date, title, position, etc.
+itinerary_template_items
+
+Primary Key: id (uuid)
+Foreign Key: template_id (uuid) - references itinerary_templates(id)
+Foreign Key: section_id (bigint) - references itinerary_template_sections(id)
+Columns: day, item_order, title, description, etc.
+Join Conditions
+Join between itinerary_templates and itinerary_template_sections:
+Join Column: itinerary_templates.id = itinerary_template_sections.template_id
+Join between itinerary_template_sections and itinerary_template_items:
+Join Column: itinerary_template_sections.id = itinerary_template_items.section_id
+Frontend Connection
+To connect these tables on the front end, you would typically fetch the data in a hierarchical manner. Here’s how you can structure the code to retrieve and display this data:
+
+Fetch Templates: First, retrieve the templates.
+Fetch Sections for Each Template: For each template, fetch the associated sections.
+Fetch Items for Each Section: For each section, fetch the associated items.
+Example Code
+Here’s an example of how you might implement this in JavaScript using a hypothetical API client (like Supabase or Axios):
+
+async
+ 
+function
+ 
+fetchItineraryTemplates
+(
+) 
+{
+    
+// Fetch all templates
+
+    
+const
+ { 
+data
+: templates, 
+error
+: templateError } = 
+await
+ supabase
+        .from(
+'itinerary_templates'
+)
+        .select(
+'*'
+);
+    
+if
+ (templateError) {
+        
+console
+.error(
+'Error fetching templates:'
+, templateError);
+        
+return
+;
+    }
+    
+// Fetch sections for each template
+
+    
+for
+ (
+const
+ template 
+of
+ templates) {
+        
+const
+ { 
+data
+: sections, 
+error
+: sectionError } = 
+await
+ supabase
+            .from(
+'itinerary_template_sections'
+)
+            .select(
+'*'
+)
+            .eq(
+'template_id'
+, template.id);
+        
+if
+ (sectionError) {
+            
+console
+.error(
+`Error fetching sections for template 
+${template.id}
+:`
+, sectionError);
+            
+continue
+;
+        }
+        
+// Attach sections to the template
+
+        template.sections = sections;
+        
+// Fetch items for each section
+
+        
+for
+ (
+const
+ section 
+of
+ sections) {
+            
+const
+ { 
+data
+: items, 
+error
+: itemError } = 
+await
+ supabase
+                .from(
+'itinerary_template_items'
+)
+                .select(
+'*'
+)
+                .eq(
+'section_id'
+, section.id);
+            
+if
+ (itemError) {
+                
+console
+.error(
+`Error fetching items for section 
+${section.id}
+:`
+, itemError);
+                
+continue
+;
+            }
+            
+// Attach items to the section
+
+            section.items = items;
+        }
+    }
+    
+return
+ templates;
+}
+// Usage
+
+fetchItineraryTemplates().then(
+templates
+ =>
+ {
+    
+console
+.log(
+'Fetched itinerary templates with sections and items:'
+, templates);
+});
+
+Summary
+The itinerary_templates table serves as the parent, with itinerary_template_sections as its child, and itinerary_template_items as the child of sections.
+The relationships are established through foreign keys, allowing for a structured hierarchy.
+The provided code demonstrates how to fetch this hierarchical data from the database and structure it for use in a front-end application.

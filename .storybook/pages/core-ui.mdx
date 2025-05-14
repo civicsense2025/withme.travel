@@ -1,0 +1,42 @@
+import { Meta, Title } from '@storybook/blocks';
+
+<Meta title="Core UI/Index" />
+
+# Core UI Components
+
+This section contains the basic building blocks and UI components that form the foundation of the withme.travel interface.
+
+## Categories
+
+- **Inputs**: Button, Input, Select, Checkbox, Radio, etc.
+- **Layout**: Card, Grid, Container, Divider, etc.
+- **Feedback**: Alert, Toast, Progress, Spinner, etc.
+- **Navigation**: Tabs, Pagination, Breadcrumb, etc.
+- **Overlay**: Dialog, Drawer, Popover, Tooltip, etc.
+- **Data Display**: Table, Badge, Avatar, etc.
+
+## Usage Guidelines
+
+When using these core components:
+
+1. **Consistency**: Use the same component for the same purpose across the app
+2. **Composition**: Combine components to build more complex interfaces
+3. **Accessibility**: Ensure proper keyboard navigation and screen reader support
+4. **Theming**: All components support both light and dark mode
+5. **Responsive**: Components should work well across all screen sizes
+
+## Component Structure
+
+Most components follow a consistent pattern:
+
+```tsx
+<Component
+  variant="default | outline | etc."
+  size="sm | md | lg"
+  className="for-custom-styling"
+  disabled={false}
+  // Other component-specific props
+>
+  Content or children
+</Component>
+```

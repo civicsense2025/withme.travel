@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .column-destination {
+    @apply bg-blue-50 dark:bg-blue-900/20;
+  }
+  .column-date {
+    @apply bg-yellow-50 dark:bg-yellow-900/20;
+  }
+  .column-activity {
+    @apply bg-green-50 dark:bg-green-900/20;
+  }
+  .column-budget {
+    @apply bg-pink-50 dark:bg-pink-900/20;
+  }
+  .column-other {
+    @apply bg-gray-50 dark:bg-gray-900/20;
+  }
+  .idea-card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1;
+  }
+  .add-idea-button {
+    @apply w-full flex items-center gap-2 px-4 py-2 rounded-md border border-dashed border-gray-300 dark:border-gray-700 bg-transparent dark:bg-transparent hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition;
+  }
+  .voting-button {
+    @apply px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white shadow-md flex items-center gap-2 transition disabled:bg-gray-300 disabled:text-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-300;
+  }
+  .help-trigger {
+    @apply cursor-pointer text-blue-600 dark:text-blue-400 hover:underline;
+  }
+  .collaborator-cursor {
+    @apply w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 shadow-md flex items-center justify-center overflow-hidden;
+  }
+}
+
+/* CSS classes for onboarding tour target elements */
+
+/* Column classes for tour targeting */
+.column-container[data-column-type='destination'] {
+  @apply column-destination;
+}
+
+.column-container[data-column-type='date'] {
+  @apply column-date;
+}
+
+.column-container[data-column-type='activity'] {
+  @apply column-activity;
+}
+
+.column-container[data-column-type='budget'] {
+  @apply column-budget;
+}
+
+.column-container[data-column-type='other'] {
+  @apply column-other;
+}
+
+/* Card classes for tour targeting */
+.idea-card-wrapper {
+  @apply idea-card;
+}
+
+/* Add idea button class for tour targeting */
+button[data-action='add-idea'] {
+  @apply add-idea-button;
+}
+
+/* Voting button class for tour targeting */
+button[data-action='start-voting'] {
+  @apply voting-button;
+}
+
+/* Help trigger class for tour targeting */
+[data-kbd-shortcut='/'] {
+  @apply help-trigger;
+}
+
+/* Collaborator cursors class for tour targeting */
+.collaborator-cursor-element {
+  @apply collaborator-cursor;
+}
+
+/* Custom column styling */
+.column-container {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.dark .column-container {
+  background-color: rgba(15, 15, 15, 0.5);
+}
+
+/* Hide scrollbar but allow scrolling */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}

@@ -1,0 +1,81 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Node.js dependencies
+/node_modules
+
+# Next.js build outputs
+/.next/
+/out/
+
+# Production/build outputs
+/build
+
+# Supabase local/dev artifacts
+/supabase/
+/schema/
+/migrations/
+
+# Scripts and generated SQL
+/scripts/
+*.sql
+
+# Test, mocks, and debug
+/__tests__/
+/__mocks__/
+/utils/testing/
+/coverage/
+/playwright-report/
+/test-results/
+/npm-debug.log*
+/yarn-debug.log*
+/yarn-error.log*
+.pnpm-debug.log*
+
+# Design/dev sandboxes
+/app/design-sandbox/
+/components/presence/
+/components/trips/trip-presence-indicator.tsx
+/fixes/
+/_disabled_features/
+/tmp/
+
+# Docs and documentation
+/docs/
+
+# Environment variables and secrets
+.env*
+.env.sentry-build-plugin
+
+# Vercel deployment
+.vercel/
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
+.qodo
+
+# Sentry config
+.env.sentry-build-plugin
+
+# Storybook logs
+*storybook.log
+
+# System files
+.DS_Store
+
+# Editor/IDE settings
+.vscode/
+.idea/
+
+# Ignore admin/dev tools
+/coverage/
+
+# Ignore any other temp files
+~*
+
+# Ignore macOS system files
+.AppleDouble
+.LSOverride
+
+# End of file
+.vercel

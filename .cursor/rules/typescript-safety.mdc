@@ -1,0 +1,3359 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# TypeScript Safety Guide for withme.travel
+
+## Introduction
+
+This guide outlines advanced TypeScript patterns and best practices to address the specific issues we've found in the withme.travel codebase. It focuses on creating a more resilient application through stronger typing, better error handling, and consistent architectural patterns.
+
+## Core Principles
+
+1. **Type-First Development**: Dalit*: M def
+3. Preftati whe Always handle null and undefined values defensively
+5. **Progressive Enhancement**: Incrementally improve type safety in existing code
+
+## Database & Supabase Type Safety
+
+The majority of TypeScript errors in our codebase stem from inconsistent Supabase type handling. Here's how to address this:
+
+### Type-Safe Supabase Client
+
+Create a type-safe wrapper for the Supabase client:
+
+```typescript
+// lib/supabase/typed-client.ts
+import { Database } from '@/types/database.types';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { PostgrestResponse } from '@supabase/supabase-js';
+
+export type TableName = keyof Database['public']['Tables'];
+
+export function createTypedClient() {
+  const supabase = createRouteHandlerClient();
+  
+  return {
+    from: <T extends TableName>(table: T) => {
+      return supabase.from(table);
+    },
+    
+    rpc: <T = unknown>(
+      functionName: keyof RpcFunctions,
+      params?: Record<string, any>
+    ): Promise<PostgrestResponse<T>> => {
+      return supabase.rpc(functionName, params) as Promise<PostgrestResponse<T>>;
+    }
+  };
+}
+```
+
+### RPC Type System
+
+Implement a strongly-typed RPC function system:
+
+```typescript
+// types/rpc.ts
+export interface RpcFunctions {
+  get_trips_with_member_count: { 
+    params: {}, 
+    returns: TripWithMembers[] 
+  },
+  get_trip_by_id: { 
+    params: { trip_id: string }, 
+    returns: TripWithMembers | null 
+  },
+  // Add other RPC functions here
+}
+
+// lib/supabase/rpc.ts
+import { RpcFunctions } from '@/types/rpc';
+
+export function callRpc<T extends keyof RpcFunctions>(
+  functionName: T,
+  params: RpcFunctions[T]['params']
+): Promise<PostgrestResponse<RpcFunctions[T]['returns']>> {
+  const supabase = createRouteHandlerClient();
+  return supabase.rpc(functionName, params);
+}
+```
+
+### Consistent Error Handling
+
+Always handle database errors consistently:
+
+```typescript
+// utils/error-handling.ts
+export function handleDatabaseResult<T>(
+  result: { data: T | null; error: any },
+  errorMessage: string = "Database operation failed",
+  defaultValue: T | null = null
+): T | null {
+  if (result.error) {
+    console.error(errorMessage, result.error);
+    return defaultValue;
+  }
+  return result.data;
+}
+
+// Usage
+const trips = handleDatabaseResult(
+  await callRpc('get_trips_with_member_count', {}),
+  "Failed to fetch trips",
+  []
+);
+```
+
+## Handling Nullable Fields
+
+A significant portion of errors relate to null handling between database fields and TypeScript types.
+
+### Database Type Utilities
+
+Create utilities to handle nullable database fields:
+
+```typescript
+// types/database-utils.ts
+
+// Make all properties in a type potentially nullable
+export type Nullable<T> = {
+  [K in keyof T]: T[K] | null;
+};
+
+// Make specific properties required, rest optional
+export type RequiredProps<T, K extends keyof T> = {
+  [P in K]-?: T[P]; // Required properties
+} & {
+  [P in Exclude<keyof T, K>]?: T[P]; // Optional properties
+};
+
+// Database model (all fields can be null)
+export type DbModel<T> = Nullable<T>;
+
+// For creating a new record (some fields required)
+export type CreateModel<T, K extends keyof T> = RequiredProps<T, K>;
+
+// For updating a record (all fields optional)
+export type UpdateModel<T> = Partial<T>;
+```
+
+### Runtime Validation with Zod
+
+Use Zod for runtime validation with TypeScript integration:
+
+```typescript
+// schemas/trip.ts
+import { z } from 'zod';
+
+export const TripSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  start_date: z.string().nullable(),
+  end_date: z.string().nullable(),
+  created_by: z.string(),
+  // Add other fields
+});
+
+export type Trip = z.infer<typeof TripSchema>;
+
+// utils/validation.ts
+export function validateData<T extends z.ZodType>(
+  schema: T, 
+  data: unknown
+): z.infer<T> {
+  try {
+    return schema.parse(data);
+  } catch (error) {
+    console.error('Validation error:', error);
+    throw new Error('Invalid data format');
+  }
+}
+
+// Usage in API handlers
+const tripData = validateData(TripSchema, data);
+```
+
+## Component Prop Typing
+
+Ensure React components have well-defined props:
+
+### Define Component Props Explicitly
+
+```typescript
+// components/ui/PageHeader.tsx
+import { ReactNode } from 'react';
+
+export type PageHeaderProps = {
+  // Required props
+  heading: string;
+  
+  // Optional props
+  description?: string;
+  children?: ReactNode;
+  className?: string;
+};
+
+export function PageHeader({
+  heading,
+  description,
+  children,
+  className = '',
+}: PageHeaderProps) {
+  return (
+    <div className={className}>
+      <h1>{heading}</h1>
+      {description && <p>{description}</p>}
+      {children}
+    </div>
+  );
+}
+```
+
+### Component Property Documentation
+
+Add JSDoc comments to document component props:
+
+```typescript
+/**
+ * PageHeader component displays a heading with optional description
+ * 
+ * @param props.heading - The main heading text (required)
+ * @param props.description - Optional description text
+ * @param props.className - Additional CSS classes
+ * @param props.children - Optional content to render below the header
+ */
+export function PageHeader({
+  heading,
+  description,
+  children,
+  className = '',
+}: PageHeaderProps) {
+  // Implementation
+}
+```
+
+### State Management Typing
+
+Use discriminated unions for component state:
+
+```typescript
+// Using discriminated unions for state
+type LoadingState = { status: 'loading' };
+type SuccessState<T> = { status: 'success'; data: T };
+type ErrorState = { status: 'error'; error: Error };
+
+type DataState<T> = LoadingState | SuccessState<T> | ErrorState;
+
+function UserProfile() {
+  const [state, setState] = useState<DataState<User>>({ status: 'loading' });
+  
+  // Type-safe rendering based on state
+  if (state.status === 'loading') {
+    return <Spinner />;
+  } else if (state.status === 'error') {
+    return <ErrorMessage message={state.error.message} />;
+  } else {
+    // TypeScript knows state.data exists here
+    return <ProfileCard user={state.data} />;
+  }
+}
+```
+
+## API Integration Patterns
+
+Create type-safe API integration patterns:
+
+### Type-safe API Result Type
+
+```typescript
+// types/api.ts
+export type ApiSuccess<T> = {
+  success: true;
+  data: T;
+};
+
+export type ApiError = {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
+export type ApiResult<T> = ApiSuccess<T> | ApiError;
+
+// api/helpers.ts
+export async function fetchData<T>(
+  url: string,
+  options?: RequestInit
+): Promise<ApiResult<T>> {
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        error: {
+          code: `HTTP_${response.status}`,
+          message: response.statusText || 'Request failed'
+        }
+      };
+    }
+    
+    const data = await response.json();
+    return {
+      success: true,
+      data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'NETWORK_ERROR',
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
+}
+
+// Usage with type narrowing
+const result = await fetchData<User>('/api/users/1');
+
+if (result.success) {
+  // result.data is typed as User
+  console.log(result.data.name);
+} else {
+  // result.error is typed correctly
+  console.error(result.error.message);
+}
+```
+
+## Error Handling Patterns
+
+Implement robust error handling patterns:
+
+### Type-safe Error Handling
+
+```typescript
+// utils/errors.ts
+export class AppError extends Error {
+  constructor(
+    public code: string,
+    message: string,
+    public statusCode: number = 500,
+    public data?: unknown
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+export class ApiError extends AppError {
+  constructor(statusCode: number, message: string, data?: unknown) {
+    super('API_ERROR', message, statusCode, data);
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string, data?: unknown) {
+    super('VALIDATION_ERROR', message, 400, data);
+  }
+}
+
+// Type guard for errors
+export function isAppError(error: unknown): error is AppError {
+  return error instanceof AppError;
+}
+
+// Safe error handling utility
+export function handleError(error: unknown): AppError {
+  if (isAppError(error)) {
+    return error;
+  }
+  
+  if (error instanceof Error) {
+    return new AppError('UNKNOWN_ERROR', error.message);
+  }
+  
+  return new AppError('UNKNOWN_ERROR', String(error));
+}
+```
+
+### Async Error Handling
+
+```typescript
+// utils/async.ts
+export async function tryCatch<T>(
+  promise: Promise<T>
+): Promise<[T, null] | [null, AppError]> {
+  try {
+    const result = await promise;
+    return [result, null];
+  } catch (error) {
+    return [null, handleError(error)];
+  }
+}
+
+// Usage
+const [data, error] = await tryCatch(api.getUser(userId));
+
+if (error) {
+  // Handle error
+  console.error(error.message);
+  return;
+}
+
+// Use data safely
+console.log(data.name);
+```
+
+## Type Guards and Type Narrowing
+
+Use type guards for safer type handling:
+
+### Custom Type Guards
+
+```typescript
+// Type guard for trip data
+export function isTrip(value: unknown): value is Trip {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'name' in value &&
+    'created_by' in value
+  );
+}
+
+// Type guard for component props
+export function hasRequiredTripProps(
+  trip: Partial<Trip>
+): trip is Required<Pick<Trip, 'id' | 'name'>> {
+  return (
+    typeof trip.id === 'string' &&
+    typeof trip.name === 'string'
+  );
+}
+
+// Usage
+const data = await api.getTrip(tripId);
+
+if (isTrip(data)) {
+  // data is typed as Trip
+  renderTrip(data);
+} else {
+  // Handle invalid data
+  showError('Invalid trip data');
+}
+```
+
+### Exhaustiveness Checking
+
+Use exhaustiveness checking for switch statements:
+
+```typescript
+type UserRole = 'admin' | 'editor' | 'viewer';
+
+function getRolePermissions(role: UserRole) {
+  switch (role) {
+    case 'admin':
+      return ['read', 'write', 'delete'];
+    case 'editor':
+      return ['read', 'write'];
+    case 'viewer':
+      return ['read'];
+    default:
+      // This ensures all cases are handled
+      const _exhaustiveCheck: never = role;
+      return [];
+  }
+}
+```
+
+## Implementation Strategy
+
+To implement these improvements, follow this phased approach:
+
+### Phase 1: Core Infrastructure
+
+1. Create the TypeScript utility types for database and nullable fields
+2. Implement the type-safe Supabase client wrapper
+3. Define RPC function types for all database functions
+4. Set up error handling utilities
+
+### Phase 2: Schema Validation
+
+1. Add Zod schemas for critical data structures
+2. Implement runtime validation in API routes
+3. Create type guards for key entities
+
+### Phase 3: Component Types
+
+1. Update component prop definitions
+2. Add proper JSDoc documentation
+3. Implement state management type patterns
+
+### Phase 4: Incremental Migration
+
+1. Apply these patterns to new code first
+2. Gradually update existing code, focusing on common error areas
+3. Add automated tests to verify type safety
+
+## Tools and Configuration
+
+Enable stricter TypeScript checking to catch more issues:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+```
+
+Add TypeScript-specific ESLint rules:
+
+```json
+// .eslintrc.json
+{
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "@typescript-eslint/prefer-nullish-coalescing": "warn",
+    "@typescript-eslint/prefer-optional-chain": "warn"
+  }
+}
+```
+
+
+# The Comprehensive Guide to Building Resilient TypeScript Code
+
+## Introduction
+
+TypeScript's power lies in its ability to prevent bugs through static type checking, but writing truly resilient TypeScript requires more than just adding type annotations. This guide provides concrete examples of high-quality, production-ready TypeScript patterns contrasted with common anti-patterns, helping you write code that stands the test of time.
+
+## Table of Contents
+
+1. [Type Definitions](#type-definitions)
+2. [Null Safety](#null-safety)
+3. [Error Handling](#error-handling)
+4. [API Integration](#api-integration)
+5. [State Management](#state-management)
+6. [Function Design](#function-design)
+7. [Component Architecture](#component-architecture)
+8. [Advanced Type Patterns](#advanced-type-patterns)
+9. [Testing TypeScript Code](#testing-typescript-code)
+10. [Performance Considerations](#performance-considerations)
+
+## Type Definitions
+
+### ✅ Strong Foundations: Domain Models
+
+**Excellent:**
+```typescript
+// Define core domain models with precise types
+export interface User {
+  id: string;
+  email: string;
+  displayName: string;
+  role: 'admin' | 'user' | 'guest';
+  createdAt: string; // ISO date string
+  isActive: boolean;
+  preferences: UserPreferences;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  emailNotifications: boolean;
+  timezone: string;
+}
+
+// Use indexed access types to maintain consistency
+export type UserRole = User['role'];
+
+// Derive related types
+export type UserCreationParams = Omit<User, 'id' | 'createdAt'>;
+export type UserPublicProfile = Pick<User, 'id' | 'displayName'>;
+```
+
+**Poor:**
+```typescript
+// Too broad, allows unexpected values
+interface User {
+  id: any; // No type safety
+  name: string;
+  role: string; // No constraints on role values
+  // Missing critical fields
+}
+
+// Duplicated type not derived from the base model
+interface CreateUserParams {
+  name: string;
+  role: string;
+  // Inconsistent with User interface - could drift over time
+}
+```
+
+### ✅ Type Organization
+
+**Excellent:**
+```typescript
+// types/models.ts - Core domain models in dedicated files
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  status: ProductStatus;
+}
+
+export type ProductStatus = 'available' | 'out-of-stock' | 'discontinued';
+
+// types/api.ts - API-specific types
+export interface ProductResponse extends Product {
+  relatedProducts: string[]; // IDs of related products
+}
+
+export type ProductListParams = {
+  category?: string;
+  status?: ProductStatus;
+  sortBy?: 'price' | 'name';
+  limit?: number;
+};
+```
+
+**Poor:**
+```typescript
+// Scattered, inconsistent type definitions
+// In file1.ts
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
+
+// In file2.ts - duplicate definition with slight differences
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  inStock: boolean; // Different property for same concept
+}
+```
+
+### ✅ Constrained Types
+
+**Excellent:**
+```typescript
+// String literal unions for finite options
+type PaymentMethod = 'credit_card' | 'bank_transfer' | 'paypal';
+
+// Numeric constraints with branded types
+type PositiveNumber = number & { __brand: 'PositiveNumber' };
+
+function makePositive(n: number): PositiveNumber {
+  if (n <= 0) throw new Error('Number must be positive');
+  return n as PositiveNumber;
+}
+
+// Usage with constraint validation
+function processPayment(amount: PositiveNumber, method: PaymentMethod) {
+  // We know amount is positive, no need to check again
+}
+
+const amount = makePositive(100); // Validated at runtime
+processPayment(amount, 'credit_card');
+```
+
+**Poor:**
+```typescript
+// Unconstrained primitive types
+function processPayment(amount: number, method: string) {
+  // Need additional validation
+  if (amount <= 0) throw new Error('Amount must be positive');
+  
+  // Method could be any string, including invalid ones
+  if (!['credit_card', 'bank_transfer', 'paypal'].includes(method)) {
+    throw new Error('Invalid payment method');
+  }
+}
+```
+
+## Null Safety
+
+### ✅ Strict Null Checking
+
+**Excellent:**
+```typescript
+// Enable strictNullChecks in tsconfig.json
+// Requires explicit handling of potentially null/undefined values
+
+function getUserName(user: User | null): string {
+  // Explicit null check
+  if (!user) return 'Guest';
+  return user.displayName;
+}
+
+// Optional chaining for deep property access
+function getPreferredTheme(user?: User): string {
+  return user?.preferences?.theme ?? 'system';
+}
+
+// Early returns for cleaner code
+function processUserData(user?: User): UserStats {
+  if (!user) return defaultStats;
+  if (!user.isActive) return inactiveUserStats;
+  
+  // At this point TypeScript knows user is both defined and active
+  return calculateStats(user);
+}
+```
+
+**Poor:**
+```typescript
+// Without strict null checks
+function getUserName(user: User): string {
+  // No null check leads to runtime errors
+  return user.displayName; // Will crash if user is null
+}
+
+// Unsafe property access
+function getPreferredTheme(user: User): string {
+  return user.preferences.theme; // Will crash if preferences is undefined
+}
+```
+
+### ✅ Nullable Type Handling
+
+**Excellent:**
+```typescript
+// Using the Result pattern for operations that might fail
+type Result<T> = 
+  | { success: true; data: T }
+  | { success: false; error: Error };
+
+// Function that might fail returns a Result type
+function findUser(id: string): Result<User> {
+  try {
+    const user = userRepository.findById(id);
+    if (!user) {
+      return { 
+        success: false, 
+        error: new Error(`User with ID ${id} not found`) 
+      };
+    }
+    return { success: true, data: user };
+  } catch (e) {
+    return { 
+      success: false, 
+      error: e instanceof Error ? e : new Error(String(e))
+    };
+  }
+}
+
+// Usage with type narrowing
+const result = findUser('123');
+if (result.success) {
+  // TypeScript knows result.data is a User here
+  processUser(result.data);
+} else {
+  // TypeScript knows result.error is an Error here
+  logError(result.error);
+}
+```
+
+**Poor:**
+```typescript
+// Inconsistent return types
+function findUser(id: string): User | null | undefined {
+  try {
+    return userRepository.findById(id); // Might return null
+  } catch (e) {
+    // Error swallowed, returns undefined instead
+    return undefined;
+  }
+}
+
+// Usage with confusing type checks needed
+const user = findUser('123');
+// Have to check for both null and undefined
+if (user !== null && user !== undefined) {
+  processUser(user);
+} else {
+  // No error information available
+  logError(new Error('User not found'));
+}
+```
+
+### ✅ Non-Nullable Assertions
+
+**Excellent:**
+```typescript
+// Using type guards to assert non-null values
+function assertNonNull<T>(value: T | null | undefined, message: string): asserts value is T {
+  if (value === null || value === undefined) {
+    throw new Error(message);
+  }
+}
+
+// Usage
+function processUserData(userId: string | null) {
+  assertNonNull(userId, 'User ID is required');
+  
+  // TypeScript now knows userId is a string
+  const normalizedId = userId.toUpperCase();
+}
+
+// For DOM elements, use optional chaining with fallback
+function updateElement() {
+  const element = document.getElementById('content');
+  
+  // Handling the null case explicitly
+  if (!element) {
+    console.error('Element not found');
+    return;
+  }
+  
+  // TypeScript knows element is not null here
+  element.innerHTML = 'Updated content';
+}
+```
+
+**Poor:**
+```typescript
+// Using non-null assertion operator (!) without checks
+function processUserData(userId: string | null) {
+  // Dangerous! Will throw at runtime if userId is null
+  const normalizedId = userId!.toUpperCase();
+}
+
+// Unsafe DOM access
+function updateElement() {
+  // Will throw at runtime if element doesn't exist
+  const element = document.getElementById('content')!;
+  element.innerHTML = 'Updated content';
+}
+```
+
+## Error Handling
+
+### ✅ Typed Error Hierarchies
+
+**Excellent:**
+```typescript
+// Create a hierarchy of typed errors
+class AppError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly statusCode: number = 500
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+    // Restore prototype chain (required in TypeScript when extending built-ins)
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(message: string, public readonly validationErrors: Record<string, string[]>) {
+    super('VALIDATION_ERROR', message, 400);
+  }
+}
+
+class NotFoundError extends AppError {
+  constructor(resource: string, id: string) {
+    super('NOT_FOUND', `${resource} with id ${id} not found`, 404);
+  }
+}
+
+// Type guard for error checking
+function isAppError(error: unknown): error is AppError {
+  return error instanceof AppError;
+}
+
+function isValidationError(error: unknown): error is ValidationError {
+  return error instanceof ValidationError;
+}
+```
+
+**Poor:**
+```typescript
+// Using generic errors with no typing
+function handleError(error: any) {
+  if (error.code === 'VALIDATION_ERROR') {
+    // No type safety on error.validationErrors
+    console.log(error.validationErrors);
+  } else if (error.statusCode === 404) {
+    // String literals with no enforced consistency
+    console.log('Resource not found');
+  }
+}
+```
+
+### ✅ Try/Catch with Proper Types
+
+**Excellent:**
+```typescript
+// Using unknown type for caught errors
+async function fetchUserData(userId: string): Promise<User> {
+  try {
+    const response = await fetch(`/api/users/${userId}`);
+    
+    if (!response.ok) {
+      throw new HttpError(
+        response.status,
+        `Failed to fetch user: ${response.statusText}`
+      );
+    }
+    
+    const data = await response.json();
+    return validateUser(data); // Validate and parse
+  } catch (error: unknown) {
+    // Type guard to handle specific error types
+    if (error instanceof HttpError) {
+      if (error.statusCode === 404) {
+        throw new NotFoundError('User', userId);
+      }
+      throw error;
+    }
+    
+    // Handle unknown errors
+    console.error('Unknown error:', error);
+    throw new AppError(
+      'UNKNOWN_ERROR',
+      'An unexpected error occurred',
+      500
+    );
+  }
+}
+
+// Usage with typed error handling
+try {
+  const user = await fetchUserData('123');
+  renderUser(user);
+} catch (error: unknown) {
+  if (isValidationError(error)) {
+    displayValidationErrors(error.validationErrors);
+  } else if (isAppError(error)) {
+    showErrorMessage(error.message, error.code);
+  } else {
+    // Fallback for truly unknown errors
+    reportToErrorTrackingService(error);
+    showErrorMessage('An unexpected error occurred');
+  }
+}
+```
+
+**Poor:**
+```typescript
+// Using any type for errors loses type safety
+async function fetchUserData(userId: string): Promise<any> {
+  try {
+    const response = await fetch(`/api/users/${userId}`);
+    const data = await response.json();
+    return data; // No validation
+  } catch (error: any) {
+    // String-based error detection is fragile
+    if (error.message.includes('404')) {
+      console.log('User not found');
+    }
+    // Re-throwing without proper wrapping
+    throw error;
+  }
+}
+```
+
+### ✅ Async Error Utilities
+
+**Excellent:**
+```typescript
+// Type-safe utility for async operations
+async function tryCatch<T>(
+  promise: Promise<T>
+): Promise<[T, null] | [null, Error]> {
+  try {
+    const data = await promise;
+    return [data, null];
+  } catch (error) {
+    return [null, error instanceof Error 
+      ? error 
+      : new Error(String(error))
+    ];
+  }
+}
+
+// Usage
+async function getUserProfile(userId: string) {
+  const [user, error] = await tryCatch(userService.findById(userId));
+  
+  if (error) {
+    logError(error);
+    return null;
+  }
+  
+  // TypeScript knows user is not null here
+  return transformUserProfile(user);
+}
+```
+
+**Poor:**
+```typescript
+// Inconsistent error handling across async functions
+async function getUserProfile(userId: string) {
+  try {
+    const user = await userService.findById(userId);
+    return transformUserProfile(user);
+  } catch (error) {
+    // Swallowing errors without proper logging
+    console.log('Error occurred');
+    return null;
+  }
+}
+```
+
+## API Integration
+
+### ✅ Type-Safe API Clients
+
+**Excellent:**
+```typescript
+// Type-safe API client with method-specific types
+class ApiClient {
+  private baseUrl: string;
+  
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+  
+  async get<T>(path: string, params?: Record<string, string>): Promise<T> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.append(key, value);
+      });
+    }
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new HttpError(
+        response.status,
+        await this.getErrorMessage(response)
+      );
+    }
+    
+    return this.parseResponse<T>(response);
+  }
+  
+  async post<TRequest, TResponse>(
+    path: string, 
+    data: TRequest
+  ): Promise<TResponse> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new HttpError(
+        response.status,
+        await this.getErrorMessage(response)
+      );
+    }
+    
+    return this.parseResponse<TResponse>(response);
+  }
+  
+  private async parseResponse<T>(response: Response): Promise<T> {
+    const text = await response.text();
+    
+    try {
+      return text ? JSON.parse(text) : undefined as unknown as T;
+    } catch (error) {
+      throw new Error(`Error parsing response: ${error}`);
+    }
+  }
+  
+  private async getErrorMessage(response: Response): Promise<string> {
+    try {
+      const data = await response.json();
+      return data.message || response.statusText;
+    } catch {
+      return response.statusText;
+    }
+  }
+}
+
+// Usage with specific request/response types
+interface CreateUserRequest {
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+interface CreateUserResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+const api = new ApiClient('https://api.example.com');
+const user = await api.post<CreateUserRequest, CreateUserResponse>(
+  '/users', 
+  { name: 'John Doe', email: 'john@example.com', role: 'user' }
+);
+```
+
+**Poor:**
+```typescript
+// Untyped API calls
+async function apiCall(url: string, method: string, data?: any): Promise<any> {
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  
+  // No error handling
+  return response.json();
+}
+
+// Usage without type safety
+const user = await apiCall('https://api.example.com/users', 'POST', {
+  name: 'John Doe',
+  // Could miss required fields or include invalid ones
+});
+```
+
+### ✅ API Response Validation
+
+**Excellent:**
+```typescript
+import { z } from 'zod';
+
+// Define schema for runtime validation
+const UserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  displayName: z.string().min(2),
+  role: z.enum(['admin', 'user', 'guest']),
+  createdAt: z.string().datetime(),
+  isActive: z.boolean(),
+  preferences: z.object({
+    theme: z.enum(['light', 'dark', 'system']),
+    emailNotifications: z.boolean(),
+    timezone: z.string(),
+  }),
+});
+
+// Infer TypeScript type from schema (DRY)
+type ValidatedUser = z.infer<typeof UserSchema>;
+
+// Validate API responses at runtime
+async function fetchUser(id: string): Promise<ValidatedUser> {
+  const response = await fetch(`/api/users/${id}`);
+  
+  if (!response.ok) {
+    throw new HttpError(response.status, response.statusText);
+  }
+  
+  const data = await response.json();
+  
+  try {
+    // Runtime validation ensures data matches expected shape
+    return UserSchema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      // Detailed validation errors
+      throw new ValidationError(
+        'Invalid user data received from API',
+        error.format()
+      );
+    }
+    throw error;
+  }
+}
+```
+
+**Poor:**
+```typescript
+// No validation, assuming API returns correct data
+async function fetchUser(id: string): Promise<User> {
+  const response = await fetch(`/api/users/${id}`);
+  const data = await response.json();
+  
+  // Just blindly returning, could have missing or wrong fields
+  return data as User;
+}
+```
+
+### ✅ HTTP Request/Response Typing
+
+**Excellent:**
+```typescript
+// API type definitions
+export namespace API {
+  // Base interfaces
+  export interface PaginatedResponse<T> {
+    data: T[];
+    pagination: {
+      page: number;
+      pageSize: number;
+      totalItems: number;
+      totalPages: number;
+    };
+  }
+  
+  export interface ErrorResponse {
+    code: string;
+    message: string;
+    details?: Record<string, string[]>;
+  }
+  
+  // User specific interfaces
+  export namespace Users {
+    export interface GetUserParams {
+      id: string;
+    }
+    
+    export interface GetUserResponse {
+      user: {
+        id: string;
+        email: string;
+        displayName: string;
+        role: UserRole;
+      };
+    }
+    
+    export interface ListUsersParams {
+      page?: number;
+      pageSize?: number;
+      role?: UserRole;
+      searchQuery?: string;
+      sortBy?: 'name' | 'email' | 'createdAt';
+      sortOrder?: 'asc' | 'desc';
+    }
+    
+    export type ListUsersResponse = PaginatedResponse<User>;
+  }
+}
+
+// Usage
+async function getUsers(params: API.Users.ListUsersParams): Promise<API.Users.ListUsersResponse> {
+  const queryParams = new URLSearchParams();
+  
+  // Safe property access with type checking
+  if (params.page) queryParams.set('page', params.page.toString());
+  if (params.pageSize) queryParams.set('pageSize', params.pageSize.toString());
+  if (params.role) queryParams.set('role', params.role);
+  if (params.searchQuery) queryParams.set('q', params.searchQuery);
+  if (params.sortBy) queryParams.set('sortBy', params.sortBy);
+  if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
+  
+  const response = await fetch(`/api/users?${queryParams.toString()}`);
+  
+  if (!response.ok) {
+    const errorData: API.ErrorResponse = await response.json();
+    throw new ApiError(response.status, errorData.message, errorData.code);
+  }
+  
+  return response.json();
+}
+```
+
+**Poor:**
+```typescript
+// No request/response type definitions
+async function getUsers(page?: number, role?: string): Promise<any> {
+  let url = '/api/users';
+  
+  if (page) url += `?page=${page}`;
+  if (role) url += `${page ? '&' : '?'}role=${role}`;
+  
+  const response = await fetch(url);
+  return response.json();
+}
+```
+
+## State Management
+
+### ✅ Discriminated Union State
+
+**Excellent:**
+```typescript
+// Define possible states with discriminated union
+type DataState<T> = 
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: Error };
+
+// React component with strongly typed state
+function UserProfile({ userId }: { userId: string }) {
+  const [state, setState] = useState<DataState<User>>({ status: 'idle' });
+  
+  useEffect(() => {
+    async function loadUser() {
+      setState({ status: 'loading' });
+      
+      try {
+        const user = await userService.getUser(userId);
+        setState({ status: 'success', data: user });
+      } catch (error) {
+        setState({ 
+          status: 'error', 
+          error: error instanceof Error ? error : new Error(String(error))
+        });
+      }
+    }
+    
+    loadUser();
+  }, [userId]);
+  
+  // Type-safe rendering based on state
+  switch (state.status) {
+    case 'idle':
+      return <div>Ready to load user data</div>;
+    
+    case 'loading':
+      return <Spinner />;
+    
+    case 'error':
+      return <ErrorDisplay message={state.error.message} />;
+    
+    case 'success':
+      return (
+        <div>
+          <h1>{state.data.displayName}</h1>
+          <p>Email: {state.data.email}</p>
+          <ThemeSelector theme={state.data.preferences.theme} />
+        </div>
+      );
+  }
+}
+```
+
+**Poor:**
+```typescript
+// Mixed concerns in state
+function UserProfile({ userId }: { userId: string }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    
+    userService.getUser(userId)
+      .then(data => {
+        setUser(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [userId]);
+  
+  // Complex conditionals for rendering
+  if (loading) return <Spinner />;
+  if (error) return <ErrorDisplay message={error} />;
+  if (!user) return null;
+  
+  return (
+    <div>
+      <h1>{user.displayName}</h1>
+      <p>Email: {user.email}</p>
+      {/* No guarantee that preferences exists */}
+      <ThemeSelector theme={user.preferences?.theme} />
+    </div>
+  );
+}
+```
+
+### ✅ Immutable State Updates
+
+**Excellent:**
+```typescript
+// Define state type
+interface TodoState {
+  items: TodoItem[];
+  filter: 'all' | 'active' | 'completed';
+  isLoading: boolean;
+}
+
+interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+// Type-safe action creators
+type TodoAction = 
+  | { type: 'ADD_TODO'; payload: { text: string } }
+  | { type: 'TOGGLE_TODO'; payload: { id: string } }
+  | { type: 'REMOVE_TODO'; payload: { id: string } }
+  | { type: 'SET_FILTER'; payload: TodoState['filter'] }
+  | { type: 'SET_LOADING'; payload: boolean };
+
+// Type-safe reducer with immutable updates
+function todoReducer(state: TodoState, action: TodoAction): TodoState {
+  switch (action.type) {
+    case 'ADD_TODO':
+      return {
+        ...state,
+        items: [
+          ...state.items,
+          {
+            id: crypto.randomUUID(),
+            text: action.payload.text,
+            completed: false
+          }
+        ]
+      };
+    
+    case 'TOGGLE_TODO':
+      return {
+        ...state,
+        items: state.items.map(item => 
+          item.id === action.payload.id
+            ? { ...item, completed: !item.completed }
+            : item
+        )
+      };
+    
+    case 'REMOVE_TODO':
+      return {
+        ...state,
+        items: state.items.filter(item => item.id !== action.payload.id)
+      };
+    
+    case 'SET_FILTER':
+      return {
+        ...state,
+        filter: action.payload
+      };
+    
+    case 'SET_LOADING':
+      return {
+        ...state,
+        isLoading: action.payload
+      };
+    
+    default:
+      // Exhaustiveness check
+      const _exhaustiveCheck: never = action;
+      return state;
+  }
+}
+```
+
+**Poor:**
+```typescript
+// No clear state type
+function todoReducer(state, action) {
+  switch (action.type) {
+    case 'ADD_TODO':
+      // Mutating state directly
+      state.items.push({
+        id: Math.random().toString(),
+        text: action.text,
+        completed: false
+      });
+      return state;
+    
+    case 'TOGGLE_TODO':
+      // Mutating nested objects
+      const item = state.items.find(i => i.id === action.id);
+      if (item) {
+        item.completed = !item.completed;
+      }
+      return state;
+    
+    case 'REMOVE_TODO':
+      // Modifying array in place
+      const index = state.items.findIndex(i => i.id === action.id);
+      if (index !== -1) {
+        state.items.splice(index, 1);
+      }
+      return state;
+    
+    default:
+      return state;
+  }
+}
+```
+
+### ✅ Context with Type Safety
+
+**Excellent:**
+```typescript
+// Define context types
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  error: Error | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+// Create context with a default value that matches the type
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: false,
+  error: null,
+  login: async () => { throw new Error('Not implemented'); },
+  logout: async () => { throw new Error('Not implemented'); }
+});
+
+// Provider with proper type implementation
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const login = useCallback(async (email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const userData = await authService.login(email, password);
+      setUser(userData);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+      throw err; // Re-throw for component handling
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      await authService.logout();
+      setUser(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    error,
+    login,
+    logout
+  };
+  
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Custom hook for accessing context
+export function useAuth() {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
+}
+
+// Usage
+function LoginForm() {
+  const { login, isLoading, error } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await login(email, password);
+      // Success handling
+    } catch (err) {
+      // Already handled in context
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && <ErrorMessage message={error.message} />}
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+      />
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? 'Logging in...' : 'Login'}
+      </button>
+    </form>
+  );
+}
+```
+
+**Poor:**
+```typescript
+// Untyped context
+const AuthContext = createContext();
+
+// Inconsistent provider implementation
+export function AuthProvider({ children }) {
+  const [data, setData] = useState({});
+  
+  function login(email, password) {
+    // No loading state
+    authService.login(email, password)
+      .then(user => {
+        // Inconsistent state shape
+        setData({ user });
+      })
+      .catch(err => {
+        // Error not typed
+        setData({ error: err });
+      });
+  }
+  
+  return (
+    <AuthContext.Provider value={{ ...data, login }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// No validation in usage
+function LoginForm() {
+  const auth = useContext(AuthContext);
+  
+  // No guarantee these properties exist
+  const { login, error } = auth;
+  
+  // ...
+}
+```
+
+## Function Design
+# The Comprehensive Guide to Building Resilient TypeScript Code (Continued)
+
+## Function Design (continued)
+
+### ✅ Function Signatures (continued)
+
+**Excellent:**
+```typescript
+// Clear parameter types and return type
+function calculateTotalPrice(
+  items: CartItem[],
+  options: {
+    applyDiscount?: boolean;
+    discountCode?: string;
+    taxRate: number;
+  }
+): {
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+} {
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  
+  let discount = 0;
+  if (options.applyDiscount && options.discountCode) {
+    discount = getDiscountAmount(subtotal, options.discountCode);
+  }
+  
+  const discountedSubtotal = subtotal - discount;
+  const tax = discountedSubtotal * options.taxRate;
+  const total = discountedSubtotal + tax;
+  
+  return {
+    subtotal,
+    discount,
+    tax,
+    total
+  };
+}
+
+// Usage with clear type expectations
+const cart: CartItem[] = [
+  { id: '1', name: 'Product 1', price: 29.99, quantity: 2 },
+  { id: '2', name: 'Product 2', price: 9.99, quantity: 1 },
+];
+
+const priceDetails = calculateTotalPrice(cart, { 
+  taxRate: 0.08,
+  applyDiscount: true,
+  discountCode: 'SUMMER10'
+});
+```
+
+**Poor:**
+```typescript
+// Unclear parameter and return types
+function calculateTotalPrice(items, options) {
+  let total = 0;
+  
+  // Loop that doesn't account for quantity
+  for (let i = 0; i < items.length; i++) {
+    total += items[i].price;
+  }
+  
+  // Inconsistent option handling
+  if (options && options.discount) {
+    total -= options.discount;
+  }
+  
+  // Inconsistent tax calculation
+  if (options && options.tax) {
+    total *= (1 + options.tax);
+  }
+  
+  // Returns only the total, losing details
+  return total;
+}
+```
+
+### ✅ Function Overloads
+
+**Excellent:**
+```typescript
+// Define overloads for different parameter combinations
+function formatDate(date: Date): string;
+function formatDate(year: number, month: number, day: number): string;
+function formatDate(dateOrYear: Date | number, month?: number, day?: number): string {
+  // Implementation that handles both cases
+  const date = dateOrYear instanceof Date 
+    ? dateOrYear 
+    : new Date(dateOrYear, (month || 0), (day || 1));
+  
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(date);
+}
+
+// Usage with different parameter types
+const today = new Date();
+formatDate(today); // "June 15, 2023"
+formatDate(2023, 5, 15); // "June 15, 2023"
+```
+
+**Poor:**
+```typescript
+// Single implementation with ambiguous types
+function formatDate(date: Date | number, month?: number, day?: number): string {
+  let useDate: Date;
+  
+  // Complex type checking logic in implementation
+  if (typeof date === 'number' && month !== undefined && day !== undefined) {
+    useDate = new Date(date, month, day);
+  } else if (date instanceof Date) {
+    useDate = date;
+  } else {
+    // Runtime error if parameters don't match expectations
+    throw new Error('Invalid parameters');
+  }
+  
+  return useDate.toLocaleDateString();
+}
+```
+
+### ✅ Generic Functions
+
+**Excellent:**
+```typescript
+// Generic function with constraints
+function pickProperties<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+  const result = {} as Pick<T, K>;
+  
+  keys.forEach(key => {
+    if (key in obj) {
+      result[key] = obj[key];
+    }
+  });
+  
+  return result;
+}
+
+// Type inference works properly
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+}
+
+const product: Product = {
+  id: '123',
+  name: 'Laptop',
+  price: 999.99,
+  description: 'Powerful laptop for developers',
+  category: 'Electronics'
+};
+
+// TypeScript knows this returns { id: string, name: string }
+const productSummary = pickProperties(product, ['id', 'name']);
+```
+
+**Poor:**
+```typescript
+// Non-generic function with type assertions
+function pickProperties(obj: any, keys: string[]): any {
+  const result: any = {};
+  
+  keys.forEach(key => {
+    if (key in obj) {
+      result[key] = obj[key];
+    }
+  });
+  
+  return result;
+}
+
+// Need manual type assertion
+const productSummary = pickProperties(product, ['id', 'name']) as {
+  id: string;
+  name: string;
+};
+```
+
+### ✅ Function Composition
+
+**Excellent:**
+```typescript
+// Typed compose utility
+function compose<A, B, C>(
+  f: (input: B) => C,
+  g: (input: A) => B
+): (input: A) => C {
+  return (input) => f(g(input));
+}
+
+// Pipe utility for left-to-right composition
+function pipe<A, B, C>(
+  g: (input: A) => B,
+  f: (input: B) => C
+): (input: A) => C {
+  return (input) => f(g(input));
+}
+
+// Correctly typed functions
+const parseIntBase10 = (s: string): number => parseInt(s, 10);
+const double = (n: number): number => n * 2;
+const numberToString = (n: number): string => n.toString();
+
+// Composing functions with correct typing
+const parseAndDouble = compose(double, parseIntBase10);
+const doubleAndStringify = compose(numberToString, double);
+const fullTransform = compose(numberToString, compose(double, parseIntBase10));
+
+// Type errors are caught by TypeScript
+// This would error as the types don't align:
+// const invalidComposition = compose(parseIntBase10, double);
+
+// Usage
+const result = fullTransform('10'); // "20"
+```
+
+**Poor:**
+```typescript
+// Untyped function composition
+function compose(f, g) {
+  return function(x) {
+    return f(g(x));
+  };
+}
+
+// Function composition without type safety
+const parseAndDouble = compose(
+  function(n) { return n * 2; },
+  function(s) { return parseInt(s, 10); }
+);
+
+// Could cause runtime errors if types don't align
+const invalidComposition = compose(
+  function(s) { return parseInt(s, 10); },
+  function(n) { return n * 2; }
+);
+```
+
+## Component Architecture
+
+### ✅ Component Props
+
+**Excellent:**
+```typescript
+// Define prop types explicitly
+interface ButtonProps {
+  // Use literal union types for finite options
+  variant: 'primary' | 'secondary' | 'danger' | 'success';
+  
+  // Callback functions with clear signatures
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  
+  // Required vs optional props
+  label: string;
+  disabled?: boolean;
+  
+  // Children for composition
+  children?: React.ReactNode;
+  
+  // DOM props using intersection types
+  htmlProps?: React.ButtonHTMLAttributes<HTMLButtonElement>;
+}
+
+// Default props using destructuring with defaults
+export function Button({
+  variant = 'primary',
+  label,
+  onClick,
+  disabled = false,
+  children,
+  htmlProps = {}
+}: ButtonProps) {
+  return (
+    <button
+      className={`btn btn-${variant}`}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      {...htmlProps}
+    >
+      {children || label}
+    </button>
+  );
+}
+
+// Usage with type checking
+<Button
+  variant="primary"
+  label="Submit"
+  onClick={(e) => console.log('Button clicked', e)}
+  disabled={isSubmitting}
+/>
+```
+
+**Poor:**
+```typescript
+// Loosely typed props
+interface ButtonProps {
+  variant?: string;
+  onClick?: any;
+  label?: string;
+  disabled?: boolean;
+  // No children type
+}
+
+// No defaults in component
+export function Button(props: ButtonProps) {
+  // Unsafe property access
+  return (
+    <button
+      className={`btn btn-${props.variant || 'default'}`}
+      onClick={props.onClick}
+      disabled={props.disabled}
+    >
+      {props.label}
+    </button>
+  );
+}
+
+// Usage with potential type issues
+<Button
+  variant="nonexistent-variant" // No type checking on variant values
+  onClick="not-a-function" // Wrong type for onClick
+/>
+```
+
+### ✅ Custom Hooks
+
+**Excellent:**
+```typescript
+// Clear return type
+interface UseCounterResult {
+  count: number;
+  increment: () => void;
+  decrement: () => void;
+  reset: () => void;
+}
+
+// Generic parameter with constraint and default
+interface UseCounterOptions {
+  initialCount?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+// Well-typed custom hook
+function useCounter({
+  initialCount = 0,
+  min = Number.MIN_SAFE_INTEGER,
+  max = Number.MAX_SAFE_INTEGER,
+  step = 1
+}: UseCounterOptions = {}): UseCounterResult {
+  const [count, setCount] = useState(initialCount);
+  
+  // Type-safe implementations
+  const increment = useCallback(() => {
+    setCount(currentCount => {
+      const newCount = currentCount + step;
+      return newCount <= max ? newCount : currentCount;
+    });
+  }, [max, step]);
+  
+  const decrement = useCallback(() => {
+    setCount(currentCount => {
+      const newCount = currentCount - step;
+      return newCount >= min ? newCount : currentCount;
+    });
+  }, [min, step]);
+  
+  const reset = useCallback(() => {
+    setCount(initialCount);
+  }, [initialCount]);
+  
+  return {
+    count,
+    increment,
+    decrement,
+    reset
+  };
+}
+
+// Usage with TypeScript inference
+function CounterComponent() {
+  // TypeScript infers the correct return type
+  const { count, increment, decrement, reset } = useCounter({
+    initialCount: 10,
+    min: 0,
+    max: 100,
+    step: 5
+  });
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={increment}>Increment</button>
+      <button onClick={decrement}>Decrement</button>
+      <button onClick={reset}>Reset</button>
+    </div>
+  );
+}
+```
+
+**Poor:**
+```typescript
+// No clear return type
+function useCounter(initialCount = 0) {
+  const [count, setCount] = useState(initialCount);
+  
+  // Functions created on every render
+  function increment() {
+    setCount(count + 1);
+  }
+  
+  function decrement() {
+    setCount(count - 1);
+  }
+  
+  // No bounds checking
+  return { count, increment, decrement };
+}
+
+// Usage without clear type expectations
+function CounterComponent() {
+  // No type safety on what's returned
+  const counter = useCounter('10'); // Wrong type, but no error
+  
+  return (
+    <div>
+      <p>Count: {counter.count}</p>
+      <button onClick={counter.increment}>Increment</button>
+      <button onClick={counter.decrement}>Decrement</button>
+      {/* No reset function available but nothing indicates this */}
+    </div>
+  );
+}
+```
+
+### ✅ Higher-Order Components
+
+**Excellent:**
+```typescript
+// Generic HOC type
+type HOC<P, InjectProps> = (
+  Component: React.ComponentType<P & InjectProps>
+) => React.ComponentType<Omit<P, keyof InjectProps>>;
+
+// Define the injected props interface
+interface WithAuthProps {
+  isAuthenticated: boolean;
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+// Create a strongly typed HOC
+const withAuth: HOC<any, WithAuthProps> = (Component) => {
+  // Return props are typed as Omit<P, keyof WithAuthProps>
+  const WithAuth = (props: any) => {
+    const auth = useAuth(); // Custom auth hook
+    
+    return <Component {...props} {...auth} />;
+  };
+  
+  // Set display name for debugging
+  WithAuth.displayName = `WithAuth(${Component.displayName || Component.name})`;
+  
+  return WithAuth;
+};
+
+// Component that needs auth
+interface UserProfileProps extends WithAuthProps {
+  userId: string;
+}
+
+function UserProfile({ userId, isAuthenticated, user, logout }: UserProfileProps) {
+  if (!isAuthenticated) {
+    return <p>Please log in to view this profile</p>;
+  }
+  
+  return (
+    <div>
+      <h1>User Profile: {userId}</h1>
+      {user && <p>Logged in as: {user.displayName}</p>}
+      <button onClick={logout}>Logout</button>
+    </div>
+  );
+}
+
+// Usage with proper type inference
+const UserProfileWithAuth = withAuth(UserProfile);
+
+// Render without needing to pass auth props
+<UserProfileWithAuth userId="123" />;
+```
+
+**Poor:**
+```typescript
+// Untyped HOC
+function withAuth(Component) {
+  return function(props) {
+    // Assumes auth object structure
+    const auth = {
+      isAuthenticated: Boolean(localStorage.getItem('token')),
+      user: JSON.parse(localStorage.getItem('user') || 'null'),
+      login: (email, password) => {},
+      logout: () => {}
+    };
+    
+    // No type safety on props spreading
+    return <Component {...props} {...auth} />;
+  };
+}
+
+// Component with implicit prop requirements
+function UserProfile(props) {
+  // No type checking on props
+  if (!props.isAuthenticated) {
+    return <p>Please log in</p>;
+  }
+  
+  return (
+    <div>
+      <h1>User Profile: {props.userId}</h1>
+      {props.user && <p>Logged in as: {props.user.name}</p>}
+      <button onClick={props.logout}>Logout</button>
+    </div>
+  );
+}
+
+// No type checking on enhanced component
+const UserProfileWithAuth = withAuth(UserProfile);
+```
+
+## Advanced Type Patterns
+
+### ✅ Type Guards and Narrowing
+
+**Excellent:**
+```typescript
+// Define union types
+type Shape = 
+  | { kind: 'circle'; radius: number }
+  | { kind: 'rectangle'; width: number; height: number }
+  | { kind: 'triangle'; base: number; height: number };
+
+// Type guard for specific shape
+function isCircle(shape: Shape): shape is Shape & { kind: 'circle' } {
+  return shape.kind === 'circle';
+}
+
+function isRectangle(shape: Shape): shape is Shape & { kind: 'rectangle' } {
+  return shape.kind === 'rectangle';
+}
+
+function isTriangle(shape: Shape): shape is Shape & { kind: 'triangle' } {
+  return shape.kind === 'triangle';
+}
+
+// Calculate area with type narrowing
+function calculateArea(shape: Shape): number {
+  // Using the discriminant property (kind)
+  switch (shape.kind) {
+    case 'circle':
+      // TypeScript knows shape has radius property here
+      return Math.PI * shape.radius ** 2;
+    
+    case 'rectangle':
+      // TypeScript knows shape has width and height properties here
+      return shape.width * shape.height;
+    
+    case 'triangle':
+      // TypeScript knows shape has base and height properties here
+      return (shape.base * shape.height) / 2;
+    
+    default:
+      // Exhaustiveness check
+      const _exhaustiveCheck: never = shape;
+      throw new Error(`Unknown shape: ${_exhaustiveCheck}`);
+  }
+}
+
+// Usage
+const shapes: Shape[] = [
+  { kind: 'circle', radius: 5 },
+  { kind: 'rectangle', width: 10, height: 5 },
+  { kind: 'triangle', base: 8, height: 6 }
+];
+
+// Using type guards
+const circles = shapes.filter(isCircle);
+// TypeScript knows circles is Array<Shape & { kind: 'circle' }>
+
+const rectangleAreas = shapes
+  .filter(isRectangle)
+  .map(rect => rect.width * rect.height);
+```
+
+**Poor:**
+```typescript
+// No discriminant property
+type Shape = Circle | Rectangle | Triangle;
+
+interface Circle {
+  radius: number;
+}
+
+interface Rectangle {
+  width: number;
+  height: number;
+}
+
+interface Triangle {
+  base: number;
+  height: number;
+}
+
+// No clear way to determine shape type
+function calculateArea(shape: Shape): number {
+  // Runtime checking that could have been caught at compile time
+  if ('radius' in shape) {
+    return Math.PI * shape.radius ** 2;
+  } else if ('width' in shape && 'height' in shape) {
+    return shape.width * shape.height;
+  } else if ('base' in shape && 'height' in shape) {
+    return (shape.base * shape.height) / 2;
+  } else {
+    // No exhaustiveness check
+    throw new Error('Unknown shape');
+  }
+}
+```
+
+### ✅ Mapped Types
+
+**Excellent:**
+```typescript
+// Base interface
+interface UserModel {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  address: {
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
+}
+
+// Create a read-only version
+type ReadonlyUser = Readonly<UserModel>;
+
+// Create a version with optional fields for updates
+type UserUpdate = Partial<UserModel>;
+
+// Create a pick with only selected fields
+type UserBasicInfo = Pick<UserModel, 'firstName' | 'lastName' | 'email'>;
+
+// Create a version with certain fields excluded
+type UserWithoutPersonalInfo = Omit<UserModel, 'birthDate' | 'address'>;
+
+// Create a nested partial type for deep updates
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+type UserDeepUpdate = DeepPartial<UserModel>;
+
+// Create a validation error map with the same keys
+type ValidationErrors<T> = {
+  [P in keyof T]?: string;
+};
+
+type UserValidationErrors = ValidationErrors<UserModel>;
+
+// Usage
+const user: UserModel = {
+  id: '123',
+  email: 'john.doe@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  birthDate: '1990-01-01',
+  address: {
+    street: '123 Main St',
+    city: 'Anytown',
+    postalCode: '12345',
+    country: 'US'
+  }
+};
+
+// Type-safe updates with nested properties
+const userUpdate: UserDeepUpdate = {
+  firstName: 'Jonathan',
+  address: {
+    city: 'New City'
+    // Other address fields are optional
+  }
+};
+
+// Type-safe validation errors
+const validationErrors: UserValidationErrors = {
+  email: 'Invalid email format',
+  birthDate: 'Must be at least 18 years old'
+};
+```
+
+**Poor:**
+```typescript
+// No type reuse
+interface UserModel {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  address: {
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
+}
+
+// Duplicated type with minor changes
+interface UserUpdateModel {
+  id?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+}
+
+// Another duplicated type
+interface UserValidationErrors {
+  id?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+}
+```
+
+### ✅ Template Literal Types
+
+**Excellent:**
+```typescript
+// Define event types using template literals
+type EntityType = 'user' | 'post' | 'comment' | 'product';
+type ActionType = 'create' | 'update' | 'delete' | 'view';
+
+// Create a union of all possible event types
+type EventType = `${EntityType}:${ActionType}`;
+
+// Use template literal to create HTTP endpoint types
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+type ApiEndpoint = `/api/${string}`;
+type ApiRoute = `${HttpMethod} ${ApiEndpoint}`;
+
+// Create a strongly typed event system
+interface EventPayloadMap {
+  'user:create': { id: string; email: string; name: string };
+  'user:update': { id: string; changes: Record<string, any> };
+  'user:delete': { id: string };
+  'user:view': { id: string; timestamp: number };
+  
+  'post:create': { id: string; title: string; content: string; userId: string };
+  'post:update': { id: string; changes: Record<string, any> };
+  'post:delete': { id: string };
+  'post:view': { id: string; userId: string; timestamp: number };
+  
+  // Add other event types
+}
+
+// Type-safe event listener
+function addEventListener<T extends keyof EventPayloadMap>(
+  eventType: T,
+  handler: (payload: EventPayloadMap[T]) => void
+): void {
+  // Implementation
+}
+
+// Type-safe event emitter
+function emitEvent<T extends keyof EventPayloadMap>(
+  eventType: T,
+  payload: EventPayloadMap[T]
+): void {
+  // Implementation
+}
+
+// Usage with correct typing
+addEventListener('user:create', (payload) => {
+  // TypeScript knows payload has id, email and name
+  console.log(`User created: ${payload.name} (${payload.email})`);
+});
+
+emitEvent('post:view', {
+  id: '123',
+  userId: '456',
+  timestamp: Date.now()
+});
+
+// Type error if payload doesn't match event type
+// This would cause a compilation error:
+// emitEvent('user:create', { id: '123' });
+```
+
+**Poor:**
+```typescript
+// Stringly-typed events
+function addEventListener(eventType: string, handler: (payload: any) => void) {
+  // Implementation
+}
+
+function emitEvent(eventType: string, payload: any) {
+  // Implementation
+}
+
+// No type checking for event types or payloads
+addEventListener('user:create', (payload) => {
+  // No guarantee payload has name or email
+  console.log(`User created: ${payload.name} (${payload.email})`);
+});
+
+// Can emit any data for any event
+emitEvent('post:view', { id: '123' }); // Missing required fields
+```
+
+### ✅ Conditional Types
+
+**Excellent:**
+```typescript
+// Create a type that flattens Promise types
+type Awaited<T> = T extends Promise<infer U> ? U : T;
+
+// Create a return type extractor
+type ReturnTypeOf<T extends (...args: any[]) => any> = T extends (...args: any[]) => infer R ? R : never;
+
+// Create a type that extracts property types by key
+type PropertyType<T, K extends keyof T> = T[K];
+
+// Create a type-safe API response handler
+type ApiResponse<T> = 
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: Error };
+
+type ExtractData<T> = T extends ApiResponse<infer U> ? U : never;
+
+// Create a function that extracts a specific prop from objects
+function prop<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key];
+}
+
+// Usage
+async function fetchUser(id: string): Promise<User> {
+  // Implementation
+  return { id, name: 'John Doe' } as User;
+}
+
+type FetchUserResult = ReturnTypeOf<typeof fetchUser>; // Promise<User>
+type UserData = Awaited<FetchUserResult>; // User
+
+const response: ApiResponse<User[]> = {
+  status: 'success',
+  data: [{ id: '1', name: 'John' }]
+};
+
+type ResponseData = ExtractData<typeof response>; // User[]
+
+// Property access with type safety
+const user = { id: '1', name: 'John', age: 30 };
+const userName = prop(user, 'name'); // string
+const userAge = prop(user, 'age'); // number
+```
+
+**Poor:**
+```typescript
+// Manual type handling without leveraging TypeScript
+function extractData(response: any) {
+  if (response.status === 'success') {
+    return response.data;
+  }
+  return null;
+}
+
+// Manual property access without type safety
+function getProp(obj: any, key: string) {
+  return obj[key];
+}
+
+// Usage with manual type assertions
+const response: any = {
+  status: 'success',
+  data: [{ id: '1', name: 'John' }]
+};
+
+const data = extractData(response) as User[];
+const userName = getProp(data[0], 'name') as string;
+```
+
+## Testing TypeScript Code
+
+### ✅ Type Testing
+
+**Excellent:**
+```typescript
+// Type assertion tests using conditional types
+type Assert<T, Expected> = T extends Expected 
+  ? (Expected extends T ? true : false) 
+  : false;
+
+// Test case for a function return type
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+// Type tests
+type TestAddReturnType = Assert<ReturnType<typeof add>, number>; // true
+
+// Test for a mapped type
+type UserBase = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+type ReadonlyUserTest = Assert
+  Readonly<UserBase>,
+  {
+    readonly id: string;
+    readonly name: string;
+    readonly email: string;
+  }
+>; // true
+
+// Test conditional types
+type UnwrapPromiseTest = Assert
+  Awaited<Promise<string>>,
+  string
+>; // true
+
+// User interface type guard test
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+function isUser(obj: unknown): obj is User {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'name' in obj &&
+    'email' in obj
+  );
+}
+
+// Runtime tests with TypeScript
+describe('User type guard', () => {
+  it('should correctly identify a User', () => {
+    const validUser = {
+      id: '123',
+      name: 'John',
+      email: 'john@example.com'
+    };
+    
+    const invalidUser = {
+      id: '123',
+      name: 'John'
+      // Missing email
+    };
+    
+    expect(isUser(validUser)).toBe(true);
+    expect(isUser(invalidUser)).toBe(false);
+    
+    // TypeScript will ensure if isUser returns true, the object is a User
+    if (isUser(validUser)) {
+      // This is safe, TypeScript knows it's a User
+      const email: string = validUser.email;
+    }
+  });
+});
+```
+
+**Poor:**
+```typescript
+// No type tests
+// No runtime type tests
+// No type guard tests
+// Only runtime behavior is tested
+describe('add function', () => {
+  it('should add two numbers', () => {
+    expect(add(1, 2)).toBe(3);
+    // But this doesn't test the type safety
+  });
+});
+```
+
+### ✅ Mocking with Types
+
+**Excellent:**
+```typescript
+// Define service interface
+interface UserService {
+  getUser(id: string): Promise<User>;
+  createUser(data: Omit<User, 'id'>): Promise<User>;
+  updateUser(id: string, data: Partial<User>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
+}
+
+// Create a strongly typed mock
+type Mock<T> = {
+  [P in keyof T]: jest.Mock<ReturnType<T[P]>, Parameters<T[P]>>;
+};
+
+// Create a mock factory
+function createMock<T>(): Mock<T> {
+  return new Proxy({} as Mock<T>, {
+    get: (target, prop) => {
+      if (!(prop in target)) {
+        target[prop as keyof T] = jest.fn() as any;
+      }
+      return target[prop as keyof T];
+    }
+  });
+}
+
+// Create a mock that adheres to the interface
+describe('UserService tests', () => {
+  let userServiceMock: Mock<UserService>;
+  
+  beforeEach(() => {
+    userServiceMock = createMock<UserService>();
+    
+    // Set up mock implementations
+    userServiceMock.getUser.mockResolvedValue({
+      id: '123',
+      name: 'Test User',
+      email: 'test@example.com'
+    });
+  });
+  
+  it('should get a user', async () => {
+    // TypeScript ensures we call with correct parameter types
+    const user = await userServiceMock.getUser('123');
+    
+    expect(userServiceMock.getUser).toHaveBeenCalledWith('123');
+    expect(user.id).toBe('123');
+  });
+  
+  it('should create a user', async () => {
+    const newUser = {
+      name: 'New User',
+      email: 'new@example.com'
+    };
+    
+    userServiceMock.createUser.mockResolvedValue({
+      id: '456',
+      ...newUser
+    });
+    
+    // TypeScript ensures we call with correct parameter types
+    const user = await userServiceMock.createUser(newUser);
+    
+    expect(userServiceMock.createUser).toHaveBeenCalledWith(newUser);
+    expect(user.id).toBe('456');
+  });
+});
+```
+
+**Poor:**
+```typescript
+// Untyped mocks
+describe('UserService tests', () => {
+  let userServiceMock: any;
+  
+  beforeEach(() => {
+    userServiceMock = {
+      getUser: jest.fn(),
+      createUser: jest.fn(),
+      updateUser: jest.fn(),
+      deleteUser: jest.fn()
+    };
+    
+    userServiceMock.getUser.mockResolvedValue({
+      id: '123',
+      name: 'Test User',
+      email: 'test@example.com'
+    });
+  });
+  
+  it('should get a user', async () => {
+    // No type checking on parameters
+    const user = await userServiceMock.getUser('123');
+    
+    expect(userServiceMock.getUser).toHaveBeenCalledWith('123');
+    expect(user.id).toBe('123');
+  });
+});
+```
+
+# The Comprehensive Guide to Building Resilient TypeScript Code (Continued)
+
+## Performance Considerations (continued)
+
+### ✅ Optimizing Type Compilation
+
+**Excellent:**
+```typescript
+// Separate type definitions from implementation
+// types.ts
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  preferences: UserPreferences;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  notifications: boolean;
+  language: string;
+}
+
+export type UserUpdate = Partial<User>;
+
+// Use project references for clear module boundaries
+// tsconfig.json
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../common" }
+  ]
+}
+
+// Avoid excessive type recursion
+// BAD: This can cause performance issues
+type DeepReadonly<T> = {
+  readonly [P in keyof T]: T[P] extends object ? DeepReadonly<T[P]> : T[P];
+};
+
+// GOOD: Use a depth limit
+type DeepReadonlyLimited<T, Depth extends number = 3> = {
+  readonly [P in keyof T]: Depth extends 0
+    ? T[P]
+    : T[P] extends object
+    ? DeepReadonlyLimited<T[P], Subtract<Depth, 1>>
+    : T[P];
+};
+
+type Subtract<A extends number, B extends number> = [...Array<A>]['length'] extends [...Array<B>, ...infer U]['length'] ? U['length'] : never;
+```
+
+**Poor:**
+```typescript
+// Mixed types and implementation
+class User {
+  id: string;
+  name: string;
+  email: string;
+  preferences: {
+    theme: 'light' | 'dark' | 'system';
+    notifications: boolean;
+    language: string;
+  };
+
+  constructor(id: string, name: string, email: string) {
+    this.id = id;
+    this.name = name;
+    this.email = email;
+    this.preferences = {
+      theme: 'system',
+      notifications: true,
+      language: 'en'
+    };
+  }
+  
+  // Methods mixed with type definitions
+}
+
+// Unbounded recursive types
+type DeepNested<T> = {
+  [P in keyof T]: T[P] extends object ? DeepNested<T[P]> : T[P];
+};
+
+// Using DeepNested on a large object can cause TypeScript to hang
+type HugeObjectType = DeepNested<SomeVeryComplexObject>;
+```
+
+### ✅ Type-Only Imports and Exports
+
+**Excellent:**
+```typescript
+// Only import the types needed
+import type { User, UserPreferences } from './types';
+import { fetchUser, updateUser } from './api';
+
+// Explicitly mark interfaces as type-only exports
+export type { SearchResult, SearchOptions };
+export { performSearch, clearSearchResults };
+
+// Create a type-only barrel file
+// types/index.ts
+export type { User } from './user';
+export type { Product } from './product';
+export type { Order } from './order';
+
+// Use specific imports instead of namespace imports
+import type { UpdateOptions } from './api-types';
+// NOT: import * as ApiTypes from './api-types';
+
+// Use interface merging for extensible types
+// types.d.ts
+interface Window {
+  analytics: {
+    track(event: string, properties?: Record<string, any>): void;
+    identify(userId: string, traits?: Record<string, any>): void;
+  };
+}
+
+// Avoid exporting large type unions directly
+// BAD:
+export type AllEntityTypes = User | Product | Order | Cart | Shipment | Payment | Discount | Tax | /* 50 more types */;
+
+// GOOD:
+// Split into smaller, logical groupings
+export type UserEntity = User | UserProfile | UserSettings;
+export type ProductEntity = Product | ProductVariant | ProductCategory;
+export type OrderEntity = Order | OrderItem | OrderShipment;
+```
+
+**Poor:**
+```typescript
+// Importing everything including types unnecessarily
+import * as UserModule from './user-module';
+
+// Mixing value and type exports
+export interface User {
+  id: string;
+  name: string;
+}
+export const DEFAULT_USER: User = { id: '', name: '' };
+
+// Importing types that pull in large dependency trees
+import { ComplexType } from './huge-module-with-side-effects';
+
+// Using type-only imports for values
+import type { fetchUser } from './api'; // Will cause runtime errors
+```
+
+### ✅ Bundle Size Optimization
+
+**Excellent:**
+```typescript
+// Use import type for types to avoid bundling type-only imports
+import type { User } from './types';
+import { userService } from './services';
+
+// Use const enums which compile to literal values
+const enum Direction {
+  Up = 'UP',
+  Down = 'DOWN',
+  Left = 'LEFT',
+  Right = 'RIGHT'
+}
+
+function move(direction: Direction) {
+  switch (direction) {
+    case Direction.Up:
+      return { x: 0, y: -1 };
+    case Direction.Down:
+      return { x: 0, y: 1 };
+    case Direction.Left:
+      return { x: -1, y: 0 };
+    case Direction.Right:
+      return { x: 1, y: 0 };
+  }
+}
+
+// Compiles to:
+// function move(direction) {
+//   switch (direction) {
+//     case "UP":
+//       return { x: 0, y: -1 };
+//     case "DOWN":
+//       return { x: 0, y: 1 };
+//     case "LEFT":
+//       return { x: -1, y: 0 };
+//     case "RIGHT":
+//       return { x: 1, y: 0 };
+//   }
+// }
+
+// Use code splitting with dynamic imports
+async function loadUserProfile() {
+  // Import only when needed
+  const { renderUserProfile } = await import('./user-profile');
+  
+  // Render the profile
+  renderUserProfile(currentUser);
+}
+
+// Tree-shakable singleton services
+export class UserService {
+  getUser(id: string) {
+    // Implementation
+  }
+}
+
+// Exported as a factory function, allows tree-shaking
+export function createUserService() {
+  return new UserService();
+}
+```
+
+**Poor:**
+```typescript
+// Regular enums create runtime objects
+enum Direction {
+  Up = 'UP',
+  Down = 'DOWN',
+  Left = 'LEFT',
+  Right = 'RIGHT'
+}
+
+// Compiles to:
+// var Direction;
+// (function (Direction) {
+//   Direction["Up"] = "UP";
+//   Direction["Down"] = "DOWN";
+//   Direction["Left"] = "LEFT";
+//   Direction["Right"] = "RIGHT";
+// })(Direction || (Direction = {}));
+
+// Importing everything statically
+import * as UserModule from './user-module';
+import * as ProductModule from './product-module';
+import * as OrderModule from './order-module';
+
+// Non-tree-shakable singleton exports
+export const userService = new UserService();
+```
+
+## Comprehensive Examples
+
+Let's put it all together with a complete example of a resilient TypeScript application component.
+
+### ✅ Complete User Management Module
+
+```typescript
+// types/user.ts
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  lastLogin?: string;
+}
+
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
+export type UserCreationParams = Omit<User, 'id' | 'createdAt' | 'lastLogin'>;
+
+export type UserUpdateParams = Partial<Omit<User, 'id' | 'createdAt'>>; 
+
+export interface UserFilter {
+  role?: UserRole;
+  isActive?: boolean;
+  search?: string;
+  sortBy?: keyof User;
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
+export interface UserListResponse {
+  users: User[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// api/user-service.ts
+import type { 
+  User,
+  UserCreationParams,
+  UserUpdateParams,
+  UserFilter,
+  UserListResponse
+} from '../types/user';
+import { apiClient } from './api-client';
+
+export class UserService {
+  async getUser(id: string): Promise<User> {
+    try {
+      return await apiClient.get<User>(`/users/${id}`);
+    } catch (error) {
+      if (error instanceof ApiError && error.statusCode === 404) {
+        throw new NotFoundError('User', id);
+      }
+      throw error;
+    }
+  }
+  
+  async listUsers(filter: UserFilter = {}): Promise<UserListResponse> {
+    return apiClient.get<UserListResponse>('/users', filter);
+  }
+  
+  async createUser(data: UserCreationParams): Promise<User> {
+    try {
+      return await apiClient.post<UserCreationParams, User>('/users', data);
+    } catch (error) {
+      if (error instanceof ApiError && error.statusCode === 400) {
+        throw new ValidationError('Invalid user data', error.data);
+      }
+      throw error;
+    }
+  }
+  
+  async updateUser(id: string, data: UserUpdateParams): Promise<User> {
+    try {
+      return await apiClient.patch<UserUpdateParams, User>(`/users/${id}`, data);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.statusCode === 404) {
+          throw new NotFoundError('User', id);
+        } else if (error.statusCode === 400) {
+          throw new ValidationError('Invalid user data', error.data);
+        }
+      }
+      throw error;
+    }
+  }
+  
+  async deleteUser(id: string): Promise<void> {
+    try {
+      await apiClient.delete(`/users/${id}`);
+    } catch (error) {
+      if (error instanceof ApiError && error.statusCode === 404) {
+        throw new NotFoundError('User', id);
+      }
+      throw error;
+    }
+  }
+}
+
+export const userService = new UserService();
+
+// hooks/use-users.ts
+import { useState, useEffect, useCallback } from 'react';
+import type { User, UserFilter, UserListResponse } from '../types/user';
+import { userService } from '../api/user-service';
+
+interface UseUsersResult {
+  users: User[];
+  total: number;
+  isLoading: boolean;
+  error: Error | null;
+  filter: UserFilter;
+  setFilter: (filter: UserFilter) => void;
+  refreshUsers: () => Promise<void>;
+}
+
+export function useUsers(initialFilter: UserFilter = {}): UseUsersResult {
+  const [users, setUsers] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [filter, setFilter] = useState<UserFilter>(initialFilter);
+  
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await userService.listUsers(filter);
+      setUsers(response.users);
+      setTotal(response.total);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filter]);
+  
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+  
+  return {
+    users,
+    total,
+    isLoading,
+    error,
+    filter,
+    setFilter,
+    refreshUsers: fetchUsers
+  };
+}
+
+// components/UserList.tsx
+import React, { useState } from 'react';
+import type { User, UserRole, UserFilter } from '../types/user';
+import { useUsers } from '../hooks/use-users';
+import { Spinner, ErrorMessage, Pagination } from '../components/ui';
+
+interface UserListProps {
+  initialFilter?: UserFilter;
+  onUserClick?: (user: User) => void;
+}
+
+export function UserList({ 
+  initialFilter = { limit: 10, offset: 0 },
+  onUserClick
+}: UserListProps) {
+  const { 
+    users, 
+    total, 
+    isLoading, 
+    error, 
+    filter, 
+    setFilter, 
+    refreshUsers 
+  } = useUsers(initialFilter);
+  
+  const handleRoleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const role = event.target.value === 'all' 
+      ? undefined 
+      : event.target.value as UserRole;
+    
+    setFilter({ ...filter, role, offset: 0 });
+  };
+  
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFilter({ 
+      ...filter, 
+      search: event.target.value || undefined,
+      offset: 0
+    });
+  };
+  
+  const handlePageChange = (page: number) => {
+    const offset = (page - 1) * (filter.limit || 10);
+    setFilter({ ...filter, offset });
+  };
+  
+  if (isLoading && users.length === 0) {
+    return <Spinner />;
+  }
+  
+  if (error) {
+    return (
+      <ErrorMessage
+        message="Failed to load users"
+        error={error}
+        onRetry={refreshUsers}
+      />
+    );
+  }
+  
+  return (
+    <div className="user-list">
+      <div className="filters">
+        <input
+          type="text"
+          placeholder="Search users..."
+          value={filter.search || ''}
+          onChange={handleSearchChange}
+        />
+        
+        <select
+          value={filter.role || 'all'}
+          onChange={handleRoleFilterChange}
+        >
+          <option value="all">All roles</option>
+          <option value="admin">Admin</option>
+          <option value="editor">Editor</option>
+          <option value="viewer">Viewer</option>
+        </select>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map(user => (
+            <tr 
+              key={user.id} 
+              onClick={() => onUserClick?.(user)}
+              className={onUserClick ? 'clickable' : ''}
+            >
+              <td>{user.name}</td>
+              <td>{user.email}</td>
+              <td>{user.role}</td>
+              <td>{user.isActive ? 'Active' : 'Inactive'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      
+      {users.length === 0 && (
+        <div className="empty-state">No users found</div>
+      )}
+      
+      <Pagination
+        currentPage={Math.floor((filter.offset || 0) / (filter.limit || 10)) + 1}
+        totalItems={total}
+        itemsPerPage={filter.limit || 10}
+        onPageChange={handlePageChange}
+      />
+    </div>
+  );
+}
+```
+
+## Conclusion
+
+Building resilient TypeScript code requires more than just adding type annotations. It involves:
+
+1. **Strong Type Foundations**: Design your type system to accurately model your domain and enforce constraints.
+
+2. **Null Safety**: Handle null and undefined values explicitly, using TypeScript's strict null checking.
+
+3. **Error Handling**: Create typed error hierarchies and use proper error handling patterns.
+
+4. **API Design**: Use precise types for API requests and responses, with runtime validation.
+
+5. **State Management**: Use discriminated unions and immutable patterns for state.
+
+6. **Component Architecture**: Define clear, well-typed interfaces for components and hooks.
+
+7. **Advanced Type Patterns**: Leverage TypeScript's advanced features like conditional types, mapped types, and template literals.
+
+8. **Testing**: Test both runtime behavior and type correctness.
+
+9. **Performance**: Optimize type compilation and bundle size while maintaining type safety.
+
+By following these patterns, you can create TypeScript code that is not only type-safe but also resilient, maintainable, and performant.
+
+Remember, the goal of TypeScript is not just to catch errors at compile-time but to make your codebase more understandable and robust. Well-typed code serves as documentation, enables better tooling, and provides confidence in refactoring and extending your application.
+
+
+
+
+## Conclusion
+
+By implementing these TypeScript patterns, we can significantly reduce type errors in our codebase and create a more robust application. The focus should be on building a strong foundation of type-safe utilities and gradually improving existing code.
+
+Remember that TypeScript is a tool to help us write better code, not an obstacle to overcome. By embracing its capabilities, we can catch errors earlier in the development process and create a more maintainable codebase.

@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+All schema changes should be idempotent: use ALTER TABLE ... ADD COLUMN IF NOT EXISTS for columns, and DROP ... IF EXISTS before creating triggers, indexes, and policies.

@@ -1,0 +1,305 @@
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import * as Sentry from '@sentry/nextjs';
+import { createSupabaseServerClient, getServerSession } from '@/utils/supabase/server';
+import TripPageClientWrapper from './trip-page-client-wrapper';
+import { ClassErrorBoundary } from '@/components/error-boundary';
+import { TripPageSkeleton } from '@/components/skeletons/trip-page-skeleton';
+import { TripPageError } from '@/components/trips/trip-page-error';
+import { z } from 'zod';
+
+// Types
+interface PageProps {
+  params: {
+    tripId: string;
+  };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+interface AuthStatus {
+  authenticated: boolean;
+  canEdit: boolean;
+  message?: string;
+}
+
+// Define TripData type
+interface TripData {
+  trip: any; // Replace with actual trip type when available
+  userRole: string | null;
+  canEdit: boolean;
+}
+
+// Define schema for validation
+const TripDataSchema = z.object({
+  trip: z.any(), // Replace with actual schema when available
+  userRole: z.string().nullable(),
+  canEdit: z.boolean(),
+});
+
+// Type guards
+function isTripMember(data: any): data is { role: string } {
+  return data && typeof data === 'object' && 'role' in data;
+}
+
+function isTripData(data: any): data is { privacy_setting: string; created_by: string } {
+  return data && typeof data === 'object' && 'privacy_setting' in data && 'created_by' in data;
+}
+
+/**
+ * Check if the user is authenticated and can access the trip
+ */
+async function checkAuth(tripId: string): Promise<AuthStatus> {
+  try {
+    // Use the more specific getServerSession utility function
+    const {
+      data: { session },
+    } = await getServerSession();
+
+    // Log session data for debugging
+    console.log(`Session check result for trip ${tripId}:`, {
+      hasSession: !!session,
+      userId: session?.user?.id || 'none',
+    });
+
+    if (!session) {
+      console.log(`No session found, user needs to login`);
+      return { authenticated: false, canEdit: false };
+    }
+
+    // Now we have a confirmed session, create the client for data access
+    const cookieStore = cookies();
+    const supabase = createSupabaseServerClient(cookieStore);
+    const userId = session.user.id;
+
+    // Check if user has direct membership in the trip
+    const { data: member, error: memberError } = await supabase
+      .from('trip_members')
+      .select('role')
+      .eq('trip_id', tripId as any)
+      .eq('user_id', userId as any)
+      .single();
+
+    if (!memberError && member && isTripMember(member)) {
+      console.log(`User ${userId} is a member of trip ${tripId} with role: ${member.role}`);
+      return {
+        authenticated: true,
+        canEdit: member.role === 'admin' || member.role === 'editor',
+      };
+    }
+
+    // Check if user is the trip creator
+    const { data: trip, error: tripError } = await supabase
+      .from('trips')
+      .select('privacy_setting, created_by')
+      .eq('id', tripId as any)
+      .single();
+
+    if (tripError) {
+      console.log(`Trip ${tripId} not found:`, tripError.message);
+      return {
+        authenticated: true,
+        canEdit: false,
+        message: 'Trip not found',
+      };
+    }
+
+    // Check if user is the creator
+    if (trip && isTripData(trip) && trip.created_by === userId) {
+      console.log(`User ${userId} is the creator of trip ${tripId}`);
+      return { authenticated: true, canEdit: true };
+    }
+
+    // Check if trip is public
+    if (trip && isTripData(trip) && trip.privacy_setting === 'public') {
+      console.log(`Trip ${tripId} is public, granting view access`);
+      return { authenticated: true, canEdit: false };
+    }
+
+    // If we got here, user is authenticated but doesn't have access
+    console.log(`User ${userId} doesn't have access to trip ${tripId}`);
+    return {
+      authenticated: true,
+      canEdit: false,
+      message: 'You do not have access to this trip',
+    };
+  } catch (error) {
+    console.error('Error in checkAuth:', error);
+    Sentry.captureException(error, {
+      tags: { tripId },
+      extra: { source: 'checkAuth' },
+    });
+
+    // If the error is related to authentication, return not authenticated
+    if (
+      error instanceof Error &&
+      (error.message.includes('auth') || error.message.includes('session'))
+    ) {
+      return { authenticated: false, canEdit: false };
+    }
+
+    // For other errors, assume user is authenticated but has an error
+    return {
+      authenticated: true,
+      canEdit: false,
+      message: 'Error checking trip access',
+    };
+  }
+}
+
+/**
+ * Fetch trip data from the API
+ */
+async function getTripData(tripId: string): Promise<TripData> {
+  const cookieStore = cookies();
+
+  try {
+    const url = `/api/trips/${tripId}`;
+
+    Sentry.addBreadcrumb({
+      category: 'data-fetch',
+      message: `Fetching trip data for: ${tripId}`,
+      level: 'info',
+      data: { url, tripId },
+    });
+
+    const response = await fetch(url, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch trip data: ${response.statusText}`);
+    }
+
+    // Get the raw data and use type assertion to work around the type check issue
+    const data = await response.json();
+
+    // This is a workaround - ideally we would use proper validation
+    return data as TripData;
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { tripId },
+      extra: { source: 'getTripData' },
+    });
+    throw error;
+  }
+}
+
+/**
+ * Main Trip Page component
+ */
+export default async function TripPage({
+  params,
+}: {
+  params: Promise<{ tripId: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
+  try {
+    // Await params before using them
+    const { tripId } = await params;
+
+    console.log(`TripPage: Starting page render for tripId: ${tripId}`);
+
+    // Add page view to Sentry for monitoring
+    Sentry.addBreadcrumb({
+      category: 'navigation',
+      message: `Trip page view for ID: ${tripId}`,
+      level: 'info',
+    });
+
+    // Check authentication and access
+    const authStatus = await checkAuth(tripId);
+    console.log(`TripPage: Auth check complete:`, authStatus);
+
+    if (!authStatus.authenticated) {
+      console.log(
+        `TripPage: Not authenticated, redirecting to login with return URL: /trips/${tripId}`
+      );
+
+      // Ensure the redirect URL is properly encoded
+      const redirectPath = `/login?redirectTo=${encodeURIComponent(`/trips/${tripId}`)}`;
+      console.log(`TripPage: Redirecting to ${redirectPath}`);
+
+      redirect(redirectPath);
+    }
+
+    if (!authStatus.canEdit) {
+      // Log access denied events in Sentry
+      Sentry.captureMessage('Trip access denied', {
+        level: 'warning',
+        tags: { tripId },
+        extra: { message: authStatus.message },
+      });
+
+      // Render a nice access denied page if authenticated but can't access
+      return (
+        <div className="container mx-auto p-8">
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="mb-4">
+            {authStatus.message || "You don't have permission to view this trip."}
+          </p>
+          <div className="mt-6">
+            <a href="/trips" className="text-primary hover:underline">
+              Return to your trips
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    // Fetch trip data directly in the page component
+    let tripData;
+    try {
+      tripData = await getTripData(tripId);
+    } catch (error) {
+      // Handle trip data fetch error
+      return (
+        <div className="container mx-auto p-8">
+          <h1 className="text-2xl font-bold mb-4">Error Loading Trip</h1>
+          <p className="text-red-500 mb-4">
+            {error instanceof Error ? error.message : 'An unexpected error occurred'}
+          </p>
+          <div className="mt-6">
+            <a href="/trips" className="text-primary hover:underline">
+              Return to trips
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    // Render trip content with error boundaries and suspense
+    return (
+      <ClassErrorBoundary
+        fallback={<TripPageError tripId={tripId} />}
+        onError={(error: Error) => {
+          Sentry.captureException(error, {
+            tags: { tripId, section: 'trip-page' },
+          });
+        }}
+      >
+        <Suspense fallback={<TripPageSkeleton />}>
+          <TripPageClientWrapper tripData={tripData} />
+        </Suspense>
+      </ClassErrorBoundary>
+    );
+  } catch (error) {
+    console.error(`TripPage: Unhandled error:`, error);
+    Sentry.captureException(error, {
+      tags: { section: 'trip-page-uncaught' },
+    });
+
+    // Also check if this is an auth error
+    if (
+      error instanceof Error &&
+      (error.message.includes('auth') || error.message.includes('session'))
+    ) {
+      console.log(`TripPage: Auth error detected, redirecting to login`);
+      redirect('/login');
+    }
+
+    throw error; // Let Next.js handle other types of errors
+  }
+} 

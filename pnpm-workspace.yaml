@@ -1,0 +1,11 @@
+ignoredBuiltDependencies:
+  - bufferutil
+  - utf-8-validate
+packages:
+  - 'app'
+  - 'components'
+  - 'lib'
+  - 'hooks'
+  - 'utils'
+  - 'types'
+  # Add any other folders that contain a package.json or are part of your monorepo

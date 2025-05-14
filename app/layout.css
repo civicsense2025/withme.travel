@@ -1,0 +1,72 @@
+/* Remove these Framer Motion related rules */
+/* .data-\[motion\^\=from-\]\:animate-in[data-motion^="from-"] {
+  animation: 0.25s ease 0s 1 normal forwards animate-in;
+}
+.data-\[motion\^\=to-\]\:animate-out[data-motion^="to-"] {
+  animation: 0.25s ease 0s 1 normal forwards animate-out;
+}
+.data-\[motion\^\=from-\]\:fade-in[data-motion^="from-"] {
+  --tw-enter-opacity: 0;
+}
+.data-\[motion\^\=to-\]\:fade-out[data-motion^="to-"] {
+  --tw-leave-opacity: 0;
+}
+.data-\[motion\=from-end\]\:slide-in-from-right-52[data-motion="from-end"] {
+  --tw-enter-translate-x: 52px;
+}
+.data-\[motion\=from-start\]\:slide-in-from-left-52[data-motion="from-start"] {
+  --tw-enter-translate-x: -52px;
+}
+.data-\[motion\=to-end\]\:slide-out-to-right-52[data-motion="to-end"] {
+  --tw-leave-translate-x: 52px;
+}
+.data-\[motion\=to-start\]\:slide-out-to-left-52[data-motion="to-start"] {
+  --tw-leave-translate-x: -52px;
+} */
+
+/* Research debug panel - make it visible and properly positioned */
+.research-debug-panel-button {
+  position: fixed;
+  z-index: 200;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  background-color: #8a63d2;
+  color: white;
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.research-debug-panel-button:hover {
+  background-color: #7048c6;
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.research-debug-panel {
+  position: fixed;
+  z-index: 200;
+  top: 50%;
+  right: 80px;
+  transform: translateY(-50%);
+  background-color: white;
+  border-radius: 8px;
+  width: 320px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.dark .research-debug-panel {
+  background-color: #1e1e2e;
+  border-color: #374151;
+}
