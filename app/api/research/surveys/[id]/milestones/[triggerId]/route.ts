@@ -1,29 +1,11 @@
-import { z } from 'zod';
-import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-// Zod schema for form config (fields/questions/logic)
-const FormConfigSchema = z.object({
-  fields: z.array(
-    z.object({
-      label: z.string(),
-      type: z.string(),
-      options: z.any().optional(),
-      required: z.boolean().optional(),
-      order: z.number().optional(),
-      milestone: z.string().optional().nullable(),
-      config: z.any().optional(),
-    })
-  ),
-  // ...add more config validation as needed
-});
-
-// GET: Retrieve a specific survey
+// GET: Retrieve a specific milestone trigger
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; triggerId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
   
@@ -45,46 +27,32 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Get the survey
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
-      .select('*')
-      .eq('id', params.id)
+    // Get the specific trigger
+    const { data: trigger, error: triggerError } = await supabase
+      .from('survey_milestone_triggers')
+      .select(`
+        *,
+        milestone:milestone_id(*)
+      `)
+      .eq('id', params.triggerId)
+      .eq('survey_id', params.id)
       .single();
       
-    if (surveyError) {
-      return NextResponse.json({ error: 'Survey not found' }, { status: 404 });
+    if (triggerError) {
+      return NextResponse.json({ error: 'Milestone trigger not found' }, { status: 404 });
     }
     
-    // Get counts of related items
-    const { data: linkCount, error: linkError } = await supabase
-      .from('survey_links')
-      .select('id', { count: 'exact', head: true })
-      .eq('survey_id', params.id);
-      
-    const { data: milestoneCount, error: milestoneError } = await supabase
-      .from('survey_milestone_triggers')
-      .select('id', { count: 'exact', head: true })
-      .eq('survey_id', params.id);
-      
-    // Combine the data
-    const surveyWithCounts = {
-      ...survey,
-      link_count: linkCount?.count || 0,
-      milestone_count: milestoneCount?.count || 0
-    };
-    
-    return NextResponse.json({ survey: surveyWithCounts });
+    return NextResponse.json({ trigger });
   } catch (error) {
-    console.error('Error in survey GET:', error);
+    console.error('Error in milestone trigger GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// PATCH: Update a survey
+// PATCH: Update a milestone trigger
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; triggerId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
   
@@ -108,15 +76,19 @@ export async function PATCH(
     
     const body = await request.json();
     
-    // Fields that can be updated
+    // Validate what can be updated
     const updateData: any = {};
     
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.title !== undefined) updateData.title = body.title;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.questions !== undefined) updateData.questions = body.questions;
-    if (body.status !== undefined && ['draft', 'active', 'archived'].includes(body.status)) {
-      updateData.status = body.status;
+    if (['high', 'medium', 'low'].includes(body.priority)) {
+      updateData.priority = body.priority;
+    }
+    
+    if (body.is_required !== undefined) {
+      updateData.is_required = !!body.is_required;
+    }
+    
+    if (['immediately', 'delay_24h', 'delay_1w'].includes(body.show_survey_after)) {
+      updateData.show_survey_after = body.show_survey_after;
     }
     
     // Ensure there's something to update
@@ -124,30 +96,34 @@ export async function PATCH(
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
     
-    // Update the survey
-    const { data: updatedSurvey, error: updateError } = await supabase
-      .from('surveys')
+    // Update the trigger
+    const { data: updatedTrigger, error: updateError } = await supabase
+      .from('survey_milestone_triggers')
       .update(updateData)
-      .eq('id', params.id)
-      .select()
+      .eq('id', params.triggerId)
+      .eq('survey_id', params.id)
+      .select(`
+        *,
+        milestone:milestone_id(*)
+      `)
       .single();
       
     if (updateError) {
-      console.error('Error updating survey:', updateError);
-      return NextResponse.json({ error: 'Failed to update survey' }, { status: 500 });
+      console.error('Error updating milestone trigger:', updateError);
+      return NextResponse.json({ error: 'Failed to update milestone trigger' }, { status: 500 });
     }
     
-    return NextResponse.json({ survey: updatedSurvey });
+    return NextResponse.json({ trigger: updatedTrigger });
   } catch (error) {
-    console.error('Error in survey PATCH:', error);
+    console.error('Error in milestone trigger PATCH:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// DELETE: Delete a survey
+// DELETE: Delete a milestone trigger
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; triggerId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
   
@@ -169,20 +145,21 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Delete the survey
+    // Delete the trigger
     const { error: deleteError } = await supabase
-      .from('surveys')
+      .from('survey_milestone_triggers')
       .delete()
-      .eq('id', params.id);
+      .eq('id', params.triggerId)
+      .eq('survey_id', params.id);
       
     if (deleteError) {
-      console.error('Error deleting survey:', deleteError);
-      return NextResponse.json({ error: 'Failed to delete survey' }, { status: 500 });
+      console.error('Error deleting milestone trigger:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete milestone trigger' }, { status: 500 });
     }
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in survey DELETE:', error);
+    console.error('Error in milestone trigger DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+} 

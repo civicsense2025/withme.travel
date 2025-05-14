@@ -57,7 +57,10 @@ export async function GET(req: NextRequest) {
       slug: dest.slug,
       emoji: dest.emoji || '🌍',
       byline: dest.country || dest.region || dest.continent,
-      image_url: dest.image_url
+      image_url: dest.image_url,
+      description: dest.description,
+      // Generate sample highlights based on the destination
+      highlights: generateHighlights(dest.name)
     }));
     
     return NextResponse.json({ 
@@ -70,4 +73,30 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Generates random highlights for a destination
+ * In a real app, these would come from the database
+ */
+function generateHighlights(destinationName: string): string[] {
+  const allHighlights = [
+    `Local cuisine and food experiences`,
+    `Historical landmarks and museums`,
+    `Outdoor activities and nature`,
+    `Cultural experiences and festivals`,
+    `Nightlife and entertainment`,
+    `Shopping districts and markets`,
+    `Architecture and urban design`,
+    `Beaches and water activities`,
+    `Parks and green spaces`,
+    `Local art and music scene`,
+    `Day trips to nearby attractions`,
+    `Unique local traditions`
+  ];
+  
+  // Select 3-5 random highlights
+  const count = Math.floor(Math.random() * 3) + 3;
+  const shuffled = [...allHighlights].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
 }

@@ -25,31 +25,32 @@ export function TripTabsWrapper({ tabs, defaultValue }: TripTabsWrapperProps) {
   
   // Handle tab change and update URL
   const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams?.toString() || '');
+    const params = new URLSearchParams(searchParams?.toString());
     params.set('tab', value);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    router.push(`${pathname}?${params.toString()}`);
   };
   
-  // Effect to sync URL to tab when URL changes externally
+  // Update URL on initial load if no tab param exists
   useEffect(() => {
-    // If the tab doesn't exist in our tabs array, set to default
-    if (!tabs.some(tab => tab.value === currentTab)) {
-      handleTabChange(defaultValue);
+    if (!searchParams?.has('tab')) {
+      const params = new URLSearchParams(searchParams?.toString());
+      params.set('tab', defaultValue);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [currentTab, defaultValue, tabs]);
+  }, [pathname, router, searchParams, defaultValue]);
   
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="flex justify-center mb-6">
-        {tabs.map(tab => (
+      <TabsList className="mx-auto mb-8">
+        {tabs.map((tab) => (
           <TabsTrigger key={tab.value} value={tab.value}>
             {tab.label}
           </TabsTrigger>
         ))}
       </TabsList>
       
-      {tabs.map(tab => (
-        <TabsContent key={tab.value} value={tab.value} className="animate-in fade-in-50">
+      {tabs.map((tab) => (
+        <TabsContent key={tab.value} value={tab.value}>
           {tab.content}
         </TabsContent>
       ))}

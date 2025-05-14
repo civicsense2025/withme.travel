@@ -1,29 +1,11 @@
-import { z } from 'zod';
-import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-// Zod schema for form config (fields/questions/logic)
-const FormConfigSchema = z.object({
-  fields: z.array(
-    z.object({
-      label: z.string(),
-      type: z.string(),
-      options: z.any().optional(),
-      required: z.boolean().optional(),
-      order: z.number().optional(),
-      milestone: z.string().optional().nullable(),
-      config: z.any().optional(),
-    })
-  ),
-  // ...add more config validation as needed
-});
-
-// GET: Retrieve a specific survey
+// GET: Retrieve a specific survey link
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; linkId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
   
@@ -45,46 +27,32 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Get the survey
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
-      .select('*')
-      .eq('id', params.id)
+    // Get the specific link
+    const { data: link, error: linkError } = await supabase
+      .from('survey_links')
+      .select(`
+        *,
+        survey_responses(*)
+      `)
+      .eq('id', params.linkId)
+      .eq('survey_id', params.id)
       .single();
       
-    if (surveyError) {
-      return NextResponse.json({ error: 'Survey not found' }, { status: 404 });
+    if (linkError) {
+      return NextResponse.json({ error: 'Survey link not found' }, { status: 404 });
     }
     
-    // Get counts of related items
-    const { data: linkCount, error: linkError } = await supabase
-      .from('survey_links')
-      .select('id', { count: 'exact', head: true })
-      .eq('survey_id', params.id);
-      
-    const { data: milestoneCount, error: milestoneError } = await supabase
-      .from('survey_milestone_triggers')
-      .select('id', { count: 'exact', head: true })
-      .eq('survey_id', params.id);
-      
-    // Combine the data
-    const surveyWithCounts = {
-      ...survey,
-      link_count: linkCount?.count || 0,
-      milestone_count: milestoneCount?.count || 0
-    };
-    
-    return NextResponse.json({ survey: surveyWithCounts });
+    return NextResponse.json({ link });
   } catch (error) {
-    console.error('Error in survey GET:', error);
+    console.error('Error in survey link GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// PATCH: Update a survey
+// PATCH: Update a survey link
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; linkId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
   
@@ -108,15 +76,15 @@ export async function PATCH(
     
     const body = await request.json();
     
-    // Fields that can be updated
+    // Validate what can be updated
     const updateData: any = {};
     
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.title !== undefined) updateData.title = body.title;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.questions !== undefined) updateData.questions = body.questions;
-    if (body.status !== undefined && ['draft', 'active', 'archived'].includes(body.status)) {
+    if (body.status && ['active', 'inactive', 'expired'].includes(body.status)) {
       updateData.status = body.status;
+    }
+    
+    if (body.user_info !== undefined) {
+      updateData.user_info = body.user_info;
     }
     
     // Ensure there's something to update
@@ -124,30 +92,31 @@ export async function PATCH(
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
     
-    // Update the survey
-    const { data: updatedSurvey, error: updateError } = await supabase
-      .from('surveys')
+    // Update the link
+    const { data: updatedLink, error: updateError } = await supabase
+      .from('survey_links')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', params.linkId)
+      .eq('survey_id', params.id)
       .select()
       .single();
       
     if (updateError) {
-      console.error('Error updating survey:', updateError);
-      return NextResponse.json({ error: 'Failed to update survey' }, { status: 500 });
+      console.error('Error updating survey link:', updateError);
+      return NextResponse.json({ error: 'Failed to update survey link' }, { status: 500 });
     }
     
-    return NextResponse.json({ survey: updatedSurvey });
+    return NextResponse.json({ link: updatedLink });
   } catch (error) {
-    console.error('Error in survey PATCH:', error);
+    console.error('Error in survey link PATCH:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// DELETE: Delete a survey
+// DELETE: Delete a survey link
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; linkId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
   
@@ -169,20 +138,21 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Delete the survey
+    // Delete the link
     const { error: deleteError } = await supabase
-      .from('surveys')
+      .from('survey_links')
       .delete()
-      .eq('id', params.id);
+      .eq('id', params.linkId)
+      .eq('survey_id', params.id);
       
     if (deleteError) {
-      console.error('Error deleting survey:', deleteError);
-      return NextResponse.json({ error: 'Failed to delete survey' }, { status: 500 });
+      console.error('Error deleting survey link:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete survey link' }, { status: 500 });
     }
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in survey DELETE:', error);
+    console.error('Error in survey link DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+} 

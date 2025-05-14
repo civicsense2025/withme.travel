@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/utils/supabase-server';
 import { TABLES } from '@/utils/constants/tables';
-import TripsClientPage from '../trips-client';
 import { PageContainer } from '@/components/layout/page-container';
 import { PageHeader } from '@/components/layout/page-header';
 import { getGuestToken } from '@/utils/guest';
@@ -18,175 +17,68 @@ export const metadata: Metadata = {
 };
 
 // Set revalidation to prevent constant refreshing
-export const revalidate = 300; // Revalidate every 5 minutes
-
-// Helper function to transform response data to the format expected by TripsClientPage
-function formatTrips(tripMembers: any[]) {
-  return tripMembers.map((member) => {
-    // If trip is an array (as sometimes returned by Supabase), use the first element
-    const tripData = Array.isArray(member.trip) ? member.trip[0] : member.trip;
-
-    return {
-      role: member.role,
-      joined_at: member.joined_at,
-      trip: tripData,
-    };
-  });
-}
+export const revalidate = 3600; // 1 hour
 
 export default async function TripsManagePage() {
-  // Check for authentication or guest status
-  const { user, isGuest, guestToken } = await requireAuthOrGuest('/trips');
-
-  // Get the Supabase client
+  // Get session and authentication info
+  const { user, isGuest } = await requireAuthOrGuest();
+  if (!user) {
+    return redirect(`/login?redirect=${encodeURIComponent('/trips/manage')}`);
+  }
+  
   const supabase = await getServerSupabase();
-
-  // Fetch user profile for personalization
-  let userProfile = null;
-  if (user) {
-    try {
-      const { data: profile } = await supabase
-        .from(TABLES.PROFILES)
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      userProfile = profile;
-    } catch (error) {
-      console.error('[TripsManagePage] Error fetching user profile:', error);
-    }
-  }
-
-  // If user is authenticated, fetch their trips
-  if (user) {
-    const { data: tripMembers, error: queryError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select(
-        `
-        role, 
-        joined_at,
-        trip:${TABLES.TRIPS} (
-          id, name, start_date, 
-          end_date, created_at,
-          status, destination_id, destination_name,
-          cover_image_url, created_by, is_public,
-          privacy_setting, description
-        )
-      `
+  
+  // Fetch trips for this user
+  const { data: tripMembers, error } = await supabase
+    .from(TABLES.MEMBERS)
+    .select(`
+      role,
+      joined_at,
+      trip:trip_id (
+        id,
+        name,
+        start_date,
+        end_date,
+        created_at,
+        status,
+        destination_id,
+        destination_name,
+        cover_image_url, 
+        created_by,
+        is_public,
+        privacy_setting,
+        description
       )
-      .eq('user_id', user.id)
-      .order('start_date', {
-        foreignTable: TABLES.TRIPS,
-        ascending: false,
-        nullsFirst: false,
-      })
-      .order('created_at', { foreignTable: TABLES.TRIPS, ascending: false });
-
-    if (queryError) {
-      console.error('[TripsManagePage] Error fetching tripMembers:', queryError);
-    }
-
-    // Format the trips data to match expected structure
-    const formattedTrips = formatTrips(tripMembers || []);
-
-    return (
-      <PageContainer
-        header={
-          <PageHeader
-            title="My Trips"
-            description="Manage your travel adventures"
-            className="mb-4"
-            centered={true}
-          />
-        }
-      >
-        <div className="max-w-3xl mx-auto">
-          <TripTabs 
-            initialTrips={formattedTrips} 
-            userId={user.id} 
-            userProfile={userProfile}
-          />
-        </div>
-      </PageContainer>
-    );
+    `)
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('joined_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching trips:', error);
   }
+  
+  // Fetch user profile for personalized destinations
+  const { data: userProfile } = await supabase
+    .from(TABLES.PROFILES)
+    .select('id, interests, home_location_name, travel_personality')
+    .eq('id', user.id)
+    .single();
 
-  // If this is a guest user, fetch their trips
-  if (isGuest && guestToken) {
-    try {
-      const { data: guestMembers, error: guestError } = await supabase
-        .from('guest_trip_members')
-        .select(
-          `
-          trip_id,
-          role,
-          trips!inner (
-            id, name, start_date, 
-            end_date, created_at,
-            status, destination_id, destination_name,
-            cover_image_url, created_by, is_public,
-            privacy_setting, description
-          )
-        `
-        )
-        .eq('guest_token', guestToken);
-
-      if (guestError) {
-        console.error('[TripsManagePage] Error fetching guest trips:', guestError);
-      }
-
-      if (guestMembers && guestMembers.length > 0) {
-        // Transform guest trip data to match the expected format
-        const guestTrips = guestMembers.map((member) => ({
-          role: member.role,
-          joined_at: null,
-          trip: Array.isArray(member.trips) ? member.trips[0] : member.trips,
-        }));
-
-        return (
-          <PageContainer
-            header={
-              <PageHeader
-                title="My Trips"
-                description="Manage your travel adventures"
-                className="mb-4"
-                centered={true}
-              />
-            }
-          >
-            <div className="max-w-3xl mx-auto">
-              <TripTabs
-                initialTrips={guestTrips}
-                isGuest={true}
-                userProfile={null}
-              />
-            </div>
-          </PageContainer>
-        );
-      }
-    } catch (err) {
-      console.error('[TripsManagePage] Error processing guest trips:', err);
-    }
-  }
-
-  // If we reach here, there are no trips for this user or guest
   return (
-    <PageContainer
-      header={
-        <PageHeader
-          title="My Trips"
-          description="Start planning your trips"
-          className="mb-4"
-          centered={true}
-        />
-      }
-    >
-      <div className="max-w-3xl mx-auto text-center p-8">
-        <p className="mb-4">You don't have any trips yet.</p>
-        <a href="/trips/create" className="text-blue-500 hover:underline">
-          Create your first trip
-        </a>
-      </div>
-    </PageContainer>
+    <div className="max-w-3xl mx-auto px-4">
+      <PageHeader
+        title="My Trips"
+        description="Manage your trip plans and itineraries"
+        className="mb-10"
+        centered={true}
+      />
+      <TripTabs 
+        initialTrips={tripMembers || []} 
+        userId={user.id} 
+        isGuest={isGuest}
+        userProfile={userProfile || null}
+      />
+    </div>
   );
 }

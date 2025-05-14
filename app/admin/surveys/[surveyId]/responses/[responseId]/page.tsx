@@ -1,124 +1,202 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, useParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CalendarIcon, UserIcon, AtSign, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, Clock, CalendarIcon, User, FileDown } from 'lucide-react';
 
-interface SurveyDefinition {
+interface SurveyField {
   id: string;
-  survey_id: string;
-  title: string;
-  description: string | null;
-  questions: any[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  label: string;
+  type: string;
+  required: boolean;
+  options?: string[];
+}
+
+interface User {
+  id: string;
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
 }
 
 interface SurveyResponse {
   id: string;
-  survey_id: string;
+  form_id: string;
   user_id: string | null;
-  email: string | null;
-  name: string | null;
+  session_id: string | null;
   responses: Record<string, any>;
-  started_at: string;
-  completed_at: string | null;
-  source: string | null;
+  milestone: string | null;
   created_at: string;
-  updated_at: string;
+  user: User | null;
+}
+
+interface Survey {
+  id: string;
+  name: string;
+  description: string | null;
+  fields: SurveyField[];
 }
 
 export default function ResponseDetailPage() {
-  const params = useParams();
   const router = useRouter();
-  const surveyId = params?.surveyId as string;
-  const responseId = params?.responseId as string;
-
-  const [survey, setSurvey] = useState<SurveyDefinition | null>(null);
+  const params = useParams();
+  const surveyId = params?.surveyId as string || '';
+  const responseId = params?.responseId as string || '';
+  
   const [response, setResponse] = useState<SurveyResponse | null>(null);
+  const [survey, setSurvey] = useState<Survey | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchData() {
+    const fetchResponseDetails = async () => {
       if (!surveyId || !responseId) return;
-
+      
       setIsLoading(true);
+      
       try {
-        // Fetch survey definition and response in parallel
-        const [surveyRes, responseRes] = await Promise.all([
-          fetch(`/api/admin/surveys/${surveyId}`),
-          fetch(`/api/admin/surveys/${surveyId}/responses/${responseId}`),
-        ]);
-
-        if (!surveyRes.ok) {
-          throw new Error('Failed to fetch survey definition');
+        const res = await fetch(`/api/admin/surveys/${surveyId}/responses/${responseId}`);
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to fetch response details');
         }
-
-        if (!responseRes.ok) {
-          throw new Error('Failed to fetch survey response');
-        }
-
-        const surveyData = await surveyRes.json();
-        const responseData = await responseRes.json();
-
-        setSurvey(surveyData.survey);
-        setResponse(responseData.response);
+        
+        const data = await res.json();
+        setResponse(data.response);
+        setSurvey(data.survey);
       } catch (err) {
         console.error('Error fetching response details:', err);
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
-    fetchData();
+    fetchResponseDetails();
   }, [surveyId, responseId]);
 
-  const calculateDuration = () => {
-    if (!response?.started_at || !response?.completed_at) return 'N/A';
-
-    const startTime = new Date(response.started_at).getTime();
-    const endTime = new Date(response.completed_at).getTime();
-    const durationMs = endTime - startTime;
-
-    if (durationMs < 60000) {
-      return `${Math.round(durationMs / 1000)} seconds`;
-    } else {
-      const minutes = Math.floor(durationMs / 60000);
-      const seconds = Math.round((durationMs % 60000) / 1000);
-      return `${minutes} min${minutes !== 1 ? 's' : ''} ${seconds} sec${seconds !== 1 ? 's' : ''}`;
-    }
+  const getInitials = (name: string | null) => {
+    if (!name) return '??';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
-  const formatResponseValue = (value: any, questionType: string) => {
-    if (value === undefined || value === null) return 'Not answered';
+  const exportResponseAsJSON = () => {
+    if (!response || !survey) return;
+    
+    const dataToExport = {
+      respondent: response.user ? {
+        id: response.user_id,
+        name: response.user.name,
+        email: response.user.email
+      } : {
+        id: response.user_id || response.session_id,
+        type: response.user_id ? 'Registered User' : 'Anonymous'
+      },
+      survey: {
+        id: survey.id,
+        name: survey.name
+      },
+      submittedAt: response.created_at,
+      milestone: response.milestone,
+      responses: response.responses
+    };
+    
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `response_${responseId}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
+  const formatResponseValue = (value: any, fieldType?: string) => {
+    if (value === null || value === undefined) {
+      return <span className="text-muted-foreground italic">No response</span>;
+    }
+    
     if (Array.isArray(value)) {
       return value.join(', ');
     }
-
+    
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+    
+    if (fieldType === 'rating' && typeof value === 'number') {
+      return '⭐'.repeat(value);
+    }
+    
     return String(value);
   };
 
-  const getOptionLabel = (questionId: string, value: string): string => {
-    if (!survey) return value;
-
-    const question = survey.questions.find((q) => q.id === questionId);
-    if (!question || !question.options) return value;
-
-    const option = question.options.find((opt: any) => opt.value === value || opt.id === value);
-
-    return option ? option.label || value : value;
+  const renderResponseFields = () => {
+    if (!response || !survey) return null;
+    
+    // Get fields from survey config
+    const fields = survey.fields || [];
+    
+    return (
+      <div className="space-y-6">
+        {fields.map((field) => {
+          const value = response.responses[field.id];
+          
+          return (
+            <div key={field.id} className="space-y-2">
+              <div className="flex items-center">
+                <div className="text-sm font-medium">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                </div>
+                <div className="ml-2 text-xs text-muted-foreground">
+                  ({field.type})
+                </div>
+              </div>
+              <div className="p-3 border rounded-md bg-muted/30">
+                {formatResponseValue(value, field.type)}
+              </div>
+            </div>
+          );
+        })}
+        
+        {/* Display any additional responses not in the field config */}
+        {Object.entries(response.responses).filter(
+          ([key]) => !fields.some(field => field.id === key)
+        ).map(([key, value]) => (
+          <div key={key} className="space-y-2">
+            <div className="flex items-center">
+              <div className="text-sm font-medium">{key}</div>
+              <Badge variant="outline" className="ml-2">Custom Field</Badge>
+            </div>
+            <div className="p-3 border rounded-md bg-muted/30">
+              {formatResponseValue(value)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -126,7 +204,7 @@ export default function ResponseDetailPage() {
       <div className="flex h-full min-h-[400px] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="text-base text-muted-foreground">Loading response data...</p>
+          <p className="text-base text-muted-foreground">Loading response details...</p>
         </div>
       </div>
     );
@@ -137,20 +215,22 @@ export default function ResponseDetailPage() {
       <div className="flex h-full min-h-[400px] items-center justify-center">
         <div className="flex flex-col items-center gap-4 max-w-md text-center">
           <p className="text-destructive text-lg">Error: {error}</p>
-          <Button onClick={() => router.back()}>Go Back</Button>
+          <Button onClick={() => router.push(`/admin/surveys/${surveyId}/responses`)}>
+            Back to Responses
+          </Button>
         </div>
       </div>
     );
   }
 
-  if (!survey || !response) {
+  if (!response || !survey) {
     return (
       <div className="flex h-full min-h-[400px] items-center justify-center">
         <div className="flex flex-col items-center gap-4 max-w-md text-center">
-          <p className="text-lg">Response not found</p>
-          <Link href={`/admin/surveys/${surveyId}`}>
-            <Button>Back to Survey</Button>
-          </Link>
+          <p className="text-lg">No response data found</p>
+          <Button onClick={() => router.push(`/admin/surveys/${surveyId}/responses`)}>
+            Back to Responses
+          </Button>
         </div>
       </div>
     );
@@ -158,156 +238,114 @@ export default function ResponseDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb className="mb-2">
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/admin/surveys">Surveys</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href={`/admin/surveys/${surveyId}`}>{survey.title}</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href={`/admin/surveys/${surveyId}/responses`}>Responses</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>Response Details</BreadcrumbItem>
-      </Breadcrumb>
-
       <div className="flex items-center justify-between">
-        <PageHeader title="Response Details" description={`For ${survey.title}`} />
-        <Button variant="outline" onClick={() => router.back()}>
+        <PageHeader
+          title="Response Details"
+          description={`Response to survey: ${survey.name}`}
+        />
+        <Button 
+          variant="outline" 
+          onClick={() => router.push(`/admin/surveys/${surveyId}/responses`)}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Back to Responses
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Respondent Information</CardTitle>
+            <CardTitle>Response Information</CardTitle>
+            <CardDescription>Details about this survey submission</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <UserIcon className="h-4 w-4 mr-2" />
-                Name
-              </div>
-              <p className="font-medium">{response.name || 'Anonymous'}</p>
+              <div className="text-sm text-muted-foreground">Response ID</div>
+              <div className="font-mono text-xs">{response.id}</div>
             </div>
 
+            <Separator />
+            
             <div className="space-y-1">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <AtSign className="h-4 w-4 mr-2" />
-                Email
+              <div className="text-sm text-muted-foreground flex items-center">
+                <CalendarIcon className="mr-1 h-4 w-4" /> Submitted
               </div>
-              <p className="font-medium">{response.email || 'Not provided'}</p>
+              <div>
+                {format(new Date(response.created_at), "MMMM d, yyyy 'at' h:mm a")}
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Submitted
-              </div>
-              <p className="font-medium">
-                {response.completed_at
-                  ? format(new Date(response.completed_at), 'PPP p')
-                  : 'Not completed'}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <FileText className="h-4 w-4 mr-2" />
-                Status
-              </div>
-              <Badge variant={response.completed_at ? 'default' : 'secondary'}>
-                {response.completed_at ? 'Completed' : 'Incomplete'}
-              </Badge>
-            </div>
-
-            {response.completed_at && (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Completion Time</p>
-                <p className="font-medium">{calculateDuration()}</p>
-              </div>
+            {response.milestone && (
+              <>
+                <Separator />
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">Milestone</div>
+                  <Badge>{response.milestone}</Badge>
+                </div>
+              </>
             )}
 
-            {response.source && (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Source</p>
-                <p className="font-medium">{response.source}</p>
+            <Separator />
+
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground flex items-center">
+                <User className="mr-1 h-4 w-4" /> Respondent
               </div>
+              {response.user ? (
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    {response.user.avatar_url && (
+                      <AvatarImage src={response.user.avatar_url} alt={response.user.name || "User"} />
+                    )}
+                    <AvatarFallback>
+                      {getInitials(response.user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div>{response.user.name || "Unnamed User"}</div>
+                    {response.user.email && (
+                      <div className="text-xs text-muted-foreground">{response.user.email}</div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-muted-foreground">Anonymous Response</div>
+              )}
+            </div>
+
+            {response.session_id && (
+              <>
+                <Separator />
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">Session ID</div>
+                  <div className="font-mono text-xs">{response.session_id}</div>
+                </div>
+              </>
             )}
           </CardContent>
+          <CardFooter>
+            <Button 
+              variant="secondary" 
+              className="w-full gap-2"
+              onClick={exportResponseAsJSON}
+            >
+              <FileDown className="h-4 w-4" />
+              Export JSON
+            </Button>
+          </CardFooter>
         </Card>
 
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Response Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-6">
-                {survey.questions.map((question, index) => {
-                  const responseValue = response.responses[question.id];
-
-                  return (
-                    <li key={question.id} className="space-y-2">
-                      <div className="flex items-start">
-                        <span className="text-muted-foreground mr-2">{index + 1}.</span>
-                        <div className="space-y-1 flex-1">
-                          <p className="font-medium">{question.text}</p>
-                          {question.description && (
-                            <p className="text-sm text-muted-foreground">{question.description}</p>
-                          )}
-                        </div>
-                        {question.required && (
-                          <Badge variant="outline" className="ml-2">
-                            Required
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="pl-6 mt-2">
-                        <Separator className="mb-2" />
-
-                        {/* Format based on question type */}
-                        {responseValue === undefined || responseValue === null ? (
-                          <p className="text-muted-foreground italic">Not answered</p>
-                        ) : question.type === 'radio' ? (
-                          <p className="py-1 px-2 bg-muted rounded-md inline-block">
-                            {getOptionLabel(question.id, responseValue)}
-                          </p>
-                        ) : question.type === 'checkbox' && Array.isArray(responseValue) ? (
-                          <div className="space-y-1">
-                            {responseValue.length > 0 ? (
-                              responseValue.map((val, i) => (
-                                <p
-                                  key={i}
-                                  className="py-1 px-2 bg-muted rounded-md inline-block mr-2"
-                                >
-                                  {getOptionLabel(question.id, val)}
-                                </p>
-                              ))
-                            ) : (
-                              <p className="text-muted-foreground italic">No options selected</p>
-                            )}
-                          </div>
-                        ) : question.type === 'textarea' ? (
-                          <div className="p-3 bg-muted rounded-md whitespace-pre-wrap">
-                            {responseValue}
-                          </div>
-                        ) : (
-                          <p className="py-1 px-2 bg-muted rounded-md">
-                            {formatResponseValue(responseValue, question.type)}
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Survey Responses</CardTitle>
+            <CardDescription>
+              Answers submitted for survey "{survey.name}"
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {renderResponseFields()}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

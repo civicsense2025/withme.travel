@@ -136,12 +136,12 @@ export default function TripsClientPage({
     return (
       <div className="mt-6 flex flex-col items-center p-8 bg-card rounded-xl border shadow-sm">
         <h2 className="text-2xl font-semibold mb-4">No Trips Yet</h2>
-        <p className="text-muted-foreground text-center mb-8 max-w-md">
+        <p className="text-muted-foreground text-center mb-6 max-w-md">
           Start planning your next adventure. Create a trip to manage itineraries, invite friends,
           and more.
         </p>
         <Link href="/trips/create">
-          <Button size="lg" className="rounded-full px-8">
+          <Button size="sm" className="rounded-full px-4">
             Plan Your First Trip
           </Button>
         </Link>

@@ -47,34 +47,20 @@ interface TripTabsProps {
 }
 
 export function TripTabs({ initialTrips, userId = '', isGuest = false, userProfile }: TripTabsProps) {
-  // Render destinations based on user profile if available
-  const getDestinationParams = () => {
-    if (!userProfile) return {};
-    
-    return {
-      interests: userProfile.interests || [],
-      homeLocation: userProfile.home_location_name || null
-    };
-  };
-  
   // Define tab content
   const tabs = [
     {
       value: 'planned',
       label: 'Planned Trips',
       content: (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <Link href="/trips/create">
-              <Button className="flex items-center rounded-full">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Trip
-              </Button>
-            </Link>
+        <>
+          <div className="space-y-6">
+            <TripsClientPage initialTrips={initialTrips} userId={userId} isGuest={isGuest} />
           </div>
-          
-          <TripsClientPage initialTrips={initialTrips} userId={userId} isGuest={isGuest} />
-        </div>
+          <div className="mt-10">
+            <PopularDestinations showAsGrid showPopover />
+          </div>
+        </>
       ),
     },
     {
@@ -82,14 +68,12 @@ export function TripTabs({ initialTrips, userId = '', isGuest = false, userProfi
       label: 'Groups',
       content: (
         <div className="text-center p-8 bg-card rounded-xl border shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Your Travel Groups</h2>
-          <p className="text-muted-foreground text-center mb-8 max-w-md mx-auto">
-            Connect with friends and plan trips together. Create or join a group to get started.
+          <h3 className="text-xl font-semibold mb-2">Your Groups</h3>
+          <p className="text-muted-foreground mb-4">
+            Create or join groups to plan trips together with friends and family.
           </p>
           <Link href="/groups">
-            <Button size="lg" className="rounded-full px-8">
-              Explore Groups
-            </Button>
+            <Button variant="outline">View Groups</Button>
           </Link>
         </div>
       ),
@@ -99,14 +83,12 @@ export function TripTabs({ initialTrips, userId = '', isGuest = false, userProfi
       label: 'Saved',
       content: (
         <div className="text-center p-8 bg-card rounded-xl border shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Saved Trips & Destinations</h2>
-          <p className="text-muted-foreground text-center mb-8 max-w-md mx-auto">
-            Keep track of places you want to visit and trips you've saved for inspiration.
+          <h3 className="text-xl font-semibold mb-2">Saved Items</h3>
+          <p className="text-muted-foreground mb-4">
+            View destinations, trips, and other items you've saved for later.
           </p>
           <Link href="/saved">
-            <Button size="lg" className="rounded-full px-8">
-              View Saved Items
-            </Button>
+            <Button variant="outline">View Saved Items</Button>
           </Link>
         </div>
       ),
@@ -114,13 +96,8 @@ export function TripTabs({ initialTrips, userId = '', isGuest = false, userProfi
   ];
   
   return (
-    <div className="space-y-8">
+    <div className="max-w-3xl mx-auto space-y-8">
       <TripTabsWrapper tabs={tabs} defaultValue="planned" />
-      
-      {/* Popular Destinations Section */}
-      <div className="pt-4 border-t">
-        <PopularDestinations {...getDestinationParams()} />
-      </div>
     </div>
   );
 } 

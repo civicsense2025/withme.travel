@@ -53,7 +53,7 @@ export default function EditSurveyPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  const surveyId = params.surveyId as string;
+  const surveyId = params?.surveyId as string || '';
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -231,7 +231,10 @@ export default function EditSurveyPage() {
           title="Edit Survey"
           description="Update survey details and questions"
         />
-        <Button variant="outline" onClick={() => router.push(`/admin/surveys/${surveyId}`)}>
+        <Button 
+          variant="outline" 
+          onClick={() => router.push(`/admin/surveys/${surveyId}`)}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
@@ -400,4 +403,4 @@ export default function EditSurveyPage() {
       </Card>
     </div>
   );
-} 
+}
