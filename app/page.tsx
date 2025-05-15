@@ -29,6 +29,7 @@
 // External dependencies
 import React from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
 // Internal modules
 import { TrendingDestinations } from '@/components/trending-destinations';
@@ -41,7 +42,6 @@ import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { Section } from '@/components/ui/section';
 import { HeroBanner } from '@/components/ui/HeroBanner';
-import { HomeResearchClient } from '@/components/HomeResearchClient';
 import { FullBleedSection } from '@/components/ui/FullBleedSection';
 
 // Types
@@ -50,6 +50,7 @@ import type { Survey } from '@/types/research';
 // Auth/session
 import { getServerSession } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+
 
 // ============================================================================
 // MOCK DATA
@@ -109,146 +110,147 @@ export default async function Home() {
   }
 
   return (
-    <Container size="full" className="w-full px-0">
-      <HomePageToaster />
-      <main className="flex min-h-screen flex-col w-full bg-white dark:bg-black overflow-x-hidden scroll-pt-16">
-        <HeroSection />
+    <div>
+      
+      <Container size="full" className="w-full px-0">
+        <HomePageToaster />
+        <main className="flex min-h-screen flex-col w-full overflow-x-hidden scroll-pt-16">
+          <HeroSection />
 
-        {/* Trending Destinations - Full-Bleed */}
-        <FullBleedSection paddingClassName="py-16">
-          <div className="flex flex-col items-center mb-16 w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 2xl:px-32">
-            <Heading
-              level={2}
-              size="large"
-              align="center"
-              className="mb-4 tracking-tight break-words text-balance w-full"
-            >
-              Trending destinations
-            </Heading>
-            <Text
-              variant="body"
-              weight="regular"
-              className="text-muted-foreground text-center max-w-2xl mb-12"
-            >
-              Discover popular places loved by our community
-            </Text>
-          </div>
-          <div className="w-full px-0 sm:px-4 mb-12">
-            <TrendingDestinations />
-            <div className="flex justify-center mt-12">
-              <Button variant="outline" className="rounded-full text-base py-6 px-8">
-                <Link href="/destinations">View All Destinations</Link>
-              </Button>
+          {/* Trending Destinations - Full-Bleed */}
+          <FullBleedSection paddingClassName="py-16">
+            <div className="flex flex-col items-center mb-16 w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 2xl:px-32">
+              <Heading
+                level={2}
+                size="large"
+                align="center"
+                className="mb-4 tracking-tight break-words text-balance w-full"
+              >
+                Trending destinations
+              </Heading>
+              <Text
+                variant="body"
+                weight="regular"
+                className="text-muted-foreground text-center max-w-2xl mb-12"
+              >
+                Discover popular places loved by our community
+              </Text>
             </div>
-          </div>
-        </FullBleedSection>
-
-        {/* Features Section - Full-Bleed */}
-        <FullBleedSection backgroundClassName="bg-neutral-50 dark:bg-neutral-900" paddingClassName="py-40">
-          <div className="text-center w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 2xl:px-32">
-            <Heading
-              level={2}
-              size="large"
-              align="center"
-              className="mb-24 tracking-tight break-words text-balance w-full"
-            >
-              Planning that actually works
-            </Heading>
-            <Text
-              variant="large"
-              className="text-muted-foreground mb-32 mx-auto max-w-3xl tracking-tight"
-            >
-              Travel with friends without the chaos.
-            </Text>
-
-            {/* Features with spacious layout */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-20 lg:gap-24 xl:gap-32 mt-32">
-              <div className="flex flex-col items-center w-full">
-                <div className="bg-white dark:bg-black w-28 h-28 rounded-3xl flex items-center justify-center mb-10 shadow-lg text-6xl">
-                  <span role="img" aria-label="map">
-                    🗣️
-                  </span>
-                </div>
-                <Heading level={3} size="default" className="mb-4">
-                  Decide together
-                </Heading>
-                <Text variant="body" className="text-muted-foreground max-w-xs">
-                  Vote on places, build itineraries, and make group decisions that stick—no more
-                  endless chats.
-                </Text>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <div className="bg-white dark:bg-black w-28 h-28 rounded-3xl flex items-center justify-center mb-10 shadow-lg text-6xl">
-                  <span role="img" aria-label="shield">
-                    📍
-                  </span>
-                </div>
-                <Heading level={3} size="default" className="mb-4">
-                  Ideas to adventures
-                </Heading>
-                <Text variant="body" className="text-muted-foreground max-w-xs">
-                  Find spots everyone will love, then transform inspiration into perfectly flowing
-                  schedules.
-                </Text>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <div className="bg-white dark:bg-black w-28 h-28 rounded-3xl flex items-center justify-center mb-10 shadow-lg text-6xl">
-                  <span role="img" aria-label="calendar">
-                    📅
-                  </span>
-                </div>
-                <Heading level={3} size="default" className="mb-4">
-                  Stay in sync
-                </Heading>
-                <Text variant="body" className="text-muted-foreground max-w-xs">
-                  Share updates, connect calendars, and ensure no one misses that sunset boat tour
-                  you've all been waiting for.
-                </Text>
-              </div>
-            </div>
-          </div>
-        </FullBleedSection>
-
-        {/* CTA Section - Full-Bleed */}
-        <FullBleedSection backgroundClassName="bg-gradient-to-br from-blue-400/10 to-teal-400/10 relative overflow-hidden" paddingClassName="py-48">
-          <HeroEmojiExplosion />
-
-          <div className="text-center w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 2xl:px-32 mx-auto relative z-20">
-            <Heading
-              level={2}
-              size="large"
-              align="center"
-              className="mb-24 tracking-tight break-words text-balance w-full"
-            >
-              From group chat chaos to perfect itinerary in minutes.
-            </Heading>
-
-            <div className="flex flex-col sm:flex-row justify-center gap-6 mt-16">
-              <Link href="/signup">
-                <Button
-                  size="lg"
-                  className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-lg py-7 px-10 w-full mb-4 sm:w-auto"
-                >
-                  Sign up - it's free
+            <div className="w-full px-0 sm:px-4 mb-12">
+              <TrendingDestinations />
+              <div className="flex justify-center mt-12">
+                <Button variant="outline" className="rounded-full text-base py-6 px-8">
+                  <Link href="/destinations">View All Destinations</Link>
                 </Button>
-              </Link>
-              <Link href="/destinations">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full text-lg py-7 px-10 w-full mb-4 sm:w-auto border-2"
-                >
-                  Explore destinations
-                </Button>
-              </Link>
+              </div>
             </div>
-          </div>
-        </FullBleedSection>
+          </FullBleedSection>
 
-        <HomeResearchClient mockSurvey={mockSurvey} />
-      </main>
-    </Container>
+          {/* Features Section - Full-Bleed */}
+          <FullBleedSection backgroundClassName="bg-neutral-50 dark:bg-neutral-900" paddingClassName="py-40">
+            <div className="text-center w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 2xl:px-32">
+              <Heading
+                level={2}
+                size="large"
+                align="center"
+                className="mb-24 tracking-tight break-words text-balance w-full"
+              >
+                Planning that actually works
+              </Heading>
+              <Text
+                variant="large"
+                className="text-muted-foreground mb-32 mx-auto max-w-3xl tracking-tight"
+              >
+                Travel with friends without the chaos.
+              </Text>
+
+              {/* Features with spacious layout */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-20 lg:gap-24 xl:gap-32 mt-32">
+                <div className="flex flex-col items-center w-full">
+                  <div className="bg-white dark:bg-black w-28 h-28 rounded-3xl flex items-center justify-center mb-10 shadow-lg text-6xl">
+                    <span role="img" aria-label="map">
+                      🗣️
+                    </span>
+                  </div>
+                  <Heading level={3} size="default" className="mb-4">
+                    Decide together
+                  </Heading>
+                  <Text variant="body" className="text-muted-foreground max-w-xs">
+                    Vote on places, build itineraries, and make group decisions that stick—no more
+                    endless chats.
+                  </Text>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <div className="bg-white dark:bg-black w-28 h-28 rounded-3xl flex items-center justify-center mb-10 shadow-lg text-6xl">
+                    <span role="img" aria-label="shield">
+                      📍
+                    </span>
+                  </div>
+                  <Heading level={3} size="default" className="mb-4">
+                    Ideas to adventures
+                  </Heading>
+                  <Text variant="body" className="text-muted-foreground max-w-xs">
+                    Find spots everyone will love, then transform inspiration into perfectly flowing
+                    schedules.
+                  </Text>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <div className="bg-white dark:bg-black w-28 h-28 rounded-3xl flex items-center justify-center mb-10 shadow-lg text-6xl">
+                    <span role="img" aria-label="calendar">
+                      📅
+                    </span>
+                  </div>
+                  <Heading level={3} size="default" className="mb-4">
+                    Stay in sync
+                  </Heading>
+                  <Text variant="body" className="text-muted-foreground max-w-xs">
+                    Share updates, connect calendars, and ensure no one misses that sunset boat tour
+                    you've all been waiting for.
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </FullBleedSection>
+
+          {/* CTA Section - Full-Bleed */}
+          <FullBleedSection backgroundClassName="bg-gradient-to-br from-blue-400/10 to-teal-400/10 relative overflow-hidden" paddingClassName="py-48">
+            <HeroEmojiExplosion />
+
+            <div className="text-center w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 2xl:px-32 mx-auto relative z-20">
+              <Heading
+                level={2}
+                size="large"
+                align="center"
+                className="mb-24 tracking-tight break-words text-balance w-full"
+              >
+                From group chat chaos to perfect itinerary in minutes.
+              </Heading>
+
+              <div className="flex flex-col sm:flex-row justify-center gap-6 mt-16">
+                <Link href="/signup">
+                  <Button
+                    size="lg"
+                    className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-lg py-7 px-10 w-full mb-4 sm:w-auto"
+                  >
+                    Sign up - it's free
+                  </Button>
+                </Link>
+                <Link href="/destinations">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full text-lg py-7 px-10 w-full mb-4 sm:w-auto border-2"
+                  >
+                    Explore destinations
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </FullBleedSection>
+        </main>
+      </Container>
+    </div>
   );
 }

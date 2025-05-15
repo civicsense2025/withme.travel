@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-05-15T08:58:40.603Z",
+  "testInfo": {
+    "name": "completes-entire-survey-flow",
+    "file": "survey-flow.spec.ts",
+    "timestamp": "2025-05-15T08-58-40-534Z",
+    "browserName": "chromium"
+  },
+  "error": {
+    "name": "Error",
+    "message": "Could not find element with selectors: [data-testid=\"survey-welcome-heading\"], h1:has-text(\"Welcome\"), h2:has-text(\"Welcome\"), .heading:has-text(\"Welcome\")",
+    "stack": "Error: Could not find element with selectors: [data-testid=\"survey-welcome-heading\"], h1:has-text(\"Welcome\"), h2:has-text(\"Welcome\"), .heading:has-text(\"Welcome\")\n    at findElement (file:///Users/tanho/GitHub_non_cloud/withme.travel/e2e/survey-flow.spec.ts:43:9)\n    at file:///Users/tanho/GitHub_non_cloud/withme.travel/e2e/survey-flow.spec.ts:289:30\n    at /Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:304:9\n    at /Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/testInfo.js:277:11\n    at TimeoutManager.withRunnable (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/timeoutManager.js:67:14)\n    at TestInfoImpl._runWithTimeout (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/testInfo.js:275:7)\n    at /Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:302:7\n    at WorkerMain._runTest (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:277:5)\n    at WorkerMain.runTestGroup (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:193:11)\n    at process.<anonymous> (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/common/process.js:70:22)"
+  },
+  "context": {
+    "url": "http://localhost:3000/user-testing/survey?token=e2dc11bd-41df-4206-b633-08e068cb825f",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "screenshotPath": "./test-results/error-entire-survey-flow-2025-05-15T08-58-40-534Z-1747299520535.png",
+    "testTokens": {
+      "VALID": "e2dc11bd-41df-4206-b633-08e068cb825f",
+      "EXPIRED": "3bb367d9-267c-442d-be7c-1e440f7cf5bb",
+      "INVALID": "257c778e-5fce-4471-ab8c-2ad7b30161f5",
+      "MULTI_MILESTONE": "c7e8cf3e-9ecf-42c8-95aa-059ab800a7a7"
+    }
+  }
+}

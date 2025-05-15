@@ -2,9 +2,9 @@
 // PLAYWRIGHT GLOBAL SETUP: Seed research test data before all tests
 // ============================================================================
 import { FullConfig } from '@playwright/test';
-import { seedResearchTestData } from './utils/research-seed';
-import { retry } from './utils/test-helpers';
-import { config } from './test-config';
+import { seedResearchTestData } from './utils/research-seed.js';
+import { retry } from './utils/test-helpers.js';
+import { config } from './test-config.js';
 
 /**
  * Global setup for Playwright tests

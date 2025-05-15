@@ -63,25 +63,25 @@ const DEMO_CITIES = [
  * Displays the main hero area for the trips page with a two-column layout.
  */
 const HeroSection: React.FC = () => (
-  <section className="w-full flex justify-center py-8 px-4 bg-black">
-    <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+  <section className="w-full flex justify-center py-16 md:py-24 px-4">
+    <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
       {/* Left: Heading, subheading, CTA */}
-      <div className="text-left md:text-left">
-        <h1 className="text-7xl md:text-7xl lg:text-7xl font-bold leading-tight mb-6">
+      <div className="text-left order-2 lg:order-1 mt-8 lg:mt-0">
+        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 text-foreground">
           Plan your perfect trip with friends and family
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground mb-8">
           Collaborate on itineraries, share ideas, and make memories together – all in one place.
         </p>
         <Link href="/trips/create">
-          <Button size="lg" className="rounded-full px-8">
+          <Button size="lg" className="rounded-full px-8 py-6 text-lg">
             Create a Trip
           </Button>
         </Link>
       </div>
       {/* Right: MultiCitySelector demo */}
-      <div className="flex justify-center md:justify-end">
-        <div className="w-full max-w-md">
+      <div className="flex justify-center lg:justify-end order-1 lg:order-2">
+        <div className="w-full max-w-lg transform translate-y-0 md:translate-y-4 lg:translate-y-0">
             {/*
               MultiCityItinerary demo with default cities and theme-aware styling.
               The defaultCities constant provides the initial city list for the demo.

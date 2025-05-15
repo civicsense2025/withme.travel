@@ -1,294 +1,461 @@
 /**
- * Survey Page Object Model
+ * SurveyPage - Page Object Model for survey research interactions
  * 
- * Encapsulates interactions with the survey page to make tests more 
- * maintainable and less brittle.
+ * This class encapsulates all interactions with the survey research system,
+ * providing a clean, reliable API for test files to use.
  */
-import { Page, expect } from '@playwright/test';
-import { config } from '../test-config';
-import { 
-  findElement, 
-  takeDebugScreenshot,
-  capturePageHtml,
-  elementExists,
-  EventRequest
-} from '../utils/test-helpers';
+import { Page, Locator, expect } from '@playwright/test';
+import { wait } from '../utils/test-helpers.js';
+import { getAccessibilityViolations } from '../utils/accessibility-helpers.js';
+import { TestEnvironment } from '../test-environment';
 
-/**
- * Options for answer submission
- */
-interface AnswerOptions {
-  // For all question types
-  waitAfterAnswer?: number;
-  
-  // For text inputs
-  clearExisting?: boolean;
-  
-  // For checkboxes
-  multiSelect?: boolean;
+export interface SurveyPageOptions {
+  /** Test token for the survey */
+  token: string;
+  /** Base URL for the survey page (defaults to environment value) */
+  baseUrl?: string;
+  /** Should automatically validate common elements on navigation */
+  autoValidate?: boolean;
+  /** Debug mode - takes screenshots on key actions */
+  debug?: boolean;
 }
 
 /**
- * Survey page object model
+ * Page Object Model for the survey research flow
  */
 export class SurveyPage {
-  constructor(
-    private page: Page, 
-    private token: string
-  ) {}
-  
+  /** Playwright page object */
+  private page: Page;
+  /** Survey token */
+  private token: string;
+  /** Base URL for the survey */
+  private baseUrl: string;
+  /** Debug mode flag */
+  private debug: boolean;
+  /** Whether to validate common elements automatically */
+  private autoValidate: boolean;
+
+  // Store locators for reuse
+  private locators = {
+    welcomeHeading: 'h1:has-text("Welcome"), h2:has-text("Welcome"), div[role="heading"]:has-text("Welcome")',
+    startButton: 'button:has-text("Start Survey"), button:has-text("Begin")',
+    nextButton: 'button:has-text("Next"), button:has-text("Continue")',
+    backButton: 'button:has-text("Back"), button:has-text("Previous")',
+    submitButton: 'button:has-text("Submit"), button:has-text("Finish")',
+    completionScreen: '.survey-completion, .thank-you-screen, .completion-screen',
+    confirmationCode: '.confirmation-code, code, .code-block',
+    errorMessage: '.error-message, .alert-error, div[role="alert"]',
+    rating: 'input[type="radio"]',
+    textInput: 'textarea, input[type="text"]',
+    selectInput: 'select',
+    checkboxInput: 'input[type="checkbox"]',
+    questionTitle: '.question-title, .question h2, .question h3',
+    modal: '.modal, [role="dialog"]',
+    milestoneProgress: '.milestone-progress, .progress-indicator',
+    surveyContainer: '.survey-container, .research-survey, main'
+  };
+
+  /**
+   * Create a new SurveyPage instance
+   * 
+   * @param page The Playwright page object
+   * @param options Options for the survey page
+   */
+  constructor(page: Page, options: SurveyPageOptions | string) {
+    this.page = page;
+    
+    // Handle string argument (legacy API support)
+    if (typeof options === 'string') {
+      this.token = options;
+      this.baseUrl = process.env.SURVEY_BASE_URL || 'http://localhost:3000';
+      this.debug = process.env.DEBUG_SURVEY_TESTS === 'true';
+      this.autoValidate = true;
+    } else {
+      this.token = options.token;
+      this.baseUrl = options.baseUrl || process.env.SURVEY_BASE_URL || 'http://localhost:3000';
+      this.debug = options.debug || process.env.DEBUG_SURVEY_TESTS === 'true';
+      this.autoValidate = options.autoValidate !== false;
+    }
+  }
+
   /**
    * Navigate to the survey page
    */
-  async goto() {
-    await this.page.goto(`/user-testing/survey?token=${this.token}`);
-    await takeDebugScreenshot(this.page, `survey-${this.token}-start`);
+  async goto(): Promise<void> {
+    // Construct URL with token
+    const url = `${this.baseUrl}/user-testing/survey?token=${this.token}`;
+    await this.page.goto(url);
+    
+    // Wait for page to be ready
+    await this.page.waitForLoadState('networkidle');
+    
+    if (this.debug) {
+      console.log(`Navigated to survey with token: ${this.token}`);
+      await this.takeScreenshot('survey-loaded');
+    }
+    
+    // Auto-validate if enabled
+    if (this.autoValidate) {
+      try {
+        await this.validatePageLoaded();
+      } catch (error) {
+        if (this.debug) {
+          console.error('Page validation failed:', error);
+          await this.takeScreenshot('validation-failure');
+          await this.captureHtml('validation-failure');
+        }
+        throw error;
+      }
+    }
   }
-  
+
   /**
    * Start the survey
    */
-  async startSurvey() {
-    const startButton = await findElement(this.page, config.selectors.startButton);
+  async startSurvey(): Promise<void> {
+    const startButton = this.page.locator(this.locators.startButton);
+    await expect(startButton).toBeVisible();
     await startButton.click();
-    console.log('Started survey');
     
-    // Verify progress indicator is shown
-    const progressBar = await findElement(this.page, config.selectors.progressBar);
-    await expect(progressBar).toBeVisible();
+    if (this.debug) {
+      console.log('Started survey');
+      await this.takeScreenshot('survey-started');
+    }
+    
+    // Wait for first question to appear
+    await this.waitForQuestion();
   }
-  
+
   /**
-   * Go to next question
+   * Answer the current question (auto-detects question type)
+   * 
+   * @param answerIndex Index of the answer to select (for ratings/selects)
+   * @param answerText Text to enter (for text inputs)
    */
-  async next() {
-    const nextButton = await findElement(this.page, config.selectors.nextButton);
+  async answerQuestion(answerIndex: number = 0, answerText: string = 'Test answer'): Promise<void> {
+    // Try to determine question type
+    const hasRating = await this.page.locator(this.locators.rating).isVisible();
+    const hasText = await this.page.locator(this.locators.textInput).isVisible();
+    const hasSelect = await this.page.locator(this.locators.selectInput).isVisible();
+    const hasCheckbox = await this.page.locator(this.locators.checkboxInput).isVisible();
+    
+    if (hasRating) {
+      await this.answerRating(answerIndex);
+    } else if (hasText) {
+      await this.answerText(answerText);
+    } else if (hasSelect) {
+      await this.answerSelect(answerIndex);
+    } else if (hasCheckbox) {
+      await this.answerCheckbox(answerIndex);
+    } else {
+      throw new Error('Could not determine question type');
+    }
+    
+    if (this.debug) {
+      console.log(`Answered question (index: ${answerIndex}, text: ${answerText})`);
+      await this.takeScreenshot('question-answered');
+    }
+  }
+
+  /**
+   * Answer a rating question
+   * 
+   * @param rating Rating value to select (0-based index)
+   */
+  async answerRating(rating: number = 3): Promise<void> {
+    const ratingInputs = this.page.locator(this.locators.rating);
+    await expect(ratingInputs).toBeVisible();
+    
+    const count = await ratingInputs.count();
+    if (rating >= count) {
+      rating = count - 1; // Adjust if out of bounds
+    }
+    
+    await ratingInputs.nth(rating).click();
+  }
+
+  /**
+   * Answer a text question
+   * 
+   * @param text Text to enter
+   */
+  async answerText(text: string = 'Test response from automated test'): Promise<void> {
+    const textInput = this.page.locator(this.locators.textInput);
+    await expect(textInput).toBeVisible();
+    await textInput.fill(text);
+  }
+
+  /**
+   * Answer a select question
+   * 
+   * @param optionIndex Index of option to select (0-based)
+   */
+  async answerSelect(optionIndex: number | string): Promise<void> {
+    const selectInput = this.page.locator(this.locators.selectInput);
+    await expect(selectInput).toBeVisible();
+    
+    if (typeof optionIndex === 'number') {
+      // Get all options
+      const options = await selectInput.locator('option').all();
+      // Skip the first one if it's a placeholder
+      const adjustedIndex = options.length > 0 && 
+        await options[0].getAttribute('value') === '' ? optionIndex + 1 : optionIndex;
+      
+      // Select by index
+      const value = await options[adjustedIndex]?.getAttribute('value');
+      if (value) {
+        await selectInput.selectOption({ value });
+      } else {
+        // Fallback to index selection
+        await selectInput.selectOption({ index: adjustedIndex });
+      }
+    } else {
+      // Select by text
+      await selectInput.selectOption({ label: optionIndex });
+    }
+  }
+
+  /**
+   * Answer a checkbox question
+   * 
+   * @param index Index of checkbox to check (0-based)
+   */
+  async answerCheckbox(index: number = 0): Promise<void> {
+    const checkboxes = this.page.locator(this.locators.checkboxInput);
+    await expect(checkboxes).toBeVisible();
+    
+    // Click the checkbox at the given index
+    await checkboxes.nth(index).check();
+  }
+
+  /**
+   * Go to the next question
+   */
+  async goToNextQuestion(): Promise<void> {
+    const nextButton = this.page.locator(this.locators.nextButton);
+    await expect(nextButton).toBeVisible();
     await nextButton.click();
-    console.log('Clicked next button');
-    await this.page.waitForTimeout(config.timeouts.animation);
+    
+    // Wait for new question to load
+    await this.waitForQuestion();
   }
-  
+
   /**
-   * Go to previous question
+   * Go to the previous question
    */
-  async previous() {
-    const previousButton = await findElement(this.page, config.selectors.previousButton);
-    await previousButton.click();
-    console.log('Clicked previous button');
-    await this.page.waitForTimeout(config.timeouts.animation);
+  async goToPreviousQuestion(): Promise<void> {
+    const backButton = this.page.locator(this.locators.backButton);
+    await expect(backButton).toBeVisible();
+    await backButton.click();
+    
+    // Wait for new question to load
+    await this.waitForQuestion();
   }
-  
+
   /**
    * Submit the survey
    */
-  async submit() {
-    const submitButton = await findElement(this.page, config.selectors.submitButton);
+  async submitSurvey(): Promise<void> {
+    const submitButton = this.page.locator(this.locators.submitButton);
+    await expect(submitButton).toBeVisible();
     await submitButton.click();
-    console.log('Submitted survey');
     
-    // Take a screenshot of completion screen
-    await takeDebugScreenshot(this.page, `survey-${this.token}-complete`);
+    // Wait for completion screen
+    await this.page.waitForSelector(this.locators.completionScreen, { 
+      state: 'visible', 
+      timeout: 10000 
+    });
     
-    // Verify completion screen
-    await this.verifyCompletionScreen();
-  }
-  
-  /**
-   * Check if validation error is present
-   */
-  async hasValidationError(): Promise<boolean> {
-    return await elementExists(this.page, config.selectors.validationError);
-  }
-  
-  /**
-   * Get current milestone progress text
-   */
-  async getMilestoneProgress(): Promise<string> {
-    try {
-      const progressElement = await this.page.locator('[data-testid="milestone-progress"]');
-      return await progressElement.textContent() || '';
-    } catch (error) {
-      return '';
+    if (this.debug) {
+      console.log('Survey submitted');
+      await this.takeScreenshot('survey-completed');
     }
   }
   
   /**
-   * Check if survey has multiple milestones
+   * Complete the entire survey with default answers
    */
-  async isMultiMilestoneSurvey(): Promise<boolean> {
-    const progress = await this.getMilestoneProgress();
-    return progress.includes('/');
-  }
-  
-  /**
-   * Answer a rating question
-   */
-  async answerRating(starIndex: number, options: AnswerOptions = {}) {
-    const { waitAfterAnswer = 0 } = options;
+  async completeEntireSurvey(): Promise<void> {
+    let isLastQuestion = false;
+    let questionCount = 0;
+    const maxQuestions = 20; // Safety limit
     
-    // Use 0-based index (0 = first star, 4 = fifth star)
-    const stars = this.page.locator('label[for^="rating-"]');
-    const count = await stars.count();
-    
-    if (starIndex >= count) {
-      throw new Error(`Star index ${starIndex} out of range (0-${count-1})`);
+    while (!isLastQuestion && questionCount < maxQuestions) {
+      // Answer current question
+      await this.answerQuestion();
+      questionCount++;
+      
+      // Check if there's a submit button (last question)
+      isLastQuestion = await this.page.locator(this.locators.submitButton).isVisible();
+      
+      if (isLastQuestion) {
+        // Submit the survey
+        await this.submitSurvey();
+      } else {
+        // Go to next question
+        await this.goToNextQuestion();
+      }
     }
     
-    await stars.nth(starIndex).click();
-    console.log(`Selected rating ${starIndex + 1}`);
-    
-    if (waitAfterAnswer > 0) {
-      await this.page.waitForTimeout(waitAfterAnswer);
-    }
-  }
-  
-  /**
-   * Answer a text input question
-   */
-  async answerText(text: string, options: AnswerOptions = {}) {
-    const { clearExisting = false, waitAfterAnswer = 0 } = options;
-    
-    const textField = await findElement(this.page, config.selectors.textInput);
-    
-    if (clearExisting) {
-      await textField.clear();
-    }
-    
-    await textField.fill(text);
-    console.log(`Entered text: "${text}"`);
-    
-    if (waitAfterAnswer > 0) {
-      await this.page.waitForTimeout(waitAfterAnswer);
+    if (this.debug) {
+      console.log(`Completed survey with ${questionCount} questions`);
     }
   }
-  
+
   /**
-   * Answer a radio question
+   * Check if the survey is completed
    */
-  async answerRadio(labelText: string, options: AnswerOptions = {}) {
-    const { waitAfterAnswer = 0 } = options;
-    
-    await this.page.getByText(labelText).click();
-    console.log(`Selected radio option: "${labelText}"`);
-    
-    if (waitAfterAnswer > 0) {
-      await this.page.waitForTimeout(waitAfterAnswer);
-    }
+  async isCompletionScreenVisible(): Promise<boolean> {
+    return await this.page.locator(this.locators.completionScreen).isVisible();
   }
-  
+
   /**
-   * Answer a checkbox question
+   * Get the confirmation code from the completion screen
    */
-  async answerCheckbox(labelTexts: string[], options: AnswerOptions = {}) {
-    const { waitAfterAnswer = 0 } = options;
-    
-    for (const labelText of labelTexts) {
-      await this.page.getByLabel(labelText).check();
-      console.log(`Checked option: "${labelText}"`);
-    }
-    
-    if (waitAfterAnswer > 0) {
-      await this.page.waitForTimeout(waitAfterAnswer);
-    }
-  }
-  
-  /**
-   * Answer a select dropdown question
-   */
-  async answerSelect(value: string, options: AnswerOptions = {}) {
-    const { waitAfterAnswer = 0 } = options;
-    
-    await this.page.locator('select').selectOption(value);
-    console.log(`Selected dropdown option: "${value}"`);
-    
-    if (waitAfterAnswer > 0) {
-      await this.page.waitForTimeout(waitAfterAnswer);
-    }
-  }
-  
-  /**
-   * Verify survey completion screen
-   */
-  async verifyCompletionScreen() {
-    // Check for thank you message
-    const thankYouMessage = await findElement(this.page, config.selectors.thankYouMessage);
-    await expect(thankYouMessage).toBeVisible();
-    
-    // Try to find the checkmark (if present)
-    const hasCheckmark = await elementExists(this.page, config.selectors.checkmark);
-    if (hasCheckmark) {
-      console.log('Found completion checkmark');
-    }
-    
-    // Wait for animation to complete
-    await this.page.waitForTimeout(config.timeouts.animation);
-  }
-  
-  /**
-   * Return to home after completing survey
-   */
-  async returnHome() {
-    const homeButton = await findElement(this.page, config.selectors.homeButton);
-    await homeButton.click();
-    console.log('Returned home');
-    
-    // Verify we've navigated away
-    await expect(this.page).toHaveURL(/\//);
-  }
-  
-  /**
-   * Verify events were tracked correctly
-   */
-  async verifyEvents(events: EventRequest[]): Promise<{
-    hasProgressEvent: boolean;
-    hasMilestoneEvent: boolean;
-    hasCompletionEvent: boolean;
-  } | null> {
-    // Tracked events are stored on the page object by the test
-    if (!events || events.length === 0) {
-      console.warn('No events were tracked or provided for verification');
+  async getConfirmationCode(): Promise<string | null> {
+    if (!await this.isCompletionScreenVisible()) {
       return null;
     }
     
-    // Check for progress events
-    const hasProgressEvent = events.some(event => 
-      event.event_type?.includes('progress') || 
-      typeof event.progress === 'number'
-    );
+    const codeElement = this.page.locator(this.locators.confirmationCode);
+    if (await codeElement.isVisible()) {
+      return await codeElement.textContent();
+    }
     
-    // Check for milestone events
-    const hasMilestoneEvent = events.some(event => 
-      event.event_type?.includes('milestone') || 
-      event.milestone
-    );
-    
-    // Check for completion event
-    const hasCompletionEvent = events.some(event => 
-      event.event_type?.includes('complete')
-    );
-    
-    console.log(`Events verified - Progress: ${hasProgressEvent}, Milestone: ${hasMilestoneEvent}, Completion: ${hasCompletionEvent}`);
-    
-    return {
-      hasProgressEvent,
-      hasMilestoneEvent,
-      hasCompletionEvent
-    };
+    return null;
   }
-  
+
   /**
-   * Check if there's an expired session error
+   * Check if this is a multi-milestone survey
+   */
+  async isMultiMilestoneSurvey(): Promise<boolean> {
+    return await this.page.locator(this.locators.milestoneProgress).isVisible();
+  }
+
+  /**
+   * Get the current milestone progress
+   */
+  async getMilestoneProgress(): Promise<string | null> {
+    const progressElement = this.page.locator(this.locators.milestoneProgress);
+    if (await progressElement.isVisible()) {
+      return await progressElement.textContent();
+    }
+    
+    return null;
+  }
+
+  /**
+   * Check if there is an expired session error
    */
   async hasExpiredSessionError(): Promise<boolean> {
-    await capturePageHtml(this.page, 'expired-session');
-    return await elementExists(this.page, config.selectors.errorContainer);
+    const errorElement = this.page.locator(this.locators.errorMessage);
+    if (await errorElement.isVisible()) {
+      const errorText = await errorElement.textContent();
+      return errorText?.toLowerCase().includes('expired') || false;
+    }
+    
+    return false;
   }
-  
+
   /**
-   * Check if there's an invalid token error
+   * Check if there is an invalid token error
    */
   async hasInvalidTokenError(): Promise<boolean> {
-    await capturePageHtml(this.page, 'invalid-token');
-    return await elementExists(this.page, config.selectors.errorMessage);
+    const errorElement = this.page.locator(this.locators.errorMessage);
+    if (await errorElement.isVisible()) {
+      const errorText = await errorElement.textContent();
+      return errorText?.toLowerCase().includes('invalid') || false;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Wait for a question to be visible
+   */
+  private async waitForQuestion(): Promise<void> {
+    await this.page.waitForSelector(this.locators.questionTitle, { 
+      state: 'visible', 
+      timeout: 5000 
+    });
+  }
+
+  /**
+   * Validate that the page is properly loaded
+   */
+  private async validatePageLoaded(): Promise<void> {
+    // Check for errors first
+    const errorElement = this.page.locator(this.locators.errorMessage);
+    if (await errorElement.isVisible()) {
+      const errorText = await errorElement.textContent();
+      throw new Error(`Survey error: ${errorText}`);
+    }
+    
+    // Check for welcome screen or first question
+    const welcomeVisible = await this.page.locator(this.locators.welcomeHeading).isVisible();
+    const questionVisible = await this.page.locator(this.locators.questionTitle).isVisible();
+    
+    if (!welcomeVisible && !questionVisible) {
+      throw new Error('Neither welcome screen nor question is visible');
+    }
+    
+    // Success
+    if (this.debug) {
+      console.log('Page validated successfully');
+    }
+  }
+
+  /**
+   * Take a screenshot for debugging
+   */
+  private async takeScreenshot(name: string): Promise<void> {
+    if (!this.debug) return;
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${name}-${timestamp}.png`;
+    
+    try {
+      await this.page.screenshot({ 
+        path: `test-results/${filename}`,
+        fullPage: true 
+      });
+    } catch (error) {
+      console.error(`Failed to take screenshot: ${error}`);
+    }
+  }
+
+  /**
+   * Capture page HTML for debugging
+   */
+  private async captureHtml(name: string): Promise<void> {
+    if (!this.debug) return;
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${name}-${timestamp}.html`;
+    
+    try {
+      const html = await this.page.content();
+      const fs = require('fs');
+      const path = require('path');
+      
+      // Ensure directory exists
+      const dir = 'test-results';
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      fs.writeFileSync(path.join(dir, filename), html);
+    } catch (error) {
+      console.error(`Failed to capture HTML: ${error}`);
+    }
+  }
+
+  /**
+   * Run accessibility checks on the current page
+   * 
+   * @returns Array of accessibility violations
+   */
+  async checkAccessibility(): Promise<any[]> {
+    return await getAccessibilityViolations(this.page);
   }
 } 

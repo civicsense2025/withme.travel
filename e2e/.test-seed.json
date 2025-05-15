@@ -1,8 +1,63 @@
 {
   "TEST_TOKENS": {
-    "VALID": "test-survey-token-1747288608471-403633",
-    "EXPIRED": "expired-survey-token-1747288608471-403633",
-    "INVALID": "invalid-survey-token-1747288608471-403633",
-    "MULTI_MILESTONE": "multi-milestone-token-1747288608471-403633"
+    "VALID": "5e40fd66-e9ad-4373-9b23-dd9ef86cd01b",
+    "EXPIRED": "0423f644-94e9-4cde-bd21-e406e7010015",
+    "INVALID": "5bb407c4-3004-4a6b-8140-4848a58e961a",
+    "MULTI_MILESTONE": "0d040c91-3133-4fff-902e-d0d12543d1f2"
+  },
+  "mockSurveyData": {
+    "basicSurvey": {
+      "id": "3774e59e-b391-492a-ad56-d0837f6dc388",
+      "name": "Basic Test Survey",
+      "form_fields": [
+        {
+          "name": "welcome",
+          "type": "welcome",
+          "config": {
+            "title": "Welcome to our survey",
+            "description": "Thank you for participating in our research.",
+            "button_text": "Start"
+          }
+        },
+        {
+          "name": "rating",
+          "type": "rating",
+          "config": {
+            "question": "How satisfied are you with WithMe?",
+            "required": true,
+            "max_rating": 5
+          }
+        },
+        {
+          "name": "feedback",
+          "type": "textarea",
+          "config": {
+            "question": "How can we improve the experience?",
+            "required": false,
+            "placeholder": "Share your thoughts"
+          }
+        }
+      ]
+    },
+    "multiMilestoneSurvey": {
+      "id": "e28d1116-486c-45b5-91a3-a8f744f6e34a",
+      "name": "Multi-Milestone Test Survey",
+      "milestones": [
+        "onboarding_complete",
+        "itinerary_3_items",
+        "group_formation_complete"
+      ],
+      "form_fields": [
+        {
+          "name": "welcome",
+          "type": "welcome",
+          "config": {
+            "title": "Multi-Milestone Test",
+            "description": "This survey tracks progress across milestones.",
+            "button_text": "Begin Session"
+          }
+        }
+      ]
+    }
   }
 }

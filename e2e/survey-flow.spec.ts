@@ -1,9 +1,14 @@
-import { test, expect, Page } from '@playwright/test';
+// External dependencies
 import { AxeBuilder } from '@axe-core/playwright';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { seedResearchTestData } from './utils/research-seed';
+import { fileURLToPath } from 'url';  
+import { Page, Route } from '@playwright/test';
+
+// Internal modules
+import { test, expect } from '@playwright/test';
+import { surveyUrl } from './utils/test-base.js';
+import { loadTestTokens } from './utils/test-helpers.js';
 import { logError, logHtml, logDiagnostic } from './utils/logger';
 
 // ESM-compatible __dirname replacement
@@ -16,25 +21,6 @@ interface EventRequest {
   milestone?: string;
   progress?: number;
   [key: string]: any;
-}
-
-// Helper function to load test tokens from file or use fallback values
-function loadTestTokens() {
-  try {
-    const tokensPath = path.join(__dirname, '../.test-seed.json');
-    const fileData = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
-    console.log('Loaded test tokens from file:', fileData.TEST_TOKENS);
-    return fileData.TEST_TOKENS;
-  } catch (err) {
-    console.error('Failed to load test tokens:', err);
-    // Fallback to hardcoded tokens if file doesn't exist
-    return {
-      VALID: 'test-survey-token',
-      EXPIRED: 'expired-survey-token',
-      INVALID: 'invalid-survey-token',
-      MULTI_MILESTONE: 'multi-milestone-token',
-    };
-  }
 }
 
 // Helper function to find an element using multiple selector strategies
@@ -65,30 +51,77 @@ async function takeDebugScreenshot(page: Page, name: string) {
   return screenshotPath;
 }
 
+// Load test tokens from file or use defaults
 let TEST_TOKENS: Record<string, string>;
 
 // Run once before all tests
 test.beforeAll(async () => {
-  // Only read the tokens file, do not seed here
+  console.log('Setting up test environment...');
+
+  // Set required environment variables if not already set
+  process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+  
+  // Load test tokens
   TEST_TOKENS = loadTestTokens();
+  
+  if (!TEST_TOKENS || !TEST_TOKENS.VALID) {
+    console.warn('⚠️ No valid test tokens found. Using default test tokens.');
+    
+    // Set default test tokens if none found
+    TEST_TOKENS = {
+      VALID: 'valid-test-token',
+      EXPIRED: 'expired-test-token',
+      INVALID: 'invalid-test-token',
+      MULTI_MILESTONE: 'multi-milestone-test-token'
+    };
+  }
+  
+  console.log('Test tokens loaded:', TEST_TOKENS);
 });
 
 test.describe('User Testing Survey Flow', () => {
   const surveyUrl = (token: string) => `/user-testing/survey?token=${token}`;
   
   // Setup: before each test, route API calls as needed
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     const trackedEvents: EventRequest[] = [];
+    
+    // Get mock survey data
+    try {
+      const mockDataPath = path.join(__dirname, '.test-seed.json');
+      const mockData = JSON.parse(fs.readFileSync(mockDataPath, 'utf-8'));
+      const mockSurveyData = mockData.mockSurveyData;
+      
+      console.log('Loaded mock survey data:', mockSurveyData);
     
     // Set up route handlers BEFORE any navigation
     await Promise.all([
       // Handle survey API routes
-      page.route('**/api/research/surveys/**', async route => {
+      page.route('**/api/research/surveys/**', async (route: Route) => {
         const url = route.request().url();
         console.log('Intercepted survey API request:', url);
+          
+          // Mock the survey response based on token type
+          if (url.includes('valid') || url.includes(TEST_TOKENS.VALID)) {
+            return route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify(mockSurveyData.basicSurvey)
+            });
+          }
+          
+          // Handle multi-milestone survey
+          if (url.includes('multi') || url.includes(TEST_TOKENS.MULTI_MILESTONE)) {
+            return route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify(mockSurveyData.multiMilestoneSurvey)
+            });
+          }
         
         // Handle expired token
-        if (url.includes(TEST_TOKENS.EXPIRED)) {
+          if (url.includes('expired') || url.includes(TEST_TOKENS.EXPIRED)) {
           console.log('Mocking expired session response');
           return route.fulfill({
             status: 401,
@@ -101,7 +134,7 @@ test.describe('User Testing Survey Flow', () => {
         }
         
         // Handle invalid token
-        if (url.includes(TEST_TOKENS.INVALID)) {
+          if (url.includes('invalid') || url.includes(TEST_TOKENS.INVALID)) {
           console.log('Mocking invalid token response');
           return route.fulfill({
             status: 404,
@@ -116,9 +149,80 @@ test.describe('User Testing Survey Flow', () => {
         // Allow all other requests to proceed normally
         return route.continue();
       }),
+        
+        // Mock session API
+        page.route('**/api/research/sessions/**', async (route: Route) => {
+          const url = route.request().url();
+          console.log('Intercepted session API request:', url);
+          
+          // Mock the session response based on token
+          if (url.includes('valid') || url.includes(TEST_TOKENS.VALID)) {
+            return route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify({
+                form_id: mockSurveyData.basicSurvey.id,
+                session_token: TEST_TOKENS.VALID,
+                status: 'active',
+                progress: 0
+              })
+            });
+          }
+          
+          // Handle multi-milestone session
+          if (url.includes('multi') || url.includes(TEST_TOKENS.MULTI_MILESTONE)) {
+            return route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify({
+                form_id: mockSurveyData.multiMilestoneSurvey.id,
+                session_token: TEST_TOKENS.MULTI_MILESTONE,
+                status: 'active',
+                progress: 0,
+                metadata: {
+                  milestones: {
+                    current: 0,
+                    total: 3
+                  }
+                }
+              })
+            });
+          }
+          
+          // Handle expired token
+          if (url.includes('expired') || url.includes(TEST_TOKENS.EXPIRED)) {
+            return route.fulfill({
+              status: 401,
+              contentType: 'application/json',
+              body: JSON.stringify({ 
+                error: 'Session expired',
+                message: 'Your session has expired. Please return to the home page.'
+              })
+            });
+          }
+          
+          // Handle invalid token
+          if (url.includes('invalid') || url.includes(TEST_TOKENS.INVALID)) {
+            return route.fulfill({
+              status: 404,
+              contentType: 'application/json',
+              body: JSON.stringify({ 
+                error: 'Invalid token',
+                message: 'This survey token does not exist or is invalid.'
+              })
+            });
+          }
+          
+          // Default response for unknown tokens
+          return route.fulfill({
+            status: 404,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: 'Session not found' })
+          });
+        }),
       
       // Handle event tracking API
-      page.route('**/api/research/events', async route => {
+      page.route('**/api/research/events', async (route: Route) => {
         try {
           // Safely parse the request data
           const postData = await route.request().postData();
@@ -145,23 +249,35 @@ test.describe('User Testing Survey Flow', () => {
       }),
       
       // Handle form responses API
-      page.route('**/api/research/forms/**', async route => {
+      page.route('**/api/research/forms/**', async (route: Route) => {
         console.log('Intercepted forms API request:', route.request().url());
-        return route.continue();
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true })
+          });
       }),
       
       // Handle milestone triggers API
-      page.route('**/api/research/milestone-triggers**', async route => {
+      page.route('**/api/research/milestone-triggers**', async (route: Route) => {
         console.log('Intercepted milestone triggers API request:', route.request().url());
-        return route.continue();
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true })
+          });
       })
     ]);
+      
+    } catch (error) {
+      console.error('Error setting up mock data:', error);
+    }
     
     // Store tracked events on the page object for later use
     (page as any).trackedEvents = trackedEvents;
   });
 
-  test('completes entire survey flow with all micro-interactions and animations', async ({ page }) => {
+  test('completes entire survey flow with all micro-interactions and animations', async ({ page }: { page: Page }) => {
     try {
       // Navigate to the survey page
       await page.goto(surveyUrl(TEST_TOKENS.VALID));
@@ -334,7 +450,7 @@ test.describe('User Testing Survey Flow', () => {
     }
   });
 
-  test('completes multi-milestone survey with progress tracking', async ({ page }) => {
+  test('completes multi-milestone survey with progress tracking', async ({ page }: { page: Page }) => {
     try {
       // Navigate to the multi-milestone survey page
       await page.goto(surveyUrl(TEST_TOKENS.MULTI_MILESTONE));
@@ -436,7 +552,7 @@ test.describe('User Testing Survey Flow', () => {
       
       // Test that events were tracked by checking request
       const eventRequests: EventRequest[] = [];
-      await page.route('**/api/research/events', route => {
+      await page.route('**/api/research/events', (route: Route) => {
         eventRequests.push(route.request().postDataJSON());
         route.continue();
       });
@@ -505,9 +621,9 @@ test.describe('User Testing Survey Flow', () => {
     }
   });
 
-  test('handles network errors gracefully', async ({ page }) => {
+  test('handles network errors gracefully', async ({ page }: { page: Page }) => {
     // Simulate network errors for all API calls
-    await page.route('**/api/**', route => route.abort('failed'));
+    await page.route('**/api/**', (route: Route) => route.abort('failed'));
     
     await page.goto(surveyUrl(TEST_TOKENS.VALID));
     await page.getByTestId('survey-start-button').click();
@@ -529,7 +645,7 @@ test.describe('User Testing Survey Flow', () => {
     await expect(page.getByText(/failed to submit|network error|try again/i)).toBeVisible();
   });
 
-  test('shows session expired error with appropriate recovery options', async ({ page }) => {
+  test('shows session expired error with appropriate recovery options', async ({ page }: { page: Page }) => {
     console.log('Starting session expired error test');
     
     // Go to the survey page with expired token
@@ -577,7 +693,7 @@ test.describe('User Testing Survey Flow', () => {
     expect(homeButtonVisible).toBe(true);
   });
 
-  test('handles invalid token correctly', async ({ page }) => {
+  test('handles invalid token correctly', async ({ page }: { page: Page }) => {
     // Use an invalid token
     await page.goto(surveyUrl(TEST_TOKENS.INVALID));
     
@@ -586,7 +702,7 @@ test.describe('User Testing Survey Flow', () => {
     await expect(page.getByTestId('error-message')).toContainText(/invalid token|not found|doesn't exist/i);
   });
 
-  test('preserves user responses when navigating between steps', async ({ page }) => {
+  test('preserves user responses when navigating between steps', async ({ page }: { page: Page }) => {
     await page.goto(surveyUrl(TEST_TOKENS.VALID));
     await page.getByTestId('survey-start-button').click();
     
@@ -610,7 +726,7 @@ test.describe('User Testing Survey Flow', () => {
     await expect(page.getByLabel(/improve/i)).toHaveValue('Navigation test');
   });
 
-  test('tracks milestone progress events correctly', async ({ page }) => {
+  test('tracks milestone progress events correctly', async ({ page }: { page: Page }) => {
     await page.goto(surveyUrl(TEST_TOKENS.MULTI_MILESTONE));
     
     // Find and click begin session button
@@ -658,7 +774,7 @@ test.describe('User Testing Survey Flow', () => {
     expect(foundProgressEvent).toBeTruthy();
   });
 
-  test('renders correctly on mobile viewport sizes', async ({ page }) => {
+  test('renders correctly on mobile viewport sizes', async ({ page }: { page: Page }) => {
     // Set viewport to mobile size
     await page.setViewportSize({ width: 375, height: 667 });
     
@@ -687,7 +803,7 @@ test.describe('User Testing Survey Flow', () => {
     await expect(page.getByText(/thank you/i)).toBeVisible();
   });
 
-  test('survey is accessible (passes basic a11y checks)', async ({ page }) => {
+  test('survey is accessible (passes basic a11y checks)', async ({ page }: { page: Page }) => {
     await page.goto(surveyUrl(TEST_TOKENS.VALID));
     
     // Run accessibility audit on welcome screen
@@ -712,7 +828,7 @@ test.describe('User Testing Survey Flow', () => {
     expect(completionResults.violations.length).toBe(0);
   });
 
-  test('keyboard navigation works correctly throughout survey', async ({ page }) => {
+  test('keyboard navigation works correctly throughout survey', async ({ page }: { page: Page }) => {
     await page.goto(surveyUrl(TEST_TOKENS.VALID));
     
     // Press Tab to focus on Start button, then Enter to click it
@@ -752,7 +868,7 @@ test.describe('User Testing Survey Flow', () => {
     await expect(page).toHaveURL(/\//);
   });
 
-  test('in-app trigger creates a survey modal on milestone event', async ({ page }) => {
+  test('in-app trigger creates a survey modal on milestone event', async ({ page }: { page: Page }) => {
     // Login first (assuming we have a test login flow)
     await page.goto('/login');
     await page.fill('[name="email"]', 'test@example.com');
@@ -763,7 +879,7 @@ test.describe('User Testing Survey Flow', () => {
     await page.waitForURL('/dashboard');
     
     // Set up route to intercept milestone triggers
-    await page.route('**/api/research/milestone-triggers**', route => {
+    await page.route('**/api/research/milestone-triggers**', (route: Route) => {
       // Return our test trigger for trip creation
       route.fulfill({
         status: 200,

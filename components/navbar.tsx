@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavLink {
   href: string;
@@ -28,11 +29,12 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isLoading, signOut } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ">
+    <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="w-full flex h-16 items-center justify-between px-4 md:px-8 max-w-[2000px] mx-auto">
         <Link
           href="/"
@@ -42,7 +44,7 @@ export function Navbar() {
           withme.
         </Link>
 
-        {/* Centered nav links */}
+        {/* Centered nav links - DESKTOP ONLY */}
         <nav className="hidden md:flex items-center justify-center flex-1 mx-4">
           <div className="flex items-center space-x-6">
             {navLinks.map((link) => (
@@ -60,6 +62,7 @@ export function Navbar() {
           </div>
         </nav>
 
+        {/* Desktop navigation - DESKTOP ONLY */}
         <div className="hidden md:flex items-center space-x-4">
           <ThemeToggle />
           {/* Start Planning CTA Dropdown (desktop) */}
@@ -90,6 +93,7 @@ export function Navbar() {
           <UserMenu />
         </div>
 
+        {/* Mobile Navigation - MOBILE ONLY */}
         <div className="md:hidden flex items-center gap-2">
           {/* Start Planning CTA Dropdown (mobile) */}
           <div className="relative">
@@ -135,7 +139,7 @@ export function Navbar() {
 
       {/* Mobile menu - Use portal to ensure it's mounted properly at the document level */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[9999] flex justify-end">
+        <div className="fixed inset-0 z-[9999] flex justify-end md:hidden">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"

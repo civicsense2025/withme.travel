@@ -10,7 +10,8 @@ export async function GET(
   { params }: { params: { token: string } }
 ) {
   try {
-    const token = params.token;
+    const { token } = params;
+    
     if (!token) {
       return NextResponse.json(
         { error: 'Session token is required' },

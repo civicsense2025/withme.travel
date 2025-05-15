@@ -1,99 +1,78 @@
 import React from 'react';
-import { ThemeProvider } from '../components/theme-provider';
-import '../app/globals.css';
-import { helveticaNeue } from '../app/fonts';
-import type { Preview } from '@storybook/react';
+import type { Preview } from "@storybook/react";
+import { ThemeProvider } from "../components/theme-provider";
+import { fn } from '@storybook/test';
+import { withThemeByClassName } from '@storybook/addon-themes';
 
-// Viewport presets for responsive testing
-const VIEWPORTS = {
-  mobile: {
-    name: 'Mobile',
-    styles: {
-      width: '375px',
-      height: '667px',
-    },
-  },
-  tablet: {
-    name: 'Tablet',
-    styles: {
-      width: '768px',
-      height: '1024px',
-    },
-  },
-  desktop: {
-    name: 'Desktop',
-    styles: {
-      width: '1280px',
-      height: '800px',
-    },
-  },
+// Import CSS files in the correct order
+import "../app/globals.css";    // App-specific global styles second
+import "./storybook.css";       // Storybook-specific styles last
+
+// Create a simple decorator that wraps stories with the theme provider
+const withThemeProvider = (Story) => {
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="storybook-theme">
+      <div className="withme-storybook-wrapper">
+        <Story />
+      </div>
+    </ThemeProvider>
+  );
 };
 
 const preview: Preview = {
   parameters: {
-    actions: { argTypesRegex: '^on[A-Z].*' },
+    // Use individual actions instead of regex per Storybook recommendation
+    actions: {
+      handles: ['click', 'click .btn', 'mouseover', 'submit', 'change', 'select'],
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,
-        date: /Date$/,
+        date: /Date$/i,
       },
     },
-    viewport: { viewports: VIEWPORTS },
-    layout: 'padded',
+    backgrounds: {
+      default: 'light',
+      values: [
+        { name: 'light', value: '#ffffff' },
+        { name: 'dark', value: '#1a1a1a' },
+      ],
+    },
+    // Ensure docs are properly rendered
     docs: {
-      container: ({ children }) => (
-        <div className="sb-unstyled">{children}</div>
-      ),
-    },
-    nextjs: {
-      appDirectory: true,
-    },
-    options: {
-      storySort: {
-        order: [
-          'Design System',
-          ['Overview', 'Core UI', 'Features', 'App Layout', 'Accessibility', 'Migration Guide'],
-          'Components',
-          'Features',
-          '*',
-        ],
+      story: {
+        inline: true,
       },
     },
-  },
-  globalTypes: {
-    theme: {
-      name: 'Theme',
-      description: 'Global theme for components',
-      defaultValue: 'light',
-      toolbar: {
-        icon: 'circlehollow',
-        items: [
-          { value: 'light', icon: 'sun', title: 'Light' },
-          { value: 'dark', icon: 'moon', title: 'Dark' },
-        ],
-        showName: true,
-      },
+    // Prevent infinite loading with proper rendering
+    renderer: {
+      strict: true,
     },
   },
   decorators: [
-    (Story, context) => {
-      const { theme } = context.globals;
-      
-      return (
-        <ThemeProvider
-          attribute="class"
-          defaultTheme={theme}
-          enableSystem
-          disableTransitionOnChange
-          storageKey="withme-theme"
-        >
-          <div className={`${helveticaNeue.variable} font-sans min-h-screen p-4`}>
-            <Story />
-          </div>
-        </ThemeProvider>
-      );
-    },
+    withThemeProvider,
+    withThemeByClassName({
+      themes: {
+        light: 'light',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
   ],
+  // Use explicit args mocking for actions
+  argTypes: {
+    onClick: { action: 'clicked' },
+    onSubmit: { action: 'submitted' },
+    onSelect: { action: 'selected' },
+    onToggle: { action: 'toggled' },
+  },
+  // Set up default args for all stories to use the stable fn function
+  args: {
+    onClick: fn(),
+    onSubmit: fn(),
+    onSelect: fn(),
+    onToggle: fn(),
+  },
 };
 
-export default preview;
+export default preview; 

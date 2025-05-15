@@ -2,10 +2,10 @@
 // PLAYWRIGHT GLOBAL TEARDOWN: Cleanup research test data after all tests
 // ============================================================================
 import { FullConfig } from '@playwright/test';
-import { cleanupResearchTestDataAfterTests } from './utils/research-seed';
-import { retry } from './utils/test-helpers';
-import { config } from './test-config';
-import { logTestRunSummary } from './utils/logger';
+import { cleanupResearchTestDataAfterTests } from './utils/research-seed.js';
+import { retry } from './utils/test-helpers.js';
+import { config } from './test-config.js';
+import { logTestRunSummary } from './utils/logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

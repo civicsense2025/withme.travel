@@ -265,22 +265,25 @@ export function SurveyForm({
   // If the survey is completed, show completion message
   if (isCompleted) {
     return (
-      <div className={cn('space-y-6 py-8 text-center', className)}>
+      <div className={cn('space-y-6 py-8 text-center', className)} data-testid="survey-completion">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-          <CheckCircle2 className="h-10 w-10 text-primary" />
+          <CheckCircle2 className="h-10 w-10 text-primary" data-testid="checkmark" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">Thank You!</h2>
+          <h2 className="text-2xl font-semibold tracking-tight" data-testid="completion-message">Thank You!</h2>
           <p className="text-muted-foreground">
             Your responses have been submitted successfully.
           </p>
         </div>
+        <Button onClick={() => window.location.href = '/'} data-testid="home-button">
+          Return Home
+        </Button>
       </div>
     );
   }
   
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-6', className)} data-testid="survey-modal">
       {/* Survey header */}
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold tracking-tight">{survey.title}</h2>
@@ -295,11 +298,12 @@ export function SurveyForm({
           value={progress} 
           steps={questions.length}
           currentStep={currentQuestionIndex + 1}
+          data-testid="survey-progress"
         />
       </div>
       
       {/* Question container */}
-      <div className="min-h-[200px]">
+      <div className="min-h-[200px]" data-testid="survey-form">
         {isCompleted ? (
           <div className="text-center py-8">
             <h3 className="text-xl font-medium mb-2">Thank you!</h3>
@@ -307,12 +311,25 @@ export function SurveyForm({
           </div>
         ) : (
           adaptedQuestion && (
-            <QuestionRenderer
-              question={adaptedQuestion}
-              value={responses[currentQuestion.id]}
-              onChange={handleResponseChange}
-              showValidation={showValidation}
-            />
+            <div>
+              <div data-testid="question-heading" className="mb-4">
+                {adaptedQuestion.text}
+                {adaptedQuestion.required && (
+                  <span className="text-destructive ml-1">*</span>
+                )}
+              </div>
+              <QuestionRenderer
+                question={adaptedQuestion}
+                value={responses[currentQuestion.id]}
+                onChange={handleResponseChange}
+                showValidation={showValidation}
+              />
+              {showValidation && adaptedQuestion.required && !isCurrentQuestionValid() && (
+                <p className="text-destructive mt-2" data-testid="validation-error">
+                  This question is required
+                </p>
+              )}
+            </div>
           )
         )}
       </div>
@@ -326,6 +343,7 @@ export function SurveyForm({
             onClick={handlePreviousClick}
             disabled={currentQuestionIndex === 0 || isSubmitting}
             className="flex items-center"
+            data-testid="survey-prev-button"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
@@ -337,6 +355,7 @@ export function SurveyForm({
             onClick={handleNextClick}
             disabled={isSubmitting}
             className="flex items-center"
+            data-testid={currentQuestionIndex < questions.length - 1 ? "survey-next-button" : "survey-submit-button"}
           >
             {currentQuestionIndex < questions.length - 1 ? (
               <>

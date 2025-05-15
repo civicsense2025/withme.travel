@@ -1,0 +1,20 @@
+/* Storybook-specific CSS utilities */
+
+/* Support for bg-background class */
+.bg-background {
+  background-color: var(--background, #ffffff);
+}
+
+/* Support for text-foreground class */
+.text-foreground {
+  color: var(--foreground, #000000);
+}
+
+/* Commonly used Tailwind utilities that might be missing */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.p-4 {
+  padding: 1rem;
+} 

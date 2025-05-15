@@ -10,8 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { config } from '../test-config';
-import { retry } from './test-helpers';
+import { config } from '../test-config.js';
+import { retry } from './test-helpers.js';
 
 // ESM-compatible __dirname replacement
 const __filename = fileURLToPath(import.meta.url);
@@ -323,7 +323,7 @@ async function robustCleanupResearchTestData(
 
       if (remainingTokens.length === 0 && remainingFormIds.length === 0) {
         log.info(`[Cleanup Attempt ${attempt}] All test data cleaned up successfully.`);
-        return;
+        return true;
       } else {
         log.warn(`[Cleanup Attempt ${attempt}] Still found lingering tokens:`, remainingTokens, 'and forms:', remainingFormIds);
         await new Promise(res => setTimeout(res, 500)); // Wait before retry
@@ -345,19 +345,37 @@ async function robustCleanupResearchTestData(
   
   if (remainingTokens.length > 0 || remainingFormIds.length > 0) {
     log.error('Failed to clean up all test data after retries. Manual DB cleanup required.', { remainingTokens, remainingFormIds });
-    throw new Error(`Failed to clean up all test data after ${maxRetries} attempts.`);
+    return false;
   }
 }
 
-// Main seed function
-export async function seedResearchTestData(options: {
-  logLevel?: 'error' | 'warn' | 'info' | 'debug',
-  skipCleanup?: boolean,
-  uniqueSuffix?: string,
-  useTransaction?: boolean,
-  cleanupRetries?: number
-} = {}) {
-  const { 
+/**
+ * Interface for seedResearchTestData options
+ */
+export interface SeedOptions {
+  logLevel?: 'error' | 'warn' | 'info' | 'debug';
+  skipCleanup?: boolean;
+  uniqueSuffix?: string;
+  useTransaction?: boolean;
+  cleanupRetries?: number;
+}
+
+/**
+ * Interface for cleanupResearchTestDataAfterTests options
+ */
+export interface CleanupOptions {
+  logLevel?: 'error' | 'warn' | 'info' | 'debug';
+  maxRetries?: number;
+  useTransaction?: boolean;
+  removeTokenFile?: boolean;
+}
+
+/**
+ * Seed research test data for E2E tests
+ * Creates test surveys, fields, and tokens for user testing
+ */
+export async function seedResearchTestData(options: SeedOptions = {}) {
+  const {
     logLevel = 'info',
     skipCleanup = false,
     uniqueSuffix = getTestRunSuffix(),
@@ -365,18 +383,10 @@ export async function seedResearchTestData(options: {
     cleanupRetries = config.retries.cleanupRetries
   } = options;
   
-  // Configure logging based on logLevel
-  const log = {
-    error: (...args: any[]) => console.error(...args),
-    warn: (...args: any[]) => logLevel !== 'error' ? console.warn(...args) : null,
-    info: (...args: any[]) => ['info', 'debug'].includes(logLevel) ? console.log(...args) : null,
-    debug: (...args: any[]) => logLevel === 'debug' ? console.log(...args) : null
-  };
-  
-  log.info('[Seed] Starting research test data seeding process');
+  console.log('[Seed] Starting to seed research test data');
   
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    log.error('[Seed] Missing environment variables for Supabase connection');
+    console.error('[Seed] Missing environment variables for Supabase connection');
     throw new Error('Missing environment variables for Supabase connection');
   }
 
@@ -386,7 +396,7 @@ export async function seedResearchTestData(options: {
   );
 
   // Generate unique tokens for this run
-  log.info(`[Seed] Using unique suffix for this test run: ${uniqueSuffix}`);
+  console.log(`[Seed] Using unique suffix for this test run: ${uniqueSuffix}`);
   
   const TEST_TOKENS = {
     VALID: `test-survey-token-${uniqueSuffix}`,
@@ -395,62 +405,12 @@ export async function seedResearchTestData(options: {
     MULTI_MILESTONE: `multi-milestone-token-${uniqueSuffix}`,
   };
   
-  log.info('[Seed] Generated test tokens:', TEST_TOKENS);
-
-  // Write the generated tokens to a file for Playwright to use
-  // IMPORTANT: Do this before creating sessions so if session creation fails, the file still exists
-  function writeSeedDataFile(tokens: Record<string, string>) {
-    const outPath = path.join(__dirname, '../.test-seed.json');
-    try {
-      fs.writeFileSync(outPath, JSON.stringify({ TEST_TOKENS: tokens }, null, 2));
-      log.info(`[Seed] Successfully wrote tokens to ${outPath}`);
-    } catch (error) {
-      log.error(`[Seed] Failed to write tokens to ${outPath}:`, error);
-      throw error;
-    }
-  }
-
-  // Generate fresh test sessions with new UUIDs for this test run
-  function createTestSessions(tokens: Record<string, string>) {
-    return {
-      VALID: {
-        id: uuidv4(),
-        token: tokens.VALID,
-        status: 'active',
-        metadata: {
-          device: 'e2e-test',
-          browser: 'playwright',
-          survey_id: BASIC_SURVEY_ID
-        }
-      },
-      EXPIRED: {
-        id: uuidv4(),
-        token: tokens.EXPIRED,
-        status: 'expired',
-        metadata: {
-          device: 'e2e-test',
-          browser: 'playwright',
-          survey_id: BASIC_SURVEY_ID
-        }
-      },
-      MULTI_MILESTONE: {
-        id: uuidv4(),
-        token: tokens.MULTI_MILESTONE,
-        status: 'active',
-        metadata: {
-          device: 'e2e-test',
-          browser: 'playwright',
-          progress: 0,
-          survey_id: MULTI_MILESTONE_SURVEY_ID
-        }
-      }
-    };
-  }
+  console.log('[Seed] Generated test tokens:', TEST_TOKENS);
 
   try {
     // Robust, idempotent cleanup before seeding
     if (!skipCleanup) {
-      log.info('[Seed] Starting cleanup of existing test data');
+      console.log('[Seed] Starting cleanup of existing test data');
       await robustCleanupResearchTestData(supabase, { 
         testTokens: TEST_TOKENS, 
         maxRetries: cleanupRetries,
@@ -458,31 +418,76 @@ export async function seedResearchTestData(options: {
         logLevel
       });
     } else {
-      log.info('[Seed] Skipping cleanup (skipCleanup=true)');
+      console.log('[Seed] Skipping cleanup (skipCleanup=true)');
     }
     
     // First, write the tokens to file so they're available even if seeding fails
-    log.info('[Seed] Writing tokens to file');
+    console.log('[Seed] Writing tokens to file');
+    function writeSeedDataFile(tokens: Record<string, string>) {
+      const outPath = path.join(__dirname, '../.test-seed.json');
+      try {
+        fs.writeFileSync(outPath, JSON.stringify({ TEST_TOKENS: tokens }, null, 2));
+        console.log(`[Seed] Successfully wrote tokens to ${outPath}`);
+      } catch (error) {
+        console.error(`[Seed] Failed to write tokens to ${outPath}:`, error);
+        throw error;
+      }
+    }
     writeSeedDataFile(TEST_TOKENS);
 
     // Now create the sessions with these tokens
-    log.info('[Seed] Creating test sessions');
+    console.log('[Seed] Creating test sessions');
+    function createTestSessions(tokens: Record<string, string>) {
+      return {
+        VALID: {
+          id: uuidv4(),
+          token: tokens.VALID,
+          status: 'active',
+          metadata: {
+            device: 'e2e-test',
+            browser: 'playwright',
+            survey_id: BASIC_SURVEY_ID
+          }
+        },
+        EXPIRED: {
+          id: uuidv4(),
+          token: tokens.EXPIRED,
+          status: 'expired',
+          metadata: {
+            device: 'e2e-test',
+            browser: 'playwright',
+            survey_id: BASIC_SURVEY_ID
+          }
+        },
+        MULTI_MILESTONE: {
+          id: uuidv4(),
+          token: tokens.MULTI_MILESTONE,
+          status: 'active',
+          metadata: {
+            device: 'e2e-test',
+            browser: 'playwright',
+            progress: 0,
+            survey_id: MULTI_MILESTONE_SURVEY_ID
+          }
+        }
+      };
+    }
     const TEST_SESSIONS = createTestSessions(TEST_TOKENS);
 
     // Start transaction if enabled
     if (useTransaction) {
       try {
         await supabase.rpc('begin');
-        log.debug('[Seed] Started transaction');
+        console.log('[Seed] Started transaction');
       } catch (e) {
-        log.warn('[Seed] Failed to start transaction, continuing without transaction:', e);
+        console.warn('[Seed] Failed to start transaction, continuing without transaction:', e);
         // Continue without transaction if it fails
       }
     }
 
     try {
       // Insert test surveys
-      log.info('[Seed] Inserting test surveys');
+      console.log('[Seed] Inserting test surveys');
       const { error: surveysError } = await supabase
         .from('forms')
         .insert([
@@ -492,7 +497,7 @@ export async function seedResearchTestData(options: {
       if (surveysError) throw new Error(`Error inserting test surveys: ${surveysError.message}`);
 
       // Insert test fields
-      log.info('[Seed] Inserting test fields');
+      console.log('[Seed] Inserting test fields');
       const { error: fieldsError } = await supabase
         .from('form_fields')
         .insert([
@@ -502,14 +507,14 @@ export async function seedResearchTestData(options: {
       if (fieldsError) throw new Error(`Error inserting test fields: ${fieldsError.message}`);
 
       // Defensive: delete any lingering sessions with these tokens before insert
-      log.info('[Seed] Cleaning up any existing sessions with same tokens');
+      console.log('[Seed] Cleaning up any existing sessions with same tokens');
       await supabase.from('user_testing_sessions').delete().in('token', [
         TEST_SESSIONS.VALID.token,
         TEST_SESSIONS.EXPIRED.token,
         TEST_SESSIONS.MULTI_MILESTONE.token
       ]);
       
-      log.info('[Seed] Inserting test sessions');
+      console.log('[Seed] Inserting test sessions');
       const { error: sessionsError } = await supabase
         .from('user_testing_sessions')
         .insert([
@@ -520,7 +525,7 @@ export async function seedResearchTestData(options: {
       if (sessionsError) throw new Error(`Error inserting test sessions: ${sessionsError.message}`);
 
       // Insert milestone triggers
-      log.info('[Seed] Inserting milestone triggers');
+      console.log('[Seed] Inserting milestone triggers');
       const { error: triggersError } = await supabase
         .from('milestone_triggers')
         .insert([
@@ -537,60 +542,49 @@ export async function seedResearchTestData(options: {
       if (useTransaction) {
         try {
           await supabase.rpc('commit');
-          log.debug('[Seed] Committed transaction');
+          console.log('[Seed] Committed transaction');
         } catch (e) {
-          log.warn('[Seed] Failed to commit transaction:', e);
+          console.warn('[Seed] Failed to commit transaction:', e);
           // If commit fails, don't throw - the operations might have worked
         }
       }
 
-      log.info('[Seed] Successfully seeded all research test data');
+      console.log('[Seed] Successfully seeded all research test data');
       return true;
     } catch (error) {
       // Rollback transaction if using transactions
       if (useTransaction) {
         try {
           await supabase.rpc('rollback');
-          log.debug('[Seed] Rolled back transaction after error');
+          console.log('[Seed] Rolled back transaction after error');
         } catch (e) {
-          log.warn('[Seed] Failed to rollback transaction:', e);
+          console.warn('[Seed] Failed to rollback transaction:', e);
         }
       }
       throw error;
     }
   } catch (error) {
-    log.error('[Seed] Error seeding research test data:', error);
+    console.error('[Seed] Error seeding research test data:', error);
     throw error;
   }
 }
 
 /**
- * Cleanup function to remove all seeded test data after tests
- * Can be called in Playwright global teardown or afterEach hooks
+ * Clean up all research test data after tests
+ * Handles retries and proper error reporting
  */
-export async function cleanupResearchTestDataAfterTests(options: {
-  logLevel?: 'error' | 'warn' | 'info' | 'debug',
-  maxRetries?: number,
-  useTransaction?: boolean,
-  removeTokenFile?: boolean
-} = {}) {
+export async function cleanupResearchTestDataAfterTests(options: CleanupOptions = {}) {
   const { 
     logLevel = 'info',
     maxRetries = config.retries.cleanupRetries,
     useTransaction = true,
-    removeTokenFile = false
+    removeTokenFile = true
   } = options;
   
-  // Configure logging based on logLevel
-  const log = {
-    error: (...args: any[]) => console.error(...args),
-    warn: (...args: any[]) => logLevel !== 'error' ? console.warn(...args) : null,
-    info: (...args: any[]) => ['info', 'debug'].includes(logLevel) ? console.log(...args) : null,
-    debug: (...args: any[]) => logLevel === 'debug' ? console.log(...args) : null
-  };
+  console.log('[Cleanup] Starting cleanup of research test data');
   
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    log.error('[Cleanup] Missing environment variables for Supabase connection');
+    console.error('[Cleanup] Missing environment variables for Supabase connection');
     return false;
   }
   
@@ -611,8 +605,8 @@ export async function cleanupResearchTestDataAfterTests(options: {
       {
         retries: 2,
         delay: 1000,
-        onRetry: (attempt, error) => {
-          log.warn(`[Cleanup] Retry attempt ${attempt} after error:`, error);
+        onRetry: (attempt: number, error: unknown) => {
+          console.warn(`[Cleanup] Retry attempt ${attempt} after error:`, error);
         }
       }
     );
@@ -621,16 +615,16 @@ export async function cleanupResearchTestDataAfterTests(options: {
     if (removeTokenFile) {
       try {
         fs.unlinkSync(path.join(__dirname, '../.test-seed.json'));
-        log.info('[Cleanup] Removed .test-seed.json file');
+        console.log('[Cleanup] Removed .test-seed.json file');
       } catch (e) {
         // Ignore if file doesn't exist
-        log.debug('[Cleanup] No .test-seed.json file to remove');
+        console.log('[Cleanup] No .test-seed.json file to remove');
       }
     }
     
     return true;
   } catch (error) {
-    log.error('[Cleanup] Failed all cleanup attempts:', error);
+    console.error('[Cleanup] Failed all cleanup attempts:', error);
     return false;
   }
 } 

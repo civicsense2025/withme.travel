@@ -212,7 +212,7 @@ export function SurveyContainer({
   // Render based on state
   if (surveyState === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]">
+      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]" data-testid="survey-loading">
         <Spinner size="lg" />
         <p className="mt-4 text-center text-muted-foreground">Loading survey...</p>
       </div>
@@ -221,11 +221,11 @@ export function SurveyContainer({
 
   if (surveyState === 'error') {
     return (
-      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]">
+      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]" data-testid="error-container" role="alert">
         <div className="text-destructive text-4xl mb-4">⚠️</div>
-        <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
-        <p className="text-center text-muted-foreground mb-4">{error || 'Failed to load the survey'}</p>
-        <Button onClick={onClose} variant="outline">Close</Button>
+        <h3 className="text-xl font-semibold mb-2" data-testid="error-title">Something went wrong</h3>
+        <p className="text-center text-muted-foreground mb-4" data-testid="error-message">{error || 'Failed to load the survey'}</p>
+        <Button onClick={onClose} variant="outline" data-testid="home-button">Close</Button>
       </div>
     );
   }
@@ -249,24 +249,42 @@ export function SurveyContainer({
   }
 
   if (surveyState === 'questions' && currentField) {
+    // Check for milestone information
+    const isMultiMilestone = form?.config?.milestones && form.config.milestones.length > 1;
+    const currentMilestone = currentField.milestone;
+    const milestoneIndex = isMultiMilestone ? form?.config?.milestones.indexOf(currentMilestone) : 0;
+    const totalMilestones = isMultiMilestone ? form?.config?.milestones.length : 1;
+    
     return (
-      <div className="flex flex-col p-4">
+      <div className="flex flex-col p-4" data-testid="survey-modal">
         {/* Progress bar */}
         <div className="mb-6">
           <div className="flex justify-between text-sm mb-1">
             <span>Question {currentFieldIndex + 1} of {fields.length}</span>
             <span>{progress}% Complete</span>
+            {isMultiMilestone && (
+              <span data-testid="milestone-progress">{milestoneIndex + 1}/{totalMilestones}</span>
+            )}
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-2" data-testid="survey-progress" />
         </div>
 
         {/* Question */}
-        <div className="mb-8">
+        <div className="mb-8" data-testid="survey-form">
+          <h3 data-testid="question-heading" className="text-lg font-medium mb-3">
+            {currentField.label}
+            {currentField.required && <span className="text-destructive ml-1">*</span>}
+          </h3>
           <QuestionRenderer
             field={currentField}
             value={responses[currentField.id]}
             onChange={(value) => handleFieldChange(currentField.id, value)}
           />
+          {currentField.required && !responses[currentField.id] && isSubmitting && (
+            <p className="text-destructive mt-2" data-testid="validation-error">
+              This question is required
+            </p>
+          )}
         </div>
 
         {/* Navigation buttons with test IDs for E2E */}
@@ -285,7 +303,7 @@ export function SurveyContainer({
               currentField.required && 
               (responses[currentField.id] === undefined || responses[currentField.id] === null || responses[currentField.id] === '')
             }
-            data-testid={currentFieldIndex === fields.length - 1 ? 'survey-submit-button' : 'survey-next-button'}
+            data-testid={currentFieldIndex === fields.length - 1 ? "survey-submit-button" : "survey-next-button"}
           >
             {currentFieldIndex === fields.length - 1 ? 'Submit' : 'Next'}
           </Button>
@@ -296,11 +314,11 @@ export function SurveyContainer({
 
   if (surveyState === 'complete') {
     return (
-      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]">
-        <div className="text-primary text-4xl mb-4">✓</div>
-        <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
+      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]" data-testid="survey-completion">
+        <div className="text-primary text-4xl mb-4" data-testid="checkmark">✓</div>
+        <h3 className="text-xl font-semibold mb-2" data-testid="completion-message">Thank You!</h3>
         <p className="text-center text-muted-foreground mb-6">Your feedback has been submitted successfully.</p>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose} data-testid="home-button">Close</Button>
       </div>
     );
   }
@@ -309,11 +327,11 @@ export function SurveyContainer({
   if ((surveyState === 'welcome' || surveyState === 'questions') && !form) {
     console.error('SurveyContainer: form is null for formId', formId);
     return (
-      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]">
+      <div className="flex flex-col items-center justify-center p-8 min-h-[300px]" data-testid="error-container" role="alert">
         <div className="text-destructive text-4xl mb-4">⚠️</div>
-        <h3 className="text-xl font-semibold mb-2">Survey Not Found</h3>
-        <p className="text-center text-muted-foreground mb-4">The requested survey could not be loaded. Please try again later.</p>
-        <Button onClick={onClose} variant="outline">Close</Button>
+        <h3 className="text-xl font-semibold mb-2" data-testid="error-title">Survey Not Found</h3>
+        <p className="text-center text-muted-foreground mb-4" data-testid="error-message">The requested survey could not be loaded. Please try again later.</p>
+        <Button onClick={onClose} variant="outline" data-testid="home-button">Close</Button>
       </div>
     );
   }

@@ -1,153 +1,131 @@
 /**
- * Test Helper Utilities
+ * Test Helpers
  * 
- * Custom assertions and helper functions to make tests more robust and maintainable.
+ * Shared utilities for e2e tests that provide consistent approaches for:
+ * - Element finding and interaction
+ * - Error handling and debugging
+ * - Timing and performance
+ * - Token management
  */
-import { Page, expect } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { config } from '../test-config';
+import { TestEnvironment } from '../test-environment';
 
 /**
- * Event Request interface for typechecking tracked events
+ * Wait for a specified amount of time
+ * 
+ * @param ms Milliseconds to wait
+ * @returns Promise that resolves after the wait
  */
-export interface EventRequest {
-  event_type: string;
-  milestone?: string;
-  progress?: number;
-  [key: string]: any;
+export async function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * Find an element using multiple selector strategies
- * Tries each selector in order until one is found or all fail
+ * Load test tokens from environment or file
+ * 
+ * @returns Object with different token types
  */
-export async function findElement(page: Page, selectors: string[], timeout = config.timeouts.defaultElement) {
-  for (let i = 0; i < selectors.length; i++) {
-    const selector = selectors[i];
-    try {
-      const element = page.locator(selector);
-      if (await element.isVisible({ timeout: i === 0 ? timeout : 1000 })) {
-        console.log(`Found element with selector: ${selector}`);
-        return element;
-      }
-    } catch (e) {
-      if (i === selectors.length - 1) {
-        console.error(`Failed to find element with any of the selectors:`, selectors);
-        throw e;
-      }
-    }
-  }
-  throw new Error(`Could not find element with selectors: ${selectors.join(', ')}`);
-}
-
-/**
- * Take a screenshot for debugging purposes
- * Returns the path of the screenshot for logging
- */
-export async function takeDebugScreenshot(page: Page, name: string) {
-  // Create test-results directory if it doesn't exist
-  const dirPath = './test-results';
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
+export async function loadTestTokens(): Promise<Record<string, string>> {
+  // First check environment
+  const envToken = process.env.TEST_SURVEY_TOKEN;
+  
+  if (envToken) {
+    return {
+      VALID: envToken,
+      EXPIRED: process.env.TEST_SURVEY_TOKEN_EXPIRED || envToken,
+      INVALID: 'invalid-token-12345'
+    };
   }
   
-  const screenshotPath = `${dirPath}/${name}-${Date.now()}.png`;
-  await page.screenshot({ path: screenshotPath, fullPage: true });
-  console.log(`Took debug screenshot: ${screenshotPath}`);
-  return screenshotPath;
-}
-
-/**
- * Capture page HTML for debugging purposes
- */
-export async function capturePageHtml(page: Page, name: string) {
-  const dirPath = './test-results';
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-  
-  const htmlPath = `${dirPath}/${name}-${Date.now()}.html`;
-  const html = await page.content();
-  fs.writeFileSync(htmlPath, html);
-  console.log(`Captured HTML to: ${htmlPath}`);
-  return htmlPath;
-}
-
-/**
- * Assert that a specific event was tracked
- * More expressive and provides better error messages than manual checks
- */
-export async function expectEventTracked(
-  events: EventRequest[], 
-  options: {
-    eventType: string,
-    milestone?: string,
-    contains?: Record<string, any>
-  }
-) {
-  const { eventType, milestone, contains = {} } = options;
-  
-  const foundEvent = events.find(event => {
-    if (event.event_type !== eventType) return false;
-    if (milestone && event.milestone !== milestone) return false;
-    
-    // Check all properties in contains
-    for (const [key, value] of Object.entries(contains)) {
-      if (JSON.stringify(event[key]) !== JSON.stringify(value)) return false;
-    }
-    
-    return true;
-  });
-  
-  expect(foundEvent, `Expected to find event type "${eventType}"${milestone ? ` with milestone "${milestone}"` : ''}`).toBeTruthy();
-  return foundEvent;
-}
-
-/**
- * Retry an async operation with exponential backoff
- */
-export async function retry<T>(
-  operation: () => Promise<T>, 
-  options: { 
-    retries?: number,
-    delay?: number,
-    backoff?: number,
-    onRetry?: (attempt: number, error: unknown) => void
-  } = {}
-): Promise<T> {
-  const { 
-    retries = config.retries.apiCallRetries,
-    delay = 1000,
-    backoff = 2,
-    onRetry = (attempt, error) => console.log(`Retry ${attempt}: ${error}`)
-  } = options;
-  
-  let lastError: unknown;
-  
-  for (let attempt = 1; attempt <= retries + 1; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error;
-      
-      if (attempt <= retries) {
-        onRetry(attempt, error);
-        const waitTime = delay * Math.pow(backoff, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-  }
-  
-  throw lastError;
-}
-
-/**
- * Check if an element exists (without throwing)
- */
-export async function elementExists(page: Page, selectors: string[]): Promise<boolean> {
+  // Then try to load from file
   try {
-    await findElement(page, selectors, 5000);
+    const tokensPath = path.join(__dirname, '../test-tokens.json');
+    if (fs.existsSync(tokensPath)) {
+      const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
+      return tokens;
+    }
+  } catch (error) {
+    console.warn('Failed to load test tokens from file:', error);
+  }
+  
+  // Fallback to default tokens
+  return {
+    VALID: TestEnvironment.getDefaultSurveyToken(),
+    EXPIRED: 'expired-token-12345',
+    INVALID: 'invalid-token-12345'
+  };
+}
+
+/**
+ * Find an element with flexible selector strategies and error handling
+ * 
+ * @param page Playwright page object
+ * @param selector Selector string or object with multiple strategies
+ * @param timeout Optional timeout in ms
+ * @returns Locator for the element
+ */
+export async function findElement(
+  page: Page, 
+  selector: string | { css?: string; text?: string; testId?: string; },
+  timeout = 5000
+): Promise<Locator> {
+  // Convert string selector to object
+  const selectorObj = typeof selector === 'string' 
+    ? { css: selector } 
+    : selector;
+  
+  // Try different selector strategies in order
+  let element: Locator | null = null;
+  
+  // First try test-id if specified (most reliable)
+  if (selectorObj.testId) {
+    try {
+      element = page.getByTestId(selectorObj.testId);
+      const isVisible = await element.isVisible({ timeout: Math.min(timeout, 1000) });
+      if (isVisible) return element;
+    } catch (error) {
+      // Continue to next strategy
+    }
+  }
+  
+  // Then try text content
+  if (selectorObj.text) {
+    try {
+      element = page.getByText(selectorObj.text, { exact: false });
+      const isVisible = await element.isVisible({ timeout: Math.min(timeout, 1000) });
+      if (isVisible) return element;
+    } catch (error) {
+      // Continue to next strategy
+    }
+  }
+  
+  // Finally try CSS selector
+  if (selectorObj.css) {
+    element = page.locator(selectorObj.css);
+    await element.waitFor({ state: 'visible', timeout });
+    return element;
+  }
+  
+  throw new Error(`Failed to find element with selector: ${JSON.stringify(selector)}`);
+}
+
+/**
+ * Check if an element exists on the page
+ * 
+ * @param page Playwright page object
+ * @param selector Selector for the element
+ * @param timeout Optional timeout in ms
+ * @returns True if element exists
+ */
+export async function elementExists(
+  page: Page, 
+  selector: string | { css?: string; text?: string; testId?: string; },
+  timeout = 1000
+): Promise<boolean> {
+  try {
+    await findElement(page, selector, timeout);
     return true;
   } catch (error) {
     return false;
@@ -155,22 +133,138 @@ export async function elementExists(page: Page, selectors: string[]): Promise<bo
 }
 
 /**
- * Load test tokens from file with fallback values
+ * Take a debug screenshot with timestamped filename
+ * 
+ * @param page Playwright page object
+ * @param name Screenshot name
  */
-export function loadTestTokens() {
-  try {
-    const tokensPath = path.join(process.cwd(), '.test-seed.json');
-    const fileData = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
-    console.log('Loaded test tokens from file:', fileData.TEST_TOKENS);
-    return fileData.TEST_TOKENS;
-  } catch (err) {
-    console.error('Failed to load test tokens:', err);
-    // Fallback to hardcoded tokens if file doesn't exist
-    return {
-      VALID: 'test-survey-token',
-      EXPIRED: 'expired-survey-token',
-      INVALID: 'invalid-survey-token',
-      MULTI_MILESTONE: 'multi-milestone-token',
-    };
+export async function takeDebugScreenshot(
+  page: Page, 
+  name: string
+): Promise<void> {
+  const timestamp = Date.now();
+  const filename = `${name}-${timestamp}.png`;
+  const directory = './test-results';
+  
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
   }
+  
+  await page.screenshot({ 
+    path: path.join(directory, filename),
+    fullPage: true 
+  });
+  
+  console.log(`Screenshot saved: ${filename}`);
+}
+
+/**
+ * Capture HTML content of the page for debugging
+ * 
+ * @param page Playwright page object
+ * @param name Snapshot name
+ */
+export async function capturePageHtml(
+  page: Page, 
+  name: string
+): Promise<void> {
+  const timestamp = Date.now();
+  const filename = `${name}-${timestamp}.html`;
+  const directory = './test-logs';
+  
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+  
+  const html = await page.content();
+  fs.writeFileSync(path.join(directory, filename), html);
+  
+  console.log(`HTML content saved: ${filename}`);
+}
+
+/**
+ * Retry a function with exponential backoff
+ * 
+ * @param fn Function to retry
+ * @param options Retry options
+ * @returns Result of the function
+ */
+export async function retry<T>(
+  fn: () => Promise<T>, 
+  options: { 
+    retries?: number; 
+    delay?: number; 
+    maxDelay?: number;
+    onRetry?: (attempt: number) => void;
+  } = {}
+): Promise<T> {
+  const { 
+    retries = 3, 
+    delay = 1000, 
+    maxDelay = 10000,
+    onRetry 
+  } = options;
+  
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt === retries) {
+        break;
+      }
+      
+      if (onRetry) {
+        onRetry(attempt + 1);
+      }
+      
+      const waitTime = Math.min(delay * Math.pow(2, attempt), maxDelay);
+      await wait(waitTime);
+    }
+  }
+  
+  throw lastError || new Error('Operation failed after retries');
+}
+
+/**
+ * Log an error and its details to a file
+ * 
+ * @param name Error name/context 
+ * @param error Error object
+ * @param extraInfo Additional information
+ */
+export function logError(
+  name: string,
+  error: Error | unknown,
+  extraInfo: Record<string, any> = {}
+): void {
+  const timestamp = Date.now();
+  const filename = `error-${name}-${timestamp}.json`;
+  const directory = './test-logs';
+  
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+  
+  // Create error object with details
+  const errorData = {
+    name,
+    timestamp,
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    ...extraInfo
+  };
+  
+  fs.writeFileSync(
+    path.join(directory, filename),
+    JSON.stringify(errorData, null, 2)
+  );
+  
+  console.error(`Error logged to: ${filename}`);
 } 

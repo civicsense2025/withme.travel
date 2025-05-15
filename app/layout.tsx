@@ -1,7 +1,5 @@
-// import AuthTestPanel from '@/components/auth-test-panel';
-//import { DebugPanel } from '@/components/debug-panel';
+import '@/app/globals.css'; // Keep this for dev mode
 
-import '@/app/globals.css';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -24,6 +22,7 @@ import { CommandMenu } from '@/components/search/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ResearchProvider } from '@/components/research/ResearchProvider';
 import { ResearchModal } from '@/components/research/ResearchModal';
+import React from 'react';
 
 // Metadata is imported from app/metadata.ts
 export const metadata = {
@@ -54,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" className={cn('font-sans', helveticaNeue.variable)}>
+    <html lang="en" className={cn('font-sans', helveticaNeue.variable)} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -106,20 +105,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body
         className={cn('min-h-screen bg-background font-sans antialiased', helveticaNeue.variable)}
+        suppressHydrationWarning
       >
-        <ThemeProvider>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-primary-foreground"
-          >
-            Skip to content
-          </a>
-
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
           <TooltipProvider>
             <Providers initialSession={session}>
               <LayoutModeProvider>
                 <ClientSideProviders>
                   <ClientSideLayoutRenderer>
+                    <Navbar />
                     {children}
                     <CommandMenu />
                   </ClientSideLayoutRenderer>

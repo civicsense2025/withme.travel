@@ -212,9 +212,9 @@ const GroupsLandingPage: React.FC = () => {
 
   return (
     <Container size="full">
-      <main className="flex min-h-screen flex-col w-full bg-white dark:bg-black overflow-hidden">
+      <main className="flex min-h-screen flex-col w-full dark:bg-black overflow-hidden">
         {/* Hero Section with clean background */}
-        <section className="py-24 w-full bg-white dark:bg-black">
+        <section className="py-24 w-full dark:bg-black">
           <div className="text-center px-6 md:px-10 max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight">
               {headline.split(' ').map((word, i, arr) => (
@@ -282,7 +282,7 @@ const GroupsLandingPage: React.FC = () => {
                   name="groupName"
                   placeholder="Name your group (e.g., Italy Squad 2024)"
                   required
-                  className="flex-1 h-16 px-5 py-4 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-black text-black dark:text-white text-lg focus:outline-none focus:ring-2 focus:ring-travel-purple"
+                  className="flex-1 h-16 px-5 py-4 rounded-full border-2 border-black dark:border-zinc-700 dark:bg-black text-black dark:text-white text-lg focus:outline-none focus:ring-2 focus:ring-travel-purple"
                 />
               </div>
               <Button
@@ -303,7 +303,7 @@ const GroupsLandingPage: React.FC = () => {
         </section>
 
         {/* Features Demo Section */}
-        <section className="py-24 w-full bg-zinc-50 dark:bg-zinc-900">
+        <section className="py-24 w-full dark:bg-zinc-900">
           <div className="px-6 md:px-10 max-w-7xl mx-auto">
             {/* Collaboration */}
             <CollaborativeItinerarySection />
@@ -340,7 +340,7 @@ const GroupsLandingPage: React.FC = () => {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-24 w-full bg-zinc-50 dark:bg-zinc-900">
+        <section className="py-24 w-full dark:bg-zinc-900">
           <div className="px-6 md:px-10 max-w-6xl mx-auto">
             <DestinationsFAQ 
               title="Group Travel FAQ" 

@@ -82,6 +82,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             required={required}
+            data-testid="text-input"
           />
         </div>
       );
@@ -98,6 +99,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             required={required}
+            data-testid="text-input"
           />
         </div>
       );
@@ -116,6 +118,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
           <Select
             value={value || ''}
             onValueChange={onChange}
+            data-testid="select-input"
           >
             <SelectTrigger id={id}>
               <SelectValue placeholder="Select an option" />
@@ -141,7 +144,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
         : [];
 
       return (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="radio-group">
           <Label>
             {label} {required && <span className="text-destructive">*</span>}
           </Label>
@@ -154,6 +157,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
                 <RadioGroupItem
                   id={`${id}-${option.value || option}`}
                   value={option.value || option}
+                  data-testid={`radio-option-${option.value || option}`}
                 />
                 <Label htmlFor={`${id}-${option.value || option}`}>
                   {option.label || option}
@@ -173,11 +177,12 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
       // Single checkbox
       if (checkboxOptions.length === 0) {
         return (
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2" data-testid="checkbox-container">
             <Checkbox
               id={id}
               checked={!!value}
               onCheckedChange={onChange}
+              data-testid="checkbox-input"
             />
             <Label htmlFor={id}>
               {label} {required && <span className="text-destructive">*</span>}
@@ -188,7 +193,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
       
       // Multiple checkboxes
       return (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="checkbox-group">
           <Label>
             {label} {required && <span className="text-destructive">*</span>}
           </Label>
@@ -214,6 +219,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
                         onChange(value.filter((v: string) => v !== optionValue));
                       }
                     }}
+                    data-testid={`checkbox-option-${optionValue}`}
                   />
                   <Label htmlFor={`${id}-${optionValue}`}>{optionLabel}</Label>
                 </div>
@@ -229,7 +235,7 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
       const ratingOptions = Array.from({ length: ratingMax }, (_, i) => i + 1);
       
       return (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="rating-container">
           <Label>
             {label} {required && <span className="text-destructive">*</span>}
           </Label>
@@ -244,6 +250,8 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
                     : 'bg-secondary hover:bg-secondary/80'
                   }`}
                 onClick={() => onChange(rating)}
+                data-testid={`rating-${rating}`}
+                aria-label={`Rating ${rating} of ${ratingMax}`}
               >
                 {rating}
               </button>
@@ -253,25 +261,11 @@ export function QuestionRenderer({ field, value, onChange }: QuestionRendererPro
       );
     }
 
-    // Fallback for unknown types
-    default: {
+    default:
       return (
-        <div className="space-y-2">
-          <Label htmlFor={id}>
-            {label} {required && <span className="text-destructive">*</span>}
-          </Label>
-          <Input
-            id={id}
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            required={required}
-          />
-          <p className="text-sm text-muted-foreground">
-            (Unknown field type: {type})
-          </p>
+        <div className="text-destructive">
+          Unknown question type: {type}
         </div>
       );
-    }
   }
 }

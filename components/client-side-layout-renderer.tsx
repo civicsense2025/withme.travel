@@ -1,7 +1,6 @@
 'use client';
 import React from 'react';
 import { useLayoutMode } from '@/app/context/layout-mode-context';
-import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { cn } from '@/lib/utils';
 
@@ -27,11 +26,10 @@ export function ClientSideLayoutRenderer({ children }: ClientSideLayoutRendererP
     );
   }
 
-  // Regular layout: Navbar, container, Footer
+  // Regular layout: container and Footer only (Navbar is handled by app/layout.tsx)
   return (
     <>
       <div className="w-full font-sans text-lg flex flex-col min-h-screen">
-        <Navbar />
         <main
           id="main-content"
           className="flex-grow w-full px-0 pt-0 pb-6 font-sans text-lg"

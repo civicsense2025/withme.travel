@@ -1,0 +1,187 @@
+/* Storybook-specific overrides and styles */
+
+/* Load font faces for Storybook */
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/fonts/helvetica-neue/helvetica-neue-light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/fonts/helvetica-neue/helvetica-neue-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/fonts/helvetica-neue/helvetica-neue-medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/fonts/helvetica-neue/helvetica-neue-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Define the font variable used across the app */
+  --font-helvetica-neue: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  
+  /* Re-define critical CSS variables to ensure they're available in Storybook */
+  --font-size-base: 1rem;
+  --font-size-h1: 2.5rem;
+  --font-size-h2: 2rem;
+  --font-size-h3: 1.5rem;
+  --font-size-h4: 1.25rem;
+  --font-size-h5: 1rem;
+  --font-size-h6: 0.875rem;
+  
+  /* Base theme variables - copy from globals.css to ensure consistency */
+  --background: 0 0% 100%; /* #ffffff */
+  --foreground: 222 84% 5%; /* #0f172a */
+  --card: 0 0% 100%; /* #ffffff */
+  --card-foreground: 222 84% 5%; /* #0f172a */
+  --popover: 0 0% 100%; /* #ffffff */
+  --popover-foreground: 222 84% 5%; /* #0f172a */
+  
+  /* Brand Colors - Light Mode */
+  --travel-purple: 260 100% 85%; /* #d4b3ff */
+  --travel-purple-dark: 260 100% 78%; /* #bb8eff */
+  --travel-purple-foreground: 260 100% 20%;
+  
+  /* Primary color using travel-purple */
+  --primary: 260 100% 85%; /* #d4b3ff */
+  --primary-foreground: 260 100% 20%;
+}
+
+/* Add padding to all story containers to ensure proper visualization */
+.withme-storybook-wrapper {
+  padding: 1rem;
+  min-height: 100vh;
+  font-family: var(--font-helvetica-neue, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+}
+
+/* Dark mode adjustments */
+.dark {
+  background-color: #1a1a1a;
+  color: #fafafa;
+  
+  /* Dark mode variables - copy from globals.css dark theme */
+  --background: 0 0% 10%; /* #1a1a1a */
+  --foreground: 0 0% 98%; /* #fafafa */
+  --card: 0 0% 15%; /* #262626 */
+  --card-foreground: 0 0% 98%; /* #fafafa */
+  
+  /* Dark Mode Brand Colors */
+  --travel-purple: 260 100% 78%; /* #bb8eff */
+  --travel-purple-dark: 260 100% 70%; /* #a366ff */
+  --travel-purple-foreground: 260 100% 90%;
+  
+  /* Primary color */
+  --primary: 260 70% 70%;
+  --primary-foreground: 260 100% 20%;
+}
+
+/* Ensure consistent font loading */
+html, body {
+  font-family: var(--font-helvetica-neue, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+}
+
+/* Explicitly set all the Tailwind classes to make sure they apply */
+/* Required because sometimes CSS purging can affect Storybook */
+body {
+  @apply bg-background text-foreground;
+}
+
+h1 {
+  @apply text-2xl font-bold sm:text-3xl md:text-4xl;
+}
+
+h2 {
+  @apply text-xl font-semibold sm:text-2xl md:text-3xl;
+}
+
+h3 {
+  @apply text-lg font-semibold sm:text-xl md:text-2xl;
+}
+
+/* Design system color samples for easy viewing */
+.color-sample {
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+  margin: 10px;
+  border-radius: 8px;
+  position: relative;
+}
+
+.color-sample::after {
+  content: attr(data-color-name);
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-size: 12px;
+  color: var(--color-contrast, inherit);
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Travel color palette */
+.color-travel-purple {
+  background-color: hsl(var(--travel-purple));
+  --color-contrast: #333;
+}
+
+.color-travel-blue {
+  background-color: hsl(var(--travel-blue));
+  --color-contrast: #333;
+}
+
+.color-travel-pink {
+  background-color: hsl(var(--travel-pink));
+  --color-contrast: #333;
+}
+
+.color-travel-yellow {
+  background-color: hsl(var(--travel-yellow));
+  --color-contrast: #333;
+}
+
+.color-travel-mint {
+  background-color: hsl(var(--travel-mint));
+  --color-contrast: #333;
+}
+
+.color-travel-peach {
+  background-color: hsl(var(--travel-peach));
+  --color-contrast: #333;
+}
+
+/* Theme toggle support */
+.theme-toggle {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+  padding: 8px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dark .theme-toggle {
+  background: #333;
+  border-color: #444;
+} 

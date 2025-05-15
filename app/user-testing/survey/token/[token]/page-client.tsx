@@ -12,6 +12,8 @@ import { SurveyContainer } from '@/components/research/SurveyContainer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useSurvey } from '@/hooks/use-survey';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface TokenSurveyPageClientProps {
   token: string;
@@ -58,12 +60,28 @@ export default function TokenSurveyPageClient({
 
   // Error state
   if (error || !survey) {
+    const isExpired = error?.message?.toLowerCase().includes('expired');
+    const isInvalid = error?.message?.toLowerCase().includes('invalid') || 
+                     error?.message?.toLowerCase().includes('not found');
+    
     return (
-      <Alert variant="destructive" className="max-w-3xl mx-auto my-8">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
+      <Alert 
+        variant="destructive" 
+        className="max-w-3xl mx-auto my-8"
+        data-testid="error-container"
+        role="alert"
+      >
+        <AlertTitle data-testid="error-title">
+          {isExpired ? 'Session Expired' : isInvalid ? 'Invalid Token' : 'Error'}
+        </AlertTitle>
+        <AlertDescription data-testid="error-message">
           {error?.message || 'Survey not found. Please check the URL and try again.'}
         </AlertDescription>
+        <div className="mt-4">
+          <Button asChild data-testid="home-button">
+            <Link href="/">Return Home</Link>
+          </Button>
+        </div>
       </Alert>
     );
   }
