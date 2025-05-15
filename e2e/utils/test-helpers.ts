@@ -197,38 +197,44 @@ export async function retry<T>(
     retries?: number; 
     delay?: number; 
     maxDelay?: number;
-    onRetry?: (attempt: number) => void;
+    onRetry?: (attempt: number, error?: unknown) => void;
   } = {}
 ): Promise<T> {
-  const { 
-    retries = 3, 
-    delay = 1000, 
-    maxDelay = 10000,
-    onRetry 
-  } = options;
+  const maxRetries = options.retries ?? 3;
+  const initialDelay = options.delay ?? 500;
+  const maxDelay = options.maxDelay ?? 10000;
   
-  let lastError: Error | null = null;
+  let lastError: unknown;
   
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
     try {
       return await fn();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+    } catch (err) {
+      lastError = err;
       
-      if (attempt === retries) {
-        break;
+      // If this was the last attempt, throw the error
+      if (attempt > maxRetries) {
+        throw err;
       }
       
-      if (onRetry) {
-        onRetry(attempt + 1);
+      // Call onRetry callback if provided
+      if (options.onRetry) {
+        options.onRetry(attempt, err);
       }
       
-      const waitTime = Math.min(delay * Math.pow(2, attempt), maxDelay);
-      await wait(waitTime);
+      // Calculate delay with exponential backoff
+      const delayMs = Math.min(
+        initialDelay * Math.pow(2, attempt - 1),
+        maxDelay
+      );
+      
+      // Wait before next attempt
+      await wait(delayMs);
     }
   }
   
-  throw lastError || new Error('Operation failed after retries');
+  // This should never happen, but TypeScript needs it
+  throw lastError;
 }
 
 /**

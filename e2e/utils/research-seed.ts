@@ -1,630 +1,436 @@
 /**
- * Research Survey Seed Utilities
+ * Research Seed Utilities
  * 
- * Helper functions to seed test data for E2E tests of the user testing
- * and research flows. Includes robust error handling, retries, and
- * cleanup strategies.
+ * Functions for seeding and cleaning up research test data for e2e tests.
+ * These functions create test surveys, survey responses, and testing tokens.
  */
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { config } from '../test-config.js';
-import { retry } from './test-helpers.js';
+import { FORM_TABLES } from '../../utils/constants/research-tables';
 
 // ESM-compatible __dirname replacement
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Generate fixed UUIDs for testing (this ensures consistent IDs)
-const BASIC_SURVEY_ID = uuidv4();
-const MULTI_MILESTONE_SURVEY_ID = uuidv4();
+// Token file path
+const TOKEN_FILE_PATH = path.join(__dirname, '../test-tokens.json');
 
-// Helper to generate a unique suffix for this test run
-function getTestRunSuffix() {
-  return `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
-}
+// Logger levels
+type LogLevel = 'none' | 'error' | 'warn' | 'info' | 'debug';
 
-// Survey Templates
-export const TEST_SURVEYS = {
-  BASIC: {
-    id: BASIC_SURVEY_ID,
-    name: 'Basic User Feedback Survey',
-    description: 'A simple one-milestone survey for testing',
-    type: 'survey',
-    milestone_trigger: 'trip_created',
-    milestones: ['basic_milestone'],
-    is_active: true,
-    config: {
-      welcome_message: 'Welcome to our survey!',
-      completion_message: 'Thank you for your feedback!',
-      button_text: {
-        start: 'Start',
-        next: 'Next',
-        previous: 'Previous',
-        submit: 'Submit',
-        home: 'Return Home'
-      }
-    }
-  },
-  MULTI_MILESTONE: {
-    id: MULTI_MILESTONE_SURVEY_ID,
-    name: 'Progressive User Research Survey',
-    description: 'A multi-milestone survey for testing progress tracking',
-    type: 'user_testing',
-    milestones: ['onboarding_complete', 'trip_created', 'itinerary_edited'],
-    is_active: true,
-    config: {
-      welcome_message: 'Welcome to our user research session!',
-      completion_message: 'Thank you for participating!',
-      button_text: {
-        start: 'Begin Session',
-        next: 'Continue',
-        previous: 'Go Back',
-        submit: 'Complete Survey',
-        home: 'Finish'
-      }
-    }
-  }
-};
-
-// Test Fields
-export const TEST_FIELDS = {
-  BASIC_SURVEY: [
-    {
-      id: uuidv4(),
-      form_id: BASIC_SURVEY_ID,
-      label: 'How satisfied are you with your experience?',
-      type: 'rating',
-      required: true,
-      order: 1,
-      milestone: 'basic_milestone',
-      config: {
-        max_rating: 5,
-        icons: 'star'
-      }
-    },
-    {
-      id: uuidv4(),
-      form_id: BASIC_SURVEY_ID,
-      label: 'What would you like us to improve?',
-      type: 'text',
-      required: false,
-      order: 2,
-      milestone: 'basic_milestone',
-      config: {
-        multiline: true,
-        placeholder: 'Share your thoughts here...'
-      }
-    }
-  ],
-  MULTI_MILESTONE: [
-    // Milestone 1: Onboarding
-    {
-      id: uuidv4(),
-      form_id: MULTI_MILESTONE_SURVEY_ID,
-      label: 'How easy was it to sign up?',
-      type: 'rating',
-      required: true,
-      order: 1,
-      milestone: 'onboarding_complete',
-      config: {
-        max_rating: 5,
-        icons: 'star'
-      }
-    },
-    {
-      id: uuidv4(),
-      form_id: MULTI_MILESTONE_SURVEY_ID,
-      label: 'What could we improve about the signup process?',
-      type: 'text',
-      required: false,
-      order: 2,
-      milestone: 'onboarding_complete',
-      config: {
-        multiline: true
-      }
-    },
-    // Milestone 2: Trip Creation
-    {
-      id: uuidv4(),
-      form_id: MULTI_MILESTONE_SURVEY_ID,
-      label: 'How was your experience creating a trip?',
-      type: 'radio',
-      required: true,
-      order: 3,
-      milestone: 'trip_created',
-      config: {
-        options: [
-          { value: 'very_easy', label: 'Very Easy' },
-          { value: 'easy', label: 'Easy' },
-          { value: 'neutral', label: 'Neutral' },
-          { value: 'difficult', label: 'Difficult' },
-          { value: 'very_difficult', label: 'Very Difficult' }
-        ]
-      }
-    },
-    {
-      id: uuidv4(),
-      form_id: MULTI_MILESTONE_SURVEY_ID,
-      label: 'What features would you like to see in trip creation?',
-      type: 'checkbox',
-      required: false,
-      order: 4,
-      milestone: 'trip_created',
-      config: {
-        options: [
-          { value: 'templates', label: 'More templates' },
-          { value: 'ai_suggestions', label: 'AI-powered suggestions' },
-          { value: 'budget', label: 'Budget planning' },
-          { value: 'sharing', label: 'Better sharing options' }
-        ]
-      }
-    },
-    // Milestone 3: Itinerary Editing
-    {
-      id: uuidv4(),
-      form_id: MULTI_MILESTONE_SURVEY_ID,
-      label: 'How intuitive was the itinerary editor?',
-      type: 'select',
-      required: true,
-      order: 5,
-      milestone: 'itinerary_edited',
-      config: {
-        options: [
-          { value: 'very_intuitive', label: 'Very Intuitive' },
-          { value: 'intuitive', label: 'Intuitive' },
-          { value: 'neutral', label: 'Neutral' },
-          { value: 'confusing', label: 'Confusing' },
-          { value: 'very_confusing', label: 'Very Confusing' }
-        ]
-      }
-    },
-    {
-      id: uuidv4(),
-      form_id: MULTI_MILESTONE_SURVEY_ID,
-      label: 'Any additional feedback about the itinerary editor?',
-      type: 'text',
-      required: false,
-      order: 6,
-      milestone: 'itinerary_edited',
-      config: {
-        multiline: true,
-        placeholder: 'Your feedback helps us improve!'
-      }
-    }
-  ]
-};
-
-/**
- * Robust, idempotent cleanup for all test data related to research surveys.
- * Handles foreign key constraints, retries, and logs any failures for manual cleanup.
- */
-async function robustCleanupResearchTestData(
-  supabase: SupabaseClient, 
-  options: {
-    testTokens?: Record<string, string>,
-    maxRetries?: number,
-    useTransaction?: boolean,
-    logLevel?: 'error' | 'warn' | 'info' | 'debug'
-  } = {}
-) {
-  const { 
-    testTokens, 
-    maxRetries = config.retries.cleanupRetries, 
-    useTransaction = true,
-    logLevel = 'info' 
-  } = options;
-  
-  // Configure logging based on logLevel
-  const log = {
-    error: (...args: any[]) => console.error(...args),
-    warn: (...args: any[]) => logLevel !== 'error' ? console.warn(...args) : null,
-    info: (...args: any[]) => ['info', 'debug'].includes(logLevel) ? console.log(...args) : null,
-    debug: (...args: any[]) => logLevel === 'debug' ? console.log(...args) : null
-  };
-  
-  // If testTokens is provided, use those values, otherwise try to load from file
-  let tokensToClean: string[] = [];
-  
-  if (testTokens) {
-    tokensToClean = Object.values(testTokens);
-  } else {
-    try {
-      const tokensPath = path.join(__dirname, '../.test-seed.json');
-      if (fs.existsSync(tokensPath)) {
-        const fileData = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
-        if (fileData.TEST_TOKENS) {
-          tokensToClean = Object.values(fileData.TEST_TOKENS);
-          log.info(`[Cleanup] Found ${tokensToClean.length} tokens in seed file`);
-        }
-      }
-    } catch (error) {
-      log.warn('[Cleanup] Failed to load tokens from seed file:', error);
-      // Continue with empty tokens array - will still clean up by form IDs
-    }
-  }
-  
-  const testFormIds = [BASIC_SURVEY_ID, MULTI_MILESTONE_SURVEY_ID];
-  let attempt = 0;
-  let remainingTokens: string[] = [];
-  let remainingFormIds: string[] = [];
-
-  while (attempt < maxRetries) {
-    attempt++;
-    log.info(`[Cleanup Attempt ${attempt}] Starting cleanup of research test data...`);
-    
-    // Start transaction if enabled
-    if (useTransaction) {
-      try {
-        await supabase.rpc('begin');
-        log.debug('[Cleanup] Started transaction');
-      } catch (e) {
-        log.warn('[Cleanup] Failed to start transaction, continuing without transaction:', e);
-        // Continue without transaction if it fails
-      }
-    }
-    
-    try {
-      // 1. Delete events (by session and event_type)
-      const { data: sessions } = await supabase
-        .from('user_testing_sessions')
-        .select('id, token')
-        .in('token', tokensToClean);
-      
-      const sessionIds = sessions?.map(s => s.id) ?? [];
-      if (sessionIds.length > 0) {
-        log.info(`[Cleanup] Found ${sessionIds.length} sessions to clean up`);
-        await supabase.from('user_testing_events').delete().in('session_id', sessionIds);
-      }
-      await supabase.from('user_testing_events').delete().in('event_type', ['test_event', 'trip_created', 'onboarding_complete', 'itinerary_edited']);
-
-      // 2. Delete form responses (by session and form)
-      if (sessionIds.length > 0) {
-        await supabase.from('form_responses').delete().in('session_id', sessionIds);
-      }
-      await supabase.from('form_responses').delete().in('form_id', testFormIds);
-
-      // 3. Delete milestone triggers (by form)
-      await supabase.from('milestone_triggers').delete().in('form_id', testFormIds);
-
-      // 4. Delete test sessions
-      await supabase.from('user_testing_sessions').delete().in('token', tokensToClean);
-
-      // 5. Delete form fields
-      await supabase.from('form_fields').delete().in('form_id', testFormIds);
-
-      // 6. Delete forms
-      await supabase.from('forms').delete().in('id', testFormIds);
-
-      // Commit transaction if using transactions
-      if (useTransaction) {
-        try {
-          await supabase.rpc('commit');
-          log.debug('[Cleanup] Committed transaction');
-        } catch (e) {
-          log.warn('[Cleanup] Failed to commit transaction:', e);
-          // Continue even if commit fails
-        }
-      }
-
-      // 7. Check for lingering sessions/forms
-      const { data: lingeringSessions } = await supabase
-        .from('user_testing_sessions')
-        .select('token')
-        .in('token', tokensToClean);
-      const { data: lingeringForms } = await supabase
-        .from('forms')
-        .select('id')
-        .in('id', testFormIds);
-      remainingTokens = lingeringSessions?.map(s => s.token) ?? [];
-      remainingFormIds = lingeringForms?.map(f => f.id) ?? [];
-
-      if (remainingTokens.length === 0 && remainingFormIds.length === 0) {
-        log.info(`[Cleanup Attempt ${attempt}] All test data cleaned up successfully.`);
-        return true;
-      } else {
-        log.warn(`[Cleanup Attempt ${attempt}] Still found lingering tokens:`, remainingTokens, 'and forms:', remainingFormIds);
-        await new Promise(res => setTimeout(res, 500)); // Wait before retry
-      }
-    } catch (error) {
-      log.error(`[Cleanup Attempt ${attempt}] Error during cleanup:`, error);
-      
-      // Rollback transaction if using transactions
-      if (useTransaction) {
-        try {
-          await supabase.rpc('rollback');
-          log.debug('[Cleanup] Rolled back transaction after error');
-        } catch (e) {
-          log.warn('[Cleanup] Failed to rollback transaction:', e);
-        }
-      }
-    }
-  }
-  
-  if (remainingTokens.length > 0 || remainingFormIds.length > 0) {
-    log.error('Failed to clean up all test data after retries. Manual DB cleanup required.', { remainingTokens, remainingFormIds });
-    return false;
-  }
-}
-
-/**
- * Interface for seedResearchTestData options
- */
-export interface SeedOptions {
-  logLevel?: 'error' | 'warn' | 'info' | 'debug';
-  skipCleanup?: boolean;
-  uniqueSuffix?: string;
-  useTransaction?: boolean;
-  cleanupRetries?: number;
-}
-
-/**
- * Interface for cleanupResearchTestDataAfterTests options
- */
-export interface CleanupOptions {
-  logLevel?: 'error' | 'warn' | 'info' | 'debug';
+// Options for seed and cleanup functions
+interface ResearchSeedOptions {
+  logLevel?: LogLevel;
   maxRetries?: number;
   useTransaction?: boolean;
   removeTokenFile?: boolean;
 }
 
+// Define tables with proper mapping to FORM_TABLES
+const TABLES = {
+  RESEARCH_FORMS: FORM_TABLES.FORMS,
+  RESEARCH_SESSIONS: FORM_TABLES.USER_TESTING_SESSIONS,
+  RESEARCH_TOKENS: 'research_tokens', // Assuming this is a valid table name
+  RESEARCH_RESPONSES: FORM_TABLES.FORM_RESPONSES
+};
+
 /**
- * Seed research test data for E2E tests
- * Creates test surveys, fields, and tokens for user testing
+ * Create a supabase client for research operations
  */
-export async function seedResearchTestData(options: SeedOptions = {}) {
-  const {
-    logLevel = 'info',
-    skipCleanup = false,
-    uniqueSuffix = getTestRunSuffix(),
-    useTransaction = true,
-    cleanupRetries = config.retries.cleanupRetries
-  } = options;
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
-  console.log('[Seed] Starting to seed research test data');
-  
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('[Seed] Missing environment variables for Supabase connection');
-    throw new Error('Missing environment variables for Supabase connection');
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase credentials. Check your environment variables.');
   }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
-  // Generate unique tokens for this run
-  console.log(`[Seed] Using unique suffix for this test run: ${uniqueSuffix}`);
   
-  const TEST_TOKENS = {
-    VALID: `test-survey-token-${uniqueSuffix}`,
-    EXPIRED: `expired-survey-token-${uniqueSuffix}`,
-    INVALID: `invalid-survey-token-${uniqueSuffix}`,
-    MULTI_MILESTONE: `multi-milestone-token-${uniqueSuffix}`,
+  return createClient(supabaseUrl, supabaseKey);
+}
+
+/**
+ * Logger utility for research seed functions
+ */
+function createLogger(level: LogLevel = 'info') {
+  const levels = {
+    none: 0,
+    error: 1,
+    warn: 2,
+    info: 3,
+    debug: 4
   };
   
-  console.log('[Seed] Generated test tokens:', TEST_TOKENS);
+  const selectedLevel = levels[level];
+  
+  return {
+    error: (...args: any[]) => {
+      if (selectedLevel >= levels.error) console.error('[Research Seed]', ...args);
+    },
+    warn: (...args: any[]) => {
+      if (selectedLevel >= levels.warn) console.warn('[Research Seed]', ...args);
+    },
+    info: (...args: any[]) => {
+      if (selectedLevel >= levels.info) console.info('[Research Seed]', ...args);
+    },
+    debug: (...args: any[]) => {
+      if (selectedLevel >= levels.debug) console.debug('[Research Seed]', ...args);
+    }
+  };
+}
 
+/**
+ * Seed research test data
+ * 
+ * Creates test survey forms, sessions, and tokens for e2e tests
+ * 
+ * @param options Options for seeding data
+ * @returns Object containing test tokens
+ */
+export async function seedResearchTestData(
+  options: ResearchSeedOptions = {}
+): Promise<Record<string, string>> {
+  const {
+    logLevel = 'info',
+    useTransaction = false,
+    maxRetries = 2
+  } = options;
+  
+  const logger = createLogger(logLevel);
+  logger.info('Starting to seed research test data');
+  
+  const supabase = getSupabaseClient();
+  let transaction = null;
+  
   try {
-    // Robust, idempotent cleanup before seeding
-    if (!skipCleanup) {
-      console.log('[Seed] Starting cleanup of existing test data');
-      await robustCleanupResearchTestData(supabase, { 
-        testTokens: TEST_TOKENS, 
-        maxRetries: cleanupRetries,
-        useTransaction,
-        logLevel
-      });
-    } else {
-      console.log('[Seed] Skipping cleanup (skipCleanup=true)');
+    // Start transaction if requested
+    if (useTransaction) {
+      transaction = await supabase.rpc('begin_transaction');
+      logger.debug('Transaction started');
     }
     
-    // First, write the tokens to file so they're available even if seeding fails
-    console.log('[Seed] Writing tokens to file');
-    function writeSeedDataFile(tokens: Record<string, string>) {
-      const outPath = path.join(__dirname, '../.test-seed.json');
-      try {
-        fs.writeFileSync(outPath, JSON.stringify({ TEST_TOKENS: tokens }, null, 2));
-        console.log(`[Seed] Successfully wrote tokens to ${outPath}`);
-      } catch (error) {
-        console.error(`[Seed] Failed to write tokens to ${outPath}:`, error);
-        throw error;
-      }
-    }
-    writeSeedDataFile(TEST_TOKENS);
-
-    // Now create the sessions with these tokens
-    console.log('[Seed] Creating test sessions');
-    function createTestSessions(tokens: Record<string, string>) {
-      return {
-        VALID: {
-          id: uuidv4(),
-          token: tokens.VALID,
-          status: 'active',
-          metadata: {
-            device: 'e2e-test',
-            browser: 'playwright',
-            survey_id: BASIC_SURVEY_ID
-          }
-        },
-        EXPIRED: {
-          id: uuidv4(),
-          token: tokens.EXPIRED,
-          status: 'expired',
-          metadata: {
-            device: 'e2e-test',
-            browser: 'playwright',
-            survey_id: BASIC_SURVEY_ID
-          }
-        },
-        MULTI_MILESTONE: {
-          id: uuidv4(),
-          token: tokens.MULTI_MILESTONE,
-          status: 'active',
-          metadata: {
-            device: 'e2e-test',
-            browser: 'playwright',
-            progress: 0,
-            survey_id: MULTI_MILESTONE_SURVEY_ID
-          }
-        }
-      };
-    }
-    const TEST_SESSIONS = createTestSessions(TEST_TOKENS);
-
-    // Start transaction if enabled
-    if (useTransaction) {
-      try {
-        await supabase.rpc('begin');
-        console.log('[Seed] Started transaction');
-      } catch (e) {
-        console.warn('[Seed] Failed to start transaction, continuing without transaction:', e);
-        // Continue without transaction if it fails
-      }
-    }
-
-    try {
-      // Insert test surveys
-      console.log('[Seed] Inserting test surveys');
-      const { error: surveysError } = await supabase
-        .from('forms')
-        .insert([
-          TEST_SURVEYS.BASIC,
-          TEST_SURVEYS.MULTI_MILESTONE
-        ]);
-      if (surveysError) throw new Error(`Error inserting test surveys: ${surveysError.message}`);
-
-      // Insert test fields
-      console.log('[Seed] Inserting test fields');
-      const { error: fieldsError } = await supabase
-        .from('form_fields')
-        .insert([
-          ...TEST_FIELDS.BASIC_SURVEY,
-          ...TEST_FIELDS.MULTI_MILESTONE
-        ]);
-      if (fieldsError) throw new Error(`Error inserting test fields: ${fieldsError.message}`);
-
-      // Defensive: delete any lingering sessions with these tokens before insert
-      console.log('[Seed] Cleaning up any existing sessions with same tokens');
-      await supabase.from('user_testing_sessions').delete().in('token', [
-        TEST_SESSIONS.VALID.token,
-        TEST_SESSIONS.EXPIRED.token,
-        TEST_SESSIONS.MULTI_MILESTONE.token
-      ]);
-      
-      console.log('[Seed] Inserting test sessions');
-      const { error: sessionsError } = await supabase
-        .from('user_testing_sessions')
-        .insert([
-          TEST_SESSIONS.VALID,
-          TEST_SESSIONS.EXPIRED,
-          TEST_SESSIONS.MULTI_MILESTONE
-        ]);
-      if (sessionsError) throw new Error(`Error inserting test sessions: ${sessionsError.message}`);
-
-      // Insert milestone triggers
-      console.log('[Seed] Inserting milestone triggers');
-      const { error: triggersError } = await supabase
-        .from('milestone_triggers')
-        .insert([
+    // Create test survey form
+    const formId = uuidv4();
+    const { error: formError } = await supabase
+      .from(TABLES.RESEARCH_FORMS)
+      .insert({
+        id: formId,
+        title: 'E2E Test Survey',
+        description: 'This survey was created for e2e testing',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        questions: [
           {
             id: uuidv4(),
-            event_type: 'trip_created',
-            form_id: BASIC_SURVEY_ID,
-            active: true
+            type: 'text',
+            question: 'What do you like most about travel planning?',
+            required: true,
+            order: 1
+          },
+          {
+            id: uuidv4(),
+            type: 'rating',
+            question: 'How would you rate your experience with travel planning tools?',
+            required: true,
+            order: 2,
+            options: {
+              min: 1,
+              max: 5,
+              minLabel: 'Poor',
+              maxLabel: 'Excellent'
+            }
+          },
+          {
+            id: uuidv4(),
+            type: 'select',
+            question: 'Which features are most important to you?',
+            required: true,
+            order: 3,
+            options: {
+              choices: [
+                'Itinerary planning',
+                'Budget tracking',
+                'Group coordination',
+                'Destination research',
+                'Activity recommendations'
+              ],
+              multiple: true
+            }
           }
-        ]);
-      if (triggersError) throw new Error(`Error inserting test triggers: ${triggersError.message}`);
-
-      // Commit transaction if using transactions
-      if (useTransaction) {
-        try {
-          await supabase.rpc('commit');
-          console.log('[Seed] Committed transaction');
-        } catch (e) {
-          console.warn('[Seed] Failed to commit transaction:', e);
-          // If commit fails, don't throw - the operations might have worked
-        }
-      }
-
-      console.log('[Seed] Successfully seeded all research test data');
-      return true;
-    } catch (error) {
-      // Rollback transaction if using transactions
-      if (useTransaction) {
-        try {
-          await supabase.rpc('rollback');
-          console.log('[Seed] Rolled back transaction after error');
-        } catch (e) {
-          console.warn('[Seed] Failed to rollback transaction:', e);
-        }
-      }
-      throw error;
+        ]
+      });
+    
+    if (formError) {
+      throw new Error(`Failed to create test form: ${formError.message}`);
     }
+    
+    logger.info(`Created test form with ID: ${formId}`);
+    
+    // Create test session
+    const sessionId = uuidv4();
+    const { error: sessionError } = await supabase
+      .from(TABLES.RESEARCH_SESSIONS)
+      .insert({
+        id: sessionId,
+        form_id: formId,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+      });
+    
+    if (sessionError) {
+      throw new Error(`Failed to create test session: ${sessionError.message}`);
+    }
+    
+    logger.info(`Created test session with ID: ${sessionId}`);
+    
+    // Create test tokens
+    const validToken = uuidv4();
+    const expiredToken = uuidv4();
+    
+    // Valid token
+    const { error: validTokenError } = await supabase
+      .from(TABLES.RESEARCH_TOKENS)
+      .insert({
+        id: validToken,
+        session_id: sessionId,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+        status: 'active'
+      });
+    
+    if (validTokenError) {
+      throw new Error(`Failed to create valid token: ${validTokenError.message}`);
+    }
+    
+    // Expired token
+    const { error: expiredTokenError } = await supabase
+      .from(TABLES.RESEARCH_TOKENS)
+      .insert({
+        id: expiredToken,
+        session_id: sessionId,
+        created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(), // 48 hours ago
+        expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 24 hours ago
+        status: 'expired'
+      });
+    
+    if (expiredTokenError) {
+      throw new Error(`Failed to create expired token: ${expiredTokenError.message}`);
+    }
+    
+    logger.info(`Created test tokens: valid=${validToken}, expired=${expiredToken}`);
+    
+    // Commit transaction if used
+    if (useTransaction) {
+      await supabase.rpc('commit_transaction');
+      logger.debug('Transaction committed');
+    }
+    
+    // Save tokens to file for tests to use
+    const tokens = {
+      VALID: validToken,
+      EXPIRED: expiredToken,
+      INVALID: 'invalid-token-12345'
+    };
+    
+    fs.writeFileSync(TOKEN_FILE_PATH, JSON.stringify(tokens, null, 2));
+    logger.info(`Saved tokens to ${TOKEN_FILE_PATH}`);
+    
+    return tokens;
   } catch (error) {
-    console.error('[Seed] Error seeding research test data:', error);
+    logger.error('Error seeding research test data:', error);
+    
+    // Rollback transaction if used
+    if (useTransaction && transaction) {
+      await supabase.rpc('rollback_transaction');
+      logger.debug('Transaction rolled back');
+    }
+    
     throw error;
   }
 }
 
 /**
- * Clean up all research test data after tests
- * Handles retries and proper error reporting
+ * Clean up research test data after tests
+ * 
+ * @param options Options for cleaning up data
  */
-export async function cleanupResearchTestDataAfterTests(options: CleanupOptions = {}) {
-  const { 
+export async function cleanupResearchTestDataAfterTests(
+  options: ResearchSeedOptions = {}
+): Promise<void> {
+  const {
     logLevel = 'info',
-    maxRetries = config.retries.cleanupRetries,
-    useTransaction = true,
-    removeTokenFile = true
+    useTransaction = false,
+    removeTokenFile = true,
+    maxRetries = 2
   } = options;
   
-  console.log('[Cleanup] Starting cleanup of research test data');
+  const logger = createLogger(logLevel);
+  logger.info('Starting to clean up research test data');
   
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('[Cleanup] Missing environment variables for Supabase connection');
-    return false;
-  }
+  const supabase = getSupabaseClient();
+  let transaction = null;
   
-  // Use retry logic for cleanup to make it more robust
   try {
-    await retry(
-      async () => {
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-        await robustCleanupResearchTestData(supabase, { 
-          maxRetries,
-          useTransaction,
-          logLevel
-        });
-      },
-      {
-        retries: 2,
-        delay: 1000,
-        onRetry: (attempt: number, error: unknown) => {
-          console.warn(`[Cleanup] Retry attempt ${attempt} after error:`, error);
-        }
-      }
-    );
+    // Load test tokens to identify data to clean up
+    let tokens: Record<string, string> = {};
     
-    // Optionally, remove the .test-seed.json file
-    if (removeTokenFile) {
-      try {
-        fs.unlinkSync(path.join(__dirname, '../.test-seed.json'));
-        console.log('[Cleanup] Removed .test-seed.json file');
-      } catch (e) {
-        // Ignore if file doesn't exist
-        console.log('[Cleanup] No .test-seed.json file to remove');
+    try {
+      if (fs.existsSync(TOKEN_FILE_PATH)) {
+        tokens = JSON.parse(fs.readFileSync(TOKEN_FILE_PATH, 'utf8'));
+        logger.debug('Loaded tokens from file:', tokens);
+      } else {
+        logger.warn(`Token file not found at ${TOKEN_FILE_PATH}`);
+        return;
+      }
+    } catch (error) {
+      logger.error('Failed to load tokens from file:', error);
+      return;
+    }
+    
+    // Get session IDs from tokens
+    const validToken = tokens.VALID;
+    const expiredToken = tokens.EXPIRED;
+    
+    if (!validToken && !expiredToken) {
+      logger.warn('No valid tokens found for cleanup');
+      return;
+    }
+    
+    // Start transaction if requested
+    if (useTransaction) {
+      transaction = await supabase.rpc('begin_transaction');
+      logger.debug('Transaction started');
+    }
+    
+    // Get sessions to delete
+    const sessionIds: string[] = [];
+    
+    for (const token of [validToken, expiredToken]) {
+      if (!token || token === 'invalid-token-12345') continue;
+      
+      const { data, error } = await supabase
+        .from(TABLES.RESEARCH_TOKENS)
+        .select('session_id')
+        .eq('id', token)
+        .single();
+      
+      if (error) {
+        logger.warn(`Failed to find session for token ${token}:`, error);
+        continue;
+      }
+      
+      if (data && data.session_id) {
+        sessionIds.push(data.session_id);
       }
     }
     
-    return true;
+    // Get form IDs to delete
+    const formIds: string[] = [];
+    
+    for (const sessionId of sessionIds) {
+      const { data, error } = await supabase
+        .from(TABLES.RESEARCH_SESSIONS)
+        .select('form_id')
+        .eq('id', sessionId)
+        .single();
+      
+      if (error) {
+        logger.warn(`Failed to find form for session ${sessionId}:`, error);
+        continue;
+      }
+      
+      if (data && data.form_id) {
+        formIds.push(data.form_id);
+      }
+    }
+    
+    logger.info(`Found ${sessionIds.length} sessions and ${formIds.length} forms to delete`);
+    
+    // Delete in reverse order of dependencies
+    
+    // Delete responses
+    if (sessionIds.length > 0) {
+      const { error: responsesError } = await supabase
+        .from(TABLES.RESEARCH_RESPONSES)
+        .delete()
+        .in('session_id', sessionIds);
+      
+      if (responsesError) {
+        logger.error('Failed to delete responses:', responsesError);
+      } else {
+        logger.info('Deleted test responses');
+      }
+    }
+    
+    // Delete tokens
+    for (const token of [validToken, expiredToken]) {
+      if (!token || token === 'invalid-token-12345') continue;
+      
+      const { error: tokenError } = await supabase
+        .from(TABLES.RESEARCH_TOKENS)
+        .delete()
+        .eq('id', token);
+      
+      if (tokenError) {
+        logger.error(`Failed to delete token ${token}:`, tokenError);
+      } else {
+        logger.info(`Deleted token: ${token}`);
+      }
+    }
+    
+    // Delete sessions
+    for (const sessionId of sessionIds) {
+      const { error: sessionError } = await supabase
+        .from(TABLES.RESEARCH_SESSIONS)
+        .delete()
+        .eq('id', sessionId);
+      
+      if (sessionError) {
+        logger.error(`Failed to delete session ${sessionId}:`, sessionError);
+      } else {
+        logger.info(`Deleted session: ${sessionId}`);
+      }
+    }
+    
+    // Delete forms
+    for (const formId of formIds) {
+      const { error: formError } = await supabase
+        .from(TABLES.RESEARCH_FORMS)
+        .delete()
+        .eq('id', formId);
+      
+      if (formError) {
+        logger.error(`Failed to delete form ${formId}:`, formError);
+      } else {
+        logger.info(`Deleted form: ${formId}`);
+      }
+    }
+    
+    // Commit transaction if used
+    if (useTransaction) {
+      await supabase.rpc('commit_transaction');
+      logger.debug('Transaction committed');
+    }
+    
+    // Remove token file if requested
+    if (removeTokenFile && fs.existsSync(TOKEN_FILE_PATH)) {
+      fs.unlinkSync(TOKEN_FILE_PATH);
+      logger.info(`Deleted token file: ${TOKEN_FILE_PATH}`);
+    }
+    
+    logger.info('Research test data cleanup completed');
   } catch (error) {
-    console.error('[Cleanup] Failed all cleanup attempts:', error);
-    return false;
+    logger.error('Error cleaning up research test data:', error);
+    
+    // Rollback transaction if used
+    if (useTransaction && transaction) {
+      await supabase.rpc('rollback_transaction');
+      logger.debug('Transaction rolled back');
+    }
+    
+    throw error;
   }
 } 

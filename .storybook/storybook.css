@@ -71,9 +71,8 @@
   font-family: var(--font-helvetica-neue, 'Helvetica Neue', Helvetica, Arial, sans-serif);
 }
 
-/* Dark mode adjustments */
+/* Dark mode adjustments - ONLY apply background to storybook context */
 .dark {
-  background-color: #1a1a1a;
   color: #fafafa;
   
   /* Dark mode variables - copy from globals.css dark theme */
@@ -90,6 +89,11 @@
   /* Primary color */
   --primary: 260 70% 70%;
   --primary-foreground: 260 100% 20%;
+}
+
+/* Apply background ONLY to storybook container */
+.storybook-container.dark {
+  background-color: #1a1a1a;
 }
 
 /* Ensure consistent font loading */

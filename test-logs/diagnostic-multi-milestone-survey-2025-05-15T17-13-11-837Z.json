@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-05-15T17:13:11.910Z",
+  "testInfo": {
+    "name": "multi-milestone-survey",
+    "timestamp": "2025-05-15T17-13-11-837Z"
+  },
+  "url": "http://localhost:3000/user-testing/survey?token=undefined",
+  "visibleTestIds": [],
+  "windowSize": {
+    "innerWidth": 414,
+    "innerHeight": 896,
+    "outerWidth": 414,
+    "outerHeight": 896
+  },
+  "testTokens": {
+    "VALID": "valid-token-12345",
+    "EXPIRED": "expired-token-12345",
+    "INVALID": "invalid-token-12345"
+  }
+}

@@ -8,7 +8,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { VercelAnalytics } from './vercel-analytics';
 import Script from 'next/script';
 import { ClientSideProviders } from '@/components/client-side-providers';
-import { Navbar } from '@/components/navbar';
+import Navbar from '@/components/layout/Navbar';
 import { Footer } from '@/components/footer';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@/utils/supabase/server';

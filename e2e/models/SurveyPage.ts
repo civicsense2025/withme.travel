@@ -8,6 +8,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { wait } from '../utils/test-helpers.js';
 import { getAccessibilityViolations } from '../utils/accessibility-helpers.js';
 import { TestEnvironment } from '../test-environment';
+import { AxeBuilder } from '@axe-core/playwright';
 
 export interface SurveyPageOptions {
   /** Test token for the survey */
@@ -54,6 +55,34 @@ export class SurveyPage {
     milestoneProgress: '.milestone-progress, .progress-indicator',
     surveyContainer: '.survey-container, .research-survey, main'
   };
+
+  // Common selectors with fallbacks
+  private startButtonSelectors = [
+    '[data-testid="survey-start-button"]',
+    'button:has-text("Begin")',
+    'button:has-text("Start")',
+    '.start-button'
+  ];
+  
+  private nextButtonSelectors = [
+    '[data-testid="survey-next-button"]',
+    'button:has-text("Next")',
+    'button:has-text("Continue")'
+  ];
+  
+  private submitButtonSelectors = [
+    '[data-testid="survey-submit-button"]',
+    'button:has-text("Submit")',
+    'button:has-text("Finish")',
+    'button:has-text("Complete")'
+  ];
+  
+  private errorMessageSelectors = [
+    '[data-testid="error-message"]',
+    '.error-message',
+    'text="invalid token"',
+    '[role="alert"]'
+  ];
 
   /**
    * Create a new SurveyPage instance
@@ -457,5 +486,155 @@ export class SurveyPage {
    */
   async checkAccessibility(): Promise<any[]> {
     return await getAccessibilityViolations(this.page);
+  }
+
+  /**
+   * Take a screenshot for debugging purposes
+   */
+  async takeScreenshotForDebugging(): Promise<void> {
+    const path = `./test-results/${Date.now()}.png`;
+    await this.page.screenshot({ path, fullPage: true });
+    console.log(`Took screenshot: ${path}`);
+  }
+
+  /**
+   * Log the current page state for debugging
+   */
+  async logPageState(message: string) {
+    console.log(`DEBUG [${message}]:`);
+    console.log(`- URL: ${this.page.url()}`);
+    
+    // Log visible buttons
+    const buttons = await this.page.getByRole('button').all();
+    console.log(`- Visible buttons: ${buttons.length}`);
+    for (const button of buttons) {
+      const text = await button.textContent();
+      console.log(`  • ${text?.trim() || '[no text]'}`);
+    }
+    
+    // Log form elements
+    const inputs = await this.page.locator('input, textarea, select').all();
+    console.log(`- Form elements: ${inputs.length}`);
+  }
+
+  /**
+   * Find an element using multiple selectors with fallbacks
+   */
+  async findElement(selectors: string[], timeout = 10000): Promise<Locator> {
+    for (let i = 0; i < selectors.length; i++) {
+      const selector = selectors[i];
+      try {
+        const element = this.page.locator(selector);
+        if (await element.isVisible({ timeout: i === 0 ? timeout : 1000 })) {
+          console.log(`Found element with selector: ${selector}`);
+          return element;
+        }
+      } catch (e) {
+        // Continue to next selector
+      }
+    }
+    
+    // If we reach here, none of the selectors worked
+    console.error(`Failed to find element with any of the selectors:`, selectors);
+    throw new Error(`Could not find element with selectors: ${selectors.join(', ')}`);
+  }
+
+  /**
+   * Start the survey by clicking the start button
+   */
+  async startSurveyByClickingButton(timeout = 10000) {
+    console.log('Attempting to start survey...');
+    await this.logPageState("before clicking start");
+    
+    const startButton = await this.findElement(this.startButtonSelectors, timeout);
+    await startButton.click();
+  }
+
+  /**
+   * Click the next button to advance to the next question
+   */
+  async clickNextButton() {
+    const nextButton = await this.findElement(this.nextButtonSelectors);
+    await nextButton.click();
+  }
+
+  /**
+   * Submit the survey
+   */
+  async submitSurveyByClickingButton() {
+    const submitButton = await this.findElement(this.submitButtonSelectors);
+    await submitButton.click();
+  }
+
+  /**
+   * Fill a text input question
+   */
+  async fillTextQuestion(text: string) {
+    const textInput = this.page.locator('input[type="text"], textarea').first();
+    await textInput.fill(text);
+  }
+
+  /**
+   * Select a rating
+   */
+  async selectRating(rating: number) {
+    // Find all rating options and click the one matching the rating
+    const ratingOption = this.page.locator(`[role="radio"]`).nth(rating - 1);
+    await ratingOption.click();
+  }
+
+  /**
+   * Select an option from a dropdown
+   */
+  async selectDropdownOption(optionText: string) {
+    await this.page.locator('select').selectOption({ label: optionText });
+  }
+
+  /**
+   * Check for error message presence
+   */
+  async checkForError(timeout = 10000) {
+    const errorElement = await this.findElement(this.errorMessageSelectors, timeout);
+    await expect(errorElement).toBeVisible();
+    return errorElement.textContent();
+  }
+
+  /**
+   * Wait for completion message
+   */
+  async waitForCompletion(timeout = 10000) {
+    await this.page
+      .locator('[data-testid="survey-completion"], .survey-completion, text="Thank you"')
+      .first()
+      .waitFor({ timeout });
+  }
+
+  /**
+   * Perform accessibility check and return violations (optionally filtered)
+   */
+  async checkAccessibilityWithAxeBuilder(options?: {
+    excludeSelectors?: string[];
+    disabledRules?: string[];
+  }) {
+    let builder = new AxeBuilder({ page: this.page });
+    
+    // Apply exclusions if provided
+    if (options?.excludeSelectors?.length) {
+      builder = builder.exclude(options.excludeSelectors);
+    }
+    
+    // Disable specific rules if provided
+    if (options?.disabledRules?.length) {
+      const rules: Record<string, { enabled: boolean }> = {};
+      options.disabledRules.forEach(rule => {
+        rules[rule] = { enabled: false };
+      });
+      
+      builder = builder.options({
+        rules
+      });
+    }
+    
+    return await builder.analyze();
   }
 } 

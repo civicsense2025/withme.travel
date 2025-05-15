@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/utils/supabase-server';
 import { Metadata } from 'next';
 import { getGuestToken } from '@/utils/guest';
-import HeroSection from './components/HeroSection';
+import HeroSectionWrapper from './components/HeroSectionWrapper';
 import TripsClient from './trips-client';
 import { PageHeader } from '@/components/layout/page-header';
 import { PlusCircle } from 'lucide-react';
@@ -115,5 +115,11 @@ export default async function TripsPage() {
   }
   
   // Show the hero section with 2-column layout for the landing page (non-authenticated users)
-  return <HeroSection />;
+  return <HeroSectionWrapper 
+    heading="Plan your perfect trip with friends and family" 
+    subheading="Collaborate on itineraries, share ideas, and make memories together – all in one place."
+    ctaText="Create a Trip"
+    ctaHref="/trips/create"
+    showBackground={true}
+  />;
 }

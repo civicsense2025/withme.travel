@@ -1,0 +1,27 @@
+{
+  "timestamp": "2025-05-15T17:11:46.669Z",
+  "testInfo": {
+    "name": "multi-milestone-welcome-heading-error",
+    "file": "survey-flow.spec.ts",
+    "timestamp": "2025-05-15T17-11-46-619Z",
+    "browserName": "firefox"
+  },
+  "error": {
+    "name": "Error",
+    "message": "\u001b[31mTimed out 10000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('[data-testid=\"survey-welcome-heading\"]')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"survey-welcome-heading\"]')\u001b[22m\n",
+    "stack": "Error: \u001b[31mTimed out 10000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('[data-testid=\"survey-welcome-heading\"]')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"survey-welcome-heading\"]')\u001b[22m\n\n    at /Users/tanho/GitHub_non_cloud/withme.travel/e2e/survey-flow.spec.ts:460:78"
+  },
+  "context": {
+    "url": "http://localhost:3000/user-testing/survey?token=undefined",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "elementSelector": "[data-testid=\"survey-welcome-heading\"]",
+    "visibleElements": [
+      "no-form-title",
+      "no-form-message",
+      "no-form-home-button"
+    ]
+  }
+}

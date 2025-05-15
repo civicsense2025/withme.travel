@@ -249,13 +249,13 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
         ? getColorToken('SURFACE', currentTheme)
         : getExtendedToken('BUTTON_BG'),
       color: isActive
-        ? getColorToken('PRIMARY', currentTheme)
+        ? getColorToken('TEXT', currentTheme)
         : getExtendedToken('BUTTON_TEXT'),
-      border: `2px solid ${isActive ? getColorToken('PRIMARY', currentTheme) : 'transparent'}`,
-      boxShadow: isActive ? getExtendedToken('SHADOW_MD') : undefined,
-      fontWeight: 600, // Always bold to prevent jump
-      opacity: isActive ? 1 : 0.85,
-      transition: 'all 0.18s',
+      border: isActive
+        ? `1px solid ${getColorToken('BORDER', currentTheme)}`
+        : `1px solid transparent`,
+      fontWeight: isActive ? 600 : 400,
+      transition: 'all 0.15s ease-in-out',
     };
   };
 
@@ -370,50 +370,76 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
     exit: { opacity: 0, y: -16, transition: { duration: 0.18 } },
   };
 
+  // Update the card style to support background toggling
+  const getCardStyle = (): React.CSSProperties => {
+    return {
+      backgroundColor: withBackground 
+        ? getColorToken('BACKGROUND', currentTheme) 
+        : 'transparent',
+      border: withBackground 
+        ? `1px solid ${getColorToken('BORDER', currentTheme)}` 
+        : 'none',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: withBackground 
+        ? getExtendedToken('SHADOW_MD') 
+        : 'none',
+      transition: 'all 0.2s ease-in-out',
+      maxWidth: '100%',
+    };
+  };
+
   // --- RENDER ---
   return (
-    <div
-      className={withBackground !== false ? "w-full min-h-screen flex items-center justify-center py-8" : "w-full flex items-center justify-center py-8"}
-      style={withBackground !== false ? { background: getColorToken('BACKGROUND', currentTheme) } : undefined}
-    >
-      <Card
-        className="max-w-2xl w-full mx-auto shadow-md overflow-hidden border-border"
+    <div style={getCardStyle()}>
+      <div
         style={{
-          background: getColorToken('SURFACE', currentTheme),
-          color: getColorToken('TEXT', currentTheme),
-          borderColor: getColorToken('BORDER', currentTheme),
-          boxShadow: getExtendedToken('SHADOW_MD'),
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <CardHeader
-          className="pb-2"
-          style={getSurfaceStyle()}
-        >
-          <div className="flex justify-between items-center">
-            <div><Badge
-              variant="outline"
-              className="gap-1 text-xs font-normal"
-              style={getBadgeStyle()}
-            >
-              <span className="text-base">📅</span>
-              June 10-24, 2025
-            </Badge>
-              <CardTitle
-                className="text-2xl font-semibold pt-4"
-                style={getLabelStyle()}
-              >
-                Discover Europe
-              </CardTitle>
-              <p
-                className="text-sm mt-1 mb-2"
-                style={getMutedTextStyle()}
-              >
-                Plan your perfect adventure across cities
-              </p>
-            </div>
-            
+        {/* Trip date */}
+        <div style={{ marginBottom: '16px' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '6px 12px',
+              borderRadius: '16px',
+              fontWeight: 500,
+              fontSize: '14px',
+              background: getColorToken('SUBTLE', currentTheme),
+              color: getColorToken('MUTED', currentTheme),
+            }}
+          >
+            ✈️ Trip: Oct 15-24, 2025
           </div>
-        </CardHeader>
+        </div>
+
+        {/* City name */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            marginBottom: '16px',
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              fontSize: '24px',
+              fontWeight: 700,
+              color: getColorToken('TEXT', currentTheme),
+            }}
+          >
+            Discover Europe
+          </h3>
+          <div style={{ fontSize: '14px', color: getColorToken('MUTED', currentTheme) }}>
+            Plan your perfect adventure across cities
+          </div>
+        </div>
 
         <CardContent className="pb-0" style={getSurfaceStyle()}>
           <div className="flex space-x-3 mb-6 overflow-x-auto pb-4 scrollbar-hide">
@@ -511,7 +537,7 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
             Edit All <span>➡️</span>
           </Button>
         </CardFooter>
-      </Card>
+      </div>
 
       {/* Add Activity Dialog */}
       {!disablePopup && (

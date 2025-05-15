@@ -107,63 +107,78 @@ export function logDiagnostic(diagnostic: Record<string, any>, testInfo: { name?
 }
 
 /**
- * Create a daily test run summary log file
- * @param results Summary of test results
+ * Test summary information
  */
-export function logTestRunSummary(results: {
+export interface TestSummary {
   passed: number;
   failed: number;
   skipped: number;
-  failedTests: Array<{ name: string; error: string; file: string }>;
-}): string {
-  const today = new Date().toISOString().split('T')[0];
-  const fileName = `summary-${today}.json`;
-  const filePath = path.join(LOG_DIR, fileName);
+  failedTests: Array<{
+    name: string;
+    error: string;
+    file: string;
+  }>;
+}
+
+/**
+ * Log a test run summary to the console
+ */
+export function logTestRunSummary(summary: TestSummary): void {
+  console.log('\n');
+  console.log('='.repeat(80));
+  console.log('TEST RUN SUMMARY');
+  console.log('='.repeat(80));
   
-  // Check if file exists, and if so, read it
-  let existingData: any = { 
-    date: today,
-    runs: [],
-    totalExecuted: 0,
-    totalPassed: 0,
-    totalFailed: 0,
-    totalSkipped: 0,
-    failedTests: []
-  };
+  // Print test counts
+  console.log(`Total Tests: ${summary.passed + summary.failed + summary.skipped}`);
+  console.log(`  ✅ Passed: ${summary.passed}`);
+  console.log(`  ❌ Failed: ${summary.failed}`);
+  console.log(`  ⏩ Skipped: ${summary.skipped}`);
   
-  if (fs.existsSync(filePath)) {
-    try {
-      existingData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    } catch (e) {
-      console.error('Error reading existing summary file:', e);
-    }
+  // Print failed tests if any
+  if (summary.failed > 0) {
+    console.log('\nFAILED TESTS:');
+    console.log('-'.repeat(80));
+    
+    summary.failedTests.forEach((test, index) => {
+      console.log(`${index + 1}. ${test.name}`);
+      console.log(`   File: ${test.file}`);
+      console.log(`   Error: ${test.error}`);
+      console.log('-'.repeat(80));
+    });
   }
   
-  // Add new run data
-  const runData = {
-    timestamp: new Date().toISOString(),
-    passed: results.passed,
-    failed: results.failed,
-    skipped: results.skipped,
-    failedTests: results.failedTests
-  };
+  console.log('\n');
+}
+
+/**
+ * Log test debug information
+ */
+export function logTestDebugInfo(testName: string, details: Record<string, any>): void {
+  console.log('\n');
+  console.log(`DEBUG INFO: ${testName}`);
+  console.log('-'.repeat(80));
   
-  existingData.runs.push(runData);
-  existingData.totalExecuted += results.passed + results.failed + results.skipped;
-  existingData.totalPassed += results.passed;
-  existingData.totalFailed += results.failed;
-  existingData.totalSkipped += results.skipped;
+  Object.entries(details).forEach(([key, value]) => {
+    console.log(`${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`);
+  });
   
-  // Add failed tests to the list if not already there
-  for (const test of results.failedTests) {
-    if (!existingData.failedTests.some((t: any) => t.name === test.name && t.file === test.file)) {
-      existingData.failedTests.push(test);
-    }
-  }
+  console.log('-'.repeat(80));
+  console.log('\n');
+}
+
+/**
+ * Log performance metrics
+ */
+export function logPerformanceMetrics(metrics: Record<string, number>): void {
+  console.log('\n');
+  console.log('PERFORMANCE METRICS');
+  console.log('-'.repeat(80));
   
-  // Write updated data
-  fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2));
-  console.log(`Test run summary logged to: ${filePath}`);
+  Object.entries(metrics).forEach(([key, value]) => {
+    console.log(`${key}: ${value}ms`);
+  });
   
-  return filePath;
+  console.log('-'.repeat(80));
+  console.log('\n');
 } 

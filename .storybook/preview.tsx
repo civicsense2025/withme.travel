@@ -3,21 +3,18 @@ import type { Preview } from "@storybook/react";
 import { ThemeProvider } from "../components/theme-provider";
 import { fn } from '@storybook/test';
 import { withThemeByClassName } from '@storybook/addon-themes';
+import { themes } from '@storybook/theming';
 
 // Import CSS files in the correct order
 import "../app/globals.css";    // App-specific global styles second
 import "./storybook.css";       // Storybook-specific styles last
 
-// Create a simple decorator that wraps stories with the theme provider
-const withThemeProvider = (Story) => {
-  return (
-    <ThemeProvider defaultTheme="light" storageKey="storybook-theme">
-      <div className="withme-storybook-wrapper">
-        <Story />
-      </div>
-    </ThemeProvider>
-  );
-};
+// Create the wrapper with storybook-specific class
+const StorybookWrapper = ({ theme, children }: { theme: 'light' | 'dark', children: React.ReactNode }) => (
+  <div className={`withme-storybook-wrapper storybook-container ${theme}`}>
+    {children}
+  </div>
+);
 
 const preview: Preview = {
   parameters: {
@@ -31,12 +28,13 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
+    darkMode: {
+      current: 'light',
+      dark: { ...themes.dark },
+      light: { ...themes.light }
+    },
     backgrounds: {
-      default: 'light',
-      values: [
-        { name: 'light', value: '#ffffff' },
-        { name: 'dark', value: '#1a1a1a' },
-      ],
+      disable: true,
     },
     // Ensure docs are properly rendered
     docs: {
@@ -50,14 +48,22 @@ const preview: Preview = {
     },
   },
   decorators: [
-    withThemeProvider,
-    withThemeByClassName({
-      themes: {
-        light: 'light',
-        dark: 'dark',
-      },
-      defaultTheme: 'light',
-    }),
+    (Story, context) => {
+      const { theme } = context.globals;
+      
+      return (
+        <ThemeProvider
+          attribute="class"
+          defaultTheme={theme || 'light'}
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <StorybookWrapper theme={theme || 'light'}>
+            <Story />
+          </StorybookWrapper>
+        </ThemeProvider>
+      );
+    },
   ],
   // Use explicit args mocking for actions
   argTypes: {
@@ -72,6 +78,21 @@ const preview: Preview = {
     onSubmit: fn(),
     onSelect: fn(),
     onToggle: fn(),
+  },
+  globalTypes: {
+    theme: {
+      name: 'Theme',
+      description: 'Global theme for components',
+      defaultValue: 'light',
+      toolbar: {
+        icon: 'circlehollow',
+        items: [
+          { value: 'light', icon: 'sun', title: 'Light' },
+          { value: 'dark', icon: 'moon', title: 'Dark' },
+        ],
+        showName: true,
+      },
+    },
   },
 };
 

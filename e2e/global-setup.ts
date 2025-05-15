@@ -2,9 +2,9 @@
 // PLAYWRIGHT GLOBAL SETUP: Seed research test data before all tests
 // ============================================================================
 import { FullConfig } from '@playwright/test';
-import { seedResearchTestData } from './utils/research-seed.js';
-import { retry } from './utils/test-helpers.js';
-import { config } from './test-config.js';
+import { seedResearchTestData } from './utils/research-seed';
+import { retry } from './utils/test-helpers';
+import { config } from './test-config';
 
 /**
  * Global setup for Playwright tests
@@ -52,7 +52,7 @@ async function globalSetup(config: FullConfig) {
       {
         retries: 2,
         delay: 1000,
-        onRetry: (attempt, error) => {
+        onRetry: (attempt: number, error: any) => {
           console.warn(`⚠️ Retry ${attempt} after seeding error:`, error);
         }
       }

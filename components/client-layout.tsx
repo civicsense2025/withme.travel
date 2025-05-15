@@ -1,7 +1,6 @@
 'use client';
 
 import { ThemeProvider } from '@/components/theme-provider';
-import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { CookieConsent } from '@/components/cookie-consent';
 import { Suspense } from 'react';
@@ -12,9 +11,14 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth-provider';
 import { AuthErrorBoundary } from '@/components/auth-error-boundary';
 
-export function ClientLayout({ children }: { children: React.ReactNode }) {
+interface ClientLayoutProps {
+  children: React.ReactNode;
+}
+
+export function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
-  const showNavbar = !pathname?.startsWith('/auth/');
+  const isFullscreenPath = pathname?.startsWith('/trips/') || pathname?.startsWith('/itineraries/');
+  const showFooter = !isFullscreenPath && !pathname?.startsWith('/auth/');
 
   return (
     <ThemeProvider>
@@ -22,11 +26,10 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         <AuthProvider initialSession={null}>
           <SearchProvider>
             <CommandMenu />
-            <Suspense fallback={null}>{showNavbar && <Navbar />}</Suspense>
-            <main className="min-h-[calc(100vh-4rem-4rem)] max-w-3xl mx-auto px-4 sm:px-6 md:px-8">
-              {children}
-            </main>
-            <Footer />
+            <Suspense fallback={null}>
+              <main className="flex-grow">{children}</main>
+              {showFooter && <Footer />}
+            </Suspense>
             <CookieConsent />
             <Toaster />
           </SearchProvider>

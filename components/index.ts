@@ -6,7 +6,7 @@
  */
 
 // Layout components
-export { Navbar } from './navbar';
+export { default as Navbar } from './layout/Navbar';
 export { Footer } from './footer';
 export { Container } from './container';
 export { PageHeader } from './page-header';

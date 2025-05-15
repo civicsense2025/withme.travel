@@ -1,6 +1,8 @@
 /**
  * @type {import('@playwright/test').PlaywrightTestConfig}
  */
+import { defineConfig } from '@playwright/test';
+
 const config = {
   testDir: './e2e',
   timeout: 30000,
@@ -43,26 +45,62 @@ const config = {
         trace: 'retain-on-failure',
       },
     },
+    {
+      name: 'firefox',
+      use: {
+        browserName: 'firefox',
+        headless: true,
+        viewport: { width: 1280, height: 720 },
+        ignoreHTTPSErrors: true,
+        video: 'retain-on-failure',
+        trace: 'retain-on-failure',
+      },
+    },
+    {
+      name: 'webkit',
+      use: {
+        browserName: 'webkit',
+        headless: true,
+        viewport: { width: 1280, height: 720 },
+        ignoreHTTPSErrors: true,
+        video: 'retain-on-failure',
+        trace: 'retain-on-failure',
+      },
+    },
+    {
+      name: 'Mobile Chrome',
+      use: {
+        browserName: 'chromium',
+        headless: true,
+        viewport: { width: 414, height: 896 },
+        deviceScaleFactor: 2,
+        isMobile: true,
+        hasTouch: true,
+        ignoreHTTPSErrors: true,
+        video: 'retain-on-failure',
+        trace: 'retain-on-failure',
+      },
+    },
   ],
 
   /* Configure the local development server to run before the tests */
   webServer: process.env.CI
     ? undefined
     : {
-        command: 'pnpm dev',
-        port: 3000,
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
-        timeout: 120000, // Allow time for Next.js to build
+        timeout: 120000, // 2 minutes
       },
 
   /* Set the base URL for the tests */
   use: {
-    baseURL: process.env.TEST_BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+    actionTimeout: 10000,
+    navigationTimeout: 30000,
   },
 
-  // Ensure test data is seeded before all tests and cleaned up after all tests
-  globalSetup: require.resolve('./e2e/global-setup.ts'),
-  globalTeardown: require.resolve('./e2e/global-teardown.ts'),
+  outputDir: 'test-results/',
 };
 
 export default config;

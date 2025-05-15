@@ -7,14 +7,12 @@ interface FooterExploreLinksProps {
 
 export function FooterExploreLinks({ user }: FooterExploreLinksProps) {
   const exploreLinks = [
-    { href: '/groups', label: 'Groups' },
+    { href: user ? '/trips' : '/trips', label: 'Trips' },
+    { href: user ? '/groups' : '/groups', label: 'Groups' },
     { href: '/destinations', label: 'Destinations' },
     { href: '/itineraries', label: 'Itineraries' },
-    { href: '/trips', label: 'Trips' },
+
   ];
-  if (user) {
-    exploreLinks.push({ href: '/trips/manage', label: 'My Trips' });
-  }
   return (
     <div className="space-y-6">
       <h3 className="text-sm font-medium">Explore</h3>

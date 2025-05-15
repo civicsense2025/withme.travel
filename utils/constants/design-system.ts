@@ -77,7 +77,7 @@ export const SHADOWS = {
 
 export const TYPOGRAPHY = {
   fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif",
+    "'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Arial, sans-serif",
   h1: {
     fontSize: { base: '3rem', sm: '3.5rem', md: '4rem' },
     fontWeight: 700,
