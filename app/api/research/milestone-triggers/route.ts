@@ -1,79 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { FORM_TABLES, TABLES } from '@/utils/constants/tables';
+import { TABLES } from '@/utils/constants/tables';
 import { z } from 'zod';
-import { EventType } from '@/types/research';
+import { Database } from '@/types/database.types';
 
-// Zod schema for validating milestone trigger creation
-const MilestoneTriggerSchema = z.object({
-  event_type: z.custom<EventType>(),
+// EventType union (should match types/research.ts)
+const EventTypeEnum = z.union([
+  z.literal('trip_created'),
+  z.literal('trip_updated'),
+  z.literal('trip_deleted'),
+  z.literal('trip_creation_failed'),
+  z.literal('itinerary_item_added'),
+  z.literal('itinerary_item_updated'),
+  z.literal('itinerary_item_deleted'),
+  z.literal('itinerary_item_creation_failed'),
+  z.literal('itinerary_voted'),
+  z.literal('group_created'),
+  z.literal('group_member_added'),
+  z.literal('group_member_removed'),
+  z.literal('group_plan_created'),
+  z.literal('group_plan_creation_failed'),
+  z.literal('comment_posted'),
+  z.literal('comment_reacted'),
+  z.literal('comment_reaction_failed'),
+  z.literal('budget_item_added'),
+  z.literal('budget_item_updated'),
+  z.literal('budget_item_deleted'),
+  z.literal('budget_item_addition_failed'),
+  z.literal('feedback_submitted'),
+  z.literal('survey_started'),
+  z.literal('survey_completed'),
+  z.literal('survey_step_completed'),
+  z.literal('survey_question_answered'),
+  z.literal('survey_submission_failed'),
+  z.literal('onboarding_completed'),
+  z.literal('feature_discovered'),
+  z.literal('destination_saved'),
+  z.literal('template_used'),
+]);
+
+// Zod schemas for validation
+const CreateMilestoneTriggerPayloadSchema = z.object({
   form_id: z.string().uuid(),
-  active: z.boolean().default(true),
-  priority: z.number().int().min(0).max(100).default(10),
-  filter_key: z.string().optional(),
-  filter_value: z.string().optional(),
-  description: z.string().optional(),
+  event_type: EventTypeEnum,
+  // milestone: z.string().optional(), // Remove, not in DB
 });
 
-// Zod schema for validating milestone trigger updates
-const MilestoneTriggerUpdateSchema = z.object({
-  event_type: z.custom<EventType>().optional(),
-  form_id: z.string().uuid().optional(),
-  active: z.boolean().optional(),
-  priority: z.number().int().min(0).max(100).optional(),
-  filter_key: z.string().optional(),
-  filter_value: z.string().optional(),
-  description: z.string().optional(),
+const ListMilestoneTriggersQuerySchema = z.object({
+  formId: z.string().uuid().optional(),
 });
+
+// Types
+/**
+ * Row and Insert types for milestone_triggers table
+ */
+type MilestoneTriggerInsert = Database['public']['Tables']['milestone_triggers']['Insert'];
+type MilestoneTriggerRow = Database['public']['Tables']['milestone_triggers']['Row'];
 
 /**
  * GET /api/research/milestone-triggers
- * Retrieve all milestone triggers or a specific one by ID
+ * List milestone triggers, optionally filtered by form_id
  */
 export async function GET(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
-  const searchParams = request.nextUrl.searchParams;
-  const id = searchParams.get('id');
-  const eventType = searchParams.get('event_type');
-  const formId = searchParams.get('form_id');
-  const activeOnly = searchParams.get('active_only') === 'true';
-  
   try {
-    let query = supabase
-      .from(FORM_TABLES.MILESTONE_TRIGGERS)
-      .select('*, form:forms(id, title, description, is_active)');
-      
-    // Apply filters
-    if (id) {
-      query = query.eq('id', id);
+    const supabase = await createRouteHandlerClient();
+    const { searchParams } = new URL(request.url);
+    const queryValidation = ListMilestoneTriggersQuerySchema.safeParse({
+      formId: searchParams.get('formId'),
+    });
+    if (!queryValidation.success) {
+      return NextResponse.json({ error: 'Invalid query parameters', details: queryValidation.error.flatten() }, { status: 400 });
     }
-    if (eventType) {
-      query = query.eq('event_type', eventType);
-    }
-    if (formId) {
-      query = query.eq('form_id', formId);
-    }
-    if (activeOnly) {
-      query = query.eq('active', true);
-    }
-    
-    // Order by priority (highest first)
-    query = query.order('priority', { ascending: false });
-    
-    const { data, error } = await query;
-    
+    const { formId } = queryValidation.data;
+    let query = supabase.from(TABLES.MILESTONE_TRIGGERS).select('*');
+    if (formId) query = query.eq('form_id', formId);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) {
-      console.error('Error fetching milestone triggers:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
-    return NextResponse.json({ triggers: data });
+    return NextResponse.json(data as MilestoneTriggerRow[]);
   } catch (error) {
-    console.error('Unexpected error in milestone triggers GET endpoint:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch milestone triggers', details: String(error) }, { status: 500 });
   }
 }
 
@@ -82,177 +89,27 @@ export async function GET(request: NextRequest) {
  * Create a new milestone trigger
  */
 export async function POST(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
-  
   try {
+    const supabase = await createRouteHandlerClient();
     const body = await request.json();
-    
-    // Validate the request body
-    const result = MilestoneTriggerSchema.safeParse(body);
-    if (!result.success) {
-      return NextResponse.json(
-        { error: 'Invalid milestone trigger data', details: result.error.flatten() },
-        { status: 400 }
-      );
+    const validation = CreateMilestoneTriggerPayloadSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid request payload', details: validation.error.flatten() }, { status: 400 });
     }
-    
+    const { form_id, event_type } = validation.data;
     // Check if the form exists
-    const { data: formData, error: formError } = await supabase
-      .from(FORM_TABLES.FORMS)
-      .select('id')
-      .eq('id', result.data.form_id)
-      .single();
-      
-    if (formError || !formData) {
-      return NextResponse.json(
-        { error: 'Form not found' },
-        { status: 404 }
-      );
+    const { data: form, error: formError } = await supabase.from(TABLES.FORMS).select('id').eq('id', form_id).single();
+    if (formError || !form) {
+      return NextResponse.json({ error: 'Form not found', details: `Form with ID '${form_id}' does not exist.` }, { status: 404 });
     }
-    
-    // Create the milestone trigger
-    const { data, error } = await supabase
-      .from(FORM_TABLES.MILESTONE_TRIGGERS)
-      .insert([result.data])
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Error creating milestone trigger:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Insert the new trigger (only valid fields)
+    const triggerToInsert: MilestoneTriggerInsert = { form_id, event_type };
+    const { data: newTrigger, error: insertError } = await supabase.from(TABLES.MILESTONE_TRIGGERS).insert(triggerToInsert).select().single();
+    if (insertError) {
+      return NextResponse.json({ error: 'Failed to create milestone trigger', details: insertError.message }, { status: 500 });
     }
-    
-    return NextResponse.json({ trigger: data }, { status: 201 });
+    return NextResponse.json(newTrigger as MilestoneTriggerRow, { status: 201 });
   } catch (error) {
-    console.error('Unexpected error in milestone triggers POST endpoint:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PATCH /api/research/milestone-triggers/:id
- * Update an existing milestone trigger
- */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const supabase = await createRouteHandlerClient();
-  const id = params.id;
-  
-  if (!id) {
-    return NextResponse.json(
-      { error: 'Trigger ID is required' },
-      { status: 400 }
-    );
-  }
-  
-  try {
-    const body = await request.json();
-    
-    // Validate the request body
-    const result = MilestoneTriggerUpdateSchema.safeParse(body);
-    if (!result.success) {
-      return NextResponse.json(
-        { error: 'Invalid milestone trigger data', details: result.error.flatten() },
-        { status: 400 }
-      );
-    }
-    
-    // Check if form_id is being updated and if it exists
-    if (result.data.form_id) {
-      const { data: formData, error: formError } = await supabase
-        .from(FORM_TABLES.FORMS)
-        .select('id')
-        .eq('id', result.data.form_id)
-        .single();
-        
-      if (formError || !formData) {
-        return NextResponse.json(
-          { error: 'Form not found' },
-          { status: 404 }
-        );
-      }
-    }
-    
-    // Update the milestone trigger
-    const { data, error } = await supabase
-      .from(FORM_TABLES.MILESTONE_TRIGGERS)
-      .update(result.data)
-      .eq('id', id)
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Error updating milestone trigger:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    
-    if (!data) {
-      return NextResponse.json(
-        { error: 'Milestone trigger not found' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json({ trigger: data });
-  } catch (error) {
-    console.error('Unexpected error in milestone triggers PATCH endpoint:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * DELETE /api/research/milestone-triggers/:id
- * Delete a milestone trigger
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const supabase = await createRouteHandlerClient();
-  const id = params.id;
-  
-  if (!id) {
-    return NextResponse.json(
-      { error: 'Trigger ID is required' },
-      { status: 400 }
-    );
-  }
-  
-  try {
-    // Delete the milestone trigger
-    const { data, error } = await supabase
-      .from(FORM_TABLES.MILESTONE_TRIGGERS)
-      .delete()
-      .eq('id', id)
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Error deleting milestone trigger:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    
-    if (!data) {
-      return NextResponse.json(
-        { error: 'Milestone trigger not found' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json({ success: true, deleted: data });
-  } catch (error) {
-    console.error('Unexpected error in milestone triggers DELETE endpoint:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create milestone trigger', details: String(error) }, { status: 500 });
   }
 }

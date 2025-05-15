@@ -1,35 +1,39 @@
-import { Meta, Title } from '@storybook/blocks';
+import { Meta } from '@storybook/blocks';
 
-<Meta title="App Layout/Index" />
+<Meta title="Design System/App Layout" />
 
 # App Layout Components
 
-This section contains components related to the overall app structure and navigation within the withme.travel platform.
+This section contains components used for organizing and structuring the application layout.
 
-## Categories
+## Navigation Components
 
-- **Navigation**: Navbar, Sidebar, TabBar, etc.
-- **Page Containers**: Page layouts, containers, and wrappers
-- **User Interface**: UserMenuDropdown, profile sections, etc.
-- **App Shell**: Core app structure components
-- **Responsive Patterns**: Components that adapt across device sizes
+- **Navbar**: Main navigation bar at the top of the application
+- **Sidebar**: Secondary navigation menu for section-specific links
+- **Footer**: Page footer with links and information
+- **Breadcrumbs**: Path-based navigation showing the current location
+
+## Layout Components 
+
+- **Container**: Wrapper component for constraining content width
+- **Grid**: Responsive grid system for layout
+- **Section**: Visual section with optional background and padding
+- **Divider**: Horizontal or vertical dividing line
+
+## Page Structures
+
+- **DashboardLayout**: Standard layout for dashboard pages
+- **SettingsLayout**: Layout for settings and configuration pages
+- **AuthLayout**: Centered layout for authentication pages
+- **MarketingLayout**: Full-width layout for marketing pages
 
 ## Usage Guidelines
 
-App layout components should:
+1. Use consistent layouts across similar page types
+2. Utilize responsive layouts that work across device sizes
+3. Keep navigation elements consistent and predictable
+4. Consider white space and content density for readability
 
-1. **Provide consistent navigation**: Help users understand where they are and how to move around
-2. **Optimize for context**: Show appropriate controls and information based on user context
-3. **Scale appropriately**: Work well across device sizes with appropriate adaptations
-4. **Maintain performance**: Keep layout components lightweight and optimized
-5. **Support both authenticated and unauthenticated states**: Handle all user states gracefully
+## Examples
 
-## Best Practices
-
-When working with app layout components:
-
-1. Use appropriate semantic HTML elements for accessibility
-2. Implement responsive behaviors using our breakpoint system
-3. Consider navigation patterns that work well on both mobile and desktop
-4. Optimize for speed and minimal layout shifting
-5. Test across different viewport sizes and with different content lengths
+Check out each component's documentation page for detailed usage examples and API references.

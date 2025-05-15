@@ -15,7 +15,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useParams, useRouter } from 'next/navigation';
-import { AlertCircle, ArrowLeft, Edit, Eye, FileDown, Pencil, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Edit, Eye, FileDown, Pencil, Trash2, BarChart } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -52,13 +52,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ResearchModal } from '@/components/research/ResearchModal';
 import { PageHeader } from '@/components/page-header';
-import {
-  BarChart,
-} from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 // Utilities and services
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import type { Survey, SurveyQuestion } from '@/types/research';
+import type { Survey as SurveyType, SurveyQuestion, QuestionType } from '@/types/research';
 import { TABLES } from '@/utils/constants/database';
 
 // ============================================================================
@@ -73,7 +71,7 @@ interface SurveyDefinition {
   name: string;
   description: string | null;
   config: {
-    fields: any[];
+    fields: SurveyField[];
     // Other config properties
   };
   is_active: boolean;
@@ -82,13 +80,14 @@ interface SurveyDefinition {
   milestone_trigger?: string | null;
   milestones?: any | null;
   type: string;
+  response_count: number;
 }
 
 interface SurveyResponse {
   id: string;
   form_id: string;
   user_id?: string;
-  data: any;
+  data: Record<string, any>;
   status: string;
   created_at: string;
   updated_at: string;
@@ -96,30 +95,19 @@ interface SurveyResponse {
 }
 
 interface SurveyPreviewModalProps {
-  survey: Survey;
+  survey: SurveyType;
   onClose: () => void;
 }
 
+// Define SurveyField locally since it's not exported from types/research.ts
 interface SurveyField {
   id: string;
   label: string;
   type: string;
   required: boolean;
   options?: string[];
-}
-
-interface Survey {
-  id: string;
-  name: string;
-  description: string | null;
-  type: string;
-  config: {
-    fields: SurveyField[];
-  };
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  response_count: number;
+  order?: number;
+  config?: Record<string, any>;
 }
 
 // ============================================================================
@@ -227,9 +215,8 @@ export default function SurveyDetailPage() {
   const supabase = getBrowserClient();
 
   // State management
-  const [survey, setSurvey] = useState<Survey | null>(null);
+  const [survey, setSurvey] = useState<SurveyDefinition | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -239,41 +226,64 @@ export default function SurveyDetailPage() {
   // DATA FETCHING & HANDLERS
   // ============================================================================
 
-  /**
-   * Fetches survey data and responses from Supabase
-   */
-  const fetchSurveyData = useCallback(async () => {
-    if (!params?.surveyId) return;
-
-    try {
-      setLoading(true);
-
-      // Fetch survey data from API
-      const surveyResponse = await fetch(`/api/admin/surveys/${params.surveyId}`);
+  // Use React Query for data fetching - surveys
+  const { 
+    data: surveyData, 
+    error: surveyError, 
+    isLoading: surveyLoading 
+  } = useQuery({
+    queryKey: ['survey', params?.surveyId],
+    queryFn: async () => {
+      if (!params?.surveyId) throw new Error('Survey ID is required');
       
-      if (!surveyResponse.ok) {
-        throw new Error('Failed to fetch survey details');
+      try {
+        const response = await fetch(`/api/admin/surveys/${params.surveyId}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch survey details');
+        }
+        
+        const data = await response.json();
+        return data.survey;
+      } catch (error) {
+        console.error('Error fetching survey:', error);
+        throw error;
       }
-      
-      const { survey: surveyData } = await surveyResponse.json();
-      setSurvey(surveyData);
+    },
+    retry: 2,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
-      // Fetch responses
-      const responsesResponse = await fetch(`/api/admin/surveys/${params.surveyId}/responses`);
+  // Use React Query for data fetching - responses
+  const { 
+    data: responsesData, 
+    error: responsesError, 
+    isLoading: responsesLoading 
+  } = useQuery({
+    queryKey: ['responses', params?.surveyId],
+    queryFn: async () => {
+      if (!params?.surveyId) throw new Error('Survey ID is required');
       
-      if (!responsesResponse.ok) {
-        throw new Error('Failed to fetch survey responses');
+      try {
+        const response = await fetch(`/api/admin/surveys/${params.surveyId}/responses`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch survey responses');
+        }
+        
+        const data = await response.json();
+        return data.responses;
+      } catch (error) {
+        console.error('Error fetching responses:', error);
+        throw error;
       }
-      
-      const { responses: responseData } = await responsesResponse.json();
-      setResponses(responseData);
-    } catch (error: any) {
-      console.error('Error loading survey:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [params?.surveyId]);
+    },
+    retry: 2,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    enabled: !!surveyData, // Only fetch responses after survey data is loaded
+  });
 
   /**
    * Exports survey responses to a CSV file
@@ -281,92 +291,109 @@ export default function SurveyDetailPage() {
   const exportResponsesToCSV = useCallback(() => {
     if (!survey || !responses.length) return;
 
-    // Generate CSV headers
-    const questions = survey.config?.fields || [];
-    let headers = ['Response ID', 'User ID', 'Date Submitted'];
-    questions.forEach((q) => {
-      headers.push(q.label || 'Unnamed Question');
-    });
-
-    // Generate row data
-    const rows = responses.map((response) => {
-      const row: any = {
-        'Response ID': response.id,
-        'User ID': response.user_id || 'N/A',
-        'Date Submitted': new Date(response.created_at).toLocaleString(),
-      };
-
-      // Add answers from the data field
-      const responseData = response.data || {};
-      questions.forEach((question, index) => {
-        const questionId = question.id || index.toString();
-        row[question.label || 'Unnamed Question'] = responseData[questionId] || 'Not answered';
+    try {
+      // Generate CSV headers
+      const questions = survey.config?.fields || [];
+      let headers = ['Response ID', 'User ID', 'Date Submitted'];
+      questions.forEach((q) => {
+        headers.push(q.label || 'Unnamed Question');
       });
 
-      return row;
-    });
+      // Generate row data
+      const rows = responses.map((response) => {
+        const row: any = {
+          'Response ID': response.id,
+          'User ID': response.user_id || 'N/A',
+          'Date Submitted': new Date(response.created_at).toLocaleString(),
+        };
 
-    // Convert to CSV
-    const replacer = (key: string, value: any) => (value === null ? '' : value);
-    const csv = [
-      headers.join(','),
-      ...rows.map((row) =>
-        headers.map((fieldName) => JSON.stringify(row[fieldName], replacer)).join(',')
-      ),
-    ].join('\r\n');
+        // Add answers from the data field
+        const responseData = response.data || {};
+        questions.forEach((question, index) => {
+          const questionId = question.id || index.toString();
+          row[question.label || 'Unnamed Question'] = responseData[questionId] || 'Not answered';
+        });
 
-    // Download
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', `survey_responses_${survey.name}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }, [survey, responses]);
+        return row;
+      });
+
+      // Convert to CSV
+      const replacer = (key: string, value: any) => (value === null ? '' : value);
+      const csv = [
+        headers.join(','),
+        ...rows.map((row) =>
+          headers.map((fieldName) => JSON.stringify(row[fieldName], replacer)).join(',')
+        ),
+      ].join('\r\n');
+
+      // Download
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `survey_responses_${survey.name}.csv`);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url); // Clean up
+      
+      toast({ 
+        title: "Export successful", 
+        description: `${rows.length} responses exported to CSV.`
+      });
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      toast({ 
+        title: "Export failed", 
+        description: "Failed to export responses to CSV. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [survey, responses, toast]);
 
   /**
    * Converts backend survey format to frontend Survey type
    */
-  const getPreviewSurvey = useCallback((): Survey => {
+  const getPreviewSurvey = useCallback((): SurveyType => {
     if (!survey) {
       throw new Error('Cannot create preview: Survey is null');
     }
 
+    // Map backend survey format to frontend Survey type
     return {
       id: survey.id,
       title: survey.name,
       description: survey.description || undefined,
-      // Add required properties to fix type errors
       type: 'survey',
       isActive: Boolean(survey.is_active),
       createdAt: survey.created_at,
-      // Convert the questions format to match SurveyQuestionType
       questions: (survey.config?.fields || []).map(
-        (q: any, index: number): SurveyQuestion => ({
-          id: q.id || String(index),
+        (q: SurveyField): SurveyQuestion => ({
+          id: q.id || String(Math.random()),
           surveyId: survey.id,
           text: q.label || 'Unnamed Question',
-          type: q.type || 'text',
+          type: (q.type as QuestionType) || 'text',
           options: q.options || [],
           required: q.required || false,
-          order: q.order || index,
+          order: q.order || 0,
           config: q.config || {},
         })
       ),
     };
   }, [survey]);
 
+  /**
+   * Handles deleting the survey with proper error handling
+   */
   const handleDelete = async () => {
     if (!survey) return;
     
     setIsDeleting(true);
     
     try {
-      const response = await fetch(`/api/admin/surveys/${survey.id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/admin/surveys/${survey.id}`, { 
+        method: 'DELETE' 
       });
       
       if (!response.ok) {
@@ -374,18 +401,18 @@ export default function SurveyDetailPage() {
         throw new Error(errorData.error || 'Failed to delete survey');
       }
       
-      toast({
-        title: 'Survey deleted',
-        description: 'The survey has been deleted successfully.',
+      toast({ 
+        title: 'Survey deleted', 
+        description: 'The survey has been deleted successfully.' 
       });
       
       router.push('/admin/surveys');
     } catch (err) {
       console.error('Error deleting survey:', err);
-      toast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'An unknown error occurred',
-        variant: 'destructive',
+      toast({ 
+        title: 'Error', 
+        description: err instanceof Error ? err.message : 'An unknown error occurred', 
+        variant: 'destructive' 
       });
     } finally {
       setIsDeleting(false);
@@ -405,37 +432,79 @@ export default function SurveyDetailPage() {
     return typeMap[type] || type;
   };
 
-  // Effect to fetch data on component mount or surveyId change
+  // Update state from React Query data
   useEffect(() => {
-    if (params?.surveyId) {
-      fetchSurveyData();
+    if (surveyData) {
+      setSurvey(surveyData as SurveyDefinition);
     }
-  }, [params?.surveyId, fetchSurveyData]);
+    if (responsesData) {
+      setResponses(responsesData as SurveyResponse[]);
+    }
+  }, [surveyData, responsesData]);
 
   // ============================================================================
   // RENDER LOGIC
   // ============================================================================
 
   // Loading state
-  if (loading) {
-    return <div className="p-8">Loading survey details...</div>;
+  if (surveyLoading || responsesLoading) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <div className="text-center space-y-4">
+          <Progress className="w-40 mx-auto" value={surveyLoading ? 50 : 75} />
+          <p className="text-muted-foreground">Loading survey details...</p>
+        </div>
+      </div>
+    );
   }
 
   // Error state
-  if (error) {
+  if (surveyError || responsesError) {
     return (
       <div className="p-8">
         <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {surveyError instanceof Error 
+              ? surveyError.message 
+              : responsesError instanceof Error 
+                ? responsesError.message 
+                : 'An unknown error occurred'}
+          </AlertDescription>
         </Alert>
+        <Button 
+          variant="outline" 
+          onClick={() => router.push('/admin/surveys')}
+          className="mt-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Surveys
+        </Button>
       </div>
     );
   }
 
   // Not found state
   if (!survey) {
-    return <div className="p-8">Survey not found.</div>;
+    return (
+      <div className="p-8">
+        <Alert>
+          <AlertTitle>Survey not found</AlertTitle>
+          <AlertDescription>
+            The requested survey could not be found or you don't have permission to view it.
+          </AlertDescription>
+        </Alert>
+        <Button 
+          variant="outline" 
+          onClick={() => router.push('/admin/surveys')}
+          className="mt-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Surveys
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -466,7 +535,7 @@ export default function SurveyDetailPage() {
         </Badge>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button 
           onClick={() => router.push(`/admin/surveys/${survey.id}/edit`)}
           className="gap-2"
@@ -476,17 +545,19 @@ export default function SurveyDetailPage() {
         </Button>
         
         <Button 
-          onClick={() => router.push(`/admin/surveys/${survey.id}/responses`)}
+          onClick={() => setPreviewOpen(true)}
           variant="secondary"
           className="gap-2"
         >
           <Eye className="h-4 w-4" />
-          View Responses
+          Preview
         </Button>
         
         <Button 
           variant="outline"
           className="gap-2"
+          onClick={exportResponsesToCSV}
+          disabled={!responses.length}
         >
           <FileDown className="h-4 w-4" />
           Export Data
@@ -531,6 +602,9 @@ export default function SurveyDetailPage() {
       <Tabs defaultValue="questions">
         <TabsList>
           <TabsTrigger value="questions">Questions</TabsTrigger>
+          <TabsTrigger value="responses" disabled={survey.response_count === 0}>
+            Responses ({survey.response_count})
+          </TabsTrigger>
           <TabsTrigger value="analytics" disabled={survey.response_count === 0}>
             Analytics
           </TabsTrigger>
@@ -546,11 +620,21 @@ export default function SurveyDetailPage() {
             </CardHeader>
             <CardContent>
               {survey.config.fields.length === 0 ? (
-                <p className="text-muted-foreground">No questions in this survey.</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <p className="text-muted-foreground mb-4">No questions have been added to this survey yet.</p>
+                  <Button 
+                    onClick={() => router.push(`/admin/surveys/${survey.id}/edit`)}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Add Questions
+                  </Button>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {survey.config.fields.map((field, index) => (
-                    <Card key={field.id} className="overflow-hidden">
+                    <Card key={field.id || index} className="overflow-hidden">
                       <CardHeader className="py-3 bg-muted/30">
                         <div className="flex items-start justify-between">
                           <div>
@@ -584,6 +668,66 @@ export default function SurveyDetailPage() {
           </Card>
         </TabsContent>
         
+        <TabsContent value="responses" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Survey Responses</CardTitle>
+              <CardDescription>
+                {responses.length} {responses.length === 1 ? 'response' : 'responses'} received
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {responses.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No responses have been collected yet.</p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {responses.slice(0, 10).map((response) => (
+                        <TableRow key={response.id}>
+                          <TableCell>{format(new Date(response.created_at), 'MMM d, yyyy HH:mm')}</TableCell>
+                          <TableCell>{response.user_id || 'Anonymous'}</TableCell>
+                          <TableCell>
+                            <Badge variant={response.status === 'completed' ? 'default' : 'secondary'}>
+                              {response.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {responses.length > 10 && (
+                    <div className="p-4 text-center border-t">
+                      <Button 
+                        variant="link" 
+                        onClick={() => router.push(`/admin/surveys/${survey.id}/responses`)}
+                      >
+                        View all {responses.length} responses
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         <TabsContent value="analytics" className="mt-4">
           <Card>
             <CardHeader>
@@ -603,6 +747,14 @@ export default function SurveyDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Survey Preview Modal */}
+      {previewOpen && (
+        <SurveyPreviewModal
+          survey={getPreviewSurvey()}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
     </div>
   );
 }

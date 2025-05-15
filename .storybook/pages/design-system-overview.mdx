@@ -1,0 +1,85 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Design System/Overview" />
+
+# withme.travel Design System
+
+Our design system is structured using a combination of Atomic Design principles and purpose-specific categories to make it easy to find and use components.
+
+## Organization Structure
+
+### Atoms
+These are the smallest, most fundamental building blocks of our UI. They cannot be broken down further without losing their functionality.
+
+- **Inputs & Controls**: Buttons, inputs, checkboxes, switches, vote buttons, etc.
+- **Typography**: Text elements, headings, paragraphs
+- **Feedback**: Alerts, toasts, notifications
+- **Data Display**: Badges, labels, tags, icons
+- **Layout**: Container, dividers, spacers
+- **Media**: Images, avatars, icons
+- **Navigation**: Links, breadcrumbs
+
+### Molecules
+Molecules are groups of atoms combined together to form relatively simple UI components with their own properties and functionality.
+
+- **Cards**: Simple content containers
+- **Forms**: Input groups, form layouts
+- **Dialogs & Modals**: Popovers, confirmations
+- **Navigation**: Tabs, pagination
+- **Feedback**: Complex notifications, progress indicators
+- **Lists**: Lists of items, search results
+
+### Organisms
+Organisms are complex UI components composed of molecules and/or atoms that form a distinct section of the interface.
+
+- **Sections**: Page sections, hero sections, feature sections
+- **Layouts**: Page layouts, grid systems
+- **Features**: Domain-specific components (Trip features, Group features)
+- **Collaborative**: Components that enable collaboration
+- **Authentication**: Login and signup components
+- **Groups**: Group-related components
+- **Trips**: Trip planning components
+- **Itinerary**: Itinerary management components
+
+### Screens
+
+Complete pages or large sections of pages that show how components come together to create a full user experience.
+
+- **Home**: Homepage layouts and variations
+- **Trips**: Trip management pages
+- **Groups**: Group collaboration screens
+- **Itinerary**: Itinerary planning screens
+- **Destinations**: Destination browsing and details
+- **Authentication**: Login, signup, and password reset pages
+- **User**: User profiles and settings
+- **Admin**: Admin management interfaces
+
+### Templates
+
+Reusable layout patterns that can be applied across different screens.
+
+- **Marketing**: Landing page templates, promo sections
+- **App Layout**: Common application layouts
+- **Landing Pages**: Specific landing page templates
+- **Dashboards**: Dashboard layouts and templates
+
+## Usage Guidelines
+
+1. **Start with Atoms**: When building new UI, start by exploring available atoms
+2. **Compose Upward**: Combine atoms into molecules, then molecules into organisms
+3. **Focus on Reusability**: Create components that can be reused across the application
+4. **Keep It Consistent**: Follow design tokens and patterns for consistency
+5. **Document Everything**: Add appropriate documentation to all components
+
+## Design Tokens
+
+Our design system is built on a foundation of design tokens for:
+
+- Color
+- Typography
+- Spacing
+- Shadows
+- Border Radius
+- Z-index
+
+Refer to the Design Tokens section for details on usage. 

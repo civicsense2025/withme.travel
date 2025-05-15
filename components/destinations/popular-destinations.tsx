@@ -98,7 +98,7 @@ export function PopularDestinationsGrid({
           >
             <PopoverTrigger asChild>
               <Card
-                className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square"
+                className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square transform hover:scale-105"
                 tabIndex={0}
                 onMouseEnter={() => setOpenPopoverId(dest.id)}
                 onMouseLeave={() => setOpenPopoverId(null)}
@@ -111,7 +111,7 @@ export function PopularDestinationsGrid({
                 <div className="font-medium text-sm">{dest.name}</div>
               </Card>
             </PopoverTrigger>
-            <PopoverContent className="p-4" align="center" side="top">
+            <PopoverContent className="p-4" align="center" side="top" sideOffset={8}>
               <div className="flex flex-col items-center">
                 <span className="text-4xl mb-2">{dest.emoji}</span>
                 <div className="font-medium text-sm">{dest.name}</div>
@@ -138,7 +138,7 @@ export function PopularDestinationsGrid({
           <Dialog key={dest.id}>
             <DialogTrigger asChild>
               <Card
-                className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square"
+                className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square transform hover:scale-105"
               >
                 <span className="text-4xl mb-2">{dest.emoji}</span>
                 <div className="font-medium text-sm">{dest.name}</div>
@@ -175,7 +175,7 @@ export function PopularDestinationsGrid({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Card
-                  className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square"
+                  className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square transform hover:scale-105"
                   onClick={() => handleDestinationClick(dest)}
                 >
                   <span className="text-4xl mb-2">{dest.emoji}</span>
@@ -296,7 +296,7 @@ export function PopularDestinations({
               passHref
             >
               <Card
-                className="cursor-pointer hover:shadow-lg transition h-full"
+                className="cursor-pointer hover:shadow-lg transition h-full transform hover:scale-105"
                 onClick={() => onSelect?.(dest)}
               >
                 <div className="flex flex-col items-center p-4 h-full">

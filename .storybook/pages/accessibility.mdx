@@ -113,12 +113,12 @@ All components must pass:
 - Provide visual feedback for hover, focus, and active states
 
 ```jsx
-// Good
+// Good example
 <Button aria-label={label ? undefined : "Close dialog"}>
   {label || <CloseIcon />}
 </Button>
 
-// Avoid
+// Avoid this pattern
 <div onClick={handleClick} className="button">
   {label}
 </div>
@@ -132,7 +132,7 @@ All components must pass:
 - Group related inputs with fieldsets and legends
 
 ```jsx
-// Good
+// Good example
 <div>
   <Label htmlFor="email">Email</Label>
   <Input
@@ -144,7 +144,7 @@ All components must pass:
   <HintText id="email-hint">We'll never share your email</HintText>
 </div>
 
-// Avoid
+// Avoid this pattern
 <div>
   <input type="email" placeholder="Enter email" />
   <span className="error">{error}</span>
@@ -199,39 +199,16 @@ All components must pass:
 
 ## Testing and Validation
 
-### Automated Testing
+We use a combination of automated and manual testing to ensure accessibility:
 
-We use several tools for automated accessibility testing:
-
-- **Storybook a11y addon** - Runs axe-core tests on rendered components
-- **ESLint jsx-a11y** - Catches common accessibility issues during development
-- **Jest with testing-library** - Tests keyboard interactions and focus management
-
-### Manual Testing
-
-For comprehensive accessibility testing, we also perform manual checks:
-
-1. **Keyboard navigation testing**
-
-   - Tab through the interface and ensure all interactive elements are reachable
-   - Check that focus order is logical and follows visual layout
-   - Verify that keyboard shortcuts work correctly
-
-2. **Screen reader testing**
-
-   - Test with at least one screen reader (e.g., NVDA, VoiceOver)
-   - Verify that all information is properly announced
-   - Check that state changes are communicated appropriately
-
-3. **Reduced motion testing**
-   - Test with `prefers-reduced-motion` media query
-   - Ensure animations are disabled or significantly reduced
-   - Verify that essential functionality is still available
+- Automated testing with axe-core
+- Keyboard navigation testing
+- Screen reader testing with VoiceOver (macOS) and NVDA (Windows)
+- High contrast mode testing
 
 ## Resources
 
-- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
-- [WAI-ARIA Authoring Practices](https://www.w3.org/TR/wai-aria-practices/)
+- [WCAG 2.1 Guidelines](https://www.w3.org/TR/WCAG21/)
+- [WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)
 - [Inclusive Components](https://inclusive-components.design/)
 - [A11y Project Checklist](https://www.a11yproject.com/checklist/)
-- [Axe DevTools](https://www.deque.com/axe/)

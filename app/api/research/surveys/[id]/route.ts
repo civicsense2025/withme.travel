@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { FORM_TABLES } from '@/utils/constants/tables';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
@@ -20,169 +20,164 @@ const FormConfigSchema = z.object({
   // ...add more config validation as needed
 });
 
-// GET: Retrieve a specific survey
+/**
+ * GET /api/research/surveys/:id
+ * Returns a survey by ID
+ */
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
-  
   try {
-    // Check admin authorization
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const id = params.id;
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Survey ID is required' },
+        { status: 400 }
+      );
     }
-    
-    // Verify user is admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
-      
-    if (adminError || !adminData?.is_admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the survey
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
+
+    const supabase = await createRouteHandlerClient();
+
+    // Get the form with the given ID
+    const { data, error } = await supabase
+      .from(FORM_TABLES.FORMS)
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
-      
-    if (surveyError) {
-      return NextResponse.json({ error: 'Survey not found' }, { status: 404 });
+
+    if (error) {
+      console.error('Error fetching survey:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch survey' },
+        { status: 500 }
+      );
     }
-    
-    // Get counts of related items
-    const { data: linkCount, error: linkError } = await supabase
-      .from('survey_links')
-      .select('id', { count: 'exact', head: true })
-      .eq('survey_id', params.id);
-      
-    const { data: milestoneCount, error: milestoneError } = await supabase
-      .from('survey_milestone_triggers')
-      .select('id', { count: 'exact', head: true })
-      .eq('survey_id', params.id);
-      
-    // Combine the data
-    const surveyWithCounts = {
-      ...survey,
-      link_count: linkCount?.count || 0,
-      milestone_count: milestoneCount?.count || 0
+
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Survey not found' },
+        { status: 404 }
+      );
+    }
+
+    // Convert data to expected Survey format
+    const survey = {
+      id: data.id,
+      name: data.name || 'Untitled Survey',
+      description: data.description,
+      type: data.type || 'general',
+      is_active: data.is_active !== false,
+      config: data.config || { fields: [] },
+      created_at: data.created_at,
+      updated_at: data.updated_at,
     };
-    
-    return NextResponse.json({ survey: surveyWithCounts });
+
+    return NextResponse.json(survey);
   } catch (error) {
-    console.error('Error in survey GET:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Unhandled error in survey API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-// PATCH: Update a survey
-export async function PATCH(
-  request: NextRequest,
+/**
+ * PUT /api/research/surveys/:id
+ * Updates a survey by ID
+ */
+export async function PUT(
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
-  
   try {
-    // Check admin authorization
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const id = params.id;
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Survey ID is required' },
+        { status: 400 }
+      );
     }
-    
-    // Verify user is admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
-      
-    if (adminError || !adminData?.is_admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
+
+    const supabase = await createRouteHandlerClient();
     const body = await request.json();
-    
-    // Fields that can be updated
-    const updateData: any = {};
-    
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.title !== undefined) updateData.title = body.title;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.questions !== undefined) updateData.questions = body.questions;
-    if (body.status !== undefined && ['draft', 'active', 'archived'].includes(body.status)) {
-      updateData.status = body.status;
-    }
-    
-    // Ensure there's something to update
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
-    }
-    
+
+    // Validate the request body
+    // You can add Zod schema validation here if needed
+
     // Update the survey
-    const { data: updatedSurvey, error: updateError } = await supabase
-      .from('surveys')
-      .update(updateData)
-      .eq('id', params.id)
+    const { data, error } = await supabase
+      .from(FORM_TABLES.FORMS)
+      .update({
+        name: body.name,
+        description: body.description,
+        type: body.type,
+        is_active: body.is_active,
+        config: body.config,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
       .select()
       .single();
-      
-    if (updateError) {
-      console.error('Error updating survey:', updateError);
-      return NextResponse.json({ error: 'Failed to update survey' }, { status: 500 });
+
+    if (error) {
+      console.error('Error updating survey:', error);
+      return NextResponse.json(
+        { error: 'Failed to update survey' },
+        { status: 500 }
+      );
     }
-    
-    return NextResponse.json({ survey: updatedSurvey });
+
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in survey PATCH:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Unhandled error in survey API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE: Delete a survey
+/**
+ * DELETE /api/research/surveys/:id
+ * Deletes a survey by ID
+ */
 export async function DELETE(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
-  
   try {
-    // Check admin authorization
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const id = params.id;
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Survey ID is required' },
+        { status: 400 }
+      );
     }
-    
-    // Verify user is admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
-      
-    if (adminError || !adminData?.is_admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
+
+    const supabase = await createRouteHandlerClient();
+
     // Delete the survey
-    const { error: deleteError } = await supabase
-      .from('surveys')
+    const { error } = await supabase
+      .from(FORM_TABLES.FORMS)
       .delete()
-      .eq('id', params.id);
-      
-    if (deleteError) {
-      console.error('Error deleting survey:', deleteError);
-      return NextResponse.json({ error: 'Failed to delete survey' }, { status: 500 });
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting survey:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete survey' },
+        { status: 500 }
+      );
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in survey DELETE:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Unhandled error in survey API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

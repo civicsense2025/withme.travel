@@ -8,230 +8,192 @@
 
 import React from 'react';
 import { Meta, StoryObj } from '@storybook/react';
-import { DollarSign, BarChart2, Lightbulb, Zap, User, Clock, Plus, Check } from 'lucide-react';
-import FeatureTabsProduct, { FeatureTab, FeatureTabsProductProps } from './FeatureTabsProduct';
+import FeatureTabsProduct, { FeatureTab } from './FeatureTabsProduct';
+import { ThemeToggle } from './theme-toggle';
 import { motion } from 'framer-motion';
 
 const meta: Meta<typeof FeatureTabsProduct> = {
   title: 'Marketing/FeatureTabsProduct',
   component: FeatureTabsProduct,
   argTypes: {
-    activeTabId: { control: 'select', options: ['expenses', 'polls', 'ideas', 'quicktrip'] },
+    activeTabId: { control: 'select', options: ['ideas', 'debates', 'budget', 'plans'] },
+    variant: { control: 'radio', options: ['default', 'simplified'] },
   },
 };
 export default meta;
 
-type Story = StoryObj<typeof FeatureTabsProduct>;
+// Typing animation for budget tip
+const TypingTip = () => {
+  const [displayed, setDisplayed] = React.useState('');
+  const tip = 'Book Machu Picchu trek as a group for a discount';
+  React.useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayed(tip.slice(0, i + 1));
+      i++;
+      if (i === tip.length) clearInterval(interval);
+    }, 30);
+    return () => clearInterval(interval);
+  }, []);
+  return <span className="text-xs text-muted-foreground font-mono">{displayed}</span>;
+};
 
 const sampleTabs: FeatureTab[] = [
   {
-    id: 'expenses',
-    label: 'Expenses',
-    icon: <DollarSign className="h-5 w-5" />,
-    emoji: '💰',
-    actionButton: (
-      <motion.button
-        className="text-xs bg-travel-purple text-white font-medium px-3 py-1.5 rounded-full"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        Add Expense
-      </motion.button>
-    ),
-    content: (
-      <div>
-        <p className="text-sm text-gray-500 mb-4">Track and split costs with your group</p>
-        <div className="space-y-2 mt-4">
-          <motion.div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-            <div className="flex justify-between mb-1">
-              <div className="font-medium text-gray-800">Hotel</div>
-              <div className="font-bold text-gray-800">$1200.00</div>
-            </div>
-            <div className="flex items-center">
-              <div className="h-5 w-5 bg-travel-blue rounded-full flex items-center justify-center text-xs text-white mr-1.5">A</div>
-              <div className="text-xs text-gray-500">Paid by Alex</div>
-            </div>
-          </motion.div>
-          <motion.div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-            <div className="flex justify-between mb-1">
-              <div className="font-medium text-gray-800">Tapas Dinner</div>
-              <div className="font-bold text-gray-800">$180.00</div>
-            </div>
-            <div className="flex items-center">
-              <div className="h-5 w-5 bg-travel-pink rounded-full flex items-center justify-center text-xs text-white mr-1.5">J</div>
-              <div className="text-xs text-gray-500">Paid by Jamie</div>
-            </div>
-          </motion.div>
-          <motion.div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-            <div className="flex justify-between mb-1">
-              <div className="font-medium text-gray-800">Beach Umbrellas</div>
-              <div className="font-bold text-gray-800">$40.00</div>
-            </div>
-            <div className="flex items-center">
-              <div className="h-5 w-5 bg-travel-mint rounded-full flex items-center justify-center text-xs text-white mr-1.5">T</div>
-              <div className="text-xs text-gray-500">Paid by Taylor</div>
-            </div>
-          </motion.div>
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex justify-between items-center">
-              <div className="font-medium text-gray-700">Total</div>
-              <div className="font-bold text-travel-purple text-lg">$1420.00</div>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-end space-x-2">
-            <motion.button className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">Settle Up</motion.button>
-            <motion.button className="px-3 py-1.5 bg-travel-blue text-white text-xs font-medium rounded-full">Split Evenly</motion.button>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 'polls',
-    label: 'Polls',
-    icon: <BarChart2 className="h-5 w-5" />,
-    emoji: '📊',
-    actionButton: (
-      <motion.button className="text-xs bg-travel-blue text-white font-medium px-3 py-1.5 rounded-full">Create Poll</motion.button>
-    ),
-    content: (
-      <div>
-        <p className="text-sm text-gray-500 mb-4">Make decisions without group chat chaos</p>
-        <div className="space-y-4 mt-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <h3 className="font-medium text-gray-800 mb-3">Which hotel should we book?</h3>
-            <div className="space-y-2">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700">Hotel Mirabelle</span>
-                  <span className="font-medium text-travel-blue">4 votes</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                  <div className="bg-travel-blue h-2 rounded-full" style={{ width: '80%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700">Oceanview Resort</span>
-                  <span className="font-medium text-gray-500">1 vote</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                  <div className="bg-gray-300 h-2 rounded-full" style={{ width: '20%' }}></div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-              <div className="flex items-center">
-                <User className="h-3 w-3 mr-1" />
-                <span>5/6 voted</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-3 w-3 mr-1" />
-                <span>Closes in 2 days</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  {
     id: 'ideas',
-    label: 'Ideas',
-    icon: <Lightbulb className="h-5 w-5" />,
     emoji: '💡',
-    actionButton: (
-      <motion.button className="text-xs bg-travel-mint text-white font-medium px-3 py-1.5 rounded-full">Add Idea</motion.button>
-    ),
+    label: 'Stop Losing Ideas',
+    subtext: 'No more scattered group chat suggestions',
     content: (
-      <div>
-        <p className="text-sm text-gray-500 mb-4">Collect and rate group ideas together</p>
-        <div className="grid grid-cols-2 gap-3">
-          <motion.div className="bg-white border-l-3 border-travel-blue border rounded-lg p-3 shadow-sm">
-            <div className="flex items-start">
-              <span className="text-xl mr-2">🏖️</span>
-              <div>
-                <h3 className="font-medium text-gray-800 text-sm">Tulum Beach Day</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Visit white sand beaches</p>
-              </div>
-            </div>
-            <div className="mt-2 flex justify-between items-center">
-              <div className="flex space-x-1">
-                <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">Beach</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-yellow-400 text-xs mr-0.5">★★★★</span>
-                <span className="text-xs text-gray-500">4</span>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div className="bg-white border-l-3 border-travel-purple border rounded-lg p-3 shadow-sm">
-            <div className="flex items-start">
-              <span className="text-xl mr-2">👨‍🍳</span>
-              <div>
-                <h3 className="font-medium text-gray-800 text-sm">Cooking Class</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Learn local dishes</p>
-              </div>
-            </div>
-            <div className="mt-2 flex justify-between items-center">
-              <div className="flex space-x-1">
-                <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">Food</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-yellow-400 text-xs mr-0.5">★★★★★</span>
-                <span className="text-xs text-gray-500">5</span>
-              </div>
-            </div>
-          </motion.div>
+      <div className="space-y-4">
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">🦙</span>
+          <span className="font-medium text-foreground">Machu Picchu sunrise trek</span>
+          <span className="text-xs text-muted-foreground ml-2">Let's do the 4-day Inca Trail, not just the train!</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">🧂</span>
+          <span className="font-medium text-foreground">Uyuni Salt Flats photo tour</span>
+          <span className="text-xs text-muted-foreground ml-2">Can we do the mirror effect at sunset?</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">🍷</span>
+          <span className="font-medium text-foreground">Mendoza wine bike tour</span>
+          <span className="text-xs text-muted-foreground ml-2">Local guide, picnic lunch at Bodega La Azul</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">💃</span>
+          <span className="font-medium text-foreground">Buenos Aires tango night</span>
+          <span className="text-xs text-muted-foreground ml-2">Milonga with a free lesson on Sunday</span>
         </div>
       </div>
     ),
   },
   {
-    id: 'quicktrip',
-    label: 'Quick Trip',
-    icon: <Zap className="h-5 w-5" />,
-    emoji: '✈️',
-    actionButton: (
-      <motion.button className="text-xs bg-travel-pink text-white font-medium px-3 py-1.5 rounded-full">Create Trip</motion.button>
-    ),
+    id: 'debates',
+    emoji: '📊',
+    label: 'End The Debates',
+    subtext: 'Decide together, no endless threads',
     content: (
-      <div>
-        <p className="text-sm text-gray-500 mb-4">Instantly create a trip from your ideas</p>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <h3 className="font-medium text-gray-800 mb-3 text-sm">Select trip style:</h3>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <motion.div className="bg-white border-2 border-travel-pink rounded-lg p-2 flex flex-col items-center shadow-sm">
-              <span className="text-2xl mb-1">🏖️</span>
-              <span className="text-xs font-medium">Beach</span>
-            </motion.div>
-            <motion.div className="bg-white border border-gray-200 rounded-lg p-2 flex flex-col items-center">
-              <span className="text-2xl mb-1">🏙️</span>
-              <span className="text-xs font-medium">City</span>
-            </motion.div>
+      <div className="space-y-4">
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🦙</span>
+            <span className="font-medium text-foreground">Machu Picchu trek</span>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3 mb-4">
-            <h4 className="font-medium text-xs text-gray-700 mb-2">Your trip will include:</h4>
-            <ul className="space-y-1.5">
-              <li className="flex items-center text-xs text-gray-600">
-                <Check className="h-3 w-3 text-travel-pink mr-1.5" />
-                <span>3 pre-selected accommodations</span>
-              </li>
-              <li className="flex items-center text-xs text-gray-600">
-                <Check className="h-3 w-3 text-travel-pink mr-1.5" />
-                <span>Daily activities based on preferences</span>
-              </li>
-            </ul>
+          <span className="text-xs text-muted-foreground">$650</span>
+          <div className="flex gap-1">
+            <motion.span animate={{ scale: 1.1 }} className="text-green-500">👍 5</motion.span>
+            <span className="text-gray-400">👎 0</span>
           </div>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🧂</span>
+            <span className="font-medium text-foreground">Uyuni Salt Flats</span>
+          </div>
+          <span className="text-xs text-muted-foreground">$120</span>
+          <div className="flex gap-1">
+            <span className="text-green-500">👍 4</span>
+            <motion.span animate={{ scale: 1.1 }} className="text-gray-400">👎 1</motion.span>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🍷</span>
+            <span className="font-medium text-foreground">Mendoza wine tour</span>
+          </div>
+          <span className="text-xs text-muted-foreground">$60</span>
+          <div className="flex gap-1">
+            <span className="text-green-500">👍 3</span>
+            <span className="text-gray-400">👎 2</span>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">💃</span>
+            <span className="font-medium text-foreground">Tango night</span>
+          </div>
+          <span className="text-xs text-muted-foreground">$15</span>
+          <div className="flex gap-1">
+            <motion.span animate={{ scale: 1.1 }} className="text-green-500">👍 5</motion.span>
+            <span className="text-gray-400">👎 0</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'budget',
+    emoji: '💰',
+    label: 'Money Peace',
+    subtext: 'No more awkward money talks',
+    content: (
+      <div className="space-y-4">
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
+          <span className="font-medium text-foreground">Group Budget</span>
+          <span className="text-xs text-muted-foreground">$1,200/person</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
+          <span className="font-medium text-foreground">Everyone agreed</span>
+          <span className="text-green-500">✔️</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="font-medium text-foreground">Money-saving tip</span>
+          <TypingTip />
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="font-medium text-foreground">Shared costs</span>
+          <span className="text-xs text-muted-foreground">Let's use Splitwise</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'plans',
+    emoji: '🗺️',
+    label: 'Create Real Plans',
+    subtext: 'Turn ideas into an actual itinerary',
+    content: (
+      <div className="space-y-4">
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">🦙</span>
+          <span className="font-medium text-foreground">Day 2: Machu Picchu trek</span>
+          <span className="text-xs text-muted-foreground ml-2">Start 5am, camp at Wayllabamba</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">🧂</span>
+          <span className="font-medium text-foreground">Day 5: Uyuni Salt Flats</span>
+          <span className="text-xs text-muted-foreground ml-2">Sunset photos, salt hotel</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">🍷</span>
+          <span className="font-medium text-foreground">Day 8: Mendoza wine tour</span>
+          <span className="text-xs text-muted-foreground ml-2">Picnic at Bodega La Azul</span>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-2">
+          <span className="text-lg">💃</span>
+          <span className="font-medium text-foreground">Day 10: Buenos Aires tango night</span>
+          <span className="text-xs text-muted-foreground ml-2">La Viruta, 8pm</span>
         </div>
       </div>
     ),
   },
 ];
 
-export const Default: Story = {
+const Template: StoryObj<typeof FeatureTabsProduct> = {
+  render: (args) => (
+    <div className="py-8 bg-background min-h-screen">
+      <div className="flex justify-end mb-4 pr-8">
+        <ThemeToggle />
+      </div>
+      <FeatureTabsProduct {...args} tabs={sampleTabs} />
+    </div>
+  ),
   args: {
-    tabs: sampleTabs,
-    defaultTabId: 'expenses',
+    variant: 'default',
+    activeTabId: 'ideas',
   },
-}; 
+};
+
+export const SouthAmericaTrip = { ...Template }; 

@@ -20,6 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { DestinationCard } from '@/components/destination-card';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Destination {
   id: string;
@@ -49,55 +50,21 @@ interface DestinationsResponse {
   destinations: Destination[];
 }
 
-// Fetcher function for SWR
-const fetcher = async (url: string): Promise<DestinationsResponse> => {
-  try {
-    // Add a timeout to the fetch request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+function isDestinationsResponse(data: unknown): data is DestinationsResponse {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    Array.isArray((data as any).destinations)
+  );
+}
 
-    const res = await fetch(url, {
-      signal: controller.signal,
-      // Add cache control headers to help with caching
-      headers: {
-        'Cache-Control': 'max-age=3600', // Cache for 1 hour
-      },
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      const errorData = await res.text();
-      throw new Error(`Failed to fetch data: ${res.status} ${errorData}`);
-    }
-    return res.json();
-  } catch (error) {
-    console.error('Fetcher error:', error);
-    // Return a fallback empty response instead of throwing
-    return { destinations: [] };
-  }
-};
-
-// Fisher-Yates (Knuth) Shuffle algorithm
 function shuffleArray<T>(array: T[]): T[] {
-  let currentIndex = array.length,
-    randomIndex;
-  const newArray = [...array]; // Create a copy to avoid modifying the original
-
-  // While there remain elements to shuffle.
-  while (currentIndex !== 0) {
-    // Pick a remaining element.
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    // And swap it with the current element.
-    [newArray[currentIndex], newArray[randomIndex]] = [
-      newArray[randomIndex],
-      newArray[currentIndex],
-    ];
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-
-  return newArray;
+  return arr;
 }
 
 // Add a helper function to safely generate destination URLs
@@ -109,53 +76,43 @@ const generateDestinationUrl = (destination: Destination): string => {
 };
 
 export function TrendingDestinations() {
-  const [shuffledDestinations, setShuffledDestinations] = useState<Destination[]>([]);
-  const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const router = useRouter();
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data, error, isValidating } = useSWR<DestinationsResponse>(
-    API_ROUTES.DESTINATIONS,
-    fetcher,
-    {
-      revalidateOnFocus: false, // Don't revalidate when window gets focus
-      revalidateIfStale: true, // Revalidate if data is stale
-      dedupingInterval: 60000, // Dedupe requests within 1 minute
-      errorRetryCount: 3, // Retry 3 times on failure
-      onError: (err: Error) => {
-        console.error('SWR Error:', err);
-        setErrorDetails(err.message || 'Unknown error');
-      },
-    }
-  );
-
-  const destinations = data?.destinations || [];
-  const isLoading = !data && !error;
-
-  // Shuffle destinations once data is loaded and limit to 8
   useEffect(() => {
-    const localDestinations = data?.destinations || [];
-    if (localDestinations.length > 0 && shuffledDestinations.length === 0) {
-      // Take only up to 8 destinations
-      const limitedDestinations = shuffleArray(localDestinations).slice(0, 8);
-      setShuffledDestinations(limitedDestinations);
+    let isMounted = true;
+    async function fetchDestinations() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(API_ROUTES.DESTINATIONS);
+        if (!res.ok) throw new Error('Failed to fetch destinations');
+        const data = await res.json();
+        if (!isDestinationsResponse(data)) {
+          throw new Error('Invalid destinations data');
+        }
+        if (isMounted) {
+          setDestinations(shuffleArray(data.destinations));
+        }
+      } catch (err: any) {
+        if (isMounted) setError(err.message || 'Error loading destinations');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     }
-    // Only run when destinations data changes (and shuffledDestinations is empty initially)
-  }, [data, shuffledDestinations.length]);
+    fetchDestinations();
+    return () => { isMounted = false; };
+  }, []);
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="aspect-[4/5] bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"
-          />
-        ))}
+      <div className="w-full flex justify-center items-center py-12">
+        <Spinner size="lg" />
       </div>
     );
   }
 
-  // Show error details for debugging
   if (error) {
     return (
       <Alert variant="destructive">
@@ -163,26 +120,24 @@ export function TrendingDestinations() {
         <AlertTitle>Error loading destinations</AlertTitle>
         <AlertDescription>
           <p>There was a problem loading destinations.</p>
-          {errorDetails && (
-            <details className="mt-2 text-xs">
-              <summary>Error details</summary>
-              <pre className="mt-2 whitespace-pre-wrap">{errorDetails}</pre>
-            </details>
-          )}
+          <details className="mt-2 text-xs">
+            <summary>Error details</summary>
+            <pre className="mt-2 whitespace-pre-wrap">{error}</pre>
+          </details>
         </AlertDescription>
       </Alert>
     );
   }
 
-  // If no destinations after loading, show empty state
-  if (shuffledDestinations.length === 0 && !isLoading && !error) {
+  if (destinations.length === 0) {
     return (
       <div className="text-center py-10">
-        <p className="text-muted-foreground">No trending destinations found.</p>
+        <p className="text-muted-foreground">No destinations found.</p>
       </div>
     );
   }
 
+  // Always use carousel layout
   return (
     <Carousel
       opts={{
@@ -191,46 +146,25 @@ export function TrendingDestinations() {
       }}
       plugins={[
         Autoplay({
-          delay: 5000, // 5 seconds delay
-          stopOnInteraction: true, // Stop autoplay on user interaction
-          stopOnMouseEnter: true, // Stop autoplay when hovering over the carousel
-        }) as any,
+          delay: 5000,
+        }),
       ]}
       className="w-full"
     >
       <CarouselContent className="-ml-2 md:-ml-4">
-        {shuffledDestinations.map((destination: Destination, index: number) => (
-          <CarouselItem
-            key={destination.id || `dest-${index}`}
-            className="pl-2 md:pl-4 basis-[50%] sm:basis-[33.333%] md:basis-[25%]"
+        {destinations.slice(0, 12).map((destination) => (
+          <CarouselItem 
+            key={destination.id} 
+            className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 2xl:basis-1/6"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.4,
-                delay: index * 0.1, // Reduce delay for faster appearance
-                ease: 'easeOut',
-              }}
-              className="h-full"
-            >
-              <DestinationCard
-                destination={destination}
-                href={generateDestinationUrl(destination)}
-                hideAttributionMobile
-              />
-            </motion.div>
+            <DestinationCard destination={destination} />
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="hidden md:flex" />
-      <CarouselNext className="hidden md:flex" />
-
-      {isValidating && !isLoading && (
-        <div className="mt-4 flex justify-center">
-          <div className="h-1 w-10 bg-travel-purple/50 rounded-full animate-pulse"></div>
-        </div>
-      )}
+      <div className="flex justify-end gap-2 mt-6">
+        <CarouselPrevious className="relative static mr-2" />
+        <CarouselNext className="relative static" />
+      </div>
     </Carousel>
   );
 }

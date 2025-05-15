@@ -10,11 +10,11 @@ export const dynamic = 'force-dynamic';
 // Instead of forcing dynamic rendering on every request, use ISR with a reasonable revalidation period
 export const revalidate = 300; // Revalidate every 5 minutes
 
-// We need to tell search engines not to index this authenticated page
+// We need to tell search engines to index this public landing page
 export const metadata: Metadata = {
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
 };
 
@@ -22,15 +22,27 @@ export default async function TripsPage() {
   const supabase = await getServerSupabase();
   
   const { data: { session } } = await supabase.auth.getSession();
+  const isAuthenticated = !!session?.user;
   
   // Check if this is a guest user
   const guestToken = getGuestToken();
   
-  // Redirect to login if not authenticated and not a guest
-  if (!session?.user && !guestToken) {
-    return redirect('/login?redirect=/trips/manage');
+  // Check if guest has any trips
+  let hasGuestTrips = false;
+  if (guestToken) {
+    const { data: guestTrips } = await supabase
+      .from('guest_trip_access')
+      .select('trip_id')
+      .eq('guest_token', guestToken);
+    
+    hasGuestTrips = !!(guestTrips && guestTrips.length > 0);
   }
   
-  // Redirect to manage page for authenticated or guest users
-  return redirect('/trips/manage');
+  // If user is authenticated or guest has trips, redirect to manage page
+  if (isAuthenticated || hasGuestTrips) {
+    return redirect('/trips/manage');
+  }
+  
+  // Show the landing page for guests with no trips
+  return <TripsLandingPage />;
 }

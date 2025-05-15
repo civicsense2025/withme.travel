@@ -36,13 +36,23 @@ export interface Destination {
   // ...other fields
 }
 
+interface PopularDestinationsGridProps {
+  destinations: Destination[];
+  maxItems?: number;
+  onSelectDestination?: (destination: Destination) => void;
+}
+
 const sortOptions: CardGridSortOption[] = [
   { label: 'Most Popular', value: 'popular' },
   { label: 'A-Z', value: 'az' },
 ];
 
-export function PopularDestinationsGrid({ destinations }: { destinations: Destination[] }) {
-  // Only show top 8 by popularity (sum of ratings)
+export function PopularDestinationsGrid({ 
+  destinations, 
+  maxItems = 8, 
+  onSelectDestination 
+}: PopularDestinationsGridProps) {
+  // Only show top N by popularity (sum of ratings)
   const topDestinations = [...destinations]
     .sort(
       (a, b) =>
@@ -57,12 +67,17 @@ export function PopularDestinationsGrid({ destinations }: { destinations: Destin
           a.outdoor_activities +
           a.beach_quality)
     )
-    .slice(0, 8);
+    .slice(0, maxItems);
 
   return (
     <CardGrid
       items={topDestinations}
-      renderItem={(item) => <DestinationCard destination={item} />}
+      renderItem={(item) => (
+        <DestinationCard 
+          destination={item} 
+          onClick={() => onSelectDestination?.(item)} 
+        />
+      )}
       sortOptions={sortOptions}
       getSortValue={(item, sort) =>
         sort === 'az'

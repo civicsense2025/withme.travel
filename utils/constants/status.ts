@@ -327,4 +327,43 @@ export const GROUP_PLAN_IDEA_TYPE = {
 
 export type GroupPlanIdeaType = (typeof GROUP_PLAN_IDEA_TYPE)[keyof typeof GROUP_PLAN_IDEA_TYPE];
 
+// ======= RESEARCH MILESTONE EVENT TYPES =======
+export const MILESTONE_EVENT_TYPES = {
+  // User journey milestones
+  INITIAL_VISIT: 'initial_visit',
+  SIGNUP_COMPLETED: 'signup_completed',
+  ONBOARDING_STARTED: 'onboarding_started',
+  ONBOARDING_COMPLETED: 'onboarding_completed',
+  
+  // Trip creation milestones
+  TRIP_CREATED: 'trip_created',
+  DESTINATION_ADDED: 'destination_added',
+  ITINERARY_ITEM_ADDED: 'itinerary_item_added',
+  TRIP_COMPLETED: 'trip_completed',
+  
+  // Collaboration milestones
+  GROUP_CREATED: 'group_created',
+  MEMBER_INVITED: 'member_invited',
+  COMMENT_ADDED: 'comment_added',
+  
+  // Feature usage milestones
+  FEATURE_DISCOVERED: 'feature_discovered',
+  BUDGET_ITEM_ADDED: 'budget_item_added',
+  MAP_VIEWED: 'map_viewed',
+  
+  // Survey milestones
+  SURVEY_STARTED: 'survey_started',
+  SURVEY_STEP_COMPLETED: 'survey_step_completed',
+  SURVEY_COMPLETED: 'survey_completed',
+  
+  // Feedback milestones
+  FEEDBACK_PROVIDED: 'feedback_provided',
+  BUG_REPORTED: 'bug_reported',
+  
+  // Final stages
+  FINAL: 'final'
+} as const;
+
+export type MilestoneEventType = keyof typeof MILESTONE_EVENT_TYPES;
+
 // Remove duplicate GroupMemberRole and GroupMemberStatus type definitions

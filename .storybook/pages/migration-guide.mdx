@@ -1,113 +1,111 @@
-import { Meta, Title } from '@storybook/blocks';
+import { Meta } from '@storybook/blocks';
 
-<Meta title="Migration Guide" />
+<Meta title="Design System/Migration Guide" />
 
-# Storybook Migration Guide
+# Migration Guide
 
-This guide outlines how to update existing story files to match our new Storybook organization.
+This guide helps you migrate from our previous component architecture to the new design system.
 
-## New Category Structure
+## Core UI Component Changes
 
-Our Storybook is now organized into five main sections:
+### Button Component
 
-1. **Design System**: Core foundations
-2. **Core UI**: Reusable UI components
-3. **Features**: Feature-specific components
-4. **Product Marketing**: Marketing/landing pages
-5. **App Layout**: Navigation and containers
-
-## How to Update Story Files
-
-For each `.stories.tsx` file, update the `title` in the Meta configuration to match our new structure:
-
-```tsx
-// Before
-const meta: Meta<typeof YourComponent> = {
-  title: 'Foundation/YourComponent', // Old structure
-  component: YourComponent,
-  // ...
-};
-
-// After
-const meta: Meta<typeof YourComponent> = {
-  title: 'Core UI/Inputs/YourComponent', // New structure
-  component: YourComponent,
-  // ...
-};
+**Before:**
+```jsx
+<Button type="primary" size="large" onClick={handleClick}>
+  Submit
+</Button>
 ```
 
-## Component Mapping to New Categories
+**After:**
+```jsx
+<Button variant="primary" size="lg" onClick={handleClick}>
+  Submit
+</Button>
+```
 
-Use this guide to determine the appropriate category for your component:
+### Input Component
 
-### Design System
+**Before:**
+```jsx
+<Input type="text" placeholder="Enter name" error={hasError} />
+```
 
-- Typography components
-- Color/theme demos
-- Icon components
-- Design token showcases
+**After:**
+```jsx
+<Input 
+  type="text" 
+  placeholder="Enter name" 
+  variant={hasError ? "error" : "default"} 
+/>
+```
 
-### Core UI
+## Layout Component Changes
 
-- Buttons, inputs, forms → `Core UI/Inputs`
-- Cards, dividers, containers → `Core UI/Layout`
-- Alerts, toasts, progress → `Core UI/Feedback`
-- Tabs, pagination, breadcrumbs → `Core UI/Navigation`
-- Dialogs, drawers, popovers → `Core UI/Overlay`
-- Tables, badges, avatars → `Core UI/Data Display`
+### Container Component
 
-### Features
+**Before:**
+```jsx
+<Container fluid={true}>
+  Content goes here
+</Container>
+```
 
-- Itinerary-related → `Features/Itinerary`
-- Trip-related → `Features/Trip`
-- Content display → `Features/Content`
-- Calendar/date components → `Features/Calendar`
-- Reviews → `Features/Review`
-- Weather → `Features/Weather`
-- Facts/highlights → `Features/Facts`
+**After:**
+```jsx
+<Container maxWidth="full">
+  Content goes here
+</Container>
+```
 
-### Product Marketing
+### Card Component
 
-- Hero sections → `Product Marketing/Hero`
-- Feature highlights → `Product Marketing/Features`
-- Testimonials → `Product Marketing/Testimonials`
-- Pricing → `Product Marketing/Pricing`
-- Call-to-actions → `Product Marketing/CTA`
-- About/Team → `Product Marketing/About`
+**Before:**
+```jsx
+<Card title="Card Title" bordered>
+  <CardContent>Content here</CardContent>
+  <CardActions>
+    <Button>Action</Button>
+  </CardActions>
+</Card>
+```
 
-### App Layout
+**After:**
+```jsx
+<Card>
+  <CardHeader>
+    <CardTitle>Card Title</CardTitle>
+  </CardHeader>
+  <CardContent>Content here</CardContent>
+  <CardFooter>
+    <Button>Action</Button>
+  </CardFooter>
+</Card>
+```
 
-- Navigation bars, menus → `App Layout/Navigation`
-- Page containers → `App Layout/Page Containers`
-- User menus/profiles → `App Layout/User Interface`
-- App shells → `App Layout/App Shell`
-- Responsive layouts → `App Layout/Responsive Patterns`
+## Migration Steps
 
-## Example Updates
+1. **Update dependencies**
+   - Ensure you're using the latest version of our component library
 
-Here are some specific examples for files in our codebase:
+2. **Identify components to update**
+   - Use our component audit tool to identify all instances of legacy components
 
-- `components/layout/navbar.stories.tsx` → `App Layout/Navigation/Navbar`
-- `components/trips/trip-card.stories.tsx` → `Features/Trip/TripCard`
-- `components/itinerary/ItineraryItemCard.stories.tsx` → `Features/Itinerary/ItineraryItemCard`
-- `app/components/feedback/FeedbackDialog.stories.tsx` → `Features/Feedback/FeedbackDialog`
-- `stories/admin/AdminSidebar.stories.tsx` → `App Layout/Navigation/AdminSidebar`
+3. **Replace one component type at a time**
+   - Start with simple components like Button and Text
+   - Progress to more complex components like forms and layouts
 
-## Guidelines for New Components
+4. **Test thoroughly**
+   - Verify functionality and appearance after each component migration
+   - Pay special attention to responsive behavior
 
-When creating new components:
+5. **Update documentation**
+   - Update any internal documentation to reference the new component APIs
 
-1. Place them in the appropriate directory based on their function
-2. Create a `.stories.tsx` file with the appropriate title following our category structure
-3. Add proper documentation and examples
-4. Consider adding controls for all important props
-5. Include the `tags: ['autodocs']` setting if you want automatic documentation generation
+## Getting Help
 
-## Testing Your Updates
+If you encounter any issues during migration, please contact the design system team through:
 
-After updating story files:
-
-1. Run Storybook with `pnpm storybook`
-2. Verify your component appears in the correct category
-3. Check that all examples and documentation render correctly
-4. Test controls and interactions to ensure they work as expected
+- Slack: #design-system-help
+- Email: design-system@withme.travel
+- GitHub: Open an issue in the design system repository

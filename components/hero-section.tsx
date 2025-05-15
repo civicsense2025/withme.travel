@@ -11,6 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarIcon, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import useOpenGraphImage from '@/lib/hooks/use-og-image';
+import { PopularDestinationsGrid } from './ui/PopularDestinationsGrid';
+import { usePopularDestinations } from '@/lib/hooks/use-popular-destinations';
 
 // Lazy load the CityBubbles component to improve initial load time
 const CityBubbles = lazy(() =>
@@ -188,6 +190,8 @@ export function HeroSection() {
       'query-input': 'required name=destination',
     },
   };
+
+  const { destinations: popularDestinations, loading, error } = usePopularDestinations(8);
 
   return (
     <section
@@ -386,9 +390,17 @@ export function HeroSection() {
                 <div className="h-40 bg-neutral-100 dark:bg-neutral-900 rounded-xl animate-pulse"></div>
               }
             >
-              <CityBubblesProvider setDestination={handleSetDestination}>
-                <CityBubbles />
-              </CityBubblesProvider>
+              <PopularDestinationsGrid
+                destinations={popularDestinations}
+                maxItems={8}
+                onSelectDestination={(destination) => {
+                  if (destination?.name) {
+                    handleSetDestination(destination.name);
+                  }
+                }}
+              />
+              {loading && <div className="text-center py-4 text-muted-foreground">Loading destinations…</div>}
+              {error && <div className="text-center py-4 text-red-500">{error}</div>}
             </Suspense>
           </div>
         </motion.div>

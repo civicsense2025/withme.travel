@@ -37,6 +37,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { QuestionType } from '@/types/research';
+import { MILESTONE_EVENT_TYPES } from '@/utils/constants/status';
 
 // Form schema for survey creation
 const formSchema = z.object({
@@ -71,11 +72,17 @@ const questionTypeOptions = [
 
 // Milestone options (these are key events in the user journey)
 const milestoneOptions = [
-  { label: 'Initial Visit', value: 'initial_visit' },
-  { label: 'After Trip Creation', value: 'trip_created' },
-  { label: 'After Adding Itinerary Items', value: 'itinerary_item_added' },
-  { label: 'After Group Creation', value: 'group_created' },
-  { label: 'Final Step', value: 'final' },
+  { label: 'Initial Visit', value: MILESTONE_EVENT_TYPES.INITIAL_VISIT },
+  { label: 'After Signup', value: MILESTONE_EVENT_TYPES.SIGNUP_COMPLETED },
+  { label: 'After Trip Creation', value: MILESTONE_EVENT_TYPES.TRIP_CREATED },
+  { label: 'After Adding Destination', value: MILESTONE_EVENT_TYPES.DESTINATION_ADDED },
+  { label: 'After Adding Itinerary Items', value: MILESTONE_EVENT_TYPES.ITINERARY_ITEM_ADDED },
+  { label: 'After Group Creation', value: MILESTONE_EVENT_TYPES.GROUP_CREATED },
+  { label: 'After Member Invited', value: MILESTONE_EVENT_TYPES.MEMBER_INVITED },
+  { label: 'After Comment Added', value: MILESTONE_EVENT_TYPES.COMMENT_ADDED },
+  { label: 'Budget Item Added', value: MILESTONE_EVENT_TYPES.BUDGET_ITEM_ADDED },
+  { label: 'Feature Discovered', value: MILESTONE_EVENT_TYPES.FEATURE_DISCOVERED },
+  { label: 'Final Step', value: MILESTONE_EVENT_TYPES.FINAL },
 ];
 
 export default function CreateSurveyPage() {
@@ -150,15 +157,19 @@ export default function CreateSurveyPage() {
           options: q.options,
         })),
       },
-      // Add syncFields flag to create entries in form_fields table
-      syncFields: true,
+    };
+    
+    // Add syncFields as a separate property
+    const requestBody = {
+      ...surveyData,
+      syncFields: true, // This is a flag for the API, not stored in DB
     };
     
     try {
       const response = await fetch('/api/research/surveys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(surveyData),
+        body: JSON.stringify(requestBody),
       });
       
       if (!response.ok) {
@@ -387,7 +398,6 @@ export default function CreateSurveyPage() {
                                 <SelectValue placeholder="Any milestone" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Any milestone</SelectItem>
                                 {milestoneOptions.map(option => (
                                   <SelectItem key={option.value} value={option.value}>
                                     {option.label}
@@ -417,9 +427,19 @@ export default function CreateSurveyPage() {
                             <Textarea
                               placeholder="Enter options, one per line"
                               value={(question.options || []).join('\n')}
-                              onChange={(e) => updateQuestion(index, 'options', e.target.value.split('\n').filter(Boolean))}
+                              onChange={(e) => {
+                                const options = e.target.value
+                                  .split('\n')
+                                  .map(option => option.trim())
+                                  .filter(Boolean);
+                                updateQuestion(index, 'options', options);
+                              }}
                               className="min-h-24"
+                              rows={6}
                             />
+                            <div className="text-sm text-muted-foreground">
+                              Enter each option on a new line. Press Enter to add multiple options.
+                            </div>
                           </div>
                         )}
                       </CardContent>

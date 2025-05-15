@@ -2,7 +2,7 @@
  * @type {import('@playwright/test').PlaywrightTestConfig}
  */
 const config = {
-  testDir: './tests',
+  testDir: './e2e',
   timeout: 30000,
   expect: {
     timeout: 5000,
@@ -59,6 +59,10 @@ const config = {
   use: {
     baseURL: process.env.TEST_BASE_URL || 'http://localhost:3000',
   },
+
+  // Ensure test data is seeded before all tests and cleaned up after all tests
+  globalSetup: require.resolve('./e2e/global-setup.ts'),
+  globalTeardown: require.resolve('./e2e/global-teardown.ts'),
 };
 
 export default config;

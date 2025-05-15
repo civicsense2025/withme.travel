@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Container } from '@/components/container';
-import { clientGuestUtils } from '@/utils/guest';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CityChipsAutocompleteInput } from '@/components/cities/city-chips-autocomplete-input';
-import { PopularDestinationsCarousel } from '@/components/destinations/popular-destinations-carousel';
 import { PageHeader } from '@/components/layout/page-header';
+import { PopularDestinationsGrid, type Destination as PopularDestinationType } from '@/components/ui/PopularDestinationsGrid';
 
 // Simple schema for trip creation
 const tripSchema = z.object({
@@ -48,18 +47,17 @@ interface City {
   [key: string]: any;
 }
 
+// Define a type for the destinations fetched from the API
+interface FetchedDestination extends PopularDestinationType {}
+
 export default function CreateTrip() {
   const router = useRouter();
   const [selectedCities, setSelectedCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [website, setWebsite] = useState(''); // Honeypot field
-  const [trip, setTrip] = useState<Trip | null>(null);
-  const [createdTripId, setCreatedTripId] = useState<string | null>(null);
-  const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const totalSteps = 3; // Total steps in trip creation process
-  const stepNames = ['destination', 'details', 'confirmation'];
+  const [popularDestinations, setPopularDestinations] = useState<FetchedDestination[]>([]);
+  const [isFetchingPopularDestinations, setIsFetchingPopularDestinations] = useState(true);
 
   const form = useForm<TripFormValues>({
     resolver: zodResolver(tripSchema),
@@ -71,6 +69,26 @@ export default function CreateTrip() {
       },
     },
   });
+
+  useEffect(() => {
+    const fetchPopularDests = async () => {
+      setIsFetchingPopularDestinations(true);
+      try {
+        const response = await fetch('/api/destinations/popular?limit=20'); // Fetch a bit more to allow sorting
+        if (!response.ok) {
+          throw new Error('Failed to fetch popular destinations');
+        }
+        const data = await response.json();
+        setPopularDestinations(data.destinations || []);
+      } catch (err) {
+        console.error('Error fetching popular destinations for create page:', err);
+        // Optionally set an error state to display to the user
+      } finally {
+        setIsFetchingPopularDestinations(false);
+      }
+    };
+    fetchPopularDests();
+  }, []);
 
   const handleSubmit = async (values: TripFormValues) => {
     if (isLoading) return;
@@ -126,25 +144,32 @@ export default function CreateTrip() {
     }
   };
 
-  const handleDestinationSelect = (destination: string) => {
-    setSelectedDestination(destination);
-    // Other existing code...
-  };
-
-  // Track created trip ID after successful creation
-  const handleTripCreated = (tripId: string) => {
-    setCreatedTripId(tripId);
-    // Other existing code...
-  };
-
-  // Update step when moving to next part of the form
-  const handleNextStep = () => {
-    setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-  };
-
   // Wrapper to match the expected onChange signature
   const handleCitiesChange = (cities: City[]) => {
     setSelectedCities(cities);
+  };
+
+  const onGridDestinationSelect = (destination: PopularDestinationType) => {
+    const newCity: City = {
+      id: destination.id || `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      name: destination.name || destination.city || 'Unknown City',
+      country: destination.country || 'Unknown Country',
+      emoji: destination.emoji || undefined,
+      continent: destination.continent,
+      description: destination.description,
+      // Add any other relevant fields from PopularDestinationType to City if needed
+    };
+
+    // Avoid adding duplicates
+    setSelectedCities((prevCities) => {
+      const exists = prevCities.some(
+        (city) => city.name === newCity.name && city.country === newCity.country
+      );
+      if (!exists) {
+        return [...prevCities, newCity];
+      }
+      return prevCities;
+    });
   };
 
   return (
@@ -153,7 +178,7 @@ export default function CreateTrip() {
         <PageHeader
           title="Create a New Trip"
           description="Start planning your next adventure with friends and family."
-          className="mb-8"
+          className="mb-8 text-center"
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -254,18 +279,17 @@ export default function CreateTrip() {
                   </p>
                 </div>
 
-                <PopularDestinationsCarousel
-                  onSelect={(destination) => {
-                    // Convert the destination format to match city format
-                    const city: City = {
-                      id: `temp-${Date.now()}`, // Temporary ID
-                      name: destination.city,
-                      country: destination.country,
-                      emoji: destination.emoji,
-                    };
-                    handleDestinationSelect(city.name);
-                  }}
-                />
+                {isFetchingPopularDestinations ? (
+                  <p className="text-muted-foreground text-center">Loading destinations...</p>
+                ) : popularDestinations.length > 0 ? (
+                  <PopularDestinationsGrid
+                    destinations={popularDestinations}
+                    maxItems={12}
+                    onSelectDestination={onGridDestinationSelect}
+                  />
+                ) : (
+                  <p className="text-muted-foreground text-center">Could not load popular destinations at the moment.</p>
+                )}
               </CardContent>
             </Card>
           </div>

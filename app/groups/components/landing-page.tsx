@@ -20,6 +20,8 @@ import { FeatureTabs } from '@/components/FeatureTabs';
 import { Container } from '@/components/container';
 import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
 import { motion, AnimatePresence } from 'framer-motion';
+import CollaborativeItinerarySection from '@/components/ui/CollaborativeItinerarySection';
+import { DestinationsFAQ } from '@/components/faq';
 
 const CreateGroupModal = dynamic(() => import('./create-group-modal'), { ssr: false });
 
@@ -294,7 +296,7 @@ const GroupsLandingPage: React.FC = () => {
             </form>
 
             {/* Emoji explosion at the bottom of hero section */}
-            <div className="flex justify-center mt-10">
+            <div className="flex justify-center mt-16 mb-10">
               <HeroEmojiExplosion variant="people-bounce" size={40} />
             </div>
           </div>
@@ -303,110 +305,28 @@ const GroupsLandingPage: React.FC = () => {
         {/* Features Demo Section */}
         <section className="py-24 w-full bg-zinc-50 dark:bg-zinc-900">
           <div className="px-6 md:px-10 max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
-                Plan together, <span className="text-travel-purple">travel better</span>
-              </h2>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Every tool your group needs to turn trip ideas into reality—without the chaos.
-              </p>
-            </div>
-
-            {/* FeatureTabs component */}
-            <FeatureTabs />
-
-            {/* Features Grid */}
-            <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-12">
-              {[
-                {
-                  icon: <Vote className="h-10 w-10 text-travel-purple" />,
-                  title: 'Group Polls',
-                  description:
-                    'Vote on destinations, dates, and activities to make decisions everyone feels good about.',
-                },
-                {
-                  icon: <DollarSign className="h-10 w-10 text-travel-purple" />,
-                  title: 'Split Expenses',
-                  description:
-                    'Track who paid for what and settle up easily—no more math headaches.',
-                },
-                {
-                  icon: <MapPinned className="h-10 w-10 text-travel-purple" />,
-                  title: 'Collaborative Map',
-                  description:
-                    'Pin and discover places you all want to visit, with easy visualization.',
-                },
-              ].map((feature, index) => (
-                <Card
-                  key={index}
-                  className="border-2 border-black dark:border-zinc-800 bg-white dark:bg-black rounded-2xl shadow-sm"
-                >
-                  <CardContent className="p-6 flex flex-col items-center text-center">
-                    <div className="mb-4 bg-zinc-50 dark:bg-zinc-800 w-16 h-16 rounded-full flex items-center justify-center">
-                      {feature.icon}
-                    </div>
-                    <CardTitle className="text-xl mb-2">{feature.title}</CardTitle>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {/* Collaboration */}
+            <CollaborativeItinerarySection />
           </div>
         </section>
 
         {/* Testimonials Section */}
         <section className="py-24 w-full">
           <div className="text-center px-6 md:px-10 max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
-              Travelers <span className="text-travel-purple">love</span> our groups
-            </h2>
-            <p className="text-lg md:text-xl text-muted-foreground mb-16 max-w-2xl mx-auto">
-              See how travel groups are making trip planning stress-free.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {[
-                {
-                  quote:
-                    'Planning our Bali trip was a breeze instead of a nightmare. Everyone could contribute ideas and vote.',
-                  author: 'Jamie S.',
-                  trip: 'Bali, 8 friends',
-                },
-                {
-                  quote:
-                    "No more 'who owes what' drama. We tracked expenses in real-time and everyone paid their fair share.",
-                  author: 'Michael T.',
-                  trip: 'Europe, 4 couples',
-                },
-              ].map((testimonial, index) => (
-                <Card
-                  key={index}
-                  className="bg-white dark:bg-black text-left p-6 border-2 border-black dark:border-zinc-800 rounded-2xl shadow-sm"
-                >
-                  <CardContent className="p-0">
-                    <p className="text-lg mb-4">"{testimonial.quote}"</p>
-                    <div className="font-medium">{testimonial.author}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.trip}</div>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
-          </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-24 w-full border-t border-zinc-200 dark:border-zinc-800">
-          <div className="text-center px-6 md:px-10 max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+        <section className="py-24 w-full border-zinc-200 dark:border-zinc-800">
+          <div className="text-center px-6 md:px-10 max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb- tracking-tight">
               Start your group, <span className="text-travel-purple">start the adventure</span>
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 mx-auto">
+            <p className="text-lg md:text-xl text-muted-foreground mb-16 mx-auto">
               It takes less than a minute to create your first group.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="rounded-full" onClick={() => setModalOpen(true)}>
-                Create a Group
-              </Button>
+
               <Button
                 variant="outline"
                 size="lg"
@@ -416,6 +336,17 @@ const GroupsLandingPage: React.FC = () => {
                 View My Groups
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-24 w-full bg-zinc-50 dark:bg-zinc-900">
+          <div className="px-6 md:px-10 max-w-6xl mx-auto">
+            <DestinationsFAQ 
+              title="Group Travel FAQ" 
+              description="Find answers to common questions about planning group trips to destinations around the world"
+              layout="sidebar"
+            />
           </div>
         </section>
       </main>

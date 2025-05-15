@@ -4,40 +4,51 @@ export const storybookCategories = {
     tokens: 'Tokens',
     theme: 'Theme',
     typography: 'Typography',
+    color: 'Color',
     icons: 'Icons',
-    showcase: 'Showcase',
   },
-  'Core UI': {
-    inputs: 'Inputs',
-    layout: 'Layout',
+  'Atoms': {
+    inputs: 'Inputs & Controls',
+    typography: 'Typography',
     feedback: 'Feedback',
+    data: 'Data Display',
+    layout: 'Layout',
+    media: 'Media',
     navigation: 'Navigation',
-    overlay: 'Overlay',
-    dataDisplay: 'Data Display',
   },
-  Features: {
-    itinerary: 'Itinerary',
-    trip: 'Trip',
-    content: 'Content',
-    calendar: 'Calendar',
-    review: 'Review',
-    weather: 'Weather',
-    facts: 'Facts',
+  'Molecules': {
+    cards: 'Cards',
+    forms: 'Forms',
+    dialogs: 'Dialogs & Modals',
+    navigation: 'Navigation',
+    feedback: 'Feedback',
+    lists: 'Lists',
   },
-  'Product Marketing': {
-    hero: 'Hero',
+  'Organisms': {
+    sections: 'Sections',
+    layouts: 'Layouts',
     features: 'Features',
-    testimonials: 'Testimonials',
-    pricing: 'Pricing',
-    cta: 'CTAs',
-    about: 'About',
+    collaborative: 'Collaborative',
+    authentication: 'Authentication',
+    groups: 'Groups',
+    trips: 'Trips',
+    itinerary: 'Itinerary',
   },
-  'App Layout': {
-    navigation: 'Navigation',
-    pageContainers: 'Page Containers',
-    userInterface: 'User Interface',
-    appShell: 'App Shell',
-    responsivePatterns: 'Responsive Patterns',
+  'Screens': {
+    home: 'Home',
+    trips: 'Trips',
+    groups: 'Groups',
+    itinerary: 'Itinerary',
+    destinations: 'Destinations',
+    authentication: 'Authentication',
+    user: 'User',
+    admin: 'Admin',
+  },
+  'Templates': {
+    marketing: 'Marketing',
+    app: 'App Layout',
+    landing: 'Landing Pages',
+    dashboards: 'Dashboards',
   },
 };
 
@@ -47,3 +58,19 @@ export type SubCategory<T extends MainCategory> = keyof (typeof storybookCategor
 
 // Type for full category path
 export type StorybookCategory = string;
+
+// For compatibility with generate-stories.js
+export const COMPONENT_CATEGORIES = {
+  FOUNDATION: 'Foundation',
+  LAYOUT: 'Layout',
+  NAVIGATION: 'Navigation',
+  INPUTS: 'Inputs & Forms',
+  DISPLAY: 'Display',
+  FEEDBACK: 'Feedback',
+  OVERLAYS: 'Overlays & Modals',
+  DATA: 'Data Display',
+  TRAVEL: 'Travel Components',
+  GROUPS: 'Group Features',
+  TRIPS: 'Trip Features',
+  USER: 'User Components',
+};

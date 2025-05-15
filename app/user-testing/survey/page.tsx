@@ -1,7 +1,19 @@
+import SurveyClient from './SurveyClient';
+
+/**
+ * Page for displaying a standalone user testing survey
+ */
+export default function UserTestingSurveyPage() {
+  return <SurveyClient />;
+}
+
+/**
+ * Static metadata for the user testing survey page
+ * @see https://nextjs.org/docs/app/api-reference/functions/generate-metadata
+ */
 export const metadata = {
-  title: 'Help Us Understand Your Travel Plans',
-  description:
-    'Share how you currently plan group travel to help us build a better experience for you.',
+  title: 'User Research Survey | Group Travel Planning - withme.travel',
+  description: 'Help us improve withme.travel by taking our survey',
   appleWebApp: {
     title: 'WithMe User Research',
     statusBarStyle: 'default',
@@ -17,9 +29,3 @@ export const metadata = {
     ],
   },
 };
-
-import UserTestingSurveyClient from './page-client';
-
-export default function UserTestingSurveyPage() {
-  return <UserTestingSurveyClient />;
-}

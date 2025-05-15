@@ -7,13 +7,11 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { 
   ArrowLeft, 
@@ -22,23 +20,26 @@ import {
   Pencil,
   Eye,
   BarChart3, 
-  MessageSquare,
-  Users,
   FileText,
-  Share2
 } from 'lucide-react';
+import { SurveyDetails } from '@/components/research/SurveyDetails';
+import { useResearchTracking } from '@/hooks/use-research-tracking';
 
 export default function SurveyDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [survey, setSurvey] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [responseCount, setResponseCount] = useState(0);
+  const { trackEvent } = useResearchTracking();
+  
+  // Use React.use to properly handle the params promise
+  const surveyId = React.use(params).id;
   
   useEffect(() => {
     async function fetchSurvey() {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/research/surveys/${params.id}`);
+        const response = await fetch(`/api/research/surveys/${surveyId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch survey');
         }
@@ -47,11 +48,22 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
         setSurvey(data.survey);
         
         // Get response count
-        const responseCountRes = await fetch(`/api/research/surveys/${params.id}/responses/count`);
-        if (responseCountRes.ok) {
-          const countData = await responseCountRes.json();
-          setResponseCount(countData.count || 0);
+        try {
+          const responseCountRes = await fetch(`/api/research/surveys/${surveyId}/responses/count`);
+          if (responseCountRes.ok) {
+            const countData = await responseCountRes.json();
+            setResponseCount(countData.count || 0);
+          }
+        } catch (error) {
+          console.error('Error fetching response count:', error);
         }
+        
+        // Track survey admin view event
+        trackEvent('admin_survey_view', {
+          details: { 
+            survey_id: surveyId
+          }
+        });
       } catch (error) {
         console.error('Error fetching survey:', error);
         toast({
@@ -65,7 +77,7 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
     }
     
     fetchSurvey();
-  }, [params.id]);
+  }, [surveyId, trackEvent]);
   
   if (isLoading) {
     return (
@@ -96,55 +108,34 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
           Back to Surveys
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{survey?.name || survey?.title || 'Untitled Survey'}</h1>
-          <p className="text-muted-foreground">
-            {survey?.status && (
-              <Badge variant={survey.status === 'active' ? 'default' : 'secondary'}>
-                {survey.status}
-              </Badge>
-            )}
-            <span className="ml-2">Created {new Date(survey?.created_at).toLocaleDateString()}</span>
-            <span className="ml-2">{responseCount} responses</span>
-          </p>
+          <h1 className="text-2xl font-bold">{survey?.name || 'Untitled Survey'}</h1>
         </div>
         <Button 
           variant="outline" 
           className="mr-2"
-          onClick={() => router.push(`/admin/research/surveys/${params.id}/edit`)}
+          onClick={() => router.push(`/admin/research/surveys/${surveyId}/edit`)}
         >
           <Pencil className="h-4 w-4 mr-2" />
           Edit
         </Button>
-        <Button onClick={() => window.open(`/user-testing/preview/${params.id}`, '_blank')}>
+        <Button onClick={() => window.open(`/user-testing/preview/${surveyId}`, '_blank')}>
           <Eye className="h-4 w-4 mr-2" />
           Preview
         </Button>
       </div>
 
-      {/* Survey description */}
-      {survey?.description && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{survey.description}</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Survey Details */}
+      <SurveyDetails survey={survey} responseCount={responseCount} />
 
       {/* Survey management links */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Link href={`/admin/research/surveys/${params.id}/links`} className="block">
+        <Link href={`/admin/research/surveys/${surveyId}/links`} className="block">
           <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <Link2 className="h-5 w-5 mr-2" />
-                  Survey Links
-                </CardTitle>
-                <Badge variant="outline">{survey?.link_count || 0}</Badge>
-              </div>
+              <CardTitle className="flex items-center">
+                <Link2 className="h-5 w-5 mr-2" />
+                Survey Links
+              </CardTitle>
               <CardDescription>
                 Generate and manage unique survey distribution links
               </CardDescription>
@@ -155,16 +146,13 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
           </Card>
         </Link>
 
-        <Link href={`/admin/research/surveys/${params.id}/milestones`} className="block">
+        <Link href={`/admin/research/surveys/${surveyId}/milestones`} className="block">
           <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <Milestone className="h-5 w-5 mr-2" />
-                  Milestone Triggers
-                </CardTitle>
-                <Badge variant="outline">{survey?.milestone_count || 0}</Badge>
-              </div>
+              <CardTitle className="flex items-center">
+                <Milestone className="h-5 w-5 mr-2" />
+                Milestone Triggers
+              </CardTitle>
               <CardDescription>
                 Configure user actions that trigger this survey
               </CardDescription>
@@ -175,16 +163,13 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
           </Card>
         </Link>
 
-        <Link href={`/admin/research/surveys/${params.id}/results`} className="block">
+        <Link href={`/admin/research/surveys/${surveyId}/results`} className="block">
           <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2" />
-                  Survey Results
-                </CardTitle>
-                <Badge variant="outline">{responseCount}</Badge>
-              </div>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2" />
+                Survey Results
+              </CardTitle>
               <CardDescription>
                 View and analyze survey responses
               </CardDescription>
@@ -195,7 +180,7 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
           </Card>
         </Link>
 
-        <Link href={`/admin/research/surveys/${params.id}/export`} className="block">
+        <Link href={`/admin/research/surveys/${surveyId}/export`} className="block">
           <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -212,44 +197,6 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
           </Card>
         </Link>
       </div>
-
-      {/* Survey content preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Survey Content</CardTitle>
-          <CardDescription>
-            Preview of the survey questions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {survey?.questions ? (
-            <div className="space-y-4">
-              {survey.questions.map((question: any, index: number) => (
-                <div key={question.id || index} className="border rounded-md p-4">
-                  <p className="font-medium">{index + 1}. {question.text}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Type: {question.type || 'Unknown'}
-                  </p>
-                  {question.options && (
-                    <div className="mt-2">
-                      <p className="text-sm text-muted-foreground">Options:</p>
-                      <ul className="list-disc list-inside mt-1">
-                        {question.options.map((option: any, optIndex: number) => (
-                          <li key={optIndex} className="text-sm">
-                            {typeof option === 'string' ? option : option.text || 'Unnamed option'}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No questions available</p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 } 

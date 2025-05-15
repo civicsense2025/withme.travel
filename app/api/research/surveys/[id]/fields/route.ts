@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { FORM_TABLES } from '@/utils/constants/tables';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Zod schema for a form field (for analytics/admin/legacy only)
@@ -18,7 +18,7 @@ const FormFieldSchema = z.object({
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = await createRouteHandlerClient();
   const { data, error } = await supabase
-    .from(TABLES.FORM_FIELDS)
+    .from(FORM_TABLES.FORM_FIELDS)
     .select('*')
     .eq('form_id', params.id)
     .order('order', { ascending: true });
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
   // Insert field
   const { data, error } = await supabase
-    .from(TABLES.FORM_FIELDS)
+    .from(FORM_TABLES.FORM_FIELDS)
     .insert([{ ...body, form_id: params.id }])
     .select()
     .single();

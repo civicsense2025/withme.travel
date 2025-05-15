@@ -344,7 +344,6 @@ export default function ViatorSearchPage() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
                   {experienceCategories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}

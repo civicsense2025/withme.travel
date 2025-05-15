@@ -1,0 +1,174 @@
+import { Meta, Story, ArgTypes, Canvas } from '@storybook/blocks';
+import * as FAQStories from './organisms/FAQ.stories';
+import * as DestinationsFAQStories from './variants/DestinationsFAQ.stories';
+import * as TripPlanningFAQStories from './variants/TripPlanningFAQ.stories';
+
+<Meta title="FAQ/Documentation" />
+
+# FAQ Component System
+
+A robust, atomic-design FAQ system that supports dynamic structured data (schema.org FAQPage), multiple layouts, filtering, and full customization.
+
+<div className="tip-wrapper">
+  <div className="tip">The FAQ system follows atomic design principles with atoms, molecules, organisms, and site-specific variants.</div>
+</div>
+
+## Features
+
+- **Atomic Design**: Atoms, molecules, organisms, and variants for maximum flexibility
+- **Dynamic Structured Data**: Outputs schema.org FAQPage JSON-LD for SEO, always matching visible content
+- **Multiple Layouts**: Default, sidebar, grid, compact, and inline
+- **Filtering**: Tag and search filter UI
+- **Dark Mode**: Fully themeable with dark mode support
+- **Accessible**: Keyboard and screen reader friendly
+
+## Basic FAQ (Default Layout)
+
+The default FAQ layout with filtering:
+
+<Canvas of={FAQStories.Default} />
+
+## Sidebar Layout
+
+A 2-column layout with filters on the left and FAQs on the right:
+
+<Canvas of={FAQStories.Sidebar} />
+
+## Grid Layout
+
+Shows FAQs in a responsive grid format:
+
+<Canvas of={FAQStories.Grid} />
+
+## Compact Layout
+
+A more condensed FAQ style for space-constrained areas:
+
+<Canvas of={FAQStories.Compact} />
+
+## Context-Specific Variants
+
+The FAQ system includes pre-configured variants for different sections of the site:
+
+### Destinations FAQ
+
+Specific to travel destinations with relevant content:
+
+<Canvas of={DestinationsFAQStories.Default} />
+
+### Trip Planning FAQ
+
+Focused on trip planning and collaboration:
+
+<Canvas of={TripPlanningFAQStories.Default} />
+
+## Structured Data for SEO
+
+The FAQ component automatically generates schema.org structured data (JSON-LD) for SEO:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I create a new trip?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can create a new trip by clicking the 'Create Trip' button on your dashboard."
+      }
+    },
+    // Additional questions...
+  ]
+}
+```
+
+## Usage
+
+### Basic Usage
+
+```tsx
+import { FAQ } from '@/components/faq';
+
+<FAQ
+  items={[
+    { 
+      question: 'How do I create a trip?', 
+      answer: 'Click "Create Trip" on your dashboard.',
+      tags: ['Getting Started'] 
+    },
+    { 
+      question: 'Is my data private?', 
+      answer: 'Yes, we never share your data.',
+      tags: ['Privacy'] 
+    },
+  ]}
+  title="Frequently Asked Questions"
+/>
+```
+
+### Using Pre-built Variants
+
+```tsx
+import { DestinationsFAQ, TripPlanningFAQ } from '@/components/faq';
+
+// For destination pages
+<DestinationsFAQ />
+
+// For trip planning pages
+<TripPlanningFAQ layout="compact" />
+```
+
+### Customizing Appearance
+
+```tsx
+<FAQ
+  items={faqItems}
+  title="Help Center"
+  description="Find answers to common questions about our platform."
+  layout="sidebar"
+  showFilter={true}
+  showSearch={true}
+  allowHtml={true}
+  className="my-8 border rounded-lg p-6"
+/>
+```
+
+## Atomic Design Structure
+
+The FAQ system follows atomic design principles:
+
+- **Atoms**: `FAQQuestion`, `FAQAnswer`, `FAQTag`
+- **Molecules**: `FAQItem`, `FAQList`, `FAQFilter`
+- **Organisms**: `FAQ`
+- **Variants**: `DestinationsFAQ`, `TripPlanningFAQ`
+
+## Extension and Customization
+
+### Creating Custom Variants
+
+```tsx
+import { FAQ } from '@/components/faq';
+import { FaqEntry } from '@/types/faq';
+
+const supportFaqs: FaqEntry[] = [
+  { 
+    question: 'How do I contact support?', 
+    answer: 'Email us at support@withme.travel',
+    tags: ['Contact'] 
+  },
+  // More support FAQs...
+];
+
+export function SupportFAQ(props) {
+  return (
+    <FAQ
+      items={supportFaqs}
+      title="Support FAQ"
+      layout="sidebar"
+      {...props}
+    />
+  );
+}
+``` 

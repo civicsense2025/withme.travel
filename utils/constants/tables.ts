@@ -58,6 +58,8 @@ export const USER_TABLES = {
   FRIENDS: 'friends',
 } as const;
 
+
+
 /**
  * Database enum types
  * These represent fixed values used in specific table columns
@@ -489,34 +491,22 @@ export const FORM_TABLES = {
   FORM_FIELDS: 'form_fields',
   /** Form responses */
   FORM_RESPONSES: 'form_responses',
-  /** Questions */
-  QUESTIONS: 'questions',
-  /** Question branching */
-  QUESTION_BRANCHING: 'question_branching',
-  /** Response sessions */
-  RESPONSE_SESSIONS: 'response_sessions',
-  /** Responses */
-  RESPONSES: 'responses',
   /** Milestone triggers */
   MILESTONE_TRIGGERS: 'milestone_triggers',
-  /** Survey definitions */
-  SURVEY_DEFINITIONS: 'survey_definitions',
-  /** Survey responses */
-  SURVEY_RESPONSES: 'survey_responses',
+  /** User testing sessions */
+  USER_TESTING_SESSIONS: 'user_testing_sessions',
+  /** User testing events */
+  USER_TESTING_EVENTS: 'user_testing_events',
 } as const;
 
 /**
  * User testing tables
  */
 export const USER_TESTING_TABLES = {
-  /** User testing signups */
-  USER_TESTING_SIGNUPS: 'user_testing_signups',
   /** User testing sessions */
   USER_TESTING_SESSIONS: 'user_testing_sessions',
   /** User testing events */
   USER_TESTING_EVENTS: 'user_testing_events',
-  /** Feedback */
-  FEEDBACK: 'feedback',
 } as const;
 
 // ============================================================================
@@ -563,6 +553,12 @@ export const TABLES = {
   AUTH_MODAL_ANALYTICS: 'auth_modal_analytics',
   FORM_TEMPLATES: 'form_templates',
   MEMBERS: 'members',
+  FORMS: 'forms',
+  FORM_FIELDS: 'form_fields',
+  FORM_RESPONSES: 'form_responses',
+  MILESTONE_TRIGGERS: 'milestone_triggers',
+  USER_TESTING_SESSIONS: 'user_testing_sessions',
+  USER_TESTING_EVENTS: 'user_testing_events',
 } as const;
 
 /**

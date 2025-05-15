@@ -50,6 +50,18 @@ export {
  */
 export { TABLE_FIELDS } from './table-fields';
 
+/**
+ * Research and Forms System Constants
+ */
+export { 
+  FORM_FIELDS,
+  FORM_FIELD_TYPES,
+  RESEARCH_EVENT_TYPES,
+  MILESTONE_TYPES,
+  FORM_TYPES,
+  SESSION_STATUS,
+} from './research-tables';
+
 export type { CommentableContentType, ItineraryTemplateMetadata } from './tables';
 
 // ============================================================================

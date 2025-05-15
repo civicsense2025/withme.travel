@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 
 // UI Components
 import { DashboardHeader } from './components/dashboard-header';
-import { QuickActionsSidebar } from './components/quick-actions-sidebar';
 import { ContentTabsSection } from './components/content-tabs-section';
 import { DiscoverSection } from './components/discover-section';
+import { CommandBar } from './components/command-bar';
 import { useToast } from '@/hooks/use-toast';
 
 // Dashboard data structure from server actions
@@ -69,11 +69,8 @@ export default function DashboardClient({ user, dashboardData }: DashboardClient
   const displayName =
     userProfile?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Traveler';
 
-  // Travel journey status text
-  const travelJourneyText = `${travelStats.visitedCount} destinations visited · ${travelStats.countriesCount} countries explored`;
-
   return (
-    <main className="container py-8 max-w-7xl">
+    <main className="container py-8 max-w-5xl mx-auto">
       {/* Onboarding Banner */}
       {showOnboardingBanner && (
         <div className="mb-6 bg-yellow-50 border border-yellow-300 text-yellow-900 rounded-lg px-4 py-3 flex items-center justify-between">
@@ -104,24 +101,20 @@ export default function DashboardClient({ user, dashboardData }: DashboardClient
       />
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Quick Actions Sidebar */}
-        <div className="col-span-1">
-          <QuickActionsSidebar travelStats={travelStats} />
-        </div>
-
+      <div className="w-full">
         {/* Main Content Area with Tabs */}
-        <div className="col-span-1 lg:col-span-2">
-          <ContentTabsSection
-            trips={recentTrips}
-            activeTrips={activeTrips}
-            savedContent={savedContent}
-          />
-        </div>
+        <ContentTabsSection
+          trips={recentTrips}
+          activeTrips={activeTrips}
+          savedContent={savedContent}
+        />
       </div>
 
       {/* Discover Section */}
       <DiscoverSection />
+      
+      {/* Floating Command Bar */}
+      <CommandBar />
     </main>
   );
 }

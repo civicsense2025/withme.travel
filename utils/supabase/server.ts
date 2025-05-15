@@ -17,6 +17,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CookieOptions } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient as SupabaseClientJs, User } from '@supabase/supabase-js';
+import type { NextRequest as NextRequestJs } from 'next/server';
 
 // ============================================================================
 // CONFIGURATION & TYPE DEFINITIONS
@@ -102,7 +105,6 @@ function convertCookieOptions(name: string, value: string, options: CookieOption
 export async function createServerComponentClient(): Promise<TypedSupabaseClient> {
   try {
     // Import cookies only inside the function
-    const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
 
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -156,42 +158,28 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
 
 /**
  * Creates a Supabase client for use in route handlers
+ * 
+ * IMPORTANT: This client DOES NOT handle cookies. Use it only for database operations
+ * that don't require authentication.
+ * 
+ * NOTE: There are known issues with the @supabase/ssr package and Next.js 15's cookie
+ * handling. This implementation avoids the cookie issues entirely by not using cookies.
+ * For authenticated operations, consider adding a server action using middleware
+ * cookie handling or implementing a custom auth solution.
  *
  * @returns A configured Supabase client for server-side API routes
  */
-export async function createRouteHandlerClient() {
-  const cookieStore = cookies();
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        async get(name: string) {
-          const cookies = await cookieStore;
-          return cookies.get(name)?.value;
-        },
-        async set(name: string, value: string, options: CookieOptions) {
-          try {
-            const cookies = await cookieStore;
-            cookies.set({ name, value, ...options });
-          } catch (error) {
-            // Handle cookie setting errors
-            console.error('Error setting cookie:', error);
-          }
-        },
-        async remove(name: string, options: CookieOptions) {
-          try {
-            const cookies = await cookieStore;
-            cookies.set({ name, value: '', ...options });
-          } catch (error) {
-            // Handle cookie removal errors
-            console.error('Error removing cookie:', error);
-          }
-        },
-      },
+export function createRouteHandlerClient(): TypedSupabaseClient {
+  // For route handlers in Next.js 15, we need to completely avoid cookie manipulation
+  // We'll create a basic client that doesn't use cookies at all
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      // Disable all features that would require cookie manipulation
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false
     }
-  );
+  });
 }
 
 /**
@@ -312,9 +300,11 @@ export async function getTypedDbClient() {
       // Use a type assertion to ensure the table argument is a valid key of the supabase.from overload
       return (supabase.from as any)(table);
     },
-    // Add rpc method to the client
-    rpc(functionName: string, params?: Record<string, any>) {
-      return supabase.rpc(functionName, params);
+    // Add rpc method to the client with type assertion to bypass strict function name checking
+    rpc<T = any>(functionName: string, params?: Record<string, any>) {
+      // Use type assertion to bypass the strict typing on function names
+      // This is necessary because the Database type might not include all RPC functions
+      return (supabase.rpc as any)(functionName, params) as Promise<{ data: T | null; error: any }>;
     },
   };
 }
@@ -333,3 +323,6 @@ export async function getTypedDbClient() {
  * Prefer importing and using createServerComponentClient directly in all new code.
  */
 export const createServerSupabaseClient = createServerComponentClient;
+
+// TODO: Once Next.js 15 compatibility issues with @supabase/ssr are resolved,
+// implement proper cookie-handling clients for API routes and server actions.

@@ -1,17 +1,13 @@
 import type { StorybookConfig } from '@storybook/nextjs';
 import path from 'path';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirnameESM = dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   stories: [
-    '../.storybook/pages/**/*.mdx',
-    '../components/ui/DesignSystem.mdx',
-    '../components/**/*.mdx',
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|ts|tsx)',
     '../components/**/*.stories.@(js|jsx|ts|tsx)',
-    '../app/**/*.stories.@(js|jsx|ts|tsx)',
+    '!../scripts/storybook-templates/**',
+    '!../node_modules/**',
   ],
   addons: [
     '@storybook/addon-links',
@@ -25,18 +21,18 @@ const config: StorybookConfig = {
     options: {},
   },
   docs: {
-    autodocs: 'tag',
-    defaultName: 'Documentation',
+    autodocs: true,
   },
+  staticDirs: ['../public'],
   webpackFinal: async (config) => {
     if (config.resolve) {
       config.resolve.alias = {
         ...config.resolve.alias,
-        '@': path.resolve(__dirnameESM, '..'),
+        '@': path.resolve(process.cwd()),
       };
     }
     return config;
   },
-  staticDirs: ['../public'],
 };
+
 export default config;

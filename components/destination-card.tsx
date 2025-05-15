@@ -204,7 +204,7 @@ export function DestinationCard({
   return (
     <div
       className={cn(
-        'relative aspect-[3/4] sm:aspect-[4/5] w-full overflow-hidden group',
+        'relative aspect-[3/4] sm:aspect-[4/5] w-full overflow-hidden group rounded-md',
         className
       )}
       onMouseEnter={() => setIsHovered(true)}

@@ -24,30 +24,57 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { PlusCircle, Edit, Eye, Trash2, Link } from 'lucide-react';
 
+// Define types for our survey data
+interface Survey {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  response_count: number;
+  config?: {
+    fields?: any[];
+  };
+}
+
 /**
  * Survey Management Admin Page
  * TODO: Implement survey list, create/edit form, and survey analytics
  */
 export default function SurveyManagementPage() {
   const router = useRouter();
-  const [surveys, setSurveys] = useState<any[]>([]);
+  const [surveys, setSurveys] = useState<Survey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch surveys
   const fetchSurveys = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/research/surveys');
       if (!response.ok) {
-        throw new Error('Failed to fetch surveys');
+        throw new Error(`Failed to fetch surveys: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
-      setSurveys(data.surveys || []);
+      
+      // Handle response format from the updated API
+      if (data.surveys && Array.isArray(data.surveys)) {
+        setSurveys(data.surveys);
+      } else if (Array.isArray(data)) {
+        setSurveys(data);
+      } else {
+        throw new Error('Unexpected response format from API');
+      }
     } catch (error) {
       console.error('Error fetching surveys:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load surveys';
+      setError(errorMessage);
       toast({
         title: 'Error',
-        description: 'Failed to load surveys',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -84,6 +111,17 @@ export default function SurveyManagementPage() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+          ) : error ? (
+            // Error state
+            <div className="text-center py-8">
+              <p className="text-red-500 mb-4">{error}</p>
+              <Button 
+                variant="outline"
+                onClick={fetchSurveys}
+              >
+                Try Again
+              </Button>
+            </div>
           ) : surveys.length === 0 ? (
             // Empty state
             <div className="text-center py-8">
@@ -113,19 +151,19 @@ export default function SurveyManagementPage() {
                 {surveys.map((survey) => (
                   <TableRow key={survey.id}>
                     <TableCell className="font-medium">
-                      {survey.name || survey.title || 'Untitled Survey'}
+                      {survey.name || 'Untitled Survey'}
                     </TableCell>
-                    <TableCell>{survey.type}</TableCell>
+                    <TableCell>{survey.type || 'general'}</TableCell>
                     <TableCell>
                       <Badge variant={survey.is_active ? "default" : "secondary"}>
                         {survey.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(survey.created_at).toLocaleDateString()}
+                      {survey.created_at ? new Date(survey.created_at).toLocaleDateString() : 'Unknown'}
                     </TableCell>
                     <TableCell>
-                      {survey.response_count || 0}
+                      {survey.response_count ?? 0}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">

@@ -287,7 +287,6 @@ const GroupSelect = ({
           <SelectValue placeholder="Select a group (optional)" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">No group</SelectItem>
           {groups.map((group) => (
             <SelectItem key={group.id} value={group.id}>
               {group.name}

@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-05-15T05:47:12.263Z",
+  "testInfo": {
+    "name": "completes-entire-survey-flow",
+    "file": "survey-flow.spec.ts",
+    "timestamp": "2025-05-15T05-47-12-083Z",
+    "browserName": "chromium"
+  },
+  "error": {
+    "name": "Error",
+    "message": "Could not find element with selectors: [data-testid=\"survey-welcome-heading\"], h1:has-text(\"Welcome\"), h2:has-text(\"Welcome\"), .heading:has-text(\"Welcome\")",
+    "stack": "Error: Could not find element with selectors: [data-testid=\"survey-welcome-heading\"], h1:has-text(\"Welcome\"), h2:has-text(\"Welcome\"), .heading:has-text(\"Welcome\")\n    at findElement (file:///Users/tanho/GitHub_non_cloud/withme.travel/e2e/survey-flow.spec.ts:57:9)\n    at file:///Users/tanho/GitHub_non_cloud/withme.travel/e2e/survey-flow.spec.ts:173:30\n    at /Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:304:9\n    at /Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/testInfo.js:277:11\n    at TimeoutManager.withRunnable (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/timeoutManager.js:67:14)\n    at TestInfoImpl._runWithTimeout (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/testInfo.js:275:7)\n    at /Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:302:7\n    at WorkerMain._runTest (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:277:5)\n    at WorkerMain.runTestGroup (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/worker/workerMain.js:193:11)\n    at process.<anonymous> (/Users/tanho/GitHub_non_cloud/withme.travel/node_modules/playwright/lib/common/process.js:70:22)"
+  },
+  "context": {
+    "url": "http://localhost:3000/user-testing/survey?token=test-survey-token",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "screenshotPath": "./test-results/error-entire-survey-flow-2025-05-15T05-47-12-083Z-1747288032084.png",
+    "testTokens": {
+      "VALID": "test-survey-token",
+      "EXPIRED": "expired-survey-token",
+      "INVALID": "invalid-survey-token",
+      "MULTI_MILESTONE": "multi-milestone-token"
+    }
+  }
+}

@@ -1,3 +1,21 @@
+/**
+ @jest-environment node
+ */
+
+// Polyfill global fetch for all tests (required for next-test-api-route-handler and API route tests)
+// This must be first to ensure fetch is available before any other setup
+import 'whatwg-fetch';
+
+// Import web streams polyfill for Next.js API route testing with ReadableStream/WritableStream
+import { ReadableStream, WritableStream, TransformStream } from 'web-streams-polyfill';
+
+// Set up global stream objects if they don't exist
+if (typeof global.ReadableStream === 'undefined') {
+  global.ReadableStream = ReadableStream;
+  global.WritableStream = WritableStream;
+  global.TransformStream = TransformStream;
+}
+
 // Optional: configure or set up a testing framework before each test
 // if you delete this file, remove `setupFilesAfterEnv` from `jest.config.js`
 
@@ -5,18 +23,10 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
-// Polyfill for TextEncoder and TextDecoder which are required by MSW
+// Polyfill encoding APIs
 import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
-
-// Web API polyfills needed for MSW
-import { Response, Request, Headers, fetch } from 'node-fetch';
-
-global.Response = Response;
-global.Request = Request;
-global.Headers = Headers;
-global.fetch = fetch;
 
 // Mock BroadcastChannel
 global.BroadcastChannel = class BroadcastChannel {

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
 
 // GET: Retrieve all research milestones
 export async function GET(request: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
 // POST: Create a new research milestone
 export async function POST(request: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization

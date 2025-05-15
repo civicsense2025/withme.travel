@@ -22,6 +22,8 @@ import { Container } from '@/components/container';
 import { SearchProvider } from '@/contexts/search-context';
 import { CommandMenu } from '@/components/search/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ResearchProvider } from '@/components/research/ResearchProvider';
+import { ResearchModal } from '@/components/research/ResearchModal';
 
 // Metadata is imported from app/metadata.ts
 export const metadata = {
@@ -105,7 +107,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body
         className={cn('min-h-screen bg-background font-sans antialiased', helveticaNeue.variable)}
       >
-        <ThemeProvider attribute="class" enableSystem defaultTheme="system" storageKey="withme-theme">
+        <ThemeProvider>
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-primary-foreground"
@@ -128,6 +130,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Toaster />
           <Analytics />
           <SpeedInsights />
+          {/* User testing/research components */}
+          <ResearchProvider>
+            <ResearchModal />
+          </ResearchProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -122,6 +122,41 @@ export function AdminSidebar() {
 
           <div>
             <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider px-2 mb-2">
+              Research
+            </h3>
+            <ul className="space-y-0.5">
+              <li>
+                <Link
+                  href="/admin/research/analytics"
+                  className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
+                >
+                  <ClipboardCheck className="mr-2 h-4 w-4 text-travel-purple" />
+                  Analytics
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin/research/surveys"
+                  className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
+                >
+                  <ClipboardCheck className="mr-2 h-4 w-4 text-travel-purple" />
+                  Surveys
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin/research/events"
+                  className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
+                >
+                  <ClipboardCheck className="mr-2 h-4 w-4 text-travel-purple" />
+                  Event Log
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider px-2 mb-2">
               Users
             </h3>
             <ul className="space-y-0.5">
@@ -193,32 +228,6 @@ export function AdminSidebar() {
                 >
                   <Palmtree className="mr-2 h-4 w-4 text-travel-purple" />
                   Viator Integration
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider px-2 mb-2">
-              Research
-            </h3>
-            <ul className="space-y-0.5">
-              <li>
-                <Link
-                  href="/admin/research/surveys"
-                  className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                >
-                  <ClipboardCheck className="mr-2 h-4 w-4 text-travel-purple" />
-                  All Surveys
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/admin/research/surveys/create"
-                  className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                >
-                  <ClipboardPlus className="mr-2 h-4 w-4 text-travel-purple" />
-                  Create Survey
                 </Link>
               </li>
             </ul>

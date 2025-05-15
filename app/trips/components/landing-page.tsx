@@ -11,6 +11,7 @@ import { MultiCityItinerary } from '@/components/ui/MultiCityItinerary';
 import FeaturesSection from './FeaturesSection';
 import TestimonialsSection from './TestimonialsSection';
 import CtaSection from './CtaSection';
+import { TripPlanningFAQ } from '@/components/faq';
 
 // Sample witty headlines for the trips landing page
 const wittyHeadlines = [
@@ -195,7 +196,7 @@ const TripsLandingPage: React.FC = () => {
         </Card>
       </div>
 
-      <div className="text-center">
+      <div className="text-center mb-20">
         <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to start planning?</h2>
         <p className="text-muted-foreground mb-8">
           Join thousands of travelers who have made their group trips unforgettable with withme.travel
@@ -205,6 +206,15 @@ const TripsLandingPage: React.FC = () => {
             Start Planning Now
           </Button>
         </Link>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="border-t py-16">
+        <TripPlanningFAQ
+          title="Trip Planning FAQ"
+          description="Find answers to the most common questions about planning trips on withme.travel"
+          layout="sidebar"
+        />
       </div>
     </div>
   );

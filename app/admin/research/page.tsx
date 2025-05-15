@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -10,207 +10,405 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import {
   BarChart3,
   LineChart,
-  ListChecks,
   FileBarChart2,
   Users,
-  Calendar,
-  Settings,
+  PlusCircle,
   BellRing,
   FileText,
-  Cog,
-  MailSearch,
+  Sparkles,
+  BookOpen,
+  BarChart,
+  CheckCircle2,
+  XCircle,
+  Settings,
   MessageCircle,
   Activity,
   FileQuestion,
+  ArrowRight,
 } from 'lucide-react';
+import { MilestoneTriggerSimulator } from '@/components/research';
+
+// Summary data - would be replaced with real API calls
+const METRICS = {
+  activeSurveys: 4,
+  totalResponses: 1245,
+  completionRate: 68,
+  avgTimeToComplete: '2m 38s',
+  activeTriggers: 8
+};
 
 export default function ResearchDashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Research Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage user research, surveys, and event tracking
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Event Tracking Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Activity className="h-5 w-5 text-blue-500" />
-              Event Tracking
-            </CardTitle>
-            <CardDescription>
-              View and analyze user events
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground">
-              Comprehensive analytics on all tracked user actions and events throughout the application.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Link href="/admin/research/analytics/events-dashboard">
-              <Button>View Events Dashboard</Button>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">User Testing & Research</h1>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/admin/research/surveys/create">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Create Survey
             </Link>
-          </CardFooter>
-        </Card>
-
-        {/* Milestone Triggers Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BellRing className="h-5 w-5 text-amber-500" />
-              Milestone Triggers
-            </CardTitle>
-            <CardDescription>
-              Configure survey triggers
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground">
-              Set up automatic survey triggers based on user actions and milestones to collect timely feedback.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Link href="/admin/research/milestone-triggers">
-              <Button>Manage Triggers</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-
-        {/* Surveys Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileQuestion className="h-5 w-5 text-green-500" />
-              Forms & Surveys
-            </CardTitle>
-            <CardDescription>
-              Design and manage surveys
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground">
-              Create, edit and manage user feedback forms, surveys, and questionnaires.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Link href="/admin/research/forms">
-              <Button>Manage Forms</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-
-        {/* Response Analytics Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-purple-500" />
-              Response Analytics
-            </CardTitle>
-            <CardDescription>
-              Analyze survey responses
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground">
-              View detailed analytics and insights from user survey responses and feedback.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Link href="/admin/research/responses">
-              <Button>View Responses</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-
-        {/* User Testing Sessions Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5 text-indigo-500" />
-              User Testing
-            </CardTitle>
-            <CardDescription>
-              Manage testing sessions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground">
-              Schedule, track, and analyze user testing sessions and participant feedback.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Link href="/admin/research/testing">
-              <Button>Manage Sessions</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-
-        {/* Settings Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Settings className="h-5 w-5 text-gray-500" />
-              Research Settings
-            </CardTitle>
-            <CardDescription>
-              Configure global settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground">
-              Manage system-wide research settings, defaults, and configuration options.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Link href="/admin/research/settings">
-              <Button>Manage Settings</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-
-      {/* Quick Stats Section */}
-      <div className="mt-12">
-        <h2 className="text-xl font-semibold mb-4">Research Activity Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Events Tracked</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">246,891</div>
-              <p className="text-xs text-muted-foreground">+12.3% from last month</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Active Surveys</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">8</div>
-              <p className="text-xs text-muted-foreground">2 pending approval</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Recent Responses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">124</div>
-              <p className="text-xs text-muted-foreground">Last 7 days</p>
-            </CardContent>
-          </Card>
+          </Button>
         </div>
       </div>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Surveys</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-10 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{METRICS.activeSurveys}</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Responses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-10 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{METRICS.totalResponses}</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-10 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{METRICS.completionRate}%</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Completion Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-10 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{METRICS.avgTimeToComplete}</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Triggers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-10 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{METRICS.activeTriggers}</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Tabs */}
+      <Tabs defaultValue="surveys" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="surveys">
+            <FileText className="h-4 w-4 mr-2" />
+            Surveys
+          </TabsTrigger>
+          <TabsTrigger value="triggers">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Milestone Triggers
+          </TabsTrigger>
+          <TabsTrigger value="analytics">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Surveys Tab */}
+        <TabsContent value="surveys" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Survey Management</CardTitle>
+                <CardDescription>Create, edit, and manage user testing surveys</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Active Surveys</span>
+                    <Badge variant="outline">{isLoading ? '-' : METRICS.activeSurveys}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Total Surveys</span>
+                    <Badge variant="outline">{isLoading ? '-' : METRICS.activeSurveys + 3}</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/surveys">
+                    View All Surveys
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Survey Builder</CardTitle>
+                <CardDescription>Create new surveys and edit questions</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Question Types</span>
+                    <Badge variant="outline">Multiple</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Milestone Support</span>
+                    <Badge variant="outline">Yes</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/surveys/create">
+                    Create New Survey
+                    <PlusCircle className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Response Management</CardTitle>
+                <CardDescription>View and export survey responses</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Total Responses</span>
+                    <Badge variant="outline">{isLoading ? '-' : METRICS.totalResponses}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Export Formats</span>
+                    <Badge variant="outline">CSV, JSON</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/analytics/responses">
+                    View Responses
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Triggers Tab */}
+        <TabsContent value="triggers" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Milestone Triggers</CardTitle>
+                <CardDescription>View and manage milestone trigger events</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Active Triggers</span>
+                    <Badge variant="outline">{isLoading ? '-' : METRICS.activeTriggers}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Event Types</span>
+                    <Badge variant="outline">12</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/milestone-triggers">
+                    Manage Triggers
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Event Types</CardTitle>
+                <CardDescription>View and configure available event types</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">User Events</span>
+                    <Badge variant="outline">8</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">System Events</span>
+                    <Badge variant="outline">4</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/events">
+                    View Events
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Trigger Simulator</CardTitle>
+                <CardDescription>Test milestone triggers in development</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="text-sm text-muted-foreground">
+                  Simulate milestone events to test trigger behavior without executing real user flows.
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button variant="outline" size="sm" className="w-full">
+                  Test Triggers
+                  <Sparkles className="h-4 w-4 ml-2" />
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          {/* Milestone Trigger Simulator (dev/admin only) */}
+          <div className="mt-6">
+            <MilestoneTriggerSimulator />
+          </div>
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Analytics Dashboard</CardTitle>
+                <CardDescription>Comprehensive research analytics</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Metrics</span>
+                    <Badge variant="outline">Multiple</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Visualizations</span>
+                    <Badge variant="outline">Charts, Tables</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/analytics">
+                    View Analytics
+                    <BarChart3 className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Event Log</CardTitle>
+                <CardDescription>Detailed log of all research events</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Events Today</span>
+                    <Badge variant="outline">{isLoading ? '-' : '204'}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Filter Options</span>
+                    <Badge variant="outline">Multiple</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/analytics#events">
+                    View Event Log
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Export Data</CardTitle>
+                <CardDescription>Export analytics data in various formats</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Export Formats</span>
+                    <Badge variant="outline">CSV, JSON, Excel</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Data Range</span>
+                    <Badge variant="outline">Configurable</Badge>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/admin/research/analytics#export">
+                    Export Analytics
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 

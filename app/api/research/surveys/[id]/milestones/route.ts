@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,7 +8,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization
@@ -66,7 +66,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization

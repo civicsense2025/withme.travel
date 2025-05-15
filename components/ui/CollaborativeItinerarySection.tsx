@@ -196,7 +196,7 @@ export function CollaborativeItinerarySection({ mode }: CollaborativeItinerarySe
               Gaudí's colorful park with amazing city views. Buy tickets in advance!
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, color: borderColor }}>Added by Maya</div>
+              <div style={{ fontSize: 12, color: textColor }}>Added by Maya</div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <motion.div
                   variants={voteVariants}
@@ -242,7 +242,7 @@ export function CollaborativeItinerarySection({ mode }: CollaborativeItinerarySe
               Famous food market off La Rambla. Try fresh juice and tapas at the stalls inside.
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, color: borderColor }}>Added by James</div>
+              <div style={{ fontSize: 12, color: textColor }}>Added by James</div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <motion.div
                   variants={voteVariants}
@@ -322,7 +322,7 @@ export function CollaborativeItinerarySection({ mode }: CollaborativeItinerarySe
               <div
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
               >
-                <div style={{ fontSize: 12, color: borderColor }}>Added by you just now</div>
+                <div style={{ fontSize: 12, color: textColor }}>Added by you just now</div>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <motion.div
                     variants={voteVariants}
@@ -364,7 +364,7 @@ export function CollaborativeItinerarySection({ mode }: CollaborativeItinerarySe
               Bar hop through the trendy El Born district. Try El Xampanyet for cava and tapas!
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, color: borderColor }}>Added by Zoe</div>
+              <div style={{ fontSize: 12, color: textColor }}>Added by Zoe</div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <motion.div
                   variants={voteVariants}

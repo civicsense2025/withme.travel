@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { TABLES, USER_TESTING_TABLES } from '@/utils/constants/tables';
 import { NextRequest, NextResponse } from 'next/server';
 import { EventType } from '@/types/research';
+import { MILESTONE_EVENT_TYPES } from '@/utils/constants/status';
+import { v4 as uuidv4 } from 'uuid';
 
 // Zod schema for an event using the broader EventType
 const EventSchema = z.object({
-  event_type: z.custom<EventType>(),
+  event_type: z.string().min(1, "Event type is required"),
   event_data: z.record(z.any()).optional(),
   session_id: z.string().optional(),
   user_id: z.string().optional(),
@@ -14,157 +16,170 @@ const EventSchema = z.object({
   source: z.string().optional(),
   component: z.string().optional(),
   route: z.string().optional(),
+  // These fields are made optional as they're not sent by trackEvent
+  type: z.string().min(1, "Event type is required").optional(),
+  milestone: z.string().optional(),
+  details: z.record(z.any()).optional(),
 });
 
 // GET /api/research/events
 export async function GET(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
-  const searchParams = request.nextUrl.searchParams;
-  
   try {
-    // Get query parameters
-    const eventType = searchParams.get('event_type');
-    const userId = searchParams.get('user_id');
-    const sessionId = searchParams.get('session_id');
-    const source = searchParams.get('source');
-    const component = searchParams.get('component');
-    const route = searchParams.get('route');
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const limit = parseInt(searchParams.get('limit') || '100');
-    const page = parseInt(searchParams.get('page') || '0');
+    const supabase = await createRouteHandlerClient();
     
-    // Start building query
+    // Check admin authorization
+    const { data } = await supabase.auth.getSession();
+    if (!data?.session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Verify user is admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', data.session.user.id)
+      .single();
+      
+    if (adminError || !adminData?.is_admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const milestone = searchParams.get('milestone');
+    const userId = searchParams.get('userId');
+    const limit = parseInt(searchParams.get('limit') || '100');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Construct query
     let query = supabase
-      .from(TABLES.USER_TESTING_EVENTS)
-      .select('*');
+      .from('research_events')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+      .range(offset, offset + limit - 1);
     
     // Apply filters
-    if (eventType) query = query.eq('event_type', eventType);
-    if (userId) query = query.eq('user_id', userId);
-    if (sessionId) query = query.eq('session_id', sessionId);
-    if (source) query = query.eq('source', source);
-    if (component) query = query.eq('component', component);
-    if (route) query = query.eq('route', route);
-    if (from) query = query.gte('timestamp', from);
-    if (to) query = query.lte('timestamp', to);
-    
-    // Apply pagination
-    query = query.order('timestamp', { ascending: false })
-      .range(page * limit, (page + 1) * limit - 1);
-    
-    const { data, error, count } = await query;
-    
-    if (error) {
-      console.error('Error fetching events:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (milestone) {
+      query = query.eq('milestone', milestone);
     }
     
-    // Get count for pagination
-    const { count: totalCount, error: countError } = await supabase
-      .from(TABLES.USER_TESTING_EVENTS)
-      .select('*', { count: 'exact', head: true });
-      
-    if (countError) {
-      console.error('Error counting events:', countError);
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
     
-    return NextResponse.json({ 
-      events: data,
-      pagination: {
-        page,
-        limit,
-        total: totalCount || 0,
-        pages: totalCount ? Math.ceil(totalCount / limit) : 0
-      }
-    });
+    // Execute query
+    const { data: events, error: eventsError } = await query;
+    
+    if (eventsError) {
+      console.error('Error fetching events:', eventsError);
+      return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+    }
+    
+    return NextResponse.json({ events });
   } catch (error) {
-    console.error('Unexpected error in events GET endpoint:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Error in events GET:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// POST /api/research/events
-export async function POST(request: NextRequest) {
-  const supabase = await createRouteHandlerClient();
-  const body = await request.json();
-  
+/**
+ * Create a new research event and check for triggers
+ */
+export async function POST(request: Request) {
   try {
-    // Validate event
-    const result = EventSchema.safeParse(body);
-    if (!result.success) {
+    const supabase = createRouteHandlerClient();
+    const data = await request.json();
+    
+    const { session_id, user_id, event_type, data: eventData = {} } = data;
+    
+    if (!session_id || !event_type) {
       return NextResponse.json(
-        { error: 'Invalid event', details: result.error.flatten() },
+        { error: 'Session ID and event type are required' },
         { status: 400 }
       );
     }
     
-    // Default timestamp if not provided
-    if (!body.timestamp) {
-      body.timestamp = new Date().toISOString();
-    }
-    
-    // Insert event
-    const { data, error } = await supabase
+    // Insert the event
+    const { data: event, error } = await supabase
       .from(TABLES.USER_TESTING_EVENTS)
-      .insert([body])
+      .insert({
+        session_id,
+        user_id,
+        event_type,
+        data: eventData,
+      })
       .select()
       .single();
-      
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     
-    // Check for milestone triggers in one combined query
-    const { data: triggerData, error: triggerError } = await supabase
+    if (error) {
+      throw error;
+    }
+    
+    // Check if this event triggers any milestone surveys
+    const { data: triggers, error: triggerError } = await supabase
       .from(TABLES.MILESTONE_TRIGGERS)
-      .select('*, form:forms(*)')
-      .eq('event_type', body.event_type)
+      .select(`
+        id,
+        form_id,
+        cooldown_minutes,
+        forms ( id, name, type, config )
+      `)
+      .eq('event_type', event_type)
       .eq('active', true)
-      .order('priority', { ascending: false })
-      .limit(5);
-      
+      .order('priority', { ascending: false });
+    
     if (triggerError) {
       console.error('Error checking for triggers:', triggerError);
-      // Continue without failing the request
     }
     
-    // Process matching triggers
-    const triggers = [];
-    if (triggerData && triggerData.length > 0) {
-      for (const trigger of triggerData) {
-        // Check if any additional conditions are met
-        let conditionsMet = true;
+    // If we have triggers, check if we should show them
+    let triggeredFormId = null;
+    let milestone = null;
+    
+    if (triggers && triggers.length > 0) {
+      // Get the highest priority trigger that's applicable
+      const trigger = triggers[0];
+      
+      // Check if the user has already seen this form recently
+      if (trigger.cooldown_minutes > 0) {
+        const cooldownTime = new Date();
+        cooldownTime.setMinutes(cooldownTime.getMinutes() - trigger.cooldown_minutes);
         
-        // Filter by value conditions (if any specified in the trigger)
-        if (trigger.filter_key && trigger.filter_value && body.event_data) {
-          // Check if the event data contains the required key/value pair
-          if (body.event_data[trigger.filter_key] !== trigger.filter_value) {
-            conditionsMet = false;
-          }
+        const { data: recentResponses, error: responseError } = await supabase
+          .from(TABLES.FORM_RESPONSES)
+          .select('id')
+          .eq('form_id', trigger.form_id)
+          .eq('session_id', session_id)
+          .gte('submitted_at', cooldownTime.toISOString())
+          .limit(1);
+        
+        if (responseError) {
+          console.error('Error checking for recent responses:', responseError);
         }
         
-        if (conditionsMet) {
-          triggers.push({
-            id: trigger.id,
-            formId: trigger.form_id,
-            form: trigger.form,
-            priority: trigger.priority
-          });
+        // If they've already responded recently, don't trigger again
+        if (recentResponses && recentResponses.length > 0) {
+          // Skip this trigger
+          return NextResponse.json(event);
         }
       }
+      
+      // Set the triggered form ID and milestone
+      triggeredFormId = trigger.form_id;
+      milestone = eventData.milestone || null;
     }
     
-    // Return the event data with available triggers
-    return NextResponse.json({ 
-      event: data,
-      triggers: triggers.length > 0 ? triggers : undefined
+    // Return the event with any triggered form
+    return NextResponse.json({
+      ...event,
+      triggered_form_id: triggeredFormId,
+      milestone,
     });
   } catch (error) {
-    console.error('Unexpected error in events POST endpoint:', error);
+    console.error('Error creating research event:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create research event' },
       { status: 500 }
     );
   }

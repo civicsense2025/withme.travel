@@ -13,7 +13,6 @@ import {
 } from './form';
 import { Input } from './input';
 import { Button } from './button';
-import { storybookCategories } from '../../.storybook/storybook-categories';
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),

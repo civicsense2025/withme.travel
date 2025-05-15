@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { FORM_TABLES } from '@/utils/constants/tables';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Zod schema for a form response (responses is a JSON object)
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
   // Insert response
   const { data, error } = await supabase
-    .from(TABLES.FORM_RESPONSES)
+    .from(FORM_TABLES.FORM_RESPONSES)
     .insert([{ ...body, form_id: params.id }])
     .select()
     .single();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 
 // GET: Retrieve a specific survey link
@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string; linkId: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization
@@ -54,7 +54,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string; linkId: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization
@@ -118,7 +118,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string; linkId: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization

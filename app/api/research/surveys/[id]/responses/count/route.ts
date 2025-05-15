@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 
 // GET: Count responses for a survey
@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createRouteHandlerClient();
   
   try {
     // Check admin authorization

@@ -1,0 +1,8 @@
+{
+  "TEST_TOKENS": {
+    "VALID": "test-survey-token-1747288608471-403633",
+    "EXPIRED": "expired-survey-token-1747288608471-403633",
+    "INVALID": "invalid-survey-token-1747288608471-403633",
+    "MULTI_MILESTONE": "multi-milestone-token-1747288608471-403633"
+  }
+}
