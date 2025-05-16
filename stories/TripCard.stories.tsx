@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { TripCard } from '../components/trip-card';
+import { TripCard } from '@/components';
 import type { TripRole } from '../utils/types';
 
 // Complete mock data for the TripWithMemberInfo type

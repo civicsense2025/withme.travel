@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Destination, LAYOUT } from './constants';
 import { ContinentTabs } from './components/ContinentTabs';
 import { CountrySection } from './components/CountrySection';
-import { DestinationCard } from '@/components/destination-card';
+import { DestinationCard } from '@/components/ui/features/destinations/molecules/DestinationCard';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { ErrorBoundary } from 'react-error-boundary';

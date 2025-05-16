@@ -50,6 +50,21 @@ export const storybookConfig = {
 // COMPONENT CATEGORIES
 // ============================================================================
 
+/**
+ * Component categories for documentation and organization
+ * 
+ * Note: When setting story titles, always use string literals instead of
+ * concatenating strings or using variables. This is required by Storybook 7+.
+ * 
+ * Example:
+ * ```
+ * // ✅ Correct
+ * title: 'Atoms/Button'
+ * 
+ * // ❌ Incorrect
+ * title: CATEGORIES.ATOMS + '/Button'
+ * ```
+ */
 export const CATEGORIES = {
   ATOMS: 'Atoms',
   MOLECULES: 'Molecules', 

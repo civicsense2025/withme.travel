@@ -5,10 +5,10 @@
  * Only rendered in development/test environments
  */
 import React from 'react';
-import { Survey } from '@/types/research';
 
+// Use a more generic type to avoid incompatibilities
 interface SurveyDebugViewProps {
-  survey: Survey | null;
+  survey: any;  // Change from Survey | null to any to allow for different survey formats
   token: string | null;
   isSubmitted: boolean;
   error: string | null;

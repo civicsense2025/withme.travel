@@ -58,7 +58,7 @@ import KeyboardShortcutsBar, {
   KeyboardShortcutsShowButton,
 } from '@/components/KeyboardShortcutsBar';
 import { IdeasBoardHelpDialog } from './components/ideas-board-help-dialog';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@/components/ui/atoms/ThemeToggle';
 import { AvatarGroup } from '@/components/ui/avatar-group';
 import { CollaboratorList } from './components/collaborator-list';
 import { toast } from '@/components/ui/use-toast';

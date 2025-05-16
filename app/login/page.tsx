@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LoginForm } from '@/components/login-form';
+import { LoginForm } from '@/components/ui/features/auth/molecules/LoginForm';
 import { Logo } from '@/components/logo';
 import { AuthSellingPoints } from '@/components/auth-selling-points';
 import { Button } from '@/components/ui/button';

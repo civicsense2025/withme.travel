@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { TripHeader } from './trip-header';
+import { TripHeader } from '../ui/features/trips/organisms/TripHeader';
 
 const meta: Meta<typeof TripHeader> = {
   title: 'Product/Features/TripHeader',

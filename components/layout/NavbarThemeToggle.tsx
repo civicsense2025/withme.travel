@@ -1,5 +1,5 @@
 import React from 'react';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@/components/ui/atoms/ThemeToggle';
 
 interface NavbarThemeToggleProps {
   mobileStyling?: boolean;

@@ -38,32 +38,54 @@ export default function SurveyList() {
       setSurveys([]);
       setUserCohort(null);
       try {
-        // Get token from URL/localStorage/guest
+        console.log('SurveyList: Starting to fetch surveys');
+        
+        // Get token from URL or localStorage
         const urlToken = searchParams?.get('token');
+        console.log('SurveyList: URL token:', urlToken ? 'present' : 'not present');
+        
         const authToken = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-        const guestToken = clientGuestUtils.getToken();
-        const userToken = urlToken || authToken || guestToken;
-        if (urlToken && urlToken !== guestToken) {
-          clientGuestUtils.saveToken(urlToken);
+        console.log('SurveyList: Auth token:', authToken ? 'present' : 'not present');
+        
+        // Use token from URL or localStorage
+        const userToken = urlToken || authToken;
+        console.log('SurveyList: Final user token:', userToken ? 'present' : 'not present');
+        
+        // Save URL token to localStorage if present
+        if (urlToken) {
+          localStorage.setItem('authToken', urlToken);
+          console.log('SurveyList: Saved URL token to localStorage');
         }
+        
         if (!userToken) {
+          console.log('SurveyList: No token found, redirecting to signup');
           setError('No authentication token found. Please sign up or log in.');
+          // Redirect to registration page
+          window.location.href = '/user-testing';
           setIsLoading(false);
           return;
         }
+        
         // 1. Fetch session to get cohort
+        console.log('SurveyList: Fetching session with token');
         const { session } = await fetchSession(userToken);
         if (!session?.cohort) throw new Error('Session missing cohort.');
         setUserCohort(session.cohort);
+        console.log('SurveyList: Got cohort:', session.cohort);
+        
         // 2. Fetch surveys for cohort
+        console.log('SurveyList: Fetching surveys for cohort:', session.cohort);
         const { forms } = await fetchSurveysForCohort(session.cohort, userToken);
         if (!forms || forms.length === 0) {
+          console.log('SurveyList: No forms returned');
           setSurveys([]);
           setIsLoading(false);
           return;
         }
+        console.log('SurveyList: Got surveys:', forms.length);
         setSurveys(forms);
       } catch (err: any) {
+        console.error('SurveyList: Error in fetchList:', err);
         setError(err.message || 'Failed to load surveys. Please try again later.');
         setSurveys([]);
       } finally {

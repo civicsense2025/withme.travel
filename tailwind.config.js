@@ -99,13 +99,17 @@ module.exports = {
       fontFamily: {
         sans: [
           'var(--font-helvetica-neue)',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"SF Pro Display"',
-          '"Segoe UI"',
-          'Roboto',
+          'Helvetica Neue',
           'sans-serif',
         ],
+      },
+      fontWeight: {
+        thin: 'var(--font-weight-thin)',
+        ultralight: 'var(--font-weight-ultralight)',
+        light: 'var(--font-weight-light)',
+        normal: 'var(--font-weight-regular)',
+        medium: 'var(--font-weight-medium)',
+        bold: 'var(--font-weight-bold)',
       },
       colors: {
         border: 'hsl(var(--border))',

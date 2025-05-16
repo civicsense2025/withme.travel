@@ -9,7 +9,6 @@
 // ============================================================================
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { CATEGORIES } from '../storybook.config';
 import { FloatingBubble } from './FloatingBubble';
 
 // ============================================================================
@@ -28,7 +27,7 @@ import { FloatingBubble } from './FloatingBubble';
  * - Place behind content with z-index
  */
 const meta: Meta<typeof FloatingBubble> = {
-  title: CATEGORIES.ATOMS + '/FloatingBubble',
+  title: 'Atoms/FloatingBubble',
   component: FloatingBubble,
   tags: ['autodocs'],
   parameters: {

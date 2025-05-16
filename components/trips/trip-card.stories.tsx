@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { TripCard } from '../trip-card';
+import { TripCard } from '@/components';
 
 const meta: Meta<typeof TripCard> = {
   title: 'Trip Features/Trip Card',

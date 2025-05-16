@@ -9,7 +9,6 @@
 // ============================================================================
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { CATEGORIES } from '../storybook.config';
 import { ThemeToggle } from './ThemeToggle';
 
 // ============================================================================
@@ -27,7 +26,7 @@ import { ThemeToggle } from './ThemeToggle';
  * - Place in a consistent location across pages
  */
 const meta: Meta<typeof ThemeToggle> = {
-  title: CATEGORIES.ATOMS + '/ThemeToggle',
+  title: 'Atoms/ThemeToggle',
   component: ThemeToggle,
   tags: ['autodocs'],
   parameters: {

@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { timeAgo } from '../utils/date-utils';
-import { AuthModalWithProps } from '@/components/auth-modal';
+import { AuthModalWithProps } from '@/components/ui/features/auth/organisms/AuthModal';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface IdeaCommentsProps {

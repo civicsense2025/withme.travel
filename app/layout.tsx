@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" className={cn('font-sans', helveticaNeue.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn('font-sans antialiased', helveticaNeue.variable)} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -105,7 +105,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body
-        className={cn('min-h-screen bg-background font-sans antialiased', helveticaNeue.variable)}
+        className={cn('min-h-screen bg-background font-sans', helveticaNeue.variable)}
         suppressHydrationWarning
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>

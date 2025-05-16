@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ResearchModal } from '@/components/research/ResearchModal';
 import { SurveyDebugView } from './SurveyDebugView';
 import { FORM_TYPES } from '@/utils/constants/research-tables';
-import type { Form, FormType } from '@/types/research';
+import type { Survey, Form, FormType } from '@/types/research';
 import clientGuestUtils from '@/utils/guest';
 
 // Define FormField if not imported
@@ -72,26 +72,38 @@ export default function SurveyClient() {
   const [token, setToken] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const formId = searchParams?.get('formId') || null;
-  const [survey, setSurvey] = useState<Survey | null>(null);
+  const [survey, setSurvey] = useState<Form | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showDevTools, setShowDevTools] = useState(false);
 
   useEffect(() => {
     // Check for authentication token
+    console.log('SurveyClient: Checking for authentication token');
+    
+    // First check URL parameters for token
+    const urlToken = searchParams?.get('token');
+    if (urlToken) {
+      console.log('SurveyClient: Found token in URL, saving and using it');
+      localStorage.setItem('authToken', urlToken);
+      setToken(urlToken);
+      return;
+    }
+    
+    // Then check localStorage for token
     const authToken = localStorage.getItem('authToken');
+    console.log('SurveyClient: Auth token from localStorage:', authToken ? 'present' : 'not present');
+    
     if (authToken) {
+      console.log('SurveyClient: Using auth token from localStorage');
       setToken(authToken);
     } else {
-      // Fallback to guest token using clientGuestUtils
-      const guestToken = clientGuestUtils.getToken();
-      if (guestToken) {
-        setToken(guestToken);
-      } else {
-        console.error('No token found');
-      }
+      console.log('SurveyClient: No auth token found');
+      setError('No authentication token found. Please sign up first.');
+      setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     // For E2E testing, expose the survey state
@@ -107,68 +119,40 @@ export default function SurveyClient() {
   }, [survey, token, loading, error, isSubmitted]);
 
   useEffect(() => {
-    const fetchSurvey = async () => {
+    async function fetchSurvey() {
       if (!token) {
-        setError('Missing token');
-        setLoading(false);
+        console.log('SurveyClient: No token available, skipping survey fetch');
         return;
       }
 
       try {
         setLoading(true);
         setError(null);
+
+        console.log('SurveyClient: Fetching survey with token:', token);
         
-        // Log the token being used (for debugging)
-        console.log(`Fetching survey with token: ${token}`);
+        // Use the new research sessions endpoint
+        const response = await fetch(`/api/research/sessions/${token}`);
         
-        const result = await fetchWithErrorHandling<Survey>(
-          `/api/research/sessions/${token}`
-        );
-        
-        // Process form_fields to ensure they're properly formatted
-        if (result && result.form_fields) {
-          // Create a clean copy to avoid reference issues
-          const processedResult = {
-            ...result,
-            form_fields: result.form_fields.map(field => {
-              // Ensure each field has an id and type at minimum
-              if (!field.id || !field.type) {
-                console.warn('Form field missing id or type:', field);
-              }
-              
-              return {
-                ...field,
-                _debug_id: `field-${field.id}-${field.type}` // Add a debug identifier
-              };
-            })
-          };
-          
-          // Debug log of the actual survey data received
-          if (process.env.NODE_ENV !== 'production') {
-            // Use replacer function to handle circular references and [object Object]
-            const safeReplacer = (key: string, value: any) => {
-              if (value === null) return 'null';
-              if (value === undefined) return 'undefined';
-              if (typeof value === 'function') return `[Function: ${value.name || 'anonymous'}]`;
-              return value;
-            };
-            
-            console.log('Survey data received:', 
-              JSON.stringify(processedResult, safeReplacer, 2)
-            );
-          }
-          
-          setSurvey(processedResult);
-        } else {
-          setSurvey(result);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch survey');
         }
+        
+        // The response is the survey directly
+        const surveyData = await response.json();
+        console.log('SurveyClient: Survey data received:', surveyData.id);
+        
+        // @ts-ignore - we know this is compatible with our component
+        setSurvey(surveyData);
       } catch (err) {
-        console.error('Error fetching survey:', err);
+        console.error('SurveyClient: Error fetching survey:', err);
         setError(err instanceof Error ? err.message : 'Failed to load survey');
+        setShowDevTools(true); // Show dev tools when there's an error
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     fetchSurvey();
   }, [token]);

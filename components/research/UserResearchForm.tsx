@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import clientGuestUtils from '@/utils/guest';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface UserResearchFormData {
   name: string;
   email: string;
+  consent: boolean;
 }
 
 export interface UserResearchFormProps {
@@ -73,13 +75,18 @@ export function UserResearchForm({
   onError,
 }: UserResearchFormProps) {
   const router = useRouter();
-  const [form, setForm] = useState<UserResearchFormData>({ name: '', email: '' });
+  const [form, setForm] = useState<UserResearchFormData>({ 
+    name: '', 
+    email: '', 
+    consent: false 
+  });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setForm((prev) => ({ ...prev, [e.target.name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,6 +96,13 @@ export function UserResearchForm({
     // Form validation
     if (!form.name.trim() || !form.email.trim()) {
       const errorMessage = 'Please enter your name and email.';
+      setError(errorMessage);
+      onError?.(new Error(errorMessage));
+      return;
+    }
+    
+    if (!form.consent) {
+      const errorMessage = 'You must consent to continue.';
       setError(errorMessage);
       onError?.(new Error(errorMessage));
       return;
@@ -109,12 +123,15 @@ export function UserResearchForm({
 
       const data = await res.json();
 
-      // Save form data and guest token using clientGuestUtils
-      clientGuestUtils.saveUserTestingData(form);
+      // Save form data using available methods
+      clientGuestUtils.setName(form.name);
+      if (form.email) {
+        localStorage.setItem('userTestingEmail', form.email);
+      }
       
       // Generate a guest token if not provided by the API
-      const guestToken = data.guestToken || clientGuestUtils.generateToken();
-      clientGuestUtils.saveToken(guestToken);
+      const guestToken = data.guestToken || uuidv4();
+      clientGuestUtils.setToken(guestToken);
 
       // Show success message
       setSuccess(true);
@@ -198,6 +215,25 @@ export function UserResearchForm({
           className="rounded-xl h-12 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-800 shadow-sm focus:ring-2 focus:ring-primary dark:focus:ring-primary dark:text-white"
           autoComplete="email"
         />
+      </div>
+      
+      <div className="flex items-start space-x-2">
+        <input
+          id="consent"
+          name="consent"
+          type="checkbox"
+          checked={form.consent}
+          onChange={handleChange}
+          disabled={loading}
+          required
+          className="h-4 w-4 mt-1 text-primary focus:ring-primary"
+        />
+        <Label
+          htmlFor="consent" 
+          className="text-sm text-gray-700 dark:text-gray-300"
+        >
+          I agree to participate in the user testing program and understand my data will be used only for research purposes.
+        </Label>
       </div>
       
       {error && (

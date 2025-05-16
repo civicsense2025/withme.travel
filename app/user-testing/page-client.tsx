@@ -9,7 +9,7 @@ import {
   UserResearchForm, 
   PrivacyConsent
 } from '@/components/research';
-import clientGuestUtils from '@/utils/guest';
+import clientGuestUtils, { getGuestToken } from '@/utils/guest';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -38,47 +38,124 @@ export default function UserTestingClient() {
   const router = useRouter();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSignupForm, setShowSignupForm] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   
-  // Check if user is already authenticated and redirect them
+  // On mount, check auth and auto-login if possible
   useEffect(() => {
-    // Get existing token from localStorage
-    const existingToken = clientGuestUtils.getToken();
-    
-    // If token exists, user is already signed up - redirect to survey page
-    if (existingToken) {
-      console.log('User already has a token, redirecting to surveys');
-      router.push('/user-testing/survey');
-    }
-  }, [router]);
+    const checkAuthAndAutoLogin = async () => {
+      // 1. If already authenticated, redirect
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        router.push('/user-testing/survey');
+        return;
+      }
+      // 2. Try to get stored email
+      let storedEmail = localStorage.getItem('userTestingEmail') || '';
+      if (!storedEmail && email) storedEmail = email;
+      if (!storedEmail) {
+        setShowSignupForm(true);
+        return;
+      }
+      setEmail(storedEmail);
+      setIsLoading(true);
+      // 3. Lookup user
+      try {
+        const lookupRes = await fetch(`/api/user-testing-lookup?email=${encodeURIComponent(storedEmail)}`);
+        const lookupData = await lookupRes.json();
+        if (lookupData.exists) {
+          // Auto-login
+          const loginRes = await fetch('/api/user-testing-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: storedEmail }),
+          });
+          const loginData = await loginRes.json();
+          if (loginRes.ok && loginData.token) {
+            localStorage.setItem('authToken', loginData.token);
+            localStorage.setItem('userTestingEmail', storedEmail);
+            setSuccessMessage('Welcome back! Logging you in...');
+            setShowSuccess(true);
+            setTimeout(() => {
+              router.push('/user-testing/survey');
+            }, 1500);
+            return;
+          } else {
+            setError(loginData.error || 'Login failed.');
+            setShowSignupForm(true);
+          }
+        } else {
+          // Not registered, show signup
+          setShowSignupForm(true);
+        }
+      } catch (err) {
+        setError('Network error.');
+        setShowSignupForm(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuthAndAutoLogin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Handle login form submission
+  // Manual login handler for the login modal
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
+    console.log('[UserTesting] Login attempt with email:', email);
+    
     try {
-      // Call auth API to log in
-      const response = await fetch('/api/auth/signin', {
+      console.log('[UserTesting] Sending login request to /api/user-testing-login');
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch('/api/user-testing-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
+      console.log('[UserTesting] Login response status:', response.status);
+      
       const data = await response.json();
+      console.log('[UserTesting] Login response data:', data);
       
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.error || 'Login failed');
       }
       
-      // Check if user has an existing user testing session
-      // We'll check this server-side and redirect appropriately
-      router.push('/user-testing/survey');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      if (data.token) {
+        console.log('[UserTesting] Login successful, storing token and redirecting');
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userTestingEmail', email);
+        setSuccessMessage('Successfully signed in! Redirecting...');
+        setShowSuccess(true);
+        setTimeout(() => {
+          router.push('/user-testing/survey');
+        }, 1500);
+      } else {
+        console.log('[UserTesting] Login response missing token');
+        setError('Login failed - no token received.');
+      }
+    } catch (err: unknown) {
+      console.error('[UserTesting] Login error:', err);
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Login request timed out. Please try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Login failed');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -88,15 +165,31 @@ export default function UserTestingClient() {
     <main className="min-h-screen flex flex-col font-sans">
       {/* Hero section with headline and subheading */}
       <UserResearchHero headline={HERO_HEADLINE} subheadline={HERO_SUBHEAD}>
-        {/* Signup form */}
-        <UserResearchForm 
-          submitUrl="/api/user-testing-signup"
-          redirectUrl="/user-testing/survey"
-          submitButtonText="Join the Alpha Program"
-          loadingText="Signing you up…"
-        />
+        {/* Only show signup form if not registered */}
+        {showSignupForm && (
+          <UserResearchForm 
+            submitUrl="/api/user-testing-signup"
+            redirectUrl="/user-testing/survey"
+            submitButtonText="Join the Alpha Program"
+            loadingText="Signing you up…"
+            onSuccess={(data) => {
+              if (data.guestToken || data.token) {
+                localStorage.setItem('authToken', data.guestToken || data.token);
+                localStorage.setItem('userTestingEmail', data.email || email);
+                setSuccessMessage('Successfully signed up! Redirecting...');
+                setShowSuccess(true);
+                setTimeout(() => {
+                  router.push('/user-testing/survey');
+                }, 1500);
+              }
+            }}
+            onError={(err) => {
+              setError(err instanceof Error ? err.message : 'Signup failed');
+            }}
+          />
+        )}
         
-        {/* Login link for returning users */}
+        {/* Login link for fallback/manual login */}
         <div className="mt-4 text-center">
           <button
             onClick={() => setLoginModalOpen(true)}
@@ -122,57 +215,53 @@ export default function UserTestingClient() {
               Enter your email and password to access your user testing surveys.
             </DialogDescription>
           </DialogHeader>
-          
           <form onSubmit={handleLogin} className="space-y-4 pt-4">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <button
-                  type="button"
-                  onClick={() => router.push('/forgot-password')}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Forgot password?
-                </button>
+            <div className="grid gap-2">
+              <div className="grid gap-1">
+                <Label className="sr-only" htmlFor="email">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  placeholder="Email address"
+                  type="email"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect="off"
+                  disabled={isLoading}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Button disabled={isLoading || !email}>
+                {isLoading && (
+                  <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Sign In
+              </Button>
             </div>
-            
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Success Modal */}
+      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign Up Successful</DialogTitle>
+            <DialogDescription>
+              Thank you for signing up! You'll be redirected to the survey shortly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center p-4">
+            <Spinner className="h-8 w-8 animate-spin text-primary" />
+          </div>
+          <p className="text-center text-sm text-gray-600">{successMessage}</p>
         </DialogContent>
       </Dialog>
       

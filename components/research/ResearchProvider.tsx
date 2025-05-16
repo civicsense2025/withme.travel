@@ -40,7 +40,7 @@ export interface ResearchContextType {
   trackEvent: (eventType: string, details?: Record<string, any>, milestone?: string) => Promise<void>;
   
   // Survey responses
-  saveResponses: (surveyId: string, responses: Record<string, any>[]) => Promise<void>;
+  saveResponses: (surveyId: string, responses: { id: string; value: string | number | boolean | Array<string | number> }[]) => Promise<void>;
   
   // Survey data
   surveys: Form[];
@@ -222,30 +222,89 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
   };
 
   /**
-   * Save survey responses
+   * Save survey responses to the backend API and update local session state on success.
+   *
+   * @param surveyId - The ID of the survey being answered
+   * @param responses - Array of response objects ({ id, value })
+   * @throws {Error} If submission fails
    */
   const saveResponses = async (
     surveyId: string,
-    responses: Record<string, any>[]
+    responses: { id: string; value: string | number | boolean | Array<string | number> }[]
   ): Promise<void> => {
-    if (!session) return;
-    
+    if (!session) throw new Error('No active session');
     setIsLoading(true);
     setError(null);
-    
+
+    // Prepare payload type
+    interface SubmitPayload {
+      form_id: string;
+      session_id: string;
+      responses: { id: string; value: string | number | boolean | Array<string | number> }[];
+      milestone?: string;
+    }
+
+    // API response type
+    interface ApiResponse {
+      id: string;
+      form_id: string;
+      session_id: string;
+      user_id?: string;
+      responses: unknown;
+      milestone?: string;
+      submitted_at: string;
+      [key: string]: unknown;
+    }
+
     try {
-      // In a real implementation, this would call the API
-      // For now, we'll update the local session
-      updateSession({
-        responses: [...session.responses, { surveyId, responses, timestamp: new Date().toISOString() }],
+      const payload: SubmitPayload = {
+        form_id: surveyId,
+        session_id: session.id,
+        responses,
+        // milestone: ... // Optionally add milestone if needed
+      };
+
+      const res = await fetch('/api/research/responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-      
+
+      if (!res.ok) {
+        let errorMsg = 'Failed to submit survey';
+        try {
+          const { error } = (await res.json()) as { error?: string };
+          if (error) errorMsg = error;
+        } catch {}
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Parse and validate response
+      const apiResponse = (await res.json()) as ApiResponse;
+      if (!apiResponse.id || !apiResponse.form_id) {
+        setError('Invalid response from server');
+        throw new Error('Invalid response from server');
+      }
+
+      // Update local session state
+      updateSession({
+        responses: [
+          ...session.responses,
+          {
+            surveyId,
+            responses,
+            timestamp: new Date().toISOString(),
+            apiResponseId: apiResponse.id,
+          },
+        ],
+      });
+
       // Track response submitted event
       await trackEvent(RESEARCH_EVENT_TYPES.SURVEY_RESPONSE_SUBMITTED, {
         surveyId,
         responseCount: responses.length,
       });
-      
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Failed to save responses';
       setError(errorMessage);

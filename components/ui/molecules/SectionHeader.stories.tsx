@@ -9,7 +9,6 @@
 // ============================================================================
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { CATEGORIES } from '../storybook.config';
 import { SectionHeader } from './SectionHeader';
 
 // ============================================================================
@@ -28,7 +27,7 @@ import { SectionHeader } from './SectionHeader';
  * - Maintain consistent spacing between headers and content
  */
 const meta: Meta<typeof SectionHeader> = {
-  title: CATEGORIES.MOLECULES + '/SectionHeader',
+  title: 'Molecules/SectionHeader',
   component: SectionHeader,
   tags: ['autodocs'],
   parameters: {

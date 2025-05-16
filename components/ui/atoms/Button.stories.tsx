@@ -9,7 +9,6 @@
 // ============================================================================
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { CATEGORIES } from '../storybook.config';
 import { Button } from './Button';
 
 // ============================================================================
@@ -29,7 +28,7 @@ import { Button } from './Button';
  * - Limit the number of primary buttons on a page
  */
 const meta: Meta<typeof Button> = {
-  title: CATEGORIES.ATOMS + '/Button',
+  title: 'Atoms/Button',
   component: Button,
   tags: ['autodocs'],
   parameters: {

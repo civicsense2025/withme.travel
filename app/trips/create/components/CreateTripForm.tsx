@@ -41,7 +41,7 @@ import { ImageSearchSelector } from '@/components/images/image-search-selector';
 import NextImage from 'next/image';
 import { PlaceSearch } from '@/components/place-search';
 import { useAuth } from '@/components/auth-provider';
-import { AuthModalWithProps } from '@/components/auth-modal';
+import { AuthModalWithProps } from '@/components/ui/features/auth/organisms/AuthModal';
 import { ActivitySuggestionsCard } from '@/components/ActivitySuggestionsCard';
 import { useResearchTracking } from '@/hooks/use-research-tracking';
 import { useTripEventTracking } from '@/hooks/use-trip-event-tracking';

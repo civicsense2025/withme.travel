@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AuthModalProvider } from '@/app/context/auth-modal-context';
-import { AuthModal } from '@/components/auth-modal';
+import { AuthModal } from '@/components/ui/features/auth';
 import { useEffect, useState } from 'react';
 import { initializeErrorLogging } from '@/utils/error-logger';
 import { initPerformanceMonitoring } from '@/utils/web-vitals';

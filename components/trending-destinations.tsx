@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { API_ROUTES } from '@/utils/constants/routes';
-import { DestinationCard } from '@/components/destination-card';
+import { DestinationCard } from '@/components/ui/features/destinations/molecules/DestinationCard';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Destination {

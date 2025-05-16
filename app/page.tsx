@@ -32,17 +32,19 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 // Internal modules
-import { TrendingDestinations } from '@/components/trending-destinations';
-import { HeroSection } from '@/components/hero-section';
-import { Button } from '@/components/ui/button';
-import { Container } from '@/components/container';
+import { 
+  TrendingDestinations, 
+  HeroSection, 
+  Container, 
+  HeroEmojiExplosion,
+} from '@/components';
+import { 
+  Button, 
+  Heading, 
+  Text, 
+  FullBleedSection 
+} from '@/components/ui';
 import { HomePageToaster } from './components/homepage-toaster';
-import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
-import { Heading } from '@/components/ui/Heading';
-import { Text } from '@/components/ui/Text';
-import { Section } from '@/components/ui/section';
-import { HeroBanner } from '@/components/ui/HeroBanner';
-import { FullBleedSection } from '@/components/ui/FullBleedSection';
 
 // Types
 import type { Survey } from '@/types/research';
@@ -131,7 +133,8 @@ export default async function Home() {
               <Text
                 variant="body"
                 weight="regular"
-                className="text-muted-foreground text-center max-w-2xl mb-12"
+                style={{ textAlign: 'center', maxWidth: '32rem', marginBottom: '3rem' }}
+                className="text-muted-foreground"
               >
                 Discover popular places loved by our community
               </Text>
@@ -159,7 +162,8 @@ export default async function Home() {
               </Heading>
               <Text
                 variant="large"
-                className="text-muted-foreground mb-32 mx-auto max-w-3xl tracking-tight"
+                style={{ marginBottom: '8rem', marginLeft: 'auto', marginRight: 'auto', maxWidth: '48rem', textAlign: 'center' }}
+                className="text-muted-foreground tracking-tight"
               >
                 Travel with friends without the chaos.
               </Text>
@@ -175,7 +179,11 @@ export default async function Home() {
                   <Heading level={3} size="default" className="mb-4">
                     Decide together
                   </Heading>
-                  <Text variant="body" className="text-muted-foreground max-w-xs">
+                  <Text 
+                    variant="body"
+                    style={{ maxWidth: '20rem' }}
+                    className="text-muted-foreground"
+                  >
                     Vote on places, build itineraries, and make group decisions that stick—no more
                     endless chats.
                   </Text>
@@ -190,7 +198,11 @@ export default async function Home() {
                   <Heading level={3} size="default" className="mb-4">
                     Ideas to adventures
                   </Heading>
-                  <Text variant="body" className="text-muted-foreground max-w-xs">
+                  <Text 
+                    variant="body"
+                    style={{ maxWidth: '20rem' }}
+                    className="text-muted-foreground"
+                  >
                     Find spots everyone will love, then transform inspiration into perfectly flowing
                     schedules.
                   </Text>
@@ -205,7 +217,11 @@ export default async function Home() {
                   <Heading level={3} size="default" className="mb-4">
                     Stay in sync
                   </Heading>
-                  <Text variant="body" className="text-muted-foreground max-w-xs">
+                  <Text 
+                    variant="body"
+                    style={{ maxWidth: '20rem' }}
+                    className="text-muted-foreground"
+                  >
                     Share updates, connect calendars, and ensure no one misses that sunset boat tour
                     you've all been waiting for.
                   </Text>

@@ -108,7 +108,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ShareTripButton } from '@/components/trips/ShareTripButton';
-import { type MemberWithProfile } from '@/components/trip-header';
+import { type MemberWithProfile } from '@/components/ui/features/trips/organisms/TripHeader';
+import { TripHeader } from '@/components/ui/features/trips/organisms/TripHeader';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { type TravelInfo, type TravelTimesResult, calculateTravelTimes } from '@/lib/mapbox';
 import {
@@ -173,10 +174,9 @@ import type { TripMember } from './context/trip-data-provider';
 import BudgetSnapshotSidebar from '@/components/trips/budget-snapshot-sidebar';
 import TripSidebarContent from '@/components/trips/trip-sidebar-content';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import { AuthModalWithProps } from '@/components/auth-modal';
+import { AuthModalWithProps } from '@/components/ui/features/auth/organisms/AuthModal';
 import CompactBudgetSnapshot from '@/components/trips/compact-budget-snapshot';
 import TripTourController from './trip-tour-controller';
-import { TripHeader } from '@/components/trip-header';
 
 // Types
 
