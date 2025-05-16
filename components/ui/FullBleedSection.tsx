@@ -1,6 +1,9 @@
 /**
  * FullBleedSection
  *
+ * @deprecated Please use the new component at @/components/ui/features/core/atoms/FullBleedSection instead.
+ * This component will be removed in a future release.
+ * 
  * A section that stretches content edge-to-edge, with optional background and padding.
  * Use for hero, feature, or CTA sections that need to break out of the standard container.
  *
@@ -30,6 +33,8 @@ export function FullBleedSection({
   paddingClassName = 'py-16',
   id,
 }: FullBleedSectionProps) {
+  console.warn('FullBleedSection is deprecated. Please use the new component at @/components/ui/features/core/atoms/FullBleedSection instead.');
+  
   return (
     <section
       id={id}

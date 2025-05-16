@@ -5,20 +5,42 @@ import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SurveyGrid, Survey } from './SurveyGrid';
 import clientGuestUtils from '@/utils/guest';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 // --- API helpers ---
 async function fetchSession(token: string) {
-  const res = await fetch(`/api/user-testing-session/${token}`);
-  if (!res.ok) throw new Error('Session not found or expired.');
-  return res.json(); // { session: { cohort: 'beta', ... } }
+  console.log('SurveyList: Fetching session with token');
+  try {
+    const res = await fetch(`/api/user-testing-session/${token}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Session not found or expired.');
+    }
+    const data = await res.json();
+    console.log('SurveyList: Session response:', data);
+    return data; // { session: { cohort: 'beta', ... } }
+  } catch (error) {
+    console.error('SurveyList: Error fetching session:', error);
+    throw error;
+  }
 }
 
 async function fetchSurveysForCohort(cohort: string, token: string) {
   // Pass token for auth, cohort for filtering
-  const res = await fetch(`/api/forms?cohort=${encodeURIComponent(cohort)}&token=${encodeURIComponent(token)}`);
-  if (!res.ok) throw new Error('Failed to fetch surveys for your cohort.');
-  return res.json(); // { forms: [...] }
+  console.log('SurveyList: Fetching surveys for cohort:', cohort);
+  try {
+    const res = await fetch(`/api/forms?cohort=${encodeURIComponent(cohort)}&token=${encodeURIComponent(token)}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch surveys for your cohort.');
+    }
+    const data = await res.json();
+    console.log('SurveyList: Surveys response:', data);
+    return data; // { forms: [...] }
+  } catch (error) {
+    console.error('SurveyList: Error fetching surveys:', error);
+    throw error;
+  }
 }
 
 /**
@@ -26,6 +48,7 @@ async function fetchSurveysForCohort(cohort: string, token: string) {
  */
 export default function SurveyList() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,17 +65,20 @@ export default function SurveyList() {
         
         // Get token from URL or localStorage
         const urlToken = searchParams?.get('token');
-        console.log('SurveyList: URL token:', urlToken ? 'present' : 'not present');
+        console.log('SurveyList: URL token:', urlToken ? 'present' : 'missing');
         
         const authToken = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-        console.log('SurveyList: Auth token:', authToken ? 'present' : 'not present');
+        console.log('SurveyList: Auth token:', authToken ? 'present' : 'missing');
         
-        // Use token from URL or localStorage
-        const userToken = urlToken || authToken;
-        console.log('SurveyList: Final user token:', userToken ? 'present' : 'not present');
+        // Get guest token as fallback
+        const guestToken = clientGuestUtils.getToken();
+        
+        // Use token from URL, localStorage, or guest token
+        const userToken = urlToken || authToken || guestToken;
+        console.log('SurveyList: Final user token:', userToken ? 'present' : 'missing');
         
         // Save URL token to localStorage if present
-        if (urlToken) {
+        if (urlToken && !authToken) {
           localStorage.setItem('authToken', urlToken);
           console.log('SurveyList: Saved URL token to localStorage');
         }
@@ -67,14 +93,12 @@ export default function SurveyList() {
         }
         
         // 1. Fetch session to get cohort
-        console.log('SurveyList: Fetching session with token');
         const { session } = await fetchSession(userToken);
-        if (!session?.cohort) throw new Error('Session missing cohort.');
+        if (!session?.cohort) throw new Error('Session missing cohort information.');
         setUserCohort(session.cohort);
         console.log('SurveyList: Got cohort:', session.cohort);
         
         // 2. Fetch surveys for cohort
-        console.log('SurveyList: Fetching surveys for cohort:', session.cohort);
         const { forms } = await fetchSurveysForCohort(session.cohort, userToken);
         if (!forms || forms.length === 0) {
           console.log('SurveyList: No forms returned');
@@ -83,7 +107,18 @@ export default function SurveyList() {
           return;
         }
         console.log('SurveyList: Got surveys:', forms.length);
-        setSurveys(forms);
+        
+        // Make sure forms are properly formatted for the SurveyGrid component
+        const formattedSurveys = forms.map((form: any) => ({
+          id: form.id,
+          title: form.name || 'Untitled Survey',
+          description: form.description || '',
+          status: form.status || 'active',
+          completedAt: form.completed_at || null,
+          url: `/user-testing/survey/${form.id}?token=${userToken}`
+        }));
+        
+        setSurveys(formattedSurveys);
       } catch (err: any) {
         console.error('SurveyList: Error in fetchList:', err);
         setError(err.message || 'Failed to load surveys. Please try again later.');
@@ -93,7 +128,7 @@ export default function SurveyList() {
       }
     };
     fetchList();
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   if (isLoading) {
     return (

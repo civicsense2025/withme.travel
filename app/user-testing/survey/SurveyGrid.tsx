@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,8 @@ export interface Survey {
   name: string;
   description: string;
   progress: number;
-  milestones: string[];
-  currentMilestone: string;
+  milestones: string[] | null;
+  currentMilestone: string | null;
 }
 
 interface SurveyGridProps {
@@ -23,46 +23,70 @@ interface SurveyGridProps {
   className?: string;
 }
 
-export function SurveyGrid({ surveys, className = '' }: SurveyGridProps) {
+export function SurveyGrid({ surveys = [], className = '' }: SurveyGridProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'popularity' | 'name' | 'progress'>('popularity');
 
+  // Log surveys prop on mount
+  useEffect(() => {
+    console.log('[SurveyGrid] surveys prop:', surveys);
+  }, [surveys]);
+
+  // Validate surveys input to prevent errors
+  const validSurveys = Array.isArray(surveys) ? surveys : [];
+
   // Sort surveys based on selected option
-  const sortedSurveys = [...surveys].sort((a, b) => {
+  const sortedSurveys = [...validSurveys].sort((a, b) => {
     switch (sortBy) {
       case 'name':
+        console.log('[SurveyGrid] Sorting by name');
         return a.name.localeCompare(b.name);
       case 'progress':
+        console.log('[SurveyGrid] Sorting by progress');
         return b.progress - a.progress;
       case 'popularity':
       default:
         // For popularity, we could implement a more complex sorting logic 
         // based on how many users have taken the survey
+        console.log('[SurveyGrid] Sorting by popularity (default/no-op)');
         return 0; // Default no sorting for now
     }
   });
 
   // Filter surveys based on search query
-  const filteredSurveys = sortedSurveys.filter(survey => 
-    survey.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    survey.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    survey.milestones.some(m => m.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredSurveys = sortedSurveys.filter(survey => {
+    const match = survey.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (survey.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (survey.milestones ? survey.milestones.some(m => m.toLowerCase().includes(searchQuery.toLowerCase())) : false);
+    if (searchQuery && match) {
+      console.log(`[SurveyGrid] Survey matched search: ${survey.name}`);
+    }
+    return match;
+  });
 
   const handleStartSurvey = (surveyId: string) => {
-    // Get token from localStorage
-    const authToken = localStorage.getItem('authToken');
+    // Get token from localStorage or client utils
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     const guestToken = clientGuestUtils.getToken();
     const token = authToken || guestToken;
     
     if (!token) {
-      console.error('No token available');
+      console.error('No authentication token available. Please sign up or log in.');
       return;
     }
     
-    // Navigate to the survey page with token as query parameter
-    router.push(`/user-testing/survey/${surveyId}?token=${encodeURIComponent(token)}`);
+    console.log(`[SurveyGrid] Navigating to survey ${surveyId} with token ${token}`);
+    
+    // Try window.location for a hard redirect instead of Next.js router
+    const url = `/user-testing/survey/${surveyId}?token=${encodeURIComponent(token)}`;
+    console.log(`[SurveyGrid] Redirecting to: ${url}`);
+    
+    // Use window.location for a hard redirect
+    window.location.href = url;
+    
+    // Comment out the Next.js router call
+    // router.push(`/user-testing/survey/${surveyId}?token=${encodeURIComponent(token)}`);
   };
 
   return (
@@ -72,12 +96,18 @@ export function SurveyGrid({ surveys, className = '' }: SurveyGridProps) {
           <Input
             placeholder="Search surveys..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              console.log('[SurveyGrid] Search query changed:', e.target.value);
+            }}
             className="w-full"
           />
         </div>
         <div className="w-full md:w-[180px]">
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+          <Select value={sortBy} onValueChange={(value) => {
+            setSortBy(value as any);
+            console.log('[SurveyGrid] Sort by changed:', value);
+          }}>
             <SelectTrigger>
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -100,23 +130,23 @@ export function SurveyGrid({ surveys, className = '' }: SurveyGridProps) {
           {filteredSurveys.map((survey) => (
             <Card key={survey.id} className="flex flex-col transition-all hover:shadow-md">
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl">{survey.name}</CardTitle>
-                <CardDescription className="line-clamp-2">{survey.description}</CardDescription>
+                <CardTitle className="text-xl">{survey.name || 'Untitled Survey'}</CardTitle>
+                <CardDescription className="line-clamp-2">{survey.description || 'No description available'}</CardDescription>
               </CardHeader>
               
               <CardContent className="flex-grow pt-0">
                 <div className="mb-4">
                   <div className="flex justify-between mb-1 text-sm">
                     <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{survey.progress}%</span>
+                    <span className="font-medium">{typeof survey.progress === 'number' ? survey.progress : 0}%</span>
                   </div>
-                  <Progress value={survey.progress} className="h-2" />
+                  <Progress value={typeof survey.progress === 'number' ? survey.progress : 0} className="h-2" />
                 </div>
                 
                 <div className="text-sm">
                   <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Milestones:</p>
                   <ul className="space-y-1.5">
-                    {survey.milestones.map((milestone) => (
+                    {survey.milestones && survey.milestones.map((milestone) => (
                       <li 
                         key={milestone} 
                         className={`flex items-center ${milestone === survey.currentMilestone ? 'font-medium' : ''}`}
@@ -128,6 +158,9 @@ export function SurveyGrid({ surveys, className = '' }: SurveyGridProps) {
                         {milestone.replace(/_/g, ' ')}
                       </li>
                     ))}
+                    {(!survey.milestones || survey.milestones.length === 0) && (
+                      <li className="text-muted-foreground">No milestones available</li>
+                    )}
                   </ul>
                 </div>
               </CardContent>

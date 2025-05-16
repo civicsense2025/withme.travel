@@ -4,73 +4,57 @@
  * Displays detailed information about survey data, form fields and tokens
  * Only rendered in development/test environments
  */
-import React from 'react';
+'use client';
 
-// Use a more generic type to avoid incompatibilities
+import React from 'react';
+import { Form } from '@/types/research';
+
 interface SurveyDebugViewProps {
-  survey: any;  // Change from Survey | null to any to allow for different survey formats
+  survey: Form | null;
   token: string | null;
   isSubmitted: boolean;
   error: string | null;
 }
 
+/**
+ * Debug view component for surveys that only shows in development mode
+ */
 export function SurveyDebugView({ survey, token, isSubmitted, error }: SurveyDebugViewProps) {
-  // Only render in non-production environments
+  // Only show in non-production environments
   if (process.env.NODE_ENV === 'production') {
     return null;
   }
 
+  // Show nothing unless explicitly triggered by URL param or error
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const showDebug = searchParams.get('debug') === 'true';
+  
+  if (!showDebug && !error) {
+    return null;
+  }
+
   return (
-    <div 
-      data-testid="survey-debug-view"
-      className="fixed bottom-0 right-0 p-2 bg-black/80 text-green-400 font-mono text-xs rounded-tl-md max-w-lg max-h-96 overflow-auto"
-      style={{ zIndex: 9999 }}
-    >
-      <div className="mb-2 p-1 border-b border-green-500">
-        <h3 className="font-bold">Survey Debug Data</h3>
-        <div className="flex gap-2">
-          <span className="px-1 bg-green-900 rounded">Token: {token || 'NONE'}</span>
-          <span className="px-1 bg-green-900 rounded">Status: {isSubmitted ? 'SUBMITTED' : 'ACTIVE'}</span>
-          {error && <span className="px-1 bg-red-900 text-red-400 rounded">ERROR: {error}</span>}
+    <div className="fixed bottom-0 right-0 bg-gray-900 text-white p-4 rounded-tl-lg opacity-75 hover:opacity-100 transition-opacity max-w-[500px] max-h-[300px] overflow-auto text-xs font-mono">
+      <h3 className="font-bold mb-2">Survey Debug View</h3>
+      
+      <div className="mb-2">
+        <div className="font-semibold">Token:</div>
+        <div className="truncate">{token || 'No token'}</div>
+      </div>
+      
+      <div className="mb-2">
+        <div className="font-semibold">Status:</div>
+        <div>
+          {error && <span className="text-red-400">Error: {error}</span>}
+          {isSubmitted && <span className="text-green-400">Submitted</span>}
+          {!error && !isSubmitted && <span>Ready</span>}
         </div>
       </div>
-
-      {survey && (
-        <div className="space-y-1">
-          <div>
-            <strong>ID:</strong> {survey.id}
-            <strong className="ml-2">Name:</strong> {survey.name}
-          </div>
-          
-          {survey.fields && (
-            <div>
-              <strong>Form Fields ({survey.fields.length}):</strong>
-              <pre className="mt-1 p-1 bg-gray-900 rounded text-xs whitespace-pre-wrap">
-                {JSON.stringify(survey.fields, replacer, 2)}
-              </pre>
-            </div>
-          )}
-          
-          {/* Fallback to questions property if available */}
-          {!survey.fields && survey.config?.fields && (
-            <div>
-              <strong>Form Fields ({survey.config.fields.length}):</strong>
-              <pre className="mt-1 p-1 bg-gray-900 rounded text-xs whitespace-pre-wrap">
-                {JSON.stringify(survey.config.fields, replacer, 2)}
-              </pre>
-            </div>
-          )}
-          
-          {survey.config && (
-            <div>
-              <strong>Config:</strong>
-              <pre className="mt-1 p-1 bg-gray-900 rounded text-xs whitespace-pre-wrap">
-                {JSON.stringify(survey.config, replacer, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
+      
+      <div>
+        <div className="font-semibold">Survey ID:</div>
+        <div>{survey?.id || 'No survey'}</div>
+      </div>
     </div>
   );
 }

@@ -212,7 +212,7 @@ export default function UserTestingClient() {
           <DialogHeader>
             <DialogTitle>Sign in to Access Your Surveys</DialogTitle>
             <DialogDescription>
-              Enter your email and password to access your user testing surveys.
+              Enter your email to access your user testing surveys.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleLogin} className="space-y-4 pt-4">

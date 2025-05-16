@@ -479,6 +479,8 @@ export const RESEARCH_TABLES = {
   PARTICIPANT_STATUS_HISTORY: 'participant_status_history',
   /** Participant variants */
   PARTICIPANT_VARIANTS: 'participant_variants',
+  /** Survey draft responses */
+  SURVEY_DRAFT_RESPONSES: 'survey_draft_responses',
 } as const;
 
 /**
@@ -559,6 +561,7 @@ export const TABLES = {
   MILESTONE_TRIGGERS: 'milestone_triggers',
   USER_TESTING_SESSIONS: 'user_testing_sessions',
   USER_TESTING_EVENTS: 'user_testing_events',
+  SURVEY_DRAFT_RESPONSES: 'survey_draft_responses',
 } as const;
 
 /**

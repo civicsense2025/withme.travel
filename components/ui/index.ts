@@ -31,4 +31,5 @@ export type { FullBleedSectionProps } from './FullBleedSection';
 // Import them directly from their respective modules:
 // import { AuthForm, LoginForm } from '@/components/ui/features/auth';
 // import { TripCard } from '@/components/ui/features/trips';
-// import { DestinationCard } from '@/components/ui/features/destinations'; 
+export { DestinationCard } from '@/components/ui/features/destinations/molecules/DestinationCard';
+export * from './features/tasks'; 

@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  context: { params: { token: string } }
 ): Promise<NextResponse> {
   const responseHeaders = new Headers({
     'Content-Type': 'application/json',
@@ -11,15 +11,16 @@ export async function GET(
   });
 
   try {
-    // Ensure params.token exists and is awaited properly
-    if (!params || !params.token) {
+    console.log('[API] /api/user-testing-session/[token] - Incoming request:', request.url);
+    const { token } = await context.params;
+    console.log('[API] /api/user-testing-session/[token] - Params:', { token });
+    if (!token) {
+      console.warn('[API] /api/user-testing-session/[token] - Missing token');
       return NextResponse.json(
         { error: 'Token is required' },
         { status: 400, headers: responseHeaders }
       );
     }
-    
-    const token = params.token;
 
     // Get session from database
     const supabase = await createRouteHandlerClient();
@@ -31,11 +32,9 @@ export async function GET(
       .single();
 
     if (error) {
-      console.error('Error fetching user testing session:', error);
-      
+      console.error('[API] /api/user-testing-session/[token] - Error fetching session:', error);
       // For testing purposes, provide a mock session when the DB one fails
-      console.log('Using fallback: Returning mock session for token:', token);
-      
+      console.log('[API] /api/user-testing-session/[token] - Using fallback: Returning mock session for token:', token);
       return NextResponse.json(
         {
           session: {
@@ -54,19 +53,20 @@ export async function GET(
     }
 
     if (!session) {
+      console.warn('[API] /api/user-testing-session/[token] - Session not found for token:', token);
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404, headers: responseHeaders }
       );
     }
 
+    console.log('[API] /api/user-testing-session/[token] - Returning session:', session);
     return NextResponse.json(
       { session },
       { status: 200, headers: responseHeaders }
     );
   } catch (error) {
-    console.error('Unexpected error fetching user testing session:', error);
-
+    console.error('[API] /api/user-testing-session/[token] - Unexpected error:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500, headers: responseHeaders }

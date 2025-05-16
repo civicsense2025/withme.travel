@@ -32,18 +32,14 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 // Internal modules
-import { 
-  TrendingDestinations, 
-  HeroSection, 
-  Container, 
-  HeroEmojiExplosion,
-} from '@/components';
-import { 
-  Button, 
-  Heading, 
-  Text, 
-  FullBleedSection 
-} from '@/components/ui';
+import { TrendingDestinations } from '@/components/trending-destinations';
+import { HeroSection } from '@/components/hero-section';
+import { Container } from '@/components/container';
+import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
+import { Text } from '@/components/ui/Text';
+import { Heading } from '@/components/ui/Heading';
+import { Button } from '@/components/ui/button';
+import { FullBleedSection } from '@/components/ui/FullBleedSection';
 import { HomePageToaster } from './components/homepage-toaster';
 
 // Types

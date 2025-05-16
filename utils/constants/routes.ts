@@ -173,6 +173,8 @@ export const API_ROUTES = {
     TRACK_EVENT: '/api/research/track-event',
     SESSION_INFO: '/api/research/session-info',
     GET_SURVEYS: '/api/research/surveys',
+    SURVEY_DRAFTS: (surveyId: string) => `/api/research/surveys/${surveyId}/drafts`,
+    SURVEY_ABANDON: '/api/research/events/abandon',
   },
 } as const;
 

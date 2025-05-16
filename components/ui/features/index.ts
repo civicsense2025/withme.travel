@@ -9,9 +9,12 @@
  * - Trips: Trip-related components (cards, lists, details)
  * - Destinations: Components for displaying destinations
  * - Groups: Group-related components (planned)
- * - Itinerary: Itinerary UI components (planned)
+ * - Itineraries: Itinerary UI components
+ * - Tasks: Task management components
  * - User: User profile components (planned)
  * - Core: Basic UI building blocks (planned)
+ * - UserTesting: User research and testing components
+ * - Todo: Todo list and task management components
  */
 
 // Authentication components
@@ -23,10 +26,23 @@ export * from './trips';
 // Destination components
 export * from './destinations';
 
+// Core UI components
+export * from './core';
+
+// Tasks components
+export * from './tasks';
+
+// User Testing components
+export * from './user-testing';
+
+// Todo components
+export * from './todo';
+
+// Itineraries components
+export * from './itineraries';
+
 // The following features will be implemented as we continue the refactoring:
 // export * from './groups';
-// export * from './itinerary';
 // export * from './user';
-// export * from './core';
 // export * from './collaboration';
 // export * from './focus';

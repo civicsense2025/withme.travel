@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * Text
+ *
+ * @deprecated Please use the new component at @/components/ui/features/core/atoms/Text instead.
+ * This component will be removed in a future release.
+ *
+ * A typography component for text content with variants, weights, and responsive sizing.
+ */
+
 import React from 'react';
 import {
   TYPOGRAPHY,
@@ -35,6 +44,8 @@ export function Text({
   spacing = 'md',
   ...props
 }: TextProps) {
+  console.warn('Text component is deprecated. Please use the new component at @/components/ui/features/core/atoms/Text instead.');
+  
   const theme = useTheme();
   const resolvedMode: ThemeMode = mode || (theme?.resolvedTheme as ThemeMode) || 'light';
   const [screenSize, setScreenSize] = useState<TextScreenSize>('base');

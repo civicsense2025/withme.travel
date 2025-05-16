@@ -1,0 +1,10 @@
+import React from 'react';
+import { ThemeToggle } from '@/components/ui/atoms/ThemeToggle';
+
+interface NavbarThemeToggleProps {
+  mobileStyling?: boolean;
+}
+
+export function NavbarThemeToggle({ mobileStyling = false }: NavbarThemeToggleProps) {
+  return <ThemeToggle variant={mobileStyling ? "outline" : "ghost"} />;
+}

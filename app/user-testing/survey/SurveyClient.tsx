@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SurveyContainer, SurveyContainerProps } from '@/components/research/SurveyContainer';
+import { SurveyContainer, Survey, SurveyField } from '@/components/research/SurveyContainer';
 import { ResearchProvider } from '@/components/research/ResearchProvider';
 import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ResearchModal } from '@/components/research/ResearchModal';
 import { SurveyDebugView } from './SurveyDebugView';
 import { FORM_TYPES } from '@/utils/constants/research-tables';
-import type { Survey, Form, FormType } from '@/types/research';
+import type { Form, FormType } from '@/types/research';
 import clientGuestUtils from '@/utils/guest';
 
 // Define FormField if not imported
@@ -23,23 +23,6 @@ interface FormField {
   config?: Record<string, any>;
   milestone?: string;
   [key: string]: any;
-}
-
-// Use Form interface from types/research but create a compatible local interface
-interface Survey {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  form_fields?: FormField[];
-  fields?: FormField[];
-  config?: Record<string, any>;
-  type: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at?: string;
-  milestone_trigger?: string | null;
-  milestones?: string[];
 }
 
 // For API fetching
@@ -59,7 +42,7 @@ async function fetchWithErrorHandling<T>(url: string): Promise<T> {
 declare global {
   interface Window {
     surveyDebugState?: {
-      surveyData: Survey | null;
+      surveyData: Form | null;
       token: string | null;
       loading: boolean;
       error: string | null;
@@ -68,11 +51,34 @@ declare global {
   }
 }
 
+// Helper function to convert a Form to a Survey
+function formToSurvey(form: Form): Survey {
+  // Convert form fields to survey fields
+  const surveyFields: SurveyField[] = (form.fields || []).map(field => ({
+    id: field.id || '',
+    milestone: 'default', // Use a default milestone since it's required
+    label: field.label || '', // Ensure label is not undefined
+    type: field.type || 'text', // Ensure type is not undefined
+    options: field.config?.options || [],
+    required: !!field.required
+  }));
+
+  // Create a proper Survey object
+  return {
+    id: form.id || '',
+    name: form.name || 'Survey',
+    description: form.description || '',
+    milestones: ['default'], // Use a default milestone array
+    fields: surveyFields
+  };
+}
+
 export default function SurveyClient() {
   const [token, setToken] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const formId = searchParams?.get('formId') || null;
-  const [survey, setSurvey] = useState<Form | null>(null);
+  // Support both URL formats: ?formId=123 and /:id
+  const formId = searchParams?.get('formId') || window.location.pathname.split('/').pop() || null;
+  const [form, setForm] = useState<Form | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -109,14 +115,14 @@ export default function SurveyClient() {
     // For E2E testing, expose the survey state
     if (process.env.NODE_ENV !== 'production') {
       window.surveyDebugState = {
-        surveyData: survey,
+        surveyData: form,
         token,
         loading,
         error,
         isFormSubmitted: isSubmitted
       };
     }
-  }, [survey, token, loading, error, isSubmitted]);
+  }, [form, token, loading, error, isSubmitted]);
 
   useEffect(() => {
     async function fetchSurvey() {
@@ -143,8 +149,8 @@ export default function SurveyClient() {
         const surveyData = await response.json();
         console.log('SurveyClient: Survey data received:', surveyData.id);
         
-        // @ts-ignore - we know this is compatible with our component
-        setSurvey(surveyData);
+        // Process the form data
+        setForm(surveyData);
       } catch (err) {
         console.error('SurveyClient: Error fetching survey:', err);
         setError(err instanceof Error ? err.message : 'Failed to load survey');
@@ -174,9 +180,23 @@ export default function SurveyClient() {
         );
       }
       
-      // Rest of submission logic...
-      // Currently stubbed for the test
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Submit the form data
+      const response = await fetch('/api/research/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          formId, // Include the form ID
+          formData
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit survey');
+      }
       
       setIsSubmitted(true);
       
@@ -190,7 +210,7 @@ export default function SurveyClient() {
       
     } catch (err) {
       console.error('Error submitting form:', err);
-      // Handle submission error
+      setError(err instanceof Error ? err.message : 'Failed to submit survey');
     }
   };
 
@@ -222,7 +242,7 @@ export default function SurveyClient() {
         
         {/* Add debug view even for error state */}
         <SurveyDebugView
-          survey={survey}
+          survey={form}
           token={token}
           isSubmitted={isSubmitted}
           error={error}
@@ -250,7 +270,7 @@ export default function SurveyClient() {
         
         {/* Add debug view */}
         <SurveyDebugView
-          survey={survey}
+          survey={form}
           token={token}
           isSubmitted={isSubmitted}
           error={error}
@@ -259,10 +279,13 @@ export default function SurveyClient() {
     );
   }
 
-  // Handle null survey case
-  if (!survey) {
+  // Handle null form case
+  if (!form) {
     return <div>No survey data available.</div>;
   }
+
+  // Convert Form to Survey type for SurveyContainer
+  const survey = formToSurvey(form);
 
   return (
     <ResearchProvider>
@@ -270,8 +293,11 @@ export default function SurveyClient() {
         <Card>
           <CardContent className="pt-6">
             <SurveyContainer
-              survey={survey as any}
-              onComplete={() => setIsSubmitted(true)}
+              survey={survey}
+              onComplete={() => {
+                handleSubmit(survey);
+                setIsSubmitted(true);
+              }}
             />
           </CardContent>
         </Card>
@@ -279,7 +305,7 @@ export default function SurveyClient() {
       
       {/* Add debug view in non-production environments */}
       <SurveyDebugView
-        survey={survey}
+        survey={form}
         token={token}
         isSubmitted={isSubmitted}
         error={error}

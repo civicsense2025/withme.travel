@@ -18,18 +18,45 @@ interface SurveyDetailProps {
 
 // --- API helpers ---
 async function fetchSession(token: string) {
-  const res = await fetch(`/api/user-testing-session/${token}`);
-  if (!res.ok) throw new Error('Session not found or expired.');
-  return res.json(); // { session: { cohort: 'beta', ... } }
+  console.log('[SurveyDetail] Fetching session with token:', token);
+  try {
+    const res = await fetch(`/api/user-testing-session/${token}`);
+    console.log('[SurveyDetail] Session API response status:', res.status);
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('[SurveyDetail] Session API error:', errorText);
+      throw new Error('Session not found or expired.');
+    }
+    const data = await res.json();
+    console.log('[SurveyDetail] Session data:', data);
+    return data; // { session: { cohort: 'beta', ... } }
+  } catch (error) {
+    console.error('[SurveyDetail] Error fetching session:', error);
+    throw error;
+  }
 }
 
 async function fetchSurveyDetail(id: string, token: string) {
-  const res = await fetch(`/api/forms/${id}?token=${token}`);
-  if (!res.ok) throw new Error('Survey not found or access denied.');
-  return res.json(); // { form: {...} }
+  console.log('[SurveyDetail] Fetching survey detail:', { id, token });
+  try {
+    const res = await fetch(`/api/forms/${id}?token=${token}`);
+    console.log('[SurveyDetail] Survey detail API response status:', res.status);
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('[SurveyDetail] Survey detail API error:', errorText);
+      throw new Error('Survey not found or access denied.');
+    }
+    const data = await res.json();
+    console.log('[SurveyDetail] Survey detail data:', data);
+    return data; // { form: {...} }
+  } catch (error) {
+    console.error('[SurveyDetail] Error fetching survey detail:', error);
+    throw error;
+  }
 }
 
 export default function SurveyDetail({ id }: SurveyDetailProps) {
+  console.log('[SurveyDetail] Component mounted with ID:', id);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [survey, setSurvey] = useState<any>(null);
@@ -44,11 +71,19 @@ export default function SurveyDetail({ id }: SurveyDetailProps) {
     const urlToken = searchParams?.get('token');
     const authToken = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     const guestToken = clientGuestUtils.getToken();
-    return urlToken || authToken || guestToken || null;
+    const finalToken = urlToken || authToken || guestToken || null;
+    console.log('[SurveyDetail] Token sources:', { 
+      urlToken: urlToken ? 'present' : 'missing', 
+      authToken: authToken ? 'present' : 'missing', 
+      guestToken: guestToken ? 'present' : 'missing',
+      finalToken: finalToken ? 'present' : 'missing' 
+    });
+    return finalToken;
   }, [searchParams]);
 
   // Main effect: fetch session, cohort, and survey
   useEffect(() => {
+    console.log('[SurveyDetail] useEffect triggered with ID:', id);
     const load = async () => {
       setLoading(true);
       setError(null);
@@ -59,55 +94,87 @@ export default function SurveyDetail({ id }: SurveyDetailProps) {
       setToken(userToken);
 
       if (!userToken) {
+        console.error('[SurveyDetail] No token available');
         setError('No authentication token found. Please sign up for user testing to access surveys.');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('[SurveyDetail] Starting data fetch with token and ID:', { token: userToken, id });
         // 1. Fetch session to get cohort
         const { session } = await fetchSession(userToken);
-        if (!session?.cohort) throw new Error('Session missing cohort.');
+        if (!session?.cohort) {
+          console.error('[SurveyDetail] Session missing cohort:', session);
+          throw new Error('Session missing cohort.');
+        }
         setUserCohort(session.cohort);
+        console.log('[SurveyDetail] Got cohort:', session.cohort);
 
         // 2. Fetch survey detail
         const { form: surveyData } = await fetchSurveyDetail(id, userToken);
+        console.log('[SurveyDetail] Got survey data:', surveyData);
+        
         // 3. Check cohort access
         const allowedCohorts = Array.isArray(surveyData.cohorts)
           ? surveyData.cohorts
           : surveyData.cohort
             ? [surveyData.cohort]
             : [];
+        
+        console.log('[SurveyDetail] Cohort check:', { 
+          userCohort: session.cohort, 
+          allowedCohorts,
+          hasAccess: allowedCohorts.length === 0 || allowedCohorts.includes(session.cohort)
+        });
+        
         if (allowedCohorts.length > 0 && !allowedCohorts.includes(session.cohort)) {
           throw new Error(
             `You do not have access to this survey (your cohort: ${session.cohort}, allowed: ${allowedCohorts.join(', ')}).`
           );
         }
         setSurvey(surveyData);
+        console.log('[SurveyDetail] Survey data set successfully');
       } catch (err: any) {
+        console.error('[SurveyDetail] Load error:', err);
         setError(err.message || 'Failed to load the survey. Please try again later.');
         setSurvey(null);
       } finally {
         setLoading(false);
+        console.log('[SurveyDetail] Data loading complete, state:', { loading: false, hasError: !!error, hasSurvey: !!survey });
       }
     };
     load();
   }, [id, getToken]);
 
   // Handlers
-  const handleComplete = () => setSubmitted(true);
-  const handleBack = () => router.push('/user-testing/survey');
-  const handleSignup = () => router.push('/user-testing'); // Or your signup page
+  const handleComplete = () => {
+    console.log('[SurveyDetail] Survey completed');
+    setSubmitted(true);
+  };
+  
+  const handleBack = () => {
+    console.log('[SurveyDetail] Navigating back to survey list');
+    router.push('/user-testing/survey');
+  };
+  
+  const handleSignup = () => {
+    console.log('[SurveyDetail] Navigating to signup');
+    router.push('/user-testing');
+  };
+  
   const handleRetry = () => {
+    console.log('[SurveyDetail] Retrying data load');
     setLoading(true);
     setError(null);
     setSurvey(null);
     setUserCohort(null);
     // Triggers useEffect
-    // (by changing id or searchParams, or can force reload by updating a key if needed)
   };
 
   // UI States
+  console.log('[SurveyDetail] Rendering state:', { loading, error, hasSurvey: !!survey, submitted });
+  
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
