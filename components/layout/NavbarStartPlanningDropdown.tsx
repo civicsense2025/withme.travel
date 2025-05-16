@@ -1,32 +1,34 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function NavbarStartPlanningDropdown() {
   return (
-    <div className="relative group ml-2">
-      <Button
-        size="sm"
-        className="rounded-full h-8 font-semibold px-5 bg-travel-purple text-purple-900 hover:bg-purple-300 transition-colors"
-        aria-haspopup="true"
-        aria-expanded="false"
-      >
-        Start Planning
-      </Button>
-      <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-48 rounded-xl shadow-lg bg-background border border-border opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity z-50">
-        <Link
-          href="/trips/create"
-          className="block px-5 py-3 text-sm hover:bg-travel-purple/10 rounded-t-xl transition-colors text-foreground"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="sm"
+          className="rounded-full font-semibold px-6 py-5 bg-travel-purple text-purple-900 hover:bg-purple-300 transition-colors"
         >
-          Plan a Trip
-        </Link>
-        <Link
-          href="/groups/create"
-          className="block px-5 py-3 text-sm hover:bg-travel-purple/10 rounded-b-xl transition-colors text-foreground"
-        >
-          Form a Group
-        </Link>
-      </div>
-    </div>
+          Start Planning
+          <ChevronDown className="h-4 w-4 ml-1 opacity-70" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem asChild className="py-3 cursor-pointer">
+          <Link href="/trips/create">Plan a Trip</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="py-3 cursor-pointer">
+          <Link href="/groups/create">Form a Group</Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

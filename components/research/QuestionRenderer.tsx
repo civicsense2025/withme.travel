@@ -7,7 +7,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea'; 
@@ -21,6 +21,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { FormField as FormFieldType } from '@/types';
+import { SurveyField } from './SurveyContainer';
 
 // ============================================================================
 // TYPES
@@ -50,12 +51,9 @@ export interface Question {
  * Props for QuestionRenderer component
  */
 export interface QuestionRendererProps {
-  /** The form field to render */
-  field: FormFieldType;
-  /** Current value for the field */
-  value: any;
-  /** Change handler */
-  onChange: (value: any) => void;
+  question: SurveyField;
+  response?: string | number | boolean | Array<string | number>;
+  onChange: (value: string | number | boolean | Array<string | number>) => void;
 }
 
 // ============================================================================
@@ -63,209 +61,182 @@ export interface QuestionRendererProps {
 // ============================================================================
 
 /**
- * Renders different question types based on field configuration
+ * Component that renders different types of survey questions
+ * Supports text, textarea, select, radio, checkbox, and rating questions
  */
-export function QuestionRenderer({ field, value, onChange }: QuestionRendererProps) {
-  const { id, label, type, options, required } = field;
-
-  // Render different input types based on field type
-  switch (type) {
-    case 'text': {
-      return (
-        <div className="space-y-2">
-          <Label htmlFor={id}>
-            {label} {required && <span className="text-destructive">*</span>}
-          </Label>
-          <Input
-            id={id}
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            required={required}
-            data-testid="text-input"
-          />
-        </div>
-      );
+export function QuestionRenderer({ question, response, onChange }: QuestionRendererProps) {
+  // Handle rendering different question types
+  const renderQuestionByType = () => {
+    switch (question.type) {
+      case 'text':
+        return renderTextQuestion();
+      case 'textarea':
+        return renderTextareaQuestion();
+      case 'select':
+        return renderSelectQuestion();
+      case 'radio':
+        return renderRadioQuestion();
+      case 'checkbox':
+        return renderCheckboxQuestion();
+      case 'rating':
+        return renderRatingQuestion();
+      default:
+        return <div>Unsupported question type: {question.type}</div>;
     }
+  };
 
-    case 'textarea': {
-      return (
-        <div className="space-y-2">
-          <Label htmlFor={id}>
-            {label} {required && <span className="text-destructive">*</span>}
-          </Label>
-          <Textarea
-            id={id}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            required={required}
-            data-testid="text-input"
-          />
-        </div>
-      );
-    }
+  // Text input question
+  const renderTextQuestion = () => {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={question.id}>{question.label}</Label>
+        <Input
+          id={question.id}
+          value={(response as string) || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Type your answer here"
+          className="w-full"
+        />
+      </div>
+    );
+  };
 
-    case 'select': {
-      const selectOptions = Array.isArray(options) 
-        ? options 
-        : [];
+  // Textarea question
+  const renderTextareaQuestion = () => {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={question.id}>{question.label}</Label>
+        <Textarea
+          id={question.id}
+          value={(response as string) || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Type your answer here"
+          className="w-full min-h-[100px]"
+        />
+      </div>
+    );
+  };
 
-      return (
-        <div className="space-y-2">
-          <Label htmlFor={id}>
-            {label} {required && <span className="text-destructive">*</span>}
-          </Label>
-          <Select
-            value={value || ''}
-            onValueChange={onChange}
-            data-testid="select-input"
-          >
-            <SelectTrigger id={id}>
-              <SelectValue placeholder="Select an option" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectOptions.map((option) => (
-                <SelectItem 
-                  key={option.value || option} 
-                  value={option.value || option}
-                >
-                  {option.label || option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      );
-    }
-
-    case 'radio': {
-      const radioOptions = Array.isArray(options) 
-        ? options 
-        : [];
-
-      return (
-        <div className="space-y-2" data-testid="radio-group">
-          <Label>
-            {label} {required && <span className="text-destructive">*</span>}
-          </Label>
-          <RadioGroup
-            value={value || ''}
-            onValueChange={onChange}
-          >
-            {radioOptions.map((option) => (
-              <div key={option.value || option} className="flex items-center space-x-2">
-                <RadioGroupItem
-                  id={`${id}-${option.value || option}`}
-                  value={option.value || option}
-                  data-testid={`radio-option-${option.value || option}`}
-                />
-                <Label htmlFor={`${id}-${option.value || option}`}>
-                  {option.label || option}
-                </Label>
-              </div>
+  // Select dropdown question
+  const renderSelectQuestion = () => {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={question.id}>{question.label}</Label>
+        <Select
+          value={(response as string) || ''}
+          onValueChange={(value) => onChange(value)}
+        >
+          <SelectTrigger id={question.id} className="w-full">
+            <SelectValue placeholder="Select an option" />
+          </SelectTrigger>
+          <SelectContent>
+            {question.options?.map((option) => (
+              <SelectItem key={String(option)} value={String(option)}>
+                {String(option)}
+              </SelectItem>
             ))}
-          </RadioGroup>
-        </div>
-      );
-    }
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  };
 
-    case 'checkbox': {
-      const checkboxOptions = Array.isArray(options) 
-        ? options 
-        : [];
-      
-      // Single checkbox
-      if (checkboxOptions.length === 0) {
-        return (
-          <div className="flex items-center space-x-2" data-testid="checkbox-container">
-            <Checkbox
-              id={id}
-              checked={!!value}
-              onCheckedChange={onChange}
-              data-testid="checkbox-input"
-            />
-            <Label htmlFor={id}>
-              {label} {required && <span className="text-destructive">*</span>}
-            </Label>
-          </div>
-        );
+  // Radio button question
+  const renderRadioQuestion = () => {
+    return (
+      <div className="space-y-3">
+        <Label>{question.label}</Label>
+        <RadioGroup
+          value={(response as string) || ''}
+          onValueChange={(value) => onChange(value)}
+          className="flex flex-col space-y-2"
+        >
+          {question.options?.map((option) => (
+            <div key={String(option)} className="flex items-center space-x-2">
+              <RadioGroupItem value={String(option)} id={`${question.id}-${option}`} />
+              <Label htmlFor={`${question.id}-${option}`} className="font-normal">
+                {String(option)}
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+    );
+  };
+
+  // Checkbox question (multiple selection)
+  const renderCheckboxQuestion = () => {
+    // Ensure response is an array
+    const selectedValues = Array.isArray(response) ? response : [];
+    
+    // Toggle option in selected values
+    const toggleOption = (option: string | number) => {
+      const optionStr = String(option);
+      if (selectedValues.includes(optionStr)) {
+        onChange(selectedValues.filter(item => item !== optionStr));
+      } else {
+        onChange([...selectedValues, optionStr]);
       }
-      
-      // Multiple checkboxes
-      return (
-        <div className="space-y-2" data-testid="checkbox-group">
-          <Label>
-            {label} {required && <span className="text-destructive">*</span>}
-          </Label>
-          <div className="space-y-2">
-            {checkboxOptions.map((option) => {
-              const optionValue = option.value || option;
-              const optionLabel = option.label || option;
-              const isChecked = Array.isArray(value) 
-                ? value.includes(optionValue) 
-                : false;
+    };
 
-              return (
-                <div key={optionValue} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${id}-${optionValue}`}
-                    checked={isChecked}
-                    onCheckedChange={(checked) => {
-                      if (!Array.isArray(value)) {
-                        onChange(checked ? [optionValue] : []);
-                      } else if (checked) {
-                        onChange([...value, optionValue]);
-                      } else {
-                        onChange(value.filter((v: string) => v !== optionValue));
-                      }
-                    }}
-                    data-testid={`checkbox-option-${optionValue}`}
-                  />
-                  <Label htmlFor={`${id}-${optionValue}`}>{optionLabel}</Label>
-                </div>
-              );
-            })}
-          </div>
+    return (
+      <div className="space-y-3">
+        <Label>{question.label}</Label>
+        <div className="flex flex-col space-y-2">
+          {question.options?.map((option) => (
+            <div key={String(option)} className="flex items-center space-x-2">
+              <Checkbox
+                id={`${question.id}-${option}`}
+                checked={selectedValues.includes(String(option))}
+                onCheckedChange={() => toggleOption(option)}
+              />
+              <Label htmlFor={`${question.id}-${option}`} className="font-normal">
+                {String(option)}
+              </Label>
+            </div>
+          ))}
         </div>
-      );
-    }
+      </div>
+    );
+  };
 
-    case 'rating': {
-      const ratingMax = field.config?.max || 5;
-      const ratingOptions = Array.from({ length: ratingMax }, (_, i) => i + 1);
-      
-      return (
-        <div className="space-y-2" data-testid="rating-container">
-          <Label>
-            {label} {required && <span className="text-destructive">*</span>}
-          </Label>
-          <div className="flex space-x-2 justify-center">
-            {ratingOptions.map((rating) => (
-              <button
-                key={rating}
-                type="button"
-                className={`w-10 h-10 rounded-full flex items-center justify-center 
-                  ${value === rating 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary hover:bg-secondary/80'
-                  }`}
-                onClick={() => onChange(rating)}
-                data-testid={`rating-${rating}`}
-                aria-label={`Rating ${rating} of ${ratingMax}`}
-              >
-                {rating}
-              </button>
-            ))}
-          </div>
+  // Rating question (e.g., 1-5 or 0-10)
+  const renderRatingQuestion = () => {
+    return (
+      <div className="space-y-3">
+        <Label>{question.label}</Label>
+        <div className="flex items-center justify-between gap-2">
+          {question.options?.map((option) => (
+            <button
+              key={String(option)}
+              type="button"
+              className={`flex items-center justify-center h-10 w-10 rounded-full border
+                ${Number(response) === option 
+                  ? 'bg-primary text-primary-foreground border-primary' 
+                  : 'bg-background border-input hover:bg-accent hover:text-accent-foreground'}`}
+              onClick={() => onChange(Number(option))}
+            >
+              {option}
+            </button>
+          ))}
         </div>
-      );
-    }
+        <div className="flex justify-between px-1 text-xs text-muted-foreground">
+          <span>Not at all likely</span>
+          <span>Very likely</span>
+        </div>
+      </div>
+    );
+  };
 
-    default:
-      return (
-        <div className="text-destructive">
-          Unknown question type: {type}
-        </div>
-      );
-  }
+  return (
+    <div className="py-2">
+      <div className="mb-6">
+        <h3 className="text-lg font-medium mb-2">
+          {question.label}
+          {question.required && <span className="text-destructive ml-1">*</span>}
+        </h3>
+      </div>
+      {renderQuestionByType()}
+    </div>
+  );
 }

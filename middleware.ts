@@ -32,6 +32,7 @@ const protectedPaths = [
   '/trips/manage',
   '/groups/manage',
   '/trips/create',
+  '/admin', // Make admin an explicitly protected path
   // Add other protected paths as needed
 ];
 
@@ -86,6 +87,11 @@ function isPublicPath(path: string): boolean {
   // Check if path is explicitly protected first
   if (isProtectedPath(normalizedPath)) {
     return false;
+  }
+  
+  // Explicitly handle admin paths
+  if (normalizedPath.startsWith('/admin')) {
+    return false; // Admin paths are never public
   }
 
   // Check exact paths first

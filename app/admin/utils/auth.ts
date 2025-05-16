@@ -6,17 +6,10 @@ import { createRouteHandlerClient, createServerComponentClient } from '@/utils/s
  */
 export async function checkAdminAuth() {
   try {
-    // Determine if we're in a route handler or server component
-    let supabase;
-    try {
-      // Try to create a route handler client first
-      supabase = await createRouteHandlerClient();
-    } catch (error) {
-      // If that fails, create a server component client
-      supabase = await createServerComponentClient();
-    }
+    // Create a server component client which is appropriate for layout.tsx
+    const supabase = await createServerComponentClient();
 
-    // Get the current user securely using getUser instead of getSession
+    // Get the current user securely using getUser
     const {
       data: { user },
       error: userError,
@@ -37,7 +30,18 @@ export async function checkAdminAuth() {
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      
+      // Check user metadata as fallback
+      if (user.user_metadata?.is_admin === true) {
+        return {
+          isAdmin: true,
+          supabase,
+          error: null,
+        };
+      }
+      
       return {
         isAdmin: false,
         supabase,
@@ -46,12 +50,24 @@ export async function checkAdminAuth() {
     }
 
     // Check if the user is an admin
+    const isAdmin = profile?.is_admin === true;
+
+    // Also check user metadata as fallback
+    if (!isAdmin && user.user_metadata?.is_admin === true) {
+      return {
+        isAdmin: true,
+        supabase,
+        error: null,
+      };
+    }
+
     return {
-      isAdmin: !!profile.is_admin,
+      isAdmin,
       supabase,
-      error: !profile.is_admin ? 'Not authorized as admin' : null,
+      error: !isAdmin ? 'Not authorized as admin' : null,
     };
   } catch (error) {
+    console.error('Admin auth check error:', error);
     return {
       isAdmin: false,
       supabase: null,

@@ -110,7 +110,7 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
   if (topPosition) {
     // Mobile view - avatar/email toggles menu
     return (
-      <div className="w-full relative flex flex-col mt-2 mb-2">
+      <div className="w-full relative flex flex-col mt-2 mb-2 md:hidden">
         {/* User info row (toggle) */}
         <button
           className="flex items-center gap-3 w-full py-2 focus:outline-none"

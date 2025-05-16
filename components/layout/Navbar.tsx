@@ -11,46 +11,74 @@ import { NavbarAuthButtons } from './NavbarAuthButtons';
 import { NavbarUserMenu } from './NavbarUserMenu';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useMediaQuery } from '@/lib/hooks/use-media-query';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   return (
     <header className="w-full bg-background standard-border-b sticky top-0 z-40 text-base md:text-lg lg:text-xl">
-      <div className="max-w-[2000px] mx-auto px-4 sm:px-6 h-24 flex items-center w-full">
+      <div className="max-w-[2000px] mx-auto px-4 sm:px-6 h-16 md:h-20 lg:h-24 flex items-center w-full transition-all duration-200">
         {/* Left: Logo */}
-        <div className="shrink-0 flex items-center">
+        <div className="shrink-0 flex items-center px-2">
           <NavbarLogo />
         </div>
-        {/* Center: Links */}
-        <div className="flex-1 flex justify-center items-center">
-          <div className="hidden md:flex flex-col w-full items-center">
-            <div className="flex items-center justify-center w-full">
+        
+        {/* Center: Links - Render based on isDesktop */}
+        {isDesktop ? (
+          <div className="flex-1 flex justify-center items-center">
+            <div className="flex w-full justify-center">
               <NavbarLinks activePath={pathname ?? undefined} user={user ?? undefined} />
-              {user && <NavbarStartPlanningDropdown />}
             </div>
           </div>
-        </div>
-        {/* Right: Auth/Theme Controls */}
-        <div className="shrink-0 flex items-center gap-2">
-          <NavbarThemeToggle />
-          <div className="hidden md:flex items-center gap-2">
-            {user ? <NavbarUserMenu /> : <NavbarAuthButtons />}
-          </div>
-          <div className="md:hidden">
-            <NavbarMobileMenuButton onClick={() => setMobileOpen(true)} />
-          </div>
+        ) : (
+          // Placeholder for mobile to maintain layout balance, or remove if not needed
+          <div className="flex-1" />
+        )}
+        
+        {/* Right: Auth + Theme + Planning */}
+        <div className="shrink-0 flex items-center gap-1 md:gap-2 px-2">
+          {/* Desktop layout */}
+          {isDesktop && (
+            <div className="flex items-center gap-2">
+              {user ? (
+                <>
+                  <NavbarStartPlanningDropdown />
+                  <NavbarThemeToggle />
+                  <NavbarUserMenu />
+                </>
+              ) : (
+                <>
+                  <NavbarAuthButtons />
+                  <NavbarThemeToggle />
+                </>
+              )}
+            </div>
+          )}
+          
+          {/* Mobile layout */}
+          {!isDesktop && (
+            <div className="flex items-center gap-2">
+              <NavbarThemeToggle mobileStyling={true} />
+              <NavbarMobileMenuButton onClick={() => setMobileOpen(true)} />
+            </div>
+          )}
         </div>
       </div>
-      <NavbarMobileMenu
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        user={user ?? undefined}
-        signOut={signOut}
-        activePath={pathname ?? undefined}
-      />
+      
+      {/* Conditionally render NavbarMobileMenu based on isDesktop */}
+      {!isDesktop && (
+        <NavbarMobileMenu
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          user={user ?? undefined}
+          signOut={signOut}
+          activePath={pathname ?? undefined}
+        />
+      )}
     </header>
   );
 }

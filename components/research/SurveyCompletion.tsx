@@ -1,89 +1,82 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Home } from "lucide-react";
-import Link from "next/link";
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
 export interface SurveyCompletionProps {
   title: string;
   description: string;
-  nextStepUrl?: string;
-  nextStepLabel?: string;
+  onClose?: () => void;
 }
 
 /**
- * Completion screen shown after a survey is submitted
+ * Completion screen shown after survey submission
+ * Includes an animated checkmark and thank you message
  */
-export function SurveyCompletion({ 
-  title, 
-  description, 
-  nextStepUrl = "/", 
-  nextStepLabel = "Return to Home" 
-}: SurveyCompletionProps) {
+export function SurveyCompletion({ title, description, onClose }: SurveyCompletionProps) {
   return (
-    <Card className="max-w-3xl mx-auto my-8">
-      <CardHeader className="text-center">
-        <div className="flex justify-center mb-4">
-          <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-            <motion.svg
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              initial="hidden"
-              animate="visible"
-            >
-              <motion.circle
-                cx="16"
-                cy="16"
-                r="15"
-                stroke="#22c55e"
-                strokeWidth="2"
-                fill="none"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5 }}
-              />
-              <motion.path
-                d="M10 17l4 4 8-8"
-                stroke="#22c55e"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              />
-            </motion.svg>
-          </div>
-        </div>
-        <CardTitle className="text-2xl md:text-3xl">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="text-center">
-        <p className="text-muted-foreground mb-6">{description}</p>
-        
-        <div className="space-y-4">
-          <div className="border rounded-md p-4 bg-muted/20">
-            <h3 className="text-lg font-medium mb-2">What happens next?</h3>
-            <p className="text-sm text-muted-foreground">
-              Your feedback will be reviewed by our team and will help shape the future of our product. 
-              Thank you for taking the time to share your thoughts with us!
-            </p>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Link href={nextStepUrl}>
-          <Button variant="outline" size="lg" className="flex gap-2 items-center">
-            <Home className="h-4 w-4" />
-            {nextStepLabel}
-          </Button>
-        </Link>
-      </CardFooter>
-    </Card>
+    <motion.div 
+      className="p-8 flex flex-col items-center text-center"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div 
+        className="mb-6 text-primary"
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+      >
+        <CheckmarkIcon className="w-20 h-20" />
+      </motion.div>
+      
+      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+      
+      <p className="text-muted-foreground mb-8 max-w-md">
+        {description}
+      </p>
+      
+      {onClose && (
+        <Button 
+          onClick={onClose} 
+          className="w-full max-w-xs"
+          size="lg"
+        >
+          Close
+        </Button>
+      )}
+    </motion.div>
+  );
+}
+
+// Animated checkmark icon
+function CheckmarkIcon({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <motion.circle
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="4"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        />
+        <motion.path
+          d="M30 50 L45 65 L70 35"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        />
+      </svg>
+    </div>
   );
 }

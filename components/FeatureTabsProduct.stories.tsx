@@ -1,31 +1,30 @@
 /**
- * Storybook story for FeatureTabsProduct
+ * FeatureTabsProduct Stories
  *
  * Demonstrates the marketing/demo use case for the tabbed feature component.
- *
- * @module components/FeatureTabsProduct.stories
  */
+
+// ============================================================================
+// IMPORTS
+// ============================================================================
 
 import React from 'react';
 import { Meta, StoryObj } from '@storybook/react';
+import { motion } from 'framer-motion';
+import { CATEGORIES } from './ui/storybook.config';
+
 import FeatureTabsProduct, { FeatureTab } from './FeatureTabsProduct';
 import { ThemeToggle } from './theme-toggle';
-import { motion } from 'framer-motion';
 
-const meta: Meta<typeof FeatureTabsProduct> = {
-  title: 'Marketing/FeatureTabsProduct',
-  component: FeatureTabsProduct,
-  argTypes: {
-    activeTabId: { control: 'select', options: ['ideas', 'debates', 'budget', 'plans'] },
-    variant: { control: 'radio', options: ['default', 'simplified'] },
-  },
-};
-export default meta;
+// ============================================================================
+// HELPER COMPONENTS
+// ============================================================================
 
 // Typing animation for budget tip
 const TypingTip = () => {
   const [displayed, setDisplayed] = React.useState('');
   const tip = 'Book Machu Picchu trek as a group for a discount';
+  
   React.useEffect(() => {
     let i = 0;
     const interval = setInterval(() => {
@@ -35,8 +34,13 @@ const TypingTip = () => {
     }, 30);
     return () => clearInterval(interval);
   }, []);
+  
   return <span className="text-xs text-muted-foreground font-mono">{displayed}</span>;
 };
+
+// ============================================================================
+// SAMPLE DATA
+// ============================================================================
 
 const sampleTabs: FeatureTab[] = [
   {
@@ -181,19 +185,106 @@ const sampleTabs: FeatureTab[] = [
   },
 ];
 
-const Template: StoryObj<typeof FeatureTabsProduct> = {
-  render: (args) => (
-    <div className="py-8 bg-background min-h-screen">
-      <div className="flex justify-end mb-4 pr-8">
-        <ThemeToggle />
-      </div>
-      <FeatureTabsProduct {...args} tabs={sampleTabs} />
-    </div>
-  ),
+// ============================================================================
+// STORYBOOK METADATA
+// ============================================================================
+
+/**
+ * ## Feature Tabs Product
+ * 
+ * A tabbed interface for showcasing product features in marketing materials.
+ * This component animates between different feature examples to demonstrate 
+ * the value proposition of the product.
+ * 
+ * ### Usage Guidelines
+ * - Use on marketing pages to demonstrate core product functionality
+ * - Each tab should highlight a distinct value proposition
+ * - Include both visual and textual elements in each tab
+ */
+const meta: Meta<typeof FeatureTabsProduct> = {
+  title: CATEGORIES.FEATURES.TRIPS + '/FeatureTabsProduct', 
+  component: FeatureTabsProduct,
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'fullscreen',
+    componentSubtitle: 'Interactive showcase of product features with tabbed navigation',
+    docs: {
+      description: {
+        component: 'A tabbed component for showcasing product features in marketing materials. Demonstrates product value proposition through interactive examples.'
+      }
+    }
+  },
+  argTypes: {
+    activeTabId: { 
+      description: 'The currently active tab', 
+      control: 'select', 
+      options: ['ideas', 'debates', 'budget', 'plans'],
+      table: {
+        type: { summary: 'string' },
+        defaultValue: { summary: 'ideas' },
+      }
+    },
+    variant: { 
+      description: 'The visual style of the tabs', 
+      control: 'radio', 
+      options: ['default', 'simplified'],
+      table: {
+        type: { summary: 'string' },
+        defaultValue: { summary: 'default' },
+      }
+    },
+    tabs: {
+      description: 'Array of tab configurations with content',
+      table: {
+        type: { summary: 'FeatureTab[]' }
+      }
+    }
+  },
   args: {
     variant: 'default',
     activeTabId: 'ideas',
-  },
+    tabs: sampleTabs
+  }
 };
 
-export const SouthAmericaTrip = { ...Template }; 
+export default meta;
+type Story = StoryObj<typeof FeatureTabsProduct>;
+
+// ============================================================================
+// STORIES
+// ============================================================================
+
+/**
+ * South America Trip example with feature tabs showcasing collaborative planning
+ */
+export const SouthAmericaTrip: Story = {
+  decorators: [
+    (Story) => (
+      <div className="py-8 bg-background min-h-screen">
+        <div className="flex justify-end mb-4 pr-8">
+          <ThemeToggle />
+        </div>
+        <Story />
+      </div>
+    )
+  ]
+};
+
+/**
+ * Simplified variant with more minimalist styling
+ */
+export const SimplifiedVariant: Story = {
+  args: {
+    variant: 'simplified'
+  },
+  decorators: [
+    (Story) => (
+      <div className="py-8 bg-background min-h-screen">
+        <div className="flex justify-end mb-4 pr-8">
+          <ThemeToggle />
+        </div>
+        <Story />
+      </div>
+    )
+  ]
+}; 

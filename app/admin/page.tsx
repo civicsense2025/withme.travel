@@ -1,137 +1,128 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import React from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Globe, FileText, MessageSquare } from 'lucide-react';
-import { AdminStatsCard } from '@/app/admin/components/AdminStatsCard';
-import { AdminDebugPanel } from '@/app/admin/components/AdminDebugPanel';
-import { TABLES } from '@/utils/constants/database';
+import { Button } from '@/components/ui/button';
+import { checkAdminAuth } from './utils/auth';
+import { redirect } from 'next/navigation';
 
-interface StatsData {
-  totalUsers: number;
-  activeTrips: number;
-  contentViews: number;
-  totalFeedback: number;
-  surveyResponses: number;
-}
-
-export default function AdminDashboardPage() {
-  const [statsData, setStatsData] = useState<StatsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      try {
-        // In a real implementation, we would fetch this data from an API
-        // For now, we'll simulate it with some realistic data
-
-        // Mock API call
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        // Get the survey responses count - this is real data
-        const surveyResponsesRes = await fetch('/api/admin/surveys/count');
-        const surveyResponsesData = surveyResponsesRes.ok
-          ? await surveyResponsesRes.json()
-          : { count: 0 };
-
-        setStatsData({
-          totalUsers: 2851,
-          activeTrips: 187,
-          contentViews: 28472,
-          totalFeedback: 74,
-          surveyResponses: surveyResponsesData.count || 0,
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  const renderStats = () => {
-    if (!statsData) return null;
-
-    const stats = [
-      {
-        title: 'Total Users',
-        value: statsData.totalUsers.toLocaleString(),
-        change: '+12%',
-        trend: 'up' as const,
-        icon: <Users className="h-5 w-5 text-travel-blue" />,
-      },
-      {
-        title: 'Active Trips',
-        value: statsData.activeTrips.toLocaleString(),
-        change: '+23%',
-        trend: 'up' as const,
-        icon: <Globe className="h-5 w-5 text-travel-purple" />,
-      },
-      {
-        title: 'Content Views',
-        value: statsData.contentViews.toLocaleString(),
-        change: '+18%',
-        trend: 'up' as const,
-        icon: <FileText className="h-5 w-5 text-travel-pink" />,
-      },
-      {
-        title: 'Feedback & Surveys',
-        value: (statsData.totalFeedback + statsData.surveyResponses).toLocaleString(),
-        change: '+15%',
-        trend: 'up' as const,
-        icon: <MessageSquare className="h-5 w-5 text-travel-green" />,
-      },
-    ];
-
-    return stats.map((stat, index) => (
-      <AdminStatsCard
-        key={index}
-        title={stat.title}
-        value={stat.value}
-        change={stat.change}
-        trend={stat.trend}
-        icon={stat.icon}
-      />
-    ));
-  };
+/**
+ * Admin dashboard main page with server-side admin verification
+ */
+export default async function AdminPage() {
+  // Server-side admin check to ensure redirect happens correctly
+  const { isAdmin } = await checkAdminAuth();
+  
+  // Redirect if not admin - this ensures the server-side redirect works
+  if (!isAdmin) {
+    redirect('/login?redirectTo=/admin');
+  }
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {isLoading
-          ? // Skeleton loader for stats
-            Array(4)
-              .fill(0)
-              .map((_, index) => (
-                <Card key={index} className="overflow-hidden shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
-                        <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
-                        <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
-                      </div>
-                      <div className="rounded-full bg-muted h-10 w-10 animate-pulse"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-          : renderStats()}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Stats components would go here */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Stats content would go here */}
+            <p className="text-2xl font-bold">Loading stats...</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Admin Debug Panel */}
-      <AdminDebugPanel
-        title="System Diagnostics"
-        description="Connected database status and system information"
-      />
+      <h2 className="text-2xl font-bold">Admin Tools</h2>
+
+      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Content Management</CardTitle>
+            <CardDescription>Manage destination content</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <Link href="/admin/destinations">Destinations</Link>
+              </Button>
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/admin/content-manager">Content Manager</Link>
+              </Button>
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/admin/places">Places</Link>
+              </Button>
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/admin/itineraries">Itineraries</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>User Research</CardTitle>
+            <CardDescription>Manage surveys and research</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <Link href="/admin/surveys">Surveys</Link>
+              </Button>
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/admin/research">Research</Link>
+              </Button>
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/admin/feedback">Feedback</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Analytics & Users</CardTitle>
+            <CardDescription>Manage users and view analytics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <Link href="/admin/analytics">Analytics</Link>
+              </Button>
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/admin/users">Users</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Media Library</CardTitle>
+            <CardDescription>Manage images and media</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <Link href="/admin/media">Media Library</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>API Integrations</CardTitle>
+            <CardDescription>Manage external API integrations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <Link href="/admin/viator">Viator API</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

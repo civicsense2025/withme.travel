@@ -70,6 +70,15 @@ const nextConfig = {
         source: '/api/destinations/:id/related-trips',
         destination: '/api/trips/related?destinationId=:id',
       },
+      // Legacy survey token route handling
+      {
+        source: '/user-testing/survey/:token/example',
+        destination: '/user-testing/survey?token=:token',
+      },
+      {
+        source: '/user-testing/survey/:token',
+        destination: '/user-testing/survey?token=:token',
+      },
       // Any other rewrites you need to add for missing API endpoints
     ];
   },

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@/utils/supabase/server';
+import { createServerComponentClient } from '@/utils/supabase/server';
 
 /**
  * API route to check if the current user is an admin
@@ -7,8 +7,9 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
  */
 export async function GET() {
   try {
-    // Initialize Supabase client with the correct approach
-    const supabase = await createRouteHandlerClient();
+    // Initialize Supabase client using server component client
+    // We need to use this instead of route handler client to maintain the session
+    const supabase = await createServerComponentClient();
 
     // Get the current user
     const {

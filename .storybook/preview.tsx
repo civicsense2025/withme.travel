@@ -18,23 +18,25 @@ const StorybookWrapper = ({ theme, children }: { theme: 'light' | 'dark', childr
 
 const preview: Preview = {
   parameters: {
-    // Use individual actions instead of regex per Storybook recommendation
-    actions: {
-      handles: ['click', 'click .btn', 'mouseover', 'submit', 'change', 'select'],
-    },
+    actions: { argTypesRegex: '^on[A-Z].*' },
     controls: {
       matchers: {
         color: /(background|color)$/i,
-        date: /Date$/i,
+        date: /Date$/,
       },
+    },
+    layout: 'centered',
+    backgrounds: {
+      default: 'light',
+      values: [
+        { name: 'light', value: 'var(--background)' },
+        { name: 'dark', value: 'var(--background-dark)' },
+      ],
     },
     darkMode: {
       current: 'light',
       dark: { ...themes.dark },
       light: { ...themes.light }
-    },
-    backgrounds: {
-      disable: true,
     },
     // Ensure docs are properly rendered
     docs: {
@@ -48,22 +50,25 @@ const preview: Preview = {
     },
   },
   decorators: [
-    (Story, context) => {
-      const { theme } = context.globals;
-      
-      return (
-        <ThemeProvider
-          attribute="class"
-          defaultTheme={theme || 'light'}
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <StorybookWrapper theme={theme || 'light'}>
-            <Story />
-          </StorybookWrapper>
-        </ThemeProvider>
-      );
-    },
+    (Story) => (
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <div className="p-4 flex justify-center items-center min-h-[100px]">
+          <Story />
+        </div>
+      </ThemeProvider>
+    ),
+    withThemeByClassName({
+      themes: {
+        light: 'light',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
   ],
   // Use explicit args mocking for actions
   argTypes: {

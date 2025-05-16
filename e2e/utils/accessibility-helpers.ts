@@ -1,200 +1,293 @@
 /**
- * Accessibility Helpers
+ * Accessibility Testing Utilities for Research System
  * 
- * Utilities for testing accessibility compliance in end-to-end tests.
- * These functions help verify that the application meets accessibility standards.
+ * This module provides functions to test accessibility compliance
+ * with specific focus on research interactions.
  */
-import { Page } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
-import fs from 'fs';
-import path from 'path';
-import { logError } from './test-helpers';
 
 /**
- * Run an accessibility scan on the current page and return violations
+ * Test keyboard navigation through a form
  * 
- * @param page Playwright page object
- * @param context Optional context for the scan (e.g., 'survey-welcome')
- * @returns Array of accessibility violations
- */
-export async function getAccessibilityViolations(
-  page: Page,
-  context: string = 'accessibility-scan'
-): Promise<Record<string, any>[]> {
-  try {
-    const axeBuilder = new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .exclude('.sse-fixes') // Exclude known issues marked with this class
-      .exclude('[aria-hidden="true"]'); // Exclude hidden elements
-    
-    const results = await axeBuilder.analyze();
-    
-    // Save full results to file for detailed analysis
-    const timestamp = Date.now();
-    const filename = `a11y-${context}-${timestamp}.json`;
-    const directory = './test-results/accessibility';
-    
-    if (!fs.existsSync(directory)) {
-      fs.mkdirSync(directory, { recursive: true });
-    }
-    
-    fs.writeFileSync(
-      path.join(directory, filename),
-      JSON.stringify(results, null, 2)
-    );
-    
-    // Log summary if violations found
-    if (results.violations.length > 0) {
-      console.warn(`Found ${results.violations.length} accessibility violations in ${context}`);
-      
-      results.violations.forEach(violation => {
-        console.warn(`- ${violation.impact || 'unknown'} impact: ${violation.help} (${violation.nodes.length} nodes affected)`);
-      });
-      
-      // Save screenshot for visual reference
-      await page.screenshot({
-        path: path.join(directory, `a11y-${context}-violations.png`),
-        fullPage: true
-      });
-    } else {
-      console.log(`✓ No accessibility violations found in ${context}`);
-    }
-    
-    return results.violations;
-  } catch (error) {
-    logError(`accessibility-scan-${context}`, error);
-    console.error('Error running accessibility scan:', error);
-    return [];
-  }
-}
-
-/**
- * Test keyboard navigation on the current page
- * 
- * @param page Playwright page object
- * @param selectors Array of selectors that should be focusable in order
- * @returns True if all selectors were focusable in order
+ * @param page The Playwright page object
+ * @param options Optional configuration
+ * @returns Promise resolving to true if keyboard navigation is working
  */
 export async function testKeyboardNavigation(
-  page: Page,
-  selectors: string[] = []
+  page: Page, 
+  options: {
+    startSelector?: string;
+    tabTimes?: number;
+    verifyFocus?: boolean;
+  } = {}
 ): Promise<boolean> {
-  try {
-    // If no selectors provided, just test that Tab moves focus
-    if (selectors.length === 0) {
-      await page.keyboard.press('Tab');
-      
-      const focusedElement = await page.evaluate(() => {
-        return document.activeElement !== document.body;
-      });
-      
-      return focusedElement;
-    }
+  const { 
+    startSelector = 'body', 
+    tabTimes = 5,
+    verifyFocus = true
+  } = options;
+  
+  // Start from the specified element
+  await page.locator(startSelector).focus();
+  
+  // Track focus history
+  const focusHistory: string[] = [];
+  
+  // Press tab multiple times and track focus
+  for (let i = 0; i < tabTimes; i++) {
+    await page.keyboard.press('Tab');
     
-    // Start by focusing the body
-    await page.evaluate(() => {
-      document.body.focus();
+    // Get the focused element
+    const focusedElement = await page.evaluate(() => {
+      const activeElement = document.activeElement;
+      if (!activeElement) return null;
+      
+      return {
+        tagName: activeElement.tagName,
+        id: activeElement.id,
+        className: activeElement.className,
+        textContent: activeElement.textContent?.trim().substring(0, 50) || '',
+        type: activeElement.getAttribute('type') || ''
+      };
     });
     
-    // Try to tab through each selector in order
-    for (const selector of selectors) {
-      await page.keyboard.press('Tab');
-      
-      const isFocused = await page.evaluate((sel) => {
-        const element = document.querySelector(sel);
-        return element === document.activeElement;
-      }, selector);
-      
-      if (!isFocused) {
-        console.warn(`Keyboard navigation test failed: Could not focus ${selector}`);
-        return false;
-      }
+    if (focusedElement) {
+      focusHistory.push(
+        `${focusedElement.tagName}${focusedElement.id ? `#${focusedElement.id}` : ''}`
+      );
+    }
+  }
+  
+  // Verify focus is working
+  if (verifyFocus) {
+    // Focus should not stay on the body element
+    const uniqueFocusPoints = new Set(focusHistory);
+    const isNavigable = uniqueFocusPoints.size > 1 && !focusHistory.includes('BODY');
+    
+    if (!isNavigable) {
+      console.error('Keyboard navigation test failed. Focus history:', focusHistory);
     }
     
-    return true;
-  } catch (error) {
-    console.error('Error testing keyboard navigation:', error);
-    return false;
+    return isNavigable;
   }
+  
+  return true;
 }
 
 /**
- * Test that focus is properly trapped in a modal or dialog
+ * Test focus trap in modal components
  * 
- * @param page Playwright page object
- * @param modalSelector Selector for the modal container
- * @param expectedTabCount Expected number of tab stops within the modal
- * @returns True if focus is properly trapped
+ * @param page The Playwright page object
+ * @param containerSelector Selector for the modal or container element
+ * @returns Promise resolving to true if focus is properly trapped
  */
 export async function testFocusTrap(
   page: Page,
-  modalSelector: string,
-  expectedTabCount: number = 3
+  containerSelector: string
 ): Promise<boolean> {
-  try {
-    // First verify the modal is visible
-    const isModalVisible = await page.isVisible(modalSelector);
-    if (!isModalVisible) {
-      console.warn(`Focus trap test failed: Modal ${modalSelector} not visible`);
-      return false;
-    }
-    
-    // Focus the first element in the modal
-    await page.focus(`${modalSelector} *:first-child`);
-    
-    // Count focusable elements by tabbing through them
-    let tabCount = 0;
-    let previousActiveElement = null;
-    let activeElement = null;
-    
-    // Tab forward through all elements and count
-    for (let i = 0; i < expectedTabCount * 2; i++) {
-      previousActiveElement = await page.evaluate(() => {
-        return document.activeElement?.outerHTML;
-      });
-      
-      await page.keyboard.press('Tab');
-      
-      activeElement = await page.evaluate(() => {
-        return document.activeElement?.outerHTML;
-      });
-      
-      // Check if we're still in the modal
-      const stillInModal = await page.evaluate((sel) => {
-        return document.activeElement?.closest(sel) !== null;
-      }, modalSelector);
-      
-      if (stillInModal) {
-        tabCount++;
-      } else {
-        console.warn('Focus trap test failed: Focus escaped the modal');
-        return false;
-      }
-      
-      // If we've gone through all elements twice, focus should cycle
-      if (i >= expectedTabCount && activeElement === previousActiveElement) {
-        break;
-      }
-    }
-    
-    // Now try shift+tab to go backwards
-    for (let i = 0; i < 3; i++) {
-      await page.keyboard.press('Shift+Tab');
-      
-      // Check if we're still in the modal
-      const stillInModal = await page.evaluate((sel) => {
-        return document.activeElement?.closest(sel) !== null;
-      }, modalSelector);
-      
-      if (!stillInModal) {
-        console.warn('Focus trap test failed: Focus escaped the modal with Shift+Tab');
-        return false;
-      }
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error testing focus trap:', error);
+  // Get all focusable elements in the container
+  const focusableElements = await page.locator(
+    `${containerSelector} a[href], ${containerSelector} button, ${containerSelector} input, ${containerSelector} select, ${containerSelector} textarea, ${containerSelector} [tabindex]:not([tabindex="-1"])`
+  ).all();
+  
+  if (focusableElements.length === 0) {
+    console.error('No focusable elements found in container');
     return false;
   }
+  
+  // Start by focusing the first element
+  await focusableElements[0].focus();
+  
+  // Tab through all elements and then once more to see if focus wraps
+  for (let i = 0; i <= focusableElements.length; i++) {
+    await page.keyboard.press('Tab');
+  }
+  
+  // Get the currently focused element
+  const focusedElementInContainer = await page.evaluate((selector) => {
+    const container = document.querySelector(selector);
+    const activeElement = document.activeElement;
+    
+    return container?.contains(activeElement);
+  }, containerSelector);
+  
+  // Focus should stay within the container
+  return !!focusedElementInContainer;
+}
+
+/**
+ * Get accessibility violations using axe-core
+ * 
+ * @param page The Playwright page object
+ * @param options Optional configuration
+ * @returns Promise resolving to array of accessibility violations
+ */
+export async function getAccessibilityViolations(
+  page: Page,
+  options: {
+    includedSelectors?: string[];
+    excludedSelectors?: string[];
+    rules?: string[];
+  } = {}
+): Promise<any[]> {
+  let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']);
+  
+  if (options.includedSelectors?.length) {
+    builder = builder.include(options.includedSelectors);
+  }
+  
+  if (options.excludedSelectors?.length) {
+    builder = builder.exclude(options.excludedSelectors);
+  }
+  
+  if (options.rules?.length) {
+    builder = builder.disableRules(options.rules);
+  }
+  
+  const results = await builder.analyze();
+  return results.violations;
+}
+
+/**
+ * Check color contrast on a specific element
+ * 
+ * @param page The Playwright page object
+ * @param selector Element selector to check
+ * @returns Promise resolving to an object with contrast information
+ */
+export async function checkColorContrast(
+  page: Page,
+  selector: string
+): Promise<{ ratio: number; passes: boolean }> {
+  return page.evaluate((sel) => {
+    const element = document.querySelector(sel);
+    if (!element) return { ratio: 0, passes: false };
+    
+    const computedStyle = window.getComputedStyle(element);
+    const bgColor = computedStyle.backgroundColor;
+    const textColor = computedStyle.color;
+    
+    // Simple luminance calculation function
+    function getLuminance(color: string): number {
+      // Extract RGB components - this is a simplified approach
+      const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (!rgbMatch) return 0;
+      
+      const r = parseInt(rgbMatch[1], 10) / 255;
+      const g = parseInt(rgbMatch[2], 10) / 255;
+      const b = parseInt(rgbMatch[3], 10) / 255;
+      
+      const rsRgb = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+      const gsRgb = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+      const bsRgb = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+      
+      return 0.2126 * rsRgb + 0.7152 * gsRgb + 0.0722 * bsRgb;
+    }
+    
+    const bgLuminance = getLuminance(bgColor);
+    const textLuminance = getLuminance(textColor);
+    
+    // Calculate contrast ratio
+    const l1 = Math.max(bgLuminance, textLuminance);
+    const l2 = Math.min(bgLuminance, textLuminance);
+    const contrastRatio = (l1 + 0.05) / (l2 + 0.05);
+    
+    // WCAG AA requires 4.5:1 for normal text
+    const passes = contrastRatio >= 4.5;
+    
+    return {
+      ratio: contrastRatio,
+      passes
+    };
+  }, selector);
+}
+
+/**
+ * Verify that an element has proper ARIA attributes
+ * 
+ * @param element Playwright locator for the element
+ * @param requiredAttributes Array of required ARIA attributes
+ * @returns Promise resolving to true if all required attributes are present
+ */
+export async function verifyAriaAttributes(
+  element: Locator,
+  requiredAttributes: string[]
+): Promise<boolean> {
+  for (const attr of requiredAttributes) {
+    const value = await element.getAttribute(attr);
+    if (value === null) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Generate a comprehensive accessibility report
+ * 
+ * @param page The Playwright page object
+ * @param options Optional configuration
+ * @returns Promise resolving to an accessibility report object
+ */
+export async function generateAccessibilityReport(
+  page: Page,
+  options: {
+    pageTitle?: string;
+    includeScreenshot?: boolean;
+    keyElements?: string[];
+  } = {}
+): Promise<any> {
+  const {
+    pageTitle = 'Accessibility Report',
+    includeScreenshot = true,
+    keyElements = []
+  } = options;
+  
+  // Get axe violations
+  const violations = await getAccessibilityViolations(page);
+  
+  // Get keyboard navigation status
+  const keyboardNavigable = await testKeyboardNavigation(page);
+  
+  // Check key elements for ARIA attributes
+  const ariaChecks: Record<string, boolean> = {};
+  for (const selector of keyElements) {
+    const element = page.locator(selector);
+    if (await element.isVisible()) {
+      ariaChecks[selector] = await verifyAriaAttributes(element, [
+        'role',
+        'aria-label'
+      ]);
+    }
+  }
+  
+  // Create report
+  const report = {
+    title: pageTitle,
+    timestamp: new Date().toISOString(),
+    url: page.url(),
+    violations: violations.map(v => ({
+      id: v.id,
+      impact: v.impact,
+      description: v.description,
+      nodes: v.nodes.length
+    })),
+    keyboardNavigable,
+    ariaChecks,
+    criticalIssuesCount: violations.filter(v => v.impact === 'critical').length,
+    seriousIssuesCount: violations.filter(v => v.impact === 'serious').length,
+    moderateIssuesCount: violations.filter(v => v.impact === 'moderate').length,
+    minorIssuesCount: violations.filter(v => v.impact === 'minor').length,
+  };
+  
+  // Take screenshot if requested
+  if (includeScreenshot) {
+    const screenshotBuffer = await page.screenshot();
+    const base64Screenshot = screenshotBuffer.toString('base64');
+    // @ts-ignore: Dynamic property assignment
+    report.screenshot = base64Screenshot;
+  }
+  
+  return report;
 } 

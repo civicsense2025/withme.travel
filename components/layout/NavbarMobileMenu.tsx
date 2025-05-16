@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { NavbarThemeToggle } from './NavbarThemeToggle';
 import UserMenu from './user-menu';
 import { cn } from '@/lib/utils';
 
@@ -34,10 +34,12 @@ export function NavbarMobileMenu({
 }: NavbarMobileMenuProps) {
   if (!open) return null;
   const navLinks = user ? privateLinks : publicLinks;
+  
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end">
+    <div className="fixed inset-0 z-[9999] flex justify-end md:hidden">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      
       {/* Slide-in Menu Panel */}
       <div className="relative w-4/5 max-w-xs h-screen bg-background border-l border-border flex flex-col z-10 animate-in slide-in-from-right duration-300">
         {/* Close Button - Top right */}
@@ -52,12 +54,16 @@ export function NavbarMobileMenu({
             <X className="h-5 w-5" />
           </Button>
         </div>
+        
         {/* Menu Items */}
         <div className="flex flex-col h-full px-6 pt-8 pb-6">
           <div className="overflow-y-auto">
-            <div>
-              <UserMenu topPosition />
-            </div>
+            {user && (
+              <div>
+                <UserMenu topPosition />
+              </div>
+            )}
+            
             <nav className="flex flex-col gap-4 mt-2">
               {navLinks.map((link) => (
                 <Link
@@ -73,11 +79,13 @@ export function NavbarMobileMenu({
                 </Link>
               ))}
             </nav>
+            
             <div className="mt-6 flex items-center">
-              <ThemeToggle />
+              <NavbarThemeToggle mobileStyling={true} />
             </div>
           </div>
-          {user && (
+          
+          {user ? (
             <button
               className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 text-base shadow-lg border-none focus:outline-none focus:ring-2 focus:ring-red-400 mt-auto"
               style={{ marginBottom: 'env(safe-area-inset-bottom, 1rem)' }}
@@ -88,6 +96,16 @@ export function NavbarMobileMenu({
             >
               Log out
             </button>
+          ) : (
+            <div className="mt-auto">
+              <Link 
+                href="/login" 
+                onClick={onClose}
+                className="w-full bg-travel-purple text-purple-900 hover:bg-purple-300 font-medium py-3 rounded-xl flex items-center justify-center gap-2 text-base shadow-lg border-none focus:outline-none focus:ring-2 focus:ring-purple-400"
+              >
+                Sign In
+              </Link>
+            </div>
           )}
         </div>
       </div>

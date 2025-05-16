@@ -4,6 +4,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Spinner } from './spinner';
 import { cva, VariantProps } from 'class-variance-authority';
+import { Slot } from '@radix-ui/react-slot';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
@@ -49,51 +50,68 @@ export interface ButtonProps
   loadingText?: string;
   /** The content of the button */
   children: React.ReactNode;
+  /** Render as child (for custom elements like Link) */
+  asChild?: boolean;
 }
 
 /**
  * Button component with multiple variants and sizes, respecting color themes.
  * Now supports loading and improved hover states.
+ * Supports asChild pattern for custom elements.
  *
  * @example
  * <Button variant="primary" size="md" loading loadingText="Submitting...">
  *   Submit
  * </Button>
+ *
+ * <Button asChild>
+ *   <Link href="/foo">Go to Foo</Link>
+ * </Button>
  */
-export function Button({
-  className,
-  variant,
-  size,
-  width,
-  children,
-  disabled,
-  leftIcon,
-  rightIcon,
-  loading = false,
-  loadingText,
-  ariaDescription,
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      className={cn(buttonVariants({ variant, size, width }), className)}
-      disabled={disabled || loading}
-      aria-disabled={disabled || loading}
-      aria-description={ariaDescription}
-      {...props}
-    >
-      {loading ? (
-        <>
-          <Spinner size="sm" className="mr-2" />
-          {loadingText || 'Loading...'}
-        </>
-      ) : (
-        <>
-          {leftIcon && <span className="mr-2 inline-flex items-center">{leftIcon}</span>}
-          {children}
-          {rightIcon && <span className="ml-2 inline-flex items-center">{rightIcon}</span>}
-        </>
-      )}
-    </button>
-  );
-}
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      className,
+      variant,
+      size,
+      width,
+      children,
+      disabled,
+      leftIcon,
+      rightIcon,
+      loading = false,
+      loadingText,
+      ariaDescription,
+      asChild = false,
+      ...props
+    },
+    ref
+  ) => {
+    const Comp = asChild ? Slot : 'button';
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, width }), className)}
+        disabled={asChild ? undefined : disabled || loading}
+        aria-disabled={disabled || loading}
+        aria-description={ariaDescription}
+        ref={ref}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <Spinner size="sm" className="mr-2" />
+            {loadingText || 'Loading...'}
+          </>
+        ) : (
+          <>
+            {leftIcon && <span className="mr-2 inline-flex items-center">{leftIcon}</span>}
+            {children}
+            {rightIcon && <span className="ml-2 inline-flex items-center">{rightIcon}</span>}
+          </>
+        )}
+      </Comp>
+    );
+  }
+);
+
+Button.displayName = 'Button';

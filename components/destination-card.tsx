@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // import { ImageDebug } from "@/components/debug/ImageDebug"; // Import the debug component
-import { Heart, Info } from 'lucide-react';
+import { Heart, Info, Camera, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { LikeButton } from '@/components/like-button';
@@ -13,6 +13,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { ImageAttribution } from '@/components/images';
 import { cn } from '@/lib/utils';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // SVG texture overlay for gradients
 const TextureOverlay = () => (
@@ -201,6 +206,13 @@ export function DestinationCard({
     );
   };
 
+  // Check if image metadata exists
+  const hasImageMetadata = destination.image_metadata && (
+    destination.image_metadata.photographer_name || 
+    destination.image_metadata.source || 
+    destination.image_metadata.attribution
+  );
+
   return (
     <div
       className={cn(
@@ -263,27 +275,77 @@ export function DestinationCard({
         />
       </div>
 
-      {/* Attribution */}
-      {destination.image_metadata?.attribution && (
-        <div
-          className={cn(
-            'absolute bottom-0 right-0 z-10 p-1 text-[10px] text-white/80 max-w-[90%] truncate',
-            'bg-black/30 backdrop-blur-sm rounded-tl-lg',
-            hideAttributionMobile && 'hidden md:block'
-          )}
-        >
-          <ImageAttribution
-            image={{
-              alt_text: destination.image_metadata.alt_text,
-              attribution_html: destination.image_metadata.attributionHtml,
-              photographer: destination.image_metadata.photographer_name,
-              photographer_url: destination.image_metadata.photographer_url,
-              source: destination.image_metadata.source,
-              external_id: destination.image_metadata.source_id,
-              url: destination.image_metadata.url,
-            }}
-            variant="overlay"
-          />
+      {/* Image Attribution Popover */}
+      {hasImageMetadata && (
+        <div className="absolute bottom-2 right-2 z-20">
+          <Popover>
+            <PopoverTrigger asChild>
+              <motion.button
+                className="h-8 w-8 bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                aria-label="Image information"
+                onClick={(e) => e.stopPropagation()} // Prevent card navigation
+              >
+                <Camera className="h-4 w-4" />
+              </motion.button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3 bg-background/95 backdrop-blur-md border-border text-sm" side="top">
+              <div className="space-y-2">
+                <h4 className="font-semibold flex items-center gap-1.5">
+                  <Camera className="h-4 w-4" />
+                  Image Information
+                </h4>
+                
+                {destination.image_metadata?.photographer_name && (
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Photographer:</span>{' '}
+                    {destination.image_metadata.photographer_url ? (
+                      <a 
+                        href={destination.image_metadata.photographer_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="font-medium text-travel-purple hover:underline inline-flex items-center"
+                        onClick={(e) => e.stopPropagation()} // Prevent card navigation
+                      >
+                        {destination.image_metadata.photographer_name}
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </a>
+                    ) : (
+                      <span>{destination.image_metadata.photographer_name}</span>
+                    )}
+                  </div>
+                )}
+                
+                {destination.image_metadata?.source && (
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Source:</span>{' '}
+                    <span className="font-medium">
+                      {destination.image_metadata.source}
+                    </span>
+                  </div>
+                )}
+                
+                {destination.image_metadata?.attribution && (
+                  <div className="text-xs">
+                    <ImageAttribution
+                      image={{
+                        alt_text: destination.image_metadata.alt_text,
+                        attribution_html: destination.image_metadata.attributionHtml,
+                        photographer: destination.image_metadata.photographer_name,
+                        photographer_url: destination.image_metadata.photographer_url,
+                        source: destination.image_metadata.source,
+                        external_id: destination.image_metadata.source_id,
+                        url: destination.image_metadata.url,
+                      }}
+                      variant="badges"
+                    />
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
 
@@ -299,6 +361,7 @@ export function DestinationCard({
                   whileTap={{ scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                   aria-label="Show destination info"
+                  onClick={(e) => e.stopPropagation()} // Prevent card navigation
                 >
                   <Info className="h-4 w-4" />
                 </motion.button>

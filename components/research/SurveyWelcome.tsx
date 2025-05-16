@@ -1,63 +1,57 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 export interface SurveyWelcomeProps {
   title: string;
   description: string;
   onStart: () => void;
-  /** Button label text (e.g., 'Start', 'Begin Session') */
-  buttonText?: string;
-  /** Test ID for the start button (default: 'survey-start-button') */
-  buttonTestId?: string;
 }
 
 /**
- * Welcome screen shown before starting a survey
- *
- * E2E and accessibility requirements:
- * - Main heading must have role="heading", data-testid="survey-welcome-heading", and include "Welcome" in the text
- * - Start button must have data-testid="survey-start-button" and visible text "Start" or "Begin Session"
- * - Use <h1> for the main heading for a11y
+ * Welcome screen for surveys with animated entrance
  */
-export function SurveyWelcome({ title, description, onStart, buttonText = 'Start', buttonTestId = 'survey-start-button' }: SurveyWelcomeProps) {
+export function SurveyWelcome({ title, description, onStart }: SurveyWelcomeProps) {
   return (
-    <Card className="max-w-3xl mx-auto my-8">
-      <CardHeader>
-        <h1
-          className="text-2xl md:text-3xl text-center"
-          role="heading"
-          aria-level={1}
-          data-testid="survey-welcome-heading"
-        >
-          {title.includes('Welcome') ? title : `Welcome${title ? ': ' + title : ''}`}
-        </h1>
-      </CardHeader>
-      <CardContent>
-        <p className="text-center text-muted-foreground mb-6">{description}</p>
-        
-        <div className="space-y-4">
-          <div className="border rounded-md p-4 bg-muted/20">
-            <h3 className="text-lg font-medium mb-2">What to expect</h3>
-            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-              <li>This survey should take about 5-10 minutes to complete</li>
-              <li>Your responses will help us improve our product</li>
-              <li>All responses are anonymous unless you choose to provide contact information</li>
-            </ul>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button
-          onClick={onStart}
-          size="lg"
-          data-testid={buttonTestId}
-          aria-label={buttonText}
-        >
-          {buttonText}
-        </Button>
-      </CardFooter>
-    </Card>
+    <motion.div 
+      className="p-8 flex flex-col items-center text-center"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="mb-6">
+        <span className="inline-block text-4xl">✨</span>
+      </div>
+      
+      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+      
+      <p className="text-muted-foreground mb-8 max-w-md">
+        {description}
+      </p>
+      
+      <ul className="mb-8 text-left w-full max-w-md space-y-2">
+        <li className="flex items-start">
+          <span className="mr-2 text-primary">✓</span>
+          <span>Your feedback will help us improve the experience for everyone</span>
+        </li>
+        <li className="flex items-start">
+          <span className="mr-2 text-primary">✓</span>
+          <span>This survey should take about 3-5 minutes to complete</span>
+        </li>
+        <li className="flex items-start">
+          <span className="mr-2 text-primary">✓</span>
+          <span>Your responses are anonymous and confidential</span>
+        </li>
+      </ul>
+      
+      <Button 
+        onClick={onStart} 
+        className="w-full max-w-xs"
+        size="lg"
+      >
+        Start Survey
+      </Button>
+    </motion.div>
   );
 }

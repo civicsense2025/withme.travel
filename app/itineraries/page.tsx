@@ -21,6 +21,7 @@ import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { Section } from '@/components/ui/section';
 import { ItineraryTemplateCard } from '@/components/itinerary-template-card';
+import { FullBleedSection } from '@/components/ui/FullBleedSection';
 
 export const dynamic = 'force-dynamic'; // Ensure dynamic rendering
 export const revalidate = 600; // Revalidate every 10 minutes
@@ -186,27 +187,24 @@ export default async function ItinerariesPage() {
 
     // Create the header section with title, description and submit button
     const header = (
-      <Section>
-        <div className="text-center">
-          <Heading level={1} size="large" align="center">
-            Itineraries
-          </Heading>
-          <Text variant="large" className="text-muted-foreground max-w-2xl mx-auto">
-            Ready-made travel plans to inspire your next adventure
-          </Text>
+      <main>
+             <PageHeader
+        title="Explore Itineraries"
+        description="Ready-made travel plans to inspire your next adventure"
+        centered={true}
+      />
           <div className="mt-6">
             <Link href="/itineraries/submit">
               <Button
                 size="default"
-                className="flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
+                className="mx-auto flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Submit Itinerary
               </Button>
             </Link>
           </div>
-        </div>
-      </Section>
+      </main>
     );
 
     // Early return if no itineraries
@@ -222,9 +220,7 @@ export default async function ItinerariesPage() {
             <Text variant="body" className="mb-4 text-muted-foreground">
               Be the first to share your travel plans with the community!
             </Text>
-            <Link href="/itineraries/submit">
-              <Button>Submit an Itinerary</Button>
-            </Link>
+
           </div>
         </PageContainer>
       );
@@ -235,9 +231,7 @@ export default async function ItinerariesPage() {
     const draftItineraries = processedItineraries.filter((i) => !i.is_published);
 
     return (
-      <PageContainer header={header} fullWidth={true}>
-        {/* Wrap client components with error boundaries */}
-     <div className="max-w-screen-2xl mx-auto">
+      <PageContainer header={header} fullWidth={false} className="max-w-3xl mx-auto">
         <ClassErrorBoundary fallback={<ItinerariesErrorFallback />}>
           <ClientWrapper
             // Type assertion is safe because we've ensured all properties match
@@ -278,7 +272,6 @@ export default async function ItinerariesPage() {
             </div>
           </div>
         )}
-        </div>
       </PageContainer>
     );
   } catch (error) {

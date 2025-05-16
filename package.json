@@ -43,7 +43,9 @@
     "storybook:clean-start": "pnpm clean-storybook && pnpm storybook",
     "test:e2e": "playwright test",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright test --reporter=json,html && node scripts/generate-test-report.js"
+    "test:e2e:report": "playwright test --reporter=json,html && node scripts/generate-test-report.js",
+    "organize-storybook": "node scripts/organize-storybook.js",
+    "organize-storybook:move": "node scripts/organize-storybook.js --move"
   },
   "husky": {
     "hooks": {

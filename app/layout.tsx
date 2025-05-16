@@ -22,6 +22,7 @@ import { CommandMenu } from '@/components/search/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ResearchProvider } from '@/components/research/ResearchProvider';
 import { ResearchModal } from '@/components/research/ResearchModal';
+import { ResearchDebugger } from '@/components/research/ResearchDebugger';
 import React from 'react';
 
 // Metadata is imported from app/metadata.ts
@@ -114,8 +115,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <ClientSideProviders>
                   <ClientSideLayoutRenderer>
                     <Navbar />
-                    {children}
-                    <CommandMenu />
+                    <ResearchProvider>
+                      <ResearchModal />
+                      {children}
+                      <CommandMenu />
+                      {process.env.NODE_ENV === 'development' && <ResearchDebugger initialOpen={false} />}
+                    </ResearchProvider>
                   </ClientSideLayoutRenderer>
                 </ClientSideProviders>
               </LayoutModeProvider>
@@ -124,10 +129,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Toaster />
           <Analytics />
           <SpeedInsights />
-          {/* User testing/research components */}
-          <ResearchProvider>
-            <ResearchModal />
-          </ResearchProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface AdminAccessCheckProps {
   children: ReactNode;
@@ -13,19 +14,22 @@ interface AdminAccessCheckProps {
  * Component that only renders its children if the current user is an admin
  */
 export default function AdminAccessCheck({ children, fallback = null }: AdminAccessCheckProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (isLoading) return;
+      if (isAuthLoading) return;
 
       try {
         if (!user) {
+          // No user - redirect to login
           setIsAdmin(false);
           setIsChecking(false);
+          router.push('/login?redirectTo=/admin');
           return;
         }
 
@@ -36,6 +40,7 @@ export default function AdminAccessCheck({ children, fallback = null }: AdminAcc
         let retries = 0;
         const maxRetries = 3;
         let retryDelay = 1000;
+        let isVerifiedAdmin = false;
 
         while (retries < maxRetries) {
           try {
@@ -43,13 +48,13 @@ export default function AdminAccessCheck({ children, fallback = null }: AdminAcc
 
             if (response.ok) {
               const data = await response.json();
-              setIsAdmin(data.isAdmin);
-              setIsChecking(false);
-              return;
+              isVerifiedAdmin = data.isAdmin === true;
+              break; // Success, exit the retry loop
             } else if (response.status === 401) {
-              // User is not authenticated, no need to retry
+              // User is not authenticated, redirect to login
               setIsAdmin(false);
               setIsChecking(false);
+              router.push('/login?redirectTo=/admin');
               return;
             }
 
@@ -69,10 +74,14 @@ export default function AdminAccessCheck({ children, fallback = null }: AdminAcc
           }
         }
 
-        // If we get here, all retries failed
-        setError('Could not verify admin status. Please try refreshing the page.');
-        setIsAdmin(false);
+        setIsAdmin(isVerifiedAdmin);
         setIsChecking(false);
+            
+        // If not admin, redirect to login
+        if (!isVerifiedAdmin) {
+          console.log('Not an admin, redirecting to login');
+          router.push('/login?redirectTo=/admin');
+        }
       } catch (error) {
         console.error('Error checking admin status:', error);
         setError('An unexpected error occurred');
@@ -82,10 +91,10 @@ export default function AdminAccessCheck({ children, fallback = null }: AdminAcc
     };
 
     checkAdminStatus();
-  }, [user, isLoading]);
+  }, [user, isAuthLoading, router]);
 
   // Still loading state
-  if (isChecking || isLoading) {
+  if (isChecking || isAuthLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[200px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />

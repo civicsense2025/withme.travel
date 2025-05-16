@@ -106,4 +106,32 @@ export const RESEARCH_EVENT_TYPES = {
   MILESTONE_REACHED: 'milestone_reached'
 } as const;
 
-export type ResearchEventType = typeof RESEARCH_EVENT_TYPES[keyof typeof RESEARCH_EVENT_TYPES]; 
+export type ResearchEventType = typeof RESEARCH_EVENT_TYPES[keyof typeof RESEARCH_EVENT_TYPES];
+
+// Define Survey related types
+
+export interface FormField {
+  id: string;
+  type: string;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  options?: string[] | { label: string; value: string }[];
+  default_value?: any;
+}
+
+export interface SurveyConfig {
+  progressBar?: boolean;
+  allowBack?: boolean;
+  showStepCount?: boolean;
+  milestones?: string[];
+}
+
+export interface Survey {
+  id: string;
+  name: string;
+  description?: string;
+  status: 'active' | 'draft' | 'archived';
+  form_fields: FormField[];
+  config?: SurveyConfig;
+} 

@@ -23,27 +23,88 @@ const Tabs = TabsPrimitive.Root;
 
 /**
  * Container for all tab triggers. Acts as an accessible navigation element.
+ * Includes fade effect on edges to indicate more content is available.
  */
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      'flex overflow-x-auto whitespace-nowrap scrollbar-hide no-scrollbar gap-2 md:gap-4 px-1 md:px-2',
-      className
-    )}
-    style={{ WebkitOverflowScrolling: 'touch' }}
-    aria-orientation="horizontal"
-    role="tablist"
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showLeftFade, setShowLeftFade] = React.useState(false);
+  const [showRightFade, setShowRightFade] = React.useState(true);
+
+  // Handle scroll event to determine if fades should be shown
+  const handleScroll = React.useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+    
+    // Show left fade if scrolled right
+    setShowLeftFade(scrollLeft > 10);
+    
+    // Show right fade if there's more content to scroll
+    setShowRightFade(scrollLeft < scrollWidth - clientWidth - 10);
+  }, []);
+
+  // Initialize scroll state
+  React.useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      // Check if scroll is needed initially
+      const { scrollWidth, clientWidth } = scrollContainer;
+      setShowRightFade(scrollWidth > clientWidth);
+      
+      // Add scroll event listener
+      scrollContainer.addEventListener('scroll', handleScroll);
+      
+      // Clean up
+      return () => {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [handleScroll]);
+
+  return (
+    <div className="relative">
+      {/* Left fade indicator */}
+      <div 
+        className={`absolute left-0 top-0 bottom-0 w-12 pointer-events-none z-10 bg-gradient-to-r from-background to-transparent transition-opacity duration-300 ${
+          showLeftFade ? 'opacity-100' : 'opacity-0'
+        }`}
+        aria-hidden="true"
+      />
+      
+      <div
+        ref={scrollContainerRef} 
+        className="relative overflow-x-auto scrollbar-hide"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <TabsPrimitive.List
+          ref={ref}
+          className={cn(
+            'flex whitespace-nowrap gap-2 md:gap-4 px-1 md:px-2 pb-1 scroll-smooth transition-all duration-300',
+            className
+          )}
+          aria-orientation="horizontal"
+          role="tablist"
+          {...props}
+        />
+      </div>
+      
+      {/* Right fade indicator */}
+      <div 
+        className={`absolute right-0 top-0 bottom-0 w-12 pointer-events-none z-10 bg-gradient-to-l from-background to-transparent transition-opacity duration-300 ${
+          showRightFade ? 'opacity-100' : 'opacity-0'
+        }`}
+        aria-hidden="true" 
+      />
+    </div>
+  );
+});
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
-  'relative bg-transparent border-0 px-2 md:px-4 py-2 text-lg md:text-xl font-light text-muted-foreground opacity-70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:z-10 whitespace-nowrap',
+  'relative bg-transparent border-0 px-2 md:px-4 py-2 text-lg md:text-xl font-light text-muted-foreground opacity-70 transition-all duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:z-10 whitespace-nowrap',
   {
     variants: {
       variant: {
@@ -163,7 +224,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      'mt-4 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      'mt-4 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-opacity duration-300 data-[state=inactive]:opacity-0 data-[state=active]:opacity-100',
       className
     )}
     role="tabpanel"

@@ -12,15 +12,15 @@ export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const interests = searchParams.get('interests');
-    const homeLocation = searchParams.get('homeLocation');
+    const homeLocationRaw = searchParams.get('homeLocation');
+    const homeLocation = typeof homeLocationRaw === 'string' ? homeLocationRaw.trim() : '';
     
     const supabase = await createRouteHandlerClient();
     
     // Base query to get popular destinations
     let query = supabase
       .from(TABLES.DESTINATIONS)
-      .select('id, name, slug, description, city, country, region, continent, emoji, image_url')
-      .eq('is_active', true)
+      .select('id, name, slug, description, city, country, continent, emoji, image_url')
       .order('popularity_score', { ascending: false });
     
     // Apply interest filtering if provided
@@ -32,11 +32,9 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    // Apply region filtering based on home location if provided
-    if (homeLocation) {
-      // Find destinations in different regions than the home location
-      // This is a simplified example - a real implementation might use
-      // location proximity or more sophisticated matching
+    // Apply city filtering based on home location if provided
+    if (homeLocation.length > 0) {
+      // Find destinations in different cities than the home location
       query = query.neq('city', homeLocation);
     }
     
@@ -53,14 +51,14 @@ export async function GET(req: NextRequest) {
     // Transform data to include byline
     const formattedDestinations = destinations.map(dest => ({
       id: dest.id,
-      name: dest.city || dest.name,
-      slug: dest.slug,
+      name: (dest.city || dest.name || ''),
+      slug: dest.slug || '',
       emoji: dest.emoji || '🌍',
-      byline: dest.country || dest.region || dest.continent,
-      image_url: dest.image_url,
-      description: dest.description,
+      byline: dest.country || dest.continent || '',
+      image_url: dest.image_url || '',
+      description: dest.description || '',
       // Generate sample highlights based on the destination
-      highlights: generateHighlights(dest.name)
+      highlights: generateHighlights(dest.name || '')
     }));
     
     return NextResponse.json({ 

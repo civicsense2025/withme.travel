@@ -1,34 +1,55 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 // External dependencies
 import { useToast } from '@/components/ui/use-toast';
 
 // Internal modules
 import { UserTestingSession } from '@/types';
-import { RESEARCH_EVENT_TYPES } from '@/types/research';
+import { RESEARCH_EVENT_TYPES, Form } from '@/types/research';
+import { SAMPLE_SURVEYS } from '@/data/sample-surveys';
 
 // Hooks
 import { useAuth } from '@/hooks/use-auth';
 
-/**
- * Research context for tracking events and managing surveys
- */
-interface ResearchContextType {
-  /** Current user testing session */
-  session: UserTestingSession | null;
-  /** Function to start a new testing session */
-  startSession: (token?: string) => Promise<UserTestingSession | null>;
-  /** Function to track research events */
-  trackEvent: (eventType: string, data?: Record<string, any>) => Promise<void>;
-  /** Function to show a survey */
-  showSurvey: (formId: string, milestone?: string) => void;
-  /** Currently active survey information */
-  activeSurvey: { formId: string; milestone?: string } | null;
-  /** Function to close the survey */
-  closeSurvey: () => void;
-  /** Whether a survey is currently showing */
-  isSurveyVisible: boolean;
+export interface ResearchSession {
+  id: string;
+  token?: string;
+  completedMilestones: string[];
+  responses: Record<string, any>[];
+  startedAt: string;
+  completedAt?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ResearchEvent {
+  type: string;
+  details?: Record<string, any>;
+  timestamp: string;
+  milestone?: string;
+}
+
+export interface ResearchContextType {
+  // Session management
+  session: ResearchSession | null;
+  createSession: (token?: string) => Promise<ResearchSession>;
+  updateSession: (updates: Partial<ResearchSession>) => void;
+  completeSession: () => Promise<void>;
+  
+  // Event tracking
+  trackEvent: (eventType: string, details?: Record<string, any>, milestone?: string) => Promise<void>;
+  
+  // Survey responses
+  saveResponses: (surveyId: string, responses: Record<string, any>[]) => Promise<void>;
+  
+  // Survey data
+  surveys: Form[];
+  getSurveyById: (surveyId: string) => Form | undefined;
+  getSurveyByType: (surveyType: string) => Form | undefined;
+  
+  // Loading states
+  isLoading: boolean;
+  error: string | null;
 }
 
 const ResearchContext = createContext<ResearchContextType | undefined>(undefined);
@@ -38,236 +59,246 @@ const ResearchContext = createContext<ResearchContextType | undefined>(undefined
  */
 const LS_KEYS = {
   SESSION_TOKEN: 'withme_research_session_token',
+  SESSION_DATA: 'research-session',
 };
 
+export interface ResearchProviderProps {
+  children: ReactNode;
+}
+
+// Default session for development use only
+const createDefaultSession = (): ResearchSession => ({
+  id: `session-${Date.now()}`,
+  completedMilestones: [],
+  responses: [],
+  startedAt: new Date().toISOString(),
+  metadata: {
+    userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : '',
+    source: 'development',
+  },
+});
+
 /**
- * Provider component for research context
+ * ResearchProvider component that manages research sessions and event tracking
+ * Provides context for the entire research system
  */
-export function ResearchProvider({ children }: { children: React.ReactNode }) {
+export function ResearchProvider({ children }: ResearchProviderProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [session, setSession] = useState<UserTestingSession | null>(null);
-  const [activeSurvey, setActiveSurvey] = useState<{ formId: string; milestone?: string } | null>(null);
-  const [isSurveyVisible, setIsSurveyVisible] = useState(false);
+  const [session, setSession] = useState<ResearchSession | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [surveys, setSurveys] = useState<Form[]>(SAMPLE_SURVEYS);
 
-  // Load session from local storage on mount
+  // Load session from localStorage in development mode
   useEffect(() => {
-    const loadSession = async () => {
+    const loadSavedSession = () => {
+      if (typeof window === 'undefined') return;
+      
       try {
-        const storedToken = localStorage.getItem(LS_KEYS.SESSION_TOKEN);
-        if (storedToken) {
-          const session = await fetchSession(storedToken);
-          if (session) {
-            setSession(session);
-          }
+        const savedSession = localStorage.getItem(LS_KEYS.SESSION_DATA);
+        if (savedSession) {
+          setSession(JSON.parse(savedSession));
         }
-      } catch (error) {
-        console.error('Error loading research session:', error);
-        // Clear invalid session
-        localStorage.removeItem(LS_KEYS.SESSION_TOKEN);
+      } catch (e) {
+        console.error('Error loading research session:', e);
       }
     };
-
-    loadSession();
+    
+    loadSavedSession();
   }, []);
+  
+  // Save session to localStorage in development mode
+  useEffect(() => {
+    if (typeof window === 'undefined' || !session) return;
+    
+    try {
+      localStorage.setItem(LS_KEYS.SESSION_DATA, JSON.stringify(session));
+    } catch (e) {
+      console.error('Error saving research session:', e);
+    }
+  }, [session]);
 
   /**
-   * Fetch session data from the API
+   * Create a new research session
+   * In production, this would call the API
    */
-  const fetchSession = async (token: string): Promise<UserTestingSession | null> => {
+  const createSession = async (token?: string): Promise<ResearchSession> => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const response = await fetch(`/api/research/sessions/${token}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch session');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching session:', error);
-      return null;
+      // In a real implementation, this would call the API
+      // For now, we'll create a local session for development
+      const newSession: ResearchSession = {
+        ...createDefaultSession(),
+        token,
+      };
+      
+      setSession(newSession);
+      return newSession;
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Failed to create session';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   /**
-   * Start a new user testing session
+   * Update the current session with new data
    */
-  const startSession = async (token?: string): Promise<UserTestingSession | null> => {
+  const updateSession = (updates: Partial<ResearchSession>) => {
+    if (!session) return;
+    
+    setSession({
+      ...session,
+      ...updates,
+    });
+  };
+
+  /**
+   * Mark a session as completed
+   */
+  const completeSession = async (): Promise<void> => {
+    if (!session) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      let sessionResponse;
+      // In a real implementation, this would call the API
+      // For now, we'll update the local session
+      updateSession({
+        completedAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Failed to complete session';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Track a research event
+   */
+  const trackEvent = async (
+    eventType: string,
+    details?: Record<string, any>,
+    milestone?: string
+  ): Promise<void> => {
+    if (!session) return;
+    
+    try {
+      // Create the event
+      const event: ResearchEvent = {
+        type: eventType,
+        details,
+        timestamp: new Date().toISOString(),
+        milestone,
+      };
       
-      if (token) {
-        // Use provided token to validate
-        sessionResponse = await fetch(`/api/research/sessions/${token}`);
-      } else {
-        // Create new session
-        sessionResponse = await fetch('/api/research/sessions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: user?.id,
-            metadata: {
-              userAgent: navigator.userAgent,
-              language: navigator.language,
-              screenWidth: window.screen.width,
-              screenHeight: window.screen.height,
-            },
-          }),
+      // In a real implementation, this would call the API
+      console.log('Research event tracked:', event);
+      
+      // Dispatch custom event for the debugger to pick up
+      if (typeof window !== 'undefined') {
+        const customEvent = new CustomEvent('research_event', { detail: event });
+        window.dispatchEvent(customEvent);
+      }
+      
+      // If this is a milestone event, update the session
+      if (milestone && !session.completedMilestones.includes(milestone)) {
+        updateSession({
+          completedMilestones: [...session.completedMilestones, milestone],
         });
       }
-
-      if (!sessionResponse.ok) {
-        throw new Error('Failed to start session');
-      }
-
-      const newSession = await sessionResponse.json();
-      setSession(newSession);
-
-      // Save session token to local storage
-      localStorage.setItem(LS_KEYS.SESSION_TOKEN, newSession.token);
-
-      // Track session started event
-      await trackEventInternal(RESEARCH_EVENT_TYPES.SESSION_STARTED, { 
-        session_id: newSession.id,
-        guest_token: newSession.guest_token 
-      });
-
-      return newSession;
-    } catch (error) {
-      console.error('Error starting session:', error);
-      return null;
+    } catch (e) {
+      console.error('Error tracking research event:', e);
     }
   };
 
   /**
-   * Internal implementation of trackEvent
+   * Save survey responses
    */
-  const trackEventInternal = async (
-    eventType: string,
-    data?: Record<string, any>
-  ) => {
+  const saveResponses = async (
+    surveyId: string,
+    responses: Record<string, any>[]
+  ): Promise<void> => {
+    if (!session) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      if (!session) {
-        // Silently return if no session
-        return;
-      }
-
-      await fetch('/api/research/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_id: session.id,
-          user_id: user?.id,
-          event_type: eventType,
-          details: data || {},
-        }),
+      // In a real implementation, this would call the API
+      // For now, we'll update the local session
+      updateSession({
+        responses: [...session.responses, { surveyId, responses, timestamp: new Date().toISOString() }],
       });
-    } catch (error) {
-      // Log error but don't interrupt user experience
-      console.error('Error tracking event:', error);
+      
+      // Track response submitted event
+      await trackEvent(RESEARCH_EVENT_TYPES.SURVEY_RESPONSE_SUBMITTED, {
+        surveyId,
+        responseCount: responses.length,
+      });
+      
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Failed to save responses';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
   /**
-   * Track a research event and check for triggered surveys
+   * Get a survey by ID
    */
-  const trackEvent = useCallback(async (
-    eventType: string,
-    data?: Record<string, any>,
-  ) => {
-    try {
-      if (!session) {
-        // Try to start a session first
-        const newSession = await startSession();
-        if (!newSession) {
-          return;
-        }
-      }
-
-      // Track the event
-      const response = await fetch('/api/research/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_id: session!.id,
-          user_id: user?.id,
-          event_type: eventType,
-          details: data || {},
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to track event');
-      }
-
-      // Check if this event triggers any surveys
-      const surveyResponse = await fetch(`/api/research/triggers?event=${eventType}`);
-      if (surveyResponse.ok) {
-        const triggerResult = await surveyResponse.json();
-        if (triggerResult.triggered && triggerResult.form_id) {
-          // Show the triggered survey
-          showSurvey(triggerResult.form_id, triggerResult.milestone);
-        }
-      }
-    } catch (error) {
-      console.error('Error in trackEvent:', error);
-    }
-  }, [session, user]);
-
+  const getSurveyById = (surveyId: string): Form | undefined => {
+    return surveys.find(survey => survey.id === surveyId);
+  };
+  
   /**
-   * Show a survey to the user
+   * Get a survey by type
    */
-  const showSurvey = useCallback((formId: string, milestone?: string) => {
-    setActiveSurvey({ formId, milestone });
-    setIsSurveyVisible(true);
-    trackEventInternal(RESEARCH_EVENT_TYPES.SURVEY_VIEWED, { 
-      form_id: formId, 
-      milestone 
-    });
-  }, []);
+  const getSurveyByType = (surveyType: string): Form | undefined => {
+    return surveys.find(survey => survey.type === surveyType);
+  };
 
-  /**
-   * Close the current survey
-   */
-  const closeSurvey = useCallback(() => {
-    if (activeSurvey) {
-      trackEventInternal(RESEARCH_EVENT_TYPES.SURVEY_ABANDONED, {
-        form_id: activeSurvey.formId,
-        milestone: activeSurvey.milestone,
-      });
-    }
-    setIsSurveyVisible(false);
-    // Keep the active survey data in case we want to reopen it
-  }, [activeSurvey]);
-
-  const contextValue = {
+  const value: ResearchContextType = {
     session,
-    startSession,
+    createSession,
+    updateSession,
+    completeSession,
     trackEvent,
-    showSurvey,
-    activeSurvey,
-    closeSurvey,
-    isSurveyVisible,
+    saveResponses,
+    surveys,
+    getSurveyById,
+    getSurveyByType,
+    isLoading,
+    error,
   };
 
   return (
-    <ResearchContext.Provider value={contextValue}>
+    <ResearchContext.Provider value={value}>
       {children}
     </ResearchContext.Provider>
   );
 }
 
 /**
- * Hook to use research context
+ * Hook to use the research context
  */
-export function useResearch() {
+export function useResearch(): ResearchContextType {
   const context = useContext(ResearchContext);
+  
   if (context === undefined) {
     throw new Error('useResearch must be used within a ResearchProvider');
   }
+  
   return context;
 } 

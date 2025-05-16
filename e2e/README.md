@@ -1,99 +1,151 @@
-# withme.travel E2E Tests
+# withme.travel Research System Testing
 
-End-to-end tests for the withme.travel platform using Playwright.
+This directory contains E2E tests for the withme.travel research system, focused on validating form-based surveys and user feedback collection.
 
 ## Overview
 
-This directory contains various test suites:
+These tests validate the research system across multiple dimensions:
+- **Functional testing**: Basic form completion flows
+- **Accessibility testing**: WCAG compliance, keyboard navigation, focus management
+- **Performance testing**: Load times, interaction times, form submission
+- **Error handling**: Proper messaging, form validation, network issues
 
-- **User Research Survey Tests**: Tests for the user research survey flows - [See detailed documentation](./SURVEY_TESTING.md)
-- General site functionality tests
-- Performance tests
+## Setup
+
+### Prerequisites
+
+- Node.js 18+
+- npm/pnpm
+- Access to a development instance of withme.travel
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Install Playwright browsers
+npx playwright install
+```
+
+### Environment Variables
+
+Create a `.env` file in the root of the project with the following variables:
+
+```
+BASE_URL=http://localhost:3000
+TEST_FORM_ID=your-test-form-id
+SEED_TEST_DATA=true
+CLEANUP_TEST_DATA=true
+```
 
 ## Running Tests
 
-### Survey Tests (Recommended)
-
-For survey testing, use the dedicated runner script:
-
-```bash
-./run-research-tests.sh
-```
-
-This automatically sets up the environment and runs the consolidated survey tests. See [SURVEY_TESTING.md](./SURVEY_TESTING.md) for detailed documentation.
-
-### General E2E Tests
-
-For other tests, use the standard Playwright commands:
-
 ```bash
 # Run all tests
-npx playwright test
+npm run test:e2e
+
+# Run tests in a specific browser
+npm run test:e2e -- --project=chromium
 
 # Run a specific test file
-npx playwright test example.spec.ts
+npm run test:e2e -- research-workflow.spec.ts
 
-# Run tests in UI mode
-npx playwright test --ui
-
-# Run tests in headed mode
-npx playwright test --headed
+# Run in debug mode with UI
+npm run test:e2e -- --debug
 ```
 
-## Project Structure
+## Test Architecture
 
-```
-e2e/
-├── consolidated-survey-flow.spec.ts  # Main survey test file (current approach)
-├── models/                           # Page Object Models
-│   └── SurveyPage.ts                 # POM for survey tests
-├── utils/                            # Utility functions
-│   ├── accessibility-helpers.ts      # Accessibility testing utilities
-│   ├── performance-helpers.ts        # Performance measurement utilities
-│   ├── research-seed.ts              # Seed and cleanup utilities
-│   └── test-helpers.ts               # General helpers
-├── test-environment.ts               # Environment configuration
-├── run-research-tests.sh             # Runner script for survey tests
-├── SURVEY_TESTING.md                 # Detailed survey test documentation
-└── README.md                         # This file
+### Page Object Model
+
+We use the Page Object Model (POM) pattern to encapsulate UI interactions. The main class is `ResearchPage` which provides methods for interacting with the research system.
+
+```typescript
+const researchPage = new ResearchPage(page, { 
+  baseUrl: BASE_URL,
+  formId: TEST_FORM_ID
+});
+
+await researchPage.gotoSurvey();
+await researchPage.startSurvey();
+await researchPage.answerCurrentQuestion('My answer');
+await researchPage.goToNextQuestion();
 ```
 
-## Test Development Guidelines
+### Utilities
+
+The test suite includes several utility modules:
+
+- **accessibility-helpers.ts**: Tools for accessibility testing
+- **performance-helpers.ts**: Performance tracking and metrics
+- **research-data-helpers.ts**: Test data management
+
+### Test Data Management
+
+Instead of relying on tokens, tests interact directly with forms via their IDs. You can create test data programmatically:
+
+```typescript
+const dataHelper = new ResearchDataHelper(page);
+const formId = await dataHelper.createStandardTestForm();
+
+// Use the form ID in tests
+await researchPage.gotoSurvey(formId);
+```
+
+## Accessibility Testing
+
+We've integrated axe-core for accessibility testing:
+
+```typescript
+const violations = await researchPage.checkAccessibility();
+expect(violations.filter(v => v.impact === 'critical')).toHaveLength(0);
+```
+
+## Performance Testing
+
+Performance metrics are tracked automatically:
+
+```typescript
+await startPerformanceTracking(page, 'form-submission');
+// Perform actions
+const metrics = await endPerformanceTracking(page);
+```
+
+## Best Practices
+
+1. **Test isolation**: Each test should clean up its own data
+2. **Defensive waiting**: Use explicit waits for elements rather than timeouts
+3. **Meaningful assertions**: Assert specific conditions, not general success
+4. **Realistic user flows**: Test complete user journeys, not just isolated components
+5. **Cross-browser compatibility**: Test on multiple browsers and viewports
+
+## Troubleshooting
+
+### Common Issues
+
+- **Test timeouts**: Ensure your element selectors are correct and elements are visible
+- **Authentication issues**: Test forms may require specific session states
+- **Database conflicts**: Use unique test data to avoid conflicts
+
+### Debug Mode
+
+Enable debug logs with:
+
+```typescript
+const researchPage = new ResearchPage(page, { 
+  debug: true
+});
+```
+
+This will save screenshots at key points during test execution.
+
+## Contributing
 
 When adding new tests:
 
-1. Use the Page Object Model pattern to encapsulate UI interactions
-2. Add test utilities to the appropriate files in `/utils`
-3. Follow the existing patterns for test organization
-4. Run tests in CI mode before committing: `CI=true npx playwright test`
-5. Add appropriate documentation
-
-## Debugging Tests
-
-For failing tests, check the following artifacts:
-
-- Screenshots: `test-results/*.png`
-- HTML snapshots: `test-logs/*.html`
-- Error logs: `test-logs/error-*.json`
-- Playwright traces: `test-results/trace/`
-
-Use trace viewer to analyze test runs:
-
-```bash
-npx playwright show-trace test-results/trace/trace.zip
-```
-
-## Environment Setup
-
-Most tests require a local Supabase instance running:
-
-```bash
-# Start Supabase
-npx supabase start
-
-# Run tests with required environment variables
-export NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-export SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
-
-npx playwright test
-``` 
+1. Use the existing Page Object Model
+2. Follow the structure of existing tests
+3. Add meaningful comments and assertions
+4. Test across multiple browsers and viewports
+5. Include accessibility checks 

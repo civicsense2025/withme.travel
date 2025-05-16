@@ -1,0 +1,1195 @@
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 812ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360643323.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360643366.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360643631.png
+
+[1A[2K  1 passed (3.8s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 802ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360647352.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360647394.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360647680.png
+
+[1A[2K  1 passed (3.2s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 858ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360651485.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360651527.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360651769.png
+
+[1A[2K  1 passed (3.6s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 806ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360655670.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360655713.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360655979.png
+
+[1A[2K  1 passed (3.4s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 807ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360659901.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360659946.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360660197.png
+
+[1A[2K  1 passed (3.4s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 869ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360664164.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360664212.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360664432.png
+
+[1A[2K  1 passed (3.5s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 895ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360668717.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360668760.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360669004.png
+
+[1A[2K  1 passed (3.8s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+[1A[2K[chromium] › e2e/survey-debug.spec.js:223:3 › Survey Flow Diagnostics › test token validation and error handling
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KTesting multiple tokens for validation
+
+[1A[2KTrying with token: valid-test-token
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 841ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360672926.html
+
+[1A[2KSuccess! Token validated: valid-test-token
+
+[1A[2KDebug data saved to survey-debug-reports/working-token.json
+
+[1A[2KAttempting to start survey...
+
+[1A[2KScreenshot saved: before-start-1747360672970.png
+
+[1A[2KTrying start button selector [data-testid="survey-start-button"]
+
+[1A[2KButton with selector [data-testid="survey-start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector [data-testid="start-button"]
+
+[1A[2KButton with selector [data-testid="start-button"] is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Begin")
+
+[1A[2KButton with selector button:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start")
+
+[1A[2KButton with selector button:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector button:has-text("Start Survey")
+
+[1A[2KButton with selector button:has-text("Start Survey") is not visible, skipping
+
+[1A[2KTrying start button selector button:has(svg):not([aria-label])
+
+[1A[2KButton with selector button:has(svg):not([aria-label]) is disabled, skipping
+
+[1A[2KTrying start button selector button[type="button"]:not([disabled])
+
+[1A[2KButton with selector button[type="button"]:not([disabled]) is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Start")
+
+[1A[2KButton with selector [role="button"]:has-text("Start") is not visible, skipping
+
+[1A[2KTrying start button selector [role="button"]:has-text("Begin")
+
+[1A[2KButton with selector [role="button"]:has-text("Begin") is not visible, skipping
+
+[1A[2KTrying start button selector .start-button
+
+[1A[2KButton with selector .start-button is not visible, skipping
+
+[1A[2KTrying start button selector button.primary
+
+[1A[2KButton with selector button.primary is not visible, skipping
+
+[1A[2KTrying start button selector button.btn-primary
+
+[1A[2KButton with selector button.btn-primary is not visible, skipping
+
+[1A[2KTrying start button selector button.survey-start
+
+[1A[2KButton with selector button.survey-start is not visible, skipping
+
+[1A[2KTrying start button selector button[type="submit"]
+
+[1A[2KButton with selector button[type="submit"] is disabled, skipping
+
+[1A[2KTrying start button selector button
+
+
+
+[1A[2KScreenshot saved: start-failure-1747360673208.png
+
+[1A[2K  1 passed (3.4s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:45:3 › Survey Flow Diagnostics › analyzes DOM structure of survey page
+[1A[2K[chromium] › e2e/survey-debug.spec.js:45:3 › Survey Flow Diagnostics › analyzes DOM structure of survey page
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KNavigating to survey page...
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 853ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360677352.html
+
+[1A[2KPage loaded in 1110ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KDebug data saved to survey-debug-reports/survey-page.html
+
+[1A[2K🔍 Analyzing page structure to identify correct selectors...
+
+[1A[2KFound buttons: [
+  {
+    "text": "Log In",
+    "disabled": false,
+    "classes": "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground h-10 py-2 rounded-md px-4",
+    "dataAttrs": [],
+    "type": "submit",
+    "isVisible": true
+  },
+  {
+    "text": "Sign Up",
+    "disabled": false,
+    "classes": "inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-10 py-2 rounded-md px-4 font-semibold",
+    "dataAttrs": [],
+    "type": "submit",
+    "isVisible": true
+  },
+  {
+    "text": "☀️🌙",
+    "disabled": false,
+    "classes": "inline-flex items-center justify-center font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-transparent text-muted-foreground hover:text-foreground w-8 h-8 rounded-full transition-colors hover:bg-muted",
+    "dataAttrs": [
+      "data-state"
+    ],
+    "type": "submit",
+    "isVisible": true
+  },
+  {
+    "text": "Return Home",
+    "disabled": false,
+    "classes": "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2 rounded-md",
+    "dataAttrs": [
+      "data-testid"
+    ],
+    "type": "submit",
+    "isVisible": true
+  },
+  {
+    "text": "",
+    "disabled": false,
+    "classes": "",
+    "dataAttrs": [
+      "data-state"
+    ],
+    "type": "button",
+    "isVisible": true
+  },
+  {
+    "text": "",
+    "disabled": true,
+    "classes": "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-transparent hover:bg-muted hover:text-foreground h-6 w-6 p-0 text-gray-300",
+    "dataAttrs": [],
+    "type": "submit",
+    "isVisible": true
+  }
+]
+
+[1A[2KPotential start buttons: [
+  {
+    "text": "Return Home",
+    "disabled": false,
+    "classes": "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2 rounded-md",
+    "dataAttrs": [
+      "data-testid"
+    ],
+    "type": "submit",
+    "isVisible": true
+  }
+]
+
+[1A[2KForm field analysis: {
+  "inputs": [
+    {
+      "type": "email",
+      "name": "",
+      "id": "",
+      "dataAttributes": [],
+      "isVisible": true
+    }
+  ],
+  "selects": [],
+  "textareas": []
+}
+
+[1A[2KHTML content saved: full-page-analysis-1747360678981.html
+
+[1A[2KDebug data saved to survey-debug-reports/selector-analysis.json
+
+[1A[2K  1 passed (4.5s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+Error: No tests found.
+Make sure that arguments are regular expressions matching test files.
+You may need to escape symbols like "$" or "*" and quote the arguments.
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:168:3 › Survey Flow Diagnostics › runs accessibility checks with fallbacks
+[1A[2K[chromium] › e2e/survey-debug.spec.js:168:3 › Survey Flow Diagnostics › runs accessibility checks with fallbacks
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 1067ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360684211.html
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KRunning accessibility checks with AxeBuilder
+
+
+
+[1A[2KPerforming basic accessibility checks without AxeBuilder
+
+[1A[2KBasic accessibility check found 2 violations
+
+[1A[2KFound 2 accessibility violations
+
+[1A[2KDebug data saved to survey-debug-reports/accessibility-violations.json
+
+[1A[2KCritical violations: 2
+
+
+[1A[2K  1 passed (4.7s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:138:3 › Survey Flow Diagnostics › measures survey performance metrics
+[1A[2K[chromium] › e2e/survey-debug.spec.js:138:3 › Survey Flow Diagnostics › measures survey performance metrics
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 846ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360689574.html
+
+[1A[2KInitial page load time: 1109ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KAttempting to start survey...
+
+[1A[2KFound error message: Missing token
+
+
+[1A[2KStart button click time: 6ms
+
+[1A[2KGetting performance metrics
+
+[1A[2KPerformance metrics: {
+  navigationTime: [33m846[39m,
+  domComplete: [33m846[39m,
+  loadEvent: [33m0[39m,
+  responseTime: [33m282[39m
+}
+
+[1A[2KDebug data saved to survey-debug-reports/performance-metrics.json
+
+[1A[2K  1 passed (4.2s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+Running 1 test using 1 worker
+
+Successfully loaded research-seed.js functions
+[1A[2K[1/1] [chromium] › e2e/survey-debug.spec.js:194:3 › Survey Flow Diagnostics › completes entire survey flow
+[1A[2K[chromium] › e2e/survey-debug.spec.js:194:3 › Survey Flow Diagnostics › completes entire survey flow
+Starting survey diagnostics with the following configuration:
+
+[1A[2K- Valid token: valid-test-token
+
+[1A[2K- Performance threshold: 5000ms
+
+[1A[2K- Debug directory: survey-debug-reports
+
+[1A[2K------------------------------------------
+
+[1A[2KSuccessfully loaded research-seed.js functions
+
+[1A[2KNavigating to: /user-testing/survey?token=valid-test-token
+
+[1A[2KPage loaded
+
+[1A[2KPage loaded in 819ms
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KHTML content saved: survey-page-1747360694531.html
+
+[1A[2KWaiting for survey to fully load
+
+[1A[2KSurvey loaded successfully
+
+[1A[2KCompleting entire survey flow...
+
+[1A[2KAttempting to start survey...
+
+[1A[2KFound error message: Missing token
+
+
+
+[1A[2KQuestion 1: Unknown question
+
+[1A[2KFilling form with test data: {
+  name: [32m'Complete Test User'[39m,
+  email: [32m'complete@example.com'[39m,
+  feedback: [32m'This is a full survey completion test'[39m
+}
+
+[1A[2KForm filling completed
+
+[1A[2KClicking next button
+

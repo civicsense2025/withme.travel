@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { TABLES, TABLE_NAMES } from '@/utils/constants/tables';
 import { z } from 'zod';
 
 // Schema for validating response data
@@ -34,7 +34,7 @@ export async function POST(
 
     // Verify the survey exists
     const { data: survey, error: surveyError } = await supabase
-      .from(TABLES.SURVEY_DEFINITIONS)
+      .from(TABLES.FORMS)
       .select('id, is_active')
       .eq('id', surveyId)
       .single();
@@ -83,7 +83,7 @@ export async function POST(
 
     // Insert the response
     const { data: responseData, error: responseError } = await supabase
-      .from(TABLES.SURVEY_RESPONSES)
+      .from(TABLE_NAMES.SURVEY_RESPONSES)
       .insert({
         survey_id: surveyId,
         session_id: sessionId,
@@ -112,6 +112,96 @@ export async function POST(
     });
   } catch (error) {
     console.error('Unhandled error in survey response API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/research/surveys/[id]/response?response_id=...
+ * Update a partial response (answers, milestone, etc)
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const surveyId = params.id;
+    const responseId = request.nextUrl.searchParams.get('response_id');
+    if (!surveyId || !responseId) {
+      return NextResponse.json(
+        { error: 'Survey ID and response_id are required' },
+        { status: 400 }
+      );
+    }
+    const supabase = await createRouteHandlerClient();
+    const body = await request.json();
+    let validatedData;
+    try {
+      validatedData = SurveyResponseSchema.partial().parse(body);
+    } catch (validationError) {
+      return NextResponse.json(
+        { error: 'Invalid response data' },
+        { status: 400 }
+      );
+    }
+    // Update the response
+    const { data, error } = await supabase
+      .from(TABLE_NAMES.SURVEY_RESPONSES)
+      .update({ ...validatedData })
+      .eq('id', responseId)
+      .eq('survey_id', surveyId)
+      .select()
+      .single();
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to update response', details: error.message },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ response: data });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/research/surveys/[id]/response?response_id=...
+ * Fetch a partial response by id
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const surveyId = params.id;
+    const responseId = request.nextUrl.searchParams.get('response_id');
+    if (!surveyId || !responseId) {
+      return NextResponse.json(
+        { error: 'Survey ID and response_id are required' },
+        { status: 400 }
+      );
+    }
+    const supabase = await createRouteHandlerClient();
+    const { data, error } = await supabase
+      .from(TABLE_NAMES.SURVEY_RESPONSES)
+      .select('*')
+      .eq('id', responseId)
+      .eq('survey_id', surveyId)
+      .single();
+    if (error || !data) {
+      return NextResponse.json(
+        { error: 'Response not found', details: error?.message },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({ response: data });
+  } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

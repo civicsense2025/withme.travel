@@ -3,40 +3,43 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Hook to detect if the viewport matches a media query
+ * Custom hook to detect if a CSS media query matches.
  *
- * @param query The media query to match
- * @returns Boolean indicating if the viewport matches the query
- *
- * @example
- * const isMobile = useMediaQuery('(max-width: 640px)');
- * const isDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+ * @param query - The media query string (e.g., '(min-width: 768px)').
+ * @returns True if the media query matches, false otherwise.
  */
 export function useMediaQuery(query: string): boolean {
-  // Initialize with null media query match (will be updated in useEffect)
-  const [matches, setMatches] = useState<boolean>(false);
+  const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    // Ensure we're on the client side
-    if (typeof window === 'undefined') return;
+    // Ensure window is defined (for SSR compatibility)
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    // Create media query list
-    const mediaQuery = window.matchMedia(query);
+    const mediaQueryList = window.matchMedia(query);
 
-    // Set initial value
-    setMatches(mediaQuery.matches);
-
-    // Create event listener
-    const handleChange = (event: MediaQueryListEvent) => {
+    const listener = (event: MediaQueryListEvent) => {
       setMatches(event.matches);
     };
 
-    // Add listener
-    mediaQuery.addEventListener('change', handleChange);
+    // Set initial state
+    setMatches(mediaQueryList.matches);
 
-    // Clean up
+    // Add listener for changes
+    // Note: Safari < 14 uses addListener/removeListener
+    if (mediaQueryList.addEventListener) {
+      mediaQueryList.addEventListener('change', listener);
+    } else {
+      mediaQueryList.addListener(listener); // Deprecated but needed for older browsers
+    }
+
     return () => {
-      mediaQuery.removeEventListener('change', handleChange);
+      if (mediaQueryList.removeEventListener) {
+        mediaQueryList.removeEventListener('change', listener);
+      } else {
+        mediaQueryList.removeListener(listener); // Deprecated
+      }
     };
   }, [query]);
 

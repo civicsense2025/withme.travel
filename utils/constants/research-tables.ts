@@ -89,6 +89,8 @@ export const RESEARCH_EVENT_TYPES = {
   GROUP_CREATED: 'group_created',
   /** Milestone reached */
   MILESTONE_REACHED: 'milestone_reached',
+  /** Survey response submitted */
+  SURVEY_RESPONSE_SUBMITTED: 'survey_response_submitted',
 } as const;
 
 /**

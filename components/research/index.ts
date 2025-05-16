@@ -1,3 +1,22 @@
+// Export existing components
+export * from './ResearchModal';
+export * from './ResearchProvider';
+export * from './ResearchDebugger';
+export * from './SurveyContainer';
+export * from './SurveyForm';
+export * from './SurveyCompletion';
+export * from './SurveyWelcome';
+export * from './SurveyQuestion';
+export * from './SurveyQuestionList';
+export * from './SurveyProgressBar';
+export * from './QuestionRenderer';
+
+// Export new components
+export * from './UserResearchHero';
+export * from './BenefitsList';
+export * from './UserResearchForm';
+export * from './PrivacyConsent';
+
 // Export all research components
 export { SurveyProgressBar } from './SurveyProgressBar';
 export { QuestionRenderer } from './QuestionRenderer';
@@ -13,5 +32,4 @@ export { MilestoneTriggerEditor } from './MilestoneTriggerEditor';
 export { MilestoneEventDisplay } from './MilestoneEventDisplay';
 export { SurveyBuilder } from './SurveyBuilder';
 export { MilestoneTriggerSimulator } from './MilestoneTriggerSimulator';
-export { ResearchModal } from './ResearchModal';
 export { SurveyProgress } from './SurveyProgress'; 

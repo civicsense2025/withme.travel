@@ -114,7 +114,7 @@ export default async function DestinationsPage() {
   return (
     <main>
       <PageHeader
-        title="Explore Destinations"
+        title="Discover Destinations"
         description="Find your next adventure"
         centered={true}
       />

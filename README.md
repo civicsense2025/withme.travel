@@ -333,6 +333,54 @@ A: Absolutely. We use industry-standard encryption, and you control exactly who 
 **Q: Can I export my trip plans to other formats?**  
 A: Yes! You can export your itinerary to PDF, Google Calendar, or Apple Calendar for easy reference during your trip.
 
+# withme.travel - Multi-Milestone Survey Testing
+
+## Survey Testing System
+
+Withme.travel's survey testing system supports comprehensive user research and feedback collection through multi-step, milestone-based surveys. The system includes:
+
+- **Token-based access** for secure sharing of surveys
+- **Multi-milestone surveys** with progress tracking
+- **Research tracking** for events and user actions
+- **Flexible question types** (text, textarea, select, radio, checkbox, rating)
+- **Mobile-responsive design** with animations
+
+### Key Components
+
+- `ResearchProvider`: Global context for tracking events and managing sessions
+- `SurveyContainer`: Orchestrates the multi-step survey flow
+- `QuestionRenderer`: Renders different question types with validation
+- `useResearchTracking`: Hook for event tracking throughout the application
+
+### Getting Started
+
+To run a survey:
+
+```
+npm run dev
+```
+
+Visit: `http://localhost:3000/user-testing/survey/test-token?type=product-experience`
+
+Available survey types:
+- `product-experience`: General product feedback
+- `feature-feedback`: Group planning feature feedback
+- `user-demographic`: User demographic survey
+
+### Running Tests
+
+E2E tests for the survey flow can be run with:
+
+```
+npx playwright test
+```
+
+Specific test for surveys:
+
+```
+npx playwright test multi-milestone-survey
+```
+
 ---
 
 **withme.travel** – Transforming group trip planning from stress to success, one collaborative adventure at a time.

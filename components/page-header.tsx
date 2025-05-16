@@ -12,17 +12,23 @@ interface PageHeaderProps {
   children?: React.ReactNode; // For backward compatibility
 }
 
-// Responsive style for extra large vertical spacing in rems
+// Responsive style for spacing in rems - reduced for mobile
 const headerStyle: React.CSSProperties = {
   width: '100%',
-  paddingTop: '5rem', // 80px
-  paddingBottom: '5rem',
+  paddingTop: '2.5rem', // 40px - reduced for mobile
+  paddingBottom: '2.5rem', // 40px - reduced for mobile
 };
 
 // Add a media query for md+ screens (min-width: 768px)
 const mdHeaderStyle: React.CSSProperties = {
-  paddingTop: '4rem', // 120px
+  paddingTop: '4rem', // 64px for medium screens
   paddingBottom: '4rem',
+};
+
+// Add a media query for lg+ screens (min-width: 1024px)
+const lgHeaderStyle: React.CSSProperties = {
+  paddingTop: '5rem', // 80px for large screens
+  paddingBottom: '5rem',
 };
 
 export function PageHeader({
@@ -41,7 +47,9 @@ export function PageHeader({
   const [style, setStyle] = React.useState<React.CSSProperties>(headerStyle);
   React.useEffect(() => {
     const updateStyle = () => {
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
+        setStyle({ ...headerStyle, ...mdHeaderStyle, ...lgHeaderStyle });
+      } else if (window.innerWidth >= 768) {
         setStyle({ ...headerStyle, ...mdHeaderStyle });
       } else {
         setStyle(headerStyle);
@@ -56,29 +64,29 @@ export function PageHeader({
     <div className={cn(centered ? 'text-center' : 'text-left', className)} style={style}>
       <div
         className={cn(
-          'space-y-4',
+          'space-y-3 md:space-y-4', // Reduced vertical spacing on mobile
           centered && 'flex flex-col items-center',
           actions
             ? 'md:flex md:flex-row md:items-center md:justify-between md:space-y-0'
             : undefined
         )}
       >
-        <div className={cn('space-y-4', centered && 'flex flex-col items-center')}>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight">
+        <div className={cn('space-y-3 md:space-y-4', centered && 'flex flex-col items-center')}>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium tracking-tight">
             {displayTitle}
           </h1>
           {description && (
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">{description}</p>
+            <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl">{description}</p>
           )}
           {children && (
-            <div className="text-lg md:text-xl text-muted-foreground max-w-2xl">{children}</div>
+            <div className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl">{children}</div>
           )}
         </div>
 
         {actions && (
           <div
             className={cn(
-              'mt-6 md:mt-0',
+              'mt-4 md:mt-0', // Reduced top margin on mobile
               centered ? 'flex justify-center' : 'flex justify-start md:justify-end'
             )}
           >

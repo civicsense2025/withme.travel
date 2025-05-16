@@ -1,6 +1,10 @@
 import React from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-export function NavbarThemeToggle() {
-  return <ThemeToggle />;
+interface NavbarThemeToggleProps {
+  mobileStyling?: boolean;
+}
+
+export function NavbarThemeToggle({ mobileStyling = false }: NavbarThemeToggleProps) {
+  return <ThemeToggle variant={mobileStyling ? "outline" : "ghost"} />;
 }

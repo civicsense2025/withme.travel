@@ -22,7 +22,13 @@ function getInitialTheme(): Theme {
   return getSystemTheme();
 }
 
-export function ThemeToggle({ emojiOnly }: { emojiOnly?: boolean } = {}) {
+export function ThemeToggle({ 
+  emojiOnly, 
+  variant = 'ghost' 
+}: { 
+  emojiOnly?: boolean;
+  variant?: 'ghost' | 'outline';
+} = {}) {
   const { resolvedTheme, toggleTheme } = useThemeSync();
   const [mounted, setMounted] = React.useState(false);
 
@@ -40,7 +46,7 @@ export function ThemeToggle({ emojiOnly }: { emojiOnly?: boolean } = {}) {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="ghost"
+            variant={variant}
             size="icon"
             onClick={toggleTheme}
             className="w-8 h-8 rounded-full transition-colors hover:bg-muted"

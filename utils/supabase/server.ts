@@ -16,7 +16,6 @@ import type { Database } from '../../types/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CookieOptions } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient as SupabaseClientJs, User } from '@supabase/supabase-js';
 import type { NextRequest as NextRequestJs } from 'next/server';
@@ -104,39 +103,31 @@ function convertCookieOptions(name: string, value: string, options: CookieOption
  */
 export async function createServerComponentClient(): Promise<TypedSupabaseClient> {
   try {
-    // Import cookies only inside the function
-    const cookieStore = await cookies();
+    const { cookies } = await import('next/headers');
+    const cookieStore = cookies();
 
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
-        get(name: string) {
+        /**
+         * Async cookie getter required by Next.js dynamic API (see https://nextjs.org/docs/messages/sync-dynamic-apis)
+         */
+        async get(name: string) {
           try {
-            return cookieStore.get(name)?.value;
+            // cookieStore is now a promise in Next.js 13+/15+
+            const store = await cookies();
+            return store.get(name)?.value;
           } catch (error) {
             console.warn(`Error reading cookie ${name}:`, error);
             return undefined;
           }
         },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            const cookieOptions = convertCookieOptions(name, value, options);
-            cookieStore.set(cookieOptions);
-          } catch (error) {
-            // Just log but don't throw - this happens during static rendering
-            console.warn('Cannot set cookie in this context');
-          }
+        set() {
+          // No-op in server components
+          console.warn('Attempted to set cookie in server component context. This is a no-op.');
         },
-        remove(name: string, options: CookieOptions) {
-          try {
-            const cookieOptions = convertCookieOptions(name, '', {
-              ...options,
-              maxAge: 0,
-            });
-            cookieStore.set(cookieOptions);
-          } catch (error) {
-            // Just log but don't throw - this happens during static rendering
-            console.warn('Cannot delete cookie in this context');
-          }
+        remove() {
+          // No-op in server components
+          console.warn('Attempted to remove cookie in server component context. This is a no-op.');
         },
       },
       auth: DEFAULT_AUTH_CONFIG,
@@ -306,6 +297,8 @@ export async function getTypedDbClient() {
       // This is necessary because the Database type might not include all RPC functions
       return (supabase.rpc as any)(functionName, params) as Promise<{ data: T | null; error: any }>;
     },
+    // Expose auth property from the original client
+    auth: supabase.auth
   };
 }
 
