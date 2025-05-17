@@ -7,7 +7,7 @@ import { action } from '@storybook/addon-actions';
  * It introduces the survey purpose and sets expectations.
  */
 const meta: Meta<typeof SurveyWelcome> = {
-  title: 'Research/Molecules/SurveyWelcome',
+  title: 'UI/SurveyWelcome',
   component: SurveyWelcome,
   tags: ['autodocs'],
   parameters: {

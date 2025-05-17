@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import TripSidebarContent from './trip-sidebar-content';
 
 const meta: Meta<typeof TripSidebarContent> = {
-  title: 'Product/Features/TripSidebarContent',
+  title: 'UI/Features/trips/trip-sidebar-content',
   component: TripSidebarContent,
   parameters: { layout: 'centered' },
 };

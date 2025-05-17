@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { SurveyContainer } from './SurveyContainer';
+import { SurveyContainer } from '@/components/ui/atoms/SurveyContainer';
 import { action } from '@storybook/addon-actions';
 
 // Mock the useSurvey hook
@@ -22,7 +22,7 @@ jest.mock('@/hooks/use-survey', () => ({
  * It manages the full survey experience from welcome screen to completion.
  */
 const meta: Meta<typeof SurveyContainer> = {
-  title: 'Research/Organisms/SurveyContainer',
+  title: 'UI/Features/user/SurveyContainer',
   component: SurveyContainer,
   tags: ['autodocs'],
   parameters: {

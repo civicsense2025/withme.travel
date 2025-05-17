@@ -12,7 +12,7 @@ import { DestinationCard } from './DestinationCard';
 // ============================================================================
 
 const meta: Meta<typeof DestinationCard> = {
-  title: 'Features/Destinations/Molecules/DestinationCard',
+  title: 'UI/Features/destinations/DestinationCard',
   component: DestinationCard,
   parameters: {
     layout: 'centered',

@@ -4,35 +4,27 @@
  */
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 
 export interface FAQTagProps {
-  /** The tag text */
-  tag: string;
-  /** Whether the tag is selected/active */
-  isSelected?: boolean;
-  /** Click handler */
-  onClick?: () => void;
-  /** Additional CSS classes */
+  children: React.ReactNode;
   className?: string;
+  variant?: 'default' | 'primary' | 'secondary';
 }
 
-export function FAQTag({
-  tag,
-  isSelected = false,
-  onClick,
-  className
-}: FAQTagProps) {
+export const FAQTag: React.FC<FAQTagProps> = ({
+  children, 
+  className,
+  variant = 'default'
+}) => {
   return (
-    <Badge
-      variant={isSelected ? "default" : "outline"}
+    <span
       className={cn(
-        "mr-2 mb-2 cursor-pointer transition-colors hover:bg-primary/80",
+        'faq-tag',
+        `faq-tag-${variant}`,
         className
       )}
-      onClick={onClick}
     >
-      {tag}
-    </Badge>
+      {children}
+    </span>
   );
-} 
+}; 

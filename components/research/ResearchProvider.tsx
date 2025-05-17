@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 // External dependencies
 import { useToast } from '@/components/ui/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 // Internal modules
 import { UserTestingSession } from '@/types';
@@ -88,7 +89,51 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
   const [session, setSession] = useState<ResearchSession | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [surveys, setSurveys] = useState<Form[]>(SAMPLE_SURVEYS);
+  const [surveys, setSurveys] = useState<Form[]>([]);
+
+  // Fetch surveys from API
+  const fetchSurveys = async () => {
+    try {
+      console.log('[ResearchProvider] Fetching surveys from API');
+      setIsLoading(true);
+      
+      const response = await fetch('/api/forms');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch surveys: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data && Array.isArray(data.forms)) {
+        console.log(`[ResearchProvider] Loaded ${data.forms.length} surveys from API`);
+        setSurveys(data.forms);
+      } else {
+        console.error('[ResearchProvider] Invalid survey data format:', data);
+        // Fall back to sample data only in development
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[ResearchProvider] Using sample surveys in development mode');
+          setSurveys(SAMPLE_SURVEYS);
+        }
+      }
+    } catch (error) {
+      console.error('[ResearchProvider] Error fetching surveys:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch surveys');
+      
+      // Fall back to sample data only in development
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[ResearchProvider] Using sample surveys in development mode');
+        setSurveys(SAMPLE_SURVEYS);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load surveys when the provider mounts
+  useEffect(() => {
+    fetchSurveys();
+  }, []);
 
   // Load session from localStorage in development mode
   useEffect(() => {
@@ -121,7 +166,6 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
 
   /**
    * Create a new research session
-   * In production, this would call the API
    */
   const createSession = async (token?: string): Promise<ResearchSession> => {
     setIsLoading(true);
@@ -133,9 +177,11 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
       const newSession: ResearchSession = {
         ...createDefaultSession(),
         token,
+        id: uuidv4(), // Ensure we use a valid UUID for session ID
       };
       
       setSession(newSession);
+      console.log('[ResearchProvider] Created session:', newSession.id);
       return newSession;
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Failed to create session';
@@ -232,7 +278,14 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
     surveyId: string,
     responses: { id: string; value: string | number | boolean | Array<string | number> }[]
   ): Promise<void> => {
-    if (!session) throw new Error('No active session');
+    if (!session) {
+      console.error('[ResearchProvider] No active session, creating one');
+      await createSession();
+      if (!session) {
+        throw new Error('No active session and failed to create one');
+      }
+    }
+    
     setIsLoading(true);
     setError(null);
 
@@ -252,16 +305,34 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
       user_id?: string;
       responses: unknown;
       milestone?: string;
-      submitted_at: string;
+      created_at: string;
       [key: string]: unknown;
     }
 
     try {
+      // Ensure we have a valid session ID (UUID format)
+      if (!session.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+        console.warn('[ResearchProvider] Invalid session ID format, creating new session');
+        await createSession();
+        if (!session) {
+          throw new Error('Failed to create a valid session');
+        }
+      }
+      
+      console.log('[ResearchProvider] Submitting responses to API:', { 
+        surveyId, 
+        responseCount: responses.length,
+        sessionId: session.id
+      });
+
       const payload: SubmitPayload = {
         form_id: surveyId,
         session_id: session.id,
         responses,
-        // milestone: ... // Optionally add milestone if needed
+        // Add milestone if available in session
+        milestone: session.completedMilestones.length > 0 
+          ? session.completedMilestones[session.completedMilestones.length - 1]
+          : undefined
       };
 
       const res = await fetch('/api/research/responses', {
@@ -275,7 +346,9 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
         try {
           const { error } = (await res.json()) as { error?: string };
           if (error) errorMsg = error;
-        } catch {}
+        } catch (parseError) {
+          console.error('[ResearchProvider] Error parsing error response:', parseError);
+        }
         setError(errorMsg);
         throw new Error(errorMsg);
       }
@@ -286,6 +359,8 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
         setError('Invalid response from server');
         throw new Error('Invalid response from server');
       }
+      
+      console.log('[ResearchProvider] Response saved successfully:', apiResponse.id);
 
       // Update local session state
       updateSession({
@@ -308,6 +383,7 @@ export function ResearchProvider({ children }: ResearchProviderProps) {
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Failed to save responses';
       setError(errorMessage);
+      console.error('[ResearchProvider] Error saving responses:', errorMessage);
       throw new Error(errorMessage);
     } finally {
       setIsLoading(false);

@@ -124,6 +124,7 @@ interface FeedbackFormWrapperProps extends ButtonProps {
   formTemplate: FeedbackFormTemplate;
   children?: React.ReactNode;
   placement?: 'inline' | 'floating';
+  buttonClassName?: string;
 }
 
 export function FeedbackFormWrapper({
@@ -131,6 +132,7 @@ export function FeedbackFormWrapper({
   children,
   className,
   placement = 'inline',
+  buttonClassName,
   ...props
 }: FeedbackFormWrapperProps) {
   const [open, setOpen] = useState(false);
@@ -215,6 +217,7 @@ export function FeedbackFormWrapper({
         className={cn(
           'text-muted-foreground hover:text-foreground transition-colors',
           formTemplate.buttonClassName,
+          buttonClassName,
           className
         )}
         {...buttonProps}

@@ -8,7 +8,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { QuestionRenderer } from '@/components/ui/features/user-testing/molecules/QuestionRenderer';
 import { useResearch } from './ResearchProvider';
 import { useResearchTracking } from './useResearchTracking';
@@ -20,11 +19,15 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 // Types
-export interface SurveyContainerProps {
+interface SurveyContainerProps {
   survey: Survey;
   onComplete: () => void;
+  className?: string;
 }
 
 export interface Survey {
@@ -57,7 +60,82 @@ type AutoSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
  * Handles progress tracking, navigation, validation, and response submission
  * Features auto-save, smooth animations, and accessibility enhancements
  */
-export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
+export function SurveyContainer({
+  survey: initialSurvey,
+  onComplete,
+  className,
+}: SurveyContainerProps) {
+  // Create a safe copy of the survey with validated milestones
+  const survey = useMemo(() => {
+    if (!initialSurvey || !initialSurvey.id) {
+      return null;
+    }
+    
+    // Create a deep copy to avoid mutating props
+    const safeSurvey = { ...initialSurvey };
+    
+    // Ensure milestones is a valid array with at least one value
+    if (!Array.isArray(safeSurvey.milestones) || safeSurvey.milestones.length === 0) {
+      console.error('[SurveyContainer] Survey has no milestones:', safeSurvey.id);
+      safeSurvey.milestones = ['default'];
+      console.log('[SurveyContainer] Added default milestone');
+    }
+    
+    // Ensure fields is a valid array
+    if (!Array.isArray(safeSurvey.fields)) {
+      console.error('[SurveyContainer] Survey has no fields array:', safeSurvey.id);
+      safeSurvey.fields = [];
+    }
+    
+    // Make sure each field has a valid milestone
+    if (safeSurvey.fields.length > 0) {
+      safeSurvey.fields = safeSurvey.fields.map(field => ({
+        ...field,
+        milestone: field.milestone && safeSurvey.milestones.includes(field.milestone) 
+          ? field.milestone 
+          : safeSurvey.milestones[0]
+      }));
+    }
+    
+    return safeSurvey;
+  }, [initialSurvey]);
+  
+  // Add debugging log
+  console.log('[SurveyContainer] Rendering survey:', { 
+    id: survey?.id,
+    name: survey?.name,
+    milestones: survey?.milestones?.length || 0,
+    fields: survey?.fields?.length || 0,
+    hasOnComplete: !!onComplete
+  });
+  
+  // Early validation to provide better error messages
+  if (!survey || !survey.id) {
+    console.error('[SurveyContainer] Invalid survey data provided');
+    return (
+      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+        <h3 className="text-lg font-medium text-red-800">Unable to load survey</h3>
+        <p className="text-red-600">The survey data is missing or invalid.</p>
+        {onComplete && (
+          <Button onClick={onComplete} className="mt-4">Return to Survey List</Button>
+        )}
+      </div>
+    );
+  }
+  
+  if (!Array.isArray(survey.fields) || survey.fields.length === 0) {
+    console.error('[SurveyContainer] Survey has no fields:', survey.id);
+    return (
+      <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg">
+        <h3 className="text-lg font-medium text-amber-800">Empty Survey</h3>
+        <p className="text-amber-600">This survey doesn't have any questions. It might be a configuration issue.</p>
+        {onComplete && (
+          <Button onClick={onComplete} className="mt-4">Return to Survey List</Button>
+        )}
+      </div>
+    );
+  }
+
   const { toast } = useToast();
   const { saveResponses, session, createSession } = useResearch();
   const { track, eventTypes } = useResearchTracking();
@@ -140,30 +218,34 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
   }, [responses, survey.fields, session]);
 
   // Get the current milestone
-  const currentMilestone = survey.milestones[currentMilestoneIndex];
+  const currentMilestone = survey.milestones && survey.milestones.length > 0 
+    ? survey.milestones[Math.min(currentMilestoneIndex, survey.milestones.length - 1)] 
+    : 'default';
   
-  // Get questions for the current milestone
-  const milestoneQuestions = survey.fields.filter(field => field.milestone === currentMilestone);
-  
-  // Current question
-  const currentQuestion = milestoneQuestions[currentQuestionIndex];
-  
-  // Calculate progress
-  const totalQuestions = survey.fields.length;
-  const completedQuestions = responses.length;
-  const progressPercentage = Math.round((completedQuestions / totalQuestions) * 100);
+  // Utility: filter out non-question fields
+  const isRealQuestion = (field: SurveyField) => {
+    return field.type !== 'welcome' && field.type !== 'completion';
+  };
 
-  // Get the current field based on current milestone and question index
-  const currentField = useMemo(() => {
-    if (!currentMilestone) return null;
-    const milestoneQuestions = survey.fields.filter(field => field.milestone === currentMilestone);
-    return milestoneQuestions[currentQuestionIndex] || null;
-  }, [survey.fields, currentMilestone, currentQuestionIndex]);
+  // Replace all usages of survey.fields with realQuestions where appropriate
+  const realQuestions = useMemo(() => survey.fields.filter(isRealQuestion), [survey.fields]);
+  
+  // Calculate progress using realQuestions
+  const totalQuestions = realQuestions.length;
+  const completedQuestions = responses.filter(r => realQuestions.some(q => q.id === r.fieldId)).length;
+  const progressPercentage = totalQuestions > 0 
+    ? Math.min(100, Math.max(0, Math.round((completedQuestions / totalQuestions) * 100))) 
+    : 0; // Ensure it's between 0-100
+
+  // Get questions for the current milestone, filtered to real questions only
+  const milestoneQuestions = survey.fields.filter(field => field.milestone === currentMilestone && isRealQuestion(field));
+  const currentQuestion = milestoneQuestions[currentQuestionIndex] || null;
 
   // Get the current response if it exists
-  const getCurrentResponse = (): SurveyResponse | undefined => {
+  const getCurrentResponse = useCallback((): SurveyResponse | undefined => {
+    if (!currentQuestion) return undefined;
     return responses.find(r => r.fieldId === currentQuestion.id);
-  };
+  }, [currentQuestion, responses]);
 
   // Check if the current question is valid (has a response if required)
   const validateCurrentQuestion = (): boolean => {
@@ -189,206 +271,7 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
     return isValid;
   };
 
-  // Handle response for current question with auto-save
-  const handleResponse = (value: string | number | boolean | Array<string | number>) => {
-    const responseIndex = responses.findIndex(r => r.fieldId === currentQuestion.id);
-    let updatedResponses: SurveyResponse[];
-    
-    if (responseIndex >= 0) {
-      // Update existing response
-      updatedResponses = [...responses];
-      updatedResponses[responseIndex] = { fieldId: currentQuestion.id, value };
-    } else {
-      // Add new response
-      updatedResponses = [...responses, { fieldId: currentQuestion.id, value }];
-    }
-    
-    setResponses(updatedResponses);
-    
-    // Clear any validation errors for this field when the user makes changes
-    if (validationErrors[currentQuestion.id]) {
-      setValidationErrors(prev => {
-        const updated = { ...prev };
-        delete updated[currentQuestion.id];
-        return updated;
-      });
-    }
-    
-    // Trigger auto-save
-    debouncedSave(updatedResponses);
-  };
-
-  // Create a session if one doesn't exist
-  useEffect(() => {
-    const ensureSession = async () => {
-      if (!session) {
-        try {
-          await createSession();
-        } catch (error) {
-          console.error('Failed to create session:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to initialize session. Your responses may not be saved.',
-            variant: 'destructive',
-          });
-        }
-      } else if (session.metadata?.userName) {
-        // If user name is available in the session, use it for personalization
-        setUserName(session.metadata.userName);
-      }
-    };
-
-    ensureSession();
-  }, [session, createSession, toast]);
-
-  // Load existing draft responses - check server first for logged-in users
-  useEffect(() => {
-    const loadDrafts = async () => {
-      if (!session || !survey.id) return;
-      
-      try {
-        // If user is logged in, try to fetch drafts from server first
-        if (user?.id) {
-          const response = await fetch(
-            `${API_ROUTES.RESEARCH.SURVEY_DRAFTS(survey.id)}?session_id=${session.id}`, 
-            { method: 'GET' }
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.draft && data.draft.responses && data.draft.responses.length > 0) {
-              // Use server-side draft if available
-              setResponses(data.draft.responses);
-              
-              // Update question index if we have one
-              if (typeof data.draft.current_question_index === 'number') {
-                setCurrentQuestionIndex(data.draft.current_question_index);
-              }
-              
-              // Update milestone index if we have one
-              if (typeof data.draft.current_milestone_index === 'number') {
-                setCurrentMilestoneIndex(data.draft.current_milestone_index);
-              }
-              
-              return;
-            }
-          }
-        }
-        
-        // Fall back to localStorage if no server drafts or not logged in
-        if (savedDraft && savedDraft.length > 0) {
-          setResponses(savedDraft);
-        }
-      } catch (error) {
-        console.error('Error loading draft responses:', error);
-        // Fall back to localStorage if server fetch fails
-        if (savedDraft && savedDraft.length > 0) {
-          setResponses(savedDraft);
-        }
-      }
-    };
-    
-    loadDrafts();
-  }, [session, survey.id, savedDraft, user?.id]);
-
-  // Track survey started when component mounts
-  useEffect(() => {
-    track(eventTypes.SURVEY_STARTED, { 
-      survey_id: survey.id,
-      survey_name: survey.name
-    });
-
-    return () => {
-      // Enhanced abandonment tracking
-      if (!isSurveyComplete && responses.length > 0) {
-        trackSurveyAbandonment('close');
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  // Track survey abandonment when user leaves the page
-  useEffect(() => {
-    if (typeof window === 'undefined' || isSurveyComplete) return;
-    
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      // Don't track if survey is complete
-      if (isSurveyComplete) return;
-      
-      // Track survey abandonment
-      trackSurveyAbandonment('navigation');
-      
-      // For better UX, we can show a confirmation dialog (browser-dependent)
-      event.preventDefault();
-      event.returnValue = 'Are you sure you want to leave? Your progress will be saved, but the survey will be incomplete.';
-      return event.returnValue;
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isSurveyComplete]);
-  
-  // Function to track survey abandonment with detailed analytics
-  const trackSurveyAbandonment = async (reason: 'close' | 'navigation' | 'timeout' | 'other' = 'other') => {
-    if (!session || isSurveyComplete) return;
-    
-    try {
-      // Calculate time spent
-      const now = new Date();
-      const timeSpentSeconds = Math.floor((now.getTime() - surveyStartTime.getTime()) / 1000);
-      
-      // Prepare abandonment data
-      const abandonData = {
-        session_id: session.id,
-        survey_id: survey.id,
-        user_id: user?.id,
-        current_question_index: currentQuestionIndex,
-        current_milestone_index: currentMilestoneIndex,
-        milestone: currentMilestone,
-        time_spent_seconds: timeSpentSeconds,
-        responses_so_far: responses.length,
-        total_questions: totalQuestions,
-        progress_percentage: progressPercentage,
-        device_info: deviceInfo,
-        viewport,
-        reason,
-        additional_details: {
-          question_time_spent: questionTimeSpent,
-          current_field_type: currentQuestion?.type,
-        }
-      };
-      
-      // First track via our existing tracking system
-      track(eventTypes.SURVEY_ABANDONED, {
-        reason,
-        milestone: currentMilestone,
-        current_question_index: currentQuestionIndex,
-        current_milestone_index: currentMilestoneIndex,
-        time_spent_seconds: timeSpentSeconds,
-        progress_percentage: progressPercentage,
-      });
-      
-      // Then send detailed analytics via the dedicated API endpoint
-      // Use sendBeacon for reliability during page unload if available
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        const blob = new Blob([JSON.stringify(abandonData)], { type: 'application/json' });
-        navigator.sendBeacon(API_ROUTES.RESEARCH.SURVEY_ABANDON, blob);
-      } else {
-        // Fall back to fetch for older browsers
-        fetch(API_ROUTES.RESEARCH.SURVEY_ABANDON, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(abandonData),
-          // Use keepalive for fetch in case page is unloading
-          keepalive: true
-        }).catch(err => console.error('Error tracking abandonment:', err));
-      }
-    } catch (error) {
-      console.error('Error tracking survey abandonment:', error);
-    }
-  };
-  
-  // Debounced auto-save function
+  // Create debounced save function - Fix: Create this outside of handleResponse
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSave = useCallback(
     debounce(async (updatedResponses: SurveyResponse[]) => {
@@ -398,7 +281,21 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
       
       try {
         // Always save to localStorage as a backup
-        setSavedDraft(updatedResponses);
+        setSavedDraft(prevResponses => {
+          // Merge logic: prioritize savedDraft over prevResponses
+          const merged = [...prevResponses];
+          updatedResponses.forEach(response => {
+            const existingIndex = merged.findIndex(
+              r => r.fieldId === response.fieldId
+            );
+            if (existingIndex >= 0) {
+              merged[existingIndex] = response;
+            } else {
+              merged.push(response);
+            }
+          });
+          return merged;
+        });
         
         // Save to server if user is authenticated
         if (user?.id) {
@@ -435,8 +332,135 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
         setAutoSaveStatus('error');
       }
     }, 800),
-    [session, setSavedDraft, survey.id, user?.id, currentMilestone, currentQuestionIndex, currentMilestoneIndex, progressPercentage, questionTimeSpent]
+    // Fix: Remove items that change on each render from the dependency array
+    // Only include stable values that are actually used in the debounced function
+    [session, setSavedDraft, survey.id, user?.id]
   );
+
+  // Handle response for current question WITHOUT auto-save
+  const handleResponse = useCallback((value: string | number | boolean | Array<string | number>) => {
+    // Exit early if no current question is defined
+    if (!currentQuestion) {
+      console.error('No current question defined');
+      return;
+    }
+
+    console.log(`[SurveyContainer] Handling response for question ${currentQuestion.id}:`, value);
+
+    const responseIndex = responses.findIndex(r => r.fieldId === currentQuestion.id);
+    let updatedResponses: SurveyResponse[];
+    
+    if (responseIndex >= 0) {
+      // Update existing response
+      updatedResponses = [...responses];
+      updatedResponses[responseIndex] = { fieldId: currentQuestion.id, value };
+    } else {
+      // Add new response
+      updatedResponses = [...responses, { fieldId: currentQuestion.id, value }];
+    }
+    
+    setResponses(updatedResponses);
+    
+    // Clear any validation errors for this field when the user makes changes
+    if (validationErrors[currentQuestion.id]) {
+      setValidationErrors(prev => {
+        const updated = { ...prev };
+        delete updated[currentQuestion.id];
+        return updated;
+      });
+    }
+    // --- AUTOSAVE DISABLED ---
+    // debouncedSave(updatedResponses);
+  }, [currentQuestion, responses, validationErrors]);
+
+  // Session setup effect - Ensure we have a valid session before proceeding
+  useEffect(() => {
+    const ensureSession = async () => {
+      try {
+        if (!session) {
+          console.log('[SurveyContainer] No existing session found, creating one');
+          // Create a new session with the provided token
+          const newSession = await createSession();
+          console.log('[SurveyContainer] Created new session:', newSession.id);
+          
+          // Track survey start event
+          await track(eventTypes.SURVEY_STARTED, {
+            survey_id: survey.id,
+            survey_name: survey.name,
+            device_info: deviceInfo,
+            viewport: viewport || { width: 0, height: 0 }
+          });
+        } else {
+          console.log('[SurveyContainer] Using existing session:', session.id);
+        }
+      } catch (error) {
+        console.error('[SurveyContainer] Error creating session:', error);
+        setError('Failed to initialize survey session. Please refresh the page and try again.');
+      }
+    };
+    
+    const loadDrafts = async () => {
+      if (savedDraft && savedDraft.length > 0) {
+        setResponses(prevResponses => {
+          // Merge logic: prioritize savedDraft over prevResponses
+          const merged = [...prevResponses];
+          savedDraft.forEach(draftResponse => {
+            const existingIndex = merged.findIndex(
+              r => r.fieldId === draftResponse.fieldId
+            );
+            if (existingIndex >= 0) {
+              merged[existingIndex] = draftResponse;
+            } else {
+              merged.push(draftResponse);
+            }
+          });
+          return merged;
+        });
+      }
+    };
+    
+    // Run session setup and draft loading in sequence
+    const initialize = async () => {
+      await ensureSession();
+      await loadDrafts();
+    };
+    
+    initialize();
+    
+    // Cleanup user abandonment tracking
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Only track abandonment if we started but didn't finish
+      if (session && !submitted && responses.length > 0) {
+        // Track abandonment in sync before page unloads
+        try {
+          // Using navigator.sendBeacon for async tracking that survives page unload
+          if (navigator.sendBeacon) {
+            const data = JSON.stringify({
+              event_type: eventTypes.SURVEY_ABANDONED,
+              survey_id: survey.id,
+              session_id: session.id,
+              completed_questions: responses.length,
+              total_questions: survey.fields.length,
+              time_spent: Math.floor((new Date().getTime() - surveyStartTime.getTime()) / 1000),
+              abandon_reason: 'close',
+              last_question_index: currentQuestionIndex,
+              current_milestone: currentMilestone
+            });
+            
+            navigator.sendBeacon('/api/research/events', data);
+          }
+        } catch (e) {
+          console.error('Failed to track survey abandonment:', e);
+        }
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [survey.id, survey.name, survey.fields.length, deviceInfo, viewport, session, createSession, track, eventTypes.SURVEY_STARTED, savedDraft, responses, submitted, currentQuestionIndex, currentMilestone, surveyStartTime]);
 
   // Focus error or success card when shown
   useEffect(() => {
@@ -467,24 +491,6 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Show milestone celebration
-  const celebrateMilestone = async () => {
-    setShowMilestoneCelebration(true);
-    
-    // Track milestone completion
-    await track(eventTypes.MILESTONE_REACHED, {
-      milestone: currentMilestone,
-      survey_id: survey.id
-    }, currentMilestone);
-    
-    // Show celebration for 2 seconds, then proceed
-    setTimeout(() => {
-      setShowMilestoneCelebration(false);
-      setCurrentMilestoneIndex(currentMilestoneIndex + 1);
-      setCurrentQuestionIndex(0);
-    }, 2000);
-  };
-
   // Navigate to next question or milestone
   const handleNext = async () => {
     // Validate the current question
@@ -508,32 +514,59 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
       milestone: currentMilestone
     });
     
-    if (currentQuestionIndex < milestoneQuestions.length - 1) {
+    console.log('[SurveyContainer] Navigation - Current state:', {
+      currentQuestionIndex,
+      totalQuestionsInMilestone: realQuestions.length,
+      currentMilestoneIndex,
+      totalMilestones: survey.milestones.length,
+      atLastQuestion: currentQuestionIndex >= realQuestions.length - 1,
+      atLastMilestone: currentMilestoneIndex >= survey.milestones.length - 1
+    });
+    
+    if (currentQuestionIndex < realQuestions.length - 1) {
       // Move to next question in current milestone
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      console.log('[SurveyContainer] Moving to next question:', currentQuestionIndex + 1);
     } else if (currentMilestoneIndex < survey.milestones.length - 1) {
       // Milestone completed - show celebration
+      console.log('[SurveyContainer] Milestone completed, showing celebration');
       celebrateMilestone();
     } else {
       // Survey is complete, submit responses
+      console.log('[SurveyContainer] Survey completed, submitting responses');
       handleSubmit();
     }
   };
 
   // Navigate to previous question or milestone
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
+    console.log('[SurveyContainer] Navigating to previous question from:', {
+      currentQuestionIndex,
+      currentMilestoneIndex
+    });
+    
     if (currentQuestionIndex > 0) {
       // Move to previous question in current milestone
+      console.log('[SurveyContainer] Moving to previous question in same milestone');
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     } else if (currentMilestoneIndex > 0) {
       // Move to last question of previous milestone
       const previousMilestone = survey.milestones[currentMilestoneIndex - 1];
       const previousMilestoneQuestions = survey.fields.filter(field => field.milestone === previousMilestone);
+      const lastQuestionIndex = Math.max(0, previousMilestoneQuestions.length - 1);
+      
+      console.log('[SurveyContainer] Moving to previous milestone:', {
+        previousMilestone,
+        questionsInPreviousMilestone: previousMilestoneQuestions.length,
+        targetQuestionIndex: lastQuestionIndex
+      });
       
       setCurrentMilestoneIndex(currentMilestoneIndex - 1);
-      setCurrentQuestionIndex(previousMilestoneQuestions.length - 1);
+      setCurrentQuestionIndex(lastQuestionIndex);
+    } else {
+      console.log('[SurveyContainer] Already at first question of first milestone, cannot go back');
     }
-  };
+  }, [currentQuestionIndex, currentMilestoneIndex, survey.milestones, survey.fields]);
 
   // Submit all responses
   const handleSubmit = async () => {
@@ -589,16 +622,16 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
 
   // Determine if it's the final question
   const isFinalQuestion = currentMilestoneIndex === survey.milestones.length - 1 && 
-                         currentQuestionIndex === milestoneQuestions.length - 1;
+                         currentQuestionIndex === realQuestions.length - 1;
 
   // Get the progress step name (milestone name)
-  const getMilestoneDisplayName = (milestone: string) => {
+  const getMilestoneDisplayName = useCallback((milestone: string) => {
     return milestone
       .replace(/_/g, ' ')
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-  };
+  }, []);
 
   // Render the milestone celebration screen
   const renderMilestoneCelebration = () => (
@@ -631,135 +664,204 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
 
   // Track time spent on current question
   useEffect(() => {
-    if (isSurveyComplete) return;
+    if (isSurveyComplete || !currentQuestion?.id) return;
+    
+    console.log('[SurveyContainer:TimeTracking] Question changed, updating timers');
     
     // Reset question start time when question changes
-    setQuestionStartTime(new Date());
-    
-    // Update total time spent
-    const now = new Date();
-    const timeSpentSoFar = Math.floor((now.getTime() - surveyStartTime.getTime()) / 1000);
-    setTotalTimeSpent(timeSpentSoFar);
+    const newStartTime = new Date();
+    const currentFieldId = currentQuestion?.id;
     
     return () => {
       // Update question time spent when unmounting or changing question
-      if (currentField) {
+      if (currentFieldId) {
         const now = new Date();
-        const timeSpent = Math.floor((now.getTime() - questionStartTime.getTime()) / 1000);
-        setQuestionTimeSpent(prev => ({
-          ...prev,
-          [currentField.id]: (prev[currentField.id] || 0) + timeSpent
-        }));
+        const timeSpent = Math.floor((now.getTime() - newStartTime.getTime()) / 1000);
+        if (timeSpent > 0) {
+          setQuestionTimeSpent(prev => ({
+            ...prev,
+            [currentFieldId]: (prev[currentFieldId] || 0) + timeSpent
+          }));
+        }
       }
     };
-  }, [currentQuestionIndex, currentField, isSurveyComplete, questionStartTime, surveyStartTime]);
+  }, [currentQuestionIndex, currentQuestion?.id, isSurveyComplete]);
 
-  // Error state UI
-  if (error) {
+  // Debug logging for survey data
+  console.log('[SurveyContainer] Rendering survey:', { 
+    id: survey?.id,
+    name: survey?.name,
+    milestones: survey?.milestones,
+    fields: survey?.fields?.length || 0
+  });
+
+  // Add detailed structure logging
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[SurveyContainer] Survey structure check:', {
+      validId: !!survey?.id,
+      validMilestones: Array.isArray(survey?.milestones),
+      milestoneCount: Array.isArray(survey?.milestones) ? survey.milestones.length : 0,
+      validFields: Array.isArray(survey?.fields),
+      fieldCount: Array.isArray(survey?.fields) ? survey.fields.length : 0,
+      firstMilestone: Array.isArray(survey?.milestones) && survey.milestones.length > 0 ? survey.milestones[0] : null
+    });
+  }
+
+  // Check if we have valid survey data
+  if (!survey) {
+    console.error('[SurveyContainer] No survey data provided');
     return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh]">
-        <div
-          ref={errorRef}
-          tabIndex={-1}
-          role="alert"
-          aria-live="assertive"
-          className="w-full max-w-xl bg-destructive/10 border border-destructive rounded-xl p-8 shadow-lg flex flex-col items-center animate-fade-in focus:outline-none"
-        >
-          <svg
-            className="w-12 h-12 text-destructive mb-4 animate-bounce"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
-            <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <h2 className="text-xl font-bold text-destructive mb-2">Oops, something went wrong!</h2>
-          <p className="text-muted-foreground mb-4 text-center max-w-md">
-            {error}
-          </p>
-          <div className="flex flex-wrap gap-2 mb-2">
-            <Button variant="outline" onClick={onComplete}>
-              Return to Survey List
-            </Button>
-            <Button variant="secondary" onClick={handleRetry}>
-              Retry
-            </Button>
-          </div>
-          <a
-            href={`mailto:support@withme.travel?subject=Survey%20Error&body=I%20encountered%20an%20error%20on%20the%20survey%20page.%20Error:%20${encodeURIComponent(error)}`}
-            className="text-xs text-blue-600 hover:underline mt-2"
-            tabIndex={0}
-          >
-            Need help? Contact support
-          </a>
-        </div>
-      </div>
+      <Alert variant="destructive" className={cn('my-4', className)}>
+        <AlertDescription>
+          Unable to load survey. The survey may not exist or you may not have access.
+        </AlertDescription>
+      </Alert>
     );
   }
 
-  // Success state UI
-  if (submitted) {
-    // SSR-safe confetti: use a fixed size if window is undefined
-    const confettiWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const confettiHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  // Check if we have valid form fields data
+  if (!survey.fields || !Array.isArray(survey.fields) || survey.fields.length === 0) {
+    console.error('[SurveyContainer] Survey has no form fields:', survey.id);
     return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh]">
-        {/* Confetti animation */}
-        <Confetti width={confettiWidth} height={confettiHeight} numberOfPieces={200} recycle={false} />
-        <Card
-          ref={successRef}
-          tabIndex={-1}
-          role="status"
-          aria-live="polite"
-          className="w-full max-w-xl p-8 shadow-lg border-emerald-400 border-2 animate-fade-in focus:outline-none"
-        >
-          <CardHeader className="flex flex-col items-center">
-            <div className="mb-4">
-              <svg
-                className="w-16 h-16 text-emerald-500 animate-bounce"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
-                <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+      <Alert variant="destructive" className={cn('my-4', className)}>
+        <AlertDescription>
+          This survey doesn't have any questions yet. Please try again later.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Filter fields for the current milestone or show all if no milestones
+  const currentFields = useMemo(() => {
+    // If we have milestones and current milestone, filter fields
+    if (Array.isArray(survey.milestones) && survey.milestones.length > 0 && currentMilestone) {
+      const fields = survey.fields.filter(
+        (field: any) => !field.milestone || field.milestone === currentMilestone
+      );
+      console.log(`[SurveyContainer] Showing ${fields.length} fields for milestone: ${currentMilestone}`);
+      return fields;
+    }
+    
+    // Otherwise show all fields
+    console.log(`[SurveyContainer] Showing all ${survey.fields.length} fields (no milestone filtering)`);
+    return survey.fields;
+  }, [survey.fields, survey.milestones, currentMilestone]);
+
+  // Handle form value changes
+  const handleChange = useCallback(
+    (fieldId: string, value: any) => {
+      console.log(`[SurveyContainer] Field ${fieldId} changed to:`, value);
+      setResponses(prev => prev.map(r =>
+        r.fieldId === fieldId ? { ...r, value } : r
+      ));
+    },
+    []
+  );
+
+  // Determine if we're on the last milestone
+  const isLastMilestone = useMemo(() => {
+    if (!Array.isArray(survey.milestones) || survey.milestones.length === 0) {
+      return true; // If no milestones, treat as last
+    }
+    return currentMilestone === survey.milestones[survey.milestones.length - 1];
+  }, [survey.milestones, currentMilestone]);
+
+  // Show milestone celebration
+  const celebrateMilestone = async () => {
+    console.log('[SurveyContainer] Showing celebration for milestone:', currentMilestone);
+    
+    // Set state for showing celebration
+    setShowMilestoneCelebration(true);
+    
+    // Track milestone completion
+    await track(eventTypes.MILESTONE_REACHED, {
+      milestone: currentMilestone,
+      survey_id: survey.id
+    }, currentMilestone);
+    
+    // Use a timeout to ensure state updates don't conflict
+    setTimeout(() => {
+      // Only proceed if component is still mounted
+      if (!isMounted.current) return;
+      
+      console.log('[SurveyContainer] Celebration complete, moving to next milestone');
+      
+      // Move to next milestone and reset question index
+      const nextMilestoneIndex = currentMilestoneIndex + 1;
+      setCurrentMilestoneIndex(nextMilestoneIndex);
+      setCurrentQuestionIndex(0);
+      
+      // Hide celebration after state is updated
+      setTimeout(() => {
+        setShowMilestoneCelebration(false);
+      }, 100);
+    }, 2000);
+  };
+
+  // Add a ref to track component mounting state
+  const isMounted = useRef(true);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Memoize the progress indicator to prevent unnecessary re-renders
+  const progressIndicator = useMemo(() => {
+    return (
+      <div className="mb-8">
+        {Array.isArray(survey.milestones) && survey.milestones.length > 0 ? (
+          <>
+            <div className="flex justify-between mb-2">
+              {survey.milestones.map((milestone, index) => (
+                <div 
+                  key={milestone}
+                  className={`text-xs font-medium ${index <= currentMilestoneIndex ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                  {getMilestoneDisplayName(milestone)}
+                  {index <= currentMilestoneIndex && (
+                    <span className="ml-1">
+                      {index < currentMilestoneIndex && (
+                        <CheckCircle className="w-3 h-3 inline text-green-500 mb-1" />
+                      )}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-            <CardTitle className="text-2xl font-bold text-emerald-700">Thank You{userName ? ', ' + userName : ''}!</CardTitle>
-            <CardDescription className="mt-2 text-center text-lg text-muted-foreground">
-              Your survey response has been submitted successfully.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <p className="text-muted-foreground text-center mb-4">
-              We appreciate your feedback and will use it to make WithMe even better for travelers like you.
-            </p>
-            {/* Optionally, add more animation here */}
-          </CardContent>
-          <CardFooter className="flex flex-col items-center gap-2">
-            <Button onClick={onComplete} className="w-full max-w-xs">
-              Return to Survey List
-            </Button>
-            <a
-              href="/user-testing/survey"
-              className="text-xs text-blue-600 hover:underline mt-2"
-              tabIndex={0}
-            >
-              Take another survey
-            </a>
-          </CardFooter>
-        </Card>
+            {/* Replace Radix Progress with custom implementation */}
+            <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full transition-all" 
+                style={{ width: `${progressPercentage}%` }}
+                role="progressbar"
+                aria-valuenow={progressPercentage}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              />
+            </div>
+            <div className="text-xs text-muted-foreground mt-2 text-right">
+              {`${completedQuestions} of ${totalQuestions} questions completed`}
+            </div>
+          </>
+        ) : (
+          <div className="text-amber-500 mb-4">
+            <Alert variant="warning">
+              <AlertDescription>
+                This survey has no milestones defined. Please contact an administrator.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
       </div>
     );
-  }
+  }, [survey.milestones, currentMilestoneIndex, progressPercentage, completedQuestions, totalQuestions, getMilestoneDisplayName]);
 
+  // Render the survey form
   return (
-    <div className="p-6 md:p-8">
+    <div className={cn('space-y-6', className)}>
       {/* Show milestone celebration when a milestone is completed */}
       {showMilestoneCelebration && renderMilestoneCelebration()}
       
@@ -772,29 +874,7 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
       )}
       
       {/* Progress indicator */}
-      <div className="mb-8">
-        <div className="flex justify-between mb-2">
-          {survey.milestones.map((milestone, index) => (
-            <div 
-              key={milestone}
-              className={`text-xs font-medium ${index <= currentMilestoneIndex ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              {getMilestoneDisplayName(milestone)}
-              {index <= currentMilestoneIndex && (
-                <span className="ml-1">
-                  {index < currentMilestoneIndex && (
-                    <CheckCircle className="w-3 h-3 inline text-green-500 mb-1" />
-                  )}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-        <Progress value={progressPercentage} className="h-2" />
-        <div className="text-xs text-muted-foreground mt-2 text-right">
-          {`${completedQuestions} of ${totalQuestions} questions completed`}
-        </div>
-      </div>
+      {progressIndicator}
 
       {/* Auto-save status indicator */}
       <div className="mb-2 flex justify-end">
@@ -823,18 +903,26 @@ export function SurveyContainer({ survey, onComplete }: SurveyContainerProps) {
       >
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentQuestion.id}
+            key={`question-${currentQuestion?.id || 'loading'}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <QuestionRenderer
-              question={currentQuestion}
-              response={getCurrentResponse()?.value}
-              onChange={handleResponse}
-              error={validationErrors[currentQuestion.id]}
-            />
+            {currentQuestion ? (
+              <QuestionRenderer
+                key={`renderer-${currentQuestion.id}`}
+                question={currentQuestion}
+                response={getCurrentResponse()?.value}
+                onChange={handleResponse}
+                error={validationErrors[currentQuestion.id]}
+              />
+            ) : (
+              <div className="text-center p-4">
+                <Spinner />
+                <p className="mt-2 text-muted-foreground">Loading question...</p>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </Card>

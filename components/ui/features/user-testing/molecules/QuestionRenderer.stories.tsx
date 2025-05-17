@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { QuestionRenderer } from './QuestionRenderer';
 
 const meta: Meta<typeof QuestionRenderer> = {
-  title: 'Features/UserTesting/Molecules/QuestionRenderer',
+  title: 'UI/Features/user-testing/QuestionRenderer',
   component: QuestionRenderer,
   parameters: {
     layout: 'centered',

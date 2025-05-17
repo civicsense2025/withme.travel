@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { CreateIdeaForm } from './create-idea-form';
 
 const meta: Meta<typeof CreateIdeaForm> = {
-  title: 'Product/Features/CreateIdeaForm',
+  title: 'UI/Features/groups/create-idea-form',
   component: CreateIdeaForm,
   parameters: { layout: 'centered' },
 };

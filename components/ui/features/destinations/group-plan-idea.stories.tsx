@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { GroupPlanIdea } from './group-plan-idea';
 
 const meta = {
-  title: 'Organisms/Groups/GroupPlanIdea',
+  title: 'UI/Features/destinations/group-plan-idea',
   component: GroupPlanIdea,
   parameters: {
     layout: 'centered',

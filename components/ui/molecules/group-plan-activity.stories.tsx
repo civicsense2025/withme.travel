@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { GroupPlanActivity } from './group-plan-activity';
 
 const meta: Meta<typeof GroupPlanActivity> = {
-  title: 'Components/Groups/GroupPlanActivity',
+  title: 'UI/group-plan-activity',
   component: GroupPlanActivity,
   parameters: {
     layout: 'centered',

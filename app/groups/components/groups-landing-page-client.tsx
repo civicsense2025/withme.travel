@@ -122,16 +122,7 @@ export default function GroupsLandingPageClient() {
     </section>
   );
 
-  // --------------------------------------------------------------------------
-  // TESTIMONIALS SECTION (placeholder)
-  // --------------------------------------------------------------------------
-  const TestimonialsSection = () => (
-    <section className="py-24 w-full bg-background">
-      <div className="text-center px-6 md:px-10 max-w-4xl mx-auto">
-        {/* Add testimonials here if needed */}
-      </div>
-    </section>
-  );
+
 
   // --------------------------------------------------------------------------
   // CTA SECTION
@@ -182,7 +173,6 @@ export default function GroupsLandingPageClient() {
       <main className="flex min-h-screen flex-col w-full bg-background overflow-hidden">
         <HeroSection />
         <FeaturesSection />
-        <TestimonialsSection />
         <CTASection />
         <FAQSection />
       </main>

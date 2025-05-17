@@ -1,180 +1,79 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { SurveyContainer } from '@/components/research/SurveyContainer';
+import { SurveyContainer, Survey } from '@/components/research/SurveyContainer';
 import { ResearchProvider } from '@/components/research/ResearchProvider';
 import { ResearchModal } from '@/components/research/ResearchModal';
-import clientGuestUtils from '@/utils/guest';
 
 interface SurveyDetailProps {
   id: string;
 }
 
-// --- API helpers ---
-async function fetchSession(token: string) {
-  console.log('[SurveyDetail] Fetching session with token:', token);
-  try {
-    const res = await fetch(`/api/user-testing-session/${token}`);
-    console.log('[SurveyDetail] Session API response status:', res.status);
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('[SurveyDetail] Session API error:', errorText);
-      throw new Error('Session not found or expired.');
-    }
-    const data = await res.json();
-    console.log('[SurveyDetail] Session data:', data);
-    return data; // { session: { cohort: 'beta', ... } }
-  } catch (error) {
-    console.error('[SurveyDetail] Error fetching session:', error);
-    throw error;
-  }
-}
-
-async function fetchSurveyDetail(id: string, token: string) {
-  console.log('[SurveyDetail] Fetching survey detail:', { id, token });
-  try {
-    const res = await fetch(`/api/forms/${id}?token=${token}`);
-    console.log('[SurveyDetail] Survey detail API response status:', res.status);
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('[SurveyDetail] Survey detail API error:', errorText);
-      throw new Error('Survey not found or access denied.');
-    }
-    const data = await res.json();
-    console.log('[SurveyDetail] Survey detail data:', data);
-    return data; // { form: {...} }
-  } catch (error) {
-    console.error('[SurveyDetail] Error fetching survey detail:', error);
-    throw error;
-  }
-}
-
 export default function SurveyDetail({ id }: SurveyDetailProps) {
-  console.log('[SurveyDetail] Component mounted with ID:', id);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [survey, setSurvey] = useState<any>(null);
+  const [survey, setSurvey] = useState<Survey | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [userCohort, setUserCohort] = useState<string | null>(null);
+  const [devMode, setDevMode] = useState(false);
 
-  // Helper: Get token from all possible sources
-  const getToken = useCallback(() => {
-    const urlToken = searchParams?.get('token');
-    const authToken = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    const guestToken = clientGuestUtils.getToken();
-    const finalToken = urlToken || authToken || guestToken || null;
-    console.log('[SurveyDetail] Token sources:', { 
-      urlToken: urlToken ? 'present' : 'missing', 
-      authToken: authToken ? 'present' : 'missing', 
-      guestToken: guestToken ? 'present' : 'missing',
-      finalToken: finalToken ? 'present' : 'missing' 
-    });
-    return finalToken;
-  }, [searchParams]);
-
-  // Main effect: fetch session, cohort, and survey
+  // Only check for dev mode once at load time
   useEffect(() => {
-    console.log('[SurveyDetail] useEffect triggered with ID:', id);
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      setSurvey(null);
-      setUserCohort(null);
+    setDevMode(process.env.NODE_ENV !== 'production' || localStorage.getItem('dev-mode') === 'true');
+  }, []);
 
-      const userToken = getToken();
-      setToken(userToken);
+  // Simple data fetching
+  useEffect(() => {
+    if (!id) {
+      setError('Survey ID is required');
+      setLoading(false);
+      return;
+    }
 
-      if (!userToken) {
-        console.error('[SurveyDetail] No token available');
-        setError('No authentication token found. Please sign up for user testing to access surveys.');
-        setLoading(false);
-        return;
-      }
-
+    async function fetchSurvey() {
       try {
-        console.log('[SurveyDetail] Starting data fetch with token and ID:', { token: userToken, id });
-        // 1. Fetch session to get cohort
-        const { session } = await fetchSession(userToken);
-        if (!session?.cohort) {
-          console.error('[SurveyDetail] Session missing cohort:', session);
-          throw new Error('Session missing cohort.');
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/user-testing/survey/${id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch survey: ${response.status}`);
         }
-        setUserCohort(session.cohort);
-        console.log('[SurveyDetail] Got cohort:', session.cohort);
-
-        // 2. Fetch survey detail
-        const { form: surveyData } = await fetchSurveyDetail(id, userToken);
-        console.log('[SurveyDetail] Got survey data:', surveyData);
         
-        // 3. Check cohort access
-        const allowedCohorts = Array.isArray(surveyData.cohorts)
-          ? surveyData.cohorts
-          : surveyData.cohort
-            ? [surveyData.cohort]
-            : [];
+        const data = await response.json();
         
-        console.log('[SurveyDetail] Cohort check:', { 
-          userCohort: session.cohort, 
-          allowedCohorts,
-          hasAccess: allowedCohorts.length === 0 || allowedCohorts.includes(session.cohort)
-        });
-        
-        if (allowedCohorts.length > 0 && !allowedCohorts.includes(session.cohort)) {
-          throw new Error(
-            `You do not have access to this survey (your cohort: ${session.cohort}, allowed: ${allowedCohorts.join(', ')}).`
-          );
+        if (!data || !data.id || !Array.isArray(data.fields)) {
+          throw new Error('Invalid survey data format received');
         }
-        setSurvey(surveyData);
-        console.log('[SurveyDetail] Survey data set successfully');
-      } catch (err: any) {
-        console.error('[SurveyDetail] Load error:', err);
-        setError(err.message || 'Failed to load the survey. Please try again later.');
-        setSurvey(null);
+        
+        setSurvey(data);
+      } catch (err: unknown) {
+        console.error('Error loading survey:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load survey');
       } finally {
         setLoading(false);
-        console.log('[SurveyDetail] Data loading complete, state:', { loading: false, hasError: !!error, hasSurvey: !!survey });
       }
-    };
-    load();
-  }, [id, getToken]);
+    }
 
-  // Handlers
-  const handleComplete = () => {
-    console.log('[SurveyDetail] Survey completed');
+    fetchSurvey();
+  }, [id]);
+
+  const handleComplete = useCallback(() => {
     setSubmitted(true);
-  };
-  
-  const handleBack = () => {
-    console.log('[SurveyDetail] Navigating back to survey list');
-    router.push('/user-testing/survey');
-  };
-  
-  const handleSignup = () => {
-    console.log('[SurveyDetail] Navigating to signup');
-    router.push('/user-testing');
-  };
-  
-  const handleRetry = () => {
-    console.log('[SurveyDetail] Retrying data load');
-    setLoading(true);
-    setError(null);
-    setSurvey(null);
-    setUserCohort(null);
-    // Triggers useEffect
-  };
+  }, []);
 
-  // UI States
-  console.log('[SurveyDetail] Rendering state:', { loading, error, hasSurvey: !!survey, submitted });
-  
+  const handleBack = useCallback(() => {
+    router.push('/user-testing/survey');
+  }, [router]);
+
+  // Loading state
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
@@ -184,34 +83,22 @@ export default function SurveyDetail({ id }: SurveyDetailProps) {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <Alert variant="destructive" className="max-w-xl mx-auto">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-        <div className="flex gap-2 mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            Return to Survey List
-          </Button>
-          <Button variant="secondary" onClick={handleRetry}>
-            Retry
-          </Button>
-          <Button variant="default" onClick={handleSignup}>
-            Sign Up for User Testing
-          </Button>
-        </div>
-        {token && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            <strong>Debug:</strong> Using token: <code>{token}</code>
-            {userCohort && (
-              <span> | Cohort: <code>{userCohort}</code></span>
-            )}
-          </div>
-        )}
+        <AlertTitle>Error Loading Survey</AlertTitle>
+        <AlertDescription>
+          <p className="mb-2">{error}</p>
+        </AlertDescription>
+        <Button variant="outline" className="mt-4" onClick={handleBack}>
+          Return to Survey List
+        </Button>
       </Alert>
     );
   }
 
+  // Missing survey state
   if (!survey) {
     return (
       <Alert className="max-w-xl mx-auto">
@@ -226,52 +113,50 @@ export default function SurveyDetail({ id }: SurveyDetailProps) {
     );
   }
 
-  if (submitted) {
-    return (
-      <Card className="max-w-xl mx-auto">
-        <CardHeader>
-          <CardTitle>Thank You!</CardTitle>
-          <CardDescription>
-            Your survey response has been submitted successfully.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            We appreciate your feedback and will use it to improve our product.
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleBack}>Return to Survey List</Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
-  // Main survey UI
+  // Main render
   return (
     <ResearchProvider>
       <div className="mb-6">
-        <Button variant="ghost" onClick={handleBack} className="mb-4">
+        <Button variant="ghost" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Surveys
         </Button>
-        <h1 className="text-3xl font-bold">{survey.name}</h1>
+        <h1 className="text-3xl font-bold mt-4">{survey.name}</h1>
         <p className="text-muted-foreground mt-2">{survey.description}</p>
-        {userCohort && (
-          <span className="inline-block mt-2 px-3 py-1 rounded-full bg-muted text-xs font-semibold">
-            Cohort: {userCohort}
-          </span>
-        )}
       </div>
-      <Card>
+
+      <Card className="mb-8">
         <CardContent className="pt-6">
-          <SurveyContainer
-            survey={survey}
-            onComplete={handleComplete}
-          />
+          {!submitted ? (
+            <SurveyContainer 
+              survey={survey} 
+              onComplete={handleComplete} 
+            />
+          ) : (
+            <div className="p-8 text-center">
+              <h2 className="text-xl font-bold mb-4 text-green-700">Thank You for Your Feedback!</h2>
+              <p className="mb-6">Your responses have been recorded successfully.</p>
+              <Button onClick={handleBack}>Return to Surveys</Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Simple dev mode display */}
+      {devMode && (
+        <div className="p-4 border border-dashed border-amber-300 rounded-md bg-amber-50 mb-8">
+          <h3 className="font-medium text-amber-800">Developer Mode</h3>
+          <p className="text-sm text-amber-700 mb-2">Survey ID: {survey.id}</p>
+          <details>
+            <summary className="cursor-pointer text-sm text-amber-700">Show Survey Data</summary>
+            <pre className="mt-2 p-2 bg-black text-green-400 rounded-md text-xs overflow-auto max-h-96">
+              {JSON.stringify(survey, null, 2)}
+            </pre>
+          </details>
+        </div>
+      )}
+
       <ResearchModal />
     </ResearchProvider>
   );
-} 
+}

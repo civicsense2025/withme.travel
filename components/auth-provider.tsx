@@ -2,13 +2,13 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient, Session, User } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { FIELDS } from '@/utils/constants/database';
 import { TABLES } from '@/utils/constants/tables';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { getBrowserClient } from '@/utils/supabase/browser-client';
 
 export interface ExtendedUser extends User {
   profile?: {
@@ -57,13 +57,13 @@ function getCookie(name: string): string | null {
   return null;
 }
 
-export function AuthProvider({ initialSession, children }: AuthProviderProps) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  const [supabase] = useState<SupabaseClient<Database>>(() =>
-    createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
-  );
+export function AuthProvider({ 
+  initialSession, 
+  children,
+  className
+}: AuthProviderProps & { className?: string }) {
+  // Use the singleton supabase client instead of creating a new one
+  const supabase = getBrowserClient();
 
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<ExtendedUser | null>(
@@ -246,20 +246,22 @@ export function AuthProvider({ initialSession, children }: AuthProviderProps) {
     setUser((u) => (u ? { ...u, profile: u.profile } : null));
   };
 
+  const value: AuthContextType = {
+    user,
+    session,
+    isLoading,
+    signIn,
+    signOut,
+    signUp,
+    refreshSession,
+    supabase,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        signIn,
-        signOut,
-        signUp,
-        refreshSession,
-        supabase,
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={value}>
+      <div className={className}>
+        {children}
+      </div>
     </AuthContext.Provider>
   );
 }

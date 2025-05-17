@@ -19,8 +19,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/hooks/use-auth';
+import React from 'react';
 
-export function EmptyTrips() {
+export interface EmptyTripsProps {
+  isLoading?: boolean;
+  error?: string | null;
+  onCreateTrip?: () => void;
+  className?: string;
+}
+
+export const EmptyTrips: React.FC<EmptyTripsProps> = ({
+  isLoading = false,
+  error = null,
+  onCreateTrip,
+  className
+}) => {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -72,101 +85,121 @@ export function EmptyTrips() {
   };
 
   return (
-    <div className="my-8 px-4">
+    <div className={cn('my-8 px-4', className)}>
       <Card className="border-0 shadow-xl rounded-2xl overflow-hidden bg-gradient-to-br from-white to-travel-blue/5 dark:from-gray-900/90 dark:to-travel-purple/10 backdrop-blur-sm">
         <CardContent className="p-8 md:p-12">
           <div className="max-w-3xl mx-auto">
-            <motion.div
-              className="text-center mb-10"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="bg-gradient-to-br from-travel-purple/20 to-travel-blue/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm shadow-inner">
-                <Plane className="h-8 w-8 text-gradient-to-r from-travel-purple to-travel-blue" />
+            {isLoading ? (
+              <div className="empty-trips-loading">
+                <span className="loading-spinner" />
+                <p>Loading trips...</p>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-travel-purple to-travel-blue">
-                Start Your Travel Journey
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Create your first trip and start bringing your travel ideas to life with friends.
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="grid md:grid-cols-2 gap-4 mb-12"
-              variants={container}
-              initial="hidden"
-              animate="show"
-            >
-              {quickStartDestinations.map((dest, index) => (
-                <motion.div key={dest.name} variants={item}>
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      'h-auto w-full p-5 flex items-start gap-4 justify-start border rounded-xl transition-all hover:shadow-md',
-                      dest.color
-                    )}
-                    onClick={() => handleQuickStart(dest.name)}
-                  >
-                    <div className="p-3 rounded-full flex-shrink-0 bg-background/70 backdrop-blur-sm shadow-sm">
-                      {dest.icon}
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-base">{dest.name}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{dest.description}</p>
-                    </div>
-                  </Button>
+            ) : error ? (
+              <div className="empty-trips-error">
+                <span className="error-icon">⚠️</span>
+                <p>{error}</p>
+                <button 
+                  className="retry-button"
+                  onClick={onCreateTrip}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <>
+                <motion.div
+                  className="text-center mb-10"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className="bg-gradient-to-br from-travel-purple/20 to-travel-blue/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm shadow-inner">
+                    <Plane className="h-8 w-8 text-gradient-to-r from-travel-purple to-travel-blue" />
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-travel-purple to-travel-blue">
+                    Start Your Travel Journey
+                  </h2>
+                  <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
+                    Create your first trip and start bringing your travel ideas to life with friends.
+                  </p>
                 </motion.div>
-              ))}
-            </motion.div>
 
-            <motion.div
-              className="flex flex-col md:flex-row gap-4 justify-center items-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-            >
-              <Link href={PAGE_ROUTES.CREATE_TRIP}>
-                <Button
-                  size="lg"
-                  className="rounded-xl gap-2 px-8 bg-gradient-to-r from-travel-purple to-travel-blue hover:from-travel-purple/90 hover:to-travel-blue/90 transition-all shadow-md hover:shadow-lg group"
+                <motion.div
+                  className="grid md:grid-cols-2 gap-4 mb-12"
+                  variants={container}
+                  initial="hidden"
+                  animate="show"
                 >
-                  <PlusCircle className="h-5 w-5" />
-                  <span>Create Custom Trip</span>
-                  <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+                  {quickStartDestinations.map((dest, index) => (
+                    <motion.div key={dest.name} variants={item}>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          'h-auto w-full p-5 flex items-start gap-4 justify-start border rounded-xl transition-all hover:shadow-md',
+                          dest.color
+                        )}
+                        onClick={() => handleQuickStart(dest.name)}
+                      >
+                        <div className="p-3 rounded-full flex-shrink-0 bg-background/70 backdrop-blur-sm shadow-sm">
+                          {dest.icon}
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium text-base">{dest.name}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{dest.description}</p>
+                        </div>
+                      </Button>
+                    </motion.div>
+                  ))}
+                </motion.div>
 
-              <Link href="/destinations">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="rounded-xl gap-2 px-8 border-travel-purple/20 hover:bg-travel-purple/5"
+                <motion.div
+                  className="flex flex-col md:flex-row gap-4 justify-center items-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
                 >
-                  <Map className="h-5 w-5" />
-                  <span>Explore Destinations</span>
-                </Button>
-              </Link>
-            </motion.div>
+                  <Link href={PAGE_ROUTES.CREATE_TRIP}>
+                    <Button
+                      size="lg"
+                      className="rounded-xl gap-2 px-8 bg-gradient-to-r from-travel-purple to-travel-blue hover:from-travel-purple/90 hover:to-travel-blue/90 transition-all shadow-md hover:shadow-lg group"
+                    >
+                      <PlusCircle className="h-5 w-5" />
+                      <span>Create Custom Trip</span>
+                      <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
 
-            {/* Only show the sign-in message if user is not logged in */}
-            {!user && (
-              <motion.div
-                className="mt-10 text-center text-sm text-muted-foreground"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <Sparkles className="h-4 w-4 text-travel-purple/70" />
-                  <span>Sign in to save your trips and collaborate with friends</span>
-                </div>
-              </motion.div>
+                  <Link href="/destinations">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="rounded-xl gap-2 px-8 border-travel-purple/20 hover:bg-travel-purple/5"
+                    >
+                      <Map className="h-5 w-5" />
+                      <span>Explore Destinations</span>
+                    </Button>
+                  </Link>
+                </motion.div>
+
+                {/* Only show the sign-in message if user is not logged in */}
+                {!user && (
+                  <motion.div
+                    className="mt-10 text-center text-sm text-muted-foreground"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <Sparkles className="h-4 w-4 text-travel-purple/70" />
+                      <span>Sign in to save your trips and collaborate with friends</span>
+                    </div>
+                  </motion.div>
+                )}
+              </>
             )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};

@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { SharedPresenceSection } from '@/components/ui/SharedPresenceSection';
+import { ExpenseMarketingSection } from './components/ExpenseMarketingSection';
 
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
@@ -115,11 +117,31 @@ export default async function TripsPage() {
   }
   
   // Show the hero section with 2-column layout for the landing page (non-authenticated users)
-  return <HeroSectionWrapper 
-    heading="Plan your perfect trip with friends and family" 
-    subheading="Collaborate on itineraries, share ideas, and make memories together – all in one place."
-    ctaText="Create a Trip"
-    ctaHref="/trips/create"
-    showBackground={true}
-  />;
+  return (
+    <>
+      <HeroSectionWrapper 
+        heading="Plan your perfect trip with friends and family" 
+        subheading="Collaborate on itineraries, share ideas, and make memories together – all in one place."
+        ctaText="Create a Trip"
+        ctaHref="/trips/create"
+        showBackground={true}
+      />
+      <section className="py-16 px-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          {/* Left: Live presence demo */}
+          <div>
+            <SharedPresenceSection />
+          </div>
+          {/* Right: Copy */}
+          <div className="flex flex-col justify-center h-full">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Plan together, in real time</h2>
+            <p className="text-lg text-muted-foreground mb-6">
+              See who's online, brainstorm ideas, and make decisions as a group. withme.travel brings everyone together—no more lost messages or missed updates.
+            </p>
+          </div>
+        </div>
+      </section>
+      <ExpenseMarketingSection />
+    </>
+  );
 }

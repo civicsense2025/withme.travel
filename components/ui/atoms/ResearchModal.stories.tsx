@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ResearchModal } from './ResearchModal';
 import { action } from '@storybook/addon-actions';
-import { SurveyContainer } from './SurveyContainer';
+import { SurveyContainer } from '@/components/ui/atoms/SurveyContainer';
 
 /**
  * `ResearchModal` is a modal dialog for displaying surveys and research prompts
  * to users without navigating away from their current context.
  */
 const meta: Meta<typeof ResearchModal> = {
-  title: 'Research/Molecules/ResearchModal',
+  title: 'UI/ResearchModal',
   component: ResearchModal,
   tags: ['autodocs'],
   parameters: {

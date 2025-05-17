@@ -27,7 +27,7 @@ import { SectionHeader } from './SectionHeader';
  * - Maintain consistent spacing between headers and content
  */
 const meta: Meta<typeof SectionHeader> = {
-  title: 'Molecules/SectionHeader',
+  title: 'UI/SectionHeader',
   component: SectionHeader,
   tags: ['autodocs'],
   parameters: {

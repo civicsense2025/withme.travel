@@ -3,7 +3,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { DestinationFeatureSection } from './destination-feature-section';
 
 const meta: Meta<typeof DestinationFeatureSection> = {
-  title: 'Destinations/DestinationFeatureSection',
+  title: 'UI/Features/destinations/destination-feature-section',
   component: DestinationFeatureSection,
   tags: ['autodocs'],
   parameters: {

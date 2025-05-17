@@ -68,10 +68,12 @@ export function DebugBoundary({
   children,
   label,
   color = 'red',
+  className = '',
 }: {
   children: React.ReactNode;
   label?: string;
   color?: 'red' | 'blue' | 'green' | 'purple' | 'yellow';
+  className?: string;
 }) {
   const [visible, setVisible] = useState(true);
 
@@ -83,10 +85,10 @@ export function DebugBoundary({
     yellow: 'border-yellow-400 bg-yellow-50 text-yellow-800',
   };
 
-  if (!visible) return <>{children}</>;
+  if (!visible) return <div className={className}>{children}</div>;
 
   return (
-    <div className={`border-2 border-dashed p-4 relative ${colorClasses[color]}`}>
+    <div className={`border-2 border-dashed p-4 relative ${colorClasses[color]} ${className}`}>
       {label && (
         <div className="absolute -top-2 left-2 px-1 text-xs font-mono bg-white">{label}</div>
       )}

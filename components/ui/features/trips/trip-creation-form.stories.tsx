@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { TripCreationForm } from './trip-creation-form';
 
 const meta: Meta<typeof TripCreationForm> = {
-  title: 'Product/Features/TripCreationForm',
+  title: 'UI/Features/trips/trip-creation-form',
   component: TripCreationForm,
   parameters: { layout: 'centered' },
 };

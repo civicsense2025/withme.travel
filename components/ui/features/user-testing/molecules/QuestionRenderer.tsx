@@ -29,7 +29,7 @@ import { Switch } from '@/components/ui/switch';
 // TYPES
 // ============================================================================
 
-export type QuestionType = 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'rating' | 'boolean';
+export type QuestionType = 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'rating' | 'boolean' | 'welcome';
 
 export interface QuestionOption {
   value: string;
@@ -118,6 +118,25 @@ export function QuestionRenderer({ question, response, onChange, error }: Questi
         return renderRatingQuestion();
       case 'boolean':
         return renderBooleanQuestion();
+      case 'welcome':
+        // Add welcome screen support
+        React.useEffect(() => {
+          // Auto respond with true for welcome screens
+          const timer = setTimeout(() => !response && onChange(true), 0);
+          return () => clearTimeout(timer);
+        }, []);
+        
+        return (
+          <div className="space-y-4 w-full">
+            <h2 className="text-2xl font-semibold">{question.label}</h2>
+            {question.options && question.options.length > 0 && (
+              <p className="text-muted-foreground">{question.options[0]}</p>
+            )}
+            <div className="pt-4">
+              <p className="text-sm text-muted-foreground">Click "Next" to begin the survey.</p>
+            </div>
+          </div>
+        );
       default:
         return <div>Unsupported question type: {question.type}</div>;
     }
@@ -233,7 +252,10 @@ export function QuestionRenderer({ question, response, onChange, error }: Questi
         </Label>
         <Select
           value={(response as string) || ''}
-          onValueChange={(value) => onChange(value)}
+          onValueChange={(value) => {
+            // Call onChange only with the value, no additional processing
+            onChange(value);
+          }}
         >
           <SelectTrigger 
             id={`question-${question.id}`}
@@ -245,7 +267,7 @@ export function QuestionRenderer({ question, response, onChange, error }: Questi
           <SelectContent>
             {selectOptions.map((option) => (
               <SelectItem 
-                key={option.value} 
+                key={`${question.id}-${option.value.toString()}`} 
                 value={option.value.toString()}
               >
                 {option.label}

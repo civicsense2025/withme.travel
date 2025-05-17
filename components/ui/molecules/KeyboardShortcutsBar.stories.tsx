@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import KeyboardShortcutsBar from './KeyboardShortcutsBar';
 
 const meta: Meta<typeof KeyboardShortcutsBar> = {
-  title: 'Features/Trip/KeyboardShortcutsBar',
+  title: 'UI/KeyboardShortcutsBar',
   component: KeyboardShortcutsBar,
   parameters: {
     layout: 'centered',

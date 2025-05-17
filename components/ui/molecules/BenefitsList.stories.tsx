@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { BenefitsList } from './BenefitsList';
 
 const meta: Meta<typeof BenefitsList> = {
-  title: 'Research/BenefitsList',
+  title: 'UI/BenefitsList',
   component: BenefitsList,
   parameters: {
     layout: 'centered',

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { GroupCard } from './group-card';
 
 const meta: Meta<typeof GroupCard> = {
-  title: 'Product/Features/GroupCard',
+  title: 'UI/Features/trips/group-card',
   component: GroupCard,
   parameters: { layout: 'centered' },
 };

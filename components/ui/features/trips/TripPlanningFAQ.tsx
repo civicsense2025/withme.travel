@@ -3,7 +3,7 @@
  * Customized FAQ for trip planning pages, including collaboration-specific questions.
  */
 import React from 'react';
-import { FAQ } from '../organisms/FAQ';
+import { FAQ } from '@/components/ui/features/trips/organisms/FAQ';
 import { FaqEntry, FaqLayout } from '@/types/faq';
 
 // Sample data for trip planning FAQ

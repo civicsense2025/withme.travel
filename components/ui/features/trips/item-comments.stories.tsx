@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { ItemComments } from './item-comments';
 
 const meta: Meta<typeof ItemComments> = {
-  title: 'Product/Features/ItemComments',
+  title: 'UI/Features/trips/item-comments',
   component: ItemComments,
   parameters: { layout: 'centered' },
 };

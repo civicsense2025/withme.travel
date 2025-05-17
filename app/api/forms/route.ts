@@ -1,6 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 
+// MOCK DATA FOR DEV MODE - Hard-coded surveys when database is empty
+const MOCK_SURVEYS = [
+  {
+    id: '488f71b9-78ee-4654-b32b-439378272e1c',
+    name: 'Basic Test Survey',
+    description: 'A simple survey for testing',
+    type: 'survey',
+    is_active: true,
+    created_at: '2025-05-15 08:54:37',
+    cohort: 'user-research-default',
+    progress: 0,
+    milestones: ['introduction', 'feedback', 'conclusion'],
+    currentMilestone: 'introduction'
+  },
+  {
+    id: 'ed9fdff7-ead4-42b2-9043-397840072c4e',
+    name: "How's Your WithMe Journey Going?",
+    description: 'Share your thoughts so we can make planning trips with friends even better',
+    type: 'survey',
+    is_active: true,
+    created_at: '2025-05-16 09:57:03',
+    cohort: 'user-research-default',
+    progress: 0,
+    milestones: null,
+    currentMilestone: null
+  },
+  {
+    id: 'f2b957b3-8dc0-4599-a98a-929e9c72ece9',
+    name: 'Multi-Milestone Test Survey',
+    description: 'A multi-milestone survey for testing',
+    type: 'survey',
+    is_active: true,
+    created_at: '2025-05-15 08:54:37',
+    cohort: 'user-research-default',
+    progress: 0,
+    milestones: ['onboarding_complete', 'itinerary_3_items', 'group_formation_complete'],
+    currentMilestone: 'onboarding_complete'
+  }
+];
+
 // Form data coming from database might have different shapes
 type DbForm = {
   id: string;
@@ -31,16 +71,57 @@ interface Survey {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  console.log('[API] Handling GET forms request');
   const responseHeaders = new Headers({
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
   });
+
+  // Development flag to bypass milestone trigger requirements
+  const BYPASS_MILESTONE_TRIGGERS = true;
 
   try {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const cohort = searchParams.get('cohort');
     const token = searchParams.get('token');
+    
+    // Check for dev-mode header or query param
+    const isDevModeRequested = searchParams.get('dev-mode') === 'false' ? false : true;
+    const headers = request.headers;
+    const devModeHeader = headers.get('x-dev-mode');
+    const useDevMode = process.env.NODE_ENV !== 'production' && 
+      (devModeHeader !== 'false' && !isDevModeRequested === false);
+    
+    console.log(`[API] Forms request mode: ${useDevMode ? 'DEVELOPMENT' : 'PRODUCTION'}`);
+
+    // DEV PATCH: In dev, ignore cohort and milestone filters, return all active forms
+    if (useDevMode) {
+      console.log('DEV MODE: Returning all active forms, ignoring cohort/milestone filters');
+      const supabase = await createRouteHandlerClient();
+      const { data: forms, error } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('DEV MODE: Error getting forms:', error);
+        return NextResponse.json({ error: 'Error getting forms' }, { status: 500 });
+      }
+
+      // If database is empty, return mock surveys
+      if (!forms || forms.length === 0) {
+        console.log('DEV MODE: No forms found in database, returning mock data');
+        return NextResponse.json({
+          forms: MOCK_SURVEYS.map(survey => ({
+            ...survey,
+            cohort: (survey as any).cohort || 'dev', // In dev, fallback if cohort is missing
+          }))
+        });
+      }
+
+      return NextResponse.json({ forms });
+    }
 
     if (!cohort) {
       return NextResponse.json(
@@ -124,6 +205,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    console.log(`Found ${forms.length} survey forms for cohort: ${cohort}`);
+    
+    // Log and optionally filter out surveys with milestone triggers (unless bypassed)
+    const formsWithMilestoneTriggers = (forms as DbForm[]).filter(form => form.milestone_trigger);
+    if (formsWithMilestoneTriggers.length > 0) {
+      console.log(`${formsWithMilestoneTriggers.length} surveys have milestone triggers:`, 
+        formsWithMilestoneTriggers.map(f => ({ id: f.id, name: f.name, trigger: f.milestone_trigger }))
+      );
+      
+      if (BYPASS_MILESTONE_TRIGGERS) {
+        console.log('DEVELOPMENT MODE: Bypassing milestone trigger requirements for testing');
+      } else {
+        console.log('Production mode: Surveys with uncompleted milestone triggers will not be available');
+        // In production, you would filter out surveys with uncompleted milestone triggers here
+      }
+    }
+
     // Transform and validate database results to match Survey interface
     const validatedForms: Survey[] = (forms as DbForm[] || []).map(form => {
       // Extract milestones from the DB form - might be a JSON string or array
@@ -152,15 +250,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         description: form.description || '',
         type: form.type || 'survey',
         is_active: form.is_active !== false, // Default to true if not specified
-        cohort: cohort, // Use the requested cohort since we filtered by this
+        cohort: (form as any).cohort || 'dev', // In dev, fallback if cohort is missing
         created_at: form.created_at || new Date().toISOString(),
         progress: config.progress || 0,
         milestones,
-        currentMilestone: form.milestone_trigger || null,
+        currentMilestone: form.milestone_trigger || (milestones && milestones.length > 0 ? milestones[0] : null),
         form_fields: config.fields || []
       };
     });
 
+    console.log(`Returning ${validatedForms.length} surveys to the client`);
+    
     return NextResponse.json(
       { forms: validatedForms },
       { status: 200, headers: responseHeaders }

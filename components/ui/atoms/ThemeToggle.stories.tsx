@@ -26,7 +26,7 @@ import { ThemeToggle } from './ThemeToggle';
  * - Place in a consistent location across pages
  */
 const meta: Meta<typeof ThemeToggle> = {
-  title: 'Atoms/ThemeToggle',
+  title: 'UI/ThemeToggle',
   component: ThemeToggle,
   tags: ['autodocs'],
   parameters: {

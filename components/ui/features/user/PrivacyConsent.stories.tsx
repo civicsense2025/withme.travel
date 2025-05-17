@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { PrivacyConsent } from './PrivacyConsent';
 
 const meta: Meta<typeof PrivacyConsent> = {
-  title: 'Research/PrivacyConsent',
+  title: 'UI/Features/user/PrivacyConsent',
   component: PrivacyConsent,
   parameters: {
     layout: 'centered',

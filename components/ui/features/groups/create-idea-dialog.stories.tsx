@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { CreateIdeaDialog } from './create-idea-dialog';
 
 const meta: Meta<typeof CreateIdeaDialog> = {
-  title: 'Product/Features/CreateIdeaDialog',
+  title: 'UI/Features/groups/create-idea-dialog',
   component: CreateIdeaDialog,
   parameters: { layout: 'centered' },
 };

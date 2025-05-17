@@ -2,18 +2,18 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { FAQTag } from './FAQTag';
 
 const meta = {
-  title: 'FAQ/Atoms/FAQTag',
+  title: 'UI/FAQTag',
   component: FAQTag,
   parameters: {
     layout: 'centered',
   },
   tags: ['autodocs'],
   argTypes: {
-    isSelected: {
-      control: 'boolean',
-      description: 'Whether the tag is selected/active',
+    variant: {
+      control: 'select',
+      options: ['default', 'primary', 'secondary'],
+      description: 'Visual style variant for the tag',
     },
-    onClick: { action: 'clicked' },
   },
 } satisfies Meta<typeof FAQTag>;
 
@@ -22,37 +22,37 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    tag: 'General',
-    isSelected: false,
+    children: 'General',
+    variant: 'default',
   },
 };
 
 export const Selected: Story = {
   args: {
-    tag: 'Payments',
-    isSelected: true,
+    children: 'Payments',
+    variant: 'primary',
   },
 };
 
 export const LongTag: Story = {
   args: {
-    tag: 'Collaborative Planning',
-    isSelected: false,
+    children: 'Collaborative Planning',
+    variant: 'default',
   },
 };
 
 export const TagGroup: Story = {
   args: {
-    tag: 'Example',
-    isSelected: false,
+    children: 'Example',
+    variant: 'default',
   },
   render: (args) => (
     <div className="flex flex-wrap gap-2">
-      <FAQTag tag="All" isSelected={true} />
-      <FAQTag tag="Account" />
-      <FAQTag tag="Planning" />
-      <FAQTag tag="Payments" />
-      <FAQTag tag="Privacy" />
+      <FAQTag variant="primary">All</FAQTag>
+      <FAQTag>Account</FAQTag>
+      <FAQTag>Planning</FAQTag>
+      <FAQTag>Payments</FAQTag>
+      <FAQTag>Privacy</FAQTag>
     </div>
   ),
 }; 

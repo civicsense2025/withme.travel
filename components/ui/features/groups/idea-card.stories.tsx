@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { IdeaCard } from './idea-card';
 
 const meta: Meta<typeof IdeaCard> = {
-  title: 'Product/Features/IdeaCard',
+  title: 'UI/Features/groups/idea-card',
   component: IdeaCard,
   parameters: { layout: 'centered' },
 };

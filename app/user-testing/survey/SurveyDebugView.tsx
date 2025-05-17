@@ -11,7 +11,6 @@ import { Form } from '@/types/research';
 
 interface SurveyDebugViewProps {
   survey: Form | null;
-  token: string | null;
   isSubmitted: boolean;
   error: string | null;
 }
@@ -19,7 +18,7 @@ interface SurveyDebugViewProps {
 /**
  * Debug view component for surveys that only shows in development mode
  */
-export function SurveyDebugView({ survey, token, isSubmitted, error }: SurveyDebugViewProps) {
+export function SurveyDebugView({ survey, isSubmitted, error }: SurveyDebugViewProps) {
   // Only show in non-production environments
   if (process.env.NODE_ENV === 'production') {
     return null;
@@ -36,11 +35,6 @@ export function SurveyDebugView({ survey, token, isSubmitted, error }: SurveyDeb
   return (
     <div className="fixed bottom-0 right-0 bg-gray-900 text-white p-4 rounded-tl-lg opacity-75 hover:opacity-100 transition-opacity max-w-[500px] max-h-[300px] overflow-auto text-xs font-mono">
       <h3 className="font-bold mb-2">Survey Debug View</h3>
-      
-      <div className="mb-2">
-        <div className="font-semibold">Token:</div>
-        <div className="truncate">{token || 'No token'}</div>
-      </div>
       
       <div className="mb-2">
         <div className="font-semibold">Status:</div>

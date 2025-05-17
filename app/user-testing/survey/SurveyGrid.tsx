@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import clientGuestUtils from '@/utils/guest';
+import { performCompleteLogout } from '../page-client';
 
 export interface Survey {
   id: string;
@@ -36,29 +36,41 @@ export function SurveyGrid({ surveys = [], className = '' }: SurveyGridProps) {
   // Validate surveys input to prevent errors
   const validSurveys = Array.isArray(surveys) ? surveys : [];
 
+  // Add logout function
+  const handleLogout = () => {
+    console.log('[SurveyGrid] Logging out user');
+    performCompleteLogout();
+    
+    // Redirect to signup page
+    router.push('/user-testing');
+  };
+
   // Sort surveys based on selected option
-  const sortedSurveys = [...validSurveys].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        console.log('[SurveyGrid] Sorting by name');
-        return a.name.localeCompare(b.name);
-      case 'progress':
-        console.log('[SurveyGrid] Sorting by progress');
-        return b.progress - a.progress;
-      case 'popularity':
-      default:
-        // For popularity, we could implement a more complex sorting logic 
-        // based on how many users have taken the survey
-        console.log('[SurveyGrid] Sorting by popularity (default/no-op)');
-        return 0; // Default no sorting for now
-    }
-  });
+  const sortedSurveys = useMemo(() => {
+    console.log(`[SurveyGrid] Sorting by ${sortBy}`);
+    return [...validSurveys].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          console.log('[SurveyGrid] Sorting by name');
+          return a.name.localeCompare(b.name);
+        case 'progress':
+          console.log('[SurveyGrid] Sorting by progress');
+          return b.progress - a.progress;
+        case 'popularity':
+        default:
+          // For popularity, we could implement a more complex sorting logic 
+          // based on how many users have taken the survey
+          console.log('[SurveyGrid] Sorting by popularity (default/no-op)');
+          return 0; // Default no sorting for now
+      }
+    });
+  }, [surveys, sortBy]);
 
   // Filter surveys based on search query
   const filteredSurveys = sortedSurveys.filter(survey => {
     const match = survey.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (survey.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (survey.milestones ? survey.milestones.some(m => m.toLowerCase().includes(searchQuery.toLowerCase())) : false);
+      (survey.milestones ? survey.milestones.some(m => m && m.toLowerCase().includes(searchQuery.toLowerCase())) : false);
     if (searchQuery && match) {
       console.log(`[SurveyGrid] Survey matched search: ${survey.name}`);
     }
@@ -66,27 +78,8 @@ export function SurveyGrid({ surveys = [], className = '' }: SurveyGridProps) {
   });
 
   const handleStartSurvey = (surveyId: string) => {
-    // Get token from localStorage or client utils
-    const authToken = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    const guestToken = clientGuestUtils.getToken();
-    const token = authToken || guestToken;
-    
-    if (!token) {
-      console.error('No authentication token available. Please sign up or log in.');
-      return;
-    }
-    
-    console.log(`[SurveyGrid] Navigating to survey ${surveyId} with token ${token}`);
-    
-    // Try window.location for a hard redirect instead of Next.js router
-    const url = `/user-testing/survey/${surveyId}?token=${encodeURIComponent(token)}`;
-    console.log(`[SurveyGrid] Redirecting to: ${url}`);
-    
-    // Use window.location for a hard redirect
-    window.location.href = url;
-    
-    // Comment out the Next.js router call
-    // router.push(`/user-testing/survey/${surveyId}?token=${encodeURIComponent(token)}`);
+    // Route directly to the survey page, no tokens
+    router.push(`/user-testing/survey/${surveyId}`);
   };
 
   return (
@@ -103,20 +96,25 @@ export function SurveyGrid({ surveys = [], className = '' }: SurveyGridProps) {
             className="w-full"
           />
         </div>
-        <div className="w-full md:w-[180px]">
-          <Select value={sortBy} onValueChange={(value) => {
-            setSortBy(value as any);
-            console.log('[SurveyGrid] Sort by changed:', value);
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="popularity">Most Popular</SelectItem>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
-              <SelectItem value="progress">Your Progress</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-2">
+          <div className="w-full md:w-[180px]">
+            <Select value={sortBy} onValueChange={(value) => {
+              setSortBy(value as any);
+              console.log('[SurveyGrid] Sort by changed:', value);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="popularity">Most Popular</SelectItem>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="progress">Your Progress</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="outline" onClick={handleLogout}>
+            Logout
+          </Button>
         </div>
       </div>
 

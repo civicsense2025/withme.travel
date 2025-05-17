@@ -3,7 +3,7 @@ import { TodoItem } from './TodoItem';
 import { TodoItem as TodoItemType } from '../types';
 
 const meta: Meta<typeof TodoItem> = {
-  title: 'Features/Todo/Molecules/TodoItem',
+  title: 'UI/Features/todo/TodoItem',
   component: TodoItem,
   parameters: {
     layout: 'centered',

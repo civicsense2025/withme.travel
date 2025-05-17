@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { TripPresenceIndicator } from './trip-presence-indicator';
 
 const meta: Meta<typeof TripPresenceIndicator> = {
-  title: 'Product/Features/TripPresenceIndicator',
+  title: 'UI/Features/trips/trip-presence-indicator',
   component: TripPresenceIndicator,
   parameters: { layout: 'centered' },
 };

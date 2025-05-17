@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { UserResearchHero } from './UserResearchHero';
 
 const meta: Meta<typeof UserResearchHero> = {
-  title: 'Research/UserResearchHero',
+  title: 'UI/Features/user/UserResearchHero',
   component: UserResearchHero,
   parameters: {
     layout: 'fullscreen',

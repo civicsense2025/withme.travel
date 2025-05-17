@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkwithme_travel=self.webpackChunkwithme_travel||[]).push([[1591],{"./node_modules/ws/browser.js":module=>{module.exports=function(){throw new Error("ws does not work in the browser. Browser clients must use the native WebSocket object")}}}]);

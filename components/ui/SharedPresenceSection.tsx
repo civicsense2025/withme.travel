@@ -267,7 +267,7 @@ export function SharedPresenceSection({ className }: SharedPresenceSectionProps)
         {/* Active Now */}
         <div className="mb-4">
           <h3 className="text-sm font-medium mb-2 text-muted-foreground">Active Now</h3>
-          <div className="flex -space-x-2">
+          <div className="flex -space-x-2 min-h-[3.5rem] items-center">
             <AnimatePresence>
               {users
                 .filter((user) => user.status !== 'offline')
@@ -318,7 +318,6 @@ export function SharedPresenceSection({ className }: SharedPresenceSectionProps)
                   </motion.div>
                 ))}
             </AnimatePresence>
-
             <motion.button
               className="h-9 w-9 rounded-full bg-muted/50 border border-border flex items-center justify-center text-muted-foreground hover:text-primary"
               whileHover={{ scale: 1.05 }}
@@ -334,38 +333,54 @@ export function SharedPresenceSection({ className }: SharedPresenceSectionProps)
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-medium text-muted-foreground">Recent Activity</h3>
           </div>
-          <div className="space-y-2">
-            <AnimatePresence initial={false}>
-              {activities.slice(0, 3).map((activity, index) => (
-                <motion.div
-                  key={`${activity}-${index}`}
-                  className="p-2 rounded-md bg-muted/30 text-sm flex items-start gap-2"
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginBottom: 8 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {activity.includes('added') ? (
-                    <div className="h-6 w-6 rounded-full bg-travel-blue/20 flex items-center justify-center">
-                      <Plus className="h-3 w-3 text-travel-blue" />
-                    </div>
-                  ) : activity.includes('liked') ? (
-                    <div className="h-6 w-6 rounded-full bg-travel-pink/20 flex items-center justify-center">
-                      <Heart className="h-3 w-3 text-travel-pink" />
-                    </div>
-                  ) : activity.includes('commented') ? (
-                    <div className="h-6 w-6 rounded-full bg-travel-purple/20 flex items-center justify-center">
-                      <MessageSquare className="h-3 w-3 text-travel-purple" />
-                    </div>
-                  ) : (
-                    <div className="h-6 w-6 rounded-full bg-travel-mint/20 flex items-center justify-center">
-                      <Edit className="h-3 w-3 text-travel-mint" />
-                    </div>
-                  )}
-                  <span>{activity}</span>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+          {/* Always render 3 rows, pad with nulls, min-h to reserve space */}
+          <div className="space-y-2 min-h-[6.5rem]">
+            {(() => {
+              const maxRows = 3;
+              const padded = [
+                ...activities.slice(0, maxRows),
+                ...Array(Math.max(0, maxRows - activities.length)).fill(null),
+              ];
+              return padded.map((activity, index) =>
+                activity ? (
+                  <motion.div
+                    key={`${activity}-${index}`}
+                    className="p-2 rounded-md bg-muted/30 text-sm flex items-start gap-2"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {activity.includes('added') ? (
+                      <div className="h-6 w-6 rounded-full bg-travel-blue/20 flex items-center justify-center">
+                        <Plus className="h-3 w-3 text-travel-blue" />
+                      </div>
+                    ) : activity.includes('liked') ? (
+                      <div className="h-6 w-6 rounded-full bg-travel-pink/20 flex items-center justify-center">
+                        <Heart className="h-3 w-3 text-travel-pink" />
+                      </div>
+                    ) : activity.includes('commented') ? (
+                      <div className="h-6 w-6 rounded-full bg-travel-purple/20 flex items-center justify-center">
+                        <MessageSquare className="h-3 w-3 text-travel-purple" />
+                      </div>
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-travel-mint/20 flex items-center justify-center">
+                        <Edit className="h-3 w-3 text-travel-mint" />
+                      </div>
+                    )}
+                    <span className="truncate max-w-[220px]">{activity}</span>
+                  </motion.div>
+                ) : (
+                  <div
+                    key={`placeholder-${index}`}
+                    className="p-2 rounded-md bg-transparent text-sm flex items-start gap-2 opacity-0 pointer-events-none select-none"
+                  >
+                    <div className="h-6 w-6 rounded-full" />
+                    <span className="truncate max-w-[220px]">&nbsp;</span>
+                  </div>
+                )
+              );
+            })()}
           </div>
         </div>
       </CardContent>

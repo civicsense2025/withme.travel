@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 // ============================================================================
 
 const meta: Meta<typeof PresenceIndicator> = {
-  title: 'Features/Collaboration/Molecules/PresenceIndicator',
+  title: 'UI/Features/collaboration/PresenceIndicator',
   component: PresenceIndicator,
   parameters: {
     layout: 'centered',

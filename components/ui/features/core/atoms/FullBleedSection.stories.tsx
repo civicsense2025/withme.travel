@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { FullBleedSection } from './FullBleedSection';
 
 const meta: Meta<typeof FullBleedSection> = {
-  title: 'UI/Core/Atoms/FullBleedSection',
+  title: 'UI/Features/core/FullBleedSection',
   component: FullBleedSection,
   tags: ['autodocs'],
   parameters: {

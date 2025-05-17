@@ -12,7 +12,7 @@ import { ProfileCard } from './ProfileCard';
 // ============================================================================
 
 const meta: Meta<typeof ProfileCard> = {
-  title: 'Features/User/Molecules/ProfileCard',
+  title: 'UI/Features/user/ProfileCard',
   component: ProfileCard,
   parameters: {
     layout: 'centered',

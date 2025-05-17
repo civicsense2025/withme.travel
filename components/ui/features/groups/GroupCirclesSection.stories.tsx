@@ -19,7 +19,7 @@ import { ThemeMode } from '@/utils/constants/design-system';
 // ============================================================================
 
 const meta: Meta<typeof GroupCirclesSection> = {
-  title: 'Features/Groups/GroupCirclesSection',
+  title: 'UI/Features/groups/GroupCirclesSection',
   component: GroupCirclesSection,
   parameters: {
     layout: 'fullscreen',

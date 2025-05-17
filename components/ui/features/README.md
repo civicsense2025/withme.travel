@@ -1,81 +1,153 @@
-# Feature-based Component Organization
+# Features Directory
 
-This directory contains UI components organized by feature and following atomic design principles.
+This directory contains all feature-specific components organized by domain and atomic design principles.
 
-## Structure
+## Directory Structure
 
-Components are organized into two levels:
-
-1. **Feature-based folders**: Each major feature area has its own directory
-2. **Atomic design categories**: Within each feature, components are organized by complexity
-
-```components/ui/features/
-├── auth/                  # Authentication components
-│   ├── atoms/             # Small, single-purpose components 
-│   ├── molecules/         # Composite components made from atoms
-│   ├── organisms/         # Complex components combining molecules
-│   └── stories/           # Storybook stories for auth components
-├── trips/                 # Trip-related components
-│   ├── atoms/
-│   ├── molecules/
-│   ├── organisms/
-│   └── stories/
-├── destinations/          # Destination-related components
-└── ...other features
+```
+features/
+├── trips/              # Trip planning & management
+├── groups/             # Group & collaboration
+├── destinations/       # Destination content & discovery
+├── itinerary/          # Itinerary planning & display
+├── places/             # Place search & management
+├── user/               # User profile & settings
+├── auth/               # Authentication & authorization
+├── collaboration/      # Real-time collaboration tools
+├── debug/              # Debugging & development tools
+├── analytics/          # Analytics & reporting
+├── admin/              # Admin interfaces & tools
+└── README.md           # This file
 ```
 
-## Atomic Design Categories
+## Feature-Based Atomic Design
 
-- **Atoms**: Smallest building blocks (buttons, form inputs, badges)
-- **Molecules**: Groups of atoms that function together (cards, form groups)
-- **Organisms**: Complex UI components combining multiple molecules (forms, modals, sections)
+Each feature directory follows the same atomic design structure:
 
-## Feature Areas
+```
+feature-name/
+├── atoms/           # Smallest, indivisible components
+├── molecules/       # Composite components made up of atoms
+├── organisms/       # More complex components that form a section
+├── templates/       # Page layouts without specific content
+├── pages/           # Complete page compositions
+├── index.ts         # Main export file for all components
+└── README.md        # Feature-specific documentation
+```
 
-- **auth**: Authentication forms, modals, and flows
-- **trips**: Trip cards, lists, details, and management interfaces
-- **destinations**: Destination cards, detail views, and search interfaces
-- **groups**: Group management and membership components
-- **itinerary**: Itinerary planning and viewing components
-- **user**: User profiles, settings, and account management
-- **core**: Base UI components that span features
+## Feature Domains
 
-## Best Practices
+### Trips
 
-1. **Imports**: Always import components from their feature module
-   ```tsx
-   // ✅ Good
-   import { AuthForm } from '@/components/ui/features/auth';
-   
-   // ❌ Avoid
-   import { AuthForm } from '@/components/ui/features/auth/molecules/AuthForm';
-   ```
+Components related to trip planning, management, and visualization.
 
-2. **Component Placement**: Place components in the appropriate atomic category based on their complexity
+- Trip cards, trip tabs, trip forms
+- Trip detail views and list views
+- Trip creation and editing flows
 
-3. **Index Exports**: Each feature should export its components through an index.ts file
+### Groups
 
-4. **Storybook Stories**: Create stories for all reusable components in the feature's stories folder
+Components for group management and sharing.
 
-5. **Dependencies**: Feature components should import from more general components, not the other way around
-   - Core components should not import from feature components
-   - Feature components can import from core components
+- Group cards and lists
+- Member management
+- Invitations and permissions
 
-## Adding New Components
+### Destinations
 
-When adding a new component:
+Components for displaying and interacting with destination content.
 
-1. Identify which feature it belongs to
-2. Determine its atomic design level (atom, molecule, organism)
-3. Create the component in the appropriate directory
-4. Export it from the feature's index.ts file
-5. Create Storybook stories for the component
+- Destination cards and details
+- City profiles and discovery
+- Destination search and filtering
 
-## Migrating Existing Components
+### Itinerary
 
-When migrating components from the old structure:
+Components for itinerary planning and management.
 
-1. Move the component to the appropriate feature/atomic directory
-2. Update imports in affected files
-3. Create Storybook stories if they don't exist
-4. Add exports to the appropriate index.ts files 
+- Itinerary day sections
+- Activity cards and timelines
+- Scheduling interfaces
+
+### Places
+
+Components for place search, management, and display.
+
+- Place search interfaces
+- Map integration components
+- Place detail views
+
+### User
+
+Components related to user profiles and settings.
+
+- Profile views and editors
+- User settings interfaces
+- Preferences and accessibility
+
+### Auth
+
+Components for authentication and authorization.
+
+- Login and signup forms
+- Password reset flows
+- Multi-factor authentication
+
+### Collaboration
+
+Components for real-time collaboration.
+
+- Presence indicators
+- Collaborative editors
+- Real-time status indicators
+
+### Debug
+
+Components for debugging and development.
+
+- Debug panels and consoles
+- Performance monitoring
+- Feature flag controls
+
+### Analytics
+
+Components for analytics and reporting.
+
+- Charts and graphs
+- Data visualization
+- Export and reporting tools
+
+### Admin
+
+Components for administrative interfaces.
+
+- Admin dashboards
+- User management
+- Content moderation tools
+
+## Usage Guidelines
+
+- Components should be placed in the feature domain that best represents their primary purpose
+- Cross-cutting concerns should be placed in the appropriate feature domain most relevant to their use
+- Components used across multiple features may be candidates for the core UI
+- Each feature directory has its own README with detailed guidelines
+
+## Storybook Integration
+
+Use the `createFeatureStoryTitle` utility from storybook.config.ts:
+
+```tsx
+import { createFeatureStoryTitle } from '../storybook.config';
+
+const meta = {
+  title: createFeatureStoryTitle('TRIPS', 'MOLECULES', 'ComponentName'),
+  component: ComponentName,
+  // ...
+};
+```
+
+## Migration Process
+
+1. For new components, create them directly in the appropriate feature directory
+2. For existing components, gradually move them to the correct feature & atomic level
+3. Update imports and maintain backward compatibility during migration 

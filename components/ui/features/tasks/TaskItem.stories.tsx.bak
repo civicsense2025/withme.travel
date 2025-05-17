@@ -1,0 +1,151 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { TaskItem } from './molecules/TaskItem';
+import type { TaskItem as TaskItemType } from './types';
+
+const meta: Meta<typeof TaskItem> = {
+  title: 'UI/Features/tasks/TaskItem',
+  component: TaskItem,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    onStatusChange: { action: 'status changed' },
+    onUpvote: { action: 'upvoted' },
+    onDownvote: { action: 'downvoted' },
+    onDelete: { action: 'deleted' },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof TaskItem>;
+
+// Mock data for stories
+const baseTask: TaskItemType = {
+  id: '1',
+  title: 'Research new destinations for summer trip',
+  status: 'suggested',
+  votes: {
+    up: 3,
+    down: 1,
+    upVoters: [
+      { id: 'user1', name: 'John Doe', avatar_url: null, username: 'johndoe' },
+      { id: 'user2', name: 'Jane Smith', avatar_url: null, username: 'janesmith' },
+      { id: 'user3', name: 'Bob Johnson', avatar_url: null, username: 'bjohnson' },
+    ],
+    downVoters: [
+      { id: 'user4', name: 'Alice Brown', avatar_url: null, username: 'abrown' },
+    ],
+    userVote: null,
+  },
+};
+
+export const Default: Story = {
+  args: {
+    task: baseTask,
+  },
+};
+
+export const WithDescription: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      description: 'Look into popular destinations in Europe for a two-week trip in July. Focus on cities with good public transportation and cultural activities.',
+    },
+  },
+};
+
+export const WithDueDate: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+    },
+  },
+};
+
+export const WithPriority: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      priority: 'high',
+    },
+  },
+};
+
+export const WithAssignee: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      assignee: {
+        id: 'user1',
+        name: 'John Doe',
+        avatar_url: 'https://i.pravatar.cc/150?u=user1',
+        username: 'johndoe',
+      },
+    },
+  },
+};
+
+export const WithTags: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      tags: ['travel', 'europe', 'summer'],
+    },
+  },
+};
+
+export const Confirmed: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      status: 'confirmed',
+      priority: 'medium',
+    },
+  },
+};
+
+export const Rejected: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      status: 'rejected',
+    },
+  },
+};
+
+export const WithUserVote: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      votes: {
+        ...baseTask.votes,
+        userVote: 'up',
+      },
+    },
+  },
+};
+
+export const CompleteExample: Story = {
+  args: {
+    task: {
+      ...baseTask,
+      description: 'Complete comprehensive research on at least 5 potential destinations for our summer trip, including cost estimates, accommodations, and key attractions.',
+      status: 'active',
+      priority: 'high',
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+      assignee: {
+        id: 'user1',
+        name: 'John Doe',
+        avatar_url: 'https://i.pravatar.cc/150?u=user1',
+        username: 'johndoe',
+      },
+      tags: ['research', 'planning', 'urgent', 'summer-trip'],
+      votes: {
+        ...baseTask.votes,
+        userVote: 'up',
+      },
+    },
+  },
+}; 

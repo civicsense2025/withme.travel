@@ -201,7 +201,7 @@ const sampleTabs: FeatureTab[] = [
  * - Include both visual and textual elements in each tab
  */
 const meta: Meta<typeof FeatureTabsProduct> = {
-  title: 'Features/Trips/FeatureTabsProduct',
+  title: 'UI/Features/trips/FeatureTabsProduct',
   component: FeatureTabsProduct,
   tags: ['autodocs'],
   parameters: {

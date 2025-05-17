@@ -5,7 +5,7 @@ import { AuthForm } from '../molecules/AuthForm';
  * The AuthForm component provides authentication functionality with multiple modes.
  */
 const meta: Meta<typeof AuthForm> = {
-  title: 'Features/Auth/Molecules/AuthForm',
+  title: 'UI/Features/auth/AuthForm',
   component: AuthForm,
   parameters: {
     layout: 'centered',

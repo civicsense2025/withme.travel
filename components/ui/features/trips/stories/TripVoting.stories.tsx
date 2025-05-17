@@ -26,7 +26,7 @@ import { TripVoting } from '../organisms/TripVoting';
  * - Set expiration dates to create urgency
  */
 const meta: Meta<typeof TripVoting> = {
-  title: 'Features/Trips/TripVoting',
+  title: 'UI/Features/trips/TripVoting',
   component: TripVoting,
   parameters: {
     layout: 'centered',

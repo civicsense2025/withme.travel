@@ -3,18 +3,18 @@
 import React from 'react';
 import { MapPin, Calendar, Clock, Users, MoreHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { VoteButton, VoteType } from '../ui/vote-button';
+import { VoteButton, VoteType } from '@/components/ui/molecules/VoteButton';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { Card, CardContent } from '@/components/ui/molecules/Card';
+import { Badge } from '@/components/ui/atoms/Badge';
+import { Button } from '@/components/ui/atoms/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+} from '@/components/ui/molecules/DropdownMenu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/atoms/Avatar';
 
 export interface GroupPlanActivityProps {
   id: string;

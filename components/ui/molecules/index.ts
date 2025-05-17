@@ -5,7 +5,11 @@
  * Molecules are reusable building blocks with specific functionality.
  */
 
-// Re-export molecules
-export const molecules = {}; // Empty export to make this a valid module
-
 // None right now as we've moved relevant components to features 
+
+export * from './Card';
+export * from './Dialog';
+export * from './DropdownMenu';
+export * from './VoteButton'; 
+
+// The molecules object is already exported from ./molecules, so we don't need another export 

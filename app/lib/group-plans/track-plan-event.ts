@@ -109,4 +109,6 @@ export const PLAN_EVENT_TYPES = {
   TOUR_START: 'tour_start',
   TOUR_COMPLETE: 'tour_complete',
   TOUR_SKIP: 'tour_skip',
+  GROUP_PLAN_CREATION_FAILED: 'group_plan_creation_failed',
+  GROUP_PLAN_CREATED: 'group_plan_created',
 };

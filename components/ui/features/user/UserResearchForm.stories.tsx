@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { UserResearchForm } from './UserResearchForm';
 
 const meta: Meta<typeof UserResearchForm> = {
-  title: 'Research/UserResearchForm',
+  title: 'UI/Features/user/UserResearchForm',
   component: UserResearchForm,
   parameters: {
     layout: 'centered',

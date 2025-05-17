@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { ActivityGeneratorWidget } from './ActivityGeneratorWidget';
 
 const meta: Meta<typeof ActivityGeneratorWidget> = {
-  title: 'Product/Features/ActivityGeneratorWidget',
+  title: 'UI/Features/trips/ActivityGeneratorWidget',
   component: ActivityGeneratorWidget,
   parameters: { layout: 'centered' },
 };

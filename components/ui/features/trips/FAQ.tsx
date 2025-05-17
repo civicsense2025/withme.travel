@@ -5,7 +5,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { FaqEntry, FaqLayout } from '@/types/faq';
-import { FAQList, FAQFilter } from '../molecules';
+import { FAQList } from '@/components/faq/molecules/FAQList';
+import { FAQFilter } from '@/components/faq/molecules/FAQFilter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface FAQProps {

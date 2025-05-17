@@ -12,7 +12,7 @@ import { GroupCard } from './GroupCard';
 // ============================================================================
 
 const meta: Meta<typeof GroupCard> = {
-  title: 'Features/Groups/Molecules/GroupCard',
+  title: 'UI/Features/groups/GroupCard',
   component: GroupCard,
   parameters: {
     layout: 'centered',

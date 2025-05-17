@@ -8,7 +8,7 @@ import { action } from '@storybook/addon-actions';
  * when to show surveys based on user actions or milestones.
  */
 const meta: Meta<typeof MilestoneTriggerEditor> = {
-  title: 'Research/Molecules/MilestoneTriggerEditor',
+  title: 'UI/MilestoneTriggerEditor',
   component: MilestoneTriggerEditor,
   tags: ['autodocs'],
   parameters: {

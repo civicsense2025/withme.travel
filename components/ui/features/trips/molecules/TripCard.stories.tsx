@@ -12,7 +12,7 @@ import { TripCard } from './TripCard';
 // ============================================================================
 
 const meta: Meta<typeof TripCard> = {
-  title: 'Features/Trips/Molecules/TripCard',
+  title: 'UI/Features/trips/TripCard',
   component: TripCard,
   parameters: {
     layout: 'centered',

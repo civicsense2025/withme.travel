@@ -50,7 +50,7 @@ const mockFaqs: FaqEntry[] = [
 ];
 
 const meta = {
-  title: 'FAQ/Organisms/FAQ',
+  title: 'UI/Features/trips/FAQ',
   component: FAQ,
   parameters: {
     layout: 'padded',

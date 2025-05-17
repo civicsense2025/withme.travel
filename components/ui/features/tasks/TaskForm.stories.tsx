@@ -3,7 +3,7 @@ import { TaskForm } from './TaskForm';
 import type { TaskItem, ProfileBasic } from './types';
 
 const meta: Meta<typeof TaskForm> = {
-  title: 'Features/Tasks/TaskForm',
+  title: 'UI/Features/tasks/TaskForm',
   component: TaskForm,
   parameters: {
     layout: 'padded',

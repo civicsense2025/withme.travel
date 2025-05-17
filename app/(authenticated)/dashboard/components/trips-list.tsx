@@ -1,5 +1,5 @@
 'use client';
-import { TripCard } from '@/components';
+import { TripCard } from '@/components/ui/features/trips/molecules/TripCard';
 
 import type { Database } from '@/types/database.types';
 type TripRole = Database['public']['Enums']['trip_role'];

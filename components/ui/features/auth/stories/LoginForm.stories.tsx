@@ -6,7 +6,7 @@ import { AuthModalContext } from '@/app/context/auth-modal-context';
  * The LoginForm component provides email and social authentication for users.
  */
 const meta: Meta<typeof LoginForm> = {
-  title: 'Features/Auth/Molecules/LoginForm',
+  title: 'UI/Features/auth/LoginForm',
   component: LoginForm,
   parameters: {
     layout: 'centered',

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { IdeasGrid } from './ideas-grid';
 
 const meta: Meta<typeof IdeasGrid> = {
-  title: 'Product/Features/IdeasGrid',
+  title: 'UI/Features/groups/ideas-grid',
   component: IdeasGrid,
   parameters: { layout: 'centered' },
 };

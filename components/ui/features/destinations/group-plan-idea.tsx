@@ -11,18 +11,18 @@ import {
   Tag,
   User
 } from 'lucide-react';
-import { VoteButton, VoteType } from '../ui/vote-button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { Card, CardContent, CardFooter } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { VoteButton, VoteType } from '@/components/ui/molecules/VoteButton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/atoms/Avatar';
+import { Card, CardContent, CardFooter } from '@/components/ui/molecules/Card';
+import { Badge } from '@/components/ui/atoms/Badge';
+import { Button } from '@/components/ui/atoms/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+} from '@/components/ui/molecules/DropdownMenu';
 import { cn } from '@/lib/utils';
 
 export type GroupPlanIdeaType = 

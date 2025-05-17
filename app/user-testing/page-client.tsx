@@ -30,6 +30,37 @@ const BENEFITS = [
 const PRIVACY_SUMMARY =
   'We respect your privacy. Your info is only used for the user testing program. Opt out anytime.';
 
+// Helper function to completely logout a user from the testing system
+export const performCompleteLogout = () => {
+  console.log('[UserTesting] Performing complete logout');
+  
+  // Clear localStorage tokens
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('userTestingEmail');
+  
+  // Clear guest token
+  clientGuestUtils.clearToken();
+  
+  // Clear cookies that might contain tokens
+  document.cookie = 'guest_token=; Max-Age=0; path=/; SameSite=Lax';
+  document.cookie = 'auth_token=; Max-Age=0; path=/; SameSite=Lax';
+  document.cookie = 'sb-auth-token=; Max-Age=0; path=/; SameSite=Lax';
+  document.cookie = 'supabase-auth-token=; Max-Age=0; path=/; SameSite=Lax';
+  
+  // Force update session storage
+  sessionStorage.clear();
+  
+  // Make sure token is invalidated on server
+  fetch('/api/auth/logout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  }).catch(err => {
+    console.error('[UserTesting] Error during server logout:', err);
+  });
+  
+  console.log('[UserTesting] Logout complete, all tokens cleared');
+};
+
 /**
  * Client component for the user testing signup page
  * Automatically redirects to survey page if user is already authenticated

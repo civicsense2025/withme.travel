@@ -156,7 +156,7 @@ const withApiData = (Story: StoryFn, context: StoryContext<ExtendedProps>) => {
 };
 
 const meta: ExtendedMeta = {
-  title: 'Destinations/PopularDestinationsGrid',
+  title: 'UI/Features/trips/popular-destinations',
   component: PopularDestinationsGrid,
   tags: ['autodocs'],
   parameters: {

@@ -7,7 +7,7 @@ import { useState } from 'react';
  * with validation and error handling.
  */
 const meta: Meta<typeof QuestionRenderer> = {
-  title: 'Research/Molecules/QuestionRenderer',
+  title: 'UI/Features/groups/QuestionRenderer',
   component: QuestionRenderer,
   tags: ['autodocs'],
   parameters: {

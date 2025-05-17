@@ -1,49 +1,52 @@
 /**
- * FAQ List component (molecule)
- * Displays a list of FAQ items with consistent styling.
+ * FAQ List Component
+ * 
+ * Renders a list of FAQs with expandable items using Radix UI Accordion.
  */
+
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { FaqEntry } from '@/types/faq';
+import * as Accordion from '@radix-ui/react-accordion';
 import { FAQItem } from './FAQItem';
 
+/**
+ * Props for the FAQList component
+ */
 export interface FAQListProps {
-  /** Array of FAQ entries to display */
-  items: FaqEntry[];
-  /** Whether to allow HTML in answers */
-  allowHtml?: boolean;
-  /** Class for customizing the container */
+  /** Array of FAQ items */
+  items: {
+    /** Question text */
+    question: string;
+    /** Answer text or ReactNode */
+    answer: string | React.ReactNode;
+    /** Optional unique identifier */
+    id?: string;
+    /** Whether to allow HTML in answers */
+    allowHtml?: boolean;
+  }[];
+  /** Optional CSS class */
   className?: string;
-  /** Class for customizing each FAQ item */
-  itemClassName?: string;
 }
 
-export function FAQList({ 
-  items, 
-  allowHtml = true,
-  className,
-  itemClassName
-}: FAQListProps) {
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No FAQs match your filters.
-      </div>
-    );
-  }
-
+/**
+ * FAQList displays an accordion of frequently asked questions
+ */
+export function FAQList({ items, className = '' }: FAQListProps) {
   return (
-    <div className={cn("space-y-1", className)}>
+    <Accordion.Root
+      className={`w-full ${className}`}
+      type="single"
+      defaultValue="item-0"
+      collapsible
+    >
       {items.map((item, index) => (
         <FAQItem
-          key={item.id || index}
-          id={item.id}
+          key={item.id || `faq-${index}`}
           question={item.question}
           answer={item.answer}
-          allowHtml={allowHtml}
-          className={itemClassName}
+          value={item.id || `item-${index}`}
+          allowHtml={item.allowHtml}
         />
       ))}
-    </div>
+    </Accordion.Root>
   );
 } 

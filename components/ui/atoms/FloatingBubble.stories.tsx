@@ -27,7 +27,7 @@ import { FloatingBubble } from './FloatingBubble';
  * - Place behind content with z-index
  */
 const meta: Meta<typeof FloatingBubble> = {
-  title: 'Atoms/FloatingBubble',
+  title: 'UI/FloatingBubble',
   component: FloatingBubble,
   tags: ['autodocs'],
   parameters: {

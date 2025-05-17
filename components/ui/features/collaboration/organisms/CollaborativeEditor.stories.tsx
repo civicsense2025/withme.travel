@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 // ============================================================================
 
 const meta: Meta<typeof CollaborativeEditor> = {
-  title: 'Features/Collaboration/Organisms/CollaborativeEditor',
+  title: 'UI/Features/collaboration/CollaborativeEditor',
   component: CollaborativeEditor,
   parameters: {
     layout: 'centered',

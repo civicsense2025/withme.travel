@@ -6,7 +6,7 @@ import { SurveyProgressBar } from './SurveyProgressBar';
  * showing completed steps and remaining steps.
  */
 const meta: Meta<typeof SurveyProgressBar> = {
-  title: 'Research/Atoms/SurveyProgressBar',
+  title: 'UI/SurveyProgressBar',
   component: SurveyProgressBar,
   tags: ['autodocs'],
   argTypes: {

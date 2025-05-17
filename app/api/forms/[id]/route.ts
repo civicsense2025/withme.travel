@@ -24,6 +24,19 @@ export async function GET(
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
   });
 
+  // Check for dev-mode header or query param
+  const url = new URL(request.url);
+  const isDevModeRequested = url.searchParams.get('dev-mode') === 'false' ? false : true;
+  const headers = request.headers;
+  const devModeHeader = headers.get('x-dev-mode');
+  const useDevMode = process.env.NODE_ENV !== 'production' && 
+    (devModeHeader !== 'false' && !isDevModeRequested === false);
+
+  console.log(`[API] Forms/[id] request mode: ${useDevMode ? 'DEVELOPMENT' : 'PRODUCTION'}`);
+  
+  // Development flag to bypass milestone trigger requirements (in dev mode only)
+  const BYPASS_MILESTONE_TRIGGERS = useDevMode;
+
   try {
     console.log('[API] /api/forms/[id] - Incoming request:', request.url);
     const { id } = await context.params;
@@ -37,33 +50,48 @@ export async function GET(
     }
 
     // Get token from search params
-    const url = new URL(request.url);
     const token = url.searchParams.get('token');
     console.log('[API] /api/forms/[id] - Token:', token);
     
-    if (!token) {
-      console.warn('[API] /api/forms/[id] - Missing token');
+    if (!token && !useDevMode) {
+      console.warn('[API] /api/forms/[id] - Missing token and not in dev mode');
       return NextResponse.json(
         { error: 'Token parameter is required' },
         { status: 400, headers: responseHeaders }
       );
     }
 
-    // Validate the token (optional, can be skipped for development)
+    // Validate the token (skip in dev mode)
     const supabase = await createRouteHandlerClient();
+    let userCohort = 'user-research-default'; // Default cohort
 
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('user_testing_sessions')
-      .select('id, status')
-      .eq('token', token)
-      .single();
+    if (!useDevMode && token) {
+      console.log('[API] Validating token in production mode');
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('user_testing_sessions')
+        .select('id, status, cohort')
+        .eq('token', token)
+        .single();
+        
+      if (sessionError || !sessionData) {
+        console.error('[API] /api/forms/[id] - Invalid session token:', token, sessionError);
+        // In production mode, fail if token is invalid
+        if (!useDevMode) {
+          return NextResponse.json(
+            { error: 'Invalid session token' },
+            { status: 401, headers: responseHeaders }
+          );
+        }
+      }
       
-    // For simplicity, let's use a default cohort since the column might not exist
-    const userCohort = 'user-research-default';
-
-    if (sessionError || !sessionData) {
-      console.error('[API] /api/forms/[id] - Invalid session token:', token, sessionError);
-      // For development, we'll continue even with an invalid token
+      // If session exists, assume it's valid, but use the default cohort
+      // since the column might not exist in all environments
+      if (sessionData) {
+        // Use default cohort set earlier
+        console.log('[API] Session exists, using default cohort:', userCohort);
+      }
+    } else {
+      console.log('[API] Skipping token validation in dev mode');
     }
 
     console.log('[API] /api/forms/[id] - Looking for form with ID:', id);
@@ -74,47 +102,77 @@ export async function GET(
       .eq('id', id)
       .single();
 
-    if (error) {
+    if (error || !form) {
       console.error('[API] /api/forms/[id] - Error fetching form:', error);
       
-      // For testing, provide a mock form
-      console.log('[API] /api/forms/[id] - Using fallback: Returning mock form for ID:', id);
-      
-      const mockForm = {
-        id,
-        name: 'Example Survey',
-        description: 'This is a mock survey for testing purposes',
-        type: 'survey',
-        is_active: true,
-        cohort: userCohort,
-        created_at: new Date().toISOString(),
-        milestones: ['INTRO', 'QUESTIONS', 'FEEDBACK'],
-        milestone_trigger: 'INTRO',
-        config: {
-          progress: 0,
-          fields: [
-            {
-              id: 'field-1',
-              type: 'text',
-              label: 'What do you think about withme.travel?',
-              required: true
-            },
-            {
-              id: 'field-2',
-              type: 'text',
-              label: 'How can we improve?',
-              required: true
-            }
-          ]
-        }
-      };
-      
-      console.log('[API] /api/forms/[id] - Mock form created:', mockForm);
-      
-      return NextResponse.json(
-        { form: mockForm },
-        { status: 200, headers: responseHeaders }
-      );
+      // Only provide mock data in dev mode
+      if (useDevMode) {
+        console.log('[API] /api/forms/[id] - DEV MODE: Using fallback mock form for ID:', id);
+        
+        const mockForm = {
+          id,
+          name: 'Example Survey',
+          description: 'This is a mock survey for testing purposes',
+          type: 'survey',
+          is_active: true,
+          cohort: userCohort,
+          created_at: new Date().toISOString(),
+          // Ensure milestones is an array
+          milestones: ['INTRO', 'QUESTIONS', 'FEEDBACK'],
+          milestone_trigger: null, // No trigger for mock form
+          config: {
+            progress: 0,
+            fields: [
+              {
+                id: 'field-1',
+                milestone: 'INTRO', // Match milestone to the first in array above
+                type: 'text',
+                label: 'What do you think about withme.travel?',
+                required: true,
+                description: 'Please provide your honest feedback'
+              },
+              {
+                id: 'field-2',
+                milestone: 'QUESTIONS', // Match milestone to the second in array above
+                type: 'text',
+                label: 'What features would you like to see?',
+                required: true,
+                description: 'Tell us what would make your experience better'
+              },
+              {
+                id: 'field-3',
+                milestone: 'FEEDBACK', // Match milestone to the third in array above
+                type: 'radio',
+                label: 'How would you rate your experience?',
+                required: true,
+                description: 'On a scale of 1-5',
+                config: {
+                  options: [
+                    '1 - Poor',
+                    '2 - Fair',
+                    '3 - Good',
+                    '4 - Very Good',
+                    '5 - Excellent'
+                  ]
+                }
+              }
+            ]
+          }
+        };
+        
+        console.log('[API] /api/forms/[id] - Mock form created:', mockForm);
+        
+        return NextResponse.json(
+          { form: mockForm },
+          { status: 200, headers: responseHeaders }
+        );
+      } else {
+        // In production mode, return 404 if form not found
+        return NextResponse.json(
+          { error: 'Survey not found' },
+          { status: 404, headers: responseHeaders }
+        );
+      }
     }
 
     // Process the form data to match expected format
@@ -139,13 +197,59 @@ export async function GET(
       }
     }
     
+    // Check if the milestone trigger is required
+    if (form.milestone_trigger && !BYPASS_MILESTONE_TRIGGERS) {
+      console.log(`[API] /api/forms/[id] - Survey requires milestone trigger: ${form.milestone_trigger}`);
+      
+      // Here you would normally check if the user has completed this milestone
+      // For now, we'll bypass this check in development mode
+      
+      // In production, you would add logic like:
+      // const userHasCompletedMilestone = await checkUserMilestone(userId, form.milestone_trigger);
+      // if (!userHasCompletedMilestone) {
+      //   return NextResponse.json(
+      //     { error: 'This survey is not available yet. Complete more activities to unlock it.' },
+      //     { status: 403, headers: responseHeaders }
+      //   );
+      // }
+    } else if (form.milestone_trigger) {
+      console.log(`[API] /api/forms/[id] - Bypassing milestone trigger: ${form.milestone_trigger} (development mode)`);
+    }
+    
     // Build processed form data
     const processedForm = {
       ...surveyData,
-      milestones,
-      fields: formConfig.fields || [],
+      // Ensure milestones is an array
+      milestones: Array.isArray(milestones) && milestones.length > 0 
+                  ? milestones 
+                  : ['default'], // Always provide a default milestone if none found
+      // Ensure fields array exists with milestone property
+      fields: Array.isArray(formConfig.fields) 
+              ? formConfig.fields.map((field: { milestone?: string; [key: string]: any }) => ({
+                  ...field,
+                  // If field doesn't have milestone, set to first milestone or 'default'
+                  milestone: field.milestone || 
+                             (Array.isArray(milestones) && milestones.length > 0 
+                               ? milestones[0] 
+                               : 'default')
+                }))
+              : [],
       progress: formConfig.progress || 0
     };
+
+    // IMPORTANT: Log the final format to ensure it matches what the components expect
+    console.log('[API] /api/forms/[id] - Response format summary:', {
+      status: 200,
+      responseKeys: Object.keys(processedForm),
+      hasMilestones: !!processedForm.milestones,
+      hasFields: Array.isArray(processedForm.fields),
+      fieldCount: Array.isArray(processedForm.fields) ? processedForm.fields.length : 0,
+      firstField: processedForm.fields?.[0] ? {
+        id: processedForm.fields[0]?.id,
+        type: processedForm.fields[0]?.type,
+        milestone: processedForm.fields[0]?.milestone,
+      } : null
+    });
 
     console.log('[API] /api/forms/[id] - Returning processed form:', processedForm);
     return NextResponse.json(

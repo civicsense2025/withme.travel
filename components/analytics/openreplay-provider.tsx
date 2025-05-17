@@ -4,7 +4,13 @@ import { useEffect } from 'react';
 import { startOpenReplay, identifyUser } from '@/app/lib/openreplay';
 import { useAuth } from '@/components/auth-provider';
 
-export function OpenReplayProvider({ children }: { children: React.ReactNode }) {
+export function OpenReplayProvider({ 
+  children, 
+  className 
+}: { 
+  children: React.ReactNode;
+  className?: string; // Allow className to be passed safely
+}) {
   const { user } = useAuth();
 
   // Initialize OpenReplay once when component mounts (client-side only)
@@ -29,5 +35,6 @@ export function OpenReplayProvider({ children }: { children: React.ReactNode }) 
     });
   }, [user]);
 
-  return <>{children}</>;
+  // Use a div instead of Fragment to allow className props
+  return <div className={className}>{children}</div>;
 }

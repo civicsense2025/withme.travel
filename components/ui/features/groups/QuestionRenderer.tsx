@@ -27,7 +27,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { FormField as FormFieldType } from '@/types';
-import { SurveyField } from './SurveyContainer';
+import { SurveyField } from '@/components/ui/atoms/SurveyContainer';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Switch } from '@/components/ui/switch';

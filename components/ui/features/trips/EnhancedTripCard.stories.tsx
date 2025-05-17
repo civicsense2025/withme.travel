@@ -6,7 +6,7 @@ const COMPONENT_CATEGORIES = {
 };
 
 const meta: Meta<typeof EnhancedTripCard> = {
-  title: 'Trip Features/EnhancedTripCard',
+  title: 'UI/Features/trips/EnhancedTripCard',
   component: EnhancedTripCard,
   parameters: {
     layout: 'centered',

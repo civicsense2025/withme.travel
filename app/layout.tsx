@@ -20,8 +20,6 @@ import { Container } from '@/components/container';
 import { SearchProvider } from '@/contexts/search-context';
 import { CommandMenu } from '@/components/search/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
-import { ResearchProvider } from '@/components/research/ResearchProvider';
-import { ResearchModal } from '@/components/research/ResearchModal';
 import { ResearchDebugger } from '@/components/research/ResearchDebugger';
 import React from 'react';
 
@@ -115,12 +113,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <ClientSideProviders>
                   <ClientSideLayoutRenderer>
                     <Navbar />
-                    <ResearchProvider>
-                      <ResearchModal />
-                      {children}
-                      <CommandMenu />
-                      {process.env.NODE_ENV === 'development' && <ResearchDebugger initialOpen={false} />}
-                    </ResearchProvider>
+                    {children}
+                    <CommandMenu />
+                    {process.env.NODE_ENV === 'development' && <ResearchDebugger initialOpen={false} />}
                   </ClientSideLayoutRenderer>
                 </ClientSideProviders>
               </LayoutModeProvider>

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { Confetti } from './Confetti';
 
 const meta: Meta<typeof Confetti> = {
-  title: 'Features/UserTesting/Atoms/Confetti',
+  title: 'UI/Features/user-testing/Confetti',
   component: Confetti,
   parameters: {
     layout: 'fullscreen',

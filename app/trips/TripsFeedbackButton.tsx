@@ -13,7 +13,11 @@ interface TripsFeedbackButtonProps extends ButtonProps {
 
 export function TripsFeedbackButton({ children, className, ...props }: TripsFeedbackButtonProps) {
   return (
-    <FeedbackFormWrapper formTemplate={TRIPS_FEEDBACK_FORM} className={className} {...props}>
+    <FeedbackFormWrapper
+      formTemplate={TRIPS_FEEDBACK_FORM}
+      buttonClassName={className}
+      {...props}
+    >
       {children || (
         <div className="flex items-center">
           <MessageSquare className="h-4 w-4 mr-2" />

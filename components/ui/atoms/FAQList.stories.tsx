@@ -38,7 +38,7 @@ const mockFaqs: FaqEntry[] = [
 ];
 
 const meta = {
-  title: 'FAQ/Molecules/FAQList',
+  title: 'UI/FAQList',
   component: FAQList,
   parameters: {
     layout: 'padded',

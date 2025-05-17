@@ -10,6 +10,7 @@ import { SearchProvider } from '@/contexts/search-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OnbordaProvider } from 'onborda';
 import { ResearchProvider } from '@/app/context/research-context';
+import { ResearchModal } from '@/components/research/ResearchModal';
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ export function Providers({
             <SearchProvider>
               <ResearchProvider>
                 {children}
+                <ResearchModal />
                 <Toaster />
               </ResearchProvider>
             </SearchProvider>

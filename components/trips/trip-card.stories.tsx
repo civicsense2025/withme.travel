@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { TripCard } from '@/components';
+import { TripCard } from '@/components/ui/features/trips/molecules/TripCard';
 
 const meta: Meta<typeof TripCard> = {
   title: 'Trip Features/Trip Card',

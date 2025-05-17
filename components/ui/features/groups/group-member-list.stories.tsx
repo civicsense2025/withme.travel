@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { GroupMemberList } from './group-member-list';
 
 const meta: Meta<typeof GroupMemberList> = {
-  title: 'Components/Groups/GroupMemberList',
+  title: 'UI/Features/groups/group-member-list',
   component: GroupMemberList,
   parameters: {
     layout: 'centered',

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useVirtual } from 'react-virtual';
+import { useVirtualizer } from 'react-virtual';
 import { Search, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -164,7 +164,7 @@ export function VirtualizedDataTable<T>({
   const parentRef = useRef<HTMLDivElement | null>(null);
   const estimateSize = useCallback(() => rowHeight, [rowHeight]);
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     size: currentPageData.length,
     parentRef,
     estimateSize,

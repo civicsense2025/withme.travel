@@ -6,7 +6,7 @@ import { ItemStatus } from '@/utils/constants/status';
  * ItineraryItemCard displays an itinerary item with title, details, location, and interactive elements
  */
 const meta: Meta<typeof ItineraryItemCard> = {
-  title: 'Features/Itineraries/Molecules/ItineraryItemCard',
+  title: 'UI/Features/itineraries/ItineraryItemCard',
   component: ItineraryItemCard,
   parameters: {
     layout: 'centered',

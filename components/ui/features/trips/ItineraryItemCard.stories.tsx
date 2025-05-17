@@ -3,7 +3,7 @@ import { ItineraryItemCard } from './ItineraryItemCard';
 import type { DisplayItineraryItem } from '@/types/itinerary';
 
 const meta: Meta<typeof ItineraryItemCard> = {
-  title: 'Itinerary/ItineraryItemCard',
+  title: 'UI/Features/trips/ItineraryItemCard',
   component: ItineraryItemCard,
   parameters: {
     layout: 'centered',

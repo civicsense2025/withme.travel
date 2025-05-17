@@ -2,17 +2,17 @@
 
 import React, { useState } from 'react';
 import { Search, MoreHorizontal, UserPlus, Mail, Star, Shield, UserMinus } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/atoms/Avatar';
+import { Badge } from '@/components/ui/atoms/Badge';
+import { Button } from '@/components/ui/atoms/Button';
+import { Input } from '@/components/ui/atoms/Input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+} from '@/components/ui/molecules/DropdownMenu';
 import { 
   Dialog, 
   DialogContent, 
@@ -21,7 +21,7 @@ import {
   DialogHeader, 
   DialogTitle,
   DialogTrigger,
-} from '../ui/dialog';
+} from '@/components/ui/molecules/Dialog';
 import { cn } from '@/lib/utils';
 
 export type GroupMemberRole = 'admin' | 'member';

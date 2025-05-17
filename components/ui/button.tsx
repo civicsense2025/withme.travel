@@ -87,11 +87,43 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : 'button';
+    // Create a variable for the combined className
+    const buttonClassName = cn(buttonVariants({ variant, size, width }), className);
+
+    // If using asChild, we need to handle the case where the child might be a Fragment
+    if (asChild) {
+      // Prepare content that will be slotted
+      const content = loading ? (
+        <div className="flex items-center">
+          <Spinner size="sm" className="mr-2" />
+          {loadingText || 'Loading...'}
+        </div>
+      ) : (
+        <>
+          {leftIcon && <span className="mr-2 inline-flex items-center">{leftIcon}</span>}
+          {children}
+          {rightIcon && <span className="ml-2 inline-flex items-center">{rightIcon}</span>}
+        </>
+      );
+
+      // Only pass props that the Slot component can accept
+      return (
+        <Slot 
+          className={buttonClassName}
+          ref={ref}
+          // Omit props that can cause issues with Fragment
+          {...(props as React.ComponentPropsWithoutRef<typeof Slot>)}
+        >
+          {content}
+        </Slot>
+      );
+    }
+
+    // Regular button rendering (not using asChild)
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, width }), className)}
-        disabled={asChild ? undefined : disabled || loading}
+      <button
+        className={buttonClassName}
+        disabled={disabled || loading}
         aria-disabled={disabled || loading}
         aria-description={ariaDescription}
         ref={ref}
@@ -109,7 +141,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             {rightIcon && <span className="ml-2 inline-flex items-center">{rightIcon}</span>}
           </>
         )}
-      </Comp>
+      </button>
     );
   }
 );

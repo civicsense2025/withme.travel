@@ -7,7 +7,7 @@ import { Pencil, Check, X, Users } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { type TripRole } from '@/utils/constants/status';
-import { type MemberWithProfile } from '../ui/features/trips/organisms/TripHeader';
+import { type MemberWithProfile } from '@/components/ui/features/trips/organisms/TripHeader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React from 'react';
 

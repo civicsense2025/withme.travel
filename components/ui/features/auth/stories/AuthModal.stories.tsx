@@ -9,7 +9,7 @@ import { AuthModalProvider } from '@/app/context/auth-modal-context';
  * This story wraps the component with the provider for demonstration purposes.
  */
 const meta: Meta<typeof AuthModal> = {
-  title: 'Features/Auth/Organisms/AuthModal',
+  title: 'UI/Features/auth/AuthModal',
   component: AuthModal,
   tags: ['autodocs'],
   parameters: {

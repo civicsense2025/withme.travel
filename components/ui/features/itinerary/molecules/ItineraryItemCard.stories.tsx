@@ -12,7 +12,7 @@ import { ItineraryItemCard } from './ItineraryItemCard';
 // ============================================================================
 
 const meta: Meta<typeof ItineraryItemCard> = {
-  title: 'Features/Itinerary/Molecules/ItineraryItemCard',
+  title: 'UI/Features/itinerary/ItineraryItemCard',
   component: ItineraryItemCard,
   parameters: {
     layout: 'centered',

@@ -3,7 +3,7 @@ import { Todo } from './Todo';
 import { TodoItem } from '../types';
 
 const meta: Meta<typeof Todo> = {
-  title: 'Features/Todo/Organisms/Todo',
+  title: 'UI/Features/todo/Todo',
   component: Todo,
   parameters: {
     layout: 'centered',

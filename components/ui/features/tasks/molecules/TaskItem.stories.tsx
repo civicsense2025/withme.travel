@@ -10,7 +10,7 @@ import { TaskItem } from './TaskItem';
 import { TaskItem as TaskItemType } from '../types';
 
 const meta: Meta<typeof TaskItem> = {
-  title: 'UI/Features/Tasks/Molecules/TaskItem',
+  title: 'UI/Features/tasks/TaskItem',
   component: TaskItem,
   tags: ['autodocs'],
   argTypes: {

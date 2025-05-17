@@ -40,7 +40,7 @@ const customTripFaqs: FaqEntry[] = [
 ];
 
 const meta = {
-  title: 'FAQ/Variants/TripPlanningFAQ',
+  title: 'UI/Features/trips/TripPlanningFAQ',
   component: TripPlanningFAQ,
   parameters: {
     layout: 'padded',

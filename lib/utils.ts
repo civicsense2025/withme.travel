@@ -4,7 +4,8 @@ import { TIME_FORMATS, THEME } from '@/utils/constants/ui';
 import { format as formatFns, parseISO } from 'date-fns';
 
 /**
- * Combine multiple class names with clsx and twMerge
+ * Utility for conditionally joining CSS class names
+ * Uses clsx for conditional class names and tailwind-merge for merging Tailwind classes
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

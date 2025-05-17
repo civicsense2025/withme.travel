@@ -3,7 +3,7 @@ import { TaskList } from './TaskList';
 import type { TaskItem } from './types';
 
 const meta: Meta<typeof TaskList> = {
-  title: 'Features/Tasks/TaskList',
+  title: 'UI/Features/tasks/TaskList',
   component: TaskList,
   parameters: {
     layout: 'padded',
