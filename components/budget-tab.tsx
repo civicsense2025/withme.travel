@@ -86,33 +86,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useResearchTracking } from '@/hooks/use-research-tracking';
-
-// Define ManualDbExpense type locally (if not imported)
-interface ManualDbExpense {
-  id: string;
-  trip_id: string;
-  title: string;
-  amount: number;
-  currency: string;
-  category: string;
-  paid_by: string; // User ID
-  date: string; // ISO string
-  created_at: string;
-  updated_at?: string | null;
-  source?: string | null;
-}
-
-// Define a unified expense type for rendering
-interface UnifiedExpense {
-  id: string | number;
-  title: string | null;
-  amount: number | null;
-  currency: string | null;
-  category: string | null;
-  date: string | null;
-  paidBy?: string | null;
-  source: 'manual' | 'planned'; // Added source
-}
+import { ManualDbExpense, UnifiedExpense, useTripBudget } from '@/hooks/use-trip-budget';
 
 interface BudgetTabProps {
   tripId: string;
@@ -121,6 +95,8 @@ interface BudgetTabProps {
   manualExpenses: ManualDbExpense[];
   plannedExpenses: UnifiedExpense[];
   initialMembers: TripMemberFromSSR[];
+  budget?: number | null;
+  handleBudgetUpdated?: () => void;
 }
 
 export function BudgetTab({
@@ -130,6 +106,8 @@ export function BudgetTab({
   manualExpenses,
   plannedExpenses,
   initialMembers,
+  budget = null,
+  handleBudgetUpdated,
 }: BudgetTabProps) {
   const { toast } = useToast();
   const { trackEvent } = useResearchTracking();
@@ -141,7 +119,8 @@ export function BudgetTab({
     date: new Date().toISOString().split('T')[0],
   });
   const [isAddingInline, setIsAddingInline] = useState(false);
-  const [budgetTotal, setBudgetTotal] = useState(3000);
+  const [budgetTotal, setBudgetTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const members = initialMembers;
   const memberCount = members.length > 0 ? members.length : 1;
@@ -296,47 +275,41 @@ export function BudgetTab({
     () => manualExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0),
     [manualExpenses]
   );
+  
+  // Calculate percentage spent
+  const percentSpent = useMemo(() => {
+    if (!budget || budget <= 0) return 0;
+    return Math.min(100, Math.round((totalManualSpent / budget) * 100));
+  }, [totalManualSpent, budget]);
 
   const toggleItemExpansion = (itemId: string | number) => {
     setExpandedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
   const handleSubmitInlineExpense = async () => {
-    // This would be replaced with an actual API call
-    console.log('Submitting new expense:', newExpense);
-
     try {
-      // Mock API call (replace with actual API call)
-      // const response = await fetch(`/api/trips/${tripId}/expenses`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(newExpense),
-      // });
-      // const result = await response.json();
-      // if (!response.ok) throw new Error(result.error || 'Failed to add expense');
-      
-      // Mock success (replace with actual API logic)
-      const mockResult = { 
-        id: `expense-${Date.now()}`,
-        ...newExpense
+      setIsLoading(true);
+
+      const payload = {
+        name: newExpense.title,
+        amount: parseFloat(newExpense.amount),
+        category: newExpense.category,
+        date: newExpense.date,
+        paid_by: newExpense.paid_by,
+        currency: 'USD', // Default currency
       };
 
-      // Track successful expense addition
-      try {
-        await trackEvent('budget_item_added', {
-          tripId,
-          expenseId: mockResult.id,
-          title: newExpense.title,
-          amount: parseFloat(newExpense.amount) || 0,
-          category: newExpense.category,
-          paid_by: newExpense.paid_by,
-          date: newExpense.date,
-          source: 'budget-tab',
-          component: 'BudgetTab',
-          isDemo: true // Since this is currently a mock implementation
-        });
-      } catch (trackingError) {
-        console.error('Failed to track budget_item_added event:', trackingError);
+      // Make the actual API call
+      const response = await fetch(`/api/trips/${tripId}/expenses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to add expense');
       }
 
       toast({
@@ -353,6 +326,14 @@ export function BudgetTab({
         date: new Date().toISOString().split('T')[0],
       });
       setIsAddingInline(false);
+      
+      // Notify parent to refresh data
+      if (handleBudgetUpdated) {
+        handleBudgetUpdated();
+      } else {
+        // Fallback to page reload if no handler provided
+        window.location.reload();
+      }
     } catch (error) {
       console.error('Failed to add expense:', error);
       toast({
@@ -360,23 +341,18 @@ export function BudgetTab({
         description: error instanceof Error ? error.message : 'Failed to add expense',
         variant: 'destructive'
       });
-
-      // Optional: Track failed expense addition
-      try {
-        await trackEvent('budget_item_addition_failed', {
-          tripId,
-          title: newExpense.title,
-          amount: parseFloat(newExpense.amount) || 0,
-          category: newExpense.category,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          source: 'budget-tab',
-          component: 'BudgetTab'
-        });
-      } catch (trackingError) {
-        console.error('Failed to track budget_item_addition_failed event:', trackingError);
-      }
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Add useEffect to set the budget from props when available
+  useEffect(() => {
+    // Get the budget value from the parent component's trip data
+    if (budget && typeof budget === 'number' && budget > 0) {
+      setBudgetTotal(budget);
+    }
+  }, [budget]);
 
   // Define loading (can be made dynamic later if needed)
   const loading = false;
@@ -601,10 +577,19 @@ export function BudgetTab({
                         size="sm"
                         onClick={handleSubmitInlineExpense}
                         className="gap-1.5 h-9"
-                        disabled={!newExpense.title || !newExpense.amount || !newExpense.paid_by}
+                        disabled={!newExpense.title || !newExpense.amount || !newExpense.paid_by || isLoading}
                       >
-                        <Save className="h-4 w-4" />
-                        Save Expense
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" />
+                            Save Expense
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>

@@ -238,28 +238,7 @@ export default function GroupsClientPage({
       setIsInviting(false);
     }
   };
-
-  // Render header with title, description, and create button
-  const renderHeader = () => {
-    return (
-      <PageHeader
-        title="Groups"
-        description="Create and manage travel groups with friends, family, or coworkers"
-        centered={true}
-        actions={
-          <Link href="/groups/create">
-            <Button
-              size="default"
-              className="flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Group
-            </Button>
-          </Link>
-        }
-      />
-    );
-  };
+  // Removed header component as requested
 
   const renderEmpty = () => {
     return (
@@ -279,8 +258,7 @@ export default function GroupsClientPage({
   };
 
   return (
-    <div className="container max-w-5xl py-8 md:py-16">
-      {renderHeader()}
+    <div className="container max-w-4xl py-8 md:py-16 mx-auto">
 
       <Tabs defaultValue="my-groups" className="mb-12">
         <TabsList className="border-b border-zinc-200 dark:border-zinc-800 mb-8 px-0">

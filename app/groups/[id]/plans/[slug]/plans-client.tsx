@@ -7,15 +7,52 @@ import { ArrowLeft } from 'lucide-react';
 import { useLayoutMode } from '@/app/context/layout-mode-context';
 import { Plan } from '../../types/plan';
 import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Heading } from '@/components/ui/Heading';
+import { Text } from '@/components/ui/Text';
+import { VoteAndDecideSection } from '@/components/ui/VoteAndDecideSection';
+import PlanIdeasClient from './plan-ideas-client';
+import VotingClient from './voting-client';
 
-const PlansClient: React.FC = () => {
+interface PlansClientProps {
+  groupId: string;
+  planId: string;
+  planSlug: string;
+  planName: string;
+  groupName: string;
+  initialIdeas: any[];
+  isAdmin: boolean;
+  isCreator: boolean;
+  userId: string;
+  isAuthenticated: boolean;
+  isGuest?: boolean;
+  guestToken?: string | null;
+}
+
+const PlansClient: React.FC<PlansClientProps> = ({
+  groupId,
+  planId,
+  planSlug,
+  planName,
+  groupName,
+  initialIdeas,
+  isAdmin,
+  isCreator,
+  userId,
+  isAuthenticated,
+  isGuest,
+  guestToken,
+}) => {
   const router = useRouter();
   const params = useParams();
-  const groupId = params?.id as string;
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creator, setCreator] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState('ideas');
 
   // Get layout mode context to handle fullscreen
   const { setFullscreen } = useLayoutMode();
@@ -138,54 +175,64 @@ const PlansClient: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="p-4 border-b">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Link
-              href={`/groups/${groupId}/plans`}
-              className="flex items-center text-sm text-muted-foreground hover:text-foreground transition"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Plans
-            </Link>
-            <h1 className="text-2xl font-bold">{plan.name}</h1>
-          </div>
+    <div className="container max-w-7xl py-4 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <Link href={`/groups/${groupId}/plans`} passHref>
+            <Button variant="ghost" size="sm" className="mb-2">
+              <ChevronLeft className="h-4 w-4 mr-1" /> Back to plans
+            </Button>
+          </Link>
+          <Heading level={1} size="large" className="mb-1">
+            {plan.name}
+          </Heading>
+          <Text className="text-sm text-muted-foreground">
+            Plan together in {plan.group_id}
+          </Text>
         </div>
-      </header>
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 p-4 md:p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* This would normally contain the actual plan content */}
-          <div className="bg-card p-6 rounded-lg border">
-            <h2 className="text-xl font-semibold mb-4">Plan Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-lg font-medium mb-2">Basic Information</h3>
-                <p className="text-muted-foreground">
-                  <span className="font-medium">Created:</span>{' '}
-                  {new Date(plan.created_at || '').toLocaleDateString()}
-                </p>
-                <p className="text-muted-foreground">
-                  <span className="font-medium">Status:</span>{' '}
-                  {plan.is_active ? 'Active' : 'Archived'}
-                </p>
-                <p className="text-muted-foreground">
-                  <span className="font-medium">Created By:</span> {creator?.name || 'Unknown'}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium mb-2">Plan Description</h3>
-                <p className="text-muted-foreground">
-                  {plan.description || 'No description available'}
-                </p>
-              </div>
-            </div>
+      <Separator />
+
+      <Tabs defaultValue="ideas" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
+          <TabsTrigger value="ideas">Ideas</TabsTrigger>
+          <TabsTrigger value="vote">Vote & Decide</TabsTrigger>
+          <TabsTrigger value="trip">Create Trip</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="ideas" className="mt-0">
+          <PlanIdeasClient
+            groupId={groupId}
+            planId={plan.id}
+            planSlug={plan.slug}
+            planName={plan.name}
+            groupName={plan.group_id}
+            initialIdeas={initialIdeas}
+            isAdmin={isAdmin}
+            isCreator={isCreator}
+            userId={userId}
+            isAuthenticated={isAuthenticated}
+            isGuest={isGuest}
+            guestToken={guestToken}
+          />
+        </TabsContent>
+
+        <TabsContent value="vote" className="mt-0">
+          <div className="bg-card shadow-sm rounded-lg border">
+            <VoteAndDecideSection />
           </div>
-        </div>
-      </main>
+        </TabsContent>
+
+        <TabsContent value="trip" className="mt-0">
+          <VotingClient 
+            groupId={groupId}
+            planSlug={plan.slug}
+            groupName={plan.group_id}
+            currentUserId={userId}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

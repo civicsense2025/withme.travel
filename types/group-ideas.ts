@@ -1,4 +1,4 @@
-import type { Database } from './database.types';
+import type { Database } from './.database.types';
 
 // Enum type aliases
 export type IdeaType = 'activity' | 'place' | 'note' | 'question' | 'other';

@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { useState } from 'react';
-import CompactBudgetSnapshot from '@/components/trips/compact-budget-snapshot';
-import ImageSelector from '@/app/components/ImageSelector';
+import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
+import { ImageSearchSelector } from '@/components/images/image-search-selector';
 import {
   Sheet,
   SheetContent,
@@ -89,7 +89,7 @@ export default function SimplifiedTripHeader({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const handleImageSelect = (selectedImageUrl: string) => {
+  const handleImageSelect = (selectedImageUrl: string, position?: number, metadata?: any) => {
     if (onImageSelect) {
       onImageSelect(selectedImageUrl);
     } else if (onEditClick) {
@@ -165,9 +165,11 @@ export default function SimplifiedTripHeader({
                   </SheetDescription>
                 </SheetHeader>
                 <div className="p-6 pt-2">
-                  <ImageSelector
-                    selectedImage={normalizedTrip.image_url || ''}
-                    onImageSelect={(selectedImage) => handleImageSelect(selectedImage.url ?? '')}
+                  <ImageSearchSelector
+                    isOpen={true}
+                    onClose={() => setIsSheetOpen(false)}
+                    onImageSelect={(imageUrl) => handleImageSelect(imageUrl)}
+                    initialSearchTerm={normalizedTrip.destination?.name || ''}
                   />
                 </div>
               </SheetContent>

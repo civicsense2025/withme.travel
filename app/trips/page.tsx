@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SharedPresenceSection } from '@/components/ui/SharedPresenceSection';
 import { ExpenseMarketingSection } from './components/ExpenseMarketingSection';
+import { getUserTrips, TripMember } from '@/lib/api';
 
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
@@ -24,29 +25,6 @@ export const metadata: Metadata = {
     follow: true,
   },
 };
-
-// Define Trip and TripMember interfaces to match what trips-client expects
-interface Trip {
-  id: string;
-  name: string;
-  start_date: string | null;
-  end_date: string | null;
-  created_at: string;
-  status: string | null;
-  destination_id: string | null;
-  destination_name: string | null;
-  cover_image_url: string | null;
-  created_by: string;
-  is_public: boolean | null;
-  privacy_setting: string | null;
-  description: string | null;
-}
-
-interface TripMember {
-  role: string;
-  joined_at: string | null;
-  trip: Trip;
-}
 
 export default async function TripsPage() {
   const supabase = await getServerSupabase();
@@ -75,39 +53,35 @@ export default async function TripsPage() {
   if (isAuthenticated || hasGuestTrips) {
     // For authenticated users, fetch their trips
     if (isAuthenticated) {
-      const { data: tripMembers } = await supabase
-        .from('trip_members')
-        .select(`
-          role,
-          joined_at,
-          trip:trips(*)
-        `)
-        .eq('user_id', session!.user.id)
-        .order('joined_at', { ascending: false });
+      try {
+        // Use our type-safe data fetching pattern
+        const tripMembers = await getUserTrips(session!.user.id);
 
-      // Properly cast the type by first converting to unknown, then to our expected type
-      const typedTripMembers = (tripMembers || []) as unknown as TripMember[];
-
-      return (
-        <div className="container mx-auto px-4 py-8">
-          <PageHeader 
-            title="My Trips" 
-            description="Manage and view all your travel plans" 
-            actions={
-              <Link href="/trips/create">
-                <Button size="sm" className="rounded-full px-4">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Trip
+        return (
+          <div className="container mx-auto px-4 py-8">
+            <PageHeader 
+              title="My Trips" 
+              description="Manage and view all your travel plans" 
+              actions={
+                <Button size="sm" className="rounded-full px-4" asChild>
+                  <Link href="/trips/create">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New Trip
+                  </Link>
                 </Button>
-              </Link>
-            }
-          />
-          <TripsClient 
-            initialTrips={typedTripMembers} 
-            userId={session?.user.id} 
-          />
-        </div>
-      );
+              }
+            />
+            <TripsClient 
+              initialTrips={tripMembers} 
+              userId={session?.user.id} 
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error('Error fetching trips:', error);
+        // Show the landing page if we fail to fetch trips
+        return renderLandingPage();
+      }
     } 
     
     // For guests with trips
@@ -116,7 +90,12 @@ export default async function TripsPage() {
     }
   }
   
-  // Show the hero section with 2-column layout for the landing page (non-authenticated users)
+  // For non-authenticated users, render the landing page
+  return renderLandingPage();
+}
+
+// Landing page component for non-authenticated users
+function renderLandingPage() {
   return (
     <>
       <HeroSectionWrapper 
@@ -128,12 +107,12 @@ export default async function TripsPage() {
       />
       <section className="py-16 px-4 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          {/* Left: Live presence demo */}
-          <div>
+          {/* Component First on Mobile, Second on Desktop */}
+          <div className="order-1 md:order-2">
             <SharedPresenceSection />
           </div>
-          {/* Right: Copy */}
-          <div className="flex flex-col justify-center h-full">
+          {/* Copy Second on Mobile, First on Desktop */}
+          <div className="order-2 md:order-1 flex flex-col justify-center h-full">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Plan together, in real time</h2>
             <p className="text-lg text-muted-foreground mb-6">
               See who's online, brainstorm ideas, and make decisions as a group. withme.travel brings everyone together—no more lost messages or missed updates.

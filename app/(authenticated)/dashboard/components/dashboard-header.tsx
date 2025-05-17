@@ -5,6 +5,7 @@ import { Settings, MapPin, Calendar, Globe, User as UserIcon } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 interface TravelStats {
   visitedCount: number;
@@ -48,36 +49,31 @@ export function DashboardHeader({ userName, avatarUrl, travelStats }: DashboardH
         Your personal travel organizer
       </p>
 
-      {/* Stats cards */}
-      <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-2xl">
-        <Card className="bg-travel-purple/10 border-none">
-          <CardContent className="flex flex-col items-center py-3 px-6">
-            <span className="text-2xl font-bold text-travel-purple">{travelStats.visitedCount}</span>
-            <span className="text-xs text-muted-foreground">Visited</span>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-travel-blue/10 border-none">
-          <CardContent className="flex flex-col items-center py-3 px-6">
-            <span className="text-2xl font-bold text-travel-blue">{travelStats.plannedCount}</span>
-            <span className="text-xs text-muted-foreground">Planned</span>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-travel-pink/10 border-none">
-          <CardContent className="flex flex-col items-center py-3 px-6">
-            <span className="text-2xl font-bold text-travel-pink">{travelStats.wishlistCount}</span>
-            <span className="text-xs text-muted-foreground">Wishlist</span>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-travel-mint/10 border-none">
-          <CardContent className="flex flex-col items-center py-3 px-6">
-            <span className="text-2xl font-bold text-travel-mint">{travelStats.countriesCount}</span>
-            <span className="text-xs text-muted-foreground">Countries</span>
-          </CardContent>
-        </Card>
+      {/* Stats row - compact, single line */}
+      <div className="flex items-center justify-center gap-6 md:gap-10 py-2">
+        <StatItem label="Visited" value={travelStats.visitedCount} color="purple" />
+        <Separator orientation="vertical" className="mx-2 h-8" />
+        <StatItem label="Planned" value={travelStats.plannedCount} color="blue" />
+        <Separator orientation="vertical" className="mx-2 h-8" />
+        <StatItem label="Wishlist" value={travelStats.wishlistCount} color="pink" />
+        <Separator orientation="vertical" className="mx-2 h-8" />
+        <StatItem label="Countries" value={travelStats.countriesCount} color="mint" />
       </div>
+    </div>
+  );
+}
+
+function StatItem({ label, value, color }: { label: string; value: number; color: 'purple' | 'blue' | 'pink' | 'mint' }) {
+  const colorMap = {
+    purple: 'text-travel-purple',
+    blue: 'text-travel-blue',
+    pink: 'text-travel-pink',
+    mint: 'text-travel-mint',
+  };
+  return (
+    <div className="flex flex-col items-center min-w-[60px]">
+      <span className={`font-semibold text-lg md:text-xl ${colorMap[color]}`}>{value}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }

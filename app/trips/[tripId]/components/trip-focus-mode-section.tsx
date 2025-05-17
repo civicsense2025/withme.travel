@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
-import { ClientFocusMode } from '@/components/trips/client-focus-mode';
+import { ClientFocusMode } from '@/components/trips';
 import { FocusSessionProvider } from '@/components/focus/focus-session-provider';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';

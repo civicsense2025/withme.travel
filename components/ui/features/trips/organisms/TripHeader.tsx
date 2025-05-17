@@ -22,14 +22,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
 // import { TripPrivacySetting } from "@/types/trip"; // Assuming type is defined here -> Define locally
-import { ShareTripButton } from '@/components/trips/ShareTripButton'; // Removed props type import
+import { ShareTripButton } from '@/components/ui/features/trips/molecules/ShareTripButton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
-import CompactBudgetSnapshot from '@/components/trips/compact-budget-snapshot';
+import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
+import { ImageSearchSelector } from '@/components/images/image-search-selector';
 
 // Define helper functions locally
 function getInitials(name?: string | null): string {
@@ -93,7 +94,7 @@ export interface TripHeaderProps {
   canEdit: boolean;
   onEdit: () => void;
   onMembers: () => void;
-  onChangeCover: () => void;
+  onChangeCover: (imageUrl?: string) => void;
   isSaving?: boolean;
   slug?: string | null;
   privacySetting?: TripPrivacySetting | null;
@@ -259,6 +260,7 @@ export function TripHeader({
   });
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
 
   // Extract attribution from URL if possible
   const extractAttribution = (url: string | null) => {
@@ -321,6 +323,12 @@ export function TripHeader({
     };
   }, [startDate, endDate]);
 
+  // Handle image selection
+  const handleImageSelect = (imageUrl: string, position: number, metadata?: any) => {
+    // Pass the selected image URL to the parent component
+    onChangeCover(imageUrl);
+  };
+
   return (
     <div className="relative bg-background z-10">
       <div
@@ -339,15 +347,37 @@ export function TripHeader({
         {/* Show Change Cover option on hover when canEdit is true - centered */}
         {canEdit && (
           <div
-            className="absolute inset-0 opacity-0 hover:opacity-100 flex items-center justify-center bg-black/30 transition-opacity duration-200 cursor-pointer"
-            onClick={onChangeCover}
+            className="absolute inset-0 opacity-0 hover:opacity-100 flex items-center justify-center bg-black/30 transition-opacity duration-200 cursor-pointer z-10"
+            onClick={() => onChangeCover()}
           >
-            <div className="bg-black/80 text-white py-2 px-4 rounded-md flex items-center">
+            <div className="bg-black/80 text-white py-2 px-4 rounded-md flex items-center gap-3">
               <Camera className="mr-2 h-4 w-4" />
               <span className="text-sm font-medium">Change Cover</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="ml-2 flex items-center gap-1"
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  setIsImageSelectorOpen(true);
+                }}
+                tabIndex={0}
+                aria-label="Upload or select a new cover photo"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Upload/Select Photo</span>
+              </Button>
             </div>
           </div>
         )}
+
+        {/* Image search selector dialog */}
+        <ImageSearchSelector
+          isOpen={isImageSelectorOpen}
+          onClose={() => setIsImageSelectorOpen(false)}
+          onImageSelect={handleImageSelect}
+          initialSearchTerm={destinationName || tripName || "travel"}
+        />
       </div>
 
       <div className="border-b">
@@ -356,6 +386,18 @@ export function TripHeader({
             <div>
               <h1 className="text-2xl font-bold tracking-tight mb-1 flex items-center gap-2">
                 {tripName}
+                {canEdit && (
+                  <Button
+                    asChild
+                    variant="link"
+                    size="sm"
+                    className="text-primary underline underline-offset-2 px-1 py-0 h-auto min-h-0"
+                  >
+                    <a href="#" onClick={onEdit} tabIndex={0} aria-label="Edit trip details">
+                      Edit Trip
+                    </a>
+                  </Button>
+                )}
                 {canEdit && (
                   <Button
                     onClick={onEdit}

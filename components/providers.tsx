@@ -9,34 +9,34 @@ import { Toaster } from '@/components/ui/toaster';
 import { SearchProvider } from '@/contexts/search-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OnbordaProvider } from 'onborda';
-import { ResearchProvider } from '@/app/context/research-context';
-import { ResearchModal } from '@/components/research/ResearchModal';
 
 const queryClient = new QueryClient();
 
 export function Providers({
-  initialSession,
   children,
+  initialSession = null
 }: {
-  initialSession: Session | null;
   children: ReactNode;
+  initialSession?: Session | null;
 }) {
   return (
-    <OnbordaProvider>
-      <ThemeProvider>
-        <AuthProvider initialSession={initialSession}>
-          <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <OnbordaProvider>
+          <AuthProvider initialSession={initialSession}>
             <SearchProvider>
-              <ResearchProvider>
-                {children}
-                <ResearchModal />
-                <Toaster />
-              </ResearchProvider>
+              {children}
+              <Toaster />
             </SearchProvider>
-          </QueryClientProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </OnbordaProvider>
       </ThemeProvider>
-    </OnbordaProvider>
+    </QueryClientProvider>
   );
 }
 

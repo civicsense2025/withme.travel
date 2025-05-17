@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { COLORS, TYPOGRAPHY } from '@/utils/constants/design-system';
+import { COLORS, TYPOGRAPHY } from '@/utils/constants/ui/design-system';
 
 interface ColorBlockProps {
   color: string;

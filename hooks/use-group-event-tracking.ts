@@ -1,15 +1,15 @@
 import { useCallback } from 'react';
-import { useResearchTracking } from './use-research-tracking';
+import { useTripEventTracking } from './use-trip-event-tracking';
 
 /**
  * Hook for tracking events related to groups with relevant context
  */
 export function useGroupEventTracking(groupId?: string) {
-  const { trackEvent } = useResearchTracking();
+  const { trackEvent } = useTripEventTracking();
 
   const trackGroupCreated = useCallback(
     (details?: Record<string, any>) => {
-      trackEvent('group_created', {
+      trackEvent('trip_created', {
         groupId,
         ...details,
       });
@@ -19,9 +19,10 @@ export function useGroupEventTracking(groupId?: string) {
 
   const trackGroupMemberAdded = useCallback(
     (memberId: string, details?: Record<string, any>) => {
-      trackEvent('group_member_added', {
+      trackEvent('trip_updated', {
         groupId,
         memberId,
+        action: 'member_added',
         ...details,
       });
     },
@@ -30,9 +31,10 @@ export function useGroupEventTracking(groupId?: string) {
 
   const trackGroupMemberRemoved = useCallback(
     (memberId: string, details?: Record<string, any>) => {
-      trackEvent('group_member_removed', {
+      trackEvent('trip_updated', {
         groupId,
         memberId,
+        action: 'member_removed',
         ...details,
       });
     },
@@ -42,11 +44,10 @@ export function useGroupEventTracking(groupId?: string) {
   // Group plan actions
   const trackGroupPlanCreated = useCallback(
     (planId: string, details?: Record<string, any>) => {
-      trackEvent('feature_discovered', {
+      trackEvent('trip_created', {
         groupId,
         planId,
-        feature: 'group_plans',
-        action: 'created',
+        context: 'group_plan',
         ...details,
       });
     },
@@ -55,12 +56,11 @@ export function useGroupEventTracking(groupId?: string) {
 
   const trackGroupPlanIdeaAdded = useCallback(
     (planId: string, ideaId: string, details?: Record<string, any>) => {
-      trackEvent('feature_discovered', {
+      trackEvent('itinerary_item_added', {
         groupId,
         planId,
         ideaId,
-        feature: 'group_plan_ideas',
-        action: 'added',
+        context: 'group_plan_idea',
         ...details,
       });
     },
@@ -69,13 +69,12 @@ export function useGroupEventTracking(groupId?: string) {
 
   const trackGroupPlanIdeaVoted = useCallback(
     (planId: string, ideaId: string, voteType: 'up' | 'down', details?: Record<string, any>) => {
-      trackEvent('feature_discovered', {
+      trackEvent('itinerary_voted', {
         groupId,
         planId,
-        ideaId,
+        itemId: ideaId,
         voteType,
-        feature: 'group_plan_ideas',
-        action: 'voted',
+        context: 'group_plan_idea',
         ...details,
       });
     },
@@ -84,12 +83,12 @@ export function useGroupEventTracking(groupId?: string) {
 
   const trackGroupPlanIdeaCommented = useCallback(
     (planId: string, ideaId: string, commentId: string, details?: Record<string, any>) => {
-      trackEvent('comment_posted', {
+      trackEvent('itinerary_item_updated', {
         groupId,
         planId,
-        ideaId,
+        itemId: ideaId,
         commentId,
-        commentContext: 'group_plan_idea',
+        action: 'comment_added',
         ...details,
       });
     },

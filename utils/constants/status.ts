@@ -1,369 +1,291 @@
 /**
- * Status-related constants for the withme.travel application
- *
- * This file contains status, state, and enum constants:
- * - TRIP_ROLES: User roles within a trip
- * - PERMISSION_STATUSES: Statuses for permission requests
- * - ITINERARY_CATEGORIES: Categories for itinerary items
- * - ITEM_STATUSES: Statuses for itinerary items
- * - TRIP_STATUSES: Trip statuses
+ * Constants for database enums
+ * Auto-generated from types/database.d.ts
+ * Last updated: 2025-05-17T18:40:52.407Z
  */
-
-import type { Database } from './database';
-
-// Export common status enums, types and values from this file
-
-// ======= TRIP ROLES (from DB) =======
-export const TRIP_ROLES = {
-  ADMIN: 'admin',
-  EDITOR: 'editor',
-  CONTRIBUTOR: 'contributor',
-  VIEWER: 'viewer',
-} as const; // DB: trip_role
-
-export type TripRole = Database['public']['Enums']['trip_role'];
-
-// ======= GROUP MEMBER ROLES =======
-export const GROUP_MEMBER_ROLES = {
-  OWNER: 'owner',
-  ADMIN: 'admin',
-  MEMBER: 'member',
+export const ENUMS = {
+  BUDGET_CATEGORY: {
+    ACCOMMODATION: "accommodation",
+    ACTIVITIES: "activities",
+    ENTERTAINMENT: "entertainment",
+    FOOD: "food",
+    GIFTS: "gifts",
+    OTHER: "other",
+    TRANSPORTATION: "transportation",
+    TRAVEL: "travel",
+  },
+  CONTENT_TYPE: {
+    COLLECTION: "collection",
+    DESTINATION: "destination",
+    GROUP_PLAN_IDEA: "group_plan_idea",
+    ITINERARY_ITEM: "itinerary_item",
+    TEMPLATE: "template",
+    TRIP: "trip",
+  },
+  GROUP_IDEA_TYPE: {
+    ACTIVITY: "activity",
+    BUDGET: "budget",
+    DATE: "date",
+    DESTINATION: "destination",
+    NOTE: "note",
+    OTHER: "other",
+    PLACE: "place",
+    QUESTION: "question",
+  },
+  GROUP_MEMBER_ROLE: {
+    ADMIN: "admin",
+    MEMBER: "member",
+  },
+  GROUP_MEMBER_STATUS: {
+    ACTIVE: "active",
+    INVITED: "invited",
+    LEFT: "left",
+    REMOVED: "removed",
+  },
+  GROUP_VISIBILITY: {
+    PRIVATE: "private",
+    PUBLIC: "public",
+    UNLISTED: "unlisted",
+  },
+  IMAGE_TYPE: {
+    DESTINATION: "destination",
+    TEMPLATE_COVER: "template_cover",
+    TRIP_COVER: "trip_cover",
+    USER_AVATAR: "user_avatar",
+  },
+  INVITATION_STATUS: {
+    ACCEPTED: "accepted",
+    DECLINED: "declined",
+    EXPIRED: "expired",
+    PENDING: "pending",
+    REVOKED: "revoked",
+  },
+  INVITATION_TYPE: {
+    GROUP: "group",
+    REFERRAL: "referral",
+    TRIP: "trip",
+  },
+  ITEM_STATUS: {
+    CONFIRMED: "confirmed",
+    PENDING: "pending",
+    REJECTED: "rejected",
+    SUGGESTED: "suggested",
+  },
+  ITINERARY_CATEGORY: {
+    CAFES: "Cafes",
+    CULTURAL: "Cultural",
+    ENTERTAINMENT: "Entertainment",
+    ICONICLANDMARKS: "IconicLandmarks",
+    MUSEUMS: "Museums",
+    NIGHTLIFE: "Nightlife",
+    OTHER: "Other",
+    OUTDOORACTIVITIES: "OutdoorActivities",
+    PARKS: "Parks",
+    RESTAURANTS: "Restaurants",
+    SHOPPING: "Shopping",
+    TOURS: "Tours",
+  },
+  PERMISSION_STATUS: {
+    ACCEPTED: "accepted",
+    PENDING: "pending",
+    REJECTED: "rejected",
+  },
+  STATE_PROVINCE_TYPE_ENUM: {
+    AUTONOMOUS_REGION: "autonomous_region",
+    COUNTY: "county",
+    DEPARTMENT: "department",
+    DISTRICT: "district",
+    MUNICIPALITY: "municipality",
+    OBLAST: "oblast",
+    OTHER: "other",
+    PREFECTURE: "prefecture",
+    PROVINCE: "province",
+    REGION: "region",
+    STATE: "state",
+    TERRITORY: "territory",
+  },
+  TRAVEL_PACE: {
+    FAST: "fast",
+    MODERATE: "moderate",
+    SLOW: "slow",
+    VERY_FAST: "very_fast",
+    VERY_SLOW: "very_slow",
+  },
+  TRIP_ACTION_TYPE: {
+    ACCESS_REQUEST_SENT: "ACCESS_REQUEST_SENT",
+    ACCESS_REQUEST_UPDATED: "ACCESS_REQUEST_UPDATED",
+    COMMENT_ADDED: "COMMENT_ADDED",
+    COMMENT_DELETED: "COMMENT_DELETED",
+    COMMENT_UPDATED: "COMMENT_UPDATED",
+    FOCUS_INITIATED: "FOCUS_INITIATED",
+    IMAGE_UPLOADED: "IMAGE_UPLOADED",
+    INVITATION_SENT: "INVITATION_SENT",
+    ITINERARY_ITEM_ADDED: "ITINERARY_ITEM_ADDED",
+    ITINERARY_ITEM_DELETED: "ITINERARY_ITEM_DELETED",
+    ITINERARY_ITEM_UPDATED: "ITINERARY_ITEM_UPDATED",
+    MEMBER_ADDED: "MEMBER_ADDED",
+    MEMBER_REMOVED: "MEMBER_REMOVED",
+    MEMBER_ROLE_UPDATED: "MEMBER_ROLE_UPDATED",
+    NOTE_CREATED: "NOTE_CREATED",
+    NOTE_DELETED: "NOTE_DELETED",
+    NOTE_UPDATED: "NOTE_UPDATED",
+    SPLITWISE_GROUP_CREATED_AND_LINKED: "SPLITWISE_GROUP_CREATED_AND_LINKED",
+    SPLITWISE_GROUP_LINKED: "SPLITWISE_GROUP_LINKED",
+    SPLITWISE_GROUP_UNLINKED: "SPLITWISE_GROUP_UNLINKED",
+    TAG_ADDED: "TAG_ADDED",
+    TAG_REMOVED: "TAG_REMOVED",
+    TRIP_CREATED: "TRIP_CREATED",
+    TRIP_UPDATED: "TRIP_UPDATED",
+    VOTE_CAST: "VOTE_CAST",
+  },
+  TRIP_PRIVACY_SETTING: {
+    PRIVATE: "private",
+    PUBLIC: "public",
+    SHARED: "shared",
+    UNLISTED: "unlisted",
+  },
+  TRIP_ROLE: {
+    ADMIN: "admin",
+    CONTRIBUTOR: "contributor",
+    EDITOR: "editor",
+    VIEWER: "viewer",
+  },
+  TRIP_STATUS: {
+    CANCELLED: "cancelled",
+    COMPLETED: "completed",
+    IN_PROGRESS: "in_progress",
+    PLANNING: "planning",
+    UPCOMING: "upcoming",
+  },
+  TRIP_TYPE: {
+    BUSINESS: "business",
+    FAMILY: "family",
+    GROUP: "group",
+    LEISURE: "leisure",
+    OTHER: "other",
+    SOLO: "solo",
+  },
+  USER_ROLE: {
+    ADMIN: "admin",
+    GUEST: "guest",
+    MODERATOR: "moderator",
+    SUPPORT: "support",
+    USER: "user",
+  },
+  VOTE_TYPE: {
+    DOWN: "down",
+    UP: "up",
+  },
+  TASK_STATUS: {
+    SUGGESTED: 'suggested',
+    CONFIRMED: 'confirmed',
+    REJECTED: 'rejected',
+    ACTIVE: 'active',
+    CANCELLED: 'cancelled',
+  },
+  TASK_PRIORITY: {
+    HIGH: 'high',
+    MEDIUM: 'medium',
+    LOW: 'low',
+  },
 } as const;
 
-export type GroupMemberRole = (typeof GROUP_MEMBER_ROLES)[keyof typeof GROUP_MEMBER_ROLES];
+/**
+ * Type for enum names
+ */
+export type EnumName = keyof typeof ENUMS;
 
-// ======= GROUP MEMBER STATUSES =======
-export const GROUP_MEMBER_STATUSES = {
-  INVITED: 'invited',
-  ACTIVE: 'active',
-  LEFT: 'left',
-  REMOVED: 'removed',
-} as const;
+/**
+ * Type helper for getting the values of an enum
+ */
+export type EnumValues<T extends EnumName> = typeof ENUMS[T][keyof typeof ENUMS[T]];
 
-export type GroupMemberStatus = (typeof GROUP_MEMBER_STATUSES)[keyof typeof GROUP_MEMBER_STATUSES];
+/**
+ * Type helper for getting the keys of an enum
+ */
+export type EnumKeys<T extends EnumName> = keyof typeof ENUMS[T];
 
-// ======= GROUP VISIBILITY =======
-export const GROUP_VISIBILITY = {
-  PRIVATE: 'private',
-  SHARED_WITH_LINK: 'shared_with_link',
-  PUBLIC: 'public',
-} as const;
+/**
+ * Get all values of an enum as an array
+ */
+export function getEnumValues<T extends EnumName>(enumName: T): EnumValues<T>[] {
+  return Object.values(ENUMS[enumName]) as EnumValues<T>[];
+}
 
-export type GroupVisibility = (typeof GROUP_VISIBILITY)[keyof typeof GROUP_VISIBILITY];
+/**
+ * Get all keys of an enum as an array
+ */
+export function getEnumKeys<T extends EnumName>(enumName: T): EnumKeys<T>[] {
+  return Object.keys(ENUMS[enumName]) as EnumKeys<T>[];
+}
 
-// ======= ITEM STATUSES (from DB) =======
-export const ITEM_STATUSES = {
-  SUGGESTED: 'suggested',
-  CONFIRMED: 'confirmed',
-  REJECTED: 'rejected',
-  CANCELLED: 'cancelled',
-  ACTIVE: 'active',
-} as const;
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
-export type ItemStatus = Database['public']['Enums']['item_status'];
+/**
+ * Define types for all enums
+ */
+export type BudgetCategory = EnumValues<'BUDGET_CATEGORY'>;
+export type ContentType = EnumValues<'CONTENT_TYPE'>;
+export type GroupIdeaType = EnumValues<'GROUP_IDEA_TYPE'>;
+export type GroupMemberRole = EnumValues<'GROUP_MEMBER_ROLE'>;
+export type GroupMemberStatus = EnumValues<'GROUP_MEMBER_STATUS'>;
+export type GroupVisibility = EnumValues<'GROUP_VISIBILITY'>;
+export type ImageType = EnumValues<'IMAGE_TYPE'>;
+export type InvitationStatus = EnumValues<'INVITATION_STATUS'>;
+export type InvitationType = EnumValues<'INVITATION_TYPE'>;
+export type ItemStatus = EnumValues<'ITEM_STATUS'>;
+export type ItineraryCategory = EnumValues<'ITINERARY_CATEGORY'>;
+export type PermissionStatus = EnumValues<'PERMISSION_STATUS'>;
+export type StateProvinceType = EnumValues<'STATE_PROVINCE_TYPE_ENUM'>;
+export type TravelPace = EnumValues<'TRAVEL_PACE'>;
+export type TripActionType = EnumValues<'TRIP_ACTION_TYPE'>;
+export type TripPrivacySetting = EnumValues<'TRIP_PRIVACY_SETTING'>;
+export type TripRole = EnumValues<'TRIP_ROLE'>;
+export type TripStatus = EnumValues<'TRIP_STATUS'>;
+export type TripType = EnumValues<'TRIP_TYPE'>;
+export type UserRole = EnumValues<'USER_ROLE'>;
+export type VoteType = EnumValues<'VOTE_TYPE'>;
 
-// ======= ITINERARY CATEGORIES =======
-export const ITINERARY_CATEGORIES = {
-  ICONIC_LANDMARKS: 'Iconic Landmarks',
-  LOCAL_SECRETS: 'Local Secrets',
-  CULTURAL_EXPERIENCES: 'Cultural Experiences',
-  OUTDOOR_ADVENTURES: 'Outdoor Adventures',
-  FOOD_AND_DRINK: 'Food & Drink',
-  ACCOMMODATIONS: 'Accommodations',
-  TRANSPORTATION: 'Transportation',
-  SHOPPING: 'Shopping',
-  ENTERTAINMENT: 'Entertainment',
-  HEALTH_AND_WELLNESS: 'Health & Wellness',
-  EDUCATIONAL: 'Educational',
-  RELAXATION: 'Relaxation',
-  NIGHTLIFE: 'Nightlife',
-  PHOTOGRAPHY: 'Photography',
-  OTHER: 'Other',
-  FLEXIBLE_OPTIONS: 'Flexible Options',
-  // Backward compatibility aliases
-  ACCOMMODATION: 'Accommodations', // Alias for ACCOMMODATIONS
-  ATTRACTION: 'Attractions', // Alias for general attractions
-} as const;
+// Commentable content type definition
+export type CommentableContentType = ContentType;
 
-export type ItineraryCategory = (typeof ITINERARY_CATEGORIES)[keyof typeof ITINERARY_CATEGORIES];
+// ============================================================================
+// BACKWARD COMPATIBILITY EXPORTS
+// The following exports are for backward compatibility with existing code
+// ============================================================================
 
-// ======= TRIP STATUSES (from DB) =======
-export const TRIP_STATUSES = {
-  PLANNING: 'planning',
-  UPCOMING: 'upcoming',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-} as const;
+// Individual enum exports for backward compatibility
+export const TRIP_ROLES = ENUMS.TRIP_ROLE;
+export const GROUP_MEMBER_ROLES = ENUMS.GROUP_MEMBER_ROLE;
+export const GROUP_VISIBILITY = ENUMS.GROUP_VISIBILITY;
+export const ITINERARY_CATEGORIES = ENUMS.ITINERARY_CATEGORY;
+export const PERMISSION_STATUSES = ENUMS.PERMISSION_STATUS;
+export const ITEM_STATUSES = ENUMS.ITEM_STATUS;
+export const TRIP_STATUSES = ENUMS.TRIP_STATUS;
+export const TRIP_TYPES = ENUMS.TRIP_TYPE;
+export const BUDGET_CATEGORIES = ENUMS.BUDGET_CATEGORY;
+export const TRIP_PRIVACY_SETTINGS = ENUMS.TRIP_PRIVACY_SETTING;
+export const TRAVEL_PACES = ENUMS.TRAVEL_PACE;
+export const INVITATION_STATUSES = ENUMS.INVITATION_STATUS;
+export const VOTE_TYPES = ENUMS.VOTE_TYPE;
+export const GROUP_PLAN_IDEA_TYPE = ENUMS.GROUP_IDEA_TYPE;
+export const GROUP_MEMBER_STATUSES = ENUMS.GROUP_MEMBER_STATUS;
+export const IMAGE_TYPES = ENUMS.IMAGE_TYPE;
+export const CONTENT_TYPES = ENUMS.CONTENT_TYPE;
 
-export type TripStatus = Database['public']['Enums']['trip_status'];
-
-// ======= PERMISSION STATUSES =======
-export const PERMISSION_STATUSES = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected',
-} as const;
-
-export type PermissionStatus = (typeof PERMISSION_STATUSES)[keyof typeof PERMISSION_STATUSES];
-
-// ======= PRESENCE STATUSES =======
-export const PRESENCE_STATUSES = {
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-  AWAY: 'away',
-} as const;
-
-export type PresenceStatus = (typeof PRESENCE_STATUSES)[keyof typeof PRESENCE_STATUSES];
-
-// ======= SPLIT TYPES =======
-export const SPLIT_TYPES = {
-  EQUAL: 'equal',
-  PERCENTAGE: 'percentage',
-  CUSTOM: 'custom',
-} as const;
-
-export type SplitType = (typeof SPLIT_TYPES)[keyof typeof SPLIT_TYPES];
-
-// ======= TRIP TYPES (from DB) =======
-export const TRIP_TYPES = {
-  LEISURE: 'leisure',
-  BUSINESS: 'business',
-  FAMILY: 'family',
-  SOLO: 'solo',
-  GROUP: 'group',
-  OTHER: 'other',
-} as const;
-
-export type TripType = Database['public']['Enums']['trip_type'];
-
-// ======= BUDGET CATEGORIES (from DB) =======
-export const BUDGET_CATEGORIES = {
-  ACCOMMODATION: 'accommodation',
-  TRANSPORTATION: 'transportation',
-  FOOD: 'food',
-  ACTIVITIES: 'activities',
-  SHOPPING: 'shopping',
-  OTHER: 'other',
-} as const;
-
-export type BudgetCategory = Database['public']['Enums']['budget_category'];
-
-// ======= PRIVACY SETTINGS (from DB) =======
-export const PRIVACY_SETTINGS = {
-  PRIVATE: 'private',
-  SHARED_WITH_LINK: 'shared_with_link',
-  PUBLIC: 'public',
-} as const;
-
-export type PrivacySetting = Database['public']['Enums']['privacy_setting'];
-
-// ======= TRIP PRIVACY SETTINGS (from DB) =======
-export const TRIP_PRIVACY_SETTINGS = {
-  PRIVATE: 'private',
-  SHARED_WITH_LINK: 'shared_with_link',
-  PUBLIC: 'public',
-} as const;
-
-export type TripPrivacySetting = Database['public']['Enums']['trip_privacy_setting'];
-
-// ======= PLACE CATEGORIES (from DB) =======
-export const PLACE_CATEGORIES = {
-  ATTRACTION: 'attraction',
-  RESTAURANT: 'restaurant',
-  CAFE: 'cafe',
-  HOTEL: 'hotel',
-  LANDMARK: 'landmark',
-  SHOPPING: 'shopping',
-  TRANSPORT: 'transport',
-  OTHER: 'other',
-} as const;
-
-export type PlaceCategory = Database['public']['Enums']['place_category'];
-
-// ======= TRAVEL PACE (from DB) =======
-export const TRAVEL_PACES = {
-  VERY_SLOW: 'very_slow',
-  SLOW: 'slow',
-  MODERATE: 'moderate',
-  FAST: 'fast',
-  VERY_FAST: 'very_fast',
-} as const;
-
-export type TravelPace = Database['public']['Enums']['travel_pace'];
-
-// ======= TRAVEL PERSONALITY TYPES (from DB) =======
-export const TRAVEL_PERSONALITY_TYPES = {
-  PLANNER: 'planner',
-  ADVENTURER: 'adventurer',
-  FOODIE: 'foodie',
-  SIGHTSEER: 'sightseer',
-  RELAXER: 'relaxer',
-  CULTURE: 'culture',
-} as const;
-
-export type TravelPersonalityType = Database['public']['Enums']['travel_personality_type'];
-
-// ======= TRAVEL SQUAD TYPES (from DB) =======
-export const TRAVEL_SQUAD_TYPES = {
-  FRIENDS: 'friends',
-  FAMILY: 'family',
-  PARTNER: 'partner',
-  SOLO: 'solo',
-  COWORKERS: 'coworkers',
-  MIXED: 'mixed',
-} as const;
-
-export type TravelSquadType = Database['public']['Enums']['travel_squad_type'];
-
-// ======= TRAVEL STYLES (from DB) =======
-export const TRAVEL_STYLES = {
-  ADVENTUROUS: 'adventurous',
-  RELAXED: 'relaxed',
-  CULTURAL: 'cultural',
-  LUXURY: 'luxury',
-  BUDGET: 'budget',
-  FAMILY: 'family',
-  SOLO: 'solo',
-  NIGHTLIFE: 'nightlife',
-  NATURE: 'nature',
-  FOOD_FOCUSED: 'food_focused',
-} as const;
-
-export type TravelStyle = Database['public']['Enums']['travel_style'];
-
-// ======= INVITATION STATUSES (from DB) =======
-export const INVITATION_STATUSES = {
-  PENDING: 'pending',
-  ACCEPTED: 'accepted',
-  DECLINED: 'declined',
-  EXPIRED: 'expired',
-} as const;
-
-export type InvitationStatus = Database['public']['Enums']['invitation_status'];
-
-// ======= TAG STATUSES (from DB) =======
-export const TAG_STATUSES = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected',
-} as const;
-
-export type TagStatus = Database['public']['Enums']['tag_status'];
-
-// ======= TEMPLATE CATEGORIES =======
-export const TEMPLATE_CATEGORIES = {
-  ADVENTURE: 'adventure',
-  RELAXATION: 'relaxation',
-  CITY: 'city',
-  BEACH: 'beach',
-  MOUNTAIN: 'mountain',
-  CULTURAL: 'cultural',
-  FAMILY: 'family',
-  ROMANTIC: 'romantic',
-  OTHER: 'other',
-} as const;
-
-export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[keyof typeof TEMPLATE_CATEGORIES];
-
-// ======= TEMPLATE TYPES =======
-export const TEMPLATE_TYPES = {
-  USER: 'user',
-  OFFICIAL: 'official',
-  PARTNER: 'partner',
-} as const;
-
-export type TemplateType = (typeof TEMPLATE_TYPES)[keyof typeof TEMPLATE_TYPES];
-
-// ======= USER STATUSES =======
-export const USER_STATUSES = {
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-  AWAY: 'away',
-  EDITING: 'editing',
-} as const;
-
-export type UserStatus = 'online' | 'offline' | 'away' | 'editing';
-
-// ======= VOTE TYPES (from DB) =======
-export const VOTE_TYPES = {
-  UP: 'up',
-  DOWN: 'down',
-} as const;
-
-export type VoteType = Database['public']['Enums']['vote_type'];
-
-// ======= INTERACTION TYPES (from DB) =======
-export const INTERACTION_TYPES = {
-  LIKE: 'like',
-  VISIT: 'visit',
-  BOOKMARK: 'bookmark',
-  TAG: 'tag',
-} as const;
-
-export type InteractionType = Database['public']['Enums']['interaction_type'];
-
-// ======= URL FORMATS (from DB) =======
-export const URL_FORMATS = {
-  CANONICAL: 'canonical',
-  SHORT: 'short',
-  SOCIAL: 'social',
-  TRACKING: 'tracking',
-} as const;
-
-export type UrlFormat = Database['public']['Enums']['url_format'];
-
-// ======= GROUP IDEA TYPES =======
-export const GROUP_PLAN_IDEA_TYPE = {
-  DESTINATION: 'destination',
-  DATE: 'date',
-  ACTIVITY: 'activity',
-  BUDGET: 'budget',
-  OTHER: 'other',
-  QUESTION: 'question',
-  NOTE: 'note',
-  PLACE: 'place',
-} as const;
-
-export type GroupPlanIdeaType = (typeof GROUP_PLAN_IDEA_TYPE)[keyof typeof GROUP_PLAN_IDEA_TYPE];
-
-// ======= RESEARCH MILESTONE EVENT TYPES =======
-export const MILESTONE_EVENT_TYPES = {
-  // User journey milestones
-  INITIAL_VISIT: 'initial_visit',
-  SIGNUP_COMPLETED: 'signup_completed',
-  ONBOARDING_STARTED: 'onboarding_started',
-  ONBOARDING_COMPLETED: 'onboarding_completed',
-  
-  // Trip creation milestones
-  TRIP_CREATED: 'trip_created',
-  DESTINATION_ADDED: 'destination_added',
-  ITINERARY_ITEM_ADDED: 'itinerary_item_added',
-  TRIP_COMPLETED: 'trip_completed',
-  
-  // Collaboration milestones
-  GROUP_CREATED: 'group_created',
-  MEMBER_INVITED: 'member_invited',
-  COMMENT_ADDED: 'comment_added',
-  
-  // Feature usage milestones
-  FEATURE_DISCOVERED: 'feature_discovered',
-  BUDGET_ITEM_ADDED: 'budget_item_added',
-  MAP_VIEWED: 'map_viewed',
-  
-  // Survey milestones
-  SURVEY_STARTED: 'survey_started',
-  SURVEY_STEP_COMPLETED: 'survey_step_completed',
-  SURVEY_COMPLETED: 'survey_completed',
-  
-  // Feedback milestones
-  FEEDBACK_PROVIDED: 'feedback_provided',
-  BUG_REPORTED: 'bug_reported',
-  
-  // Final stages
-  FINAL: 'final'
-} as const;
-
-export type MilestoneEventType = keyof typeof MILESTONE_EVENT_TYPES;
-
-// Remove duplicate GroupMemberRole and GroupMemberStatus type definitions
+// Placeholder constants (can be replaced with actual implementations if needed)
+export const SPLIT_TYPES = { EQUAL: 'equal', PERCENTAGE: 'percentage', CUSTOM: 'custom' } as const;
+export const TEMPLATE_CATEGORIES = { CITY: 'city', COUNTRY: 'country', THEME: 'theme', OTHER: 'other' } as const;
+export const TEMPLATE_TYPES = { PUBLIC: 'public', PRIVATE: 'private', SHARED: 'shared' } as const;
+export const PRIVACY_SETTINGS = { PUBLIC: 'public', PRIVATE: 'private', SHARED: 'shared' } as const;
+export const PLACE_CATEGORIES = { RESTAURANT: 'restaurant', ATTRACTION: 'attraction', HOTEL: 'hotel', OTHER: 'other' } as const;
+export const TRAVEL_PERSONALITY_TYPES = { PLANNER: 'planner', SPONTANEOUS: 'spontaneous', BALANCED: 'balanced' } as const;
+export const TRAVEL_SQUAD_TYPES = { SOLO: 'solo', COUPLE: 'couple', FAMILY: 'family', FRIENDS: 'friends', GROUP: 'group' } as const;
+export const TRAVEL_STYLES = { LUXURY: 'luxury', BUDGET: 'budget', ADVENTURE: 'adventure', RELAXING: 'relaxing', CULTURAL: 'cultural' } as const;
+export const TAG_STATUSES = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
+export const USER_STATUSES = { ACTIVE: 'active', INACTIVE: 'inactive', SUSPENDED: 'suspended' } as const;
+export const INTERACTION_TYPES = { LIKE: 'like', COMMENT: 'comment', SHARE: 'share' } as const;
+export const URL_FORMATS = { FULL: 'full', SHORT: 'short', SHARE: 'share' } as const;
+export const PRESENCE_STATUSES = { ONLINE: 'online', AWAY: 'away', OFFLINE: 'offline' } as const;

@@ -175,11 +175,11 @@ export function SharedPresenceSection({ className }: SharedPresenceSectionProps)
   }
 
   return (
-    <Card className="overflow-hidden border-border shadow-md dark:shadow-gray-900/30">
+    <Card className="overflow-hidden border-border shadow-md dark:shadow-gray-900/30 rounded-4xl">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="text-xl font-semibold">Team Presence</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-semibold">Team Presence</CardTitle>
             <CardDescription>See who's working on the trip in real-time</CardDescription>
           </div>
           <Badge
@@ -197,7 +197,7 @@ export function SharedPresenceSection({ className }: SharedPresenceSectionProps)
 
       <CardContent>
         {/* User Presence Area */}
-        <div className="relative w-full bg-muted/30 rounded-lg p-4 mb-4 h-48 overflow-hidden">
+        <div className="relative w-full bg-muted/30 rounded-3xl p-3 sm:p-4 mb-4 h-36 sm:h-48 overflow-hidden">
           {/* Location markers */}
           <div className="absolute inset-0 p-4">
             <div className="absolute left-[20%] top-[15%] bg-travel-purple/20 px-2 py-0.5 rounded text-xs">
@@ -267,7 +267,7 @@ export function SharedPresenceSection({ className }: SharedPresenceSectionProps)
         {/* Active Now */}
         <div className="mb-4">
           <h3 className="text-sm font-medium mb-2 text-muted-foreground">Active Now</h3>
-          <div className="flex -space-x-2 min-h-[3.5rem] items-center">
+          <div className="flex flex-wrap gap-1 sm:-space-x-2 min-h-[3.5rem] items-center">
             <AnimatePresence>
               {users
                 .filter((user) => user.status !== 'offline')
@@ -334,7 +334,7 @@ export function SharedPresenceSection({ className }: SharedPresenceSectionProps)
             <h3 className="text-sm font-medium text-muted-foreground">Recent Activity</h3>
           </div>
           {/* Always render 3 rows, pad with nulls, min-h to reserve space */}
-          <div className="space-y-2 min-h-[6.5rem]">
+          <div className="space-y-2 min-h-[6rem] sm:min-h-[6.5rem]">
             {(() => {
               const maxRows = 3;
               const padded = [

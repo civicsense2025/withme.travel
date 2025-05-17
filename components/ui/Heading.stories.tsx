@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Heading } from './Heading';
-import { COLORS } from '@/utils/constants/design-system';
+import { COLORS } from '@/utils/constants/ui/design-system';
 
 const meta: Meta<typeof Heading> = {
   title: 'Design System/Typography/Heading',

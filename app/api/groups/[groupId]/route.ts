@@ -1,5 +1,11 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { 
+  getGroupWithDetails, 
+  updateGroup, 
+  deleteGroup, 
+  checkGroupMemberRole 
+} from '@/lib/api/groups';
 
 // --- Types ---
 interface Group {
@@ -48,45 +54,17 @@ export async function GET(request: Request, { params }: { params: { groupId: str
       return NextResponse.json({ error: 'Group ID is required' }, { status: 400 });
     }
 
-    // Get the group with members and trips
-    const { data: group, error } = await supabase
-      .from('groups')
-      .select(
-        `
-        *,
-        group_members (
-          user_id,
-          role,
-          status,
-          joined_at
-        ),
-        group_trips (
-          trip_id,
-          added_at,
-          added_by,
-          trips:trips (
-            id,
-            name,
-            start_date,
-            end_date,
-            destination_id,
-            created_by
-          )
-        )
-      `
-      )
-      .eq('id', groupId)
-      .single();
+    // Use centralized API to fetch group with details
+    const result = await getGroupWithDetails(groupId);
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+    if (!result.success) {
+      if (result.error.includes('not found')) {
         return NextResponse.json({ error: 'Group not found' }, { status: 404 });
       }
-      console.error('Error fetching group:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ group });
+    return NextResponse.json({ group: result.data });
   } catch (error) {
     console.error('Error in group GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -113,16 +91,18 @@ export async function PUT(request: Request, { params }: { params: { groupId: str
       return NextResponse.json({ error: 'Group ID is required' }, { status: 400 });
     }
 
-    // Check if user is owner or admin
-    const { data: membership, error: membershipError } = await supabase
-      .from('group_members')
-      .select('role')
-      .eq('group_id', groupId)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
+    // Check if user is owner or admin using the centralized API
+    const permissionResult = await checkGroupMemberRole(
+      groupId, 
+      user.id, 
+      ['owner', 'admin']
+    );
 
-    if (membershipError || !membership || !['owner', 'admin'].includes(membership.role)) {
+    if (!permissionResult.success) {
+      return NextResponse.json({ error: 'Failed to check permissions' }, { status: 500 });
+    }
+
+    if (!permissionResult.data) {
       return NextResponse.json(
         { error: "You don't have permission to update this group" },
         { status: 403 }
@@ -138,26 +118,19 @@ export async function PUT(request: Request, { params }: { params: { groupId: str
       return NextResponse.json({ error: 'Group name is required' }, { status: 400 });
     }
 
-    // Update the group
-    const { data, error } = await supabase
-      .from('groups')
-      .update({
-        name,
-        description,
-        emoji,
-        visibility,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', groupId)
-      .select()
-      .single();
+    // Update the group using the centralized API
+    const result = await updateGroup(groupId, {
+      name,
+      description,
+      emoji,
+      visibility
+    });
 
-    if (error) {
-      console.error('Error updating group:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ group: data });
+    return NextResponse.json({ group: result.data });
   } catch (error) {
     console.error('Error in group PUT route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -184,28 +157,29 @@ export async function DELETE(request: Request, { params }: { params: { groupId: 
       return NextResponse.json({ error: 'Group ID is required' }, { status: 400 });
     }
 
-    // Check if user is owner
-    const { data: membership, error: membershipError } = await supabase
-      .from('group_members')
-      .select('role')
-      .eq('group_id', groupId)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
+    // Check if user is owner using the centralized API
+    const permissionResult = await checkGroupMemberRole(
+      groupId, 
+      user.id, 
+      ['owner']
+    );
 
-    if (membershipError || !membership || membership.role !== 'owner') {
+    if (!permissionResult.success) {
+      return NextResponse.json({ error: 'Failed to check permissions' }, { status: 500 });
+    }
+
+    if (!permissionResult.data) {
       return NextResponse.json(
         { error: 'Only the group owner can delete the group' },
         { status: 403 }
       );
     }
 
-    // Delete the group
-    const { error } = await supabase.from('groups').delete().eq('id', groupId);
+    // Delete the group using the centralized API
+    const result = await deleteGroup(groupId);
 
-    if (error) {
-      console.error('Error deleting group:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

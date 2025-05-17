@@ -26,7 +26,7 @@ import {
   DEFAULT_CATEGORY_DISPLAY,
   ITEM_TYPE_DISPLAY,
   DEFAULT_TYPE_DISPLAY,
-} from '@/utils/constants/ui';
+} from '@/utils/constants/ui/ui';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

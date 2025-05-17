@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { useTheme } from 'next-themes';
-import { getColorToken, ThemeMode } from '@/utils/constants/design-system';
+import { getColorToken, ThemeMode } from '@/utils/constants/ui/design-system';
 
 export interface CollaborativeItinerarySectionProps {
   mode?: ThemeMode;

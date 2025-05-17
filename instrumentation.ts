@@ -12,11 +12,17 @@ export async function register() {
         // Dynamically import to avoid webpack issues
         // These modules will be treated as external due to our next.config.mjs configuration
         const { NodeSDK } = await import('@opentelemetry/sdk-node');
-        const { Resource } = await import('@opentelemetry/resources');
-        const { SemanticResourceAttributes } = await import('@opentelemetry/semantic-conventions');
+        
+        // Import and use the Resource constructor from resourceFromAttributes
+        const resourcesModule = await import('@opentelemetry/resources');
+        const resourceFromAttributes = resourcesModule.resourceFromAttributes;
+        
+        // Import semantic conventions
+        const semConv = await import('@opentelemetry/semantic-conventions');
+        const SemanticResourceAttributes = semConv.SemanticResourceAttributes;
 
         const sdk = new NodeSDK({
-          resource: new Resource({
+          resource: resourceFromAttributes({
             [SemanticResourceAttributes.SERVICE_NAME]: 'withme-travel',
             [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
           }),
@@ -25,18 +31,18 @@ export async function register() {
         // Initialize the SDK to prevent instrumentation loading issues
         sdk.start();
 
+        // Only log in production
         console.log('OpenTelemetry SDK initialized in production mode');
       } catch (error) {
         // Don't crash if OpenTelemetry is not available
         console.warn('Failed to initialize OpenTelemetry:', error);
       }
-    } else {
-      console.info('OpenTelemetry SDK not initialized in development mode');
     }
+    // Removed console.info in development mode
   }
 
   if (process.env.NODE_ENV === 'development') {
-    console.info('Sentry disabled in development mode');
+    // Removed console.info about Sentry in development mode
     return;
   }
   if (process.env.NEXT_RUNTIME === 'nodejs') {

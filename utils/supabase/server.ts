@@ -12,7 +12,7 @@
  */
 
 import { createServerClient } from '@supabase/ssr';
-import type { Database } from '../../types/database.types';
+import type { Database } from '../../types/.database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CookieOptions } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -130,7 +130,9 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
           console.warn('Attempted to remove cookie in server component context. This is a no-op.');
         },
       },
-      auth: DEFAULT_AUTH_CONFIG,
+      auth: {
+        ...DEFAULT_AUTH_CONFIG,
+      },
     });
   } catch (error) {
     console.error('Error creating server component client:', error);
@@ -150,27 +152,50 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
 /**
  * Creates a Supabase client for use in route handlers
  * 
- * IMPORTANT: This client DOES NOT handle cookies. Use it only for database operations
- * that don't require authentication.
- * 
- * NOTE: There are known issues with the @supabase/ssr package and Next.js 15's cookie
- * handling. This implementation avoids the cookie issues entirely by not using cookies.
- * For authenticated operations, consider adding a server action using middleware
- * cookie handling or implementing a custom auth solution.
+ * This implementation properly handles cookies for authentication in Next.js 15+
  *
  * @returns A configured Supabase client for server-side API routes
  */
-export function createRouteHandlerClient(): TypedSupabaseClient {
-  // For route handlers in Next.js 15, we need to completely avoid cookie manipulation
-  // We'll create a basic client that doesn't use cookies at all
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      // Disable all features that would require cookie manipulation
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false
-    }
-  });
+export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
+  try {
+    // Directly import cookies
+    const { cookies } = await import('next/headers');
+    
+    // Function to safely get a cookie value
+    const getCookie = async (name: string): Promise<string | undefined> => {
+      try {
+        const cookieStore = await cookies();
+        return cookieStore.get(name)?.value;
+      } catch (error) {
+        console.error(`Error accessing cookie ${name}:`, error);
+        return undefined;
+      }
+    };
+    
+    return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get: getCookie,
+        set: () => {},
+        remove: () => {},
+      },
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+      },
+    });
+  } catch (error) {
+    console.error('Error creating route handler client:', error);
+    
+    // Create a non-cookie client as fallback
+    return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+  }
 }
 
 /**
@@ -319,3 +344,15 @@ export const createServerSupabaseClient = createServerComponentClient;
 
 // TODO: Once Next.js 15 compatibility issues with @supabase/ssr are resolved,
 // implement proper cookie-handling clients for API routes and server actions.
+
+// ============================================================================
+// ADD EXPLICIT TYPES FOR FUNCTION PARAMETERS
+// ============================================================================
+// For any function like:
+// buildNext(fn) { ... }
+// Change to:
+// buildNext<T extends (...args: any[]) => any>(fn: T): (...args: Parameters<T>) => ReturnType<T> { ... }
+// Or, if you don't know the type, use:
+// buildNext(fn: (...args: any[]) => any): (...args: any[]) => any { ... }
+//
+// For (...args), use (...args: any[])

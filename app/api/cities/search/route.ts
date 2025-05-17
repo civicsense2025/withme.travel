@@ -60,12 +60,12 @@ export async function GET(request: NextRequest) {
     let destinationCities = new Set<string>();
     try {
       const { data: destinations } = await supabase
-        .from(TABLES.DESTINATIONS)
-        .select('city')
-        .or(`city.ilike.%${q}%`);
+        .from(TABLES.CITIES)
+        .select('name')
+        .or(`name.ilike.%${q}%`);
 
       if (destinations && destinations.length > 0) {
-        destinationCities = new Set(destinations.map((d) => d.city?.toLowerCase()).filter(Boolean));
+        destinationCities = new Set(destinations.map((d) => d.name?.toLowerCase()).filter(Boolean));
       }
     } catch (destError) {
       console.error('Error checking destinations:', destError);

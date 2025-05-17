@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { COLORS, RADII, SHADOWS, ThemeMode, getColorToken } from '@/utils/constants/design-system';
+import { COLORS, RADII, SHADOWS, ThemeMode, getColorToken } from '@/utils/constants/ui/design-system';
 import { useTheme } from 'next-themes';
 
 /**

@@ -2,35 +2,14 @@
 
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Calendar } from 'lucide-react';
+import { PlusCircle, Search, Calendar, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
-
-// Define our types
-interface Trip {
-  id: string;
-  name: string;
-  start_date: string | null;
-  end_date: string | null;
-  created_at: string;
-  status: string | null;
-  destination_id: string | null;
-  destination_name: string | null;
-  cover_image_url: string | null;
-  created_by: string;
-  is_public: boolean | null;
-  privacy_setting: string | null;
-  description: string | null;
-}
-
-interface TripMember {
-  role: string;
-  joined_at: string | null;
-  trip: Trip;
-}
+import { cn } from '@/lib/utils';
+import { formatDateRange } from '@/utils/lib-utils';
+import { Trip, TripMember } from '@/lib/api';
 
 export default function TripsClientPage({
   initialTrips = [],
@@ -54,7 +33,11 @@ export default function TripsClientPage({
       filtered = filtered.filter(
         (tripMember) =>
           tripMember.trip.name.toLowerCase().includes(query) ||
-          tripMember.trip.destination_name?.toLowerCase().includes(query)
+          tripMember.trip.destination_name?.toLowerCase().includes(query) ||
+          // Also search through city names
+          tripMember.trip.cities?.some(city => 
+            city.name?.toLowerCase().includes(query)
+          )
       );
     }
 
@@ -131,6 +114,27 @@ export default function TripsClientPage({
     return grouped;
   }, [filteredTrips, filterType]);
 
+  // Travel stats in a single line
+  const travelStats = useMemo(() => {
+    const visitedTrips = trips.filter(t => 
+      t.trip.end_date && new Date(t.trip.end_date) < new Date()).length;
+    const upcomingTrips = trips.filter(t => 
+      t.trip.end_date && new Date(t.trip.end_date) >= new Date() || 
+      // If no end date but has start date in future, count as upcoming
+      (!t.trip.end_date && t.trip.start_date && new Date(t.trip.start_date) >= new Date())
+    ).length;
+    
+    // Use cities for counting unique destinations, fallback to destination_name for legacy data
+    const uniqueDestinations = new Set([
+      ...trips.flatMap(t => 
+        t.trip.cities?.map(city => city.name).filter(Boolean) || []
+      ),
+      ...trips.map(t => t.trip.destination_name).filter(Boolean)
+    ]).size;
+
+    return { visited: visitedTrips, upcoming: upcomingTrips, destinations: uniqueDestinations };
+  }, [trips]);
+
   // Empty state when no trips exist
   if (trips.length === 0) {
     return (
@@ -150,10 +154,21 @@ export default function TripsClientPage({
   }
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Travel stats as a single line */}
+      {trips.length > 0 && (
+        <div className="text-sm text-muted-foreground px-2 py-2 text-center">
+          {travelStats.visited > 0 && <span>{travelStats.visited} visited</span>}
+          {travelStats.visited > 0 && travelStats.upcoming > 0 && <span> • </span>}
+          {travelStats.upcoming > 0 && <span>{travelStats.upcoming} upcoming</span>}
+          {(travelStats.visited > 0 || travelStats.upcoming > 0) && travelStats.destinations > 0 && <span> • </span>}
+          {travelStats.destinations > 0 && <span>{travelStats.destinations} unique destinations</span>}
+        </div>
+      )}
+
       {/* Filter and search controls */}
-      <div className="flex flex-wrap gap-4 items-center mb-8 justify-center">
-        <div className="relative w-full max-w-md mx-auto">
+      <div className="flex flex-wrap gap-4 items-center mb-4">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search trips..."
@@ -162,19 +177,42 @@ export default function TripsClientPage({
             className="pl-10"
           />
         </div>
-        <Tabs
-          defaultValue="all"
-          value={filterType}
-          onValueChange={(value) => setFilterType(value as 'all' | 'upcoming' | 'past')}
-          className="w-full max-w-md"
-        >
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="past">Past</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
+
+      {/* Tabs Interface */}
+      <Tabs 
+        defaultValue="all" 
+        value={filterType}
+        onValueChange={(value) => setFilterType(value as 'all' | 'upcoming' | 'past')}
+        className="w-full"
+      >
+        <div className="flex justify-center mb-4">
+          <TabsList className="grid grid-cols-3 rounded-full p-1 w-auto min-w-[300px]">
+            <TabsTrigger value="all" className="rounded-full">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="rounded-full">
+              Upcoming
+            </TabsTrigger>
+            <TabsTrigger value="past" className="rounded-full">
+              Past
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="all" className="mt-0">
+          <TripsList groupedTrips={groupedTrips} />
+        </TabsContent>
+        
+        <TabsContent value="upcoming" className="mt-0">
+          <TripsList groupedTrips={groupedTrips} />
+        </TabsContent>
+        
+        <TabsContent value="past" className="mt-0">
+          <TripsList groupedTrips={groupedTrips} />
+        </TabsContent>
+      </Tabs>
+      
       {/* Show empty state if no trips match the filters */}
       {Object.keys(groupedTrips).length === 0 && (
         <div className="text-center p-8 border rounded-lg bg-card/50">
@@ -193,81 +231,79 @@ export default function TripsClientPage({
           </Button>
         </div>
       )}
-      {/* Grouped trips list */}
-      <div className="space-y-12">
-        {Object.entries(groupedTrips).map(([dateGroup, tripsInGroup]) => (
-          <div key={dateGroup}>
-            <div className="flex items-center mb-4">
-              <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">{dateGroup}</h2>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {tripsInGroup.map((tripMember) => (
-                <Link
-                  key={tripMember.trip.id}
-                  href={`/trips/${tripMember.trip.id}`}
-                  className="no-underline"
-                >
-                  <Card className="h-full hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                    <div
-                      className={`relative h-32 bg-cover bg-center ${
-                        !tripMember.trip.cover_image_url ? 'bg-muted' : ''
-                      }`}
-                      style={
-                        tripMember.trip.cover_image_url
-                          ? { backgroundImage: `url(${tripMember.trip.cover_image_url})` }
-                          : {}
-                      }
-                    >
-                      {!tripMember.trip.cover_image_url && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-4xl">✈️</span>
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="mb-2">
-                        <p className="text-xs text-muted-foreground">
-                          {tripMember.role.toUpperCase()}
-                        </p>
-                      </div>
-                      <h3 className="text-lg font-bold line-clamp-1 mb-1">
-                        {tripMember.trip.name}
-                      </h3>
-                      {tripMember.trip.destination_name && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {tripMember.trip.destination_name}
-                        </p>
-                      )}
-                      {(tripMember.trip.start_date || tripMember.trip.end_date) && (
-                        <div className="flex items-center text-xs">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          <span>
-                            {tripMember.trip.start_date
-                              ? new Date(tripMember.trip.start_date).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                })
-                              : 'TBD'}{' '}
-                            -{' '}
-                            {tripMember.trip.end_date
-                              ? new Date(tripMember.trip.end_date).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                })
-                              : 'TBD'}
-                          </span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+    </div>
+  );
+}
+
+// Minimal Trip Card Component
+function MinimalTripCard({ tripMember }: { tripMember: TripMember }) {
+  const trip = tripMember.trip;
+  const hasDateInfo = trip.start_date || trip.end_date;
+  const dateRange = hasDateInfo 
+    ? formatDateRange(trip.start_date || '', trip.end_date || '') 
+    : '';
+
+  // Get primary city name or fall back to destination_name
+  const locationName = trip.cities?.length 
+    ? trip.cities[0].name 
+    : trip.destination_name;
+
+  return (
+    <Link href={`/trips/${trip.id}`} className="no-underline block">
+      <Card className="h-full hover:shadow-md transition-shadow duration-200 overflow-hidden">
+        <CardContent className="p-4">
+          {/* Privacy badge */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+              {trip.is_public ? 'Public' : 'Private'}
+            </span>
+          </div>
+
+          <h3 className="text-lg font-semibold mb-1 line-clamp-1">{trip.name}</h3>
+          
+          <div className="space-y-1 text-sm text-muted-foreground">
+            {locationName && (
+              <div className="flex items-center gap-1">
+                <span className="truncate">{locationName}</span>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" />
+              <span>0 travelers</span>
+              
+              {hasDateInfo && (
+                <>
+                  <span className="mx-1">•</span>
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{dateRange}</span>
+                </>
+              )}
             </div>
           </div>
-        ))}
-      </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+// Trip List Component
+function TripsList({ groupedTrips }: { groupedTrips: Record<string, TripMember[]> }) {
+  return (
+    <div className="space-y-8">
+      {Object.entries(groupedTrips).map(([dateGroup, tripsInGroup]) => (
+        <div key={dateGroup}>
+          <div className="flex items-center mb-4">
+            <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
+            <h2 className="text-xl font-semibold">{dateGroup}</h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {tripsInGroup.map((tripMember) => (
+              <MinimalTripCard key={tripMember.trip.id} tripMember={tripMember} />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 // Define the schema for reaction validation
 const reactionSchema = z.object({
-  reaction: z.string().min(1).max(10),
+  emoji: z.string().min(1).max(10),
 });
 
 /**
@@ -15,7 +15,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { tripId: string; itemId: string; commentId: string } }
 ) {
-  const { tripId, itemId, commentId } = params;
+  // Await the params object before using its properties
+  const { tripId, itemId, commentId } = await params;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -39,7 +40,7 @@ export async function POST(
       );
     }
 
-    const { reaction } = validation.data;
+    const { emoji } = validation.data;
 
     // First check if the user has access to the trip
     const { data: membership, error: membershipError } = await supabase
@@ -71,7 +72,7 @@ export async function POST(
       .select('id')
       .eq('comment_id', commentId)
       .eq('user_id', user.id)
-      .eq('reaction', reaction)
+      .eq('emoji', emoji)
       .single();
 
     // If reaction exists, remove it (toggle behavior)
@@ -94,7 +95,7 @@ export async function POST(
       .insert({
         comment_id: commentId,
         user_id: user.id,
-        reaction: reaction,
+        emoji: emoji,
       })
       .select()
       .single();
@@ -122,7 +123,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { tripId: string; itemId: string; commentId: string } }
 ) {
-  const { tripId, commentId } = params;
+  // Await the params object before using its properties
+  const { tripId, commentId } = await params;
   const supabase = await createRouteHandlerClient();
 
   try {

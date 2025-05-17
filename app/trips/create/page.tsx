@@ -14,7 +14,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CityChipsAutocompleteInput } from '@/components/cities/city-chips-autocomplete-input';
 import { PageHeader } from '@/components/layout/page-header';
-import { PopularDestinationsGrid, type Destination as PopularDestinationType } from '@/components/ui/PopularDestinationsGrid';
+import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
+import { toast } from '@/hooks/use-toast';
+import { mutate } from 'swr';
+import LoadingOverlay from '@/components/shared/loading-overlay';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { X } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 // Simple schema for trip creation
 const tripSchema = z.object({
@@ -43,12 +49,11 @@ interface City {
   created_at?: string;
   updated_at?: string;
   is_destination?: boolean;
-  emoji?: string;
+  emoji?: string | null;
+  iso2?: string | null;
+  description?: string | null;
   [key: string]: any;
 }
-
-// Define a type for the destinations fetched from the API
-interface FetchedDestination extends PopularDestinationType {}
 
 export default function CreateTrip() {
   const router = useRouter();
@@ -56,8 +61,9 @@ export default function CreateTrip() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [website, setWebsite] = useState(''); // Honeypot field
-  const [popularDestinations, setPopularDestinations] = useState<FetchedDestination[]>([]);
-  const [isFetchingPopularDestinations, setIsFetchingPopularDestinations] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGuestBanner, setShowGuestBanner] = useState(false);
+  const [createdTripId, setCreatedTripId] = useState<string | null>(null);
 
   const form = useForm<TripFormValues>({
     resolver: zodResolver(tripSchema),
@@ -69,26 +75,6 @@ export default function CreateTrip() {
       },
     },
   });
-
-  useEffect(() => {
-    const fetchPopularDests = async () => {
-      setIsFetchingPopularDestinations(true);
-      try {
-        const response = await fetch('/api/destinations/popular?limit=20'); // Fetch a bit more to allow sorting
-        if (!response.ok) {
-          throw new Error('Failed to fetch popular destinations');
-        }
-        const data = await response.json();
-        setPopularDestinations(data.destinations || []);
-      } catch (err) {
-        console.error('Error fetching popular destinations for create page:', err);
-        // Optionally set an error state to display to the user
-      } finally {
-        setIsFetchingPopularDestinations(false);
-      }
-    };
-    fetchPopularDests();
-  }, []);
 
   const handleSubmit = async (values: TripFormValues) => {
     if (isLoading) return;
@@ -149,152 +135,207 @@ export default function CreateTrip() {
     setSelectedCities(cities);
   };
 
-  const onGridDestinationSelect = (destination: PopularDestinationType) => {
-    const newCity: City = {
-      id: destination.id || `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-      name: destination.name || destination.city || 'Unknown City',
-      country: destination.country || 'Unknown Country',
-      emoji: destination.emoji || undefined,
-      continent: destination.continent,
-      description: destination.description,
-      // Add any other relevant fields from PopularDestinationType to City if needed
-    };
+  const onSubmit = async (data: TripFormValues) => {
+    setIsSubmitting(true);
+    
+    try {
+      // Get formatted dates for API
+      const formattedData = {
+        ...data,
+        start_date: data.date_range.from ? data.date_range.from.toISOString().split('T')[0] : null,
+        end_date: data.date_range.to ? data.date_range.to.toISOString().split('T')[0] : null,
+        // Add cities data 
+        cities: selectedCities.map(city => ({
+          city_id: city.id,
+          name: city.name,
+          country: city.country
+        }))
+      };
 
-    // Avoid adding duplicates
-    setSelectedCities((prevCities) => {
-      const exists = prevCities.some(
-        (city) => city.name === newCity.name && city.country === newCity.country
-      );
-      if (!exists) {
-        return [...prevCities, newCity];
+      // Make the actual API call in the background
+      const response = await fetch(API_ROUTES.TRIPS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formattedData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create trip');
       }
-      return prevCities;
-    });
+
+      const result = await response.json();
+      setCreatedTripId(result.trip.id);
+
+      // Show success toast
+      toast({
+        title: 'Trip created successfully!',
+        description: 'Your new trip is ready to plan.',
+      });
+
+      // If guest, show banner - using proper auth check
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const isGuest = !session?.user;
+      
+      if (isGuest) {
+        setShowGuestBanner(true);
+      }
+
+      // Redirect to the new trip page
+      router.push(PAGE_ROUTES.TRIP_DETAILS(result.trip.id));
+      
+      // Invalidate trips cache to reflect the new trip
+      mutate(API_ROUTES.TRIPS);
+    } catch (err) {
+      console.error('Error creating trip:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create trip');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Container size="wide">
-      <div className="py-10">
+      <div className="py-10 max-w-2xl mx-auto">
         <PageHeader
           title="Create a New Trip"
           description="Start planning your next adventure with friends and family."
           className="mb-8 text-center"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Trip Form */}
-          <div className="lg:col-span-5">
-            <Card>
-              <CardHeader>
-                <CardTitle>Trip Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Form form={form}>
-                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                    {/* Honeypot field - hidden from users */}
-                    <div className="hidden">
-                      <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        value={website}
-                        onChange={(e) => setWebsite(e.target.value)}
-                      />
-                    </div>
+        {/* Display error message if there is one */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                onClick={() => setError(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </Alert>
+        )}
 
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Trip Name*</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Summer in Europe" {...field} disabled={isLoading} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+        {/* Show guest banner if needed */}
+        {showGuestBanner && (
+          <Alert className="mb-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <AlertTitle>Trip created as guest</AlertTitle>
+                <AlertDescription>
+                  Sign up to save and access your trip from any device.
+                </AlertDescription>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                onClick={() => setShowGuestBanner(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </Alert>
+        )}
 
-                    <FormField
-                      control={form.control}
-                      name="date_range"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Trip Dates (optional)</FormLabel>
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Trip Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form form={form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Trip Name*</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Summer in Europe"
+                            {...field}
+                            disabled={isSubmitting}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="date_range"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Trip Dates (optional)</FormLabel>
+                        <FormControl>
                           <DatePicker
                             date={field.value}
-                            setDate={(newDate) => field.onChange(newDate)}
-                            disabled={isLoading}
+                            setDate={field.onChange}
+                            placeholder="Pick a date range"
+                            disabled={isSubmitting}
                           />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="space-y-2">
-                      <CityChipsAutocompleteInput
-                        selectedCities={selectedCities}
-                        onChange={handleCitiesChange}
-                        disabled={isLoading}
-                        label="Destinations*"
-                        placeholder="Search for places to visit..."
-                        emptyMessage="Find places by searching or click on suggestions from the right"
-                      />
-                    </div>
-
-                    {error && (
-                      <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded">
-                        {error}
-                      </div>
+                        </FormControl>
+                      </FormItem>
                     )}
-
-                    <div className="flex justify-end space-x-4 pt-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => router.push('/trips')}
-                        disabled={isLoading}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={isLoading || selectedCities.length === 0}>
-                        {isLoading ? 'Creating...' : 'Create Trip'}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column: Inspiration Section */}
-          <div className="lg:col-span-7">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Popular Destinations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-6">
-                  <p className="text-muted-foreground mb-4">
-                    Browse popular destinations and click on any that interest you to add them to
-                    your trip.
-                  </p>
-                </div>
-
-                {isFetchingPopularDestinations ? (
-                  <p className="text-muted-foreground text-center">Loading destinations...</p>
-                ) : popularDestinations.length > 0 ? (
-                  <PopularDestinationsGrid
-                    destinations={popularDestinations}
-                    maxItems={12}
-                    onSelectDestination={onGridDestinationSelect}
                   />
-                ) : (
-                  <p className="text-muted-foreground text-center">Could not load popular destinations at the moment.</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cities" className="text-sm font-medium">
+                      Destinations*
+                    </Label>
+                    <CityChipsAutocompleteInput
+                      selectedCities={selectedCities}
+                      onChange={handleCitiesChange}
+                      disabled={isSubmitting}
+                      placeholder="Find places by searching or click on suggestions from the right"
+                    />
+                  </div>
+
+                  {/* Honeypot field - invisible to users but traps bots */}
+                  <div className="hidden">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      type="text"
+                      autoComplete="off"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => router.back()}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isSubmitting || isLoading}>
+                      {isSubmitting ? 'Creating Trip...' : 'Create Trip'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
         </div>
       </div>
+      {isSubmitting && <LoadingOverlay message="Creating your trip..." />}
     </Container>
   );
 }

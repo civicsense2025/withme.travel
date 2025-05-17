@@ -2,7 +2,7 @@ import { Place } from './places';
 import { Profile } from './profile';
 import { ProcessedVotes, Vote } from './votes';
 import { type ItemStatus } from '@/utils/constants/status';
-import type { Tables } from './database.types';
+import type { Tables } from './.database.types';
 type ItineraryItemReaction = Tables<'itinerary_item_reactions'>;
 
 // --- Base Itinerary Item Interfaces ---

@@ -73,9 +73,9 @@ export function HeroSectionWrapper({
   return (
     <section className={`w-full flex justify-center py-16 md:py-24 px-4 ${className}`}>
       <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
-        {/* Left: Heading, subheading, CTA */}
+        {/* Left: Heading, subheading, CTA - appears second on mobile */}
         <div className="text-left order-2 lg:order-1 mt-8 lg:mt-0">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 text-foreground">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 text-foreground">
             {heading}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8">
@@ -87,14 +87,16 @@ export function HeroSectionWrapper({
             </Button>
           </Link>
         </div>
-        {/* Right: MultiCitySelector demo */}
+        {/* Right: MultiCitySelector demo - appears first on mobile */}
         <div className="flex justify-center lg:justify-end order-1 lg:order-2">
           <div className="w-full max-w-lg transform translate-y-0 md:translate-y-4 lg:translate-y-0">
-            <MultiCityItinerary
-              initialCities={cities}
-              disablePopup={true}
-              withBackground={showBackground}
-            />
+            <div className="rounded-4xl overflow-hidden shadow-lg">
+              <MultiCityItinerary
+                initialCities={cities}
+                disablePopup={true}
+                withBackground={showBackground}
+              />
+            </div>
           </div>
         </div>
       </div>

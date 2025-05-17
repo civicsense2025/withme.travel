@@ -10,18 +10,15 @@ import Script from 'next/script';
 import { ClientSideProviders } from '@/components/client-side-providers';
 import Navbar from '@/components/layout/Navbar';
 import { Footer } from '@/components/footer';
-import { cookies } from 'next/headers';
-import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { LayoutModeProvider } from './context/layout-mode-context';
 import { ClientSideLayoutRenderer } from '@/components/client-side-layout-renderer';
 import { Toaster } from '@/components/ui/toaster';
 import { helveticaNeue } from './fonts';
 import { Container } from '@/components/container';
 import { SearchProvider } from '@/contexts/search-context';
-import { CommandMenu } from '@/components/search/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
-import { ResearchDebugger } from '@/components/research/ResearchDebugger';
 import React from 'react';
+import { ServerAuthProvider } from '@/components/server-auth-provider';
 
 // Metadata is imported from app/metadata.ts
 export const metadata = {
@@ -31,26 +28,6 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // SSR: fetch session once, but handle missing session gracefully
-  let session = null;
-  try {
-    const supabase = await createRouteHandlerClient();
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Supabase session error:', error);
-      }
-      session = null;
-    } else {
-      session = data?.session ?? null;
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('No session found or Supabase error:', err);
-    }
-    session = null;
-  }
-
   return (
     <html lang="en" className={cn('font-sans antialiased', helveticaNeue.variable)} suppressHydrationWarning>
       <head>
@@ -108,18 +85,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
           <TooltipProvider>
-            <Providers initialSession={session}>
+            <ServerAuthProvider>
               <LayoutModeProvider>
                 <ClientSideProviders>
                   <ClientSideLayoutRenderer>
                     <Navbar />
                     {children}
-                    <CommandMenu />
-                    {process.env.NODE_ENV === 'development' && <ResearchDebugger initialOpen={false} />}
                   </ClientSideLayoutRenderer>
                 </ClientSideProviders>
               </LayoutModeProvider>
-            </Providers>
+            </ServerAuthProvider>
           </TooltipProvider>
           <Toaster />
           <Analytics />

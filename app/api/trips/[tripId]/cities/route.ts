@@ -1,67 +1,100 @@
-import { createRouteHandlerClient } from '@/utils/supabase/server';
+/**
+ * Trip Cities API Route
+ * 
+ * Handles listing, adding, and removing cities for a trip.
+ * 
+ * @module api/trips/[tripId]/cities
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database-multi-city';
+import { createRouteHandlerClient } from '@supabase/ssr';
+import { TABLES } from '@/utils/constants/tables';
 
-// Define API response types
-interface SuccessResponse<T> {
-  data: T;
-  success: true;
-  message?: string;
+// ============================================================================
+// GET: List all cities for a trip
+// ============================================================================
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { tripId: string } }
+) {
+  const supabase = createRouteHandlerClient();
+  const { tripId } = params;
+
+  const { data, error } = await supabase
+    .from(TABLES.TRIP_CITIES)
+    .select(`
+      city:city_id (
+        id, name, country, admin_name, continent, latitude, longitude, mapbox_id, population, timezone, country_code, metadata, created_at, updated_at, is_destination, emoji, iso2, description
+      )
+    `)
+    .eq('trip_id', tripId);
+
+  if (error) {
+    return NextResponse.json({ error: 'Failed to fetch cities for trip' }, { status: 500 });
+  }
+
+  // Flatten city objects
+  const cities = (data ?? []).map((row: any) => row.city);
+
+  return NextResponse.json({ cities });
 }
 
-interface ErrorResponse {
-  error: string;
-  code?: string;
-  success: false;
+// ============================================================================
+// POST: Add cities to a trip
+// ============================================================================
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { tripId: string } }
+) {
+  const supabase = createRouteHandlerClient();
+  const { tripId } = params;
+  const { cities } = await req.json();
+
+  if (!Array.isArray(cities) || cities.length === 0) {
+    return NextResponse.json({ error: 'No cities provided' }, { status: 400 });
+  }
+
+  // Prepare insert data
+  const insertRows = cities.map((city: { id: string }) => ({
+    trip_id: tripId,
+    city_id: city.id,
+  }));
+
+  const { error } = await supabase
+    .from(TABLES.TRIP_CITIES)
+    .upsert(insertRows, { onConflict: 'trip_id,city_id' });
+
+  if (error) {
+    return NextResponse.json({ error: 'Failed to add cities to trip' }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }
 
-// Define city-related types
-interface City {
-  id: string;
-  name: string;
-  country: string;
-  region?: string | null;
-  continent?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  timezone?: string | null;
-}
+// ============================================================================
+// DELETE: Remove a city from a trip
+// ============================================================================
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { tripId: string } }
+) {
+  const supabase = createRouteHandlerClient();
+  const { tripId } = params;
+  const { cityId } = await req.json();
 
-interface TripCity {
-  id: string;
-  trip_id: string;
-  city_id: string;
-  position: number | null;
-  arrival_date: string | null;
-  departure_date: string | null;
-  city: City | null;
-}
+  if (!cityId) {
+    return NextResponse.json({ error: 'cityId is required' }, { status: 400 });
+  }
 
-/**
- * DEPRECATED: This endpoint previously relied on the 'places' table, which no longer exists in the database schema.
- * This feature is deprecated and will be removed in a future release.
- */
-export async function GET() {
-  return NextResponse.json({ error: 'This endpoint is no longer available.' }, { status: 410 });
-}
+  const { error } = await supabase
+    .from(TABLES.TRIP_CITIES)
+    .delete()
+    .eq('trip_id', tripId)
+    .eq('city_id', cityId);
 
-/**
- * POST handler to add a city to a trip
- */
-export async function POST() {
-  return NextResponse.json({ error: 'This endpoint is no longer available.' }, { status: 410 });
-}
+  if (error) {
+    return NextResponse.json({ error: 'Failed to remove city from trip' }, { status: 500 });
+  }
 
-/**
- * PUT handler to reorder cities in a trip
- */
-export async function PUT(request: NextRequest, { params }: { params: { tripId: string } }) {
-  return NextResponse.json({ error: 'This endpoint is no longer available.' }, { status: 410 });
-}
-
-// DEPRECATED: This endpoint previously relied on the 'places' table, which no longer exists in the database schema.
-// This feature is deprecated and will be removed in a future release.
-
-export async function DELETE() {
-  return NextResponse.json({ error: 'This endpoint is no longer available.' }, { status: 410 });
+  return NextResponse.json({ success: true });
 }

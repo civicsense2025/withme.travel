@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { TIME_FORMATS, THEME } from '@/utils/constants/ui';
+import { TIME_FORMATS, THEME } from '@/utils/constants/ui/ui';
 import { format as formatFns, parseISO } from 'date-fns';
 
 /**

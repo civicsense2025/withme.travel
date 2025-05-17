@@ -7,7 +7,7 @@ import { z } from 'zod';
 // Schema for comment request
 const commentSchema = z.object({
   content: z.string().trim().min(1, 'Comment cannot be empty').max(2000, 'Comment too long'),
-  parent_id: z.string().uuid().nullable().optional(),
+  parent_id: z.number().nullable().optional(),
 });
 
 /**
@@ -18,8 +18,8 @@ export async function GET(
   req: NextRequest,
   context: { params: { tripId: string; itemId: string } }
 ) {
-  const tripId = context.params.tripId;
-  const itemId = context.params.itemId;
+  // Await the params object before using its properties
+  const { tripId, itemId } = await context.params;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -118,8 +118,8 @@ export async function POST(
   req: NextRequest,
   context: { params: { tripId: string; itemId: string } }
 ) {
-  const tripId = context.params.tripId;
-  const itemId = context.params.itemId;
+  // Await the params object before using its properties
+  const { tripId, itemId } = await context.params;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -143,16 +143,36 @@ export async function POST(
       return NextResponse.json({ error: 'Trip not found or no access' }, { status: 404 });
     }
 
-    // TODO: Only id, created_at, guest_token are supported in itinerary_item_comments Insert type. Fallback to minimal insert.
+    // Parse and validate the request body
+    const requestBody = await req.json();
+    const validationResult = commentSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid comment data', details: validationResult.error.format() },
+        { status: 400 }
+      );
+    }
+    
+    const { content, parent_id } = validationResult.data;
+
+    // Insert the new comment
     const { data: newComment, error } = await supabase
       .from('itinerary_item_comments')
-      .insert({})
+      .insert({
+        item_id: itemId,
+        user_id: user.id,
+        content,
+        parent_id
+      })
       .select('*')
       .single();
+
     if (error) {
       console.error('Error creating comment:', error);
       return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
     }
+    
     return NextResponse.json({ comment: newComment });
   } catch (error) {
     console.error('Error processing comment creation:', error);
@@ -168,22 +188,51 @@ export async function PATCH(
   request: Request,
   context: { params: { tripId: string; itemId: string } }
 ) {
-  const tripId = context.params.tripId;
-  const itemId = context.params.itemId;
+  // Await the params object before using its properties
+  const { tripId, itemId } = await context.params;
   const supabase = await createRouteHandlerClient();
 
   try {
+    // Get the authenticated user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Get comment ID and update data from request
-    const { commentId, is_deleted } = await request.json();
+    const { commentId, content, is_deleted } = await request.json();
 
     if (!commentId) {
       return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
     }
 
-    // TODO: No user_id field in itinerary_item_comments. Cannot check ownership. Only allow update by id and item_id.
+    // Verify ownership of the comment
+    const { data: comment, error: commentError } = await supabase
+      .from('itinerary_item_comments')
+      .select('user_id')
+      .eq('id', commentId)
+      .eq('item_id', itemId)
+      .single();
+    
+    if (commentError || !comment) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
+    
+    // Check if user owns the comment
+    if (comment.user_id !== user.id) {
+      return NextResponse.json({ error: 'Not authorized to edit this comment' }, { status: 403 });
+    }
 
     // Build update object based on what's provided
     const updateData: any = {};
+
+    if (content) {
+      updateData.content = content;
+      updateData.is_edited = true;
+    }
 
     if (typeof is_deleted === 'boolean') {
       updateData.is_deleted = is_deleted;

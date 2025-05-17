@@ -8,15 +8,20 @@ import { API_ROUTES } from '@/utils/constants/routes';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { TRIP_TABLES, GROUP_TABLES } from '@/utils/constants/tables';
 import { GROUP_FIELDS } from '@/utils/constants/groups';
-import { TABLE_NAMES } from '@/utils/constants/tables';
+import { TABLES } from '@/utils/constants/tables';
+import { DATABASE_TYPES } from '@/utils/constants/database.types';
 
 // Types
-import type { Database } from '@/types/database.types';
+import type { Database } from '@/utils/constants/database';
 import type { TripMembership, Trip, TripWithMemberInfo } from '@/types/trips';
 
 // Utils
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { handleQueryResult } from '@/utils/type-safety';
+import { getGuestToken } from '@/utils/guest';
+
+// Centralized API
+import { listPublicTrips, listUserTripsWithMembership, createTrip } from '@/lib/api/trips';
 
 // --------------------------------
 // Types
@@ -143,9 +148,10 @@ async function getOrCreateGuestToken(): Promise<string> {
  * Returns all trips for the authenticated user.
  * This includes both trips created by the user
  * and trips they are a member of.
+ *
+ * Refactored to use centralized API module (lib/api/trips)
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = await createRouteHandlerClient();
   const userId = request.headers.get('x-user-id');
   const includeShared = request.nextUrl.searchParams.get('includeShared') === 'true';
   const limit = Number(request.nextUrl.searchParams.get('limit')) || 10;
@@ -154,135 +160,47 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     if (!userId) {
-      // Return only public trips for unauthenticated users
-      const { data, error } = await supabase
-        .from(TABLE_NAMES.TRIPS)
-        .select('*')
-        .eq('is_public', true)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) {
-        console.error('Error fetching public trips:', error);
-        return NextResponse.json({ error: 'Failed to fetch trips' }, { status: 500 });
+      // Use centralized API for public trips
+      const result = await listPublicTrips({ limit, offset });
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 500 });
       }
-
-      return NextResponse.json({ trips: data || [] });
-    }
-
-    // For authenticated users, return their trips
-    let tripsQuery = supabase
-      .from(TABLE_NAMES.TRIPS)
-      .select('*')
-      .eq('created_by', userId)
-      .order('created_at', { ascending: false });
-
-    if (includeShared) {
-      // If includeShared is true, also get trips where user is a member
-      const { data: memberTrips, error: memberError } = await supabase
-        .from(TABLE_NAMES.TRIP_MEMBERS)
-        .select('trip_id')
-        .eq('user_id', userId)
-        .eq('status', 'active');
-
-      if (memberError) {
-        console.error('Error fetching member trips:', memberError);
-        return NextResponse.json({ error: 'Failed to fetch trips' }, { status: 500 });
+      return NextResponse.json({ trips: result.data });
+    } else {
+      // Use centralized API for user trips (with optional shared trips)
+      const result = await listUserTripsWithMembership(userId, { includeShared, limit, offset });
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 500 });
       }
-
-      if (memberTrips && memberTrips.length > 0) {
-        const tripIds = memberTrips.map((member) => member.trip_id);
-
-        // Get both user's created trips and trips they're members of
-        const { data: combinedTrips, error: tripsError } = await supabase
-          .from(TABLE_NAMES.TRIPS)
-          .select('*')
-          .or(`created_by.eq.${userId},id.in.(${tripIds.join(',')})`)
-          .order('created_at', { ascending: false })
-          .range(offset, offset + limit - 1);
-
-        if (tripsError) {
-          console.error('Error fetching combined trips:', tripsError);
-          return NextResponse.json({ error: 'Failed to fetch trips' }, { status: 500 });
-        }
-
-        return NextResponse.json({ trips: combinedTrips || [] });
-      }
+      return NextResponse.json({ trips: result.data });
     }
-
-    // If not including shared trips or no shared trips found
-    const { data, error } = await tripsQuery.range(offset, offset + limit - 1);
-
-    if (error) {
-      console.error('Error fetching user trips:', error);
-      return NextResponse.json({ error: 'Failed to fetch trips' }, { status: 500 });
-    }
-
-    return NextResponse.json({ trips: data || [] });
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch trips' }, { status: 500 });
   }
 }
 
 /**
- * POST /api/trips - Create a new trip
+ * POST /api/trips
+ *
+ * Creates a new trip for the authenticated user.
+ * Refactored to use centralized API module (lib/api/trips)
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const userId = request.headers.get('x-user-id');
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
-    // Get the request body
     const body = await request.json();
-
-    // Get the authenticated user
-    const supabase = await createRouteHandlerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    // Ensure user is authenticated
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Attach created_by to trip data
+    const tripData = { ...body, created_by: userId };
+    const result = await createTrip(tripData);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
-
-    // Create the trip
-    const tripData = {
-      name: body.name || 'New Trip',
-      description: body.description || '',
-      start_date: body.start_date || null,
-      end_date: body.end_date || null,
-      created_by: user.id, // Ensure created_by is always set and not null
-      // Add other fields as needed
-    };
-
-    const { data: newTrip, error: tripError } = await supabase
-      .from(TABLE_NAMES.TRIPS)
-      .insert(tripData)
-      .select()
-      .single();
-
-    if (tripError) {
-      console.error('Error creating trip:', tripError);
-      return NextResponse.json({ error: 'Failed to create trip' }, { status: 500 });
-    }
-
-    // Add the user as a member of the trip
-    const memberData = {
-      trip_id: newTrip.id,
-      user_id: user.id,
-      role: TRIP_ROLES.ADMIN, // Use the enum value instead of string literal
-    };
-
-    const { error: memberError } = await supabase.from(TABLE_NAMES.TRIP_MEMBERS).insert(memberData);
-
-    if (memberError) {
-      console.error('Error adding trip member:', memberError);
-      // Non-fatal, we'll still return the trip
-    }
-
-    return NextResponse.json({ trip: newTrip });
+    return NextResponse.json({ trip: result.data });
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create trip' }, { status: 500 });
   }
 }
 

@@ -35,7 +35,7 @@
     "build/types/**/*.ts",
     "tailwind.config.js",
     "tailwind.config.ts"
-  ],
+, "types/.database.types.ts"  ],
   "exclude": [
     "node_modules",
     "mobile",

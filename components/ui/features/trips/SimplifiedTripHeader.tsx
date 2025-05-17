@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { useState } from 'react';
-import CompactBudgetSnapshot from '@/components/trips/compact-budget-snapshot';
+import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
 import ImageSelector from '@/app/components/ImageSelector';
 import {
   Sheet,

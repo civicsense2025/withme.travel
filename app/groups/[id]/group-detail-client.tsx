@@ -90,7 +90,6 @@ import {
 } from '@/components/ui/table';
 import { ENUMS } from '@/utils/constants/database';
 import { useToast } from '@/components/ui/use-toast';
-import { useResearchTracking } from '@/hooks/use-research-tracking';
 
 interface GroupDetailClientProps {
   group: Group;
@@ -162,7 +161,6 @@ export default function GroupDetailClient({
     description: '',
   });
   const { toast } = useToast();
-  const { trackEvent } = useResearchTracking();
 
   // Compose the full member list: active members, creator, guest
   const fullMembers = useMemo(() => {
@@ -406,41 +404,88 @@ export default function GroupDetailClient({
   const handleAddPlan = async () => {
     try {
       setIsLoading(true);
+      console.log('Creating new plan for group:', group.id);
+      
+      // Make sure we have valid data
+      const planName = newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`;
+      const planDescription = newPlanData.description || '';
+      
+      // Prepare the payload
+      const payload = {
+        name: planName,
+        description: planDescription,
+      };
+      
+      console.log('Sending plan creation request with payload:', payload);
+
+      // First check if user is authenticated before making the request
+      if (!isAuthenticated) {
+        toast({
+          title: 'Authentication Required',
+          description: 'You must be signed in to create a plan.',
+          variant: 'destructive',
+        });
+        throw new Error('Authentication required');
+      }
 
       const res = await fetch(`/api/groups/${group.id}/plans`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`,
-          description: newPlanData.description || '',
-        }),
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify(payload),
       });
+
+      // Check for specific response status
+      if (res.status === 401) {
+        toast({
+          title: 'Authentication Error',
+          description: 'Your session may have expired. Please sign in again.',
+          variant: 'destructive',
+        });
+        throw new Error('Authentication failed');
+      }
+      
+      if (res.status === 403) {
+        toast({
+          title: 'Permission Denied',
+          description: 'You do not have permission to create plans in this group.',
+          variant: 'destructive',
+        });
+        throw new Error('Permission denied');
+      }
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to create plan');
+        console.error('Plan creation error details:', {
+          status: res.status,
+          statusText: res.statusText,
+          data,
+        });
+        
+        // Use specific error message if available
+        let errorMessage = 'Failed to create plan';
+        if (data.error) {
+          errorMessage = data.error;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.details) {
+          errorMessage = `${errorMessage}: ${JSON.stringify(data.details)}`;
+        }
+        
+        toast({
+          title: 'Error Creating Plan',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        
+        throw new Error(errorMessage);
       }
 
-      // Track successful plan creation
-      try {
-        await trackEvent('group_plan_created', {
-          groupId: group.id, 
-          planId: data.plan?.id || 'unknown',
-          planName: newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`,
-          hasDescription: !!newPlanData.description,
-          groupName: group.name,
-          memberCount: fullMembers.length || 0,
-          source: 'group-detail',
-          route: `/groups/${group.id}`,
-          component: 'GroupDetailClient'
-        });
-      } catch (trackingError) {
-        // Don't let tracking failures affect user experience
-        console.error('Failed to track group_plan_created event:', trackingError);
-      }
+      // Plan created successfully
+      console.log('Plan created successfully:', data);
 
       // Refresh plans list
       const plansRes = await fetch(`/api/groups/${group.id}/plans`);
@@ -457,35 +502,16 @@ export default function GroupDetailClient({
         description: 'Plan created successfully',
       });
 
-      // Navigate to the new plan using plan.id instead of slug
-      if (data.plan && data.plan.id) {
-        router.push(`/groups/${group.id}/plans/${data.plan.id}`);
+      // Navigate to the new plan using plan.id
+      if (data.data && data.data.id) {
+        router.push(`/groups/${group.id}/plans/${data.data.id}`);
       } else {
         // If for some reason we don't have the plan ID, just refresh the current page
         router.refresh();
       }
     } catch (error) {
       console.error('Error creating plan:', error);
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Failed to create plan. Please try again.',
-        variant: 'destructive',
-      });
-
-      // Optional: Track failed plan creation for UX analysis
-      try {
-        await trackEvent('group_plan_creation_failed', {
-          groupId: group.id,
-          planName: newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          source: 'group-detail',
-          route: `/groups/${group.id}`,
-          component: 'GroupDetailClient'
-        });
-      } catch (trackingError) {
-        console.error('Failed to track group_plan_creation_failed event:', trackingError);
-      }
+      // Error toast is already displayed in the try block for specific errors
     } finally {
       setIsLoading(false);
       setShowAddPlan(false);
@@ -591,7 +617,7 @@ export default function GroupDetailClient({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1 space-y-6">
             <Card>
               <CardHeader className="pb-3">
@@ -696,7 +722,7 @@ export default function GroupDetailClient({
             </Card>
           </div>
 
-          <div className="md:col-span-2 space-y-6">
+          <div className="md:col-span-3 space-y-6">
             <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full justify-start mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -835,7 +861,7 @@ export default function GroupDetailClient({
 
               <TabsContent value="ideas">
                 <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+                  <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Group Ideas</h2>
                     <Button onClick={() => setNewIdeaOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -843,14 +869,14 @@ export default function GroupDetailClient({
                     </Button>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="relative w-full sm:w-auto flex-1">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
                       <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Search ideas..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 w-full"
+                        className="pl-8"
                       />
                       {searchQuery && (
                         <Button
@@ -864,48 +890,44 @@ export default function GroupDetailClient({
                       )}
                     </div>
 
-                    <div className="w-full sm:w-auto">
-                      <Select
-                        value={selectedPlanFilter === null ? 'all_plans' : selectedPlanFilter}
-                        onValueChange={(value) =>
-                          setSelectedPlanFilter(value === 'all_plans' ? null : value)
-                        }
-                      >
-                        <SelectTrigger className="min-w-[180px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all_plans">All plans</SelectItem>
-                          <SelectItem value="null">Unassigned</SelectItem>
-                          {plans.map((plan) => (
-                            <SelectItem key={plan.id} value={plan.id}>
-                              {plan.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Select
+                      value={selectedPlanFilter === null ? 'all_plans' : selectedPlanFilter}
+                      onValueChange={(value) =>
+                        setSelectedPlanFilter(value === 'all_plans' ? null : value)
+                      }
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all_plans">All plans</SelectItem>
+                        <SelectItem value="null">Unassigned</SelectItem>
+                        {plans.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id}>
+                            {plan.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-                    <div className="w-full sm:w-auto">
-                      <Select
-                        value={selectedTypeFilter === null ? 'all_types' : selectedTypeFilter}
-                        onValueChange={(value) =>
-                          setSelectedTypeFilter(value === 'all_types' ? null : value)
-                        }
-                      >
-                        <SelectTrigger className="min-w-[180px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all_types">All types</SelectItem>
-                          <SelectItem value="DESTINATION">Destination</SelectItem>
-                          <SelectItem value="DATE">Date</SelectItem>
-                          <SelectItem value="ACTIVITY">Activity</SelectItem>
-                          <SelectItem value="BUDGET">Budget</SelectItem>
-                          <SelectItem value="OTHER">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Select
+                      value={selectedTypeFilter === null ? 'all_types' : selectedTypeFilter}
+                      onValueChange={(value) =>
+                        setSelectedTypeFilter(value === 'all_types' ? null : value)
+                      }
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all_types">All types</SelectItem>
+                        <SelectItem value="DESTINATION">Destination</SelectItem>
+                        <SelectItem value="DATE">Date</SelectItem>
+                        <SelectItem value="ACTIVITY">Activity</SelectItem>
+                        <SelectItem value="BUDGET">Budget</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {(searchQuery || selectedPlanFilter || selectedTypeFilter) && (

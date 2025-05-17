@@ -94,7 +94,7 @@ export function RecentFeedback() {
 
   return (
     <Card className="overflow-hidden border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-      <CardHeader className="bg-gradient-to-r from-zinc-50 to-white dark:from-zinc-900 dark:to-black border-b">
+      <CardHeader className="bg-gradient-to-r from-zinc-50 to-white dark:from-zinc-900 dark:to-zinc-950 border-b">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl font-bold">Recent Feedback</CardTitle>

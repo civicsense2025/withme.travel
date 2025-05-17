@@ -6,7 +6,7 @@
 
 //  - Route constants:          import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 //  - Status/enums:             import { TRIP_ROLES, ITEM_STATUSES } from '@/utils/constants/status';
-//  - UI/theme constants:       import { THEME, LIMITS } from '@/utils/constants/ui';
+//  - UI/theme constants:       import { THEME, LIMITS } from '@/components/ui/ui';
 //
 // For migration guidance, see docs/constants-migration.md
 // =======================================================================

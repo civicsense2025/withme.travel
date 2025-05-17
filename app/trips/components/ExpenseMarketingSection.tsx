@@ -22,7 +22,7 @@ const scenarios = [
     emoji: '🍝',
     location: 'Trattoria da Luigi',
     paidBy: 0, // Tina
-    amount: 120,
+    amount: 220, // More realistic for a nice dinner for 4 in Rome
     split: true,
     shares: [0.25, 0.25, 0.25, 0.25], // Equal split
   },
@@ -32,7 +32,7 @@ const scenarios = [
     emoji: '🖼️',
     location: 'Florence',
     paidBy: 1, // June
-    amount: 80,
+    amount: 120, // More realistic for museum tickets for 4 people
     split: true,
     shares: [0.25, 0.25, 0.25, 0.25], // Equal split
   },
@@ -42,22 +42,24 @@ const scenarios = [
     emoji: '🚣‍♂️',
     location: 'Lake Como',
     paidBy: 2, // Jay
-    amount: 200,
+    amount: 40, // More realistic for a kayak tour for 4
     split: false, // "It's on me!"
     shares: [0, 0, 1, 0], // Jay pays for everyone
   }
 ];
 
-// Summary of the whole trip for the final phase
+// Summary of the whole trip for the final phase - updated with more expenses and realistic pricing
 const tripSummary = {
   title: "Italian Adventure",
-  duration: "7 days",
-  totalSpent: 400, // Total spent on trip
+  duration: "5 days",
+  totalSpent: 1780, // Updated total
   expenses: [
-    { activity: "Dinner", amount: 120, paidBy: "Tina" },
+    { activity: "Dinner", amount: 240, paidBy: "Tina" },
     { activity: "Museum", amount: 80, paidBy: "June" },
-    { activity: "Kayak Tour", amount: 200, paidBy: "Jay" }
+    { activity: "Kayak Tour", amount: 320, paidBy: "Jay" },
+    // No need to add all 23 expenses, we'll mention them in the UI
   ],
+  otherExpensesCount: 23, // Added to show in summary
   participants: 4
 };
 
@@ -109,21 +111,31 @@ export function ExpenseMarketingSection() {
       2500, // Phase 1 → 2
       3000, // Phase 2 → 3
       3500, // Phase 3 → 4
-      4000, // Phase 4 → 5 (summary)
+      4000, // Phase 4 → next scenario or summary
     ];
     
-    if (animationPhase < 5) {
+    if (animationPhase < 4) {
+      // Progress through phases 0-3 of the current scenario
       timeout = setTimeout(() => {
         setAnimationPhase(prev => prev + 1);
-        if (animationPhase === 4) {
-          // After "all settled up" phase, show the summary
+      }, phaseDelays[animationPhase]);
+    } else if (animationPhase === 4) {
+      // At phase 4 ("All settled up"), wait then move to next scenario
+      timeout = setTimeout(() => {
+        // If we're at the last scenario, show the summary
+        if (activeScenario === scenarios.length - 1) {
           setSummaryVisible(true);
+          setAnimationPhase(5); // Move to phase 5 (summary phase)
+        } else {
+          // Otherwise move to the next scenario
+          setActiveScenario(prev => prev + 1);
+          setAnimationPhase(0);
         }
       }, phaseDelays[animationPhase]);
     } else {
-      // Move to next scenario after longer delay
+      // We're in the summary phase (5) - restart the whole animation after delay
       timeout = setTimeout(() => {
-        setActiveScenario((prev) => (prev + 1) % scenarios.length);
+        setActiveScenario(0);
         setAnimationPhase(0);
         setSummaryVisible(false);
       }, 8000);
@@ -144,20 +156,9 @@ export function ExpenseMarketingSection() {
   return (
     <section ref={sectionRef} className="py-16 px-4 max-w-6xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        {/* Left: Marketing Copy */}
-        <div className="order-1 md:order-none flex flex-col justify-center h-full">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Group expenses, made easy</h2>
-          <p className="text-lg text-muted-foreground mb-6">
-            With withme.travel, you can track every shared cost, see who paid for what, and split expenses fairly—no spreadsheets, no drama. Settle up in seconds and keep your friendships strong.
-          </p>
-          <Button size="lg" asChild>
-            <a href="#get-started">See how it works</a>
-          </Button>
-        </div>
-        
-        {/* Right: Animated Expense Demo */}
-        <div className="order-2 md:order-none">
-          <div className="bg-card rounded-3xl shadow-xl border border-border p-8 max-w-md mx-auto w-full h-[480px] md:h-[520px] flex flex-col justify-center items-center relative overflow-hidden">
+        {/* Component First on Mobile, Second on Desktop */}
+        <div className="order-1 md:order-2">
+          <div className="bg-card rounded-4xl shadow-xl border border-border p-5 sm:p-8 max-w-md mx-auto w-full h-[400px] sm:h-[480px] md:h-[520px] flex flex-col justify-center items-center relative overflow-hidden">
             {/* Trip Activity Header */}
             <AnimatePresence mode="wait">
               {!summaryVisible && (
@@ -166,25 +167,23 @@ export function ExpenseMarketingSection() {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5 }}
-                  className="absolute top-8 left-0 right-0 text-center"
+                  transition={{ duration: 0.3 }}
+                  className="absolute top-5 sm:top-8 left-0 w-full px-5 sm:px-8 text-center"
                 >
-                  <div className="text-xl font-semibold flex items-center justify-center gap-2">
-                    <span>{scenario.emoji}</span>
-                    <span>{scenario.activity}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground">{scenario.location}</div>
+                  <span className="text-3xl sm:text-4xl mb-2 sm:mb-3 inline-block">{scenario.emoji}</span>
+                  <h3 className="text-lg sm:text-xl font-bold">{scenario.activity}</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm">{scenario.location}</p>
                 </motion.div>
               )}
             </AnimatePresence>
             
-            {/* Main Content Area */}
+            {/* Main Content Area - improve centering and mobile scaling */}
             <div className="w-full h-full flex flex-col items-center justify-center relative">
-              {/* Animated Avatars Circle */}
+              {/* Animated Avatars Circle - reduce size on smaller screens */}
               <AnimatePresence>
                 {!summaryVisible && (
                   <motion.div 
-                    className="w-[280px] h-[280px] relative mt-12"
+                    className="w-full max-w-[280px] h-[280px] relative mt-12 mx-auto flex items-center justify-center"
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.5 }}
@@ -192,7 +191,7 @@ export function ExpenseMarketingSection() {
                     {users.map((user, index) => {
                       // Position avatars in a circle
                       const angle = (index * (Math.PI * 2)) / users.length;
-                      const radius = 110; // slightly smaller than half of container width
+                      const radius = 100; // slightly smaller than half of container width
                       const x = Math.cos(angle) * radius;
                       const y = Math.sin(angle) * radius;
                       
@@ -207,8 +206,8 @@ export function ExpenseMarketingSection() {
                           }}
                           className={`absolute ${user.shadowColor} shadow-lg rounded-full`}
                           style={{
-                            left: "calc(50% + " + x + "px)",
-                            top: "calc(50% + " + y + "px)",
+                            left: `calc(50% + ${x}px)`,
+                            top: `calc(50% + ${y}px)`,
                             transform: "translate(-50%, -50%)"
                           }}
                           initial={false}
@@ -221,45 +220,45 @@ export function ExpenseMarketingSection() {
                           <div className={`relative`}>
                             <div 
                               className={`
-                                h-16 w-16 rounded-full flex items-center justify-center text-3xl
+                                h-14 w-14 sm:h-16 sm:w-16 rounded-full flex items-center justify-center text-2xl sm:text-3xl
                                 font-bold ${user.color} border
-                                ${isPayer && animationPhase >= 1 ? 'ring-4 ring-green-300 animate-pulse' : ''}
+                                ${isPayer && animationPhase >= 1 ? 'ring-4 ring-green-400 border-green-300' : ''}
                               `}
                             >
                               {user.emoji}
                             </div>
                             
                             {/* User Name */}
-                            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                              <span className={`text-sm font-medium ${isPayer ? user.textColor : ''}`}>
+                            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-center">
+                              <span className={`text-xs sm:text-sm font-medium ${isPayer ? user.textColor : ''}`}>
                                 {user.name} {isPayer && animationPhase >= 1 && !isItsOnMe && <span className="text-xs">(paid)</span>}
                               </span>
                             </div>
                             
-                            {/* Expense Amount (only shows for payer when revealed) */}
+                            {/* Expense Amount (only shows for payer when revealed) - make smaller font, wider bubble */}
                             {isPayer && animationPhase >= 1 && (
                               <motion.div
                                 initial={{ opacity: 0, scale: 0.8, y: -10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 className={`absolute -top-8 left-1/2 transform -translate-x-1/2 
-                                  px-3 py-1 bg-white ${user.textColor} text-sm font-semibold rounded-full 
-                                  shadow-md border border-gray-100`}
+                                  px-4 py-1 bg-white/90 ${user.textColor} text-xs font-semibold rounded-full 
+                                  shadow-sm border border-gray-100 z-10 min-w-[60px] text-center`}
                               >
                                 {isItsOnMe ? "It's on me!" : `$${scenario.amount}`}
                               </motion.div>
                             )}
                             
-                            {/* Owed Amount (for non-payers, phase 2+) */}
-                            {!isPayer && animationPhase >= 2 && !isItsOnMe && (
+                            {/* Owed Amount (for non-payers, phase 2+) - make smaller font, wider bubble */}
+                            {!isPayer && animationPhase >= 2 && !isItsOnMe && getAmount(index) > 0 && (
                               <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.3 + index * 0.15 }}
                                 className={`absolute -top-8 left-1/2 transform -translate-x-1/2 
-                                  px-3 py-1 bg-white text-sm font-semibold rounded-full 
-                                  shadow-md border border-gray-100 ${getAmount(index) > 0 ? 'text-red-500' : 'text-green-500'}`}
+                                  px-4 py-1 bg-white/90 text-xs font-semibold rounded-full 
+                                  shadow-sm border border-gray-100 text-red-500 z-10 min-w-[60px] text-center`}
                               >
-                                {getAmount(index) > 0 ? `-$${getAmount(index)}` : '$0'}
+                                -${getAmount(index)}
                               </motion.div>
                             )}
                             
@@ -281,9 +280,9 @@ export function ExpenseMarketingSection() {
                       );
                     })}
                     
-                    {/* Money Flow Animations (Phase 3) */}
+                    {/* Money Flow Animations (Phase 3) - ensure properly centered */}
                     {animationPhase >= 3 && !isItsOnMe && (
-                      <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                         {users.map((user, index) => {
                           if (index === scenario.paidBy) return null; // Skip payer
                           return (
@@ -298,13 +297,13 @@ export function ExpenseMarketingSection() {
                                 visible: { opacity: 1 }
                               }}
                             >
-                              {/* Draw path from user to payer */}
+                              {/* Draw path from user to payer - ensure properly centered */}
                               <svg className="absolute inset-0 w-full h-full">
                                 <motion.path
-                                  d={`M ${140 + Math.cos((index * (Math.PI * 2)) / users.length) * 110} 
-                                    ${140 + Math.sin((index * (Math.PI * 2)) / users.length) * 110} 
-                                    L ${140 + Math.cos((scenario.paidBy * (Math.PI * 2)) / users.length) * 110} 
-                                    ${140 + Math.sin((scenario.paidBy * (Math.PI * 2)) / users.length) * 110}`}
+                                  d={`M ${140 + Math.cos((index * (Math.PI * 2)) / users.length) * 100} 
+                                    ${140 + Math.sin((index * (Math.PI * 2)) / users.length) * 100} 
+                                    L ${140 + Math.cos((scenario.paidBy * (Math.PI * 2)) / users.length) * 100} 
+                                    ${140 + Math.sin((scenario.paidBy * (Math.PI * 2)) / users.length) * 100}`}
                                   stroke={user.textColor.replace('text-', 'var(--')}
                                   strokeWidth="2"
                                   fill="none"
@@ -326,10 +325,10 @@ export function ExpenseMarketingSection() {
                                   transition={{ delay: index * 0.2 + 0.2 }}
                                 >
                                   <animateMotion
-                                    path={`M ${140 + Math.cos((index * (Math.PI * 2)) / users.length) * 110} 
-                                      ${140 + Math.sin((index * (Math.PI * 2)) / users.length) * 110} 
-                                      L ${140 + Math.cos((scenario.paidBy * (Math.PI * 2)) / users.length) * 110} 
-                                      ${140 + Math.sin((scenario.paidBy * (Math.PI * 2)) / users.length) * 110}`}
+                                    path={`M ${140 + Math.cos((index * (Math.PI * 2)) / users.length) * 100} 
+                                      ${140 + Math.sin((index * (Math.PI * 2)) / users.length) * 100} 
+                                      L ${140 + Math.cos((scenario.paidBy * (Math.PI * 2)) / users.length) * 100} 
+                                      ${140 + Math.sin((scenario.paidBy * (Math.PI * 2)) / users.length) * 100}`}
                                     dur="1s"
                                     fill="freeze"
                                     begin={`${index * 0.2 + 0.2}s`}
@@ -358,7 +357,8 @@ export function ExpenseMarketingSection() {
               
               {/* "All Settled" message (Phase 4) */}
               <AnimatePresence>
-                {animationPhase >= 4 && !summaryVisible && (
+                {/* Remove the "All Settled" message during individual scenarios - only show in summary */}
+                {false && animationPhase >= 4 && !summaryVisible && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -425,6 +425,22 @@ export function ExpenseMarketingSection() {
                             <span>${expense.amount}</span>
                           </div>
                         ))}
+                        {/* Add the "other expenses" row */}
+                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-full flex items-center justify-center text-lg font-bold bg-muted/50">
+                              ⋯
+                            </div>
+                            <span>and {tripSummary.otherExpensesCount} other expenses...</span>
+                          </div>
+                          <span>$600</span>
+                        </div>
+                      </div>
+                      
+                      {/* All settled up message - moved here from individual scenarios */}
+                      <div className="mt-4 pt-3 border-t border-border text-center">
+                        <div className="text-green-500 font-semibold">All settled up!</div>
+                        <div className="text-xs text-muted-foreground">Everyone paid their fair share.</div>
                       </div>
                     </div>
                     
@@ -437,6 +453,17 @@ export function ExpenseMarketingSection() {
               </AnimatePresence>
             </div>
           </div>
+        </div>
+        
+        {/* Marketing Copy - Second on Mobile, First on Desktop */}
+        <div className="order-2 md:order-1 flex flex-col justify-center h-full">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Group expenses, made easy</h2>
+          <p className="text-lg text-muted-foreground mb-6">
+            With withme.travel, you can track every shared cost, see who paid for what, and split expenses fairly—no spreadsheets, no drama. Settle up in seconds and keep your friendships strong.
+          </p>
+          <Button size="lg" asChild className="self-start">
+            <a href="#get-started">See how it works</a>
+          </Button>
         </div>
       </div>
     </section>

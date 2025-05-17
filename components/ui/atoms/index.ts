@@ -15,7 +15,4 @@ export * from './FAQTag';
 export * from './FAQQuestion';
 export * from './FAQAnswer';
 export * from './FAQList';
-export * from './SurveyContainer';
-export * from './ResearchProvider';
-export * from './ResearchModal';
 export { atoms } from './atoms'; 

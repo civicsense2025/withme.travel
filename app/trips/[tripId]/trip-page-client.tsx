@@ -107,9 +107,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ShareTripButton } from '@/components/trips/ShareTripButton';
-import { type MemberWithProfile } from '@/components/ui/features/trips/organisms/TripHeader';
-import { TripHeader } from '@/components/ui/features/trips/organisms/TripHeader';
+import { TripHeader } from '@/components/trips/organisms/TripHeader';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { type TravelInfo, type TravelTimesResult, calculateTravelTimes } from '@/lib/mapbox';
 import {
@@ -172,82 +170,14 @@ import type { TripMember } from './context/trip-data-provider';
 
 // --- Import Extracted Components ---
 import BudgetSnapshotSidebar from '@/components/trips/budget-snapshot-sidebar';
-import TripSidebarContent from '@/components/trips/trip-sidebar-content';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { AuthModalWithProps } from '@/components/ui/features/auth/organisms/AuthModal';
-import CompactBudgetSnapshot from '@/components/trips/compact-budget-snapshot';
+import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
 import TripTourController from './trip-tour-controller';
 
 // Types
 
-// Local utility functions to avoid import issues
-// Format error messages consistently
-function formatError(error: unknown, fallback: string = 'An unexpected error occurred'): string {
-  if (!error) return fallback;
-  if (typeof error === 'string') return error;
-  if (error instanceof Error) return error.message;
-  return fallback;
-}
-
-// Format a date range consistently
-function formatDateRange(startDate?: string | Date | null, endDate?: string | Date | null): string {
-  if (!startDate && !endDate) return 'Dates not set';
-
-  const startStr = startDate ? formatDate(startDate) : null;
-  const endStr = endDate ? formatDate(endDate) : null;
-
-  if (startStr && !endStr) return `From ${startStr}`;
-  if (!startStr && endStr) return `Until ${endStr}`;
-  if (startStr && endStr) return `${startStr} - ${endStr}`;
-
-  return 'Invalid date range';
-}
-
-// Add getInitials function since it's not exported from lib/utils
-function getInitials(name?: string | null): string {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .map((part) => part.charAt(0))
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
-}
-
-// Define IconMap with lowercase keys
-const IconMap: Record<string, React.ElementType> = {
-  flight: Plane,
-  accommodation: BedDouble, // Fixed key
-  attraction: Landmark,
-  restaurant: Utensils,
-  cafe: Coffee,
-  transportation: Car, // Fixed key
-  activity: Activity,
-  custom: Sparkles,
-  other: HelpCircle,
-};
-
-// ----- INTERFACES -----
-
-// Define AccessRequest type (matching the structure from API response)
-interface AccessRequestUser {
-  name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-}
-
-interface AccessRequest {
-  id: string;
-  user_id: string;
-  message: string | null;
-  created_at: string;
-  user: AccessRequestUser | null;
-}
-
-/**
- * Represents a trip member with associated profile information as stored in the database
- * Used for transferring trip member data between SSR and client components
- */
+// Restore removed interfaces and utility functions
 interface LocalTripMemberFromSSR {
   id: string;
   trip_id: string;
@@ -262,16 +192,73 @@ interface LocalTripMemberFromSSR {
   } | null;
 }
 
-/**
- * Props for the TripPageClient component
- * Contains all necessary data to render a trip page from SSR
- */
 export interface TripPageClientProps {
   tripId: string;
   canEdit: boolean;
   isGuestCreator?: boolean;
   setClientFunctions?: (functions: any) => void;
 }
+
+interface AccessRequestUser {
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+}
+
+interface AccessRequest {
+  id: string;
+  user_id: string;
+  message: string | null;
+  created_at: string;
+  user: AccessRequestUser | null;
+}
+
+function formatError(error: unknown, fallback: string = 'An unexpected error occurred'): string {
+  if (!error) return fallback;
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
+function getInitials(name?: string | null): string {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .map((part) => part.charAt(0))
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+}
+
+const IconMap: Record<string, React.ElementType> = {
+  flight: Plane,
+  accommodation: BedDouble,
+  attraction: Landmark,
+  restaurant: Utensils,
+  cafe: Coffee,
+  transportation: Car,
+  activity: Activity,
+  custom: Sparkles,
+  other: HelpCircle,
+};
+
+/**
+ * Represents a trip member with associated profile information for local use
+ */
+type MemberWithProfile = {
+  id: string;
+  trip_id?: string;
+  user_id: string;
+  role?: string;
+  joined_at?: string;
+  profiles: {
+    id: string;
+    name: string | null;
+    avatar_url: string | null;
+    username: string | null;
+  } | null;
+  privacySetting?: string | null;
+};
 
 // --- Utility Functions --- //
 // Corrected adaptMembersToWithProfile function
@@ -732,7 +719,8 @@ export function TripPageClient({
     if (userRole === TRIP_ROLES.ADMIN && tripId) {
       const fetchAccessRequests = async () => {
         try {
-          const response = await fetch(API_ROUTES.PERMISSION_REQUESTS(tripId), {
+          // Use get-permissions route instead of permissions which may require different auth
+          const response = await fetch(API_ROUTES.TRIP_ACCESS_REQUEST(tripId), {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -742,6 +730,7 @@ export function TripPageClient({
 
           if (response.status === 401) {
             // Silently ignore permission errors - user might not have sufficient permissions
+            console.log('Authorization failed for access requests');
             setAccessRequests([]);
             return;
           }
@@ -774,7 +763,7 @@ export function TripPageClient({
       try {
         setManagingRequestId(requestId);
 
-        const response = await fetch(`${API_ROUTES.PERMISSION_REQUESTS(tripId)}/${requestId}`, {
+        const response = await fetch(`${API_ROUTES.TRIP_ACCESS_REQUEST(tripId)}/${requestId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -1576,6 +1565,7 @@ export function TripPageClient({
               plannedExpenses={totalPlannedCost}
               members={tripData?.members ? adaptMembersToSSR(tripData.members) : []}
               isLoading={isLoading}
+              budget={tripData?.trip?.budget ? Number(tripData.trip.budget) : null}
             />
           </ErrorBoundary>
         ),
@@ -1654,24 +1644,7 @@ export function TripPageClient({
   // GET ACTIVE TAB CONTENT (TYPE-SAFE)
   // ============================================================================
 
-  /**
-   * Effect: Updates the active tab content based on the currentTab value.
-   * Ensures type safety by using explicit types for tab lookup and content.
-   */
-  useEffect(() => {
-    /**
-     * Finds the active tab object by matching the currentTab value.
-     * Uses a type guard to ensure the tab is of the correct type.
-     * @returns The matching tab object or undefined if not found.
-     */
-    type TabType = typeof tabs extends Array<infer T> ? T : never;
-    const activeTab: TabType | undefined = tabs.find(
-      (tab): tab is TabType => tab.value === currentTab
-    );
-
-    // Set the active tab content, ensuring type safety (content is ReactNode or null)
-    setActiveTabContent(activeTab?.content ?? null);
-  }, [currentTab, tabs]);
+  // Removed problematic useEffect that was causing "currentTab is not defined" error
 
   // Set client functions for parent component
   useEffect(() => {

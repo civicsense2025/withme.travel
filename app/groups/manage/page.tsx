@@ -57,7 +57,7 @@ export default async function GroupsManagePage() {
             className="mb-6"
             centered={true}
             actions={
-              <Link href="/groups/create">
+              <Link href="/groups/create" className="mt-16">
                 <Button className="flex items-center rounded-full">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create Group
@@ -124,16 +124,7 @@ export default async function GroupsManagePage() {
         });
 
         return (
-          <PageContainer
-            header={
-              <PageHeader
-                title="My Groups"
-                description="Manage your travel groups"
-                className="mb-6"
-                centered={true}
-              />
-            }
-          >
+          <PageContainer>
             <GroupsClientPage initialGroups={guestGroups} isGuest={true} />
           </PageContainer>
         );
@@ -145,16 +136,7 @@ export default async function GroupsManagePage() {
 
   // If we reach here, there are no groups for this user or guest
   return (
-    <PageContainer
-      header={
-        <PageHeader
-          title="My Groups"
-          description="No groups found"
-          className="mb-6"
-          centered={true}
-        />
-      }
-    >
+    <PageContainer>
       <div className="text-center p-8">
         <p className="mb-4">You don't have any groups yet.</p>
         <a href="/groups/create" className="text-blue-500 hover:underline">

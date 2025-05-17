@@ -8,8 +8,8 @@ export async function GET(
   req: NextRequest,
   context: { params: { tripId: string; itemId: string } }
 ) {
-  const tripId = context.params.tripId;
-  const itemId = context.params.itemId;
+  // Await the params object before using its properties
+  const { tripId, itemId } = await context.params;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -74,8 +74,8 @@ export async function POST(
   req: NextRequest,
   context: { params: { tripId: string; itemId: string } }
 ) {
-  const tripId = context.params.tripId;
-  const itemId = context.params.itemId;
+  // Await the params object before using its properties
+  const { tripId, itemId } = await context.params;
   const supabase = await createRouteHandlerClient();
 
   try {

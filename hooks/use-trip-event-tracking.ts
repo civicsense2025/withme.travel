@@ -1,12 +1,29 @@
 import { useCallback } from 'react';
-import { useResearchTracking } from './use-research-tracking';
-import type { EventType } from '@/types/research';
+
+/**
+ * Types of events that can be tracked
+ */
+export type EventType = 
+  | 'trip_created' 
+  | 'trip_updated'
+  | 'trip_deleted'
+  | 'itinerary_item_added'
+  | 'itinerary_item_updated'
+  | 'itinerary_item_deleted'
+  | 'itinerary_voted';
 
 /**
  * Hook for tracking events related to trips with relevant context
  */
 export function useTripEventTracking(tripId?: string) {
-  const { trackEvent } = useResearchTracking();
+  // Basic event tracking function - to be expanded later with analytics integration
+  const trackEvent = useCallback((eventType: EventType, details?: Record<string, any>) => {
+    // Log for development
+    console.log(`[EVENT] ${eventType}`, { tripId, ...details });
+    
+    // In the future, we can add real analytics tracking here
+    // Example: analytics.track(eventType, { tripId, ...details });
+  }, [tripId]);
 
   const trackTripCreated = useCallback(
     (details?: Record<string, any>) => {

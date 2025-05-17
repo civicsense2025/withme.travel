@@ -40,6 +40,14 @@ export function rateLimit(options: RateLimitOptions) {
   return async function rateLimitMiddleware(req: NextRequest) {
     const { limit, windowMs } = options;
 
+    // Increase limit for expense-related routes
+    let actualLimit = limit;
+    if (req.nextUrl.pathname.includes('/expenses') || 
+        req.nextUrl.pathname.includes('/planned-expenses')) {
+      // Use a much higher limit for expense routes
+      actualLimit = Math.max(limit, 300); // Minimum 300 requests per window
+    }
+
     // Get a unique identifier for the requester (IP by default)
     const identifier = options.identifierFn ? options.identifierFn(req) : getIpAddress(req);
 
@@ -57,16 +65,16 @@ export function rateLimit(options: RateLimitOptions) {
     }
 
     // Set headers for rate limit info
-    const remainingRequests = Math.max(0, limit - store[key].count);
+    const remainingRequests = Math.max(0, actualLimit - store[key].count);
     const resetTime = new Date(store[key].resetTime).toUTCString();
 
     const headers = new Headers();
-    headers.set('X-RateLimit-Limit', limit.toString());
+    headers.set('X-RateLimit-Limit', actualLimit.toString());
     headers.set('X-RateLimit-Remaining', remainingRequests.toString());
     headers.set('X-RateLimit-Reset', resetTime);
 
     // If over the limit, return a 429 Too Many Requests response
-    if (store[key].count > limit) {
+    if (store[key].count > actualLimit) {
       console.warn(`Rate limit exceeded for ${key}`);
 
       headers.set('Retry-After', Math.ceil((store[key].resetTime - now) / 1000).toString());

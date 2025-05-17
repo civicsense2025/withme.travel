@@ -1,6 +1,5 @@
 import { ThemeProvider } from '@/components/theme-provider';
 import { ClientSideProviders } from '@/components/client-side-providers';
-import { ResearchProvider } from '@/components/research/ResearchProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -9,9 +8,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       defaultTheme="light"
       disableTransitionOnChange
     >
-      <ResearchProvider>
-        <ClientSideProviders>{children}</ClientSideProviders>
-      </ResearchProvider>
+      <ClientSideProviders>{children}</ClientSideProviders>
     </ThemeProvider>
   );
 } 

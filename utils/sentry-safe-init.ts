@@ -33,7 +33,6 @@ const createNoopSentry = (): SentryLikeAPI => ({
 export const initSentrySafely = (Sentry: any, options: any): SentryLikeAPI => {
   // Skip Sentry in development mode to avoid errors
   if (process.env.NODE_ENV === 'development') {
-    console.info('Sentry disabled in development mode');
     return createNoopSentry();
   }
 
@@ -70,7 +69,9 @@ export const executeSentryMethodSafely = <T>(fn: () => T, fallback: T): T => {
   try {
     return fn();
   } catch (error) {
-    console.warn('Sentry method execution failed:', error);
+    if (process.env.NODE_ENV !== 'development') {
+      console.warn('Sentry method execution failed:', error);
+    }
     return fallback;
   }
 };
@@ -86,7 +87,9 @@ export const getSafeLogger = (Sentry: any) => {
           safeSentry.captureException(error, options);
         }
       } catch (e) {
-        console.error('Failed to log exception to Sentry:', e);
+        if (process.env.NODE_ENV !== 'development') {
+          console.error('Failed to log exception to Sentry:', e);
+        }
       }
     },
 
@@ -96,7 +99,9 @@ export const getSafeLogger = (Sentry: any) => {
           safeSentry.captureMessage(message, options);
         }
       } catch (e) {
-        console.error('Failed to log message to Sentry:', e);
+        if (process.env.NODE_ENV !== 'development') {
+          console.error('Failed to log message to Sentry:', e);
+        }
       }
     },
   };
@@ -119,7 +124,6 @@ let _sentryInitialized = false;
 export function initSentryInternalSafely(): boolean {
   // Skip in development mode
   if (process.env.NODE_ENV === 'development') {
-    console.info('Sentry disabled in development mode');
     return false;
   }
 
@@ -172,14 +176,18 @@ export function getSafeSentry() {
             try {
               return value(...args);
             } catch (error) {
-              console.warn(`Sentry.${String(prop)} failed:`, error);
+              if (process.env.NODE_ENV !== 'development') {
+                console.warn(`Sentry.${String(prop)} failed:`, error);
+              }
               return undefined;
             }
           };
         }
         return value;
       } catch (error) {
-        console.warn(`Failed to access Sentry.${String(prop)}:`, error);
+        if (process.env.NODE_ENV !== 'development') {
+          console.warn(`Failed to access Sentry.${String(prop)}:`, error);
+        }
         return undefined;
       }
     },
@@ -200,7 +208,9 @@ export function configureScopeIfAvailable(scopeConfig: (scope: any) => void): vo
       Sentry.withScope(scopeConfig);
     }
   } catch (error) {
-    console.warn('Failed to configure Sentry scope:', error);
+    if (process.env.NODE_ENV !== 'development') {
+      console.warn('Failed to configure Sentry scope:', error);
+    }
   }
 }
 
@@ -217,7 +227,9 @@ export function captureExceptionSafely(
       return Sentry.captureException(error, captureContext);
     }
   } catch (sentryError) {
-    console.warn('Failed to capture exception with Sentry:', sentryError);
+    if (process.env.NODE_ENV !== 'development') {
+      console.warn('Failed to capture exception with Sentry:', sentryError);
+    }
   }
   return undefined;
 }

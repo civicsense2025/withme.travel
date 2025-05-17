@@ -3,98 +3,107 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Pencil, Info, Plus } from 'lucide-react';
+import { Loader2, Pencil, Info, Plus, AlertCircle, DollarSign, Check, ArrowRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { DollarSign, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Wallet } from 'lucide-react';
+import { useTripBudget, ManualDbExpense, UnifiedExpense } from '@/hooks/use-trip-budget';
+import { TripMemberFromSSR } from '@/components/members-tab';
+import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/utils/lib-utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface BudgetSnapshotSidebarProps {
-  targetBudget: number | null;
-  totalPlanned: number;
-  totalSpent: number;
-  canEdit: boolean;
-  isEditing: boolean;
-  onEditToggle: (isEditing: boolean) => void;
-  onSave: (newBudget: number) => Promise<void>;
-  onLogExpenseClick: () => void;
+  tripId: string;
+  initialBudget?: number | null;
+  initialManualExpenses?: ManualDbExpense[];
+  initialPlannedExpenses?: UnifiedExpense[];
+  initialMembers?: TripMemberFromSSR[];
+  onBudgetUpdated?: () => void;
+  onLogExpenseClick?: () => void;
   /**
    * If true, renders without the Card wrapper (for use inside CollapsibleSection)
    */
   noCardWrapper?: boolean;
 }
 
+function getInitials(name: string): string {
+  if (!name) return '?';
+  const parts = name.split(' ');
+  return parts.map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2);
+}
+
 export function BudgetSnapshotSidebar({
-  targetBudget,
-  totalPlanned,
-  totalSpent,
-  canEdit,
-  isEditing,
-  onEditToggle,
-  onSave,
+  tripId,
+  initialBudget,
+  initialManualExpenses = [],
+  initialPlannedExpenses = [],
+  initialMembers = [],
+  onBudgetUpdated,
   onLogExpenseClick,
   noCardWrapper = false,
 }: BudgetSnapshotSidebarProps) {
-  const [localBudget, setLocalBudget] = useState<string>('');
+  const { toast } = useToast();
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [newBudgetValue, setNewBudgetValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Format number to fixed 2 decimal places
-  const formatCurrency = (value: number | null) => {
-    if (value === null) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  const {
+    budget,
+    manualExpenses,
+    plannedExpenses,
+    members,
+    totalManualSpent,
+    totalPlanned,
+    percentSpent,
+    loading,
+    updateBudget,
+    memberExpenseSummary,
+  } = useTripBudget({
+    tripId,
+    initialBudget,
+    initialManualExpenses,
+    initialPlannedExpenses,
+    initialMembers,
+  });
 
   // Initialize local budget when target budget changes
   useEffect(() => {
-    if (targetBudget !== null) {
-      setLocalBudget(targetBudget.toString());
+    if (budget !== null) {
+      setNewBudgetValue(budget.toString());
     } else {
-      setLocalBudget('');
+      setNewBudgetValue('');
     }
-  }, [targetBudget]);
+  }, [budget]);
 
   // Calculate progress percentages
-  const totalUsed = totalSpent + totalPlanned;
-  const budgetUsedPercentage = targetBudget
-    ? Math.min(Math.round((totalUsed / targetBudget) * 100), 100)
+  const totalUsed = totalManualSpent + totalPlanned;
+  const budgetUsedPercentage = budget > 0
+    ? Math.min(Math.round((totalManualSpent / budget) * 100), 100)
     : 0;
-  const isOverBudget = targetBudget !== null && totalUsed > targetBudget;
-
-  // Handle edit mode toggle
-  const handleEditToggle = () => {
-    if (isEditing) {
-      onEditToggle(false);
-    } else {
-      onEditToggle(true);
-    }
-  };
+  const isOverBudget = budget > 0 && totalManualSpent > budget;
 
   // Handle budget input changes
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Allow only numbers and decimal point
     if (value === '' || /^\d+(\.\d{0,2})?$/.test(value)) {
-      setLocalBudget(value);
+      setNewBudgetValue(value);
       setErrorMessage(null);
     }
   };
 
   // Handle save
   const handleSave = async () => {
-    if (!localBudget) {
+    if (!newBudgetValue) {
       setErrorMessage('Please enter a budget amount');
       return;
     }
 
-    const budgetValue = parseFloat(localBudget);
+    const budgetValue = parseFloat(newBudgetValue);
     if (isNaN(budgetValue) || budgetValue <= 0) {
       setErrorMessage('Please enter a valid budget amount');
       return;
@@ -104,28 +113,46 @@ export function BudgetSnapshotSidebar({
     setErrorMessage(null);
 
     try {
-      await onSave(budgetValue);
-      onEditToggle(false); // Exit edit mode after successful save
+      await updateBudget(budgetValue);
+      setIsEditingBudget(false);
+      toast({
+        title: 'Budget updated',
+        description: `Budget set to ${formatCurrency(budgetValue)}`,
+      });
+      if (onBudgetUpdated) onBudgetUpdated();
     } catch (error) {
       console.error('Error saving budget:', error);
       setErrorMessage('Failed to save budget. Please try again.');
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update budget',
+        variant: 'destructive',
+      });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Determine color for budget status
+  const getBudgetStatusColor = () => {
+    if (budget <= 0) return 'text-muted-foreground';
+    if (percentSpent > 90) return 'text-red-500';
+    if (percentSpent > 70) return 'text-amber-500';
+    return 'text-green-500';
   };
 
   // Render budget content section
   const renderContent = () => (
     <>
       <div className="space-y-4">
-        {isEditing ? (
+        {isEditingBudget ? (
           // Edit mode
           <div className="space-y-2">
             <div className="flex items-center">
               <DollarSign className="h-4 w-4 mr-1 text-muted-foreground" />
               <Input
                 type="text"
-                value={localBudget}
+                value={newBudgetValue}
                 onChange={handleBudgetChange}
                 placeholder="Enter budget amount"
                 className="max-w-[150px]"
@@ -155,7 +182,7 @@ export function BudgetSnapshotSidebar({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onEditToggle(false)}
+                onClick={() => setIsEditingBudget(false)}
                 disabled={isSaving}
               >
                 Cancel
@@ -169,16 +196,14 @@ export function BudgetSnapshotSidebar({
               <div className="flex items-center mb-2 justify-between">
                 <div className="flex items-center">
                   <span className="text-lg font-semibold mr-2">
-                    {targetBudget !== null
-                      ? formatCurrency(targetBudget)
+                    {budget !== null && budget > 0
+                      ? formatCurrency(budget)
                       : 'No Budget Set'}
                   </span>
-                  {canEdit && (
-                    <Button size="sm" variant="ghost" onClick={handleEditToggle}>
-                      <Pencil className="h-3 w-3" />
-                      <span className="sr-only">Edit Budget</span>
-                    </Button>
-                  )}
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingBudget(true)}>
+                    <Pencil className="h-3 w-3" />
+                    <span className="sr-only">Edit Budget</span>
+                  </Button>
                 </div>
                 {isOverBudget && (
                   <Badge variant="destructive" className="ml-2">
@@ -191,19 +216,22 @@ export function BudgetSnapshotSidebar({
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
                   <span>
-                    {formatCurrency(totalUsed)} used (
-                    {targetBudget ? Math.round((totalUsed / targetBudget) * 100) : 0}%)
+                    {formatCurrency(totalManualSpent)} spent ({percentSpent}%)
                   </span>
-                  {targetBudget !== null && (
+                  {budget > 0 && (
                     <span>
-                      {formatCurrency(targetBudget - totalUsed)} remaining
+                      {formatCurrency(budget - totalManualSpent)} remaining
                     </span>
                   )}
                 </div>
-                <Progress 
-                  value={budgetUsedPercentage} 
-                  className={`h-2 ${isOverBudget ? 'bg-red-200' : ''}`}
-                />
+                <div className="relative w-full h-2 bg-muted overflow-hidden rounded-full">
+                  <div
+                    className={`absolute left-0 top-0 h-full ${
+                      percentSpent > 90 ? 'bg-red-500' : percentSpent > 70 ? 'bg-amber-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${percentSpent}%` }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -211,7 +239,7 @@ export function BudgetSnapshotSidebar({
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Spent:</span>
-                <span>{formatCurrency(totalSpent)}</span>
+                <span>{formatCurrency(totalManualSpent)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Planned:</span>
@@ -219,9 +247,49 @@ export function BudgetSnapshotSidebar({
               </div>
               <div className="pt-1 border-t flex justify-between font-medium">
                 <span>Total:</span>
-                <span>{formatCurrency(totalUsed)}</span>
+                <span>{formatCurrency(totalManualSpent + totalPlanned)}</span>
               </div>
             </div>
+
+            {/* Recent expenses preview */}
+            {manualExpenses.length > 0 && (
+              <div className="space-y-2 pt-1 border-t">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium">Recent Expenses</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground"
+                    onClick={onLogExpenseClick}
+                  >
+                    View All
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+                
+                {manualExpenses.slice(0, 2).map((expense) => {
+                  const payer = members.find((m) => m.user_id === expense.paid_by);
+                  
+                  return (
+                    <div
+                      key={expense.id}
+                      className="flex items-center justify-between p-2 border rounded-lg text-sm hover:bg-muted/20 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={payer?.profiles?.avatar_url ?? undefined} />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(payer?.profiles?.name || '')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate max-w-[120px]">{expense.title}</span>
+                      </div>
+                      <span className="font-medium">{formatCurrency(expense.amount)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Add expense button */}
             <Button
@@ -234,9 +302,9 @@ export function BudgetSnapshotSidebar({
               Log Expense
             </Button>
 
-            {targetBudget === null && canEdit && (
+            {budget <= 0 && (
               <div className="text-center">
-                <Button size="sm" onClick={handleEditToggle}>
+                <Button size="sm" onClick={() => setIsEditingBudget(true)}>
                   Set Budget
                 </Button>
               </div>

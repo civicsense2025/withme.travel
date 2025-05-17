@@ -7,7 +7,7 @@ import { PlusCircle } from 'lucide-react';
 import { DisplayItineraryItem } from '@/types/itinerary';
 import { ItineraryItemCard } from './ItineraryItemCard';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
-import { CATEGORY_DISPLAY } from '@/utils/constants/ui';
+import { CATEGORY_DISPLAY } from '@/utils/constants/ui/ui';
 
 interface TripDetailsSectionProps {
   tripId: string;

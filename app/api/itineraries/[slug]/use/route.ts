@@ -108,7 +108,7 @@ export async function POST(
     console.log(`[DEBUG] Created new trip: ${trip.id}`);
 
     // Add the user as a member with admin role
-    const { error: memberError } = await supabase.from(TABLES.MEMBERS).insert({
+    const { error: memberError } = await supabase.from(TABLES.TRIP_MEMBERS).insert({
       trip_id: trip.id,
       user_id: user.id,
       role: 'admin',
@@ -126,38 +126,34 @@ export async function POST(
 
     // Fetch template sections (or items directly if sections fail)
     let templateSections: any[] = [];
-    if (template && Array.isArray(template.sections)) {
-      templateSections = template.sections;
-    } else {
-      console.log(
-        '[DEBUG] No sections found via join, fetching items directly for template:',
-        template.id
-      );
-      const { data: templateItemsFlat, error: itemsFlatError } = await supabase
-        .from('itinerary_template_items')
-        .select('*')
-        .eq('template_id', template.id)
-        .order('day', { ascending: true })
-        .order('item_order', { ascending: true });
+    console.log(
+      '[DEBUG] Fetching items directly for template:',
+      template.id
+    );
+    const { data: templateItemsFlat, error: itemsFlatError } = await supabase
+      .from('itinerary_template_items')
+      .select('*')
+      .eq('template_id', template.id)
+      .order('day', { ascending: true })
+      .order('item_order', { ascending: true });
 
-      if (itemsFlatError) {
-        console.error('[DEBUG] Error fetching flat items:', itemsFlatError);
-        // Proceed without items if fetch fails
-      } else if (templateItemsFlat && templateItemsFlat.length > 0) {
-        console.log(`[DEBUG] Found ${templateItemsFlat.length} items directly.`);
-        // Group items by day to reconstruct sections
-        const itemsByDay = templateItemsFlat.reduce((acc: any, item: any) => {
-          const day = item.day || 1;
-          if (!acc[day]) acc[day] = [];
-          acc[day].push(item);
-          return acc;
-        }, {});
-        templateSections = Object.keys(itemsByDay).map((day) => ({
-          id: `synth-sec-day-${day}`,
-          day_number: parseInt(day, 10),
-          itinerary_template_items: itemsByDay[day],
-        }));
-      }
+    if (itemsFlatError) {
+      console.error('[DEBUG] Error fetching flat items:', itemsFlatError);
+      // Proceed without items if fetch fails
+    } else if (templateItemsFlat && templateItemsFlat.length > 0) {
+      console.log(`[DEBUG] Found ${templateItemsFlat.length} items directly.`);
+      // Group items by day to reconstruct sections
+      const itemsByDay = templateItemsFlat.reduce((acc: any, item: any) => {
+        const day = item.day || 1;
+        if (!acc[day]) acc[day] = [];
+        acc[day].push(item);
+        return acc;
+      }, {});
+      templateSections = Object.keys(itemsByDay).map((day) => ({
+        id: `synth-sec-day-${day}`,
+        day_number: parseInt(day, 10),
+        itinerary_template_items: itemsByDay[day],
+      }));
     }
 
     if (templateSections.length === 0) {
@@ -229,14 +225,6 @@ export async function POST(
       } else {
         console.log('[DEBUG] No items to insert.');
       }
-    }
-
-    // Increment the template usage count (non-critical)
-    try {
-      await supabase.rpc('increment_template_use_count', { template_id: template.id });
-      console.log(`[DEBUG] Incremented usage count for template ${template.id}`);
-    } catch (rpcError) {
-      console.error('[DEBUG] Could not increment template uses:', rpcError);
     }
 
     console.log(`[DEBUG] Template use process completed for trip: ${trip.id}`);

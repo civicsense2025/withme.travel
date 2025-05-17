@@ -108,7 +108,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-full max-w-md flex flex-col text-center">
           <div className="p-3">
-            <Spinner size="xl" variant="primary" />
+            <Spinner size="lg" />
           </div>
           <p className="text-muted-foreground">
             {isRedirecting ? 'Redirecting you now...' : 'Checking authentication status...'}
@@ -152,15 +152,7 @@ export default function LoginPage() {
             <LoginForm />
           </CardContent>
           <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2">
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account?</span>{' '}
-              <Link
-                href={`/signup${redirectPath !== '/' ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`}
-                className="text-primary hover:underline"
-              >
-                Sign Up
-              </Link>
-            </div>
+          
           </CardFooter>
         </Card>
       </div>

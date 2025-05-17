@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './card';
 import { useTheme } from 'next-themes';
-import { COLORS, ThemeMode, getColorToken, SHADOWS } from '@/utils/constants/design-system';
+import { COLORS, ThemeMode, getColorToken, SHADOWS } from '@/utils/constants/ui/design-system';
 import {
   Dialog,
   DialogContent,
@@ -38,11 +38,25 @@ export interface MultiCityItineraryProps {
   mode?: ThemeMode;
   disablePopup?: boolean;
   withBackground?: boolean;
+  className?: string;
 }
 
-export function MultiCityItinerary({ initialCities, mode, disablePopup = false, withBackground = true }: MultiCityItineraryProps) {
+export function MultiCityItinerary({ initialCities, mode, disablePopup = false, withBackground = true, className = '' }: MultiCityItineraryProps) {
   const { resolvedTheme } = useTheme();
-  const currentTheme = mode || (resolvedTheme as ThemeMode) || 'light';
+  
+  // Fix: Add fallback for theme to prevent "Cannot read properties of undefined (reading 'light')" error
+  const currentTheme = (mode || resolvedTheme || 'light') as ThemeMode;
+
+  // Add custom CSS for the no-scrollbar class
+  const noScrollbarStyle = `
+    .no-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;  /* Chrome, Safari, Opera */
+    }
+  `;
 
   const defaultCities: City[] = [
     {
@@ -370,250 +384,233 @@ export function MultiCityItinerary({ initialCities, mode, disablePopup = false, 
     exit: { opacity: 0, y: -16, transition: { duration: 0.18 } },
   };
 
-  // Update the card style to support background toggling
+  // Update the card style to have rounder corners
   const getCardStyle = (): React.CSSProperties => {
+    const shadow = getExtendedToken('SHADOW_MD');
+
     return {
-      backgroundColor: withBackground 
-        ? getColorToken('BACKGROUND', currentTheme) 
-        : 'transparent',
-      border: withBackground 
-        ? `1px solid ${getColorToken('BORDER', currentTheme)}` 
-        : 'none',
-      borderRadius: '12px',
+      borderRadius: '1.75rem', // More rounded corners
+      backgroundColor: getExtendedToken('PRIMARY_BG'),
+      boxShadow: shadow,
       overflow: 'hidden',
-      boxShadow: withBackground 
-        ? getExtendedToken('SHADOW_MD') 
-        : 'none',
-      transition: 'all 0.2s ease-in-out',
-      maxWidth: '100%',
+      border: `1px solid ${getColorToken('BORDER', currentTheme)}`,
     };
   };
 
   // --- RENDER ---
   return (
-    <div style={getCardStyle()}>
-      <div
-        style={{
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {/* Trip date */}
-        <div style={{ marginBottom: '16px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '6px 12px',
-              borderRadius: '16px',
-              fontWeight: 500,
-              fontSize: '14px',
-              background: getColorToken('SUBTLE', currentTheme),
-              color: getColorToken('MUTED', currentTheme),
-            }}
-          >
-            ✈️ Trip: Oct 15-24, 2025
-          </div>
-        </div>
-
-        {/* City name */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-            marginBottom: '16px',
-          }}
-        >
-          <h3
-            style={{
-              margin: 0,
-              fontSize: '24px',
-              fontWeight: 700,
-              color: getColorToken('TEXT', currentTheme),
-            }}
-          >
-            Discover Europe
-          </h3>
-          <div style={{ fontSize: '14px', color: getColorToken('MUTED', currentTheme) }}>
-            Plan your perfect adventure across cities
-          </div>
-        </div>
-
-        <CardContent className="pb-0" style={getSurfaceStyle()}>
-          <div className="flex space-x-3 mb-6 overflow-x-auto pb-4 scrollbar-hide">
-            {cities.map((city) => (
-              <button
-                key={city.id}
-                className="px-4 mt-2 ml-2 py-1 rounded-full text-sm font-medium flex items-center space-x-1.5 focus:outline-none focus:ring-2 transition-all"
-                style={getCityButtonStyle(city)}
-                onClick={() => setActiveCity(city.id)}
-                aria-pressed={activeCity === city.id}
-                tabIndex={0}
-              >
-                <span className="text-base">{city.emoji}</span>
-                <span>{city.name}</span>
-              </button>
-            ))}
+    <div className={`relative w-full h-[400px] sm:h-[450px] md:h-[500px] overflow-hidden ${className}`} style={getSurfaceStyle()}>
+      {/* Add the custom CSS for no-scrollbar */}
+      <style>{noScrollbarStyle}</style>
+      
+      <Card className="h-full w-full" style={getCardStyle()}>
+        <CardHeader className="pt-4 pb-2 px-4 sm:px-5 flex flex-col space-y-2">
+          <CardTitle className="text-lg sm:text-xl font-bold">Multi-City Trip</CardTitle>
+          <div className="badge rounded-full bg-muted-foreground/20 px-3 py-1 text-xs text-muted-foreground w-fit">
+            Spain Exploration
           </div>
 
-          {/* Fixed height container for city content */}
-          <div className="space-y-6 min-h-[300px]">
-            <AnimatePresence mode="wait">
-              {cities
-                .filter((city) => city.id === activeCity)
-                .map((city) => (
-                  <motion.div
-                    key={city.id}
-                    className="space-y-3"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                  >
-                    {city.items.map((item) => (
+          {/* City tabs - make these scroll horizontally on mobile */}
+          <div className="relative">
+            {/* Fade effect for overflowing tabs */}
+            <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-card to-transparent z-10 pointer-events-none"></div>
+            
+            <div className="flex gap-1.5 overflow-x-auto pb-2 pr-12 no-scrollbar">
+              {cities.map((city) => (
+                <button
+                  key={city.id}
+                  className={`relative rounded-full px-3 sm:px-4 py-1.5 sm:py-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 sm:gap-2 transition-all min-w-[90px] justify-center`}
+                  style={getButtonStyle(city.id)}
+                  onClick={() => setActiveCity(city.id)}
+                >
+                  <span className="text-xl">{city.emoji}</span>
+                  {city.name}
+                  {city.id === activeCity && (
+                    <motion.div
+                      layoutId="citytab"
+                      className="absolute inset-0 rounded-full"
+                      style={getCityButtonStyle(city)}
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="h-[220px] sm:h-[250px] md:h-[300px] pb-0 px-3 sm:px-4 overflow-hidden relative">
+          {cities.map((city) => (
+            <AnimatePresence key={city.id}>
+              {city.id === activeCity && (
+                <motion.div
+                  key={city.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full"
+                >
+                  <div className="space-y-4 pt-2">
+                    {city.items.map((item, index) => (
                       <motion.div
                         key={item.id}
-                        className="p-4 rounded-lg border transition-all hover:shadow-sm"
+                        initial={isAdding && index === city.items.length - 1 ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="bg-background rounded-2xl p-3 sm:p-4 flex items-start shadow-sm border border-border"
                         style={getItemCardStyle()}
-                        variants={itemVariants}
                       >
-                        <div className="flex justify-between items-start gap-3">
-                          <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${city.color}30` }}>
+                            {getItemTypeIcon(item.type)}
+                          </div>
+                        </div>
+                        <div className="ml-3 sm:ml-4 flex-1">
+                          <div className="flex justify-between">
+                            <h3 className="font-medium text-sm sm:text-base">{item.name}</h3>
                             <div
-                              className="rounded-full p-2 flex-shrink-0 text-xl"
-                              style={getPlusButtonStyle(city.id)}
+                              className="ml-2 flex items-center rounded-full py-0.5 sm:py-1 px-1.5 sm:px-2 text-xs"
+                              style={getBadgeStyle()}
                             >
-                              {getItemTypeIcon(item.type)}
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-base" style={getLabelStyle()}>
-                                {item.name}
-                              </h4>
-                              <div
-                                className="flex items-center text-xs mt-1"
-                                style={getMutedTextStyle()}
+                              <motion.span
+                                key={`vote-${item.id}`}
+                                initial={isAdding && index === city.items.length - 1 ? { scale: 0 } : { scale: 1 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.4, type: 'spring' }}
                               >
-                                {item.time}
-                              </div>
+                                {item.votes}
+                              </motion.span>
+                              <span className="ml-1">votes</span>
                             </div>
                           </div>
-                          <div
-                            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium"
-                            style={getMutedBadgeStyle()}
-                          >
-                            <span className="mr-0.5">💗</span>
-                            {item.votes}
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1" style={getMutedTextStyle()}>
+                            {item.time}
                           </div>
                         </div>
                       </motion.div>
                     ))}
+
                     {city.items.length === 0 && (
-                      <motion.div
-                        className="text-center py-8"
+                      <div
+                        className="bg-background rounded-xl p-4 flex items-center justify-center h-[200px]"
                         style={getEmptyStateStyle()}
-                        variants={itemVariants}
                       >
-                        <p>No activities added yet.</p>
-                      </motion.div>
+                        <div className="text-center">
+                          <div className="mb-2 text-3xl">⛱️</div>
+                          <div className="text-muted-foreground">No activities yet</div>
+                          <div className="text-muted-foreground text-sm">Click + to add something fun!</div>
+                        </div>
+                      </div>
                     )}
-                  </motion.div>
-                ))}
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
-          </div>
+          ))}
         </CardContent>
 
-        <CardFooter
-          className="flex justify-between"
-          style={getCardFooterStyle()}
-        >
-          <div
-            className="text-xs flex items-center gap-1"
-            style={getMutedTextStyle()}
+        <CardFooter className="p-3 sm:p-4 pt-2 sm:pt-3" style={getCardFooterStyle()}>
+          <button
+            className="flex items-center gap-1.5 sm:gap-2 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all"
+            style={getPlusButtonStyle(activeCity)}
+            onClick={() => !disablePopup && setIsDialogOpen(true)}
           >
+            <span className="text-xl">+</span>
+            <span>Add Activity</span>
+          </button>
+          <div className="flex gap-2 ml-auto">
+            <div
+              className="rounded-full px-2 sm:px-3 py-1 sm:py-1.5 text-xs flex items-center gap-1"
+              style={getMutedBadgeStyle()}
+            >
+              <span className="text-sm">👥</span>
+              <span>4 travelers</span>
+            </div>
+            <div
+              className="rounded-full px-2 sm:px-3 py-1 sm:py-1.5 text-xs flex items-center gap-1"
+              style={getMutedBadgeStyle()}
+            >
+              <span className="text-sm">📅</span>
+              <span>7 days</span>
+            </div>
           </div>
-          <Button variant="ghost" size="sm" className="gap-1">
-            Edit All <span>➡️</span>
-          </Button>
         </CardFooter>
-      </div>
+      </Card>
 
-      {/* Add Activity Dialog */}
-      {!disablePopup && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md" style={getDialogStyle()}>
-            <DialogHeader>
-              <DialogTitle style={getLabelStyle()}>Add Activity</DialogTitle>
-              <DialogDescription style={getMutedTextStyle()}>
-                Add a new activity to {cities.find((c) => c.id === activeCity)?.name}
-              </DialogDescription>
-            </DialogHeader>
+      {/* Add activity dialog */}
+      <Dialog open={isDialogOpen && !disablePopup} onOpenChange={(open) => setIsDialogOpen(open)}>
+        <DialogContent style={getDialogStyle()} className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle style={getLabelStyle()}>Add Activity</DialogTitle>
+            <DialogDescription style={getMutedTextStyle()}>
+              Add a new activity to {cities.find((c) => c.id === activeCity)?.name}
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="activity-name" style={getLabelStyle()}>
-                  Activity Name
-                </Label>
-                <Input
-                  id="activity-name"
-                  placeholder="E.g., Visit La Sagrada Familia"
-                  value={newItem.name}
-                  onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  style={getInputStyle()}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="activity-time" style={getLabelStyle()}>
-                  Time
-                </Label>
-                <Input
-                  id="activity-time"
-                  placeholder="E.g., 10:00 AM"
-                  value={newItem.time}
-                  onChange={(e) => setNewItem({ ...newItem, time: e.target.value })}
-                  style={getInputStyle()}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label style={getLabelStyle()}>Activity Type</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {itemTypes.map((type) => (
-                    <Button
-                      key={type.type}
-                      type="button"
-                      variant={newItem.type === type.type ? 'primary' : 'outline'}
-                      size="sm"
-                      className="justify-start gap-2"
-                      style={getActivityTypeButtonStyle(newItem.type === type.type, activeCity)}
-                      onClick={() => setNewItem({ ...newItem, type: type.type })}
-                    >
-                      {type.emoji}
-                      <span className="text-xs">{type.label}</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="activity-name" style={getLabelStyle()}>
+                Activity Name
+              </Label>
+              <Input
+                id="activity-name"
+                placeholder="E.g., Visit La Sagrada Familia"
+                value={newItem.name}
+                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                style={getInputStyle()}
+              />
             </div>
 
-            <DialogFooter style={getDialogFooterStyle()}>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={addNewItem}
-                disabled={isAdding}
-                className={getCityColor(activeCity)}
-                style={getButtonStyle(activeCity)}
-              >
-                {isAdding ? <>Adding...</> : <>Add Activity</>}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+            <div className="space-y-2">
+              <Label htmlFor="activity-time" style={getLabelStyle()}>
+                Time
+              </Label>
+              <Input
+                id="activity-time"
+                placeholder="E.g., 10:00 AM"
+                value={newItem.time}
+                onChange={(e) => setNewItem({ ...newItem, time: e.target.value })}
+                style={getInputStyle()}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label style={getLabelStyle()}>Activity Type</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {itemTypes.map((type) => (
+                  <Button
+                    key={type.type}
+                    type="button"
+                    variant={newItem.type === type.type ? 'primary' : 'outline'}
+                    size="sm"
+                    className="justify-start gap-2"
+                    style={getActivityTypeButtonStyle(newItem.type === type.type, activeCity)}
+                    onClick={() => setNewItem({ ...newItem, type: type.type })}
+                  >
+                    {type.emoji}
+                    <span className="text-xs">{type.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter style={getDialogFooterStyle()}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={addNewItem}
+              disabled={isAdding}
+              className={getCityColor(activeCity)}
+              style={getButtonStyle(activeCity)}
+            >
+              {isAdding ? <>Adding...</> : <>Add Activity</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

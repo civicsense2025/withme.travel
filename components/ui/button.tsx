@@ -92,20 +92,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // If using asChild, we need to handle the case where the child might be a Fragment
     if (asChild) {
-      // Prepare content that will be slotted
-      const content = loading ? (
-        <div className="flex items-center">
-          <Spinner size="sm" className="mr-2" />
-          {loadingText || 'Loading...'}
-        </div>
-      ) : (
-        <>
-          {leftIcon && <span className="mr-2 inline-flex items-center">{leftIcon}</span>}
-          {children}
-          {rightIcon && <span className="ml-2 inline-flex items-center">{rightIcon}</span>}
-        </>
-      );
-
       // Only pass props that the Slot component can accept
       return (
         <Slot 
@@ -114,7 +100,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           // Omit props that can cause issues with Fragment
           {...(props as React.ComponentPropsWithoutRef<typeof Slot>)}
         >
-          {content}
+          {/* Always wrap in a span to ensure className is properly applied */}
+          <span>
+            {loading ? (
+              <div className="flex items-center">
+                <Spinner size="sm" className="mr-2" />
+                {loadingText || 'Loading...'}
+              </div>
+            ) : (
+              <>
+                {leftIcon && <span className="mr-2 inline-flex items-center">{leftIcon}</span>}
+                {children}
+                {rightIcon && <span className="ml-2 inline-flex items-center">{rightIcon}</span>}
+              </>
+            )}
+          </span>
         </Slot>
       );
     }

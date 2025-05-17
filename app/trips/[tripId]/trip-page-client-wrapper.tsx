@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { TripPageClient } from './trip-page-client';
 import { ClassErrorBoundary } from '@/components/error-boundary';
-import { TripPageError } from '@/components/trips/trip-page-error';
+import { TripPageError } from '@/components/trips';
 import { TripDataProvider, useTripData } from './context/trip-data-provider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
@@ -18,7 +18,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import SimplifiedTripHeader from '@/components/trips/SimplifiedTripHeader';
+import { SimplifiedTripHeader } from '@/components/trips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TABLES } from '@/utils/constants/database';
 import { useToast } from '@/components/ui/use-toast';

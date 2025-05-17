@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/utils/supabase-server';
-import { TABLES } from '@/utils/constants/tables';
 import { PageContainer } from '@/components/layout/page-container';
 import { PageHeader } from '@/components/layout/page-header';
-import { getGuestToken } from '@/utils/guest';
 import { Metadata } from 'next';
 import { requireAuthOrGuest } from '@/utils/auth/route-helpers';
 import { TripTabs } from '../components/TripTabs';
+import { getServerSupabase } from '@/utils/supabase-server';
+import { TABLES } from '@/utils/constants/tables';
+import { getUserTrips } from '@/lib/api';
 
 // We need to tell search engines not to index this authenticated page
 export const metadata: Metadata = {
@@ -26,59 +26,51 @@ export default async function TripsManagePage() {
     return redirect(`/login?redirect=${encodeURIComponent('/trips/manage')}`);
   }
   
-  const supabase = await getServerSupabase();
-  
-  // Fetch trips for this user
-  const { data: tripMembers, error } = await supabase
-    .from(TABLES.MEMBERS)
-    .select(`
-      role,
-      joined_at,
-      trip:trip_id (
-        id,
-        name,
-        start_date,
-        end_date,
-        created_at,
-        status,
-        destination_id,
-        destination_name,
-        cover_image_url, 
-        created_by,
-        is_public,
-        privacy_setting,
-        description
-      )
-    `)
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('joined_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching trips:', error);
-  }
-  
-  // Fetch user profile for personalized destinations
-  const { data: userProfile } = await supabase
-    .from(TABLES.PROFILES)
-    .select('id, interests, home_location_name, travel_personality')
-    .eq('id', user.id)
-    .single();
+  try {
+    // Use our new type-safe data fetching pattern
+    const tripMembers = await getUserTrips(user.id);
+    
+    // Fetch user profile for personalized destinations
+    const supabase = await getServerSupabase();
+    const { data: userProfile } = await supabase
+      .from(TABLES.PROFILES)
+      .select('id, interests, home_location_name, travel_personality')
+      .eq('id', user.id)
+      .single();
 
-  return (
-    <div className="max-w-3xl mx-auto px-4">
-      <PageHeader
-        title="My Trips"
-        description="Manage your trip plans and itineraries"
-        className="mb-10"
-        centered={true}
-      />
-      <TripTabs 
-        initialTrips={tripMembers || []} 
-        userId={user.id} 
-        isGuest={isGuest}
-        userProfile={userProfile || null}
-      />
-    </div>
-  );
+    return (
+      <div className="max-w-3xl mx-auto px-4">
+        <PageHeader
+          title="My Trips"
+          description="Manage your trip plans and itineraries"
+          className="mb-10"
+          centered={true}
+        />
+        <TripTabs 
+          initialTrips={tripMembers} 
+          userId={user.id} 
+          isGuest={isGuest}
+          userProfile={userProfile || null}
+        />
+      </div>
+    );
+  } catch (error) {
+    console.error('Error in TripsManagePage:', error);
+    return (
+      <div className="max-w-3xl mx-auto px-4">
+        <PageHeader
+          title="My Trips"
+          description="Manage your trip plans and itineraries"
+          className="mb-10"
+          centered={true}
+        />
+        <div className="text-center p-8 bg-card rounded-xl border shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Error Loading Trips</h2>
+          <p className="text-muted-foreground mb-6">
+            We couldn't load your trips. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 }

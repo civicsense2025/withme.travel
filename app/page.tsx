@@ -42,50 +42,10 @@ import { Button } from '@/components/ui/button';
 import { FullBleedSection } from '@/components/ui/FullBleedSection';
 import { HomePageToaster } from './components/homepage-toaster';
 
-// Types
-import type { Survey } from '@/types/research';
-
 // Auth/session
 import { getServerSession } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
-
-// ============================================================================
-// MOCK DATA
-// ============================================================================
-
-/**
- * Demo survey for user research
- */
-const mockSurvey: Survey = {
-  id: 'demo-survey',
-  name: 'Demo User Research Survey',
-  description: 'Help us improve withme.travel by answering a few quick questions!',
-  type: 'survey',
-  is_active: true,
-  created_at: '2024-01-01T00:00:00.000Z',
-  updated_at: '2024-01-01T00:00:00.000Z',
-  fields: [
-    {
-      id: 'q1',
-      form_id: 'demo-survey',
-      type: 'text',
-      name: 'favorite_feature',
-      label: 'What is your favorite feature so far?',
-      required: true,
-      order: 1,
-    },
-    {
-      id: 'q2',
-      form_id: 'demo-survey',
-      type: 'text',
-      name: 'recommendation_likelihood',
-      label: 'How likely are you to recommend us to a friend?',
-      required: true,
-      order: 2,
-    },
-  ],
-};
 
 // ============================================================================
 // MAIN HOMEPAGE COMPONENT
@@ -226,41 +186,6 @@ export default async function Home() {
             </div>
           </FullBleedSection>
 
-          {/* CTA Section - Full-Bleed */}
-          <FullBleedSection backgroundClassName="bg-gradient-to-br from-blue-400/10 to-teal-400/10 relative overflow-hidden" paddingClassName="py-48">
-            <HeroEmojiExplosion />
-
-            <div className="text-center w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 2xl:px-32 mx-auto relative z-20">
-              <Heading
-                level={2}
-                size="large"
-                align="center"
-                className="mb-24 tracking-tight break-words text-balance w-full"
-              >
-                From group chat chaos to perfect itinerary in minutes.
-              </Heading>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-6 mt-16">
-                <Link href="/signup">
-                  <Button
-                    size="lg"
-                    className="rounded-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-lg py-7 px-10 w-full mb-4 sm:w-auto"
-                  >
-                    Sign up - it's free
-                  </Button>
-                </Link>
-                <Link href="/destinations">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="rounded-full text-lg py-7 px-10 w-full mb-4 sm:w-auto border-2"
-                  >
-                    Explore destinations
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </FullBleedSection>
         </main>
       </Container>
     </div>

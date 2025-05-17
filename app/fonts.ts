@@ -41,4 +41,6 @@ export const helveticaNeue = localFont({
   ],
   variable: '--font-helvetica-neue',
   display: 'swap',
+  fallback: ['system-ui', 'Arial', 'sans-serif'],
+  preload: true,
 });

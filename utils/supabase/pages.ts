@@ -5,7 +5,7 @@
 
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../../types/database.types';
+import type { Database } from '../../types/.database.types';
 import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 'next';
 
 // Environment validation

@@ -13,10 +13,7 @@ export function DiscoverSection() {
       <section>
         <div className="flex flex-col items-center text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="h-10 w-10 rounded-full bg-travel-pink/10 flex items-center justify-center mr-3">
-              <Compass className="h-5 w-5 text-travel-pink" />
-            </div>
-            <h2 className="text-2xl font-bold">Discover Destinations</h2>
+            <h2 className="text-2xl font-bold">🧭 Discover Destinations</h2>
           </div>
           <p className="text-muted-foreground max-w-md mb-6">
             Explore trending destinations and find your next adventure
@@ -66,12 +63,6 @@ export function DiscoverSection() {
           <p className="text-muted-foreground max-w-md mb-6">
             Get inspired by curated travel plans from our community
           </p>
-          <Button variant="outline" className="rounded-full" asChild>
-            <Link href="/itineraries" className="flex items-center">
-              Browse all itineraries
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
         </div>
         <Suspense fallback={<div className="h-64 bg-muted/30 animate-pulse rounded-xl" />}>
           <PopularItineraries />

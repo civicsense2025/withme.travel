@@ -9,7 +9,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { SearchProvider } from '@/contexts/search-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OnbordaProvider } from 'onborda';
-import { ResearchProvider } from '@/app/context/research-context';
 
 const queryClient = new QueryClient();
 
@@ -26,10 +25,8 @@ export function Providers({
         <AuthProvider initialSession={initialSession}>
           <QueryClientProvider client={queryClient}>
             <SearchProvider>
-              <ResearchProvider>
-                {children}
-                <Toaster />
-              </ResearchProvider>
+              {children}
+              <Toaster />
             </SearchProvider>
           </QueryClientProvider>
         </AuthProvider>

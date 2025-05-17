@@ -11,18 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarIcon, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import useOpenGraphImage from '@/lib/hooks/use-og-image';
-import { PopularDestinationsGrid } from './ui/PopularDestinationsGrid';
 import { usePopularDestinations } from '@/lib/hooks/use-popular-destinations';
 
-// Lazy load the CityBubbles component to improve initial load time
-const CityBubbles = lazy(() =>
-  import('./city-bubbles').then((mod) => ({ default: mod.CityBubbles }))
-);
-
-// Also import the provider
-const CityBubblesProvider = lazy(() =>
-  import('./city-bubbles').then((mod) => ({ default: mod.CityBubblesProvider }))
-);
 
 export function HeroSection() {
   const router = useRouter();
@@ -375,35 +365,7 @@ export function HeroSection() {
         </motion.div>
 
         {/* Popular destinations section - lazy loaded with improved styling */}
-        <motion.div
-          className="w-full overflow-visible"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.8 }}
-        >
-          <h2 className="text-2xl font-medium my-12 text-center">
-            Need inspiration? Check these spots
-          </h2>
-          <div className="backdrop-blur-sm rounded-3xl p-5 md:p-6 shadow-sm mx-auto max-w-5xl">
-            <Suspense
-              fallback={
-                <div className="h-40 bg-neutral-100 dark:bg-neutral-900 rounded-xl animate-pulse"></div>
-              }
-            >
-              <PopularDestinationsGrid
-                destinations={popularDestinations}
-                maxItems={8}
-                onSelectDestination={(destination) => {
-                  if (destination?.name) {
-                    handleSetDestination(destination.name);
-                  }
-                }}
-              />
-              {loading && <div className="text-center py-4 text-muted-foreground">Loading destinations…</div>}
-              {error && <div className="text-center py-4 text-red-500">{error}</div>}
-            </Suspense>
-          </div>
-        </motion.div>
+    
       </div>
     </section>
   );

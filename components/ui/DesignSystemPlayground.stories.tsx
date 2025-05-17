@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React, { useState, useEffect } from 'react';
-import { COLORS, TYPOGRAPHY, ThemeMode, getResponsiveSize } from '@/utils/constants/design-system';
+import { COLORS, TYPOGRAPHY, ThemeMode, getResponsiveSize } from '@/utils/constants/ui/design-system';
 import { Button } from './button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './card';
 import { Text, Heading } from './index';

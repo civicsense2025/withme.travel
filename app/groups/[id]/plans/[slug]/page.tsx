@@ -1,83 +1,109 @@
 import { notFound, redirect } from 'next/navigation';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import IdeasWhiteboard from './ideas-whiteboard';
-import { getGuestToken, setGuestToken } from '@/utils/guest';
+import { getGuestToken } from '@/utils/guest';
+import { TABLES } from '@/utils/constants/tables';
+import PlansClient from './plans-client';
 
-interface PlanPageProps {
-  params: {
-    id: string; // Group ID
-    slug: string; // Plan ID
-  };
-}
-
-export default async function PlanPage({ params: rawParams }: PlanPageProps) {
-  // Properly await all dynamic route params
-  const params = await Promise.resolve(rawParams);
-  const groupId = params.id;
-  const planId = params.slug; // This is now the plan ID, not a slug
-
-  // Create Supabase client first - this is an async operation
+export default async function PlanDetail({
+  params,
+}: {
+  params: { id: string; slug: string };
+}) {
   const supabase = await createServerComponentClient();
-
-  // Get current user session or guest token
+  
+  // Get user securely
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-
-  // Use async getGuestToken
-  let guestToken = await getGuestToken();
-
-  // If no user and no guest token, create a new guest token
+    error: userError,
+  } = await supabase.auth.getUser().catch(error => {
+    console.error('Error getting user:', error);
+    // Return empty data to prevent app from crashing
+    return { data: { user: null }, error };
+  });
+  
+  // Get the guest token for non-authenticated users
+  const guestToken = await getGuestToken().catch(error => {
+    console.error('Error getting guest token:', error);
+    return null;
+  });
+  
+  // Check if user is authenticated or has a guest token
   if (!user && !guestToken) {
-    guestToken = await setGuestToken();
+    redirect(`/login?redirect=/groups/${params.id}/plans/${params.slug}`);
   }
-
-  // Check if group exists and user has access to it (member, admin, or guest)
-  const { data: group } = await supabase
-    .from('groups')
-    .select('*, members:group_members(*)')
-    .eq('id', groupId)
-    .single();
-
-  if (!group) {
-    return notFound();
-  }
-
-  // Get the plan by ID instead of slug
-  const { data: plan } = await supabase
-    .from('group_plans')
+  
+  // Fetch the group to verify it exists
+  const { data: group, error: groupError } = await supabase
+    .from(TABLES.GROUPS)
     .select('*')
-    .eq('group_id', groupId)
-    .eq('id', planId) // Use ID instead of slug
+    .eq('id', params.id)
     .single();
-
-  if (!plan) {
-    return notFound();
+  
+  if (groupError || !group) {
+    console.error('Group not found:', groupError);
+    notFound();
   }
-
-  // Check user's membership or if guest token is the creator of this plan
+  
+  // Fetch the plan by slug
+  const { data: plan, error: planError } = await supabase
+    .from(TABLES.GROUP_PLANS)
+    .select('*')
+    .eq('group_id', params.id)
+    .eq('slug', params.slug)
+    .single();
+  
+  if (planError || !plan) {
+    console.error('Plan not found:', planError);
+    notFound();
+  }
+  
+  // Check if user is a member of the group
+  let membership = null;
+  if (user) {
+    const { data: memberData } = await supabase
+      .from(TABLES.GROUP_MEMBERS)
+      .select('*')
+      .eq('group_id', params.id)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+    
+    membership = memberData;
+  }
+  
+  // If authenticated but not a member, redirect to group page
+  if (user && !membership && !user.app_metadata?.is_admin) {
+    redirect(`/groups/${params.id}`);
+  }
+  
+  // Determine if the user is an admin or creator
+  const isAdmin = membership?.role === 'admin' || membership?.role === 'owner' || !!user?.app_metadata?.is_admin;
+  const isCreator = plan.created_by === user?.id;
   const isGuest = !user && !!guestToken;
-  const isCreator = user ? plan.created_by === user.id : plan.guest_token === guestToken;
-  const isAdmin =
-    user &&
-    group.members?.some((member: any) => member.user_id === user.id && member.role === 'admin');
-  const isGroupMember = user && group.members?.some((member: any) => member.user_id === user.id);
-
-  // Allow access to the plan for all users, including guests
-  // This is because we want to enable collaboration with minimal friction
-
-  // Render the whiteboard if the user has access
+  
+  // Fetch ideas for this plan
+  const { data: ideas } = await supabase
+    .from(TABLES.GROUP_PLAN_IDEAS)
+    .select('*')
+    .eq('plan_id', plan.id)
+    .order('created_at', { ascending: false });
+  
+  const userId = user?.id || `guest:${guestToken}`;
+  
   return (
-    <IdeasWhiteboard
-      groupId={groupId}
+    <PlansClient
+      groupId={params.id}
+      planId={plan.id}
+      planSlug={params.slug}
+      planName={plan.name}
       groupName={group.name}
+      initialIdeas={ideas || []}
+      isAdmin={isAdmin}
+      isCreator={isCreator}
+      userId={userId}
       isAuthenticated={!!user}
       isGuest={isGuest}
       guestToken={guestToken}
-      isAdmin={!!isAdmin}
-      isCreator={isCreator}
-      planId={plan.id}
-      planSlug={plan.id} // Use ID for both since we don't have slugs
     />
   );
 }

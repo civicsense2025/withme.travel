@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { Database } from '@/types/database.types';
+import type { Database } from '@/utils/constants/database';
 import { rateLimit, RateLimitOptions } from '@/utils/middleware/rate-limit';
 import { GROUP_VISIBILITY } from '@/utils/constants/status';
 
@@ -23,15 +23,12 @@ const publicPaths = [
   '/search',
   '/groups',
   '/trips',
-  '/groups/*/plans/*', // Add wildcard pattern for group plans
   // Add other public paths as needed
 ];
 
 // Protected paths that always require authentication
 const protectedPaths = [
-  '/trips/manage',
-  '/groups/manage',
-  '/trips/create',
+  '/groups/*/plans/*',
   '/admin', // Make admin an explicitly protected path
   // Add other protected paths as needed
 ];
@@ -149,42 +146,55 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/images/placeholder-destination.jpg', req.url));
     }
 
-    // Apply rate limiting to API routes
+    // Implement rate limiting in two tiers - strict for intensive operations and lenient for normal API routes
     if (pathname.startsWith('/api/')) {
-      // Set up the rate limit options
-      const rateLimitOptions: RateLimitOptions = {
-        limit: 60, // 60 requests
-        windowMs: 60 * 1000, // per minute
-      };
-
-      // Create and apply the rate limiter
+      // Determine which tier of rate limiting to apply
+      const isIntensiveOperation = 
+        pathname.includes('/error') || 
+        pathname.includes('/analytics') || 
+        pathname.includes('/logging');
+        
+      // Set rate limit options based on operation type
+      const rateLimitOptions: RateLimitOptions = isIntensiveOperation
+        ? {
+            // More restrictive for intensive operations
+            limit: 20, 
+            windowMs: 60 * 1000 // per minute
+          }
+        : {
+            // More lenient for normal API operations (especially expense APIs)
+            limit: pathname.includes('/expenses') ? 500 : 300,
+            windowMs: 60 * 1000 // per minute
+          };
+          
+      // Apply rate limiting
       const rateLimiter = rateLimit(rateLimitOptions);
       const rateLimitResult = await rateLimiter(req);
-
-      // If rate limit is exceeded, rateLimiter returns a Response
+      
       if (rateLimitResult) {
+        console.log(`Rate limit exceeded for ${isIntensiveOperation ? 'intensive' : 'regular'} API route: ${pathname}`);
         return rateLimitResult;
       }
+    }
 
-      // Special handling for destination API image requests
-      if (
-        pathname.startsWith('/api/destinations') &&
-        pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico|avif)$/i)
-      ) {
-        // Redirect image requests directly to static assets
-        return NextResponse.redirect(new URL('/images/placeholder-destination.jpg', req.url));
-      }
+    // Special handling for destination API image requests
+    if (
+      pathname.startsWith('/api/destinations') &&
+      pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico|avif)$/i)
+    ) {
+      // Redirect image requests directly to static assets
+      return NextResponse.redirect(new URL('/images/placeholder-destination.jpg', req.url));
+    }
 
-      // Handle null-prefixed slugs in the API
-      if (
-        pathname.startsWith('/api/destinations/by-slug/null') ||
-        pathname.includes('/undefined') ||
-        pathname.includes('/[object%20Object]')
-      ) {
-        // Redirect to a valid API endpoint
-        const cleanPath = pathname.replace(/\/by-slug\/.*/, '/by-slug/placeholder');
-        return NextResponse.redirect(new URL(cleanPath, req.url));
-      }
+    // Handle null-prefixed slugs in the API
+    if (
+      pathname.startsWith('/api/destinations/by-slug/null') ||
+      pathname.includes('/undefined') ||
+      pathname.includes('/[object%20Object]')
+    ) {
+      // Redirect to a valid API endpoint
+      const cleanPath = pathname.replace(/\/by-slug\/.*/, '/by-slug/placeholder');
+      return NextResponse.redirect(new URL(cleanPath, req.url));
     }
 
     // Check for guest token in cookies for group plan paths

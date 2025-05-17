@@ -151,7 +151,7 @@ export function MembersTab({
       // Fetch access requests if user is admin
       if (isAdmin) {
         try {
-          const requestsResponse = await fetch(API_ROUTES.PERMISSION_REQUESTS(tripId));
+          const requestsResponse = await fetch(API_ROUTES.TRIP_ACCESS_REQUEST(tripId));
           if (requestsResponse.ok) {
             const requestsData = await requestsResponse.json();
             setAccessRequests(requestsData.requests || []);
@@ -256,7 +256,7 @@ export function MembersTab({
 
   const handleAccessRequest = async (requestId: string, approve: boolean) => {
     try {
-      const response = await fetch(`${API_ROUTES.PERMISSION_REQUESTS(tripId)}/${requestId}`, {
+      const response = await fetch(`${API_ROUTES.TRIP_ACCESS_REQUEST(tripId)}/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

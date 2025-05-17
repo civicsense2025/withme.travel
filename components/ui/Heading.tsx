@@ -7,7 +7,7 @@ import {
   ThemeMode,
   COLORS,
   getResponsiveSize,
-} from '@/utils/constants/design-system';
+} from '@/utils/constants/ui/ui';
 import { useTheme } from 'next-themes';
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;

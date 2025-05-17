@@ -3,7 +3,7 @@ import React from 'react';
 import { Text, Heading } from './index';
 import { Button } from './button';
 import { Card } from './card';
-import { COLORS, TYPOGRAPHY } from '@/utils/constants/design-system';
+import { COLORS, TYPOGRAPHY } from '@/utils/constants/ui/design-system';
 
 const ThemeDemo = () => {
   return (

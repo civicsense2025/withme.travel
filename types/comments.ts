@@ -1,6 +1,6 @@
 // import { Tables } from '@/utils/constants/database'; // Not used in this file
 import type { Database } from '@/utils/constants/database';
-import type { Tables } from './database.types';
+import type { Tables } from './.database.types';
 type Profile = Tables<'profiles'>;
 
 /**

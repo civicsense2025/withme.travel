@@ -6,7 +6,6 @@ import { CookieConsent } from '@/components/cookie-consent';
 import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { SearchProvider } from '@/contexts/search-context';
-import { CommandMenu } from '@/components/search/command-menu';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth-provider';
 import { AuthErrorBoundary } from '@/components/auth-error-boundary';
@@ -25,7 +24,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       <AuthErrorBoundary>
         <AuthProvider initialSession={null}>
           <SearchProvider>
-            <CommandMenu />
+
             <Suspense fallback={null}>
               <main className="flex-grow">{children}</main>
               {showFooter && <Footer />}

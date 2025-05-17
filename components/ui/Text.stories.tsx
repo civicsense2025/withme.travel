@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Text } from './Text';
-import { COLORS } from '@/utils/constants/design-system';
+import { COLORS } from '@/utils/constants/ui/design-system';
 
 const meta: Meta<typeof Text> = {
   title: 'Design System/Typography/Text',

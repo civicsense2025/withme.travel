@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
-import type { Database } from '@/types/database.types';
+import type { Database } from '@/utils/constants/database';
 
 // Define schema for validating tag requests
 const tagSchema = z.object({
@@ -13,9 +13,9 @@ const tagSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tripId: string; noteId: string } }
+  { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  const { tripId, noteId } = params;
+  const { tripId, noteId } = await params;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -52,10 +52,10 @@ export async function GET(
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
 
-    // Get tags for this note
-    const { data: tags, error: tagsError } = await supabase
+    // Get tags for this note by joining with tags table to get tag names
+    const { data: tagData, error: tagsError } = await supabase
       .from('note_tags')
-      .select('tag')
+      .select('tags:tag_id(id, name)')
       .eq('note_id', noteId);
 
     if (tagsError) {
@@ -63,7 +63,10 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch tags' }, { status: 500 });
     }
 
-    return NextResponse.json({ tags: tags.map((t) => t.tag) });
+    // Extract tag names from the join result
+    const tags = tagData?.map(item => item.tags?.name).filter(Boolean) || [];
+
+    return NextResponse.json({ tags });
   } catch (error) {
     console.error('Unexpected error in GET /api/trips/[tripId]/notes/[noteId]/tags:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -75,9 +78,9 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { tripId: string; noteId: string } }
+  { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  const { tripId, noteId } = params;
+  const { tripId, noteId } = await params;
   const supabase = await createRouteHandlerClient();
 
   try {
@@ -131,10 +134,45 @@ export async function PUT(
       );
     }
 
-    const { tags } = validation.data;
+    const { tags: tagNames } = validation.data;
 
     // Start a transaction to update tags
-    // 1. Remove all existing tags for this note
+    // 1. First, get or create tag IDs for all tag names
+    const tagUpsertPromises = tagNames.map(async (tagName) => {
+      // Check if tag exists
+      const { data: existingTag, error: lookupError } = await supabase
+        .from('tags')
+        .select('id')
+        .eq('name', tagName)
+        .maybeSingle();
+
+      if (lookupError) {
+        console.error(`Error looking up tag '${tagName}':`, lookupError);
+        throw new Error('Failed to look up tag');
+      }
+
+      if (existingTag) {
+        return existingTag.id;
+      }
+
+      // Create new tag
+      const { data: newTag, error: createError } = await supabase
+        .from('tags')
+        .insert({ name: tagName, slug: tagName.toLowerCase().replace(/\s+/g, '-') })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error(`Error creating tag '${tagName}':`, createError);
+        throw new Error('Failed to create tag');
+      }
+
+      return newTag.id;
+    });
+
+    const tagIds = await Promise.all(tagUpsertPromises);
+
+    // 2. Remove all existing tags for this note
     const { error: deleteError } = await supabase.from('note_tags').delete().eq('note_id', noteId);
 
     if (deleteError) {
@@ -142,11 +180,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update tags' }, { status: 500 });
     }
 
-    // 2. Add new tags if any were provided
-    if (tags.length > 0) {
-      const tagObjects = tags.map((tag) => ({
+    // 3. Add new tags if any were provided
+    if (tagIds.length > 0) {
+      const tagObjects = tagIds.map((tagId) => ({
         note_id: noteId,
-        tag,
+        tag_id: tagId,
         created_by: user.id,
       }));
 
@@ -158,7 +196,7 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json({ success: true, tags });
+    return NextResponse.json({ success: true, tags: tagNames });
   } catch (error) {
     console.error('Unexpected error in PUT /api/trips/[tripId]/notes/[noteId]/tags:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -170,9 +208,9 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { tripId: string; noteId: string } }
+  { params }: { params: Promise<{ tripId: string; noteId: string }> }
 ) {
-  const { tripId, noteId } = params;
+  const { tripId, noteId } = await params;
   const supabase = await createRouteHandlerClient();
 
   try {

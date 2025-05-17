@@ -1,7 +1,7 @@
 import { TripType, TripStatus } from '@/utils/constants/status';
 import { User } from './user';
 import { Destination } from './destination';
-import { Database } from './database.types';
+import { Database } from './.database.types';
 
 /**
  * Type for a trip member passed from SSR data

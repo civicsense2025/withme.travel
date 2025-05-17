@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { DashboardHeader } from './components/dashboard-header';
 import { ContentTabsSection } from './components/content-tabs-section';
 import { DiscoverSection } from './components/discover-section';
-import { CommandBar } from './components/command-bar';
 import { useToast } from '@/hooks/use-toast';
 
 // Dashboard data structure from server actions
@@ -113,8 +112,7 @@ export default function DashboardClient({ user, dashboardData }: DashboardClient
       {/* Discover Section */}
       <DiscoverSection />
       
-      {/* Floating Command Bar */}
-      <CommandBar />
+
     </main>
   );
 }

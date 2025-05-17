@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { COLORS, ThemeMode, getColorToken } from '@/utils/constants/design-system';
+import { COLORS, ThemeMode, getColorToken } from '@/utils/constants/ui/design-system';
 
 import { Button } from './button';
 import {

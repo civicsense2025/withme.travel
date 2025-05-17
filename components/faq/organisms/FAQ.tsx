@@ -80,7 +80,7 @@ export function FAQ({
   // Layout-specific container classes
   const containerClasses = {
     default: "space-y-6",
-    sidebar: "md:grid md:grid-cols-3 md:gap-6",
+    sidebar: "md:grid md:grid-cols-3 md:gap-16",
     inline: "space-y-6",
     grid: "space-y-6",
     compact: "space-y-4"

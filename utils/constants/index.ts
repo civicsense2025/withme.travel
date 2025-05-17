@@ -8,7 +8,7 @@
  *   import { TABLES } from '@/utils/constants/tables';
  *   import { API_ROUTES } from '@/utils/constants/routes';
  *   import { TRIP_ROLES } from '@/utils/constants/status';
- *   import { THEME } from '@/utils/constants/ui';
+ *   import { THEME } from '@/components/ui/ui';
  *
  * This file is maintained for backward compatibility and convenience.
  */
@@ -23,138 +23,111 @@
 export * from './database';
 
 /**
- * Database tables, fields, and enum constants
+ * Database tables constants
  */
-export {
+export { 
   TABLES,
-  FIELDS,
-  ENUMS,
-
-  // Domain-specific table groups
-  ITINERARY_TABLES,
-  TEMPLATE_TABLES,
+  TRIP_TABLES,
+  GROUP_TABLES,
+  USER_TABLES,
   DESTINATION_TABLES,
   CONTENT_TABLES,
+  ITINERARY_TABLES,
+  TEMPLATE_TABLES,
   SOCIAL_TABLES,
   FINANCE_TABLES,
+  FORM_TABLES,
+  SPATIAL_TABLES,
   NOTIFICATION_TABLES,
   PREFERENCE_TABLES,
   RESEARCH_TABLES,
-  FORM_TABLES,
   USER_TESTING_TABLES,
-  SPATIAL_TABLES,
+  MULTI_CITY_TABLES,
+  MULTI_CITY_QUERY_SNIPPETS,
 } from './tables';
-
-/**
- * Table field constants for referencing specific fields
- */
-export { TABLE_FIELDS } from './table-fields';
-
-/**
- * Research and Forms System Constants
- */
-export { 
-  FORM_FIELDS,
-  FORM_FIELD_TYPES,
-  RESEARCH_EVENT_TYPES,
-  MILESTONE_TYPES,
-  FORM_TYPES,
-  SESSION_STATUS,
-} from './research-tables';
-
 export type { CommentableContentType, ItineraryTemplateMetadata } from './tables';
 
-// ============================================================================
-// ROUTING CONSTANTS
-// ============================================================================
+/**
+ * Database table field names
+ */
+export { TABLE_FIELDS } from './table-fields';
+export type { TableFieldKey } from './table-fields';
 
 /**
- * Application routes for API endpoints and pages
+ * Database enum values and types
  */
-export { API_ROUTES, PAGE_ROUTES } from './routes';
-
-// ============================================================================
-// STATUS & ENUM CONSTANTS
-// ============================================================================
-
-/**
- * Status enums and constants used throughout the application
- */
-export {
+export { 
+  // Main ENUMS object containing all enum values
+  ENUMS,
+  
+  // Individual enum objects for backward compatibility
   TRIP_ROLES,
-  PERMISSION_STATUSES,
-  ITINERARY_CATEGORIES,
   ITEM_STATUSES,
+  ITINERARY_CATEGORIES,
+  GROUP_MEMBER_ROLES,
+  GROUP_VISIBILITY,
+  VOTE_TYPES,
+  TRIP_PRIVACY_SETTINGS,
   TRIP_STATUSES,
-  SPLIT_TYPES,
   TRIP_TYPES,
   BUDGET_CATEGORIES,
-  TEMPLATE_CATEGORIES,
-  TEMPLATE_TYPES,
-  PRIVACY_SETTINGS,
-  TRIP_PRIVACY_SETTINGS,
-  PLACE_CATEGORIES,
+  PERMISSION_STATUSES,
   TRAVEL_PACES,
-  TRAVEL_PERSONALITY_TYPES,
-  TRAVEL_SQUAD_TYPES,
-  TRAVEL_STYLES,
   INVITATION_STATUSES,
-  TAG_STATUSES,
-  USER_STATUSES,
-  VOTE_TYPES,
-  INTERACTION_TYPES,
-  URL_FORMATS,
-  PRESENCE_STATUSES,
+  GROUP_PLAN_IDEA_TYPE,
+  GROUP_MEMBER_STATUSES,
+  IMAGE_TYPES,
+  CONTENT_TYPES,
 } from './status';
 
+// Export types from status.ts
 export type {
-  PermissionStatus,
-  ItineraryCategory,
-  ItemStatus,
-  TripStatus,
-  SplitType,
-  TripType,
   BudgetCategory,
-  TemplateCategory,
-  TemplateType,
-  InvitationStatus,
+  ContentType,
+  GroupIdeaType as GroupPlanIdeaType,
+  GroupMemberRole,
+  GroupMemberStatus,
+  GroupVisibility,
+  ImageType,
+  ItemStatus,
+  TripPrivacySetting,
+  TripRole,
+  TripStatus,
+  TripType,
   VoteType,
 } from './status';
 
 // ============================================================================
-// UI CONSTANTS
+// APPLICATION CONSTANTS
 // ============================================================================
 
 /**
- * UI-related constants including theme, limits, and formats
+ * API route constants
  */
-export { THEME, LIMITS, TIME_FORMATS } from './ui';
+export { API_ROUTES, PAGE_ROUTES } from './routes';
 
 /**
- * Color constants for the application
+ * User interface constants
  */
-export * from './colors';
-
-// ============================================================================
-// VALIDATION & API CONSTANTS
-// ============================================================================
+export * from './ui/ui';
 
 /**
- * Validation rules and schemas
+ * API response constants 
+ */
+export * from './api';
+
+/**
+ * Form validation constants
  */
 export * from './validation';
 
 /**
- * API-related constants
+ * Color constants
  */
-export * from './api';
-
-// ============================================================================
-// PLACES & LOCATION CONSTANTS
-// ============================================================================
+export * from './ui/colors';
 
 /**
- * Places and location-related constants
+ * Places/locations constants
  */
 export * from './places';
 
@@ -171,13 +144,3 @@ export const TRIP_SECTIONS = [
   { id: 'expenses', name: 'Expenses' },
   { id: 'manage', name: 'Manage' },
 ];
-
-/**
- * @deprecated - Legacy constants that should be imported from their specific modules
- * These are included for backward compatibility only and will be removed in future versions
- */
-export { GROUP_TABLES } from './groups';
-export { TRIP_TABLES } from './trips';
-export { USER_TABLES } from './users';
-
-// Don't re-export tables to avoid ambiguity with the more specific exports above

@@ -1,77 +1,82 @@
 # Trip Components
 
-This directory contains reusable components for trip-related functionality in the withme.travel application.
+This directory contains a comprehensive set of components for creating, viewing, and managing trips, organized according to the Atomic Design methodology.
 
-## Components
+## Component Structure
 
-### `TripCreationForm`
+### Atoms (Fundamental UI Elements)
+- `TripCoverImage` - Displays the trip's cover image with appropriate sizing and fallbacks
+- `TripDates` - Formats and displays trip start/end dates
+- `TripDestinationBadge` - Displays destination information in a badge format
+- `PresenceAvatar` - Shows user avatars with online/offline status indicators
+- `TripStatusBadge` - Visual indicator of trip status (planning, active, completed)
+- `ActivityIcon` - Icons representing different types of trip activities
 
-A modern, user-friendly form component for creating new trips that follows the withme.travel design system.
+### Molecules (Combinations of Atoms)
+- `TripCardHeader` - Header portion of a trip card with image and title
+- `TripCardFooter` - Footer portion of a trip card with stats and actions
+- `ActivityItem` - Individual activity item with icon, details, and actions
+- `TripMemberItem` - Component for displaying a single trip member
+- `TripShareButton` - Button with sharing options for trips
+- `ConnectionStatusIndicator` - Shows real-time connection status
+- `PresenceIndicator` - Displays active members/viewers of a trip
 
-#### Features
+### Organisms (Functional Components)
+- `TripCard` - Complete card representing a trip in lists or grids
+- `TripCreationForm` - Form for creating or editing trips
+- `TripHeader` - Full header component for trip detail pages
+- `ActivityTimeline` - Complete timeline of trip activities
+- `TripMembersList` - List of members with management options
+- `MultipleCitySelector` - Component for selecting multiple destinations
+- `TripSidebar` - Sidebar with trip navigation and context
 
-- Apple-inspired design with clean layout and subtle visual effects
-- Conversational field labels for friendly user experience
-- Integrated city search with autocomplete
-- Date range picker for trip dates
-- Form validation with real-time feedback
-- Responsive layout works on all device sizes
-- Animated loading states
-- Error handling with visual feedback
+### Templates
+- `TripsOverviewTemplate` - Layout for the trips listing page
+- `TripDetailTemplate` - Layout for single trip view with all sections
+- `TripCreationTemplate` - Layout for the trip creation flow
 
-#### Usage
+## Usage
+
+### Basic Usage
+
+Import individual components as needed:
 
 ```tsx
-import { TripCreationForm } from '@/components/trips/trip-creation-form';
-
-function CreateTripPage() {
-  const handleDestinationSelect = (destination: string) => {
-    console.log(`User selected destination: ${destination}`);
-  };
-
-  const handleTripCreated = (tripId: string) => {
-    console.log(`Trip created with ID: ${tripId}`);
-    // Redirect or show success message
-  };
-
-  return (
-    <div className="container">
-      <TripCreationForm
-        onDestinationSelect={handleDestinationSelect}
-        onTripCreated={handleTripCreated}
-        // Optional: initial destination if coming from destination page
-        // initialDestination={someCityObject}
-        // Optional: override theme mode
-        // mode="dark"
-      />
-    </div>
-  );
-}
+import { 
+  TripCard,
+  TripHeader,
+  ActivityTimeline 
+} from '@/components/trips';
 ```
 
-#### Props
+Or import a complete template:
 
-| Prop                  | Type                            | Description                                  |
-| --------------------- | ------------------------------- | -------------------------------------------- |
-| `onDestinationSelect` | `(destination: string) => void` | Callback when a destination is selected      |
-| `onTripCreated`       | `(tripId: string) => void`      | Callback when trip creation succeeds         |
-| `onCancel`            | `() => void`                    | Optional callback for cancel button click    |
-| `initialDestination`  | `City`                          | Optional initial destination to pre-populate |
-| `mode`                | `'light' \| 'dark'`             | Optional theme mode override                 |
+```tsx
+import { TripDetailTemplate } from '@/components/trips';
+```
 
-#### Design Notes
+### Example Implementation
 
-This component implements our Apple-inspired design system with:
+```tsx
+<TripDetailTemplate
+  trip={tripData}
+  members={members}
+  activities={activities}
+  isEditable={hasEditPermission}
+  onShare={handleShare}
+/>
+```
 
-- Clean card with subtle elevation
-- Generous white space and padding
-- Conversational copy (e.g., "What are you calling this adventure?")
-- Icons to improve visual hierarchy
-- Modern input styling with clear focus states
-- Consistent error handling
+## Design Principles
 
-To see this component in action, visit the enhanced trip creation page at `/trips/create/enhanced`.
+1. **Modularity**: Each component is reusable and has a single responsibility
+2. **Composability**: Atoms combine into molecules, which combine into organisms
+3. **Real-time Collaboration**: Components support presence awareness and collaborative editing
+4. **Responsive Design**: All components work seamlessly across devices
+5. **Design System Integration**: Components use the shared UI components library
 
----
+## API Integration
 
-For additional trip-related components, see the main components documentation.
+- Components fetch data from the trips API via custom hooks
+- Trip data is managed through endpoints in `app/api/trips/*`
+- Real-time updates use Supabase Realtime features for presence and collaborative editing

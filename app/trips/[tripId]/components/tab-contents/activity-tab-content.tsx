@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivityTimeline } from '@/components/trips/activity-timeline';
+import { ActivityTimeline } from '@/components/trips';
 
 interface ActivityTabContentProps {
   tripId: string;

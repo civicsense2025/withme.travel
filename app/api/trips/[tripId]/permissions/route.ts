@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { errorResponse, successResponse } from '@/lib/api-utils';
-import { withAuth } from '@/lib/auth-middleware';
-import { ensureTripAccess } from '@/lib/trip-access';
-import { rateLimit } from '@/lib/rate-limit';
+import { listPermissionRequests, createPermissionRequest, updatePermissionRequest } from '@/lib/api/permissions';
 import { z } from 'zod';
-import { TABLES } from '@/utils/constants/tables';
-import { Database } from '@/types/database.types';
 
 // Class for API errors with status code
 class ApiError extends Error {
@@ -51,6 +45,13 @@ const roleUpdateSchema = z.object({
   role: z.enum(['admin', 'editor', 'contributor', 'viewer']),
 });
 
+const patchSchema = z.object({
+  requestId: z.string(),
+  role: z.enum(['admin', 'editor', 'contributor', 'viewer']).optional(),
+  message: z.string().optional(),
+  status: z.enum(['pending', 'approved', 'rejected']).optional(),
+});
+
 /**
  * Get all permission requests for a trip
  * @param request The HTTP request
@@ -62,45 +63,15 @@ export async function GET(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   try {
-    // Apply rate limiting based on IP
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitKey = `get_permission_requests_${ip}`;
-    const rateLimitResponse = await rateLimit.apply(request, rateLimitKey, async () => {
-      const { tripId } = await params;
-      if (!tripId) return errorResponse('Trip ID is required', 400);
-
-      const supabase = await createRouteHandlerClient();
-
-      return await withAuth(async (user) => {
-        try {
-          const accessResponse = await ensureTripAccess(user.id, tripId, ['admin', 'editor']);
-          if (accessResponse) return accessResponse;
-
-          const { data: requests, error } = await supabase
-            .from(TABLES.PERMISSION_REQUESTS)
-            .select(`*, user:user_id(id, name, email, avatar_url)`)
-            .eq('trip_id', tripId)
-            .eq('status', 'pending');
-
-          if (error) {
-            throw new ApiError(error.message, 500);
-          }
-
-          return successResponse({ requests });
-        } catch (error) {
-          console.error(`[Permissions GET Handler Error] Trip ${tripId}:`, error);
-          return errorResponse(
-            error instanceof ApiError ? error.message : 'Failed to fetch permissions',
-            error instanceof ApiError ? error.status : 500
-          );
-        }
-      });
-    });
-
-    return rateLimitResponse;
+    const { tripId } = await params;
+    if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
+    const result = await listPermissionRequests(tripId);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    return NextResponse.json({ requests: result.data });
   } catch (error) {
-    console.error(`[Permissions GET Top-Level Error]:`, error);
-    return errorResponse('An unexpected error occurred', 500);
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
 
@@ -116,75 +87,21 @@ export async function POST(
 ) {
   try {
     const { tripId } = await params;
-    if (!tripId) {
-      return errorResponse('Trip ID is required', 400);
+    if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
+    const requestBody = await request.json();
+    const validation = permissionRequestSchema.safeParse(requestBody);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid request', details: validation.error.format() }, { status: 400 });
     }
-
-    const supabase = await createRouteHandlerClient();
-
-    return await withAuth(async (user) => {
-      try {
-        const accessResponse = await ensureTripAccess(user.id, tripId, ['admin', 'editor']);
-        if (accessResponse) return accessResponse;
-
-        const { data: existingMember, error: checkError } = await supabase
-          .from(TABLES.TRIP_MEMBERS)
-          .select('id')
-          .eq('trip_id', tripId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (checkError) throw new ApiError(checkError.message, 500);
-        if (existingMember) {
-          return errorResponse('You are already a member of this trip', 400);
-        }
-
-        const requestBody = await request.json();
-        const { role, message } = await validateInput(requestBody, permissionRequestSchema);
-
-        const { data: existingRequest, error: requestError } = await supabase
-          .from(TABLES.PERMISSION_REQUESTS)
-          .select('id')
-          .eq('trip_id', tripId)
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .maybeSingle();
-
-        if (requestError) throw new ApiError(requestError.message, 500);
-        if (existingRequest) {
-          return errorResponse('You already have a pending request for this trip', 400);
-        }
-
-        const { data, error } = await supabase
-          .from(TABLES.PERMISSION_REQUESTS)
-          .insert([
-            {
-              trip_id: tripId,
-              user_id: user.id,
-              role: role,
-              message: message,
-              status: 'pending',
-            },
-          ])
-          .select()
-          .single();
-
-        if (error) {
-          throw new ApiError(error.message, 500);
-        }
-
-        return successResponse({ request: data }, 201);
-      } catch (error) {
-        console.error(`[Permissions POST Handler Error] Trip ${tripId}:`, error);
-        return errorResponse(
-          error instanceof ApiError ? error.message : 'Failed to create permission request',
-          error instanceof ApiError ? error.status : 500
-        );
-      }
-    });
+    const { role, message } = validation.data;
+    // Map role to requested_role for PermissionRequest
+    const result = await createPermissionRequest(tripId, { requested_role: role, message });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    return NextResponse.json({ request: result.data }, { status: 201 });
   } catch (error) {
-    console.error(`[Permissions POST Top-Level Error]:`, error);
-    return errorResponse('An unexpected error occurred', 500);
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
 
@@ -194,22 +111,24 @@ export async function PATCH(
 ) {
   try {
     const { tripId } = await params;
-    if (!tripId) {
-      return errorResponse('Trip ID is required', 400);
+    if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
+    const body = await request.json();
+    const validation = patchSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid request', details: validation.error.format() }, { status: 400 });
     }
-
-    // Parse request body to get role
-    const data = await request.json();
-    const { role } = await validateInput(data, roleUpdateSchema);
-
-    // Implementation for PATCH method
-    return NextResponse.json({
-      updated: true,
-      role: role,
-    });
+    const { requestId, role, message, status } = validation.data;
+    // Map role to requested_role if present
+    const updateData: any = {};
+    if (role) updateData.requested_role = role;
+    if (message) updateData.message = message;
+    if (status) updateData.status = status;
+    const result = await updatePermissionRequest(tripId, requestId, updateData);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    return NextResponse.json({ request: result.data });
   } catch (error) {
-    console.error('Error updating member role:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

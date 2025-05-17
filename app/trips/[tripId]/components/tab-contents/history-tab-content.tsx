@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 
 // Lazy load the ActivityTimeline component
 const ActivityTimeline = lazy(() =>
-  import('@/components/trips/activity-timeline').then((mod) => ({
+  import('@/components/ui/features/trips/activity-timeline').then((mod) => ({
     default: mod.ActivityTimeline,
   }))
 );

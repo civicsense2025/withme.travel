@@ -1,19 +1,10 @@
-'use client';
-
 import React, { useState } from 'react';
-import { PlusCircle, Wallet, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { BudgetSnapshotSidebar } from '../organisms/BudgetSnapshotSidebar';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Check, Pencil, X } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
-// Helper function to format currency
-const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || value === undefined) return 'N/A';
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
-interface CompactBudgetSnapshotProps {
+export interface CompactBudgetSnapshotProps {
   targetBudget: number | null;
   totalPlanned: number;
   totalSpent: number;
@@ -25,6 +16,10 @@ interface CompactBudgetSnapshotProps {
   tripId: string;
 }
 
+/**
+ * CompactBudgetSnapshot
+ * Displays a compact budget summary with visual indicators and edit functionality
+ */
 export function CompactBudgetSnapshot({
   targetBudget,
   totalPlanned,
@@ -36,126 +31,141 @@ export function CompactBudgetSnapshot({
   onLogExpenseClick,
   tripId,
 }: CompactBudgetSnapshotProps) {
-  const hasTargetBudget = targetBudget !== null;
-  const budgetValue = hasTargetBudget ? formatCurrency(targetBudget) : 'Click to set budget';
-  const remainingValue = hasTargetBudget
-    ? formatCurrency(targetBudget - totalSpent - totalPlanned)
-    : 'N/A';
-  const isOverBudget = hasTargetBudget && totalSpent + totalPlanned > targetBudget;
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [localIsEditing, setLocalIsEditing] = useState(isEditing);
-
-  // Handle local editing state
-  const handleEditToggle = (editing: boolean) => {
-    setLocalIsEditing(editing);
-    onEditToggle(editing);
+  const [inputValue, setInputValue] = useState(targetBudget?.toString() || '');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Format currency consistently
+  const formatCurrency = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return '$0';
+    return `$${value.toLocaleString('en-US', { 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })}`;
   };
-
-  // Handle local save
-  const handleSave = async (newBudget: number) => {
+  
+  // Calculate percentage used for progress bar
+  const percentSpent = targetBudget && targetBudget > 0 
+    ? Math.min(Math.round((totalSpent / targetBudget) * 100), 100)
+    : 0;
+  
+  const isOverBudget = targetBudget !== null && totalSpent > targetBudget;
+  
+  // Handle save action
+  const handleSave = async () => {
+    if (!inputValue) return;
+    
+    const numValue = parseFloat(inputValue);
+    if (isNaN(numValue)) return;
+    
+    setIsSaving(true);
     try {
-      await onSave(newBudget);
-      setLocalIsEditing(false);
+      await onSave(numValue);
+      onEditToggle(false);
     } catch (error) {
-      console.error('Error saving budget:', error);
+      console.error('Error saving budget', error);
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  // Handle local expense logging
-  const handleLogExpense = () => {
-    setSheetOpen(false); // Close the sheet first
-    // Small delay to allow sheet to close
-    setTimeout(() => {
-      onLogExpenseClick();
-    }, 100);
-  };
-
+  
   return (
-    <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto bg-background hover:bg-background/80"
-        >
-          <Wallet className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Budget: &nbsp; </span> {budgetValue}
-          <span className={`ml-2 ${isOverBudget ? 'text-destructive' : 'text-muted-foreground'}`}>
-            ({remainingValue} remaining)
-          </span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="sm:max-w-md">
-        <div className="mt-2">
-          <BudgetSnapshotSidebar
-            targetBudget={targetBudget}
-            totalPlanned={totalPlanned}
-            totalSpent={totalSpent}
-            canEdit={canEdit}
-            isEditing={localIsEditing}
-            onEditToggle={handleEditToggle}
-            onSave={handleSave}
-            onLogExpenseClick={handleLogExpense}
-            noCardWrapper={false}
-          />
-
-          {hasTargetBudget && (
-            <div className="mt-6 border-t pt-4">
-              <h3 className="text-lg font-semibold mb-3">Expense Summary</h3>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Total Budget:</span>
-                  <span className="font-medium">{formatCurrency(targetBudget)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Amount Spent:</span>
-                  <span className="font-medium">{formatCurrency(totalSpent)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Planned Expenses:</span>
-                  <span className="font-medium">{formatCurrency(totalPlanned)}</span>
-                </div>
-                <div className="flex justify-between items-center font-semibold pt-1 border-t">
-                  <span className="text-sm">Remaining:</span>
-                  <span className={isOverBudget ? 'text-destructive' : 'text-green-600'}>
-                    {formatCurrency(targetBudget - totalSpent - totalPlanned)}
-                  </span>
-                </div>
+    <div className="flex flex-col items-end gap-1 text-right">
+      <div className="text-xs text-muted-foreground">Budget</div>
+      
+      {isEditing ? (
+        // Edit mode
+        <div className="flex flex-col gap-2 items-end">
+          <div className="flex items-center gap-2">
+            <Input 
+              type="number"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              className="w-24 text-right"
+              min="0"
+              autoFocus
+            />
+          </div>
+          <div className="flex gap-1">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="h-7 px-2"
+              onClick={() => onEditToggle(false)}
+              disabled={isSaving}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="default" 
+              className="h-7 px-2"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? 
+                <span className="animate-pulse">Saving...</span> : 
+                <Check className="h-3 w-3" />
+              }
+            </Button>
+          </div>
+        </div>
+      ) : (
+        // View mode
+        <>
+          <div className="flex items-center gap-2">
+            <div className="font-bold text-lg">
+              {targetBudget !== null ? (
+                <span>
+                  {formatCurrency(totalSpent)} / {formatCurrency(targetBudget)}
+                </span>
+              ) : (
+                <span>{formatCurrency(totalSpent)}</span>
+              )}
+            </div>
+            {canEdit && (
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onEditToggle(true)}>
+                <Pencil className="h-3 w-3" />
+                <span className="sr-only">Edit Budget</span>
+              </Button>
+            )}
+          </div>
+          
+          {targetBudget !== null && targetBudget > 0 && (
+            <div className="w-full mt-1">
+              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${
+                    isOverBudget 
+                      ? 'bg-destructive' 
+                      : percentSpent > 80 
+                        ? 'bg-amber-500' 
+                        : 'bg-primary'
+                  }`}
+                  style={{ width: `${percentSpent}%` }}
+                />
               </div>
-
-              {/* Expense Breakdown - Placeholder */}
-              <div className="mt-5">
-                <div className="flex items-center mb-3">
-                  <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <h3 className="text-md font-semibold">Expense Breakdown</h3>
-                </div>
-
-                <ScrollArea className="h-[100px] pr-4">
-                  <p className="text-sm text-center text-muted-foreground py-3">
-                    This feature will show a per-person expense breakdown.
-                  </p>
-                </ScrollArea>
-              </div>
-
-              <div className="mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    setSheetOpen(false);
-                    // Navigate to the budget tab for the full expense breakdown
-                    window.location.href = `#budget-section`;
-                  }}
-                >
-                  View Full Expense Breakdown
-                </Button>
+              <div className="text-xs mt-0.5">
+                {isOverBudget ? (
+                  <span className="text-destructive font-medium">Over budget!</span>
+                ) : (
+                  <span>{percentSpent}% used</span>
+                )}
               </div>
             </div>
           )}
-        </div>
-      </SheetContent>
-    </Sheet>
+          
+          <div className="flex gap-2 mt-1">
+            {canEdit && targetBudget === null && (
+              <Button size="sm" variant="outline" onClick={() => onEditToggle(true)}>
+                Set Budget
+              </Button>
+            )}
+            <Button size="sm" variant="secondary" onClick={onLogExpenseClick}>
+              Log Expense
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
   );
 } 

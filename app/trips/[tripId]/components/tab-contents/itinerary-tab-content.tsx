@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { TripsFeedbackButton } from '@/app/trips/TripsFeedbackButton';
-import { SimplifiedItemForm, BulkItemForm } from '@/components/trips/SimplifiedItemForm';
+import { SimplifiedItemForm } from '@/components/trips';
 import { QuickAddItemDialog } from '@/components/itinerary/QuickAddItemDialog';
 import { AddViatorButton } from '@/components/viator/AddViatorButton';
 

@@ -11,8 +11,8 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { GroupCirclesSection } from './GroupCirclesSection';
-import { ThemeMode } from '@/utils/constants/design-system';
+import { GroupCirclesSection } from './index';
+import { ThemeMode } from '@/utils/constants/ui/design-system';
 
 // ============================================================================
 // METADATA

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MOBILE_MAX_WIDTH, TABLET_MAX_WIDTH, LayoutType } from '@/utils/constants/groupCirclesConstants'; // Adjust path
+import { MOBILE_MAX_WIDTH, TABLET_MAX_WIDTH, LayoutType } from '@/utils/constants/ui/groupCirclesConstants'; // Adjust path
 
 interface ScreenSizeInfo {
   width: number;

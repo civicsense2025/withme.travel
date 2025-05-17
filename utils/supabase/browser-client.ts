@@ -19,11 +19,13 @@ let browserClient: TypedSupabaseClient | null = null;
  * @returns A typed Supabase client for browser use
  */
 export function getBrowserClient(): TypedSupabaseClient {
+  // Return existing client if available
+  if (browserClient) return browserClient;
+  
+  // Check if we're in a browser environment
   if (typeof window === 'undefined') {
     throw new Error('getBrowserClient should only be called in browser environments');
   }
-
-  if (browserClient) return browserClient;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

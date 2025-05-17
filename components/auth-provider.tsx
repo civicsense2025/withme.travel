@@ -62,16 +62,27 @@ export function AuthProvider({
   children,
   className
 }: AuthProviderProps & { className?: string }) {
-  // Use the singleton supabase client instead of creating a new one
-  const supabase = getBrowserClient();
-
+  // Initialize state first
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<ExtendedUser | null>(
     initialSession ? { ...initialSession.user } : null
   );
   const [isLoading, setIsLoading] = useState<boolean>(!initialSession);
+  const [supabase, setSupabase] = useState<SupabaseClient<Database>>({} as SupabaseClient<Database>);
+  
+  // Use an effect to initialize Supabase client only on the client side
+  useEffect(() => {
+    try {
+      const client = getBrowserClient();
+      setSupabase(client);
+    } catch (error) {
+      console.error('Error initializing Supabase client:', error);
+    }
+  }, []);
 
   async function fetchUserProfile(userId: string) {
+    if (!supabase || !Object.keys(supabase).length) return null;
+    
     const { data, error } = await supabase
       .from(TABLES.PROFILES)
       .select(['name', 'avatar_url', 'username', 'email'].join(','))
@@ -94,10 +105,13 @@ export function AuthProvider({
   }
 
   useEffect(() => {
+    // Skip if no supabase client is initialized yet or initialSession exists
+    if (!supabase || !Object.keys(supabase).length) return;
     if (initialSession) {
       setIsLoading(false);
       return;
     }
+    
     supabase.auth.getUser().then(({ data, error }) => {
       if (error) {
         setSession(null);
@@ -111,7 +125,8 @@ export function AuthProvider({
   }, [supabase, initialSession]);
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user || !supabase || !Object.keys(supabase).length) return;
+    
     fetchUserProfile(session.user.id).then((profile) => {
       if (profile) {
         setUser((u) =>
@@ -129,9 +144,11 @@ export function AuthProvider({
         );
       }
     });
-  }, [session]);
+  }, [session, supabase]);
 
   useEffect(() => {
+    if (!supabase || !Object.keys(supabase).length) return;
+    
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
@@ -145,13 +162,18 @@ export function AuthProvider({
         setUser(null);
       }
     });
-    return () => listener.subscription.unsubscribe();
+    
+    return () => {
+      if (listener?.subscription) {
+        listener.subscription.unsubscribe();
+      }
+    };
   }, [supabase]);
 
   // --- GUEST TO USER GROUP CLAIM LOGIC ---
   useEffect(() => {
-    // Only run if user is present (just signed up/logged in)
-    if (!user || !user.id) return;
+    // Skip if conditions aren't met
+    if (!user || !user.id || !supabase || !Object.keys(supabase).length) return;
     // Only run in browser
     if (typeof window === 'undefined') return;
     // Check for guest_token cookie
@@ -217,16 +239,25 @@ export function AuthProvider({
   }, [user, supabase]);
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase || !Object.keys(supabase).length) 
+      throw new Error('Supabase client not initialized');
+      
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
   const signOut = async () => {
+    if (!supabase || !Object.keys(supabase).length) 
+      throw new Error('Supabase client not initialized');
+      
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
 
   const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
+    if (!supabase || !Object.keys(supabase).length) 
+      throw new Error('Supabase client not initialized');
+      
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -236,6 +267,9 @@ export function AuthProvider({
   };
 
   const refreshSession = async () => {
+    if (!supabase || !Object.keys(supabase).length) 
+      throw new Error('Supabase client not initialized');
+      
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user) {
       setSession(null);
@@ -259,9 +293,7 @@ export function AuthProvider({
 
   return (
     <AuthContext.Provider value={value}>
-      <div className={className}>
-        {children}
-      </div>
+      <div className={className}>{children}</div>
     </AuthContext.Provider>
   );
 }

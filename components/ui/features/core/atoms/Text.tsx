@@ -15,7 +15,7 @@ import {
   ThemeMode,
   COLORS,
   getResponsiveSize,
-} from '@/utils/constants/design-system';
+} from '@/utils/constants/ui/design-system';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 

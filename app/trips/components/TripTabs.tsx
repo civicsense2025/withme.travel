@@ -2,35 +2,13 @@
 
 import { useState } from 'react';
 import TripsClientPage from '../trips-client';
-import { PopularDestinations } from '@/components/destinations/popular-destinations';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { TripTabsWrapper } from './TripTabsWrapper';
+import { TripMember } from '@/lib/api';
 
-// Types
-interface Trip {
-  id: string;
-  name: string;
-  start_date: string | null;
-  end_date: string | null;
-  created_at: string;
-  status: string | null;
-  destination_id: string | null;
-  destination_name: string | null;
-  cover_image_url: string | null;
-  created_by: string;
-  is_public: boolean | null;
-  privacy_setting: string | null;
-  description: string | null;
-}
-
-interface TripMember {
-  role: string;
-  joined_at: string | null;
-  trip: Trip;
-}
-
+// Types for userProfile which is not exported from lib/api
 interface UserProfile {
   id: string;
   interests?: string[];
@@ -56,9 +34,6 @@ export function TripTabs({ initialTrips, userId = '', isGuest = false, userProfi
         <>
           <div className="space-y-6">
             <TripsClientPage initialTrips={initialTrips} userId={userId} isGuest={isGuest} />
-          </div>
-          <div className="mt-10">
-            <PopularDestinations showAsGrid showPopover />
           </div>
         </>
       ),
