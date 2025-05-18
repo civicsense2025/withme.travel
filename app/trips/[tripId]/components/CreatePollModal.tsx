@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { CreatePollForm } from '@/components/trips';
+import { CreatePollForm } from '@/components/trips/molecules';
 import { Button } from '@/components/ui/button';
 import { Plus, Vote, VoteIcon } from 'lucide-react';
 

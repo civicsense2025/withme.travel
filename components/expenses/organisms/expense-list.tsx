@@ -30,17 +30,45 @@ import {
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { ENUMS } from '@/utils/constants/status';
-import { UnifiedExpense } from '@/hooks/use-trip-budget';
+import type { Expense } from '@/lib/api/_shared';
+
+// For backwards compatibility with components that use UnifiedExpense
+export interface UnifiedExpense {
+  id: string | number;
+  title: string | null;
+  amount: number | null;
+  currency: string | null;
+  category: string | null;
+  date: string | null;
+  paidBy?: string | null;
+  paidById?: string;
+  source: 'manual' | 'planned';
+}
+
+// Helper function to convert Expense to backward compatible UnifiedExpense for rendering
+function adaptExpenseForDisplay(expense: Expense, displayName?: string): UnifiedExpense {
+  return {
+    id: expense.id,
+    title: expense.title,
+    amount: expense.amount,
+    currency: expense.currency || 'USD',
+    category: expense.category || 'other',
+    date: expense.date || null,
+    paidBy: displayName || 'Unknown',
+    paidById: expense.paid_by,
+    source: 'manual'
+  };
+}
 
 export interface ExpenseListProps {
   /**
    * Array of expenses to display
    */
-  expenses: UnifiedExpense[];
+  expenses: Expense[];
   /**
    * Array of planned expenses to display
    */
-  plannedExpenses: UnifiedExpense[];
+  plannedExpenses: Expense[];
   /**
    * Whether the user can edit expenses
    */
@@ -48,11 +76,11 @@ export interface ExpenseListProps {
   /**
    * Callback for editing an expense
    */
-  onEditExpense: (expense: UnifiedExpense) => void;
+  onEditExpense: (expense: Expense) => void;
   /**
    * Callback for deleting an expense
    */
-  onDeleteExpense: (expense: UnifiedExpense) => void;
+  onDeleteExpense: (expense: Expense) => void;
   /**
    * Callback for adding a new expense
    */
@@ -107,7 +135,7 @@ export function ExpenseList({
       const query = searchQuery.toLowerCase();
       result = result.filter(expense => 
         expense.title?.toLowerCase().includes(query) ||
-        expense.paidBy?.toLowerCase().includes(query)
+        expense.paid_by?.toLowerCase().includes(query)
       );
     }
     
@@ -205,9 +233,9 @@ export function ExpenseList({
               {filteredExpenses.map((expense) => (
                 <ExpenseItemCard
                   key={expense.id}
-                  expense={expense}
-                  onEdit={onEditExpense}
-                  onDelete={onDeleteExpense}
+                  expense={adaptExpenseForDisplay(expense)}
+                  onEdit={() => onEditExpense(expense)}
+                  onDelete={() => onDeleteExpense(expense)}
                   canEdit={canEdit}
                   compact
                 />
@@ -240,53 +268,52 @@ export function ExpenseList({
     </div>
   );
 
-  // The main content component
-  const content = (
+  // Render content with or without tabs based on whether we have planned expenses
+  const content = plannedExpenses.length > 0 ? (
+    <Tabs defaultValue="actual" className="w-full" onValueChange={(v) => setActiveTab(v as any)}>
+      <TabsList className="grid grid-cols-2 w-full max-w-[200px] mb-4">
+        <TabsTrigger value="actual" className="flex items-center">
+          <Receipt className="h-4 w-4 mr-2" />
+          Actual
+        </TabsTrigger>
+        <TabsTrigger value="planned" className="flex items-center">
+          <Calendar className="h-4 w-4 mr-2" />
+          Planned
+        </TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="actual" className="mt-0">
+        {filtersSection}
+        {expenseList}
+      </TabsContent>
+      
+      <TabsContent value="planned" className="mt-0">
+        {filtersSection}
+        {expenseList}
+      </TabsContent>
+    </Tabs>
+  ) : (
     <>
-      <div className="flex justify-between items-center mb-4">
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as 'actual' | 'planned')}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="actual" className="flex items-center gap-1">
-              <Receipt className="h-4 w-4" />
-              <span>Actual Expenses</span>
-            </TabsTrigger>
-            <TabsTrigger value="planned" className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              <span>Planned Expenses</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-      
       {filtersSection}
-      
-      {canEdit && (
-        <div className="mb-4">
-          <Button variant="outline" size="sm" className="w-full" onClick={onAddExpense}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add {activeTab === 'actual' ? 'Expense' : 'Planned Expense'}
-          </Button>
-        </div>
-      )}
-      
       {expenseList}
     </>
   );
 
-  // Render without card wrapper
+  // Render with or without the card wrapper
   if (noCardWrapper) {
     return <div className={className}>{content}</div>;
   }
 
-  // Render with card wrapper
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Expenses</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-md">Expenses</CardTitle>
+        {canEdit && (
+          <Button onClick={onAddExpense} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Expense
+          </Button>
+        )}
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>

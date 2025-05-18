@@ -342,3 +342,6 @@ export function ActivityGeneratorWidget({
     </Card>
   );
 }
+
+// Add default export to fix index.ts
+export default ActivityGeneratorWidget;

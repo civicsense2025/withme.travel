@@ -9,18 +9,15 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Wallet } from 'lucide-react';
-import { useTripBudget, ManualDbExpense, UnifiedExpense } from '@/hooks/use-trip-budget';
-import { TripMemberFromSSR } from '@/components/members-tab';
+import { useExpenses } from '@/hooks/use-expenses';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/lib-utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { Expense } from '@/lib/api/_shared';
 
 interface BudgetSnapshotSidebarProps {
   tripId: string;
   initialBudget?: number | null;
-  initialManualExpenses?: ManualDbExpense[];
-  initialPlannedExpenses?: UnifiedExpense[];
-  initialMembers?: TripMemberFromSSR[];
   onBudgetUpdated?: () => void;
   onLogExpenseClick?: () => void;
   /**
@@ -38,9 +35,6 @@ function getInitials(name: string): string {
 export function BudgetSnapshotSidebar({
   tripId,
   initialBudget,
-  initialManualExpenses = [],
-  initialPlannedExpenses = [],
-  initialMembers = [],
   onBudgetUpdated,
   onLogExpenseClick,
   noCardWrapper = false,
@@ -51,24 +45,18 @@ export function BudgetSnapshotSidebar({
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Use the new expenses hook
   const {
-    budget,
-    manualExpenses,
-    plannedExpenses,
-    members,
-    totalManualSpent,
-    totalPlanned,
-    percentSpent,
-    loading,
-    updateBudget,
-    memberExpenseSummary,
-  } = useTripBudget({
-    tripId,
-    initialBudget,
-    initialManualExpenses,
-    initialPlannedExpenses,
-    initialMembers,
-  });
+    expenses,
+    isLoading,
+    error,
+    summary,
+  } = useExpenses(tripId);
+
+  // Calculate budget and expense info
+  const budget = initialBudget || 0;
+  const totalSpent = summary?.total || expenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+  const percentSpent = budget > 0 ? Math.min(Math.round((totalSpent / budget) * 100), 100) : 0;
 
   // Initialize local budget when target budget changes
   useEffect(() => {
@@ -80,11 +68,11 @@ export function BudgetSnapshotSidebar({
   }, [budget]);
 
   // Calculate progress percentages
-  const totalUsed = totalManualSpent + totalPlanned;
+  const totalUsed = totalSpent;
   const budgetUsedPercentage = budget > 0
-    ? Math.min(Math.round((totalManualSpent / budget) * 100), 100)
+    ? Math.min(Math.round((totalSpent / budget) * 100), 100)
     : 0;
-  const isOverBudget = budget > 0 && totalManualSpent > budget;
+  const isOverBudget = budget > 0 && totalSpent > budget;
 
   // Handle budget input changes
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,13 +101,24 @@ export function BudgetSnapshotSidebar({
     setErrorMessage(null);
 
     try {
-      await updateBudget(budgetValue);
-      setIsEditingBudget(false);
-      toast({
-        title: 'Budget updated',
-        description: `Budget set to ${formatCurrency(budgetValue)}`,
+      // Call the API directly to update the budget since useExpenses doesn't expose budget update
+      const response = await fetch(`/api/trips/${tripId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ budget: budgetValue }),
       });
-      if (onBudgetUpdated) onBudgetUpdated();
+      
+      if (response.ok) {
+        setIsEditingBudget(false);
+        toast({
+          title: 'Budget updated',
+          description: `Budget set to ${formatCurrency(budgetValue)}`,
+        });
+        if (onBudgetUpdated) onBudgetUpdated();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update budget');
+      }
     } catch (error) {
       console.error('Error saving budget:', error);
       setErrorMessage('Failed to save budget. Please try again.');
@@ -216,11 +215,11 @@ export function BudgetSnapshotSidebar({
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
                   <span>
-                    {formatCurrency(totalManualSpent)} spent ({percentSpent}%)
+                    {formatCurrency(totalSpent)} spent ({percentSpent}%)
                   </span>
                   {budget > 0 && (
                     <span>
-                      {formatCurrency(budget - totalManualSpent)} remaining
+                      {formatCurrency(budget - totalSpent)} remaining
                     </span>
                   )}
                 </div>
@@ -239,52 +238,44 @@ export function BudgetSnapshotSidebar({
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Spent:</span>
-                <span>{formatCurrency(totalManualSpent)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Planned:</span>
-                <span>{formatCurrency(totalPlanned)}</span>
+                <span>{formatCurrency(totalSpent)}</span>
               </div>
               <div className="pt-1 border-t flex justify-between font-medium">
                 <span>Total:</span>
-                <span>{formatCurrency(totalManualSpent + totalPlanned)}</span>
+                <span>{formatCurrency(totalSpent)}</span>
               </div>
             </div>
 
             {/* Recent expenses preview */}
-            {manualExpenses.length > 0 && (
+            {expenses.length > 0 && (
               <div className="space-y-2 pt-1 border-t">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium">Recent Expenses</span>
+                  <h4 className="font-medium">Recent Expenses</h4>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-xs text-muted-foreground"
+                    className="h-8 px-2"
                     onClick={onLogExpenseClick}
                   >
-                    View All
-                    <ArrowRight className="h-3 w-3 ml-1" />
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    <span className="text-xs">Add</span>
                   </Button>
                 </div>
                 
-                {manualExpenses.slice(0, 2).map((expense) => {
-                  const payer = members.find((m) => m.user_id === expense.paid_by);
+                {expenses.slice(0, 2).map((expense) => {
+                  // Display the expense with the payer name if available in title
+                  // No longer need to fetch payer from members array since we now focus on the expense itself
                   
                   return (
-                    <div
-                      key={expense.id}
-                      className="flex items-center justify-between p-2 border rounded-lg text-sm hover:bg-muted/20 transition-colors"
-                    >
+                    <div key={expense.id} className="flex justify-between items-center p-2 bg-muted/30 rounded-sm text-sm">
                       <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={payer?.profiles?.avatar_url ?? undefined} />
-                          <AvatarFallback className="text-xs">
-                            {getInitials(payer?.profiles?.name || '')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="truncate max-w-[120px]">{expense.title}</span>
+                        <div className="text-xs font-medium truncate">
+                          {expense.title}
+                        </div>
                       </div>
-                      <span className="font-medium">{formatCurrency(expense.amount)}</span>
+                      <div className="font-medium text-xs">
+                        {formatCurrency(expense.amount || 0)}
+                      </div>
                     </div>
                   );
                 })}

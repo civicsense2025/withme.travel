@@ -552,16 +552,56 @@ export async function updateGroupMemberRole(
  * List all plans for a group.
  * @param groupId - The group's unique identifier
  * @returns Result containing an array of group plans
- * 
- * TODO: Implement group plans functionality
  */
 export async function listGroupPlans(groupId: string): Promise<Result<any[]>> {
   try {
     const supabase = await createRouteHandlerClient();
-    // TODO: Implement plans table/query
-    return { success: true, data: [] };
+    
+    const { data, error } = await supabase
+      .from(TABLES.GROUP_PLANS)
+      .select(`
+        *,
+        items:group_plan_items (*)
+      `)
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false });
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data ?? [] };
   } catch (error) {
     return handleError(error, 'Failed to fetch group plans');
+  }
+}
+
+/**
+ * Get a specific plan from a group with its items.
+ * @param groupId - The group's unique identifier
+ * @param planId - The plan's unique identifier
+ * @returns Result containing the plan with its items
+ */
+export async function getGroupPlan(
+  groupId: string, 
+  planId: string
+): Promise<Result<any>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    const { data, error } = await supabase
+      .from(TABLES.GROUP_PLANS)
+      .select(`
+        *,
+        items:group_plan_items (*)
+      `)
+      .eq('group_id', groupId)
+      .eq('id', planId)
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    if (!data) return { success: false, error: 'Plan not found' };
+    
+    return { success: true, data };
+  } catch (error) {
+    return handleError(error, 'Failed to fetch group plan');
   }
 }
 
@@ -569,14 +609,62 @@ export async function listGroupPlans(groupId: string): Promise<Result<any[]>> {
  * Create a new plan for a group.
  * @param groupId - The group's unique identifier
  * @param data - The plan data
+ * @param userId - The ID of the user creating the plan
  * @returns Result containing the created plan
- * 
- * TODO: Implement group plans functionality
  */
-export async function createGroupPlan(groupId: string, data: any): Promise<Result<any>> {
+export async function createGroupPlan(
+  groupId: string, 
+  data: any, 
+  userId: string
+): Promise<Result<any>> {
   try {
-    // TODO: Implement plan creation
-    return { success: false, error: 'Not implemented yet' };
+    const supabase = await createRouteHandlerClient();
+    
+    // Prepare the plan data
+    const planData = {
+      group_id: groupId,
+      title: data.title,
+      description: data.description || null,
+      status: data.status || 'draft',
+      start_date: data.start_date || null,
+      end_date: data.end_date || null,
+      meta: data.meta || {},
+      created_by: userId
+    };
+    
+    // Insert the plan
+    const { data: newPlan, error } = await supabase
+      .from(TABLES.GROUP_PLANS)
+      .insert(planData)
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    
+    // If there are items to add, create them
+    if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+      const planItems = data.items.map((item: any, index: number) => ({
+        plan_id: newPlan.id,
+        group_id: groupId,
+        title: item.title,
+        description: item.description || null,
+        order: index,
+        type: item.type || 'generic',
+        status: item.status || 'draft',
+        meta: item.meta || {},
+        created_by: userId
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from(TABLES.GROUP_PLAN_ITEMS)
+        .insert(planItems);
+      
+      if (itemsError) {
+        console.warn('Failed to create plan items:', itemsError);
+      }
+    }
+    
+    return { success: true, data: newPlan };
   } catch (error) {
     return handleError(error, 'Failed to create group plan');
   }
@@ -586,15 +674,40 @@ export async function createGroupPlan(groupId: string, data: any): Promise<Resul
  * Update an existing group plan.
  * @param groupId - The group's unique identifier
  * @param planId - The plan's unique identifier
- * @param data - Partial plan data to update
+ * @param data - The updated plan data
  * @returns Result containing the updated plan
- * 
- * TODO: Implement group plans functionality
  */
-export async function updateGroupPlan(groupId: string, planId: string, data: any): Promise<Result<any>> {
+export async function updateGroupPlan(
+  groupId: string, 
+  planId: string, 
+  data: any
+): Promise<Result<any>> {
   try {
-    // TODO: Implement plan update
-    return { success: false, error: 'Not implemented yet' };
+    const supabase = await createRouteHandlerClient();
+    
+    // Prepare the update data
+    const updateData = {
+      title: data.title,
+      description: data.description,
+      status: data.status,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      meta: data.meta
+    };
+    
+    // Update the plan
+    const { data: updatedPlan, error } = await supabase
+      .from(TABLES.GROUP_PLANS)
+      .update(updateData)
+      .eq('group_id', groupId)
+      .eq('id', planId)
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    if (!updatedPlan) return { success: false, error: 'Plan not found' };
+    
+    return { success: true, data: updatedPlan };
   } catch (error) {
     return handleError(error, 'Failed to update group plan');
   }
@@ -605,15 +718,143 @@ export async function updateGroupPlan(groupId: string, planId: string, data: any
  * @param groupId - The group's unique identifier
  * @param planId - The plan's unique identifier
  * @returns Result indicating success or failure
- * 
- * TODO: Implement group plans functionality
  */
-export async function deleteGroupPlan(groupId: string, planId: string): Promise<Result<null>> {
+export async function deleteGroupPlan(
+  groupId: string, 
+  planId: string
+): Promise<Result<null>> {
   try {
-    // TODO: Implement plan deletion
-    return { success: false, error: 'Not implemented yet' };
+    const supabase = await createRouteHandlerClient();
+    
+    // First delete all items associated with the plan
+    const { error: itemsError } = await supabase
+      .from(TABLES.GROUP_PLAN_ITEMS)
+      .delete()
+      .eq('plan_id', planId);
+    
+    if (itemsError) {
+      console.warn('Error deleting plan items:', itemsError);
+      // Continue with plan deletion even if item deletion fails
+    }
+    
+    // Delete the plan
+    const { error } = await supabase
+      .from(TABLES.GROUP_PLANS)
+      .delete()
+      .eq('group_id', groupId)
+      .eq('id', planId);
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: null };
   } catch (error) {
     return handleError(error, 'Failed to delete group plan');
+  }
+}
+
+/**
+ * Create or update items for a group plan.
+ * @param groupId - The group's unique identifier
+ * @param planId - The plan's unique identifier
+ * @param items - Array of items to add or update
+ * @param userId - The ID of the user adding/updating the items
+ * @returns Result containing the created/updated items
+ */
+export async function updateGroupPlanItems(
+  groupId: string,
+  planId: string,
+  items: any[],
+  userId: string
+): Promise<Result<any[]>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    // Process each item - if it has an ID, update it; otherwise create new item
+    const results = await Promise.all(
+      items.map(async (item: any, index: number) => {
+        if (item.id) {
+          // Update existing item
+          const { data, error } = await supabase
+            .from(TABLES.GROUP_PLAN_ITEMS)
+            .update({
+              title: item.title,
+              description: item.description,
+              order: item.order ?? index,
+              type: item.type,
+              status: item.status,
+              meta: item.meta
+            })
+            .eq('id', item.id)
+            .eq('plan_id', planId)
+            .select()
+            .single();
+          
+          if (error) {
+            console.warn(`Error updating item ${item.id}:`, error);
+            return null;
+          }
+          return data;
+        } else {
+          // Create new item
+          const { data, error } = await supabase
+            .from(TABLES.GROUP_PLAN_ITEMS)
+            .insert({
+              plan_id: planId,
+              group_id: groupId,
+              title: item.title,
+              description: item.description || null,
+              order: item.order ?? index,
+              type: item.type || 'generic',
+              status: item.status || 'draft',
+              meta: item.meta || {},
+              created_by: userId
+            })
+            .select()
+            .single();
+          
+          if (error) {
+            console.warn('Error creating item:', error);
+            return null;
+          }
+          return data;
+        }
+      })
+    );
+    
+    // Filter out failed operations
+    const successfulResults = results.filter(result => result !== null);
+    
+    return { success: true, data: successfulResults };
+  } catch (error) {
+    return handleError(error, 'Failed to update plan items');
+  }
+}
+
+/**
+ * Delete a specific item from a group plan.
+ * @param groupId - The group's unique identifier
+ * @param planId - The plan's unique identifier
+ * @param itemId - The item's unique identifier
+ * @returns Result indicating success or failure
+ */
+export async function deleteGroupPlanItem(
+  groupId: string,
+  planId: string,
+  itemId: string
+): Promise<Result<null>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    const { error } = await supabase
+      .from(TABLES.GROUP_PLAN_ITEMS)
+      .delete()
+      .eq('group_id', groupId)
+      .eq('plan_id', planId)
+      .eq('id', itemId);
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: null };
+  } catch (error) {
+    return handleError(error, 'Failed to delete plan item');
   }
 }
 
@@ -621,13 +862,19 @@ export async function deleteGroupPlan(groupId: string, planId: string): Promise<
  * List all ideas for a group.
  * @param groupId - The group's unique identifier
  * @returns Result containing an array of group ideas
- * 
- * TODO: Implement group ideas functionality
  */
 export async function listGroupIdeas(groupId: string): Promise<Result<any[]>> {
   try {
-    // TODO: Implement ideas retrieval
-    return { success: true, data: [] };
+    const supabase = await createRouteHandlerClient();
+    
+    const { data, error } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEAS)
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false });
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data ?? [] };
   } catch (error) {
     return handleError(error, 'Failed to fetch group ideas');
   }
@@ -637,16 +884,226 @@ export async function listGroupIdeas(groupId: string): Promise<Result<any[]>> {
  * Create a new idea for a group.
  * @param groupId - The group's unique identifier
  * @param data - The idea data
+ * @param userId - The ID of the user creating the idea
  * @returns Result containing the created idea
- * 
- * TODO: Implement group ideas functionality
  */
-export async function createGroupIdea(groupId: string, data: any): Promise<Result<any>> {
+export async function createGroupIdea(
+  groupId: string, 
+  data: any, 
+  userId: string
+): Promise<Result<any>> {
   try {
-    // TODO: Implement idea creation
-    return { success: false, error: 'Not implemented yet' };
+    const supabase = await createRouteHandlerClient();
+    
+    // Prepare the data for insertion
+    const ideaData = {
+      group_id: groupId,
+      title: data.title,
+      description: data.description,
+      type: data.type,
+      created_by: userId,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      meta: data.meta,
+      votes_up: 0,
+      votes_down: 0,
+    };
+
+    const { data: newIdea, error } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEAS)
+      .insert(ideaData)
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: newIdea };
   } catch (error) {
     return handleError(error, 'Failed to create group idea');
+  }
+}
+
+/**
+ * Get a specific idea from a group.
+ * @param groupId - The group's unique identifier
+ * @param ideaId - The idea's unique identifier
+ * @returns Result containing the idea
+ */
+export async function getGroupIdea(
+  groupId: string, 
+  ideaId: string
+): Promise<Result<any>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    const { data, error } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEAS)
+      .select('*')
+      .eq('group_id', groupId)
+      .eq('id', ideaId)
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    if (!data) return { success: false, error: 'Idea not found' };
+    
+    return { success: true, data };
+  } catch (error) {
+    return handleError(error, 'Failed to fetch group idea');
+  }
+}
+
+/**
+ * Update an existing group idea.
+ * @param groupId - The group's unique identifier
+ * @param ideaId - The idea's unique identifier
+ * @param data - The idea data to update
+ * @returns Result containing the updated idea
+ */
+export async function updateGroupIdea(
+  groupId: string, 
+  ideaId: string, 
+  data: any
+): Promise<Result<any>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    const { data: updatedIdea, error } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEAS)
+      .update({
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        meta: data.meta,
+      })
+      .eq('group_id', groupId)
+      .eq('id', ideaId)
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    if (!updatedIdea) return { success: false, error: 'Failed to update idea' };
+    
+    return { success: true, data: updatedIdea };
+  } catch (error) {
+    return handleError(error, 'Failed to update group idea');
+  }
+}
+
+/**
+ * Delete an idea from a group.
+ * @param groupId - The group's unique identifier
+ * @param ideaId - The idea's unique identifier
+ * @returns Result indicating success or failure
+ */
+export async function deleteGroupIdea(
+  groupId: string, 
+  ideaId: string
+): Promise<Result<null>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    const { error } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEAS)
+      .delete()
+      .eq('group_id', groupId)
+      .eq('id', ideaId);
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: null };
+  } catch (error) {
+    return handleError(error, 'Failed to delete group idea');
+  }
+}
+
+/**
+ * Vote on a group idea.
+ * @param groupId - The group's unique identifier
+ * @param ideaId - The idea's unique identifier
+ * @param userId - The user's unique identifier
+ * @param voteType - The type of vote ('up' or 'down')
+ * @returns Result indicating success or failure
+ */
+export async function voteGroupIdea(
+  groupId: string,
+  ideaId: string,
+  userId: string,
+  voteType: 'up' | 'down'
+): Promise<Result<any>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    // First, check if user already voted
+    const { data: existingVote, error: checkError } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEA_VOTES)
+      .select('*')
+      .eq('idea_id', ideaId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (checkError) return { success: false, error: checkError.message };
+    
+    // Start a transaction
+    // If user already voted, update the vote; otherwise, insert a new vote
+    const { data, error } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEA_VOTES)
+      .upsert({
+        idea_id: ideaId,
+        user_id: userId,
+        vote_type: voteType,
+        group_id: groupId,
+      }, { onConflict: 'idea_id,user_id' })
+      .select();
+    
+    if (error) return { success: false, error: error.message };
+    
+    // Update the vote count on the idea
+    // This is a separate operation to ensure atomicity
+    await updateGroupIdeaVoteCount(ideaId);
+    
+    return { success: true, data: data?.[0] ?? null };
+  } catch (error) {
+    return handleError(error, 'Failed to vote on group idea');
+  }
+}
+
+/**
+ * Helper function to update the vote count for an idea.
+ * @param ideaId - The idea's unique identifier
+ */
+async function updateGroupIdeaVoteCount(ideaId: string): Promise<void> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    // Count up votes
+    const { count: upVotes, error: upError } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEA_VOTES)
+      .select('*', { count: 'exact', head: true })
+      .eq('idea_id', ideaId)
+      .eq('vote_type', 'up');
+    
+    // Count down votes
+    const { count: downVotes, error: downError } = await supabase
+      .from(TABLES.GROUP_PLAN_IDEA_VOTES)
+      .select('*', { count: 'exact', head: true })
+      .eq('idea_id', ideaId)
+      .eq('vote_type', 'down');
+    
+    if (upError || downError) {
+      console.error('Error counting votes:', upError || downError);
+      return;
+    }
+    
+    // Update the idea with the vote counts
+    await supabase
+      .from(TABLES.GROUP_PLAN_IDEAS)
+      .update({
+        votes_up: upVotes || 0,
+        votes_down: downVotes || 0,
+      })
+      .eq('id', ideaId);
+  } catch (error) {
+    console.error('Error updating vote count:', error);
   }
 }
 

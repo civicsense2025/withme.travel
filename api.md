@@ -7,41 +7,508 @@ This document tracks the status of the API implementation across different modul
 The withme.travel API is structured around a modular architecture:
 
 1. **API Modules**: Feature-specific modules in `/lib/api/` containing CRUD operations and specialized functions
-2. **Shared Types**: Common types and interfaces defined in `/lib/api/_shared.ts`
-3. **Result Pattern**: Standardized `Result<T>` return type for consistent error handling
-4. **Route Handlers**: Next.js API routes that call these modules
+2. **Client Wrappers**: Frontend API client wrappers in `/lib/client/` for type-safe API calls
+3. **Shared Types**: Common types and interfaces defined in `/lib/api/_shared.ts`
+4. **Result Pattern**: Standardized `Result<T>` return type for consistent error handling
+5. **React Hooks**: Custom React hooks in `/hooks/` that leverage client wrappers for state management
 
 ## Implementation Status
 
-| Module | Status | CRUD Complete | Advanced Features | Notes |
-|--------|--------|---------------|-------------------|-------|
-| Activities | In Progress | ✅ | ⚠️ Partial | Advanced features need AI implementation |
-| Comments | Complete | ✅ | ✅ | Includes threaded comments & reactions |
-| Destinations | Complete | ✅ | ✅ | Includes search, filtering, and recommendations |
-| Expenses | Complete | ✅ | ⚠️ Partial | Currency conversion pending |
-| Groups | Complete | ✅ | ✅ | Includes access control and member management |
-| Itineraries | Complete | ✅ | ⚠️ Partial | AI optimization pending |
-| Permissions | Complete | ✅ | ⚠️ Partial | Role-based permissions partially implemented |
-| Places | Complete | ✅ | ✅ | Includes geocoding and reverse lookup |
-| Tags | Complete | ✅ | ✅ | Includes filtering and suggestion features |
-| Trips | Complete | ✅ | ✅ | Full member management, sharing features |
-| Trip Members | Complete | ✅ | ✅ | Role management, invitation system |
+| Resource     | API Module        | Client Wrapper  | React Hook  | Notes                                 |
+|--------------|-------------------|-----------------|-------------|---------------------------------------|
+| Trips        | ✅ Complete        | ✅ Complete     | ✅ Complete | Core CRUD operations                  |
+| Itinerary    | ✅ Complete        | ✅ Complete     | ✅ Complete | Complex nested data                   |
+| Notes        | ✅ Complete        | ✅ Complete     | ✅ Complete | Collaborative editing support         |
+| Comments     | ✅ Complete        | ✅ Complete     | ✅ Complete | Includes replies and reactions        |
+| Trip Members | ✅ Complete        | ✅ Complete     | ✅ Complete | Member management and access control  |
+| Destinations | ✅ Complete        | ✅ Complete     | ✅ Complete | City guides and location data         |
+| Groups       | ✅ Complete        | ✅ Complete     | ✅ Complete | Group management with member roles      |
+| Group Plans  | ✅ Complete        | ✅ Complete     | ✅ Complete | ✅ Fully atomized UI components with centralized API |
+| Group Ideas  | ✅ Complete        | ✅ Complete     | ✅ Complete | ✅ Interactive idea board with voting      |
+| Votes        | ✅ Complete        | ✅ Complete     | ✅ Complete | ✅ Fully integrated voting system          |
+| Tags         | ✅ Complete        | ✅ Complete     | ✅ Complete | Fully implemented with proper typing  |
+| Activities   | ✅ Complete        | ✅ Complete     | ✅ Complete | Includes suggestion and voting systems |
+| Expenses     | ✅ Complete        | ✅ Complete      | ✅ Complete   | ✅ Fully integrated across backend and UI, with client wrapper, hook, and tests |
+| Places       | ✅ Complete        | ❌ Pending      | ❌ Pending  | Need client-side integration           |
 
-Legend:
-- ✅ Complete
-- ⚠️ Partial implementation
-- ❌ Not started
+## Implementation Priorities
+
+1. **High Priority**:
+   - ✅ Trips API Client & Hook
+   - Destinations API Client & Hook
+   - Places API Client & Hook
+
+2. **Medium Priority**:
+   - ✅ Groups API Client & Hook
+   - ✅ Group Plans API Client & Hook
+   - ✅ Group Ideas API Client & Hook
+   - Trip Members API Client & Hook
+   - Itineraries API Client & Hook
+
+3. **Lower Priority**:
+   - ✅ Expenses API Client & Hook
+   - Authentication improvements
+   - Permissions API Client & Hook
+
+## Standardization Guidelines
+
+All new API integrations should follow these standards:
+
+1. **API Module Structure**:
+   - Use feature-specific modules in `/lib/api/`
+   - Export typed functions with clear parameter definitions
+   - Use `Result<T>` return type pattern
+
+2. **Client Wrapper Structure**:
+   - Create a module in `/lib/client/` with matching name
+   - Re-export from `/lib/client/index.ts`
+   - Use the standardized error handling with `tryCatch` and `handleApiResponse`
+
+3. **React Hook Structure**:
+   - Create a hook in `/hooks/use-[feature].ts`
+   - Include state management and utility functions
+   - Provide proper loading/error state handling
+   - Use toast notifications for user feedback
+
+4. **Typing Requirements**:
+   - All API parameters and return types must be explicitly typed
+   - Use TypeScript interfaces/types for models
+   - Document functions with JSDoc comments
+
+## Next Steps
+
+1. ✅ Implement client wrapper and hook for Trips API
+2. Implement client wrapper and hook for Destinations API
+3. Update routes.ts to include missing API routes
+4. Refactor existing components to use the new hooks
+5. Add tests for API integrations
+
+## Recent Changes
+
+- 2023-10-10: Standardized the Tags API client and hook
+- 2023-10-10: Created the Comments API client and hook
+- 2023-10-10: Added Activities API client and hook
+- 2023-10-10: Updated API constants in api.ts to avoid route duplication with routes.ts
+- 2023-10-10: Improved error handling in client API wrappers
+- 2023-10-10: Implemented Trips API client and hook
+- 2023-10-12: Implemented Tasks API client and hook
+- 2023-10-12: Added isSuccess type guard to Result pattern for type safety
+- 2023-10-12: Updated routes.ts to include tasks endpoints
+- 2024-06-XX: Implemented Expenses API client wrapper and React hook
+- 2024-06-XX: Fully integrated Expenses across UI components, migrated budget tab to use the new hook
+- 2024-06-XX: Completed Expenses implementation with test coverage and removed legacy code
+- 2024-06-XX: Completed Tasks API integration with route handlers
+- 2024-06-XX: Added tagging and voting support to Tasks API
+- 2024-06-XX: Enhanced Tasks API with personal and group task management
+- 2024-06-XX: Documented Group Plans and Group Ideas API integration
+- 2024-06-XX: Verified Group Ideas voting functionality and optimistic updates
+- 2024-06-XX: Improved error handling across all API hooks
+
+## Client-Side Integration Progress
+
+Client-side API integration follows these steps for each module:
+
+1. **Create Client API Module**: Implement a type-safe client wrapper in `/lib/client/[module].ts`
+2. **Implement React Hook**: Create a custom React hook in `/hooks/use-[module].ts`
+3. **Integrate in Components**: Update UI components to use the new hook
+4. **Write Tests**: Add tests for the client wrapper and hook
+
+### Completed Modules
+
+#### Tasks API
+- ✅ Client wrapper in `/lib/client/tasks.ts`
+- ✅ React hook in `/hooks/use-tasks.ts`
+- ✅ UI components in `/components/ui/features/tasks/`
+  - ✅ `TaskManager` - Complete task management with CRUD, assignment, and tagging
+  - ✅ `TaskList` - Filterable/sortable list with loading states
+  - ✅ `TaskItem` - Individual task with actions
+- ✅ Support for both personal and group tasks
+- ✅ Optimistic updates for better UX
+- ✅ Complete loading states for all operations
+
+#### Group Plans API
+- ✅ Client wrapper in `/lib/client/groupPlans.ts`
+- ✅ React hook in `/hooks/use-group-plans.ts`
+- ✅ Integrated with group plans page (`/app/groups/[id]/plans/plans-client.tsx`)
+- ✅ CRUD operations for group plans
+- ✅ Error handling with toast notifications
+- ✅ Optimistic updates for better UX
+- ✅ Atomized components following the atomic design pattern:
+  - ✅ Molecules: `GroupPlanIdea`, `GroupPlanActivity`
+  - ✅ Organisms: `GroupPlanCard`
+- ✅ Standardized API implementation in `/lib/api/groups.ts`
+
+#### Group Ideas API
+- ✅ Client integration through `/lib/client/groupPlans.ts`
+- ✅ React hook in `/hooks/use-group-ideas.ts`
+- ✅ Integration with interactive idea board (`/app/groups/[id]/plans/[slug]/idea-board.tsx`)
+- ✅ Support for creating, updating, and deleting ideas
+- ✅ Voting integration via `useVotes` hook
+- ✅ Optimistic updates for real-time feel
+
+#### Tags API
+- ✅ Client wrapper in `/lib/client/tags.ts`
+- ✅ React hook in `/hooks/use-tags.ts`
+- ✅ Standardized Result pattern
+- ✅ Type-safe API calls
+- ✅ Error handling
+
+#### Comments API
+- ✅ Client wrapper in `/lib/client/comments.ts`
+- ✅ React hook in `/hooks/use-comments.ts`
+- ✅ Support for replies and nested comments
+- ✅ Error handling with toasts
+- ✅ Optimistic UI updates
+
+#### Tasks API
+- ✅ Client wrapper in `/lib/client/tasks.ts`
+- ✅ React hook in `/hooks/use-tasks.ts`
+- ✅ CRUD operations plus specialized task functions
+- ✅ Loading state tracking for all operations
+- ✅ Comprehensive error handling with toasts
+- ✅ Support for personal and group tasks
+- ✅ Integrated with route handlers (API endpoints)
+- ✅ Updated routes in routes.ts
+- ✅ Complete tagging and voting integration
+
+### Next Planned Modules
+
+1. **Destinations API**: CRUD operations and search
+2. **Places API**: Location and place data operations
+3. **Trip Members API**: Member management and permissions
+
+### Client Integration Plan
+
+To continue the client API integration effort, we'll follow this approach for each remaining module:
+
+1. **Evaluate Current State**:
+   - Check for existing direct API calls in components
+   - Identify components that should use the API
+
+2. **Implement Client Wrapper** (if not already done):
+   - Create structured client wrapper in `/lib/client/`
+   - Ensure proper typing and error handling
+   - Follow established patterns
+
+3. **Create React Hook**:
+   - Build custom hook to manage state and API calls
+   - Implement optimistic updates for better UX
+   - Add comprehensive error handling
+
+4. **Update Components**:
+   - Replace direct API calls with hook usage
+   - Implement loading states and error handling UI
+   - Ensure consistent patterns across the app
+
+5. **Testing & Documentation**:
+   - Add tests for both client wrapper and hook
+   - Update API documentation
+   - Create usage examples
+
+## Standardization Guidelines
+
+When implementing new client API modules, follow these patterns:
+
+### 1. Client API Module Structure
+```typescript
+// lib/client/[module].ts
+
+import { API_ROUTES } from '@/utils/constants/routes';
+import { tryCatch } from '@/utils/result';
+import type { Result } from '@/utils/result';
+import { handleApiResponse } from './index';
+
+export async function listItems(): Promise<Result<Item[]>> {
+  return tryCatch(
+    fetch(API_ROUTES.MODULE.LIST, {
+      method: 'GET',
+      cache: 'no-store',
+    }).then((response) => handleApiResponse<Item[]>(response))
+  );
+}
+
+// Additional CRUD methods...
+```
+
+### 2. React Hook Structure
+```typescript
+// hooks/use-[module].ts
+
+'use client';
+
+import { useState, useCallback, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { listItems, createItem, updateItem, deleteItem } from '@/lib/client/[module]';
+
+export function useModule(params) {
+  const { toast } = useToast();
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Implementation...
+  
+  return {
+    items,
+    isLoading,
+    error,
+    // Additional methods...
+  };
+}
+```
+
+## Best Practices
+
+- Use the Result pattern for all API calls
+- Properly type all parameters and return values
+- Handle loading states and errors consistently
+- Use optimistic UI updates where appropriate
+- Follow the established naming conventions
+- Update API_ROUTES in constants
+- Update this document when adding new modules
+
+## API Client Integration
+
+We've implemented a standardized approach for frontend components to interact with backend API services:
+
+### Result Pattern
+
+A standardized `Result<T>` type for consistent error handling between backend and frontend:
+
+```typescript
+export type Result<T> = 
+  | { success: true; data: T }
+  | { success: false; error: string; details?: unknown };
+```
+
+### Client Wrappers
+
+Client-side wrapper modules in `/lib/client/` that provide type-safe access to the API:
+
+```typescript
+// Example: /lib/client/trips.ts
+export async function getTrip(tripId: string): Promise<Result<Trip>> {
+  return tryCatch(
+    fetch(API_ROUTES.TRIP_DETAILS(tripId), {
+      method: 'GET',
+      cache: 'no-store',
+    }).then(async (response) => {
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch trip');
+      }
+      return response.json();
+    })
+  );
+}
+```
+
+### React Hooks
+
+Custom React hooks that leverage the client wrappers for state management:
+
+```typescript
+// Example: /hooks/use-trips.ts
+export function useTrips(includeShared = false) {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch trips on mount
+  useEffect(() => {
+    async function fetchTrips() {
+      setIsLoading(true);
+      const result = await listTrips(includeShared);
+      
+      if (isSuccess(result)) {
+        setTrips(result.data.trips);
+      } else {
+        setError(result.error);
+      }
+      
+      setIsLoading(false);
+    }
+    
+    fetchTrips();
+  }, [includeShared]);
+  
+  return { trips, isLoading, error };
+}
+```
+
+## Recent Integration Progress
+
+### Completed Integrations
+
+1. **Trips Module**:
+   - ✅ Created client-side API wrapper in `lib/client/trips.ts`
+   - ✅ Created React hook in `hooks/use-trips.ts`
+   - ✅ Updated TripContext to use the API client
+   - ✅ Fixed type issues between backend and frontend interfaces
+   - ✅ Added mapping between different property names (city_id/destination_id)
+
+2. **Groups Module**:
+   - ✅ Created client-side API wrapper in `lib/client/groups.ts`
+   - ✅ Created React hook in `hooks/use-groups.ts`
+   - ✅ Updated GroupsClientPage to use the API client
+   - ✅ Updated CreateGroupModal to use the API client
+   - ✅ Added proper conversion between different group schemas
+
+3. **Itinerary Module**:
+   - ✅ Created client-side API wrapper in `lib/client/itinerary.ts`
+   - ✅ Implemented LogisticsTabContent using the API client
+
+4. **Tags Module**:
+   - ✅ Created client-side API wrapper in `lib/client/tags.ts`
+   - ✅ Created React hook in `hooks/use-tags.ts`
+   - ✅ Fixed type safety issues in Result pattern handling
+   - ✅ Added proper type guards for Result type safety
+
+5. **Standardized Client API Approach**:
+   - ✅ Added centralized client API exports in `lib/client/index.ts`
+   - ✅ Created shared `handleApiResponse` utility for consistent response handling
+   - ✅ Added proper `tryCatch` utility in `utils/result.ts`
+   - ✅ Standardized type guards pattern for Result type safety
+
+### Next Steps
+
+1. **Complete React Hooks**:
+   - Create hooks for remaining modules (Comments, Places, etc.)
+   - Add documentation for each hook
+   - Standardize error handling pattern across all hooks
+
+2. **Activities API**:
+   - Complete client wrapper implementation
+   - Create React hook for activities
+   - Integrate with activity components
+
+3. **Comments API**:
+   - Implement client wrapper
+   - Create React hook
+   - Integrate with comment components
+
+## Standard API Client Integration Pattern
+
+To ensure consistency across all API client integrations, follow this standardized pattern:
+
+### 1. Client Wrapper Implementation
+
+Create a client wrapper file (e.g., `lib/client/comments.ts`):
+
+```typescript
+import { API_ROUTES } from '@/utils/constants/routes';
+import { tryCatch } from '@/utils/result';
+import type { Result } from '@/utils/result';
+import type { Comment } from '@/types';
+import { handleApiResponse } from './index';
+
+/**
+ * List all comments for an entity
+ */
+export async function listComments(
+  entityType: string, 
+  entityId: string
+): Promise<Result<Comment[]>> {
+  return tryCatch(
+    fetch(`${API_ROUTES.COMMENTS}?entityType=${entityType}&entityId=${entityId}`, {
+      method: 'GET',
+      cache: 'no-store',
+    }).then(handleApiResponse)
+  );
+}
+
+// Add other API functions...
+```
+
+### 2. Add to Client Index
+
+Update `lib/client/index.ts` to export the new module:
+
+```typescript
+// Existing exports...
+export * from './comments';
+```
+
+### 3. Create React Hook
+
+Create a hook file (e.g., `hooks/use-comments.ts`):
+
+```typescript
+'use client';
+
+import { useState, useCallback, useEffect } from 'react';
+import { Result } from '@/utils/result';
+import { listComments } from '@/lib/client';
+
+/**
+ * Type guard to check if a result is successful
+ */
+function isSuccess<T>(result: Result<T, Error>): result is { success: true; data: T } {
+  return result.success === true;
+}
+
+/**
+ * Hook for managing comments with loading states and error handling
+ */
+export function useComments({ entityType, entityId, fetchOnMount = true }) {
+  const [comments, setComments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const refreshComments = useCallback(async () => {
+    if (!entityType || !entityId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    const result = await listComments(entityType, entityId);
+    
+    if (isSuccess(result)) {
+      setComments(result.data);
+    } else {
+      setError(result.error.message || 'Failed to fetch comments');
+    }
+    
+    setIsLoading(false);
+  }, [entityType, entityId]);
+  
+  // Implement other methods...
+  
+  useEffect(() => {
+    if (fetchOnMount) {
+      refreshComments();
+    }
+  }, [fetchOnMount, refreshComments]);
+  
+  return {
+    comments,
+    isLoading,
+    error,
+    refreshComments,
+    // Other methods...
+  };
+}
+```
+
+### 4. Update API.md
+
+After completing the integration, update this file to reflect the new status.
 
 ## Next Steps
 
 ### High Priority
 
-1. **Activities API**:
+1. **Complete Client Wrappers**:
+   - Implement remaining API client wrappers for all API modules
+   - Create React hooks for all major features
+   - Standardize error handling and loading states
+
+2. **Activities API**:
    - Complete AI-powered recommendations
    - Add social features (voting, popularity)
    - Implement categorization
 
-2. **Permissions API**:
+3. **Permissions API**:
    - Complete role permission verification system
    - Implement ownership transfer functionality
    - Add audit trail for permission changes
@@ -77,6 +544,7 @@ suggestActivity(parentId, parentType, suggestion)
 - Implement voting system for suggested activities
 - Add AI-powered activity recommendations
 - Implement AI categorization
+- Create client wrapper
 
 ### Comments API
 
@@ -90,7 +558,8 @@ deleteComment(commentId)
 getThreadedComments(entityId, entityType)
 ```
 
-**Complete**
+**TODOs**:
+- Create client wrapper
 
 ### Destinations API
 
@@ -105,7 +574,8 @@ searchDestinations(query)
 getPopularDestinations(limit)
 ```
 
-**Complete**
+**TODOs**:
+- Create client wrapper
 
 ### Expenses API
 
@@ -123,6 +593,7 @@ getTripBudgetSummary(tripId)
 - Implement currency conversion
 - Add split expense functionality
 - Add payment tracking
+- Create client wrapper
 
 ### Groups API
 
@@ -138,7 +609,7 @@ removeMember(groupId, userId)
 listMembers(groupId)
 ```
 
-**Complete**
+**Complete including client wrapper and React hooks**
 
 ### Itineraries API
 
@@ -178,6 +649,7 @@ transferTripOwnership(tripId, currentOwnerId, newOwnerId) // TODO
 - Complete role-based permission verification logic
 - Implement ownership transfer functionality
 - Add audit trail for permission changes
+- Create client wrapper
 
 ### Places API
 
@@ -192,7 +664,8 @@ searchPlaces(query, params)
 getNearbyPlaces(lat, lng, radius)
 ```
 
-**Complete**
+**TODOs**:
+- Create client wrapper
 
 ### Tags API
 
@@ -205,9 +678,11 @@ updateTag(tagId, data)
 deleteTag(tagId)
 searchTags(query)
 suggestTags(entityType, content)
+addTagToEntity(entityType, entityId, tagName)
+removeTagFromEntity(entityType, entityId, tagName)
 ```
 
-**Complete**
+**Complete including client wrapper and React hook**
 
 ### Trips API
 
@@ -218,9 +693,13 @@ getTrip(tripId)
 createTrip(data)
 updateTrip(tripId, data)
 deleteTrip(tripId)
+listPublicTrips({ limit, offset })
+listUserTripsWithMembership(userId, { includeShared, limit, offset })
+getTripWithDetails(tripId)
+updateTripWithDetails(tripId, data)
 ```
 
-**Complete**
+**Complete including client wrapper and React hooks**
 
 ### Trip Members API
 
@@ -233,7 +712,8 @@ updateTripMember(tripId, userId, data)
 removeTripMember(tripId, userId)
 ```
 
-**Complete**
+**TODOs**:
+- Create client wrapper
 
 ## Long-term API Roadmap
 
@@ -242,6 +722,7 @@ removeTripMember(tripId, userId)
 3. **Caching**: Implement Redis caching for frequently accessed data
 4. **Analytics**: Add tracking of API usage and performance metrics
 5. **Documentation**: Generate comprehensive API docs with Swagger/OpenAPI 
+6. **Complete Client Integration**: Create client wrappers and React hooks for all API modules
 
 # Tasks API
 
@@ -280,226 +761,401 @@ await assignTask(newTask.id, assigneeId);
 await voteTask(newTask.id, userId, 'up');
 ``` 
 
-## Integration Plan: Centralized API Adoption
+## Integration Plan: Prioritized Action Items
 
-This plan outlines how to fully integrate the new centralized API modules (`/lib/api/*.ts`) into the Next.js route handlers under `/app/api/`, and remove legacy/duplicated logic. The goal is to ensure all business logic lives in the API modules, with route handlers acting as thin adapters.
+To complete our API integration and atomization work, we'll focus on these key modules:
 
-### General Steps for Each Module
-1. **Inventory**: List all route handler files for the domain (e.g., `/app/api/trips`, `/app/api/trips/[tripId]`, etc.)
-2. **Refactor**: Update each route handler to import and use the corresponding functions from `/lib/api/` (e.g., `import { listTrips } from '@/lib/api/trips'`)
-3. **Remove**: Delete or comment out any legacy business logic, direct DB access, or duplicated code in route handlers
-4. **Test**: Ensure all endpoints return the same (or improved) results, and that error handling is consistent
-5. **Document**: Mark the migration as complete in this checklist
+### 1. Itineraries Module (Highest Priority)
+- [ ] Refactor `/app/api/itineraries/` route handlers to use centralized `/lib/api/itineraries.ts` API
+- [x] Atomize `/app/trips/[tripId]/components/tab-contents/itinerary-tab-content.tsx` into:
+  - [x] Atoms: ItineraryItemAction, ItineraryItemStatus, ItineraryDayHeader
+  - [x] Molecules: ItineraryItemCard, ItineraryDaySection, UnscheduledItemsSection
+  - [x] Templates: ItineraryTabTemplate
+  - _Note: Placeholder implementations are in place; further extraction and unit testing are planned._
+- [ ] Add unit tests for client wrapper and React hook
+- [ ] Update documentation in this file to mark as complete
 
-### Integration Checklist by Module
+### 2. Activities Module
+- [ ] Refactor `/app/api/activities/` route handlers to use centralized `/lib/api/activities.ts` API
+- [ ] Verify full integration of client wrapper and React hook
+- [ ] Atomize activity-related UI components
+- [ ] Add unit tests for client wrapper and React hook
+- [ ] Update documentation in this file to mark as complete
 
-#### Trips API
-- [x] `/app/api/trips/route.ts` → use `lib/api/trips`
-- [x] `/app/api/trips/[tripId]/route.ts` → use `lib/api/trips`
-- [x] `/app/api/trips/[tripId]/members/` (GET, POST, PATCH, DELETE) → use `lib/api/tripMembers`
-- [x] `/app/api/trips/[tripId]/members/import/` (POST) → use `lib/api/tripMembers`
-- [x] Advanced features (invites, import, permissions): migrated to `lib/api/tripMembers`
-- [x] `/app/api/trips/[tripId]/permissions/` (GET, POST, PATCH) → use `lib/api/permissions`
-- [x] `/app/api/trips/[tripId]/tags/` (GET, PUT) → use `lib/api/tags`
-- [x] Remove all direct DB logic from these files
-  - [x] Main CRUD logic migrated for trips and trip detail
-  - [x] Public trips and shared trips logic centralized in `lib/api/trips`
-  - [x] Pagination and cities support implemented
-  - [x] Trip details now include members and cities
-  - [x] Trip members: all features (add, invite, import, check access) centralized
-  - [x] Permissions: all endpoints centralized
-  - [x] Tags: all endpoints centralized in `lib/api/tags` and `lib/api/trips`
+### 3. Expenses Module
+- [ ] Refactor `/app/api/trips/[tripId]/expenses/` to use centralized `/lib/api/expenses.ts` API
+- [ ] Complete atomization of `components/expenses/budget-tab.tsx`:
+  - [ ] Atoms: BudgetProgress, ExpenseCategory, ExpenseAmount
+  - [ ] Molecules: BudgetSummary, ExpenseItem, ExpenseFilter
+  - [ ] Organisms: ExpenseList, BudgetBreakdown
+  - [ ] Templates: BudgetTabTemplate
+- [ ] Add unit tests for client wrapper and React hook
+- [ ] Update documentation in this file to mark as complete
 
-#### Groups API
-- [x] `/app/api/groups/route.ts` → use `lib/api/groups`
-- [x] `/app/api/groups/[groupId]/route.ts` → use `lib/api/groups`
-- [x] `/app/api/groups/[groupId]/tasks/` → use `lib/api/tasks` (already using centralized API)
-- [x] Remove all direct DB logic from these files
-- [x] Advanced features implemented in `lib/api/groups`:
-  - [x] Group member management and role checks
-  - [x] Guest group creation and token management
-  - [x] Group details with related data (members, trips)
-  - [ ] TODO: Group plans/ideas implementation
-  - [ ] TODO: Group invitations and join requests
-  - [ ] TODO: Group analytics and activity tracking
+### Approach for Each Module
+1. **API Integration**:
+   - Analyze current route handler implementation
+   - Refactor to use corresponding lib/api functions
+   - Test API endpoints to ensure functionality is preserved
+   
+2. **Component Atomization**:
+   - Identify atomic elements within each page/component
+   - Create reusable atoms and molecules following our atomic design system
+   - Build new component hierarchy using these atoms
+   
+3. **Testing and Documentation**:
+   - Write unit tests for client wrappers and React hooks
+   - Update API.md with completion status
+   - Document each atomized component in Storybook
 
-#### Places API
-- [ ] `/app/api/places/route.ts` → use `lib/api/places`
-- [ ] Remove all direct DB logic from these files
+## How to Use the Expenses Hook
 
-#### Comments API
-- [ ] `/app/api/comments/route.ts` → use `lib/api/comments`
-- [ ] `/app/api/comments/[id]/route.ts` → use `lib/api/comments`
-- [ ] `/app/api/comments/[id]/replies/route.ts` → use `lib/api/comments`
-- [ ] `/app/api/comments/[id]/reactions/route.ts` → use `lib/api/comments`
-- [ ] Remove all direct DB logic from these files
+To manage trip expenses in your UI components, use the new `useExpenses` hook:
 
-#### Activities API
-- [ ] `/app/api/activities/` (and subroutes) → use `lib/api/activities`
-- [ ] Remove all direct DB logic from these files
+```typescript
+import { useExpenses } from '@/hooks/use-expenses';
 
-#### Itineraries API
-- [ ] `/app/api/itineraries/route.ts` → use `lib/api/itineraries`
-- [ ] `/app/api/itineraries/[slug]/route.ts` → use `lib/api/itineraries`
-- [ ] Remove all direct DB logic from these files
+function TripExpensesSection({ tripId }: { tripId: string }) {
+  const {
+    expenses,
+    isLoading,
+    error,
+    addExpense,
+    editExpense,
+    removeExpense,
+    summary,
+    refresh,
+  } = useExpenses(tripId);
 
-#### Tags API
-- [ ] `/app/api/tags/route.ts` → use `lib/api/tags`
-- [ ] Remove all direct DB logic from these files
+  // ...render UI, call addExpense/editExpense/removeExpense as needed
+}
+``` 
 
-#### Permissions API
-- [ ] `/app/api/trips/[tripId]/permissions/route.ts` → use `lib/api/permissions`
-- [ ] `/app/api/trips/[tripId]/permissions/request/route.ts` → use `lib/api/permissions`
-- [ ] Remove all direct DB logic from these files
+## Testing the Expenses Module
 
-#### Expenses API
-- [ ] `/app/api/trips/[tripId]/expenses/route.ts` → use `lib/api/expenses`
-- [ ] `/app/api/trips/[tripId]/expenses/[expenseId]/route.ts` → use `lib/api/expenses`
-- [ ] Remove all direct DB logic from these files
+### Client Wrapper Tests
 
-#### Trip Members API
-- [ ] `/app/api/trips/[tripId]/members/` → use `lib/api/tripMembers`
-- [ ] Remove all direct DB logic from these files
+To test the Expenses client wrapper, create tests in `__tests__/lib/client/expenses.test.ts`:
 
-### Additional Steps
-- [ ] Update all tests/mocks to use the new API modules
-- [ ] Remove any unused utility functions that are now handled by the API modules
-- [ ] Update documentation and onboarding guides to reference the new API structure
-- [ ] Add TODOs in route handlers for any advanced features not yet implemented in the API modules
+```typescript
+import { 
+  listTripExpenses, 
+  getTripExpense, 
+  createTripExpense,
+  updateTripExpense,
+  deleteTripExpense,
+  getTripExpenseSummary
+} from '@/lib/client/expenses';
+import { mockFetch } from '@/utils/testing/mock-fetch';
 
-For each handler, replace all business logic with calls to the centralized API module, and remove any direct DB or legacy code.
-Mark each completed migration in the checklist above.
+describe('Expenses client wrapper', () => {
+  beforeEach(() => {
+    mockFetch.mockClear();
+  });
 
-### Progress should be tracked in this file as each module is migrated. 
+  test('listTripExpenses fetches expenses for a trip', async () => {
+    const mockExpenses = [{ id: '1', title: 'Test expense', amount: 100 }];
+    mockFetch.mockResponse({ expenses: mockExpenses });
+    
+    const result = await listTripExpenses('trip-123');
+    
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual(mockExpenses);
+    expect(mockFetch).toHaveBeenCalledWith('/api/trips/trip-123/expenses', {
+      method: 'GET',
+    });
+  });
 
-## Implementation Plan for Remaining Modules
+  // Add similar tests for other functions
+});
+```
 
-Below is a step-by-step plan for migrating each remaining API module to the centralized pattern. For each, follow these steps:
+### Hook Tests
 
-1. **Inventory**: List all route handler files for the domain (e.g., `/app/api/groups`, `/app/api/groups/[groupId]`, etc.)
-2. **Refactor**: Update each route handler to import and use the corresponding functions from `/lib/api/` (e.g., `import { listGroups } from '@/lib/api/groups'`)
-3. **Remove**: Delete or comment out any legacy business logic, direct DB access, or duplicated code in route handlers
-4. **Test**: Ensure all endpoints return the same (or improved) results, and that error handling is consistent
-5. **Document**: Mark the migration as complete in this checklist
-6. **TODOs**: For any advanced features or new requirements, add TODOs in the API module for future implementation
+To test the useExpenses hook, create tests in `__tests__/hooks/use-expenses.test.tsx`:
 
-### Groups API
-- **Route Handlers:**
-  - `/app/api/groups/route.ts`
-  - `/app/api/groups/[groupId]/route.ts`
-  - `/app/api/groups/[groupId]/tasks/`
-- **Centralized Module:** `lib/api/groups`, `lib/api/tasks`
-- **Advanced Features/TODOs:**
-  - Group invitations and join requests
-  - Group role management and audit trail
-  - Group analytics and activity feed
-- **Checklist:**
-  - [x] Refactor all handlers to use centralized API
-  - [x] Remove direct DB logic
-  - [x] Add TODOs for advanced features
-  - [x] Mark as complete in this doc
+```typescript
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useExpenses } from '@/hooks/use-expenses';
+import * as expensesClient from '@/lib/client/expenses';
 
-### Places API
-- **Route Handlers:**
-  - `/app/api/places/route.ts`
-- **Centralized Module:** `lib/api/places`
-- **Advanced Features/TODOs:**
-  - Place reviews and ratings
-  - Place suggestion engine
-- **Checklist:**
-  - [ ] Refactor handler to use centralized API
-  - [ ] Remove direct DB logic
-  - [ ] Add TODOs for advanced features
-  - [ ] Mark as complete in this doc
+// Mock the client wrapper functions
+jest.mock('@/lib/client/expenses');
 
-### Comments API
-- **Route Handlers:**
-  - `/app/api/comments/route.ts`
-  - `/app/api/comments/[id]/route.ts`
-  - `/app/api/comments/[id]/replies/route.ts`
-  - `/app/api/comments/[id]/reactions/route.ts`
-- **Centralized Module:** `lib/api/comments`
-- **Advanced Features/TODOs:**
-  - Threaded comments and moderation
-  - Comment reactions and reporting
-- **Checklist:**
-  - [ ] Refactor all handlers to use centralized API
-  - [ ] Remove direct DB logic
-  - [ ] Add TODOs for advanced features
-  - [ ] Mark as complete in this doc
+describe('useExpenses hook', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (expensesClient.listTripExpenses as jest.Mock).mockResolvedValue({
+      success: true,
+      data: [{ id: '1', title: 'Test expense', amount: 100 }]
+    });
+  });
 
-### Activities API
-- **Route Handlers:**
-  - `/app/api/activities/` (and subroutes)
-- **Centralized Module:** `lib/api/activities`
-- **Advanced Features/TODOs:**
-  - AI-powered activity recommendations
-  - Activity voting and popularity
-  - Activity categorization and tagging
-- **Checklist:**
-  - [ ] Refactor all handlers to use centralized API
-  - [ ] Remove direct DB logic
-  - [ ] Add TODOs for advanced features
-  - [ ] Mark as complete in this doc
+  test('loads expenses on mount', async () => {
+    const { result, waitForNextUpdate } = renderHook(() => useExpenses('trip-123'));
+    
+    expect(result.current.isLoading).toBe(true);
+    
+    await waitForNextUpdate();
+    
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.expenses).toEqual([{ id: '1', title: 'Test expense', amount: 100 }]);
+    expect(expensesClient.listTripExpenses).toHaveBeenCalledWith('trip-123');
+  });
 
-### Itineraries API
-- **Route Handlers:**
-  - `/app/api/itineraries/route.ts`
-  - `/app/api/itineraries/[slug]/route.ts`
-- **Centralized Module:** `lib/api/itineraries`
-- **Advanced Features/TODOs:**
-  - AI itinerary optimization
-  - Time-based scheduling and availability
-- **Checklist:**
-  - [ ] Refactor all handlers to use centralized API
-  - [ ] Remove direct DB logic
-  - [ ] Add TODOs for advanced features
-  - [ ] Mark as complete in this doc
+  test('addExpense adds a new expense', async () => {
+    (expensesClient.createTripExpense as jest.Mock).mockResolvedValue({
+      success: true,
+      data: { id: '2', title: 'New expense', amount: 50 }
+    });
+    
+    const { result, waitForNextUpdate } = renderHook(() => useExpenses('trip-123'));
+    
+    await waitForNextUpdate();
+    
+    act(() => {
+      result.current.addExpense({ title: 'New expense', amount: 50 });
+    });
+    
+    await waitForNextUpdate();
+    
+    expect(result.current.expenses).toContainEqual({ id: '2', title: 'New expense', amount: 50 });
+    expect(expensesClient.createTripExpense).toHaveBeenCalledWith('trip-123', {
+      title: 'New expense',
+      amount: 50
+    });
+  });
 
-### Tags API
-- **Route Handlers:**
-  - `/app/api/tags/route.ts`
-- **Centralized Module:** `lib/api/tags`
-- **Advanced Features/TODOs:**
-  - Tag suggestion and auto-categorization
-- **Checklist:**
-  - [ ] Refactor handler to use centralized API
-  - [ ] Remove direct DB logic
-  - [ ] Add TODOs for advanced features
-  - [ ] Mark as complete in this doc
+  // Add similar tests for other methods
+});
+```
 
-### Permissions API
-- **Route Handlers:**
-  - `/app/api/trips/[tripId]/permissions/request/route.ts`
-- **Centralized Module:** `lib/api/permissions`
-- **Advanced Features/TODOs:**
-  - Permission change audit trail
-  - Ownership transfer workflows
-- **Checklist:**
-  - [ ] Refactor handler to use centralized API
-  - [ ] Remove direct DB logic
-  - [ ] Add TODOs for advanced features
-  - [ ] Mark as complete in this doc
+### Integration Tests
 
-### Expenses API
-- **Route Handlers:**
-  - `/app/api/trips/[tripId]/expenses/route.ts`
-  - `/app/api/trips/[tripId]/expenses/[expenseId]/route.ts`
-- **Centralized Module:** `lib/api/expenses`
-- **Advanced Features/TODOs:**
-  - Currency conversion
-  - Split expense logic
-  - Payment tracking
-- **Checklist:**
-  - [ ] Refactor all handlers to use centralized API
-  - [ ] Remove direct DB logic
-  - [ ] Add TODOs for advanced features
-  - [ ] Mark as complete in this doc
+For key UI components that use the Expenses module:
+
+```typescript
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { BudgetTab } from '@/components/expenses/budget-tab';
+import * as expensesHook from '@/hooks/use-expenses';
+
+jest.mock('@/hooks/use-expenses');
+
+describe('BudgetTab integration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (expensesHook.useExpenses as jest.Mock).mockReturnValue({
+      expenses: [{ id: '1', title: 'Test expense', amount: 100 }],
+      isLoading: false,
+      error: null,
+      addExpense: jest.fn(),
+      editExpense: jest.fn(),
+      removeExpense: jest.fn(),
+      refresh: jest.fn(),
+      fetchSummary: jest.fn(),
+      summary: { total: 100 }
+    });
+  });
+
+  test('renders expense list', () => {
+    render(<BudgetTab 
+      tripId="trip-123"
+      initialMembers={[]}
+    />);
+    
+    expect(screen.getByText('Test expense')).toBeInTheDocument();
+    expect(screen.getByText('$100')).toBeInTheDocument();
+  });
+
+  test('opens add expense form when button is clicked', async () => {
+    render(<BudgetTab 
+      tripId="trip-123"
+      initialMembers={[]}
+      canEdit={true}
+    />);
+    
+    fireEvent.click(screen.getByText('Add Expense'));
+    
+    await waitFor(() => {
+      expect(screen.getByText('Add New Expense')).toBeInTheDocument();
+    });
+  });
+
+  // Add more integration tests
+}); 
+```
+
+## API Integration to Frontend Standardization
+
+This section tracks our progress in standardizing how frontend components interact with backend APIs, focusing particularly on the trip feature tab contents.
+
+### Current Status of Trip Tab Components
+
+| Tab Component | Uses Client Wrapper | Uses React Hook | Status | Notes |
+|---------------|---------------------|-----------------|--------|-------|
+| PlacesTabContent | ✅ | ✅ | Complete | Uses `use-places-v2` hook and Places client |
+| LogisticsTabContent | ✅ | ✅ | Complete | Uses `useLogistics` hook and Itinerary client with atomized components |
+| BudgetTabContent | ✅ | ✅ | Complete | Fully integrated with Expenses API |
+| ItineraryTabContent | Partial | Partial | In Progress | Still uses direct fetch calls in some places |
+| NotesTabContent | Partial | ❌ | Needs Work | Direct API calls without proper client abstraction |
+| ActivityTabContent | ✅ | ✅ | Complete | Uses ActivityTimeline component with proper API integration |
+| ManageTabContent | ❌ | ❌ | Needs Work | Uses direct API calls, needs client wrapper |
+
+### Frontend Integration Priorities
+
+1. **High Priority**:
+   - ✅ Complete `LogisticsTabContent` - DONE
+   - Complete `ItineraryTabContent`
+   - Create `NotesTabContent` client wrapper and hook
+
+## Components Successfully Atomized
+
+4. **Trips Module**
+   - ✅ TripImage (atom)
+   - ✅ TripInfo (atom)
+   - ✅ TripCardFooter (atom)
+   - ✅ TripCard (molecule)
+   - ✅ LogisticsItemIcon (atom)
+   - ✅ LogisticsItemCard (molecule)
+   - ✅ EmptyLogisticsState (molecule)
+   - ✅ LogisticsDialog (molecule)
+   - ✅ LogisticsSection (organism)
+
+### Logistics API
+
+```typescript
+// List of implemented functions
+listTripLogistics(tripId)
+addAccommodationToTrip(tripId, accommodationData)
+addTransportationToTrip(tripId, transportationData)
+addFormToTrip(tripId, formData)
+```
+
+**Complete including client wrapper and React hook**
+
+**Usage with hooks**:
+```typescript
+import { useLogistics } from '@/hooks/use-logistics';
+
+function TripLogisticsSection({ tripId, canEdit }) {
+  const {
+    accommodations,
+    transportation,
+    isLoading,
+    error,
+    addAccommodation,
+    addTransportation,
+    refresh
+  } = useLogistics(tripId);
+  
+  // Use the hook data and functions
+}
+```
+
+## Trip Member Management: Atomic API Integration
+
+### 1. useTripManagement Hook
+All trip member CRUD, invitation, and access request actions are handled via the `useTripManagement` hook:
+
+```ts
+const {
+  members, // TripMember[] from API
+  isLoadingMembers,
+  membersError,
+  addMember,
+  updateMemberRole,
+  removeMember,
+  sendInvitation,
+  refreshMembers,
+  accessRequests,
+  isLoadingAccessRequests,
+  accessRequestsError,
+  respondToRequest,
+  refreshAccessRequests,
+  transferOwnership,
+  isOperationInProgress,
+} = useTripManagement(tripId);
+```
+
+### 2. Adapter Utility: API → UI
+To ensure atomic UI components receive the correct member shape, use the provided adapter:
+
+```ts
+import { adaptTripMembersToSSR } from '@/hooks/use-trip-management';
+
+const adaptedMembers = adaptTripMembersToSSR(members); // TripMember[] → TripMemberFromSSR[]
+```
+
+#### Type Definitions
+```ts
+// API type
+export interface TripMember {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: TripRole; // 'admin' | 'editor' | 'viewer' | 'contributor'
+  created_at: string;
+  user?: {
+    id: string;
+    username?: string | null;
+    full_name?: string | null;
+    email?: string | null;
+    avatar_url?: string | null;
+  };
+}
+
+// UI type
+export interface TripMemberFromSSR {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: GroupMemberRole; // 'admin' | 'member'
+  joined_at: string;
+  profiles: MemberProfile | null;
+}
+```
+
+#### Role Mapping Logic
+- `'admin'` and `'editor'` (TripRole) → `'admin'` (GroupMemberRole)
+- All other roles → `'member'`
+
+### 3. Atomic UI Pattern
+- Use atomic components for all member UI (e.g., `MembersTab`).
+- Pass only adapted members (`TripMemberFromSSR[]`) to UI components.
+- Handle loading, error, and empty states with atomic patterns (`Skeleton`, error message, etc).
+
+### 4. Example: ManageTabContent
+```tsx
+import { useTripManagement, adaptTripMembersToSSR } from '@/hooks/use-trip-management';
+import { MembersTab } from '@/components/members-tab';
+
+export function ManageTabContent({ tripId, canEdit, userRole }) {
+  const {
+    members,
+    isLoadingMembers,
+    membersError,
+    // ...other actions
+  } = useTripManagement(tripId);
+
+  if (isLoadingMembers) return <Skeleton className="h-64 w-full" />;
+  if (membersError) return <div className="text-red-500 p-4">{membersError}</div>;
+
+  const adaptedMembers = adaptTripMembersToSSR(members);
+
+  return (
+    <MembersTab
+      tripId={tripId}
+      canEdit={canEdit}
+      userRole={userRole}
+      initialMembers={adaptedMembers}
+    />
+  );
+}
+```
+
+### 5. Testing & Extensibility
+- Adapter is unit-testable for all role and profile edge cases.
+- All member actions and UI are now atomic and API-driven.
 
 ---
-
-**General Guidance:**
-- For each migration, add TODOs for any advanced or new features directly in the relevant API module.
-- Use the Result pattern and shared types for all new/updated endpoints.
-- Keep this file updated as you complete each migration.
-- For onboarding, reference this plan and the completed modules above as examples of the new pattern. 
+**This standardizes trip member management for atomic design and API integration.**

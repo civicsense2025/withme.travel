@@ -46,6 +46,10 @@ export interface MemberExpensesGridProps {
    */
   debts: MemberDebt[];
   /**
+   * Total amount of expenses
+   */
+  totalAmount: number;
+  /**
    * Optional CSS class
    */
   className?: string;
@@ -65,6 +69,7 @@ export interface MemberExpensesGridProps {
 export function MemberExpensesGrid({
   members,
   debts,
+  totalAmount,
   className = '',
   defaultTab = 'members',
   noCardWrapper = false

@@ -36,15 +36,19 @@ export interface BudgetSnapshotCardProps {
   /**
    * Target budget amount
    */
-  targetBudget: number | null;
+  budget: number | null;
   /**
    * Total amount of actual expenses
    */
-  totalSpent: number;
+  spent: number;
   /**
-   * Total amount of planned expenses
+   * Total percentage spent
    */
-  totalPlanned: number;
+  percentSpent: number;
+  /**
+   * Total amount of planned expenses (optional)
+   */
+  totalPlanned?: number;
   /**
    * Whether the user can edit the budget
    */
@@ -60,11 +64,11 @@ export interface BudgetSnapshotCardProps {
   /**
    * Callback to save the new budget amount
    */
-  onSave: (newBudget: number) => Promise<void>;
+  onBudgetUpdate: (newBudget: number) => Promise<void>;
   /**
-   * Callback when "Log Expense" button is clicked
+   * Callback when "Log Expense" button is clicked (optional)
    */
-  onLogExpenseClick: () => void;
+  onLogExpenseClick?: () => void;
   /**
    * Optional CSS class
    */
@@ -79,27 +83,28 @@ export interface BudgetSnapshotCardProps {
  * Displays a budget snapshot with total spent, planned expenses, and budget progress
  */
 export function BudgetSnapshotCard({
-  targetBudget,
-  totalSpent,
-  totalPlanned,
+  budget,
+  spent,
+  percentSpent,
+  totalPlanned = 0,
   canEdit,
   isEditing,
   onEditToggle,
-  onSave,
+  onBudgetUpdate,
   onLogExpenseClick,
   className = '',
   noCardWrapper = false
 }: BudgetSnapshotCardProps) {
-  const [editedBudget, setEditedBudget] = useState<string>(targetBudget?.toString() ?? '');
+  const [editedBudget, setEditedBudget] = useState<string>(budget?.toString() ?? '');
   const [isSaving, setIsSaving] = useState(false);
 
   // Calculate if over budget
-  const overBudget = targetBudget !== null && totalSpent + totalPlanned > targetBudget;
+  const overBudget = budget !== null && spent + totalPlanned > budget;
 
-  // Update editedBudget when targetBudget changes or isEditing mode changes
+  // Update editedBudget when budget changes or isEditing mode changes
   useEffect(() => {
-    setEditedBudget(targetBudget?.toString() ?? '');
-  }, [targetBudget, isEditing]);
+    setEditedBudget(budget?.toString() ?? '');
+  }, [budget, isEditing]);
 
   const handleSaveClick = async () => {
     const newBudgetValue = parseFloat(editedBudget);
@@ -109,7 +114,7 @@ export function BudgetSnapshotCard({
     
     setIsSaving(true);
     try {
-      await onSave(newBudgetValue);
+      await onBudgetUpdate(newBudgetValue);
       onEditToggle(false);
     } catch (error) {
       console.error('Failed to save budget:', error);
@@ -119,7 +124,7 @@ export function BudgetSnapshotCard({
   };
 
   const handleCancelClick = () => {
-    setEditedBudget(targetBudget?.toString() ?? '');
+    setEditedBudget(budget?.toString() ?? '');
     onEditToggle(false);
   };
 
@@ -163,42 +168,44 @@ export function BudgetSnapshotCard({
       ) : (
         <div className="space-y-3">
           <div className="text-2xl font-bold">
-            {targetBudget !== null ? <ExpenseAmount amount={targetBudget} /> : 'No budget set'}
+            {budget !== null ? <ExpenseAmount amount={budget} /> : 'No budget set'}
           </div>
           
-          {targetBudget !== null && (
+          {budget !== null && (
             <>
               <div className="flex justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Spent: <ExpenseAmount amount={totalSpent} className="font-medium" />
+                  Spent: <ExpenseAmount amount={spent} className="font-medium" />
                 </p>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge
-                        variant="outline"
-                        className="bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 cursor-help"
-                      >
-                        Planned: <ExpenseAmount amount={totalPlanned} className="font-medium" />
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Estimated costs from itinerary items</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                {totalPlanned > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 cursor-help"
+                        >
+                          Planned: <ExpenseAmount amount={totalPlanned} className="font-medium" />
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Estimated costs from itinerary items</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               
               <BudgetProgressIndicator
-                spent={totalSpent}
+                spent={spent}
                 planned={totalPlanned}
-                budget={targetBudget}
+                budget={budget}
                 showPercentage={true}
               />
               
               {overBudget && (
                 <p className="text-xs text-destructive">
-                  Over budget by <ExpenseAmount amount={totalSpent + totalPlanned - targetBudget} />
+                  Over budget by <ExpenseAmount amount={spent + totalPlanned - budget} className="font-medium" />
                 </p>
               )}
             </>
@@ -208,57 +215,70 @@ export function BudgetSnapshotCard({
     </div>
   );
 
-  // Log expense button
-  const logExpenseButton = !isEditing && (
-    <Button variant="outline" size="sm" className="w-full" onClick={onLogExpenseClick}>
-      <Plus className="h-4 w-4 mr-2" />
-      Log Expense
-    </Button>
-  );
-
-  // Title and Edit button
-  const titleAndEditButton = (
-    <>
-      <span className="text-sm font-medium">Budget Snapshot</span>
-      {canEdit && !isEditing && (
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditToggle(true)}>
-          <Pencil className="h-4 w-4" />
-        </Button>
+  // Card actions content
+  const actionsContent = (
+    <div className="flex gap-2 justify-end">
+      {!isEditing && canEdit && (
+        <>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onEditToggle(true)}
+          >
+            <Pencil className="h-4 w-4 mr-1" />
+            Edit Budget
+          </Button>
+          
+          {onLogExpenseClick && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onLogExpenseClick}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Log Expense
+            </Button>
+          )}
+        </>
       )}
-    </>
+    </div>
   );
 
-  // Render without card wrapper
+  // Render with or without card wrapper
   if (noCardWrapper) {
     return (
       <div className={className}>
-        <div className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-1">
-          {titleAndEditButton}
-        </div>
-        <div className="px-4">{budgetDetailsContent}</div>
-        <div className="pt-4 border-t px-4 pb-4">{logExpenseButton}</div>
+        {budgetDetailsContent}
+        {actionsContent}
       </div>
     );
   }
-
-  // Render with card wrapper
+  
   return (
     <Card className={className}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Budget Snapshot</CardTitle>
-        {canEdit && !isEditing && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => onEditToggle(true)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        )}
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-md">
+          Budget Summary
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs max-w-xs">Set your trip budget and track expenses</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardTitle>
       </CardHeader>
-      <CardContent>{budgetDetailsContent}</CardContent>
-      <CardFooter className="pt-4 border-t">{logExpenseButton}</CardFooter>
+      
+      <CardContent>
+        {budgetDetailsContent}
+      </CardContent>
+      
+      <CardFooter className="pt-0">
+        {actionsContent}
+      </CardFooter>
     </Card>
   );
 } 

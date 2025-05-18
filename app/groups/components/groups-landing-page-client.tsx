@@ -30,6 +30,9 @@ export default function GroupsLandingPageClient() {
   const router = useRouter();
   const [headline] = useState(() => wittyHeadlines[Math.floor(Math.random() * wittyHeadlines.length)]);
   const { isDark } = useThemeSync();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [success, setSuccess] = useState(false);
 
   // --------------------------------------------------------------------------
   // HERO SECTION
@@ -122,8 +125,6 @@ export default function GroupsLandingPageClient() {
     </section>
   );
 
-
-
   // --------------------------------------------------------------------------
   // CTA SECTION
   // --------------------------------------------------------------------------
@@ -165,6 +166,28 @@ export default function GroupsLandingPageClient() {
     </section>
   );
 
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description }),
+      });
+      if (!res.ok) throw new Error('Failed to create group');
+      setSuccess(true);
+      setName('');
+      setDescription('');
+    } catch (err) {
+      setError('Failed to create group');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --------------------------------------------------------------------------
   // MAIN RENDER
   // --------------------------------------------------------------------------
@@ -179,7 +202,7 @@ export default function GroupsLandingPageClient() {
       <CreateGroupModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onCreateGroup={(group) => router.push(`/groups/${group.id}`)}
+        onGroupCreated={(group) => router.push(`/groups/${group.id}`)}
       />
     </Container>
   );

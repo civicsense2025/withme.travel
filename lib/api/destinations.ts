@@ -130,5 +130,22 @@ export async function deleteDestination(destinationId: string): Promise<Result<n
  * @param limit - Maximum number of destinations to return
  * @returns Result containing an array of popular destinations
  */
-export async function getPopularDestinations(limit: number) {}
+export async function getPopularDestinations(limit: number = 6): Promise<Result<Destination[]>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    
+    // In a real implementation, this would use analytics data, ratings, or other metrics
+    // For now, we'll just get a list of destinations
+    const { data, error } = await supabase
+      .from(TABLES.DESTINATIONS)
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+      
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data ?? [] };
+  } catch (error) {
+    return handleError(error, 'Failed to fetch popular destinations');
+  }
+}
 // (Add more as needed) 

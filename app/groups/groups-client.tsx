@@ -32,23 +32,25 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
-import { GroupCard } from '@/components/groups/group-card';
-import { DeleteConfirmationDialog } from '@/components/groups/delete-confirmation-dialog';
+import { GroupCard, EmptyState } from '@/components/groups/molecules';
+import { DeleteConfirmationDialog } from '@/components/groups/molecules/DeleteConfirmationDialog';
 import { FriendsList } from '@/components/friends-list';
 import type { Friend } from '@/components/friends-list';
-import type { Group, GroupMember } from '@/types/groups';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { trackEvent } from '@/lib/tracking';
-import { getBrowserClient } from '@/utils/supabase/browser-client';
 import Link from 'next/link';
 import { PageHeader } from '@/components/layout/page-header';
+import { useGroups } from '@/hooks/use-groups';
+import { Group as ClientGroup } from '@/lib/client/groups';
 
 // Locally define the detailed Group type based on Supabase query
 type TripCount = { count: number };
 
-interface GroupWithDetails extends Omit<Group, 'group_members' | 'trip_count'> {
-  group_members: Pick<GroupMember, 'user_id' | 'role' | 'status'>[];
+interface GroupWithDetails extends Omit<ClientGroup, 'group_members' | 'trip_count'> {
+  group_members: Array<{ user_id: string; role: string; status: string }>;
   trip_count: TripCount[];
+  slug?: string;
+  emoji?: string | null;
 }
 
 const CreateGroupModal = dynamic(() => import('./components/create-group-modal'), { ssr: false });
@@ -77,6 +79,22 @@ export default function GroupsClientPage({
   initialGroups = [],
   isGuest = false,
 }: GroupsClientPageProps) {
+  // Use the groups hook
+  const guestToken = isGuest 
+    ? typeof window !== 'undefined' 
+      ? window.localStorage.getItem('guestToken') || undefined 
+      : undefined 
+    : undefined;
+  
+  const { 
+    groups: hookGroups, 
+    isLoading, 
+    error: hookError,
+    refresh: refreshGroups,
+    createGroup: createGroupHook,
+    deleteGroup: deleteGroupHook
+  } = useGroups(guestToken);
+  
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [groups, setGroups] = useState<GroupWithDetails[]>(initialGroups);
@@ -88,6 +106,20 @@ export default function GroupsClientPage({
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Sync state with hook data when it changes
+  useEffect(() => {
+    if (hookGroups.length > 0) {
+      const formattedGroups: GroupWithDetails[] = hookGroups.map(group => ({
+        ...group,
+        group_members: [], // We don't have member data from the hook
+        trip_count: [{ count: 0 }], // Default trip count
+        slug: '', // Add required properties
+        emoji: null, // Add required properties
+      }));
+      setGroups(formattedGroups);
+    }
+  }, [hookGroups]);
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {
@@ -105,14 +137,26 @@ export default function GroupsClientPage({
     }
   }, [bulkMode]);
 
-  const handleGroupCreated = (newGroup: Group) => {
-    const groupWithDetails: GroupWithDetails = {
-      ...newGroup,
-      group_members: [],
-      trip_count: [{ count: 0 }],
+  const handleGroupCreated = async (newGroup: any) => {
+    // Extract the data needed for the API
+    const newGroupData = {
+      name: newGroup.name,
+      description: newGroup.description,
+      visibility: newGroup.visibility as 'public' | 'private' | 'unlisted',
     };
-    setGroups((prevGroups) => [groupWithDetails, ...prevGroups]);
-    setModalOpen(false);
+
+    const result = await createGroupHook(newGroupData);
+    
+    if (result.success) {
+      trackEvent('group_created', {
+        group_id: result.groupId,
+        visibility: newGroupData.visibility || 'private',
+      });
+      
+      // Refresh groups to get the latest data
+      refreshGroups();
+      setModalOpen(false);
+    }
   };
 
   const handleGroupSelection = (groupId: string, isSelected: boolean) => {
@@ -140,19 +184,16 @@ export default function GroupsClientPage({
     if (selectedGroupIds.size === 0) return;
 
     setIsDeleting(true);
-    const supabase = getBrowserClient();
     let failedCount = 0;
 
     for (const groupId of selectedGroupIds) {
       try {
-        const { error } = await supabase.from('groups').delete().eq('id', groupId);
-
-        if (error) {
-          console.error(`Error deleting group ${groupId}:`, error);
-          failedCount++;
+        const result = await deleteGroupHook(groupId);
+        if (!result.success) {
+          throw new Error(`Failed to delete group: ${result.error}`);
         }
-      } catch (error) {
-        console.error(`Error deleting group ${groupId}:`, error);
+      } catch (err) {
+        console.error(`Error deleting group ${groupId}:`, err);
         failedCount++;
       }
     }
@@ -238,22 +279,21 @@ export default function GroupsClientPage({
       setIsInviting(false);
     }
   };
-  // Removed header component as requested
 
   const renderEmpty = () => {
     return (
-      <div className="mt-8 text-center">
-        <div className="mx-auto w-28 h-28 mb-6 rounded-full bg-muted flex items-center justify-center">
-          <Users className="h-14 w-14 text-muted-foreground" />
-        </div>
-        <h2 className="text-2xl font-semibold">No Groups Yet</h2>
-        <p className="text-muted-foreground mt-2 mb-6 max-w-md mx-auto">
-          Create a group to plan trips with friends, family, or colleagues.
-        </p>
-        <Button size="lg" className="rounded-full px-8" onClick={() => setModalOpen(true)}>
-          Create Your First Group
-        </Button>
-      </div>
+      <EmptyState
+        title="No Groups Yet"
+        description="Create a group to plan trips with friends, family, or colleagues."
+        action={
+          <Button size="lg" className="rounded-full px-8" onClick={() => setModalOpen(true)}>
+            Create Your First Group
+          </Button>
+        }
+        icon={<Users className="h-8 w-8" />}
+        iconBackground="bg-muted"
+        className="mt-8"
+      />
     );
   };
 
@@ -278,7 +318,15 @@ export default function GroupsClientPage({
         </TabsList>
         <TabsContent value="my-groups" className="mt-6">
           {groups.length === 0 ? (
-            renderEmpty()
+            isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <GroupCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              renderEmpty()
+            )
           ) : (
             <>
               {/* Search input */}
@@ -301,14 +349,18 @@ export default function GroupsClientPage({
                     group={{
                       id: group.id,
                       name: group.name,
+                      description: group.description,
+                      emoji: group.emoji,
                       memberCount: group.group_members?.length ?? 0,
                       tripCount: group.trip_count[0]?.count ?? 0,
+                      createdAt: group.created_at
                     }}
                     isSelectable={bulkMode}
                     isSelected={selectedGroupIds.has(group.id)}
                     onSelect={handleGroupSelection}
                     onDelete={handleSingleDelete}
                     bulkMode={bulkMode}
+                    className="h-full"
                   />
                 ))}
               </div>
@@ -359,7 +411,7 @@ export default function GroupsClientPage({
         <CreateGroupModal
           isOpen={isModalOpen}
           onClose={() => setModalOpen(false)}
-          onCreateGroup={handleGroupCreated}
+          onGroupCreated={handleGroupCreated}
         />
       </Suspense>
 
@@ -409,6 +461,14 @@ export default function GroupsClientPage({
         itemType="group"
         isDeleting={isDeleting}
       />
+
+      {hookError && <div className="text-red-500 mb-2">{hookError}</div>}
+      <div className="mt-8">
+        <Button onClick={refreshGroups} disabled={isLoading} className="flex items-center">
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+          Refresh Groups
+        </Button>
+      </div>
     </div>
   );
 }

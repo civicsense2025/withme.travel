@@ -90,6 +90,7 @@ import {
 } from '@/components/ui/table';
 import { ENUMS } from '@/utils/constants/database';
 import { useToast } from '@/components/ui/use-toast';
+import { EmptyState } from '@/components/groups/molecules';
 
 interface GroupDetailClientProps {
   group: Group;
@@ -98,24 +99,6 @@ interface GroupDetailClientProps {
   isAuthenticated: boolean;
   guestToken?: string | null;
 }
-
-const EmptyState = ({
-  title,
-  description,
-  action,
-}: {
-  title: string;
-  description: string;
-  action: React.ReactNode;
-}) => {
-  return (
-    <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg bg-background">
-      <h3 className="mt-2 text-lg font-semibold">{title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      <div className="mt-6">{action}</div>
-    </div>
-  );
-};
 
 export default function GroupDetailClient({
   group,

@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SharedPresenceSection } from '@/components/ui/SharedPresenceSection';
 import { ExpenseMarketingSection } from './components/ExpenseMarketingSection';
-import { getUserTrips, TripMember } from '@/lib/api';
+import { listTrips } from '@/lib/api/trips';
 
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
@@ -55,7 +55,9 @@ export default async function TripsPage() {
     if (isAuthenticated) {
       try {
         // Use our type-safe data fetching pattern
-        const tripMembers = await getUserTrips(session!.user.id);
+        const result = await listTrips(session!.user.id);
+        if (!result.success) throw new Error(result.error || 'Failed to fetch trips');
+        const tripMembers = result.data.map(trip => ({ trip }));
 
         return (
           <div className="container mx-auto px-4 py-8">

@@ -2,14 +2,18 @@
  * Budget Tab
  * 
  * Main container component for the trip budget feature.
+ * Uses the centralized useExpenses hook for API access.
  */
 import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ManualDbExpense, UnifiedExpense, useTripBudget } from '@/hooks/use-trip-budget';
 import { TripMemberFromSSR } from '@/components/members-tab';
 import { useResearchTracking } from '@/hooks/use-research-tracking';
+import { useExpenses } from '@/hooks/use-expenses';
+import type { Expense } from '@/lib/api/_shared';
+import { UnifiedExpense } from './organisms/expense-list';
 
 // Import our component library
 import {
@@ -20,7 +24,7 @@ import {
 } from './index';
 
 // Extended interface for expense form data
-interface ExtendedExpense extends UnifiedExpense {
+interface ExtendedExpense extends Expense {
   description?: string;
   paidById?: string;
 }
@@ -34,15 +38,25 @@ interface MemberDebt {
   amount: number;
 }
 
+// Type for member expense summary
+interface MemberExpense {
+  memberId: string;
+  name: string;
+  avatar: string | null;
+  paid: number;
+  share: number;
+  balance: number;
+}
+
 export interface BudgetTabProps {
   tripId: string;
   canEdit?: boolean;
   isTripOver?: boolean;
-  manualExpenses: ManualDbExpense[];
-  plannedExpenses: UnifiedExpense[];
   initialMembers: TripMemberFromSSR[];
   budget?: number | null;
   handleBudgetUpdated?: () => void;
+  manualExpenses?: any[];
+  plannedExpenses?: any[];
 }
 
 /**
@@ -52,55 +66,81 @@ export function BudgetTab({
   tripId,
   canEdit = false,
   isTripOver = false,
-  manualExpenses: initialManualExpenses,
-  plannedExpenses: initialPlannedExpenses,
   initialMembers,
   budget: initialBudget = null,
   handleBudgetUpdated,
+  manualExpenses = [],
+  plannedExpenses = [],
 }: BudgetTabProps) {
   const { toast } = useToast();
   const { trackEvent } = useResearchTracking();
   
   // State for budget management
   const [budgetEditMode, setBudgetEditMode] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<UnifiedExpense | undefined>(undefined);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>(undefined);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'expenses' | 'members'>('expenses');
+  const [budgetValue, setBudgetValue] = useState<number>(initialBudget || 0);
+  const [members, setMembers] = useState<TripMemberFromSSR[]>(initialMembers);
 
-  // Use the budget hook
+  // Use the new expenses hook
   const {
-    budget,
-    setBudget,
-    manualExpenses,
-    plannedExpenses,
-    members,
-    totalManualSpent,
-    totalPlanned,
-    memberExpenseSummary,
+    expenses,
+    isLoading,
+    error,
+    summary,
+    refresh: refreshExpenses,
     addExpense,
-    updateBudget,
-    refreshExpenses,
-  } = useTripBudget({
-    tripId,
-    initialManualExpenses,
-    initialPlannedExpenses,
-    initialMembers,
-    initialBudget
-  });
+    editExpense,
+    removeExpense,
+  } = useExpenses(tripId);
+
+  // Calculate totals
+  const totalManualSpent = expenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+  const totalPlanned = plannedExpenses?.reduce((sum, exp) => sum + Number(exp.amount || 0), 0) || 0;
+  const percentSpent = budgetValue > 0 ? Math.min(100, Math.round((totalManualSpent / budgetValue) * 100)) : 0;
+
+  // Calculate member expense summary
+  const memberExpenseSummary: MemberExpense[] = members.map((member) => {
+    const memberCount = members.length > 0 ? members.length : 1;
+    
+    // Calculate what this member paid
+    const paid = expenses
+      .filter((exp) => exp.paid_by === member.user_id)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+
+    // Calculate this member's share of all expenses
+    const share = expenses.reduce(
+      (sum, exp) => sum + Number(exp.amount) / memberCount,
+      0
+    );
+
+    // Calculate balance (positive means others owe this member)
+    const balance = paid - share;
+
+    return {
+      memberId: member.user_id,
+      name: member.profiles?.name || 'Unknown',
+      avatar: member.profiles?.avatar_url || null,
+      paid,
+      share,
+      balance,
+    };
+  }).sort((a, b) => b.paid - a.paid);
   
   // Track any context changes in our UI
   useEffect(() => {
-    if (manualExpenses.length > 0) {
+    if (expenses.length > 0) {
       trackEvent('budget_tab_viewed' as any, {
         tripId,
-        manualExpensesCount: manualExpenses.length,
-        plannedExpensesCount: plannedExpenses.length,
-        hasBudget: budget > 0,
+        manualExpensesCount: expenses.length,
+        plannedExpensesCount: plannedExpenses?.length || 0,
+        hasBudget: budgetValue > 0,
         totalSpent: totalManualSpent,
       });
     }
-  }, [manualExpenses.length, trackEvent, tripId, budget, totalManualSpent, plannedExpenses.length]);
+  }, [expenses.length, trackEvent, tripId, budgetValue, totalManualSpent, plannedExpenses?.length]);
 
   // Calculate debts between members
   const calculateMemberDebts = useCallback(() => {
@@ -135,9 +175,9 @@ export function BudgetTab({
       
       if (transferAmount > 0.01) {  // Ignore tiny amounts
         debts.push({
-          fromMemberId: debtor.id,
+          fromMemberId: debtor.memberId,
           fromMemberName: debtor.name,
-          toMemberId: creditor.id,
+          toMemberId: creditor.memberId,
           toMemberName: creditor.name,
           amount: transferAmount
         });
@@ -166,7 +206,9 @@ export function BudgetTab({
   // Handle updating the budget
   const handleBudgetUpdate = async (newBudget: number) => {
     try {
-      await updateBudget(newBudget);
+      // Here we would call an API to update the budget, but that's not part of useExpenses yet
+      // For now, just update the local state
+      setBudgetValue(newBudget);
       
       // Notify parent
       if (handleBudgetUpdated) {
@@ -182,7 +224,7 @@ export function BudgetTab({
       trackEvent('budget_updated' as any, { 
         tripId, 
         newBudget, 
-        previousBudget: budget 
+        previousBudget: budgetValue 
       });
     } catch (error) {
       console.error('Failed to update budget:', error);
@@ -198,69 +240,69 @@ export function BudgetTab({
   const handleAddExpenseClick = () => {
     setSelectedExpense(undefined);
     setShowExpenseForm(true);
-    trackEvent('add_expense_started' as any, { tripId });
   };
 
-  // Handle editing an expense
-  const handleEditExpense = (expense: UnifiedExpense) => {
-    setSelectedExpense(expense as ExtendedExpense);
+  // Handle opening the edit expense form
+  const handleEditExpense = (expense: Expense) => {
+    setSelectedExpense(expense);
     setShowExpenseForm(true);
-    trackEvent('edit_expense_started' as any, { tripId, expenseId: expense.id });
   };
 
   // Handle deleting an expense
-  const handleDeleteExpense = async (expense: UnifiedExpense) => {
-    // Implement delete logic
-    toast({
-      title: 'Not Implemented',
-      description: 'Delete expense functionality is not implemented yet.'
-    });
+  const handleDeleteExpense = async (expense: Expense) => {
+    try {
+      await removeExpense(expense.id);
+      trackEvent('expense_deleted' as any, { tripId, expenseId: expense.id });
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
+      toast({
+        title: 'Delete failed',
+        description: 'Could not delete expense. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  // Handle submitting the expense form
+  // Handle expense form submission
   const handleExpenseSubmit = async (data: any) => {
     setIsSubmitting(true);
     
     try {
-      // Determine if this is an edit or a new expense
+      const expenseData = {
+        title: data.title,
+        amount: Number(data.amount),
+        category: data.category,
+        date: data.date ? data.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        description: data.description,
+        paid_by: data.paidBy || (members.length > 0 ? members[0].user_id : ''),
+        currency: data.currency || 'USD'
+      };
+      
       if (selectedExpense) {
         // Update existing expense
-        toast({
-          title: 'Not Implemented',
-          description: 'Edit expense functionality is not implemented yet.'
+        await editExpense(selectedExpense.id, expenseData);
+        trackEvent('expense_updated' as any, { 
+          tripId, 
+          expenseId: selectedExpense.id,
+          category: data.category
         });
       } else {
-        // Add new expense
-        await addExpense({
-          title: data.title,
-          amount: data.amount,
-          category: data.category,
-          date: data.date ? data.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          paid_by: data.paidBy || (members.length > 0 ? members[0].user_id : ''),
-          currency: data.currency
-        });
-        
-        // Show success toast
-        toast({
-          title: 'Expense added',
-          description: `Added "${data.title}" for ${data.currency} ${data.amount}`
-        });
-
+        // Create new expense
+        await addExpense(expenseData);
         trackEvent('expense_added' as any, { 
-          tripId, 
-          amount: data.amount,
-          category: data.category
+          tripId,
+          category: data.category,
+          amount: Number(data.amount)
         });
       }
 
-      // Close form and refresh data
       setShowExpenseForm(false);
-      refreshExpenses();
+      setSelectedExpense(undefined);
     } catch (error) {
-      console.error('Error adding/updating expense:', error);
+      console.error('Failed to save expense:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save expense. Please try again.',
+        title: 'Save failed',
+        description: 'Could not save expense. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -268,77 +310,76 @@ export function BudgetTab({
     }
   };
 
-  // Transform member data for different components
-  const membersForDropdown = members.map(member => ({
+  // Format members for the expense form dropdown
+  const formattedMembers = members.map(member => ({
     id: member.user_id,
     name: member.profiles?.name || 'Unknown'
-  }));
-
-  // Transform member expense data
-  const memberExpenses = memberExpenseSummary.map(member => ({
-    memberId: member.id,
-    name: member.name,
-    avatar: member.avatar,
-    paid: member.paid,
-    share: member.share,
-    balance: member.balance
   }));
 
   // Calculate member debts
   const memberDebts = calculateMemberDebts();
 
   return (
-    <div className="space-y-6">
-      {/* Budget Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <Tabs defaultValue="expenses" className="w-full space-y-4" onValueChange={(v) => setActiveTab(v as any)}>
+      <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
+        <TabsTrigger value="expenses">Expenses</TabsTrigger>
+        <TabsTrigger value="members">Splits</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="expenses" className="space-y-4">
+        {/* Budget snapshot */}
         <BudgetSnapshotCard
-          targetBudget={budget}
-          totalSpent={totalManualSpent}
-          totalPlanned={totalPlanned}
-          canEdit={canEdit}
+          budget={budgetValue}
+          spent={totalManualSpent}
+          percentSpent={percentSpent}
           isEditing={budgetEditMode}
           onEditToggle={handleBudgetEditToggle}
-          onSave={handleBudgetUpdate}
-          onLogExpenseClick={handleAddExpenseClick}
-          className="md:col-span-1"
+          onBudgetUpdate={handleBudgetUpdate}
+          canEdit={canEdit}
         />
         
-        <MemberExpensesGrid
-          members={memberExpenses}
-          debts={memberDebts}
-          className="md:col-span-2"
-        />
-      </div>
-
-      {/* Expenses List */}
-      <ExpenseList
-        expenses={manualExpenses.map(exp => ({
-          id: exp.id,
-          title: exp.title,
-          amount: Number(exp.amount),
-          currency: exp.currency,
-          category: exp.category,
-          date: exp.date,
-          paidBy: members.find(m => m.user_id === exp.paid_by)?.profiles?.name || 'Unknown',
-          paidById: exp.paid_by,
-          source: 'manual' as const
-        } as ExtendedExpense))}
-        plannedExpenses={plannedExpenses}
-        canEdit={canEdit}
-        onEditExpense={handleEditExpense}
-        onDeleteExpense={handleDeleteExpense}
-        onAddExpense={handleAddExpenseClick}
-      />
+        {/* Expenses list */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-md">Expense List</CardTitle>
+            {canEdit && (
+              <Button onClick={handleAddExpenseClick} size="sm">
+                Add Expense
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <ExpenseList
+              expenses={expenses}
+              plannedExpenses={plannedExpenses}
+              canEdit={canEdit}
+              onEditExpense={handleEditExpense}
+              onDeleteExpense={handleDeleteExpense}
+              onAddExpense={handleAddExpenseClick}
+              noCardWrapper
+            />
+          </CardContent>
+        </Card>
+      </TabsContent>
       
-      {/* Expense Form */}
+      <TabsContent value="members" className="space-y-4">
+        {/* Member expense grid */}
+        <MemberExpensesGrid
+          members={memberExpenseSummary}
+          debts={memberDebts}
+          totalAmount={totalManualSpent}
+        />
+      </TabsContent>
+      
+      {/* Expense form dialog */}
       <ExpenseForm
         isOpen={showExpenseForm}
-        expense={selectedExpense}
-        members={membersForDropdown}
+        expense={selectedExpense as any}
+        members={formattedMembers}
         isSubmitting={isSubmitting}
         onClose={() => setShowExpenseForm(false)}
         onSubmit={handleExpenseSubmit}
       />
-    </div>
+    </Tabs>
   );
 } 

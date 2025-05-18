@@ -41,66 +41,86 @@ interface GroupSettingsModalProps {
   group: Group;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onGroupUpdated?: (group: Group) => void;
+  onGroupDeleted?: () => void;
 }
 
-export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSettingsModalProps) {
+export function GroupSettingsModal({ group, isOpen, onOpenChange, onGroupUpdated, onGroupDeleted }: GroupSettingsModalProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
-
-  // Form state
-  const [formData, setFormData] = useState({
-    name: group.name || '',
-    description: group.description || '',
-    emoji: group.emoji || '👥',
-    visibility: group.visibility || 'private',
-    joinRequiresApproval: true,
-    allowMemberInvites: true,
-    notificationsEnabled: true,
-    showMemberList: true,
-  });
+  const [name, setName] = useState(group.name || '');
+  const [description, setDescription] = useState(group.description || '');
+  const [emoji, setEmoji] = useState(group.emoji || '👥');
+  const [visibility, setVisibility] = useState(group.visibility || 'private');
+  const [joinRequiresApproval, setJoinRequiresApproval] = useState(true);
+  const [allowMemberInvites, setAllowMemberInvites] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showMemberList, setShowMemberList] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    if (id === 'name') {
+      setName(value);
+    } else if (id === 'description') {
+      setDescription(value);
+    } else if (id === 'emoji') {
+      setEmoji(value);
+    } else if (id === 'visibility') {
+      setVisibility(value);
+    }
   };
 
   const handleSwitchChange = (id: string, checked: boolean) => {
-    setFormData((prev) => ({ ...prev, [id]: checked }));
+    if (id === 'joinRequiresApproval') {
+      setJoinRequiresApproval(checked);
+    } else if (id === 'allowMemberInvites') {
+      setAllowMemberInvites(checked);
+    } else if (id === 'notificationsEnabled') {
+      setNotificationsEnabled(checked);
+    } else if (id === 'showMemberList') {
+      setShowMemberList(checked);
+    }
   };
 
   const handleSelectChange = (id: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    if (id === 'visibility') {
+      setVisibility(value);
+    }
   };
 
   const handleSaveChanges = async () => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch(`/api/groups/${group.id}`, {
+      const res = await fetch(`/api/groups/${group.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          emoji: formData.emoji,
-          visibility: formData.visibility,
-          // Add other fields as needed
+          name,
+          description,
+          emoji,
+          visibility,
+          joinRequiresApproval,
+          allowMemberInvites,
+          notificationsEnabled,
+          showMemberList,
         }),
       });
 
-      if (!response.ok) {
+      if (!res.ok) {
         throw new Error('Failed to update group');
       }
 
+      const data = await res.json();
+      onGroupUpdated?.(data.group);
       toast.success('Group settings updated successfully');
       onOpenChange(false);
       router.refresh();
-    } catch (error) {
-      console.error('Error updating group:', error);
-      toast.error('Failed to update group settings');
+    } catch (err) {
+      setError('Failed to update group');
     } finally {
       setIsLoading(false);
     }
@@ -112,22 +132,20 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
     }
 
     setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch(`/api/groups/${group.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
+      const res = await fetch(`/api/groups/${group.id}`, { method: 'DELETE' });
+      if (!res.ok) {
         throw new Error('Failed to delete group');
       }
 
+      onGroupDeleted?.();
       toast.success('Group deleted successfully');
       onOpenChange(false);
       router.push('/groups');
-    } catch (error) {
-      console.error('Error deleting group:', error);
-      toast.error('Failed to delete group');
+    } catch (err) {
+      setError('Failed to delete group');
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +182,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 </Label>
                 <Input
                   id="name"
-                  value={formData.name}
+                  value={name}
                   onChange={handleInputChange}
                   className="col-span-3"
                   placeholder="Enter group name"
@@ -177,7 +195,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 </Label>
                 <Input
                   id="emoji"
-                  value={formData.emoji}
+                  value={emoji}
                   onChange={handleInputChange}
                   className="col-span-3"
                   placeholder="Choose an emoji (e.g. 🌴, 🏔️, 🏞️)"
@@ -190,7 +208,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 </Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={description}
                   onChange={handleInputChange}
                   className="col-span-3 min-h-[100px]"
                   placeholder="Describe what this group is about"
@@ -207,7 +225,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 </Label>
                 <Select
                   onValueChange={(value) => handleSelectChange('visibility', value)}
-                  defaultValue={formData.visibility}
+                  defaultValue={visibility}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue />
@@ -236,7 +254,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 <div className="flex items-center space-x-2 col-span-3">
                   <Switch
                     id="joinRequiresApproval"
-                    checked={formData.joinRequiresApproval}
+                    checked={joinRequiresApproval}
                     onCheckedChange={(checked) =>
                       handleSwitchChange('joinRequiresApproval', checked)
                     }
@@ -254,7 +272,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 <div className="flex items-center space-x-2 col-span-3">
                   <Switch
                     id="allowMemberInvites"
-                    checked={formData.allowMemberInvites}
+                    checked={allowMemberInvites}
                     onCheckedChange={(checked) => handleSwitchChange('allowMemberInvites', checked)}
                   />
                   <Label htmlFor="allowMemberInvites" className="text-sm text-muted-foreground">
@@ -270,7 +288,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 <div className="flex items-center space-x-2 col-span-3">
                   <Switch
                     id="showMemberList"
-                    checked={formData.showMemberList}
+                    checked={showMemberList}
                     onCheckedChange={(checked) => handleSwitchChange('showMemberList', checked)}
                   />
                   <Label htmlFor="showMemberList" className="text-sm text-muted-foreground">
@@ -290,7 +308,7 @@ export function GroupSettingsModal({ group, isOpen, onOpenChange }: GroupSetting
                 <div className="flex items-center space-x-2 col-span-3">
                   <Switch
                     id="notificationsEnabled"
-                    checked={formData.notificationsEnabled}
+                    checked={notificationsEnabled}
                     onCheckedChange={(checked) =>
                       handleSwitchChange('notificationsEnabled', checked)
                     }

@@ -9,11 +9,10 @@ import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CreateGroupFormProps {
-  onSuccess: (groupId: string) => void;
-  onCancel: () => void;
+  onGroupCreated?: (group: any) => void;
 }
 
-export default function CreateGroupForm({ onSuccess, onCancel }: CreateGroupFormProps) {
+export default function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [emoji, setEmoji] = useState('');
@@ -25,46 +24,20 @@ export default function CreateGroupForm({ onSuccess, onCancel }: CreateGroupForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    if (!name.trim()) {
-      setError('Group name is required');
-      return;
-    }
-
     setLoading(true);
-
+    setError(null);
     try {
-      const response = await fetch('/api/groups', {
+      const res = await fetch('/api/groups', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          emoji: emoji.trim(),
-          website, // Honeypot field
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to create group');
-        setLoading(false);
-        return;
-      }
-
-      if (data.group?.id) {
-        onSuccess(data.group.id);
-      } else {
-        setError('Something went wrong. Please try again.');
-        setLoading(false);
-      }
+      if (!res.ok) throw new Error('Failed to create group');
+      const data = await res.json();
+      onGroupCreated?.(data.group);
     } catch (err) {
-      console.error('Error creating group:', err);
-      setError('An unexpected error occurred. Please try again.');
+      setError('Failed to create group');
+    } finally {
       setLoading(false);
     }
   };
@@ -127,9 +100,6 @@ export default function CreateGroupForm({ onSuccess, onCancel }: CreateGroupForm
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-          Cancel
-        </Button>
         <Button type="submit" disabled={loading}>
           {loading ? 'Creating...' : 'Create Group'}
         </Button>

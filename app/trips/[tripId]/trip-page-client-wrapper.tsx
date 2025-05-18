@@ -385,11 +385,13 @@ export default function TripPageClientWrapper({
       <ClassErrorBoundary fallback={<TripPageError tripId={tripId} />} section="trip-page-client">
         <QueryClientProvider client={queryClient}>
           <TripDataProvider tripId={tripId} initialData={initialTrip}>
-            <EnhancedTripContent
-              tripId={tripId}
-              canEdit={canEdit}
-              isGuestCreator={isGuestCreator}
-            />
+            <TripProvider tripId={tripId} initialTrip={initialTrip}>
+              <EnhancedTripContent
+                tripId={tripId}
+                canEdit={canEdit}
+                isGuestCreator={isGuestCreator}
+              />
+            </TripProvider>
           </TripDataProvider>
         </QueryClientProvider>
       </ClassErrorBoundary>

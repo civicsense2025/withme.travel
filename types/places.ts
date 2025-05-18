@@ -1,3 +1,57 @@
+/**
+ * Place Type Definitions
+ */
+
+/**
+ * Place entity representing a location or venue
+ */
+export interface Place {
+  /** Unique identifier */
+  id: string;
+  
+  /** Name of the place */
+  name: string;
+  
+  /** Optional address */
+  address?: string;
+  
+  /** Optional latitude coordinate */
+  latitude?: number;
+  
+  /** Optional longitude coordinate */
+  longitude?: number;
+  
+  /** Category or type of place (restaurant, hotel, attraction, etc.) */
+  category?: string;
+  
+  /** Optional description */
+  description?: string;
+  
+  /** Optional website URL */
+  website?: string;
+  
+  /** Optional phone number */
+  phone?: string;
+  
+  /** Optional hours of operation */
+  hours?: string;
+  
+  /** Optional price level (1-4) */
+  price_level?: number;
+  
+  /** Optional rating (0-5) */
+  rating?: number;
+  
+  /** Optional image URL */
+  image_url?: string;
+  
+  /** Optional creation date */
+  created_at?: string;
+  
+  /** Optional last update date */
+  updated_at?: string;
+}
+
 // Define the place category enum type directly, matching the SQL definition
 export type PlaceCategory =
   | 'attraction'

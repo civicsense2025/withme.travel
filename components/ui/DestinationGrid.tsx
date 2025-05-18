@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { CardGrid, CardGridFilter, CardGridSortOption } from './card-grid';
 import { DestinationCard } from '../destination-card';

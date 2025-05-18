@@ -46,6 +46,7 @@ import CreateIdeaDialog from './create-idea-dialog';
 import EditIdeaDialog from './edit-idea-dialog';
 import PlansNavigation from '../components/plans-navigation';
 import { debounce } from 'lodash';
+import { useGroupIdeas } from '@/hooks/use-group-ideas';
 
 interface PlanIdeasClientProps {
   groupId: string;
@@ -198,25 +199,40 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
               <div
                 key={idea.id}
                 className={`border rounded-md p-3 cursor-pointer hover:bg-secondary/20 transition-colors ${
-                  selectedIdeas.includes(idea.id)
-                    ? 'border-primary bg-secondary/30'
-                    : 'border-border'
+                  selectedIdeas.includes(idea.id) ? 'bg-secondary/20 border-primary' : ''
                 }`}
                 onClick={() => toggleIdeaSelection(idea.id)}
               >
-                <div className="flex items-start justify-between">
-                  <h3 className="font-medium text-sm">{idea.title}</h3>
-                  <div className="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">
-                    {idea.type}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-sm font-medium">{idea.title}</div>
+                    {idea.description && (
+                      <div className="text-xs text-muted-foreground mt-1">{idea.description}</div>
+                    )}
                   </div>
-                </div>
-                {idea.description && (
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {idea.description}
-                  </p>
-                )}
-                <div className="text-xs text-muted-foreground mt-2">
-                  By {idea.created_by || 'Unknown'}
+                  <div
+                    className={`w-5 h-5 rounded-sm border ${
+                      selectedIdeas.includes(idea.id)
+                        ? 'bg-primary border-primary text-primary-foreground flex items-center justify-center'
+                        : 'border-input'
+                    }`}
+                  >
+                    {selectedIdeas.includes(idea.id) && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -224,21 +240,11 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
         )}
 
         <DialogFooter>
-          <Button variant="secondary" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={addSelectedIdeasToPlan}
-            disabled={isLoading || selectedIdeas.length === 0}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Adding...
-              </>
-            ) : (
-              `Add ${selectedIdeas.length} ideas to plan`
-            )}
+          <Button onClick={addSelectedIdeasToPlan} disabled={selectedIdeas.length === 0}>
+            Add Selected ({selectedIdeas.length})
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -263,32 +269,29 @@ function RemoveFromPlanDialog({
   onRemoved,
   trigger,
 }: RemoveFromPlanDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const removeFromPlan = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/groups/${groupId}/plans/${planId}/remove-ideas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ideaIds: [ideaId] }),
+      const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas/${ideaId}/remove`, {
+        method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to remove idea from plan');
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Success',
-          description: 'Idea removed from plan',
-        });
-
-        // Call the callback
-        onRemoved(ideaId);
+      if (!response.ok) {
+        throw new Error('Failed to remove idea from plan');
       }
+
+      // Call the callback to update the UI
+      onRemoved(ideaId);
+      
+      setIsOpen(false);
+      
+      toast({
+        title: 'Success',
+        description: 'Idea removed from plan',
+      });
     } catch (error) {
       console.error('Error removing idea from plan:', error);
       toast({
@@ -302,27 +305,29 @@ function RemoveFromPlanDialog({
   };
 
   return (
-    <AlertDialog>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Remove Idea from Plan</AlertDialogTitle>
+          <AlertDialogTitle>Remove idea from plan</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to remove "{ideaTitle}" from this plan? This won't delete the idea
-            - it will still be available in the group.
+            Are you sure you want to remove "{ideaTitle}" from this plan? This will only remove it from
+            the plan, the idea will still be available in your group.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={removeFromPlan}
+          <AlertDialogAction 
+            onClick={(e) => {
+              e.preventDefault();
+              removeFromPlan();
+            }}
             disabled={isLoading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isLoading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Removing...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Removing...
               </>
             ) : (
               'Remove'
@@ -348,31 +353,43 @@ export default function PlanIdeasClient({
   isGuest,
   guestToken,
 }: PlanIdeasClientProps) {
-  const router = useRouter();
-  const [ideas, setIdeas] = useState<LocalGroupIdea[]>(initialIdeas);
-  const [selectedIdea, setSelectedIdea] = useState<LocalGroupIdea | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Use the groupIdeas hook
+  const { ideas: groupIdeas, loading: groupIdeasLoading, createIdea: createGroupIdea, refetch } = useGroupIdeas(groupId);
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [ideas, setIdeas] = useState<LocalGroupIdea[]>(initialIdeas || []);
   const [createIdeaOpen, setCreateIdeaOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<LocalGroupIdea | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
+  // Fetch ideas on load
+  useEffect(() => {
+    if (initialIdeas?.length > 0) {
+      setIdeas(initialIdeas);
+      setIsLoading(false);
+    } else {
+      fetchIdeas();
+    }
+  }, [initialIdeas]);
+
+  // Fetch plan ideas
   const fetchIdeas = async () => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas`);
-
+      
       if (!response.ok) {
-        throw new Error(`Failed to fetch ideas: ${response.statusText}`);
+        throw new Error('Failed to fetch ideas');
       }
-
+      
       const data = await response.json();
       setIdeas(data.ideas || []);
     } catch (error) {
       console.error('Error fetching ideas:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load ideas',
+        description: 'Failed to load ideas. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -380,113 +397,98 @@ export default function PlanIdeasClient({
     }
   };
 
-  // Reload ideas if initialIdeas changes (e.g., from server)
-  useEffect(() => {
-    if (initialIdeas && initialIdeas.length > 0) {
-      setIdeas(initialIdeas);
-    }
-  }, [initialIdeas]);
-
-  // Handle position changes
+  // Handle idea position change
   const handlePositionChange = (ideaId: string, position: LocalIdeaPosition) => {
-    // Update local state
-    setIdeas((prevIdeas) => {
-      return prevIdeas.map((idea) => {
-        if (idea.id === ideaId) {
-          return { ...idea, position };
+    // Update local state first for immediate feedback
+    setIdeas((prevIdeas) =>
+      prevIdeas.map((idea) => (idea.id === ideaId ? { ...idea, position } : idea))
+    );
+
+    // Debounced function to send position update to server
+    const updateIdeaPosition = debounce(async () => {
+      try {
+        const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas/reorder`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            updates: [{ ideaId, position }] 
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update idea position');
         }
-        return idea;
-      });
-    });
+      } catch (error) {
+        console.error('Error updating idea position:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save idea position',
+          variant: 'destructive',
+        });
+        // Refresh ideas to get the correct positions
+        fetchIdeas();
+      }
+    }, 500);
 
-    // Create a properly typed position update
-    const positionUpdate: IdeaPositionUpdate = { ideaId, position };
-
-    // Send update to server
-    fetch(`/api/groups/${groupId}/plans/${planId}/ideas/position`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        positions: [positionUpdate],
-      }),
-    }).catch((error) => {
-      console.error('Error updating idea position:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update idea position',
-        variant: 'destructive',
-      });
-    });
+    updateIdeaPosition();
   };
 
+  // Handle adding ideas to the plan from existing group ideas
   const handleAddIdeasToPlan = (newIdeas: LocalGroupIdea[]) => {
-    setIdeas((prevIdeas) => [...prevIdeas, ...newIdeas]);
+    setIdeas((prev) => [...prev, ...newIdeas]);
   };
 
+  // Handle removing an idea from the plan
   const handleRemoveIdeaFromPlan = (ideaId: string) => {
-    setIdeas((prevIdeas) => prevIdeas.filter((idea) => idea.id !== ideaId));
+    setIdeas((prev) => prev.filter((idea) => idea.id !== ideaId));
   };
 
-  // Handle idea deletion
+  // Handle deleting an idea completely
   const handleDeleteIdea = async (ideaId: string) => {
-    if (!groupId || !planId) return;
+    if (!window.confirm('Are you sure you want to delete this idea? This cannot be undone.')) {
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas/${ideaId}`, {
+      const response = await fetch(`/api/groups/${groupId}/ideas/${ideaId}`, {
         method: 'DELETE',
       });
-      if (response.ok) {
-        setIdeas((prevIdeas) => prevIdeas.filter((idea) => idea.id !== ideaId));
-      } else {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete idea');
+
+      if (!response.ok) {
+        throw new Error('Failed to delete idea');
       }
-    } catch (err: any) {
-      console.error('Error deleting idea:', err.message);
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+
+      // Remove the idea from the list
+      setIdeas((prev) => prev.filter((idea) => idea.id !== ideaId));
+
+      toast({
+        title: 'Success',
+        description: 'Idea deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting idea:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete idea',
+        variant: 'destructive',
+      });
     }
   };
 
-  // Handle idea updates
+  // Handle updating an idea
   const handleIdeaUpdated = (updatedIdea: LocalGroupIdea) => {
-    setIdeas((prevIdeas) =>
-      prevIdeas.map((idea) => (idea.id === updatedIdea.id ? updatedIdea : idea))
-    );
+    setIdeas((prev) => prev.map((i) => (i.id === updatedIdea.id ? updatedIdea : i)));
   };
 
-  // Debounced function to update idea positions on the server
-  const debouncedUpdatePositions = useCallback(
-    debounce(
-      async (
-        updatedIdeas: LocalGroupIdea[],
-        columnId: LocalColumnId,
-        newPosition: LocalIdeaPosition
-      ) => {
-        if (!groupId || !planId) return;
-        try {
-          await fetch(`/api/groups/${groupId}/plans/${planId}/ideas/position`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ideas: updatedIdeas, columnId, position: newPosition }), // Ensure position is typed
-          });
-        } catch (error) {
-          console.error('Error updating positions:', error);
-          toast({ title: 'Error', description: 'Failed to save order', variant: 'destructive' });
-        }
-      },
-      1000
-    ), // Adjust debounce time as needed
-    [groupId, planId]
-  );
-
+  // Handle reordering ideas within a column
   const handleReorderIdeas = (
     ideasInColumn: LocalGroupIdea[],
     columnId: LocalColumnId,
     position: LocalIdeaPosition
   ) => {
-    // ... implementation ...
-    // Call debouncedUpdatePositions if you update server side here
+    // Handle reordering by mapping new positions
     // For client-side only reordering reflected by `ideas` state, ensure `setIdeas` is called.
   };
 
@@ -494,34 +496,24 @@ export default function PlanIdeasClient({
   const createIdea = async (formData: any) => {
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          position: { columnId: formData.type, index: 0 },
-        }),
+      // Use the createGroupIdea from useGroupIdeas hook instead of direct API call
+      const newIdea = await createGroupIdea({
+        ...formData,
+        position: { columnId: formData.type, index: 0 },
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create idea');
+      if (newIdea) {
+        // Add the new idea to the list
+        setIdeas((prev) => [...prev, newIdea]);
+
+        // Close the dialog
+        setCreateIdeaOpen(false);
+
+        toast({
+          title: 'Success',
+          description: 'Idea created successfully',
+        });
       }
-
-      const { idea } = await response.json();
-
-      // Add the new idea to the list
-      setIdeas((prev) => [...prev, idea]);
-
-      // Close the dialog
-      setCreateIdeaOpen(false);
-
-      toast({
-        title: 'Success',
-        description: 'Idea created successfully',
-      });
     } catch (error) {
       console.error('Error creating idea:', error);
       toast({

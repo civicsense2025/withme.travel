@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Group } from '@/types/groups';
-import { GROUP_VISIBILITY } from '@/utils/constants/status';
+import { ENUMS } from '@/utils/constants/status';
+import { Group, CreateGroupData } from '@/lib/client/groups';
 import { Button } from '@/components/ui/button';
+import { useGroups } from '@/hooks/use-groups';
 import {
   Dialog,
   DialogContent,
@@ -27,57 +28,76 @@ import EmojiPicker from './emoji-picker';
 interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateGroup: (group: Group) => void;
+  onGroupCreated?: (group: any) => void;
 }
 
 export default function CreateGroupModal({
   isOpen,
   onClose,
-  onCreateGroup,
+  onGroupCreated,
 }: CreateGroupModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { createGroup } = useGroups();
 
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [emoji, setEmoji] = useState<string | null>('✈️');
-  const [visibility, setVisibility] = useState<string>(GROUP_VISIBILITY.PRIVATE);
+  const [visibility, setVisibility] = useState<string>(ENUMS.GROUP_VISIBILITY.PRIVATE);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!name.trim()) {
+      setError('Group name is required');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/groups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          description: description || null,
+      const groupData: CreateGroupData = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        visibility: visibility as 'public' | 'private' | 'unlisted',
+      };
+      
+      const result = await createGroup(groupData);
+      
+      if (result.success) {
+        // Create a group object with the expected structure for the parent component
+        const newGroup = {
+          id: result.groupId,
+          name: groupData.name,
+          description: groupData.description || '',
+          visibility: groupData.visibility,
           emoji,
-          visibility,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create group');
+          slug: name.toLowerCase().replace(/\s+/g, '-'),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          created_by: '',
+        };
+        
+        // Notify the parent component
+        if (onGroupCreated) {
+          onGroupCreated(newGroup);
+        }
+        
+        // Reset form
+        setName('');
+        setDescription('');
+        setEmoji('✈️');
+        setVisibility(ENUMS.GROUP_VISIBILITY.PRIVATE);
+        
+        // Close the modal
+        onClose();
+      } else {
+        setError(result.error);
       }
-
-      const { group } = await response.json();
-      onCreateGroup(group);
-
-      // Reset form
-      setName('');
-      setDescription('');
-      setEmoji('✈️');
-      setVisibility(GROUP_VISIBILITY.PRIVATE);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create group');
     } finally {
       setIsLoading(false);
     }
@@ -130,13 +150,13 @@ export default function CreateGroupModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={GROUP_VISIBILITY.PRIVATE}>
+                <SelectItem value={ENUMS.GROUP_VISIBILITY.PRIVATE}>
                   Private - Only visible to members
                 </SelectItem>
-                <SelectItem value={GROUP_VISIBILITY.SHARED_WITH_LINK}>
+                <SelectItem value={ENUMS.GROUP_VISIBILITY.UNLISTED}>
                   Link Sharing - Anyone with the link can request to join
                 </SelectItem>
-                <SelectItem value={GROUP_VISIBILITY.PUBLIC}>
+                <SelectItem value={ENUMS.GROUP_VISIBILITY.PUBLIC}>
                   Public - Anyone can discover and request to join
                 </SelectItem>
               </SelectContent>

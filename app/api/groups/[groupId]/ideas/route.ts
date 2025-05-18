@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
 import { GROUP_PLAN_IDEA_TYPE } from '@/utils/constants/status';
 import { z } from 'zod';
+import { 
+  listGroupIdeas, 
+  createGroupIdea, 
+  checkGroupMemberRole 
+} from '@/lib/api/groups';
 
 // Validation schema for creating a new idea
 const createIdeaSchema = z.object({
@@ -42,35 +46,37 @@ export async function GET(request: Request, { params }: { params: { groupId: str
     }
 
     // Check if the user is a member of the group
-    const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
-      .select('*')
-      .eq('group_id', params.groupId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheckResult = await checkGroupMemberRole(
+      params.groupId,
+      user.id,
+      ['owner', 'admin', 'member']
+    );
 
-    if (membershipError) {
-      console.error('Error checking group membership:', membershipError);
-      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
+    if (!memberCheckResult.success) {
+      return NextResponse.json(
+        { error: 'Error checking group membership' }, 
+        { status: 500 }
+      );
     }
 
-    if (!membership) {
-      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
+    if (!memberCheckResult.data) {
+      return NextResponse.json(
+        { error: 'Not a member of this group' }, 
+        { status: 403 }
+      );
     }
 
-    // Fetch all ideas for the group
-    const { data: ideas, error: ideasError } = await supabase
-      .from(TABLES.GROUP_PLAN_IDEAS)
-      .select('*')
-      .eq('group_id', params.groupId)
-      .order('created_at', { ascending: false });
+    // Fetch ideas using centralized API
+    const result = await listGroupIdeas(params.groupId);
 
-    if (ideasError) {
-      console.error('Error fetching ideas:', ideasError);
-      return NextResponse.json({ error: 'Failed to fetch ideas' }, { status: 500 });
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error }, 
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ data: ideas });
+    return NextResponse.json({ data: result.data });
   } catch (error) {
     console.error('Error in GET /api/groups/[groupId]/ideas:', error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
@@ -96,20 +102,24 @@ export async function POST(request: Request, { params }: { params: { groupId: st
     }
 
     // Check if the user is a member of the group
-    const { data: membership, error: membershipError } = await supabase
-      .from(TABLES.GROUP_MEMBERS)
-      .select('*')
-      .eq('group_id', params.groupId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheckResult = await checkGroupMemberRole(
+      params.groupId,
+      user.id,
+      ['owner', 'admin', 'member']
+    );
 
-    if (membershipError) {
-      console.error('Error checking group membership:', membershipError);
-      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
+    if (!memberCheckResult.success) {
+      return NextResponse.json(
+        { error: 'Error checking group membership' }, 
+        { status: 500 }
+      );
     }
 
-    if (!membership) {
-      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
+    if (!memberCheckResult.data) {
+      return NextResponse.json(
+        { error: 'Not a member of this group' }, 
+        { status: 403 }
+      );
     }
 
     // Parse request body
@@ -125,32 +135,17 @@ export async function POST(request: Request, { params }: { params: { groupId: st
       );
     }
 
-    // Create the idea
-    const ideaData = {
-      group_id: params.groupId,
-      title: body.title,
-      description: body.description,
-      type: body.type,
-      created_by: user.id,
-      start_date: body.start_date,
-      end_date: body.end_date,
-      meta: body.meta,
-      votes_up: 0,
-      votes_down: 0,
-    };
+    // Create the idea using centralized API
+    const result = await createGroupIdea(params.groupId, body, user.id);
 
-    const { data: newIdea, error: createError } = await supabase
-      .from(TABLES.GROUP_PLAN_IDEAS)
-      .insert(ideaData)
-      .select()
-      .single();
-
-    if (createError) {
-      console.error('Error creating idea:', createError);
-      return NextResponse.json({ error: 'Failed to create idea' }, { status: 500 });
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ data: newIdea }, { status: 201 });
+    return NextResponse.json({ data: result.data }, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/groups/[groupId]/ideas:', error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });

@@ -1,154 +1,79 @@
-// Server component wrapper
-import { Metadata } from 'next';
-import { Suspense } from 'react';
-import { PageHeader } from '@/components/layout/page-header';
-import { SEO, LAYOUT } from './constants';
-import DestinationsClient from './destinations-client';
-import { createServerComponentClient } from '@/utils/supabase/server';
-import { FIELDS } from '@/utils/constants/tables';
-
-// Mark as a dynamic route for fresh data
-export const dynamic = 'force-dynamic';
-
-// Define metadata for SEO
-export const metadata: Metadata = {
-  title: SEO.TITLE,
-  description: SEO.DESCRIPTION,
-  keywords: SEO.KEYWORDS,
-  openGraph: {
-    title: 'Discover Your Next Travel Adventure',
-    description: SEO.DESCRIPTION,
-    images: [
-      {
-        url: '/images/og-destinations.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Discover destinations with withme.travel',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Discover Amazing Travel Destinations',
-    description: SEO.DESCRIPTION,
-    images: ['/images/og-destinations.jpg'],
-  },
-};
-
-interface Destination {
-  id: string;
-  name: string;
-  city: string;
-  country: string;
-  image_url: string;
-  description: string;
-  continent?: string;
-  emoji?: string;
-}
-
-// Type assertion for Supabase data
-interface DestinationData {
-  id: string;
-  name?: string;
-  city?: string;
-  country?: string;
-  image_url?: string;
-  description?: string;
-}
-
-/**
- * Fetch all destinations from Supabase, selecting only the fields we need.
- */
-async function fetchAllDestinations(): Promise<any[]> {
-  const supabase = await createServerComponentClient();
-  console.log('[fetchAllDestinations] Fetching destinations from Supabase');
-
-  const { data, error } = await supabase
-    .from('destinations')
-    .select(['id', 'name', 'city', 'country', 'image_url', 'continent', 'emoji'].join(','))
-    .order('country', { ascending: true })
-    .order('city', { ascending: true });
-
-  if (error) {
-    console.error('[fetchAllDestinations] Error fetching destinations:', error);
-    return [];
-  }
-
-  if (!Array.isArray(data)) {
-    console.error('[fetchAllDestinations] Data is not an array:', data);
-    return [];
-  }
-
-  console.log(`[fetchAllDestinations] Fetched ${data.length} destinations from Supabase`);
-
-  // Log the first item to see its structure
-  if (data.length > 0) {
-    console.log(`[fetchAllDestinations] First raw item: ${JSON.stringify(data[0])}`);
-
-    // Check if continent exists on each item
-    const hasContinentCount = data.filter((item: any) => item.continent).length;
-    console.log(
-      `[fetchAllDestinations] ${hasContinentCount} out of ${data.length} destinations have continent field`
-    );
-  }
-
-  // Simply return the raw data from Supabase
-  return data;
-}
-
 /**
  * Destinations Page
  *
- * Server component that renders the destinations page.
- * Uses a client component for the interactive elements.
+ * Page displaying all destinations with filtering options
  */
-export default async function DestinationsPage() {
-  const destinations: Destination[] = await fetchAllDestinations();
-  console.log(`[DestinationsPage] Fetched ${destinations.length} destinations`);
 
-  // Log the first few destinations for debugging
-  if (destinations.length > 0) {
-    console.log(`[DestinationsPage] First destination: ${JSON.stringify(destinations[0])}`);
-  }
+import React from 'react';
+import { Metadata } from 'next';
+import { DestinationGrid } from '@/components/destinations/organisms/DestinationGrid';
+import { listDestinations } from '@/lib/api/destinations';
+import { ErrorBoundary } from 'react-error-boundary';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
+export const metadata: Metadata = {
+  title: 'Explore Destinations | withme.travel',
+  description: 'Discover and explore amazing destinations around the world with withme.travel',
+};
+
+// Default number of destinations to show initially
+const DEFAULT_LIMIT = 20;
+
+/**
+ * Error fallback component for the destinations page
+ */
+function DestinationsErrorFallback({ error }: { error: Error }) {
   return (
-    <main>
-      <PageHeader
-        title="Discover Destinations"
-        description="Find your next adventure"
-        centered={true}
-      />
-      <Suspense fallback={<LoadingFallback />}>
-        <DestinationsClient destinations={destinations} />
-      </Suspense>
-    </main>
+    <Alert variant="destructive" className="my-8">
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>Error loading destinations</AlertTitle>
+      <AlertDescription>
+        {error.message || 'Something went wrong. Please try again later.'}
+      </AlertDescription>
+    </Alert>
   );
 }
 
-// Loading state component
-function LoadingFallback() {
-  return (
-    <div className={LAYOUT.CONTAINER_CLASS}>
-      <div className="mx-auto max-w-xl mb-8 animate-pulse">
-        <div className="h-7 bg-muted-foreground/20 rounded mb-2 w-3/4"></div>
-        <div className="h-4 bg-muted-foreground/20 rounded w-full"></div>
+/**
+ * Destinations page showing all available destinations with filtering
+ */
+export default async function DestinationsPage() {
+  // Fetch destinations from the API
+  const destinationsResult = await listDestinations({ limit: DEFAULT_LIMIT });
+  
+  // Check if the API returned an error
+  if (!destinationsResult.success) {
+    return (
+      <div className="container py-8 md:py-12">
+        <DestinationsErrorFallback error={new Error(destinationsResult.error)} />
       </div>
+    );
+  }
+  
+  const destinations = destinationsResult.data;
 
-      <div className={LAYOUT.GRID_CLASS}>
-        {Array.from({ length: LAYOUT.SKELETON_COUNT }).map((_, index) => (
-          <div
-            key={`loading-skeleton-${index}`}
-            className={`${LAYOUT.CARD_CLASSES} ${LAYOUT.ITEM_HEIGHT} animate-pulse bg-muted/50`}
-          >
-            <div className="h-full w-full flex items-end p-4">
-              <div className="w-2/3">
-                <div className="h-4 bg-muted-foreground/20 rounded mb-2"></div>
-                <div className="h-3 bg-muted-foreground/20 rounded w-2/3"></div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+  return (
+    <main className="container py-8 md:py-12">
+      <header className="text-center mb-10">
+        <h1 className="text-4xl font-bold tracking-tight mb-3">
+          Explore Destinations
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          Discover amazing places around the world and start planning your next adventure with friends.
+        </p>
+      </header>
+
+      <ErrorBoundary FallbackComponent={DestinationsErrorFallback}>
+      <DestinationGrid
+        destinations={destinations}
+        showSearch={true}
+        showFilters={true}
+        showSorting={true}
+        columns={{ sm: 1, md: 2, lg: 3, xl: 4 }}
+          className="mb-8"
+      />
+      </ErrorBoundary>
+    </main>
   );
 }

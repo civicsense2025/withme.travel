@@ -130,7 +130,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Trip,
+  Trip as ApiTrip,
   ManualDbExpense,
   UnifiedExpense,
   ItinerarySection,
@@ -140,6 +140,7 @@ import { ProcessedVotes } from '@/types/votes';
 
 import { HistoryTabContent } from '@/app/trips/[tripId]/components/tab-contents/history-tab-content';
 import LogisticsTabContent from './components/tab-contents/LogisticsTabContent';
+import { PlacesTabContent } from './components/tab-contents/places-tab-content';
 
 // React imports
 
@@ -192,11 +193,12 @@ interface LocalTripMemberFromSSR {
   } | null;
 }
 
+// Update props interface to use the API Client's Trip type
 export interface TripPageClientProps {
   tripId: string;
   canEdit: boolean;
   isGuestCreator?: boolean;
-  setClientFunctions?: (functions: any) => void;
+  setClientFunctions?: (functions: { [key: string]: (...args: any[]) => any }) => void;
 }
 
 interface AccessRequestUser {
@@ -1539,6 +1541,30 @@ export function TripPageClient({
             onReset={() => refetchTrip()}
           >
             <LogisticsTabContent tripId={tripId} canEdit={canEdit} />
+          </ErrorBoundary>
+        ),
+      },
+      {
+        value: 'places',
+        label: 'Places',
+        content: (
+          <ErrorBoundary
+            FallbackComponent={(props) => (
+              <TabErrorFallback
+                {...props}
+                tripId={tripId}
+                section="places"
+                refetchFn={refetchTrip}
+              />
+            )}
+            onReset={() => refetchTrip()}
+          >
+            <PlacesTabContent 
+              tripId={tripId} 
+              canEdit={canEdit} 
+              destinationId={tripData?.trip?.destination_id || undefined}
+              onPlaceAdded={refetchItinerary}
+            />
           </ErrorBoundary>
         ),
       },

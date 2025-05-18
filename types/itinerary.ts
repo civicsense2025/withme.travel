@@ -60,13 +60,21 @@ export type ItineraryCategory =
 /**
  * Interface for displaying itinerary items in the UI
  */
-export interface DisplayItineraryItem extends FetchedItineraryItemData {
-  // Add any UI-specific properties if needed in the future
-  votes: ProcessedVotes; // Processed vote counts and user's vote
-  user_vote?: 'up' | 'down' | null; // Optional duplication for easier access
-  creatorProfile: Profile | null; // Ensure creator profile is properly typed
-  place?: Place | null; // Optional associated place details
-  formattedCategory?: string; // Formatted category name for display
+export interface DisplayItineraryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  day_number: number | null;
+  category: string | null;
+  votes: any[];
+  creatorProfile: any | null;
+  section_id: string;
+  type: string;
+  status: string;
+  position: number;
+  place_id: string | null;
+  details: Record<string, any>;
+  [key: string]: any;
 }
 
 export interface OrganizedItinerary {
@@ -246,4 +254,41 @@ export interface ItineraryTemplate {
   copied_count: number;
   last_copied_at: string | null;
   metadata: ItineraryTemplateMetadata | null;
+}
+
+export interface ItineraryItemResponse {
+  id: string;
+  trip_id: string;
+  title: string;
+  description: string | null;
+  day_number: number | null;
+  category: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
+  status?: string | null;
+  position?: number | null;
+  place_id?: string | null;
+  metadata?: Record<string, any> | null;
+}
+
+/**
+ * Function to adapt database item to display format
+ */
+export function adaptToDisplayItem(item: ItineraryItemResponse): DisplayItineraryItem {
+  return {
+    id: item.id,
+    title: item.title || '',
+    description: item.description,
+    day_number: item.day_number,
+    category: item.category,
+    votes: [],
+    creatorProfile: null,
+    section_id: '',
+    type: '',
+    status: item.status || 'suggested',
+    position: item.position || 0,
+    place_id: item.place_id || null,
+    details: item.metadata || {},
+  };
 }

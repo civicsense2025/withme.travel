@@ -5,17 +5,16 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/types/supabase';
 import type { TypedSupabaseClient } from '@/utils/supabase/browser-client';
-
-export type Tag = {
-  id: string;
-  name: string;
-  slug: string;
-  category: string;
-  emoji?: string;
-  description?: string;
-  use_count: number | null;
-  is_verified: boolean | null;
-};
+import { Result, success } from '@/utils/result';
+import type { Tag } from '@/utils/constants/database.types';
+import {
+  listTags,
+  searchTags,
+  createTag,
+  deleteTag,
+  addTagToEntity,
+  removeTagFromEntity
+} from '@/lib/client/tags';
 
 export type TagSuggestion = {
   id: string;
@@ -25,9 +24,66 @@ export type TagSuggestion = {
   admin_notes: string | null;
 };
 
-export function useTags() {
+/**
+ * Params for useTags hook
+ */
+interface UseTagsParams {
+  /** Type of entity to fetch tags for */
+  entityType?: string;
+  /** ID of entity to fetch tags for */
+  entityId?: string;
+  /** Whether to fetch tags on mount */
+  fetchOnMount?: boolean;
+}
+
+/**
+ * Return type for useTags hook
+ */
+interface UseTagsResult {
+  /** Array of tags */
+  tags: Tag[];
+  /** Whether tags are currently loading */
+  isLoading: boolean;
+  /** Error message if any */
+  error: string | null;
+  /** Function to refresh tags */
+  refreshTags: () => Promise<void>;
+  /** Function to add a tag to the current entity */
+  addTag: (tagName: string) => Promise<boolean>;
+  /** Function to remove a tag from the current entity */
+  removeTag: (tagName: string) => Promise<boolean>;
+  /** Function to create a new tag */
+  createNewTag: (tagData: Partial<Tag>) => Promise<Tag | null>;
+  /** Function to search for tags */
+  searchForTags: (query: string) => Promise<Tag[]>;
+}
+
+/**
+ * Type guard to check if a result is successful
+ */
+function isSuccess<T>(result: Result<T, Error>): result is { success: true; data: T } {
+  return result.success === true;
+}
+
+/**
+ * Type guard to check if a result is a failure
+ */
+function isFailure<T>(result: Result<T, Error>): result is { success: false; error: Error } {
+  return result.success === false;
+}
+
+/**
+ * Hook for managing tags with loading states and error handling
+ */
+export function useTags({
+  entityType,
+  entityId,
+  fetchOnMount = true,
+}: UseTagsParams = {}): UseTagsResult {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [supabase, setSupabase] = useState<TypedSupabaseClient | null>(null);
 
   // Initialize Supabase client safely in an effect
@@ -40,395 +96,133 @@ export function useTags() {
     }
   }, []);
 
-  const getDestinationTags = useCallback(
-    async (destinationId: string) => {
-      if (!supabase) {
-        console.error('Supabase client not available in useTags');
-        return [];
-      }
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('destination_tags')
-          .select(
-            `
-          *,
-          tag:tags(*)
-        `
-          )
-          .eq('destination_id', destinationId)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        console.error('Error fetching destination tags:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load tags',
-          variant: 'destructive',
-        });
-        return [];
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [supabase, toast]
-  );
-
-  const suggestTag = useCallback(
-    async (destinationId: string, tagData: Partial<Tag>) => {
-      if (!supabase) {
-        console.error('Supabase client not available in useTags');
-        return false;
-      }
-      try {
-        setIsLoading(true);
-
-        // Defensive: Ensure tagData.name is defined and a string
-        if (!tagData.name || typeof tagData.name !== 'string') {
-          toast({
-            title: 'Error',
-            description: 'Tag name is required',
-            variant: 'destructive',
-          });
-          setIsLoading(false);
-          return false;
-        }
-
-        // First, try to find the tag by name
-        const { data: tagResult, error: tagError } = await supabase
-          .from('tags')
-          .select('*')
-          .eq('name', tagData.name)
-          .maybeSingle();
-
-        let tagId: string | undefined;
-        if (tagError && tagError.code !== 'PGRST116') {
-          // Only throw if error is not "no rows found"
-          throw tagError;
-        }
-
-        if (!tagResult) {
-          // Tag doesn't exist, create it
-          const { data: newTag, error: createError } = await supabase
-            .from('tags')
-            .insert([
-              {
-                name: tagData.name,
-                slug: tagData.name.toLowerCase().replace(/\s+/g, '-'),
-                category: tagData.category || 'general',
-                emoji: tagData.emoji,
-                description: tagData.description,
-              },
-            ])
-            .select()
-            .single();
-
-          if (createError || !newTag) throw createError || new Error('Failed to create tag');
-          tagId = newTag.id;
-        } else {
-          tagId = tagResult.id;
-        }
-
-        if (!tagId) {
-          toast({
-            title: 'Error',
-            description: 'Failed to resolve tag ID',
-            variant: 'destructive',
-          });
-          setIsLoading(false);
-          return false;
-        }
-
-        // Create the tag suggestion (user_suggested_tags table does not have tag_id, so use name/slug/category)
-        const { error: suggestionError } = await supabase.from('user_suggested_tags').insert([
-          {
-            name: tagData.name,
-            slug: tagData.name.toLowerCase().replace(/\s+/g, '-'),
-            category: tagData.category || 'general',
-            destination_id: destinationId,
-          },
-        ]);
-
-        if (suggestionError) throw suggestionError;
-
-        toast({
-          title: 'Success',
-          description: 'Tag suggestion submitted for review',
-        });
-
-        return true;
-      } catch (error) {
-        console.error('Error suggesting tag:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to suggest tag',
-          variant: 'destructive',
-        });
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [supabase, toast]
-  );
-
-  const voteOnTag = useCallback(
-    async (destinationId: string, tagId: string, isUpvote: boolean) => {
-      if (!supabase) {
-        console.error('Supabase client not available in useTags');
-        return false;
-      }
-      try {
-        setIsLoading(true);
-
-        // Defensive: Only increment the correct vote column
-        const updateField = isUpvote ? { votes_up: 1 } : { votes_down: 1 };
-
-        // Use PostgREST's increment syntax
-        const { error } = await supabase
-          .from('destination_tags')
-          .update(
-            {
-              ...updateField,
-            },
-            { count: 'exact' }
-          )
-          .eq('destination_id', destinationId)
-          .eq('tag_id', tagId);
-
-        if (error) throw error;
-
-        return true;
-      } catch (error) {
-        console.error('Error voting on tag:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to record vote',
-          variant: 'destructive',
-        });
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [supabase, toast]
-  );
-
-  const getUserInterests = useCallback(async () => {
-    if (!supabase) {
-      console.error('Supabase client not available in useTags');
-      return [];
+  /**
+   * Fetches tags for the specified entity
+   */
+  const refreshTags = useCallback(async () => {
+    if (!entityType) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    const result = await listTags(entityType, entityId);
+    
+    if (isSuccess(result)) {
+      setTags(result.data);
+    } else {
+      setError(result.error.message || 'Failed to fetch tags');
     }
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('user_interests')
-        .select(
-          `
-          *,
-          tag:tags(*)
-        `
-        )
-        .order('strength', { ascending: false });
+    
+    setIsLoading(false);
+  }, [entityType, entityId]);
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching user interests:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load interests',
-        variant: 'destructive',
-      });
-      return [];
-    } finally {
+  /**
+   * Adds a tag to the current entity
+   */
+  const addTag = useCallback(async (tagName: string): Promise<boolean> => {
+    if (!entityType || !entityId) {
+      setError('Entity type and ID are required to add a tag');
+      return false;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    const result = await addTagToEntity(entityType, entityId, tagName);
+    
+    if (isSuccess(result)) {
+      await refreshTags();
+      return true;
+    } else {
+      setError(result.error.message || 'Failed to add tag');
       setIsLoading(false);
+      return false;
     }
-  }, [supabase, toast]);
+  }, [entityType, entityId, refreshTags]);
 
-  const updateUserInterest = useCallback(
-    async (tagId: string, strength: number) => {
-      if (!supabase) {
-        console.error('Supabase client not available in useTags');
-        return false;
-      }
-      try {
-        setIsLoading(true);
-
-        const { error } = await supabase.from('user_interests').upsert({
-          tag_id: tagId,
-          strength,
-        });
-
-        if (error) throw error;
-
-        return true;
-      } catch (error) {
-        console.error('Error updating interest:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to update interest',
-          variant: 'destructive',
-        });
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [supabase, toast]
-  );
-
-  const getTags = useCallback(async () => {
-    if (!supabase) {
-      console.error('Supabase client not available in useTags');
-      return [];
+  /**
+   * Removes a tag from the current entity
+   */
+  const removeTag = useCallback(async (tagName: string): Promise<boolean> => {
+    if (!entityType || !entityId) {
+      setError('Entity type and ID are required to remove a tag');
+      return false;
     }
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('use_count', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load tags',
-        variant: 'destructive',
-      });
-      return [];
-    } finally {
+    
+    setIsLoading(true);
+    setError(null);
+    
+    const result = await removeTagFromEntity(entityType, entityId, tagName);
+    
+    if (isSuccess(result)) {
+      await refreshTags();
+      return true;
+    } else {
+      setError(result.error.message || 'Failed to remove tag');
       setIsLoading(false);
+      return false;
     }
-  }, [supabase, toast]);
+  }, [entityType, entityId, refreshTags]);
 
-  const createTag = useCallback(
-    async (name: string) => {
-      if (!supabase) {
-        console.error('Supabase client not available in useTags');
-        return null;
+  /**
+   * Creates a new tag 
+   */
+  const createNewTag = useCallback(async (tagData: Partial<Tag>): Promise<Tag | null> => {
+    setIsLoading(true);
+    setError(null);
+    
+    const result = await createTag(tagData);
+    
+    setIsLoading(false);
+    
+    if (isSuccess(result)) {
+      if (entityType && entityId) {
+        await addTagToEntity(entityType, entityId, result.data.name);
+        await refreshTags();
       }
-      try {
-        setIsLoading(true);
+      return result.data;
+    } else {
+      setError(result.error.message || 'Failed to create tag');
+      return null;
+    }
+  }, [entityType, entityId, refreshTags]);
 
-        const { data: tagResult, error: tagError } = await supabase
-          .from('tags')
-          .select('*')
-          .eq('name', name)
-          .single();
+  /**
+   * Searches for tags by query
+   */
+  const searchForTags = useCallback(async (query: string): Promise<Tag[]> => {
+    if (!query) return [];
+    
+    setIsLoading(true);
+    setError(null);
+    
+    const result = await searchTags(query);
+    
+    setIsLoading(false);
+    
+    if (isSuccess(result)) {
+      return result.data;
+    } else {
+      setError(result.error.message || 'Failed to search tags');
+      return [];
+    }
+  }, []);
 
-        if (tagError) {
-          // Tag doesn't exist, create it
-          const { data: newTag, error: createError } = await supabase
-            .from('tags')
-            .insert({
-              name: name,
-              slug: name?.toLowerCase().replace(/\s+/g, '-'),
-              category: 'general',
-            })
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          return newTag;
-        } else {
-          return tagResult;
-        }
-      } catch (error) {
-        console.error('Error creating tag:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to create tag',
-          variant: 'destructive',
-        });
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [supabase, toast]
-  );
-
-  const addTagToTrip = useCallback(
-    async (tripId: string, tagId: string) => {
-      if (!supabase) {
-        console.error('Supabase client not available in useTags');
-        return false;
-      }
-      try {
-        setIsLoading(true);
-
-        const { error } = await supabase.from('destination_tags').insert({
-          destination_id: tripId,
-          tag_id: tagId,
-        });
-
-        if (error) throw error;
-
-        return true;
-      } catch (error) {
-        console.error('Error adding tag to trip:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to add tag to trip',
-          variant: 'destructive',
-        });
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [supabase, toast]
-  );
-
-  const removeTagFromTrip = useCallback(
-    async (tripId: string, tagId: string) => {
-      if (!supabase) {
-        console.error('Supabase client not available in useTags');
-        return false;
-      }
-      try {
-        setIsLoading(true);
-
-        const { error } = await supabase
-          .from('destination_tags')
-          .delete()
-          .eq('destination_id', tripId)
-          .eq('tag_id', tagId);
-
-        if (error) throw error;
-
-        return true;
-      } catch (error) {
-        console.error('Error removing tag from trip:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to remove tag from trip',
-          variant: 'destructive',
-        });
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [supabase, toast]
-  );
+  // Fetch tags on mount if requested
+  useEffect(() => {
+    if (fetchOnMount && entityType) {
+      refreshTags();
+    }
+  }, [fetchOnMount, entityType, refreshTags]);
 
   return {
+    tags,
     isLoading,
-    getDestinationTags,
-    suggestTag,
-    voteOnTag,
-    getUserInterests,
-    updateUserInterest,
-    getTags,
-    createTag,
-    addTagToTrip,
-    removeTagFromTrip,
+    error,
+    refreshTags,
+    addTag,
+    removeTag,
+    createNewTag,
+    searchForTags,
   };
 }

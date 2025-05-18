@@ -9,7 +9,11 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatDateRange } from '@/utils/lib-utils';
-import { Trip, TripMember } from '@/lib/api';
+import { Trip } from '@/utils/constants/database.types';
+import { TripCardHeader } from '@/components/trips/molecules/TripCardHeader';
+
+// Define TripMember type locally
+export type TripMember = { trip: Trip };
 
 export default function TripsClientPage({
   initialTrips = [],
@@ -35,7 +39,7 @@ export default function TripsClientPage({
           tripMember.trip.name.toLowerCase().includes(query) ||
           tripMember.trip.destination_name?.toLowerCase().includes(query) ||
           // Also search through city names
-          tripMember.trip.cities?.some(city => 
+          tripMember.trip.cities?.some((city: any) => 
             city.name?.toLowerCase().includes(query)
           )
       );
@@ -127,7 +131,7 @@ export default function TripsClientPage({
     // Use cities for counting unique destinations, fallback to destination_name for legacy data
     const uniqueDestinations = new Set([
       ...trips.flatMap(t => 
-        t.trip.cities?.map(city => city.name).filter(Boolean) || []
+        t.trip.cities?.map((city: any) => city.name).filter(Boolean) || []
       ),
       ...trips.map(t => t.trip.destination_name).filter(Boolean)
     ]).size;
@@ -258,20 +262,18 @@ function MinimalTripCard({ tripMember }: { tripMember: TripMember }) {
               {trip.is_public ? 'Public' : 'Private'}
             </span>
           </div>
-
-          <h3 className="text-lg font-semibold mb-1 line-clamp-1">{trip.name}</h3>
-          
-          <div className="space-y-1 text-sm text-muted-foreground">
-            {locationName && (
-              <div className="flex items-center gap-1">
-                <span className="truncate">{locationName}</span>
-              </div>
-            )}
-            
+          <TripCardHeader
+            name={trip.name}
+            destination={locationName}
+            coverImageUrl={trip.cover_image_url}
+            status={trip.status}
+            // Add more props as needed
+          />
+          {/* Travelers and date info */}
+          <div className="space-y-1 text-sm text-muted-foreground mt-2">
             <div className="flex items-center gap-1.5">
               <User className="h-3.5 w-3.5" />
               <span>0 travelers</span>
-              
               {hasDateInfo && (
                 <>
                   <span className="mx-1">•</span>

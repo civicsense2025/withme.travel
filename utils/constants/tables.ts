@@ -10,7 +10,9 @@
 // ============================================================================
 
 /**
- * Core database table names
+ * Constants for database table names
+ *
+ * Use 'as const' to ensure each value is a string literal type for type-safe Supabase usage.
  */
 export const TABLES = {
   ACCESS_REQUESTS: 'access_requests',
@@ -93,7 +95,7 @@ export const TABLES = {
   TASKS: 'tasks',
   TASK_VOTES: 'task_votes',
   TASK_TAGS: 'task_tags'
-};
+} as const;
 
 // ============================================================================
 // DOMAIN-SPECIFIC TABLE GROUPS

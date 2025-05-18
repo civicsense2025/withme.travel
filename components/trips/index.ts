@@ -1,8 +1,17 @@
 /**
  * Trip Components
  * 
- * Exports organized according to Atomic Design methodology
+ * Export all trip components from atoms, molecules, and organisms
  */
+
+// Export atoms
+// export * from './atoms';
+
+// Export molecules
+// export * from './molecules';
+
+// Export organisms
+// export * from './organisms';
 
 // Atoms
 export * from './atoms/TripCoverImage';
@@ -25,7 +34,7 @@ export * from './molecules/ActivityItem';
 export * from './organisms/TripCard';
 // export * from './organisms/TripCreationForm';
 // export * from './organisms/TripHeader';
-// export * from './organisms/ActivityTimeline';
+export * from './organisms/ActivityTimeline';
 export * from './organisms/TripMembersList';
 // export * from './organisms/MultipleCitySelector';
 // export * from './organisms/TripSidebar';
@@ -33,4 +42,7 @@ export * from './organisms/TripMembersList';
 // Templates
 // export * from './templates/TripsOverviewTemplate';
 // export * from './templates/TripDetailTemplate';
-// export * from './templates/TripCreationTemplate'; 
+// export * from './templates/TripCreationTemplate';
+
+export { TripPageError } from './trip-page-error';
+export { default as SimplifiedTripHeader } from './SimplifiedTripHeader'; 

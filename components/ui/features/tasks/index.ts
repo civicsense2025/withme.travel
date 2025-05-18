@@ -13,7 +13,7 @@ export * from './molecules';
 
 // Export the main organisms
 export { TaskList } from './TaskList';
-export type { TaskListProps } from './TaskList';
+export type { TaskListProps, Task } from './TaskList';
 
 export { TaskForm } from './TaskForm';
 export type { TaskFormProps, TaskFormValues } from './TaskForm';
@@ -29,4 +29,18 @@ export type {
   ProfileBasic,
   TaskVotes
 } from './types';
+
+/**
+ * Tasks Components
+ * 
+ * Export file for task-related components following atomic design
+ */
+
+// Molecules
+export { TaskItem } from './TaskItem';
+export type { TaskItemProps } from './TaskItem';
+
+// Organisms
+export { TaskManager } from './TaskManager';
+export type { TaskManagerProps } from './TaskManager';
 

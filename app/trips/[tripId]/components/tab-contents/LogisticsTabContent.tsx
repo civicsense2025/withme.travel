@@ -1,12 +1,11 @@
+/**
+ * LogisticsTabContent
+ * 
+ * Tab content for trip logistics management
+ */
+
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, BedDouble, Car } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { DroppableContainer } from '@/components/itinerary/DroppableContainer';
-import { useState, useEffect, useCallback } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -18,22 +17,9 @@ import {
   DragStartEvent,
   DragEndEvent,
 } from '@dnd-kit/core';
-import { API_ROUTES } from '@/utils/constants/routes';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
-import { DisplayItineraryItem } from '@/types/itinerary';
-import { useRouter } from 'next/navigation';
-import { addFormToTrip, addAccommodationToTrip, addTransportationToTrip } from '@/lib/api';
+import { useState } from 'react';
+import { LogisticsSection } from '@/components/trips/organisms/LogisticsSection';
+import type { LogisticsItem } from '@/hooks/use-logistics';
 
 interface LogisticsTabContentProps {
   tripId: string;
@@ -41,88 +27,21 @@ interface LogisticsTabContentProps {
   refetchItinerary?: () => Promise<void>;
 }
 
-// Define types for the logistics items
-interface LogisticsItem {
-  id: string;
-  type: 'form' | 'accommodation' | 'transportation';
-  title: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  location?: string;
-}
-
-export default function LogisticsTabContent({
+export function LogisticsTabContent({
   tripId,
   canEdit,
   refetchItinerary,
 }: LogisticsTabContentProps) {
-  const [items, setItems] = useState<LogisticsItem[]>([]);
+  // State for drag-and-drop functionality
   const [activeItem, setActiveItem] = useState<LogisticsItem | null>(null);
-  const [isAccommodationDialogOpen, setIsAccommodationDialogOpen] = useState(false);
-  const [isTransportationDialogOpen, setIsTransportationDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const router = useRouter();
-
-  // Add the missing function
-  const handleFormTemplateSelect = useCallback(async (template: any) => {
-    try {
-      // Use our shared API function
-      await addFormToTrip(tripId, {
-        title: template.title,
-        description: template.description || '',
-        template_id: template.id || null,
-      });
-
-      // Show success message
-      toast({
-        title: 'Form added',
-        description: 'A new form has been added to the trip.',
-      });
-
-      // Refresh if needed
-      if (refetchItinerary) {
-        await refetchItinerary();
-      }
-    } catch (error) {
-      console.error('Error adding form to trip:', error);
-      toast({
-        title: 'Error adding form',
-        description: 'There was a problem adding the form. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  }, [tripId, toast, refetchItinerary]);
-
-  // Render individual item
-  const renderItem = (item: LogisticsItem) => (
-    <Card key={item.id} className="mb-2" draggable={canEdit}>
-      <CardContent className="p-4">
-        <h4 className="font-medium">{item.title}</h4>
-        {item.description && <p className="text-sm text-muted-foreground">{item.description}</p>}
-        {item.location && <p className="text-sm mt-1">Location: {item.location}</p>}
-        {item.startDate && (
-          <p className="text-sm">From: {new Date(item.startDate).toLocaleDateString()}</p>
-        )}
-        {item.endDate && (
-          <p className="text-sm">To: {new Date(item.endDate).toLocaleDateString()}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
 
   // Set up DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 300,
-        tolerance: 8,
-      },
+      activationConstraint: { delay: 300, tolerance: 8 },
     }),
     useSensor(KeyboardSensor)
   );
@@ -130,471 +49,35 @@ export default function LogisticsTabContent({
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const draggingItem = items.find((item) => item.id === active.id);
+    const draggingItem = active.data?.current;
 
     if (draggingItem) {
-      setActiveItem(draggingItem);
-    } else if (active.data?.current?.type === 'template') {
-      // Handle template items being dragged
-      setActiveItem({
-        id: `temp-${active.id}`,
-        ...active.data.current.template,
-      });
+      setActiveItem(draggingItem as LogisticsItem);
     }
   };
 
   // Handle drag end
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragEnd = (event: DragEndEvent) => {
     setActiveItem(null);
-
-    if (!over) return;
-
-    const itemType = over.id.toString().split('-')[0]; // form, accommodation, transportation
-
-    // Handle template being dragged
-    if (active.data?.current?.type === 'template' && active.data.current.template) {
-      try {
-        const template = active.data.current.template;
-
-        if (template.type === 'form') {
-          // Handle form template differently - add through API
-          await handleFormTemplateSelect(template);
-        } else {
-          // For other templates, use the existing logic
-          const newItem: LogisticsItem = {
-            id: `${template.type}-${Date.now()}`, // Temporary ID until API creates one
-            ...template,
-          };
-
-          // Add item to the state
-          setItems((prevItems) => [...prevItems, newItem]);
-
-          toast({
-            title: 'Item added',
-            description: `${template.title} has been added.`,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to add item:', error);
-        toast({
-          title: 'Error adding item',
-          description: 'Could not add the item. Please try again.',
-          variant: 'destructive',
-        });
-      }
-    }
-  };
-
-  // Helper function to add accommodation to trip itinerary
-  const handleAddAccommodation = useCallback(
-    async (accommodationData: {
-      title: string;
-      location?: string;
-      startDate?: string;
-      endDate?: string;
-      description?: string;
-    }) => {
-      try {
-        // Use our shared API function
-        await addAccommodationToTrip(tripId, accommodationData);
-
-        // Show success message
-        toast({
-          title: 'Accommodation added',
-          description: 'Your accommodation has been added to the trip itinerary.',
-        });
-
-        // Refresh itinerary
-        if (refetchItinerary) {
-          await refetchItinerary();
-        }
-
-        return true;
-      } catch (error) {
-        console.error('Error adding accommodation to itinerary:', error);
-        toast({
-          title: 'Error adding accommodation',
-          description: 'There was a problem adding your accommodation. Please try again.',
-          variant: 'destructive',
-        });
-        return false;
-      }
-    },
-    [tripId, toast, refetchItinerary]
-  );
-
-  // Helper function to add transportation to trip itinerary
-  const handleAddTransportation = useCallback(
-    async (transportationData: {
-      title: string;
-      departureLocation?: string;
-      arrivalLocation?: string;
-      departureDate?: string;
-      arrivalDate?: string;
-      description?: string;
-    }) => {
-      try {
-        // Use our shared API function
-        await addTransportationToTrip(tripId, transportationData);
-
-        // Show success message
-        toast({
-          title: 'Transportation added',
-          description: 'Your transportation has been added to the trip itinerary.',
-        });
-
-        // Refresh itinerary
-        if (refetchItinerary) {
-          await refetchItinerary();
-        }
-
-        return true;
-      } catch (error) {
-        console.error('Error adding transportation to itinerary:', error);
-        toast({
-          title: 'Error adding transportation',
-          description: 'There was a problem adding your transportation. Please try again.',
-          variant: 'destructive',
-        });
-        return false;
-      }
-    },
-    [tripId, toast, refetchItinerary]
-  );
-
-  // Handle accommodation form submission
-  const handleAccommodationSubmit = async () => {
-    // Get form values
-    const title =
-      (document.getElementById('accommodation-name') as HTMLInputElement)?.value ||
-      'New Accommodation';
-    const location = (
-      document.getElementById('accommodation-location') as HTMLInputElement
-    )?.value;
-    const startDate = (document.getElementById('check-in') as HTMLInputElement)?.value;
-    const endDate = (document.getElementById('check-out') as HTMLInputElement)?.value;
-    const description = (
-      document.getElementById('accommodation-notes') as HTMLTextAreaElement
-    )?.value;
-
-    // Add to local state
-    const newItem: LogisticsItem = {
-      id: `accommodation-${Date.now()}`,
-      type: 'accommodation',
-      title,
-      location,
-      startDate,
-      endDate,
-      description,
-    };
-
-    setItems((prev) => [...prev, newItem]);
-
-    // Add to itinerary using our helper function
-    const success = await handleAddAccommodation({
-      title,
-      location,
-      startDate,
-      endDate,
-      description,
-    });
-
-    setIsAccommodationDialogOpen(false);
-
-    if (success) {
-      // Ask if the user wants to go to the itinerary to see the item
-      toast({
-        title: 'Accommodation added to itinerary',
-        description: 'Would you like to view it in the itinerary?',
-        action: (
-          <Button variant="outline" size="sm" onClick={navigateToItinerary}>
-            View Itinerary
-          </Button>
-        ),
-      });
-    }
-  };
-
-  // Handle transportation form submission
-  const handleTransportationSubmit = async () => {
-    // Get form values
-    const title =
-      (document.getElementById('transportation-type') as HTMLInputElement)?.value ||
-      'New Transportation';
-    const departureLocation = (
-      document.getElementById('departure-location') as HTMLInputElement
-    )?.value;
-    const arrivalLocation = (
-      document.getElementById('arrival-location') as HTMLInputElement
-    )?.value;
-    const departureDate = (
-      document.getElementById('departure-date') as HTMLInputElement
-    )?.value;
-    const arrivalDate = (document.getElementById('arrival-date') as HTMLInputElement)
-      ?.value;
-    const description = (
-      document.getElementById('transportation-notes') as HTMLTextAreaElement
-    )?.value;
-
-    // Add to local state
-    const newItem: LogisticsItem = {
-      id: `transportation-${Date.now()}`,
-      type: 'transportation',
-      title,
-      location: `${departureLocation || ''} to ${arrivalLocation || ''}`,
-      startDate: departureDate,
-      endDate: arrivalDate,
-      description,
-    };
-
-    setItems((prev) => [...prev, newItem]);
-
-    // Add to itinerary using our helper function
-    const success = await handleAddTransportation({
-      title,
-      departureLocation,
-      arrivalLocation,
-      departureDate,
-      arrivalDate,
-      description,
-    });
-
-    setIsTransportationDialogOpen(false);
-
-    if (success) {
-      // Ask if the user wants to go to the itinerary to see the item
-      toast({
-        title: 'Transportation added to itinerary',
-        description: 'Would you like to view it in the itinerary?',
-        action: (
-          <Button variant="outline" size="sm" onClick={navigateToItinerary}>
-            View Itinerary
-          </Button>
-        ),
-      });
-    }
-  };
-
-  // Dialog for adding accommodation
-  const accommodationDialog = (
-    <Dialog open={isAccommodationDialogOpen} onOpenChange={setIsAccommodationDialogOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Accommodation</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="accommodation-name">Name</Label>
-            <Input id="accommodation-name" placeholder="Hotel, Airbnb, etc." />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="accommodation-location">Location</Label>
-            <Input id="accommodation-location" placeholder="Address or location" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="check-in">Check-in</Label>
-              <Input id="check-in" type="date" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="check-out">Check-out</Label>
-              <Input id="check-out" type="date" />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="accommodation-notes">Notes</Label>
-            <Textarea
-              id="accommodation-notes"
-              placeholder="Additional details like confirmation number, contact information, etc."
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => setIsAccommodationDialogOpen(false)}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleAccommodationSubmit}>
-            Add Accommodation
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // Dialog for adding transportation
-  const transportationDialog = (
-    <Dialog open={isTransportationDialogOpen} onOpenChange={setIsTransportationDialogOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Transportation</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="transportation-type">Type</Label>
-            <Input id="transportation-type" placeholder="Flight, Train, Car Rental, etc." />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="departure-location">From</Label>
-              <Input id="departure-location" placeholder="Departure location" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="arrival-location">To</Label>
-              <Input id="arrival-location" placeholder="Arrival location" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="departure-date">Departure Date</Label>
-              <Input id="departure-date" type="date" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="arrival-date">Arrival Date</Label>
-              <Input id="arrival-date" type="date" />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="transportation-notes">Notes</Label>
-            <Textarea
-              id="transportation-notes"
-              placeholder="Additional details like confirmation number, seats, etc."
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => setIsTransportationDialogOpen(false)}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleTransportationSubmit}>
-            Add Transportation
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // Handle navigation to the itinerary tab
-  const navigateToItinerary = () => {
-    // Navigate to the itinerary tab using the window location
-    // Since we know the tab is accessed via URL parameter ?tab=itinerary
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('tab', 'itinerary');
-    router.push(currentUrl.toString());
+    // Handle any drop logic here if needed
   };
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="space-y-8">
-        {/* Accommodation Section */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-semibold">Accommodation</h3>
-            {canEdit && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1"
-                onClick={() => setIsAccommodationDialogOpen(true)}
-              >
-                <BedDouble className="h-4 w-4" />
-                <span>Add Accommodation</span>
-              </Button>
-            )}
+      <LogisticsSection
+        tripId={tripId}
+        canEdit={canEdit}
+        refetchItinerary={refetchItinerary}
+      />
+      
+      {/* DragOverlay for drag-and-drop visualization */}
+      <DragOverlay>
+        {activeItem ? (
+          <div className="w-full max-w-md opacity-80">
+            {/* Placeholder for dragged item */}
           </div>
-          <Separator />
-          <DroppableContainer
-            id="accommodation-container"
-            className="min-h-[150px]"
-            disabled={!canEdit}
-          >
-            {items.filter((item) => item.type === 'accommodation').map(renderItem)}
-            {items.filter((item) => item.type === 'accommodation').length === 0 && (
-              <EmptyAccommodationPlaceholder canEdit={canEdit} />
-            )}
-          </DroppableContainer>
-        </section>
-
-        {/* Transportation Section */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-semibold">Transportation</h3>
-            {canEdit && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1"
-                onClick={() => setIsTransportationDialogOpen(true)}
-              >
-                <Car className="h-4 w-4" />
-                <span>Add Transportation</span>
-              </Button>
-            )}
-          </div>
-          <Separator />
-          <DroppableContainer
-            id="transportation-container"
-            className="min-h-[150px]"
-            disabled={!canEdit}
-          >
-            {items.filter((item) => item.type === 'transportation').map(renderItem)}
-            {items.filter((item) => item.type === 'transportation').length === 0 && (
-              <EmptyTransportationPlaceholder canEdit={canEdit} />
-            )}
-          </DroppableContainer>
-        </section>
-
-        {/* Drag overlay */}
-        <DragOverlay>{activeItem ? renderItem(activeItem) : null}</DragOverlay>
-      </div>
-
-      {accommodationDialog}
-      {transportationDialog}
+        ) : null}
+      </DragOverlay>
     </DndContext>
-  );
-}
-
-// Placeholder components - used when containers are empty
-function EmptyAccommodationPlaceholder({ canEdit }: { canEdit: boolean }) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-muted-foreground mb-4">
-          No accommodations have been added to this trip yet.
-        </p>
-        {canEdit && (
-          <p className="text-sm text-muted-foreground">
-            Add hotels, Airbnbs, or other places where you'll be staying during your trip. These
-            will also appear in your trip itinerary.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function EmptyTransportationPlaceholder({ canEdit }: { canEdit: boolean }) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-muted-foreground mb-4">
-          No transportation options have been added to this trip yet.
-        </p>
-        {canEdit && (
-          <p className="text-sm text-muted-foreground">
-            Add flights, train tickets, rental cars, or other transportation details for your trip.
-            These will also appear in your trip itinerary.
-          </p>
-        )}
-      </CardContent>
-    </Card>
   );
 }

@@ -4,31 +4,32 @@ import { MembersTab } from '@/components/members-tab';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as Sentry from '@sentry/nextjs';
 import { TripRole } from '@/types/roles';
-
-// Type for members passed from SSR
-interface LocalTripMemberFromSSR {
-  id: string;
-  trip_id: string;
-  user_id: string;
-  role: TripRole;
-  joined_at: string;
-  profiles: {
-    id: string;
-    name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-  } | null;
-}
+import { useTripManagement, adaptTripMembersToSSR } from '@/hooks/use-trip-management';
 
 interface ManageTabContentProps {
   tripId: string;
   canEdit: boolean;
   userRole: TripRole | null;
-  members: LocalTripMemberFromSSR[];
 }
 
-export function ManageTabContent({ tripId, canEdit, userRole, members }: ManageTabContentProps) {
-  const [isLoading, setIsLoading] = useState(true);
+export function ManageTabContent({ tripId, canEdit, userRole }: ManageTabContentProps) {
+  const {
+    members,
+    isLoadingMembers,
+    membersError,
+    addMember,
+    updateMemberRole,
+    removeMember,
+    sendInvitation,
+    refreshMembers,
+    accessRequests,
+    isLoadingAccessRequests,
+    accessRequestsError,
+    respondToRequest,
+    refreshAccessRequests,
+    transferOwnership,
+    isOperationInProgress,
+  } = useTripManagement(tripId);
 
   // Track component load in Sentry
   useEffect(() => {
@@ -44,34 +45,23 @@ export function ManageTabContent({ tripId, canEdit, userRole, members }: ManageT
           membersCount: members?.length,
         },
       });
-
-      // Simulate loading state for SSR hydration
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-
-      return () => {
-        clearTimeout(timer);
-      };
     } catch (error) {
       console.error('Error in ManageTabContent init:', error);
       Sentry.captureException(error, {
         tags: { component: 'ManageTabContent', tripId },
       });
-      setIsLoading(false);
     }
   }, [tripId, canEdit, userRole, members?.length]);
 
-  if (isLoading) {
+  if (isLoadingMembers) {
     return <Skeleton className="h-64 w-full" />;
   }
 
-  // Convert members to the expected type by treating TripRole as GroupMemberRole
-  // This works because they have the same string values, just different TypeScript types
-  const adaptedMembers = members.map((member) => ({
-    ...member,
-    role: member.role as any, // Type assertion to bypass type checking
-  }));
+  if (membersError) {
+    return <div className="text-red-500 p-4">{membersError}</div>;
+  }
+
+  const adaptedMembers = adaptTripMembersToSSR(members);
 
   return (
     <MembersTab

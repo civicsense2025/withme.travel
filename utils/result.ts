@@ -6,6 +6,13 @@ import { getErrorMessage } from './error-handling';
 export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
 
 /**
+ * Type guard to check if a result is successful and narrow the type
+ */
+export function isSuccess<T, E = Error>(result: Result<T, E>): result is { success: true; data: T } {
+  return result.success === true;
+}
+
+/**
  * Creates a successful result
  */
 export function success<T, E = Error>(data: T): Result<T, E> {
@@ -17,6 +24,19 @@ export function success<T, E = Error>(data: T): Result<T, E> {
  */
 export function failure<T, E = Error>(error: E): Result<T, E> {
   return { success: false, error };
+}
+
+/**
+ * Utility to wrap a promise and convert it to a Result
+ * Useful for API calls and other operations that might throw
+ */
+export async function tryCatch<T>(promise: Promise<T>): Promise<Result<T, Error>> {
+  try {
+    const data = await promise;
+    return success(data);
+  } catch (e) {
+    return failure(e instanceof Error ? e : new Error(getErrorMessage(e)));
+  }
 }
 
 /**

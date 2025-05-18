@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { TripVoting } from '@/components/trips';
+import { TripVoting } from '@/components/trips/organisms';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, VoteIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';

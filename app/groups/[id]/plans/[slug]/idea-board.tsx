@@ -21,6 +21,9 @@ import { clientGuestUtils } from '@/utils/guest';
 import { IdeasBoardHelpDialog } from './components/ideas-board-help-dialog';
 import { IdeasPresenceContext, useIdeasPresenceContext } from './context/ideas-presence-context';
 import { API_ROUTES } from '@/utils/constants/routes';
+import { useVotes } from '@/hooks/use-votes';
+import { useGroupIdeas } from '@/hooks/use-group-ideas';
+import { useToast } from '@/components/ui/use-toast';
 
 // Make the grid responsive
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -34,6 +37,11 @@ interface IdeaBoardProps {
 export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaBoardProps) {
   const router = useRouter();
   const supabase = getBrowserClient();
+  const { toast } = useToast();
+  
+  // Use our hooks
+  const { voteOnGroupIdea, isVoting, error: voteError } = useVotes();
+  const { ideas: groupIdeasFromHook, loading: groupIdeasLoading, error: groupIdeasError, createIdea: createGroupIdea, refetch: refetchIdeas } = useGroupIdeas(groupId);
 
   // Setup state
   const [ideas, setIdeas] = useState<GroupIdeaWithVotes[]>([]);
@@ -158,51 +166,80 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
   const handleCreateIdea = useCallback(
     async (ideaData: any) => {
       try {
-        const response = await fetch(API_ROUTES.GROUP_PLAN_IDEAS.CREATE(groupId), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(ideaData),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to create idea: ${response.statusText}`);
+        // Use our group ideas hook to create an idea instead of direct API call
+        const newIdea = await createGroupIdea(ideaData);
+        
+        if (newIdea) {
+          // Close the modal
+          setAddModalOpen(false);
+          toast({
+            title: "Success",
+            description: "Idea created successfully"
+          });
         }
-
-        // Reload ideas to get the new one
-        loadIdeas();
-
-        // Close the modal
-        setAddModalOpen(false);
       } catch (err) {
         console.error('Error creating idea:', err);
-        setError(err instanceof Error ? err.message : 'Failed to create idea');
+        toast({
+          title: "Error",
+          description: err instanceof Error ? err.message : 'Failed to create idea',
+          variant: "destructive"
+        });
       }
     },
-    [groupId, loadIdeas]
+    [groupId, createGroupIdea, toast]
   );
 
-  // Handle voting
+  // Handle voting using the useVotes hook
   const handleVote = useCallback(
     async (ideaId: string, voteType: 'UP' | 'DOWN') => {
-      if (!isAuthenticated) return;
-      try {
-        const response = await fetch(API_ROUTES.GROUP_PLAN_IDEA_VOTES.CREATE(groupId, ideaId), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vote_type: voteType.toLowerCase() }),
+      if (!isAuthenticated) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to vote on ideas",
+          variant: "destructive"
         });
-
-        if (!response.ok) {
-          throw new Error(`Failed to vote: ${response.statusText}`);
+        return;
+      }
+      
+      try {
+        // Use the voting hook instead of direct API call
+        const success = await voteOnGroupIdea(groupId, ideaId, voteType.toLowerCase() as 'up' | 'down');
+        
+        if (success) {
+          // Optimistically update the UI
+          setIdeas(prevIdeas => 
+            prevIdeas.map(idea => {
+              if (idea.id === ideaId) {
+                if (voteType === 'UP') {
+                  return {
+                    ...idea,
+                    votes_up: (idea.votes_up || 0) + 1
+                  };
+                } else {
+                  return {
+                    ...idea,
+                    votes_down: (idea.votes_down || 0) + 1
+                  };
+                }
+              }
+              return idea;
+            })
+          );
+        } else if (voteError) {
+          throw voteError;
         }
       } catch (err) {
-        console.error('Error voting:', err);
-        setError(err instanceof Error ? err.message : 'Failed to vote');
+        console.error('Error voting on idea:', err);
+        toast({
+          title: "Error",
+          description: err instanceof Error ? err.message : 'Failed to vote on idea',
+          variant: "destructive"
+        });
+        // Reload ideas to get the correct vote counts
+        loadIdeas();
       }
     },
-    [groupId, isAuthenticated]
+    [groupId, isAuthenticated, voteOnGroupIdea, voteError, loadIdeas, toast]
   );
 
   // Handle remove vote

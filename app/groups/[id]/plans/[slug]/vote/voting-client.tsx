@@ -26,6 +26,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { CreateTripModal } from './create-trip-modal';
 import { TABLES } from '@/utils/constants/database';
+import { useVotes } from '@/hooks/use-votes';
 
 // Define the types for our data
 type Idea = {
@@ -77,6 +78,9 @@ export default function VotingClient({
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
   const [hasShownMilestone, setHasShownMilestone] = useState(false);
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
+  
+  // Use the voting hook
+  const { isVoting, error: voteError, voteOnGroupIdea } = useVotes();
 
   // Group ideas by their type
   const ideasByType = useMemo(() => {
@@ -208,27 +212,12 @@ export default function VotingClient({
       }
       setUserVotes(newUserVotes);
 
-      const supabase = getBrowserClient();
-
-      // Update vote count on the server
-      const { error } = await supabase
-        .from(TABLES.GROUP_PLAN_IDEAS)
-        .update({
-          votes_up: ideas.find((i) => i.id === ideaId)?.votes_up,
-          votes_down: ideas.find((i) => i.id === ideaId)?.votes_down,
-        })
-        .eq('id', ideaId);
-
-      if (error) throw error;
-
-      // Record the user's vote
-      const { error: voteError } = await supabase.from(TABLES.GROUP_PLAN_IDEA_VOTES).upsert({
-        idea_id: ideaId,
-        user_id: currentUserId,
-        vote_type: voteType,
-      });
-
-      if (voteError) throw voteError;
+      // Use the votes hook to update the vote on the server
+      await voteOnGroupIdea(groupId, ideaId, voteType);
+      
+      if (voteError) {
+        throw voteError;
+      }
     } catch (error) {
       console.error('Error saving vote:', error);
       toast({
@@ -236,6 +225,32 @@ export default function VotingClient({
         description: 'Failed to save your vote. Please try again.',
         variant: 'destructive',
       });
+      
+      // Revert to initial ideas and refetch votes on error
+      setIdeas(initialIdeas);
+      
+      async function revertAndRefetch() {
+        try {
+          const supabase = getBrowserClient();
+          const { data, error } = await supabase
+            .from(TABLES.GROUP_PLAN_IDEA_VOTES)
+            .select('idea_id, vote_type')
+            .eq('user_id', currentUserId);
+
+          if (error) throw error;
+
+          const votes: Votes = {};
+          data.forEach((vote) => {
+            votes[vote.idea_id] = vote.vote_type as VoteType;
+          });
+
+          setUserVotes(votes);
+        } catch (error) {
+          console.error('Error refetching votes:', error);
+        }
+      }
+      
+      revertAndRefetch();
     }
   };
 

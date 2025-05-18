@@ -10,4 +10,14 @@ export * as activities from './activities';
 export * as comments from './comments';
 export * as trips from './trips';
 export * as places from './places';
+
+// Export logistics API functions
+export {
+  addFormToTrip,
+  addAccommodationToTrip,
+  addTransportationToTrip,
+  listLogisticsItems,
+  deleteLogisticsItem
+} from './logistics';
+
 // Add more as needed 

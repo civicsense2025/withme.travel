@@ -1,15 +1,17 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { BudgetTab } from '@/components/budget-tab';
+import { BudgetTab } from '@/components/expenses/budget-tab';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as Sentry from '@sentry/nextjs';
 import { TripRole } from '@/types/roles';
 import { BudgetSnapshotSidebar } from '@/components/ui/features/trips/organisms/BudgetSnapshotSidebar';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useTripBudget, ManualDbExpense, UnifiedExpense } from '@/hooks/use-trip-budget';
+import { useExpenses } from '@/hooks/use-expenses';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Plus, Wallet2 } from 'lucide-react';
+import type { Expense } from '@/lib/api/_shared';
+import { ManualDbExpense } from '@/types/trip';
 
 // Type for members passed from SSR
 interface LocalTripMemberFromSSR {
@@ -30,9 +32,9 @@ interface BudgetTabContentProps {
   tripId: string;
   canEdit: boolean;
   isTripOver: boolean;
-  manualExpenses: ManualDbExpense[];
-  plannedExpenses: UnifiedExpense[];
   members: LocalTripMemberFromSSR[];
+  manualExpenses?: ManualDbExpense[];
+  plannedExpenses?: any[];
   isLoading?: boolean;
   budget?: number | null;
 }
@@ -41,9 +43,9 @@ export function BudgetTabContent({
   tripId,
   canEdit,
   isTripOver,
-  manualExpenses: initialManualExpenses,
-  plannedExpenses: initialPlannedExpenses,
   members: initialMembers,
+  manualExpenses = [],
+  plannedExpenses = [],
   isLoading = false,
   budget: initialBudget = null,
 }: BudgetTabContentProps) {
@@ -51,25 +53,14 @@ export function BudgetTabContent({
   const [showBudgetSheet, setShowBudgetSheet] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Use our centralized budget hook
+  // Use our new expenses hook
   const {
-    budget,
-    manualExpenses,
-    plannedExpenses,
-    members,
-    totalManualSpent,
-    totalPlanned,
-    refreshExpenses,
-  } = useTripBudget({
-    tripId,
-    initialBudget,
-    initialManualExpenses,
-    initialPlannedExpenses,
-    initialMembers: initialMembers.map((member) => ({
-      ...member,
-      role: member.role as any, // Type assertion to bypass type checking
-    })),
-  });
+    expenses,
+    isLoading: isExpensesLoading,
+    error,
+    summary,
+    refresh: refreshExpenses,
+  } = useExpenses(tripId);
 
   // Handle refresh
   const handleBudgetUpdate = () => {
@@ -85,13 +76,12 @@ export function BudgetTabContent({
       level: 'info',
       data: {
         tripId,
-        expensesCount: manualExpenses?.length,
-        plannedExpensesCount: plannedExpenses?.length,
+        expensesCount: expenses?.length,
       },
     });
-  }, [tripId, manualExpenses?.length, plannedExpenses?.length]);
+  }, [tripId, expenses?.length]);
 
-  if (isLoading) {
+  if (isLoading || isExpensesLoading) {
     return <Skeleton className="h-64 w-full" />;
   }
 
@@ -110,10 +100,11 @@ export function BudgetTabContent({
             tripId={tripId}
             canEdit={canEdit}
             isTripOver={isTripOver}
-            manualExpenses={manualExpenses}
-            plannedExpenses={plannedExpenses}
             initialMembers={adaptedMembers}
-            budget={budget}
+            budget={initialBudget}
+            handleBudgetUpdated={handleBudgetUpdate}
+            manualExpenses={manualExpenses} 
+            plannedExpenses={plannedExpenses}
           />
         </div>
         
@@ -122,9 +113,6 @@ export function BudgetTabContent({
           <BudgetSnapshotSidebar
             tripId={tripId}
             initialBudget={initialBudget}
-            initialManualExpenses={initialManualExpenses}
-            initialPlannedExpenses={initialPlannedExpenses}
-            initialMembers={adaptedMembers}
             onBudgetUpdated={handleBudgetUpdate}
             onLogExpenseClick={() => setShowBudgetSheet(true)}
             key={`snapshot-${refreshTrigger}`}

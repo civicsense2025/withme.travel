@@ -11,7 +11,12 @@
 // API Routes - All backend API endpoints
 export const API_ROUTES = {
   // Trip routes
-  TRIPS: '/api/trips',
+  TRIPS: {
+    DETAIL: (tripId: string) => `/api/trips/${tripId}`,
+    ITINERARY: (tripId: string) => `/api/trips/${tripId}/itinerary`,
+    MEMBERS: (tripId: string) => `/api/trips/${tripId}/members`,
+    LOGISTICS: (tripId: string) => `/api/trips/${tripId}/logistics`,
+  },
   TRIP_DETAILS: (tripId: string) => `/api/trips/${tripId}`,
   TRIP_MEMBERS: (tripId: string) => `/api/trips/${tripId}/members`,
   TRIP_ITINERARY: (tripId: string) => `/api/trips/${tripId}/itinerary`,
@@ -19,6 +24,8 @@ export const API_ROUTES = {
   TRIP_BUDGET: (tripId: string) => `/api/trips/${tripId}/budget`,
   BUDGET_ITEM: (tripId: string, itemId: string) => `/api/trips/${tripId}/budget/${itemId}`,
   COLLABORATIVE_NOTES: (tripId: string) => `/api/trips/${tripId}/notes`,
+  TRIP_NOTES: (tripId: string) => `/api/trips/${tripId}/notes`,
+  TRIP_NOTES_COLLABORATION: (tripId: string) => `/api/trips/${tripId}/notes/collaboration`,
   TRIP_MEMBER_INVITE: (tripId: string) => `/api/trips/${tripId}/members/invite`,
   TRIP_TAGS: (tripId: string) => `/api/trips/${tripId}/tags`,
   TRIP_ITINERARY_REORDER: (tripId: string) => `/api/trips/${tripId}/itinerary/reorder`,
@@ -33,6 +40,26 @@ export const API_ROUTES = {
   ITINERARIES: '/api/itineraries',
   ITINERARY_DETAILS: (slug: string) => `/api/itineraries/${slug}`,
   APPLY_TEMPLATE: (slug: string) => `/api/itineraries/${slug}/use`,
+
+  // Comments routes
+  COMMENTS: {
+    LIST: '/api/comments',
+    DETAIL: (id: string) => `/api/comments/${id}`,
+    CREATE: '/api/comments',
+    UPDATE: (id: string) => `/api/comments/${id}`,
+    DELETE: (id: string) => `/api/comments/${id}`,
+    REPLIES: (id: string) => `/api/comments/${id}/replies`,
+    REACTIONS: (id: string) => `/api/comments/${id}/reactions`,
+  },
+
+  // Tasks routes
+  TASKS: {
+    LIST: '/api/tasks',
+    DETAIL: (id: string) => `/api/tasks/${id}`,
+    ASSIGN: (id: string) => `/api/tasks/${id}/assign`,
+    VOTE: (id: string) => `/api/tasks/${id}/vote`,
+    TAGS: (id: string) => `/api/tasks/${id}/tags`,
+  },
 
   // Destination routes
   DESTINATIONS: '/api/destinations',
@@ -89,7 +116,7 @@ export const API_ROUTES = {
 
   // Place routes
   PLACES: '/api/places',
-  PLACE_DETAILS: (id: string) => `/api/places/${id}`,
+  PLACE_DETAILS: (placeId: string) => `/api/places/${placeId}`,
   PLACE_REVIEWS: (id: string) => `/api/places/${id}/reviews`,
 
   // Permission routes
@@ -117,6 +144,10 @@ export const API_ROUTES = {
     MEMBERS: (id: string) => `/api/groups/${id}/members`,
     JOIN: (id: string) => `/api/groups/${id}/join`,
     INVITE: (id: string) => `/api/groups/${id}/invite`,
+    TASKS: {
+      LIST: (groupId: string) => `/api/groups/${groupId}/tasks`,
+      DETAIL: (groupId: string, taskId: string) => `/api/groups/${groupId}/tasks/${taskId}`,
+    },
   },
 
   // Group plan routes
@@ -235,3 +266,15 @@ export const ROUTE_HELPERS = {
     );
   },
 } as const;
+
+// Place routes
+export const PLACE_ROUTES = {
+  PLACES: '/api/places',
+  PLACE_DETAILS: (placeId: string) => `/api/places/${placeId}`,
+  PLACE_LOOKUP_OR_CREATE: '/api/places/lookup-or-create'
+};
+
+// Add to API_ROUTES if it exists
+if (typeof API_ROUTES !== 'undefined') {
+  Object.assign(API_ROUTES, PLACE_ROUTES);
+}

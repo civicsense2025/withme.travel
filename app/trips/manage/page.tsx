@@ -6,7 +6,7 @@ import { requireAuthOrGuest } from '@/utils/auth/route-helpers';
 import { TripTabs } from '../components/TripTabs';
 import { getServerSupabase } from '@/utils/supabase-server';
 import { TABLES } from '@/utils/constants/tables';
-import { getUserTrips } from '@/lib/api';
+import { listTrips } from '@/lib/api/trips';
 
 // We need to tell search engines not to index this authenticated page
 export const metadata: Metadata = {
@@ -28,7 +28,9 @@ export default async function TripsManagePage() {
   
   try {
     // Use our new type-safe data fetching pattern
-    const tripMembers = await getUserTrips(user.id);
+    const result = await listTrips(user.id);
+    if (!result.success) throw new Error(result.error || 'Failed to fetch trips');
+    const tripMembers = result.data.map(trip => ({ trip }));
     
     // Fetch user profile for personalized destinations
     const supabase = await getServerSupabase();

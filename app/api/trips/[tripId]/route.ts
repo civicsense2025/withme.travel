@@ -1,4 +1,3 @@
-import type { Database } from '@/types/database.types';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { type CookieOptions } from '@supabase/ssr';
 import { API_ROUTES } from '@/utils/constants/routes';
@@ -242,7 +241,7 @@ interface Tag {
  * @returns Object with hasAccess boolean and optional role if access granted
  */
 async function checkTripAccess(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient,
   userId: string,
   tripId: string,
   requiredRoles?: Array<(typeof TRIP_ROLES)[keyof typeof TRIP_ROLES]>
@@ -361,9 +360,9 @@ async function createApiRouteClient() {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tripId: string } }
+  context: { params: { tripId: string } }
 ): Promise<NextResponse> {
-  const { tripId } = params;
+  const { tripId } = await context.params;
   try {
     const result = await getTripWithDetails(tripId);
     if (!result.success) {
@@ -384,9 +383,9 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { tripId: string } }
+  context: { params: { tripId: string } }
 ): Promise<NextResponse> {
-  const { tripId } = params;
+  const { tripId } = await context.params;
   try {
     const body = await request.json();
     const result = await updateTripWithDetails(tripId, body);
@@ -408,9 +407,9 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { tripId: string } }
+  context: { params: { tripId: string } }
 ): Promise<NextResponse> {
-  const { tripId } = params;
+  const { tripId } = await context.params;
   try {
     const result = await deleteTrip(tripId);
     if (!result.success) {

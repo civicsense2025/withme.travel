@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivityTimeline } from '@/components/trips';
+import { ActivityTimeline } from '@/components/trips/organisms';
 
 interface ActivityTabContentProps {
   tripId: string;

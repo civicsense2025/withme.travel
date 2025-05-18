@@ -28,6 +28,7 @@ import { CreateTripModal } from './vote/create-trip-modal';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { TABLES } from '@/utils/constants/tables';
 import { useResearchTracking } from '@/hooks/use-research-tracking';
+import { useVotes } from '@/hooks/use-votes';
 
 // Define the types for our data
 type Idea = {
@@ -77,6 +78,9 @@ export default function VotingClient({
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { trackEvent } = useResearchTracking();
+  
+  // Use the voting hook
+  const { isVoting, error: voteError, voteOnGroupIdea } = useVotes();
 
   // Define fetchData function to load ideas, members, and votes
   const fetchData = useCallback(async () => {
@@ -230,20 +234,15 @@ export default function VotingClient({
     );
 
     try {
-      // Use the API route for voting instead of direct Supabase access
-      const response = await fetch(API_ROUTES.GROUP_PLAN_IDEA_VOTES.CREATE(groupId, ideaId), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ vote_type: voteType }),
-      });
+      // Use the votes hook instead of direct API calls
+      const success = await voteOnGroupIdea(groupId, ideaId, voteType);
 
-      if (!response.ok) {
-        throw new Error(`Failed to save vote: ${response.statusText}`);
+      if (success) {
+        trackEvent('itinerary_voted', { ideaId, voteType, groupId });
+      } else if (voteError) {
+        // Handle error from the hook
+        throw voteError;
       }
-
-      trackEvent('itinerary_voted', { ideaId, voteType, groupId });
     } catch (error) {
       console.error('Error saving vote:', error);
       toast({
@@ -251,8 +250,8 @@ export default function VotingClient({
         description: 'Failed to save your vote. Please try again.',
         variant: 'destructive',
       });
-
-      // Call fetchData to reset state on error
+      
+      // Revert the optimistic update if the API call fails
       fetchData();
     }
   };
