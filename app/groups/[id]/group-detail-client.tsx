@@ -388,17 +388,17 @@ export default function GroupDetailClient({
     try {
       setIsLoading(true);
       console.log('Creating new plan for group:', group.id);
-      
+
       // Make sure we have valid data
       const planName = newPlanData.name || `New Plan (${new Date().toLocaleDateString()})`;
       const planDescription = newPlanData.description || '';
-      
+
       // Prepare the payload
       const payload = {
         name: planName,
         description: planDescription,
       };
-      
+
       console.log('Sending plan creation request with payload:', payload);
 
       // First check if user is authenticated before making the request
@@ -429,7 +429,7 @@ export default function GroupDetailClient({
         });
         throw new Error('Authentication failed');
       }
-      
+
       if (res.status === 403) {
         toast({
           title: 'Permission Denied',
@@ -447,7 +447,7 @@ export default function GroupDetailClient({
           statusText: res.statusText,
           data,
         });
-        
+
         // Use specific error message if available
         let errorMessage = 'Failed to create plan';
         if (data.error) {
@@ -457,13 +457,13 @@ export default function GroupDetailClient({
         } else if (data.details) {
           errorMessage = `${errorMessage}: ${JSON.stringify(data.details)}`;
         }
-        
+
         toast({
           title: 'Error Creating Plan',
           description: errorMessage,
           variant: 'destructive',
         });
-        
+
         throw new Error(errorMessage);
       }
 
@@ -707,11 +707,23 @@ export default function GroupDetailClient({
 
           <div className="md:col-span-3 space-y-6">
             <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full justify-start mb-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="ideas">Ideas</TabsTrigger>
-                <TabsTrigger value="members">Members</TabsTrigger>
-              </TabsList>
+              <div className="flex items-center justify-between mb-4">
+                <TabsList className="justify-start">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="ideas">Ideas</TabsTrigger>
+                  <TabsTrigger value="members">Members</TabsTrigger>
+                </TabsList>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/groups/${group.id}/ideas-summary`)}
+                  className="gap-1"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  Ideas Summary
+                </Button>
+              </div>
 
               <TabsContent value="overview" className="space-y-6">
                 <div></div>
@@ -842,345 +854,260 @@ export default function GroupDetailClient({
                 </div>
               </TabsContent>
 
-              <TabsContent value="ideas">
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Group Ideas</h2>
-                    <Button onClick={() => setNewIdeaOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Idea
-                    </Button>
+              <TabsContent value="ideas" className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-xl font-semibold">Ideas</h2>
+                      <div className="flex items-center">
+                        <Link
+                          href={`/groups/${group.id}/ideas-summary`}
+                          className="text-sm text-muted-foreground hover:text-foreground hover:underline flex items-center gap-1"
+                        >
+                          <Lightbulb className="h-3.5 w-3.5" />
+                          View all ideas summary
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button onClick={() => setNewIdeaOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Idea
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search ideas..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8"
+                    />
+                    {searchQuery && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                        onClick={() => setSearchQuery('')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <div className="relative flex-1 min-w-[200px]">
-                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search ideas..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8"
-                      />
-                      {searchQuery && (
+                  <Select
+                    value={selectedPlanFilter === null ? 'all_plans' : selectedPlanFilter}
+                    onValueChange={(value) =>
+                      setSelectedPlanFilter(value === 'all_plans' ? null : value)
+                    }
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all_plans">All plans</SelectItem>
+                      <SelectItem value="null">Unassigned</SelectItem>
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={selectedTypeFilter === null ? 'all_types' : selectedTypeFilter}
+                    onValueChange={(value) =>
+                      setSelectedTypeFilter(value === 'all_types' ? null : value)
+                    }
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all_types">All types</SelectItem>
+                      <SelectItem value="DESTINATION">Destination</SelectItem>
+                      <SelectItem value="DATE">Date</SelectItem>
+                      <SelectItem value="ACTIVITY">Activity</SelectItem>
+                      <SelectItem value="BUDGET">Budget</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(searchQuery || selectedPlanFilter || selectedTypeFilter) && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {searchQuery && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        Search: {searchQuery}
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                          className="h-4 w-4 ml-1 p-0"
                           onClick={() => setSearchQuery('')}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3" />
                         </Button>
-                      )}
-                    </div>
+                      </Badge>
+                    )}
 
-                    <Select
-                      value={selectedPlanFilter === null ? 'all_plans' : selectedPlanFilter}
-                      onValueChange={(value) =>
-                        setSelectedPlanFilter(value === 'all_plans' ? null : value)
-                      }
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter by plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all_plans">All plans</SelectItem>
-                        <SelectItem value="null">Unassigned</SelectItem>
-                        {plans.map((plan) => (
-                          <SelectItem key={plan.id} value={plan.id}>
-                            {plan.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {selectedPlanFilter && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        Plan:{' '}
+                        {selectedPlanFilter === 'null'
+                          ? 'Unassigned'
+                          : getPlanName(selectedPlanFilter)}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 ml-1 p-0"
+                          onClick={() => setSelectedPlanFilter(null)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    )}
 
-                    <Select
-                      value={selectedTypeFilter === null ? 'all_types' : selectedTypeFilter}
-                      onValueChange={(value) =>
-                        setSelectedTypeFilter(value === 'all_types' ? null : value)
-                      }
+                    {selectedTypeFilter && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        Type:{' '}
+                        {selectedTypeFilter.charAt(0) + selectedTypeFilter.slice(1).toLowerCase()}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 ml-1 p-0"
+                          onClick={() => setSelectedTypeFilter(null)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    )}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedPlanFilter(null);
+                        setSelectedTypeFilter(null);
+                      }}
                     >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter by type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all_types">All types</SelectItem>
-                        <SelectItem value="DESTINATION">Destination</SelectItem>
-                        <SelectItem value="DATE">Date</SelectItem>
-                        <SelectItem value="ACTIVITY">Activity</SelectItem>
-                        <SelectItem value="BUDGET">Budget</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      Clear all
+                    </Button>
                   </div>
+                )}
 
-                  {(searchQuery || selectedPlanFilter || selectedTypeFilter) && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {searchQuery && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          Search: {searchQuery}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 ml-1 p-0"
-                            onClick={() => setSearchQuery('')}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      )}
-
-                      {selectedPlanFilter && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          Plan:{' '}
-                          {selectedPlanFilter === 'null'
-                            ? 'Unassigned'
-                            : getPlanName(selectedPlanFilter)}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 ml-1 p-0"
-                            onClick={() => setSelectedPlanFilter(null)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      )}
-
-                      {selectedTypeFilter && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          Type:{' '}
-                          {selectedTypeFilter.charAt(0) + selectedTypeFilter.slice(1).toLowerCase()}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 ml-1 p-0"
-                            onClick={() => setSelectedTypeFilter(null)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      )}
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSelectedPlanFilter(null);
-                          setSelectedTypeFilter(null);
-                        }}
-                      >
-                        Clear all
-                      </Button>
-                    </div>
-                  )}
-
-                  {ideasLoading ? (
-                    <div className="flex justify-center py-10">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  ) : ideasError ? (
-                    <div className="text-center py-10 text-muted-foreground">
-                      <p>{ideasError}</p>
-                    </div>
-                  ) : filteredIdeas.length > 0 ? (
-                    <div className="border rounded-md overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Plan</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead>Votes</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredIdeas.map((idea) => (
-                            <TableRow key={idea.id}>
-                              <TableCell className="font-medium">{idea.title}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {idea.type.charAt(0) + idea.type.slice(1).toLowerCase()}
+                {ideasLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : ideasError ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <p>{ideasError}</p>
+                  </div>
+                ) : filteredIdeas.length > 0 ? (
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Plan</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Votes</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredIdeas.map((idea) => (
+                          <TableRow key={idea.id}>
+                            <TableCell className="font-medium">{idea.title}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {idea.type.charAt(0) + idea.type.slice(1).toLowerCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {idea.plan_id ? (
+                                <Link href={`/groups/${group.id}/plans/${idea.plan_id}`}>
+                                  <span className="text-primary hover:underline">
+                                    {getPlanName(idea.plan_id)}
+                                  </span>
+                                </Link>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">Unassigned</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{new Date(idea.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                                >
+                                  +{idea.votes_up || 0}
                                 </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {idea.plan_id ? (
-                                  <Link href={`/groups/${group.id}/plans/${idea.plan_id}`}>
-                                    <span className="text-primary hover:underline">
-                                      {getPlanName(idea.plan_id)}
-                                    </span>
-                                  </Link>
-                                ) : (
-                                  <span className="text-muted-foreground text-sm">Unassigned</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {new Date(idea.created_at).toLocaleDateString()}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                                  >
-                                    +{idea.votes_up || 0}
-                                  </Badge>
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
-                                  >
-                                    -{idea.votes_down || 0}
-                                  </Badge>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    {idea.plan_id ? (
-                                      <DropdownMenuItem asChild>
-                                        <Link href={`/groups/${group.id}/plans/${idea.plan_id}`}>
-                                          View in Plan
-                                        </Link>
-                                      </DropdownMenuItem>
-                                    ) : (
-                                      <DropdownMenuItem>Assign to Plan</DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem className="text-red-600">
-                                      Delete
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                                >
+                                  -{idea.votes_down || 0}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {idea.plan_id ? (
+                                    <DropdownMenuItem asChild>
+                                      <Link href={`/groups/${group.id}/plans/${idea.plan_id}`}>
+                                        View in Plan
+                                      </Link>
                                     </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <EmptyState
-                      title="No ideas found"
-                      description={
-                        searchQuery || selectedPlanFilter || selectedTypeFilter
-                          ? 'Try adjusting your filters'
-                          : 'Add your first idea to get started'
-                      }
-                      action={
-                        <Button onClick={() => setNewIdeaOpen(true)}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Idea
-                        </Button>
-                      }
-                    />
-                  )}
-                </div>
-
-                <Dialog open={newIdeaOpen} onOpenChange={setNewIdeaOpen}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Idea</DialogTitle>
-                      <DialogDescription>
-                        Add a new idea to your group. You can assign it to a specific plan or keep
-                        it unassigned.
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    <form onSubmit={handleAddIdea} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="title">Title</Label>
-                        <Input
-                          id="title"
-                          value={newIdeaData.title}
-                          onChange={(e) =>
-                            setNewIdeaData({ ...newIdeaData, title: e.target.value })
-                          }
-                          placeholder="Enter idea title"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Description (optional)</Label>
-                        <Textarea
-                          id="description"
-                          value={newIdeaData.description}
-                          onChange={(e) =>
-                            setNewIdeaData({ ...newIdeaData, description: e.target.value })
-                          }
-                          placeholder="Describe your idea..."
-                          rows={3}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="type">Type</Label>
-                        <Select
-                          value={newIdeaData.type}
-                          onValueChange={(value) => setNewIdeaData({ ...newIdeaData, type: value })}
-                        >
-                          <SelectTrigger id="type">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="DESTINATION">Destination</SelectItem>
-                            <SelectItem value="DATE">Date</SelectItem>
-                            <SelectItem value="ACTIVITY">Activity</SelectItem>
-                            <SelectItem value="BUDGET">Budget</SelectItem>
-                            <SelectItem value="OTHER">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="plan">Plan (optional)</Label>
-                        <Select
-                          value={newIdeaData.plan_id === null ? 'none' : newIdeaData.plan_id}
-                          onValueChange={(value) => {
-                            const updatedData = {
-                              ...newIdeaData,
-                              plan_id: value === 'none' ? null : value,
-                            };
-                            setNewIdeaData(updatedData);
-                          }}
-                        >
-                          <SelectTrigger id="plan">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No plan / Unassigned</SelectItem>
-                            {plans.map((plan) => (
-                              <SelectItem key={plan.id} value={plan.id}>
-                                {plan.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <DialogFooter>
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Creating...
-                            </>
-                          ) : (
-                            'Create Idea'
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                                  ) : (
+                                    <DropdownMenuItem>Assign to Plan</DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>Edit</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-red-600">
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="No ideas found"
+                    description={
+                      searchQuery || selectedPlanFilter || selectedTypeFilter
+                        ? 'Try adjusting your filters'
+                        : 'Add your first idea to get started'
+                    }
+                    action={
+                      <Button onClick={() => setNewIdeaOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Idea
+                      </Button>
+                    }
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="members">{/* ... existing members content ... */}</TabsContent>

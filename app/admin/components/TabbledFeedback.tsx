@@ -105,17 +105,18 @@ export function TabbledFeedback() {
     // Try to get name from response data
     if (response.data && typeof response.data === 'object') {
       // Look for common name fields in the response data
-      const nameField = response.data.name || 
-                         response.data.fullName || 
-                         response.data.user_name || 
-                         response.data.userName;
-      
+      const nameField =
+        response.data.name ||
+        response.data.fullName ||
+        response.data.user_name ||
+        response.data.userName;
+
       if (nameField) return nameField;
     }
-    
+
     // Fallback to first initial if we have a user_id
     if (response.user_id) return response.user_id.substring(0, 1).toUpperCase();
-    
+
     // Default fallback
     return 'A';
   };
@@ -222,8 +223,8 @@ export function TabbledFeedback() {
                       {Object.keys(response.data || {}).length} answers
                     </Badge>
                     {response.status ? (
-                      <Badge 
-                        variant={response.status === 'completed' ? 'secondary' : 'outline'} 
+                      <Badge
+                        variant={response.status === 'completed' ? 'secondary' : 'outline'}
                         className="text-xs ml-2"
                       >
                         {response.status.charAt(0).toUpperCase() + response.status.slice(1)}

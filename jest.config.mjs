@@ -18,7 +18,7 @@ const customJestConfig = {
 
   // Handle React server components that use the "use client" directive
   transformIgnorePatterns: [
-    '/node_modules/(?!(@radix-ui|tailwindcss|class-variance-authority|react-day-picker)/)'
+    '/node_modules/(?!(@radix-ui|tailwindcss|class-variance-authority|react-day-picker)/)',
   ],
 
   // Ignore app/package.json to avoid Haste module naming collision
@@ -34,7 +34,7 @@ const customJestConfig = {
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
     '^@/styles/(.*)$': '<rootDir>/styles/$1',
-    '^@/utils/(.*)$': '<rootDir>/utils/$1'
+    '^@/utils/(.*)$': '<rootDir>/utils/$1',
   },
 
   testEnvironment: 'jest-environment-jsdom',

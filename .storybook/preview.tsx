@@ -1,20 +1,22 @@
 import React from 'react';
-import type { Preview } from "@storybook/react";
-import { ThemeProvider } from "../components/theme-provider";
+import type { Preview } from '@storybook/react';
+import { ThemeProvider } from '../components/theme-provider';
 import { fn } from '@storybook/test';
 import { withThemeByClassName } from '@storybook/addon-themes';
 import { themes } from '@storybook/theming';
 
 // Import CSS files in the correct order
-import "../app/globals.css";    // App-specific global styles second
-import "./storybook.css";       // Storybook-specific styles last
+import '../app/globals.css'; // App-specific global styles second
+import './storybook.css'; // Storybook-specific styles last
 
 // Create the wrapper with storybook-specific class
-const StorybookWrapper = ({ theme, children }: { theme: 'light' | 'dark', children: React.ReactNode }) => (
-  <div className={`withme-storybook-wrapper storybook-container ${theme}`}>
-    {children}
-  </div>
-);
+const StorybookWrapper = ({
+  theme,
+  children,
+}: {
+  theme: 'light' | 'dark';
+  children: React.ReactNode;
+}) => <div className={`withme-storybook-wrapper storybook-container ${theme}`}>{children}</div>;
 
 const preview: Preview = {
   parameters: {
@@ -36,7 +38,7 @@ const preview: Preview = {
     darkMode: {
       current: 'light',
       dark: { ...themes.dark },
-      light: { ...themes.light }
+      light: { ...themes.light },
     },
     // Ensure docs are properly rendered
     docs: {
@@ -51,12 +53,7 @@ const preview: Preview = {
   },
   decorators: [
     (Story) => (
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <div className="p-4 flex justify-center items-center min-h-[100px]">
           <Story />
         </div>
@@ -101,4 +98,4 @@ const preview: Preview = {
   },
 };
 
-export default preview; 
+export default preview;

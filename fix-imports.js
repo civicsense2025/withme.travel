@@ -23,18 +23,18 @@ const componentMappings = {
 function findTsxFiles(dir) {
   let results = [];
   const files = fs.readdirSync(dir);
-  
+
   for (const file of files) {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
-    
+
     if (stat.isDirectory()) {
       results = results.concat(findTsxFiles(filePath));
     } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
       results.push(filePath);
     }
   }
-  
+
   return results;
 }
 
@@ -53,40 +53,45 @@ function findFilesWithRelativeImports() {
 // List all files with relative imports
 console.log('Files with relative imports:');
 const filesWithRelativeImports = findFilesWithRelativeImports();
-filesWithRelativeImports.forEach(file => {
+filesWithRelativeImports.forEach((file) => {
   console.log(` - ${path.relative(process.cwd(), file)}`);
 });
 
 // List all component files in the ui/features directory for reference
 console.log('\nAvailable UI components:');
-exec(`find ${uiComponentsDir}/features -name "*.tsx" | grep -v ".stories.tsx" | sort`, (error, stdout) => {
-  console.log(stdout);
-});
+exec(
+  `find ${uiComponentsDir}/features -name "*.tsx" | grep -v ".stories.tsx" | sort`,
+  (error, stdout) => {
+    console.log(stdout);
+  }
+);
 
-console.log('\nTo fix imports, look at the relative paths in each file and update the componentMappings object in this script.');
+console.log(
+  '\nTo fix imports, look at the relative paths in each file and update the componentMappings object in this script.'
+);
 console.log('Then run this script with the --fix flag to automatically update the imports.');
 
 // If --fix flag is provided, fix the imports
 if (process.argv.includes('--fix')) {
   console.log('\nFixing imports...');
-  
-  filesWithRelativeImports.forEach(file => {
+
+  filesWithRelativeImports.forEach((file) => {
     let content = fs.readFileSync(file, 'utf8');
     let modified = false;
-    
+
     for (const [oldImport, newImport] of Object.entries(componentMappings)) {
       const regex = new RegExp(`from\\s+['"](${oldImport.replace('.', '\\.')})['"](;?)`, 'g');
       const newContent = content.replace(regex, `from '${newImport}'$2`);
-      
+
       if (newContent !== content) {
         content = newContent;
         modified = true;
         console.log(`Updated imports in ${path.relative(process.cwd(), file)}`);
       }
     }
-    
+
     if (modified) {
       fs.writeFileSync(file, content);
     }
   });
-} 
+}

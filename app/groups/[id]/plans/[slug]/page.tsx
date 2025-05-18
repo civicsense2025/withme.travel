@@ -9,7 +9,9 @@ export default async function PlanDetailPage({ params }: { params: { id: string;
   let guestToken = null;
 
   try {
-    const planRes = await fetch(`/api/groups/${params.id}/plans/${params.slug}`, { cache: 'no-store' });
+    const planRes = await fetch(`/api/groups/${params.id}/plans/${params.slug}`, {
+      cache: 'no-store',
+    });
     if (planRes.ok) {
       const planData = await planRes.json();
       plan = planData.plan;
@@ -17,7 +19,9 @@ export default async function PlanDetailPage({ params }: { params: { id: string;
       isAuthenticated = planData.isAuthenticated || false;
       guestToken = planData.guestToken || null;
     }
-    const ideasRes = await fetch(`/api/groups/${params.id}/plans/${params.slug}/ideas`, { cache: 'no-store' });
+    const ideasRes = await fetch(`/api/groups/${params.id}/plans/${params.slug}/ideas`, {
+      cache: 'no-store',
+    });
     if (ideasRes.ok) {
       const ideasData = await ideasRes.json();
       ideas = ideasData.ideas || [];

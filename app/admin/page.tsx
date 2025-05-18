@@ -11,7 +11,7 @@ import { redirect } from 'next/navigation';
 export default async function AdminPage() {
   // Server-side admin check to ensure redirect happens correctly
   const { isAdmin } = await checkAdminAuth();
-  
+
   // Redirect if not admin - this ensures the server-side redirect works
   if (!isAdmin) {
     redirect('/login?redirectTo=/admin');

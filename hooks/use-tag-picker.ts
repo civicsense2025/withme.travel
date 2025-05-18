@@ -2,7 +2,7 @@
 
 /**
  * Tag Picker Hook
- * 
+ *
  * React hook for managing tag selection with suggestions and data management
  */
 
@@ -73,14 +73,14 @@ export function useTagPicker({
   // State for search query and selected tags
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
-  
+
   // Track loading states for individual tags
   const [addingTags, setAddingTags] = useState<Record<string, boolean>>({});
   const [removingTags, setRemovingTags] = useState<Record<string, boolean>>({});
-  
+
   // Debounce search query to avoid excessive API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
+
   // Get tag data from the tags hook
   const {
     tags: allTags,
@@ -94,120 +94,132 @@ export function useTagPicker({
     entityId,
     fetchOnMount,
   });
-  
+
   // When search query changes, fetch suggestions
   useEffect(() => {
     if (debouncedSearchQuery) {
       searchTagsFromApi(debouncedSearchQuery);
     }
   }, [debouncedSearchQuery, searchTagsFromApi]);
-  
+
   // When selected tags change, call onChange callback
   useEffect(() => {
     onChange?.(selectedTags);
   }, [selectedTags, onChange]);
-  
+
   // Add a tag to selection
-  const addTag = useCallback(async (tag: string): Promise<boolean> => {
-    // Skip if already selected
-    if (selectedTags.includes(tag)) {
-      return true;
-    }
-    
-    // Update local state optimistically
-    setSelectedTags(prev => [...prev, tag]);
-    
-    // If no entity ID, just update local state (new entity)
-    if (!entityId) {
-      return true;
-    }
-    
-    // Track loading state
-    setAddingTags(prev => ({ ...prev, [tag]: true }));
-    
-    try {
-      // Add to remote entity
-      const result = await addTagToEntity(entityType, entityId, tag);
-      
-      // Revert if failed
-      if (!result || !result.success) {
-        setSelectedTags(prev => prev.filter(t => t !== tag));
-        return false;
+  const addTag = useCallback(
+    async (tag: string): Promise<boolean> => {
+      // Skip if already selected
+      if (selectedTags.includes(tag)) {
+        return true;
       }
-      
-      return true;
-    } finally {
-      // Clear loading state
-      setAddingTags(prev => ({ ...prev, [tag]: false }));
-    }
-  }, [selectedTags, entityId, entityType, addTagToEntity]);
-  
+
+      // Update local state optimistically
+      setSelectedTags((prev) => [...prev, tag]);
+
+      // If no entity ID, just update local state (new entity)
+      if (!entityId) {
+        return true;
+      }
+
+      // Track loading state
+      setAddingTags((prev) => ({ ...prev, [tag]: true }));
+
+      try {
+        // Add to remote entity
+        const result = await addTagToEntity(entityType, entityId, tag);
+
+        // Revert if failed
+        if (!result || !result.success) {
+          setSelectedTags((prev) => prev.filter((t) => t !== tag));
+          return false;
+        }
+
+        return true;
+      } finally {
+        // Clear loading state
+        setAddingTags((prev) => ({ ...prev, [tag]: false }));
+      }
+    },
+    [selectedTags, entityId, entityType, addTagToEntity]
+  );
+
   // Remove a tag from selection
-  const removeTag = useCallback(async (tag: string): Promise<boolean> => {
-    // Skip if not selected
-    if (!selectedTags.includes(tag)) {
-      return true;
-    }
-    
-    // Update local state optimistically
-    setSelectedTags(prev => prev.filter(t => t !== tag));
-    
-    // If no entity ID, just update local state (new entity)
-    if (!entityId) {
-      return true;
-    }
-    
-    // Track loading state
-    setRemovingTags(prev => ({ ...prev, [tag]: true }));
-    
-    try {
-      // Remove from remote entity
-      const result = await removeTagFromEntity(entityType, entityId, tag);
-      
-      // Revert if failed
-      if (!result || !result.success) {
-        setSelectedTags(prev => [...prev, tag]);
-        return false;
+  const removeTag = useCallback(
+    async (tag: string): Promise<boolean> => {
+      // Skip if not selected
+      if (!selectedTags.includes(tag)) {
+        return true;
       }
-      
-      return true;
-    } finally {
-      // Clear loading state
-      setRemovingTags(prev => ({ ...prev, [tag]: false }));
-    }
-  }, [selectedTags, entityId, entityType, removeTagFromEntity]);
-  
+
+      // Update local state optimistically
+      setSelectedTags((prev) => prev.filter((t) => t !== tag));
+
+      // If no entity ID, just update local state (new entity)
+      if (!entityId) {
+        return true;
+      }
+
+      // Track loading state
+      setRemovingTags((prev) => ({ ...prev, [tag]: true }));
+
+      try {
+        // Remove from remote entity
+        const result = await removeTagFromEntity(entityType, entityId, tag);
+
+        // Revert if failed
+        if (!result || !result.success) {
+          setSelectedTags((prev) => [...prev, tag]);
+          return false;
+        }
+
+        return true;
+      } finally {
+        // Clear loading state
+        setRemovingTags((prev) => ({ ...prev, [tag]: false }));
+      }
+    },
+    [selectedTags, entityId, entityType, removeTagFromEntity]
+  );
+
   // Clear all selected tags
   const clearTags = useCallback(() => {
     setSelectedTags([]);
   }, []);
-  
+
   // Check if a tag is being added
-  const isAddingTag = useCallback((tag: string) => {
-    return Boolean(addingTags[tag]);
-  }, [addingTags]);
-  
+  const isAddingTag = useCallback(
+    (tag: string) => {
+      return Boolean(addingTags[tag]);
+    },
+    [addingTags]
+  );
+
   // Check if a tag is being removed
-  const isRemovingTag = useCallback((tag: string) => {
-    return Boolean(removingTags[tag]);
-  }, [removingTags]);
-  
+  const isRemovingTag = useCallback(
+    (tag: string) => {
+      return Boolean(removingTags[tag]);
+    },
+    [removingTags]
+  );
+
   // Get suggestions based on tags from API and search query
   const suggestions = useMemo(() => {
-    const tagNames = allTags?.map(tag => tag.name) || [];
+    const tagNames = allTags?.map((tag) => tag.name) || [];
     // Filter by search query and exclude already selected tags
-    return tagNames.filter(tag => 
-      !selectedTags.includes(tag) && 
-      (!debouncedSearchQuery || 
-        tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
+    return tagNames.filter(
+      (tag) =>
+        !selectedTags.includes(tag) &&
+        (!debouncedSearchQuery || tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
     );
   }, [allTags, selectedTags, debouncedSearchQuery]);
-  
+
   // Trigger search
   const searchTags = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
-  
+
   return {
     selectedTags,
     suggestions,
@@ -220,4 +232,4 @@ export function useTagPicker({
     clearTags,
     error,
   };
-} 
+}

@@ -3,7 +3,11 @@ import type { Result } from './result';
 import { handleApiResponse } from './index';
 
 // Vote on a group idea
-export async function submitGroupIdeaVote(groupId: string, ideaId: string, voteType: 'up' | 'down'): Promise<Result<any>> {
+export async function submitGroupIdeaVote(
+  groupId: string,
+  ideaId: string,
+  voteType: 'up' | 'down'
+): Promise<Result<any>> {
   return tryCatch(
     fetch(`/api/groups/${groupId}/ideas/${ideaId}/vote`, {
       method: 'POST',
@@ -14,7 +18,10 @@ export async function submitGroupIdeaVote(groupId: string, ideaId: string, voteT
 }
 
 // Vote on a task
-export async function submitTaskVote(taskId: string, voteType: 'up' | 'down'): Promise<Result<any>> {
+export async function submitTaskVote(
+  taskId: string,
+  voteType: 'up' | 'down'
+): Promise<Result<any>> {
   return tryCatch(
     fetch(`/api/tasks/${taskId}/vote`, {
       method: 'POST',
@@ -22,4 +29,4 @@ export async function submitTaskVote(taskId: string, voteType: 'up' | 'down'): P
       body: JSON.stringify({ voteType }),
     }).then((response) => handleApiResponse<any>(response))
   );
-} 
+}

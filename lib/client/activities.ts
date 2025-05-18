@@ -1,6 +1,6 @@
 /**
  * Activities API Client
- * 
+ *
  * Client-side wrapper for the Activities API providing type-safe access to activity operations
  */
 
@@ -53,7 +53,7 @@ export interface ActivityRecommendationParams {
 
 /**
  * List all activities for a parent entity
- * 
+ *
  * @param parentId - ID of the parent entity (trip or group)
  * @param parentType - Type of the parent entity ('trip' or 'group')
  */
@@ -64,28 +64,28 @@ export async function listActivities(
   return tryCatch(
     fetch(`/api/activities?parentId=${parentId}&parentType=${parentType}`, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Activity[]>(response))
   );
 }
 
 /**
  * Get a specific activity by ID
- * 
+ *
  * @param activityId - ID of the activity to retrieve
  */
 export async function getActivity(activityId: string): Promise<Result<Activity>> {
   return tryCatch(
     fetch(`/api/activities/${activityId}`, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Activity>(response))
   );
 }
 
 /**
  * Create a new activity
- * 
+ *
  * @param parentId - ID of the parent entity (trip or group)
  * @param parentType - Type of the parent entity ('trip' or 'group')
  * @param data - Activity data
@@ -101,15 +101,15 @@ export async function createActivity(
       ...API_SETTINGS.DEFAULT_OPTIONS,
       body: JSON.stringify({
         ...data,
-        [`${parentType}_id`]: parentId
-      })
+        [`${parentType}_id`]: parentId,
+      }),
     }).then((response) => handleApiResponse<Activity>(response))
   );
 }
 
 /**
  * Update an existing activity
- * 
+ *
  * @param activityId - ID of the activity to update
  * @param data - Updated activity data
  */
@@ -121,51 +121,51 @@ export async function updateActivity(
     fetch(`/api/activities/${activityId}`, {
       method: 'PATCH',
       ...API_SETTINGS.DEFAULT_OPTIONS,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     }).then((response) => handleApiResponse<Activity>(response))
   );
 }
 
 /**
  * Delete an activity
- * 
+ *
  * @param activityId - ID of the activity to delete
  */
 export async function deleteActivity(activityId: string): Promise<Result<void>> {
   return tryCatch(
     fetch(`/api/activities/${activityId}`, {
       method: 'DELETE',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<void>(response))
   );
 }
 
 /**
  * Search for activities
- * 
+ *
  * @param params - Search parameters
  */
 export async function searchActivities(params: ActivitySearchParams): Promise<Result<Activity[]>> {
   const searchParams = new URLSearchParams({
-    q: params.query
+    q: params.query,
   });
-  
+
   if (params.category) searchParams.append('category', params.category);
   if (params.location) searchParams.append('location', params.location);
   if (params.limit) searchParams.append('limit', params.limit.toString());
   if (params.offset) searchParams.append('offset', params.offset.toString());
-  
+
   return tryCatch(
     fetch(`/api/activities/search?${searchParams.toString()}`, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Activity[]>(response))
   );
 }
 
 /**
  * Suggest a new activity
- * 
+ *
  * @param parentId - ID of the parent entity (trip or group)
  * @param parentType - Type of the parent entity ('trip' or 'group')
  * @param suggestion - Activity suggestion data
@@ -183,15 +183,15 @@ export async function suggestActivity(
         ...suggestion,
         [`${parentType}_id`]: parentId,
         is_suggestion: true,
-        status: 'suggested'
-      })
+        status: 'suggested',
+      }),
     }).then((response) => handleApiResponse<Activity>(response))
   );
 }
 
 /**
  * Vote on a suggested activity
- * 
+ *
  * @param activityId - ID of the activity to vote on
  * @param vote - Vote direction ('up' or 'down')
  */
@@ -203,14 +203,14 @@ export async function voteOnActivity(
     fetch(`/api/activities/${activityId}/vote`, {
       method: 'POST',
       ...API_SETTINGS.DEFAULT_OPTIONS,
-      body: JSON.stringify({ vote })
+      body: JSON.stringify({ vote }),
     }).then((response) => handleApiResponse<{ activityId: string; vote: string }>(response))
   );
 }
 
 /**
  * Generate activity ideas for a destination
- * 
+ *
  * @param destinationId - ID of the destination
  * @param tripId - Optional trip ID for context
  */
@@ -224,31 +224,31 @@ export async function generateActivityIdeas(
       ...API_SETTINGS.DEFAULT_OPTIONS,
       body: JSON.stringify({
         destinationId,
-        tripId
-      })
+        tripId,
+      }),
     }).then((response) => handleApiResponse<{ activities: Activity[] }>(response))
   );
 }
 
 /**
  * Get recommended activities
- * 
+ *
  * @param params - Recommendation parameters
  */
 export async function getRecommendedActivities(
   params: ActivityRecommendationParams
 ): Promise<Result<Activity[]>> {
   const queryParams = new URLSearchParams({
-    tripId: params.tripId
+    tripId: params.tripId,
   });
-  
+
   if (params.limit) queryParams.append('limit', params.limit.toString());
   if (params.category) queryParams.append('category', params.category);
-  
+
   return tryCatch(
     fetch(`/api/activities/recommended?${queryParams.toString()}`, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Activity[]>(response))
   );
 }
@@ -260,51 +260,72 @@ export async function listTripActivities(tripId: string): Promise<Result<Activit
   return tryCatch(
     fetch(`${API_ROUTES.TRIPS.DETAIL(tripId)}/activities`, {
       method: 'GET',
-    }).then((response) => handleApiResponse<{ activities: Activity[] }>(response).then(r => r.activities))
+    }).then((response) =>
+      handleApiResponse<{ activities: Activity[] }>(response).then((r) => r.activities)
+    )
   );
 }
 
 /**
  * Get a specific activity for a trip
  */
-export async function getTripActivity(tripId: string, activityId: string): Promise<Result<Activity>> {
+export async function getTripActivity(
+  tripId: string,
+  activityId: string
+): Promise<Result<Activity>> {
   return tryCatch(
     fetch(`${API_ROUTES.TRIPS.DETAIL(tripId)}/activities/${activityId}`, {
       method: 'GET',
-    }).then((response) => handleApiResponse<{ activity: Activity }>(response).then(r => r.activity))
+    }).then((response) =>
+      handleApiResponse<{ activity: Activity }>(response).then((r) => r.activity)
+    )
   );
 }
 
 /**
  * Create a new activity for a trip
  */
-export async function createTripActivity(tripId: string, data: Partial<Activity>): Promise<Result<Activity>> {
+export async function createTripActivity(
+  tripId: string,
+  data: Partial<Activity>
+): Promise<Result<Activity>> {
   return tryCatch(
     fetch(`${API_ROUTES.TRIPS.DETAIL(tripId)}/activities`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    }).then((response) => handleApiResponse<{ activity: Activity }>(response).then(r => r.activity))
+    }).then((response) =>
+      handleApiResponse<{ activity: Activity }>(response).then((r) => r.activity)
+    )
   );
 }
 
 /**
  * Update an existing activity for a trip
  */
-export async function updateTripActivity(tripId: string, activityId: string, data: Partial<Activity>): Promise<Result<Activity>> {
+export async function updateTripActivity(
+  tripId: string,
+  activityId: string,
+  data: Partial<Activity>
+): Promise<Result<Activity>> {
   return tryCatch(
     fetch(`${API_ROUTES.TRIPS.DETAIL(tripId)}/activities/${activityId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    }).then((response) => handleApiResponse<{ activity: Activity }>(response).then(r => r.activity))
+    }).then((response) =>
+      handleApiResponse<{ activity: Activity }>(response).then((r) => r.activity)
+    )
   );
 }
 
 /**
  * Delete an activity for a trip
  */
-export async function deleteTripActivity(tripId: string, activityId: string): Promise<Result<null>> {
+export async function deleteTripActivity(
+  tripId: string,
+  activityId: string
+): Promise<Result<null>> {
   return tryCatch(
     fetch(`${API_ROUTES.TRIPS.DETAIL(tripId)}/activities/${activityId}`, {
       method: 'DELETE',
@@ -316,7 +337,7 @@ export async function deleteTripActivity(tripId: string, activityId: string): Pr
  * Generate activity suggestions for a trip
  */
 export async function generateActivitySuggestions(
-  tripId: string, 
+  tripId: string,
   params: { count?: number; category?: string }
 ): Promise<Result<Activity[]>> {
   const queryParams = new URLSearchParams();
@@ -326,6 +347,8 @@ export async function generateActivitySuggestions(
   return tryCatch(
     fetch(`${API_ROUTES.TRIPS.DETAIL(tripId)}/activities/suggestions?${queryParams.toString()}`, {
       method: 'GET',
-    }).then((response) => handleApiResponse<{ suggestions: Activity[] }>(response).then(r => r.suggestions))
+    }).then((response) =>
+      handleApiResponse<{ suggestions: Activity[] }>(response).then((r) => r.suggestions)
+    )
   );
-} 
+}

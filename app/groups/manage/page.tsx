@@ -31,7 +31,9 @@ export default async function GroupsManagePage() {
   let isGuestMode = false;
 
   try {
-    let url = user ? `${getBaseUrl()}/api/groups` : `${getBaseUrl()}/api/groups?guestToken=${guestToken}`;
+    let url = user
+      ? `${getBaseUrl()}/api/groups`
+      : `${getBaseUrl()}/api/groups?guestToken=${guestToken}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();

@@ -40,7 +40,7 @@ export function getColorToken(
   mode: ThemeMode = 'light'
 ): string {
   // Make sure mode is a valid value
-  const safeMode: ThemeMode = (mode && (mode === 'light' || mode === 'dark')) ? mode : 'light';
+  const safeMode: ThemeMode = mode && (mode === 'light' || mode === 'dark') ? mode : 'light';
   return COLORS[safeMode][color] ?? COLORS.light[color];
 }
 

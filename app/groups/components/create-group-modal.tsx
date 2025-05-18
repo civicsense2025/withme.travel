@@ -48,12 +48,12 @@ export default function CreateGroupModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       setError('Group name is required');
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -63,9 +63,9 @@ export default function CreateGroupModal({
         description: description.trim() || undefined,
         visibility: visibility as 'public' | 'private' | 'unlisted',
       };
-      
+
       const result = await createGroup(groupData);
-      
+
       if (result.success) {
         // Create a group object with the expected structure for the parent component
         const newGroup = {
@@ -79,18 +79,18 @@ export default function CreateGroupModal({
           updated_at: new Date().toISOString(),
           created_by: '',
         };
-        
+
         // Notify the parent component
         if (onGroupCreated) {
           onGroupCreated(newGroup);
         }
-        
+
         // Reset form
         setName('');
         setDescription('');
         setEmoji('✈️');
         setVisibility(ENUMS.GROUP_VISIBILITY.PRIVATE);
-        
+
         // Close the modal
         onClose();
       } else {

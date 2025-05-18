@@ -1,6 +1,6 @@
 /**
  * Places Hook
- * 
+ *
  * React hook for interacting with the Places API
  */
 
@@ -18,25 +18,31 @@ export function usePlaces(initialQuery?: string) {
   const [query, setQuery] = useState<string>(initialQuery || '');
 
   // Fetch places based on query and params
-  const fetchPlaces = useCallback(async (searchQuery: string, params?: {
-    category?: string;
-    limit?: number;
-    offset?: number;
-  }) => {
-    setLoading(true);
-    setError(null);
+  const fetchPlaces = useCallback(
+    async (
+      searchQuery: string,
+      params?: {
+        category?: string;
+        limit?: number;
+        offset?: number;
+      }
+    ) => {
+      setLoading(true);
+      setError(null);
 
-    const result = await PlacesClient.searchPlaces(searchQuery, params);
+      const result = await PlacesClient.searchPlaces(searchQuery, params);
 
-    if (result.success) {
-      setPlaces(result.data);
-    } else {
-      setError(result.error);
-    }
+      if (result.success) {
+        setPlaces(result.data);
+      } else {
+        setError(result.error);
+      }
 
-    setLoading(false);
-    return result;
-  }, []);
+      setLoading(false);
+      return result;
+    },
+    []
+  );
 
   // Fetch a single place by ID
   const fetchPlace = useCallback(async (placeId: string) => {
@@ -57,7 +63,7 @@ export function usePlaces(initialQuery?: string) {
     const result = await PlacesClient.createPlace(data);
 
     if (result.success) {
-      setPlaces(prevPlaces => [...prevPlaces, result.data]);
+      setPlaces((prevPlaces) => [...prevPlaces, result.data]);
     } else {
       setError(result.error);
     }
@@ -74,8 +80,8 @@ export function usePlaces(initialQuery?: string) {
     const result = await PlacesClient.updatePlace(placeId, data);
 
     if (result.success) {
-      setPlaces(prevPlaces => 
-        prevPlaces.map(place => place.id === placeId ? result.data : place)
+      setPlaces((prevPlaces) =>
+        prevPlaces.map((place) => (place.id === placeId ? result.data : place))
       );
     } else {
       setError(result.error);
@@ -93,7 +99,7 @@ export function usePlaces(initialQuery?: string) {
     const result = await PlacesClient.deletePlace(placeId);
 
     if (result.success) {
-      setPlaces(prevPlaces => prevPlaces.filter(place => place.id !== placeId));
+      setPlaces((prevPlaces) => prevPlaces.filter((place) => place.id !== placeId));
     } else {
       setError(result.error);
     }
@@ -103,31 +109,34 @@ export function usePlaces(initialQuery?: string) {
   }, []);
 
   // Lookup or create a place
-  const lookupOrCreatePlaceFunc = useCallback(async (data: {
-    name: string;
-    address?: string;
-    latitude?: number;
-    longitude?: number;
-    category?: string;
-  }) => {
-    setLoading(true);
-    setError(null);
+  const lookupOrCreatePlaceFunc = useCallback(
+    async (data: {
+      name: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      category?: string;
+    }) => {
+      setLoading(true);
+      setError(null);
 
-    const result = await PlacesClient.lookupOrCreatePlace(data);
+      const result = await PlacesClient.lookupOrCreatePlace(data);
 
-    if (result.success) {
-      // Check if place already exists in our list
-      const exists = places.some(place => place.id === result.data.id);
-      if (!exists) {
-        setPlaces(prevPlaces => [...prevPlaces, result.data]);
+      if (result.success) {
+        // Check if place already exists in our list
+        const exists = places.some((place) => place.id === result.data.id);
+        if (!exists) {
+          setPlaces((prevPlaces) => [...prevPlaces, result.data]);
+        }
+      } else {
+        setError(result.error);
       }
-    } else {
-      setError(result.error);
-    }
 
-    setLoading(false);
-    return result;
-  }, [places]);
+      setLoading(false);
+      return result;
+    },
+    [places]
+  );
 
   // Perform initial search if query is provided
   useEffect(() => {
@@ -147,7 +156,7 @@ export function usePlaces(initialQuery?: string) {
     createPlace,
     updatePlace,
     deletePlace,
-    lookupOrCreatePlace: lookupOrCreatePlaceFunc
+    lookupOrCreatePlace: lookupOrCreatePlaceFunc,
   };
 }
 
@@ -176,28 +185,31 @@ export function usePlaceDetails(placeId?: string) {
     return result;
   }, []);
 
-  const updatePlace = useCallback(async (data: Partial<Place>) => {
-    if (!placeId || !place) {
-      return { 
-        success: false as const, 
-        error: new Error('No place loaded') 
-      };
-    }
-    
-    setLoading(true);
-    setError(null);
+  const updatePlace = useCallback(
+    async (data: Partial<Place>) => {
+      if (!placeId || !place) {
+        return {
+          success: false as const,
+          error: new Error('No place loaded'),
+        };
+      }
 
-    const result = await PlacesClient.updatePlace(placeId, data);
+      setLoading(true);
+      setError(null);
 
-    if (result.success) {
-      setPlace(result.data);
-    } else {
-      setError(result.error);
-    }
+      const result = await PlacesClient.updatePlace(placeId, data);
 
-    setLoading(false);
-    return result;
-  }, [placeId, place]);
+      if (result.success) {
+        setPlace(result.data);
+      } else {
+        setError(result.error);
+      }
+
+      setLoading(false);
+      return result;
+    },
+    [placeId, place]
+  );
 
   // Load place on mount if ID is provided
   useEffect(() => {
@@ -211,6 +223,6 @@ export function usePlaceDetails(placeId?: string) {
     loading,
     error,
     fetchPlace,
-    updatePlace
+    updatePlace,
   };
-} 
+}

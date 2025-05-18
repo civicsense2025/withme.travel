@@ -64,7 +64,7 @@ export async function GET(
     }
 
     // Extract tag names from the join result
-    const tags = tagData?.map(item => item.tags?.name).filter(Boolean) || [];
+    const tags = tagData?.map((item) => item.tags?.name).filter(Boolean) || [];
 
     return NextResponse.json({ tags });
   } catch (error) {

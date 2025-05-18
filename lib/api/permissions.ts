@@ -31,7 +31,7 @@ export async function listPermissionRequests(tripId: string): Promise<Result<Per
       .from(TABLES.ACCESS_REQUESTS)
       .select('*')
       .eq('trip_id', tripId);
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -46,7 +46,7 @@ export async function listPermissionRequests(tripId: string): Promise<Result<Per
  * @returns Result containing the permission request
  */
 export async function getPermissionRequest(
-  tripId: string, 
+  tripId: string,
   requestId: string
 ): Promise<Result<PermissionRequest>> {
   try {
@@ -57,7 +57,7 @@ export async function getPermissionRequest(
       .eq('trip_id', tripId)
       .eq('id', requestId)
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   } catch (error) {
@@ -72,26 +72,26 @@ export async function getPermissionRequest(
  * @returns Result containing the created permission request
  */
 export async function createPermissionRequest(
-  tripId: string, 
+  tripId: string,
   data: Partial<PermissionRequest>
 ): Promise<Result<PermissionRequest>> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // Ensure trip_id is set
-    const requestData = { 
-      ...data, 
+    const requestData = {
+      ...data,
       trip_id: tripId,
       status: 'pending', // Default status
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
-    
+
     const { data: newRequest, error } = await supabase
       .from(TABLES.ACCESS_REQUESTS)
       .insert(requestData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newRequest };
   } catch (error) {
@@ -107,19 +107,19 @@ export async function createPermissionRequest(
  * @returns Result containing the updated permission request
  */
 export async function updatePermissionRequest(
-  tripId: string, 
-  requestId: string, 
+  tripId: string,
+  requestId: string,
   data: Partial<PermissionRequest>
 ): Promise<Result<PermissionRequest>> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // Update timestamp
     const updateData = {
       ...data,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
-    
+
     const { data: updatedRequest, error } = await supabase
       .from(TABLES.ACCESS_REQUESTS)
       .update(updateData)
@@ -127,7 +127,7 @@ export async function updatePermissionRequest(
       .eq('id', requestId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedRequest };
   } catch (error) {
@@ -142,7 +142,7 @@ export async function updatePermissionRequest(
  * @returns Result indicating success or failure
  */
 export async function deletePermissionRequest(
-  tripId: string, 
+  tripId: string,
   requestId: string
 ): Promise<Result<null>> {
   try {
@@ -152,7 +152,7 @@ export async function deletePermissionRequest(
       .delete()
       .eq('trip_id', tripId)
       .eq('id', requestId);
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -172,13 +172,13 @@ export async function deletePermissionRequest(
  * @returns Result indicating success or failure
  */
 export async function approvePermissionRequest(
-  tripId: string, 
+  tripId: string,
   requestId: string,
   resolvedBy: string
 ): Promise<Result<PermissionRequest>> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // First, get the request to check if it exists and is pending
     const { data: request, error: fetchError } = await supabase
       .from(TABLES.ACCESS_REQUESTS)
@@ -186,47 +186,45 @@ export async function approvePermissionRequest(
       .eq('trip_id', tripId)
       .eq('id', requestId)
       .single();
-    
+
     if (fetchError) {
       return { success: false, error: fetchError.message };
     }
-    
+
     if (!request) {
       return { success: false, error: 'Permission request not found' };
     }
-    
+
     if (request.status !== 'pending') {
       return { success: false, error: `Request is already ${request.status}` };
     }
-    
+
     // Update the request status
     const { data: updatedRequest, error: updateError } = await supabase
       .from(TABLES.ACCESS_REQUESTS)
       .update({
         status: 'approved',
         resolved_by: resolvedBy,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', requestId)
       .select('*')
       .single();
-    
+
     if (updateError) {
       return { success: false, error: updateError.message };
     }
-    
+
     // Add the user to trip members with the requested role
-    const { error: memberError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .insert({
-        trip_id: tripId,
-        user_id: request.user_id,
-        role: request.requested_role,
-        joined_at: new Date().toISOString(),
-        invited_by: resolvedBy,
-        status: 'active'
-      });
-    
+    const { error: memberError } = await supabase.from(TABLES.TRIP_MEMBERS).insert({
+      trip_id: tripId,
+      user_id: request.user_id,
+      role: request.requested_role,
+      joined_at: new Date().toISOString(),
+      invited_by: resolvedBy,
+      status: 'active',
+    });
+
     if (memberError) {
       // Revert the approval if member creation fails
       await supabase
@@ -234,13 +232,13 @@ export async function approvePermissionRequest(
         .update({
           status: 'pending',
           resolved_by: null,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', requestId);
-      
+
       return { success: false, error: memberError.message };
     }
-    
+
     return { success: true, data: updatedRequest };
   } catch (error) {
     return handleError(error, 'Failed to approve permission request');
@@ -256,14 +254,14 @@ export async function approvePermissionRequest(
  * @returns Result indicating success or failure
  */
 export async function rejectPermissionRequest(
-  tripId: string, 
+  tripId: string,
   requestId: string,
   resolvedBy: string,
   reason?: string
 ): Promise<Result<PermissionRequest>> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // First, check if the request exists and is pending
     const { data: request, error: fetchError } = await supabase
       .from(TABLES.ACCESS_REQUESTS)
@@ -271,19 +269,19 @@ export async function rejectPermissionRequest(
       .eq('trip_id', tripId)
       .eq('id', requestId)
       .single();
-    
+
     if (fetchError) {
       return { success: false, error: fetchError.message };
     }
-    
+
     if (!request) {
       return { success: false, error: 'Permission request not found' };
     }
-    
+
     if (request.status !== 'pending') {
       return { success: false, error: `Request is already ${request.status}` };
     }
-    
+
     // Update the request status
     const { data: updatedRequest, error: updateError } = await supabase
       .from(TABLES.ACCESS_REQUESTS)
@@ -291,16 +289,16 @@ export async function rejectPermissionRequest(
         status: 'rejected',
         resolved_by: resolvedBy,
         message: reason,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', requestId)
       .select('*')
       .single();
-    
+
     if (updateError) {
       return { success: false, error: updateError.message };
     }
-    
+
     return { success: true, data: updatedRequest };
   } catch (error) {
     return handleError(error, 'Failed to reject permission request');
@@ -314,17 +312,19 @@ export async function rejectPermissionRequest(
  * @returns Result indicating the user's permission status
  */
 export async function checkPermissionStatus(
-  tripId: string, 
+  tripId: string,
   userId: string
-): Promise<Result<{ 
-  hasAccess: boolean; 
-  role?: string; 
-  pendingRequest?: boolean;
-  isOwner?: boolean;
-}>> {
+): Promise<
+  Result<{
+    hasAccess: boolean;
+    role?: string;
+    pendingRequest?: boolean;
+    isOwner?: boolean;
+  }>
+> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // Check if user is a trip member
     const { data: memberData, error: memberError } = await supabase
       .from(TABLES.TRIP_MEMBERS)
@@ -332,39 +332,39 @@ export async function checkPermissionStatus(
       .eq('trip_id', tripId)
       .eq('user_id', userId)
       .single();
-    
+
     if (memberData) {
       // User is a member
       const hasAccess = memberData.status === 'active';
-      return { 
-        success: true, 
-        data: { 
-          hasAccess, 
+      return {
+        success: true,
+        data: {
+          hasAccess,
           role: memberData.role,
-          isOwner: memberData.role === 'admin'
-        } 
+          isOwner: memberData.role === 'admin',
+        },
       };
     }
-    
+
     // Check if the user is the trip owner/creator
     const { data: tripData, error: tripError } = await supabase
       .from(TABLES.TRIPS)
       .select('created_by')
       .eq('id', tripId)
       .single();
-    
+
     if (tripData && tripData.created_by === userId) {
       // User is the trip creator
-      return { 
-        success: true, 
-        data: { 
-          hasAccess: true, 
+      return {
+        success: true,
+        data: {
+          hasAccess: true,
           role: 'admin',
-          isOwner: true
-        } 
+          isOwner: true,
+        },
       };
     }
-    
+
     // Check if user has a pending request
     const { data: requestData, error: requestError } = await supabase
       .from(TABLES.ACCESS_REQUESTS)
@@ -373,17 +373,17 @@ export async function checkPermissionStatus(
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1);
-    
-    const pendingRequest = requestData && requestData.length > 0 && 
-                          requestData[0].status === 'pending';
-    
+
+    const pendingRequest =
+      requestData && requestData.length > 0 && requestData[0].status === 'pending';
+
     // User has no access
-    return { 
+    return {
       success: true,
-      data: { 
+      data: {
         hasAccess: false,
-        pendingRequest: !!pendingRequest
-      }
+        pendingRequest: !!pendingRequest,
+      },
     };
   } catch (error) {
     return handleError(error, 'Failed to check permission status');
@@ -392,43 +392,47 @@ export async function checkPermissionStatus(
 
 /**
  * Get users with access to a trip.
- * 
+ *
  * @param tripId - The trip's unique identifier
  * @returns Result containing users with their roles
  */
-export async function getTripAccessList(
-  tripId: string
-): Promise<Result<Array<{
-  user_id: string;
-  role: string;
-  joined_at: string;
-  invited_by?: string;
-  status: string;
-  profile?: any;
-}>>> {
+export async function getTripAccessList(tripId: string): Promise<
+  Result<
+    Array<{
+      user_id: string;
+      role: string;
+      joined_at: string;
+      invited_by?: string;
+      status: string;
+      profile?: any;
+    }>
+  >
+> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     const { data, error } = await supabase
       .from(TABLES.TRIP_MEMBERS)
-      .select(`
+      .select(
+        `
         user_id,
         role,
         joined_at,
         invited_by,
         status,
         profiles:user_id(name, avatar_url, email)
-      `)
+      `
+      )
       .eq('trip_id', tripId);
-    
+
     if (error) return { success: false, error: error.message };
-    
+
     // Transform the data to have profile info nested
-    const formattedData = data.map(item => ({
+    const formattedData = data.map((item) => ({
       ...item,
-      profile: item.profiles
+      profile: item.profiles,
     }));
-    
+
     return { success: true, data: formattedData };
   } catch (error) {
     return handleError(error, 'Failed to get trip access list');
@@ -437,13 +441,13 @@ export async function getTripAccessList(
 
 /**
  * Change a user's role for a trip.
- * 
+ *
  * @param tripId - The trip's unique identifier
  * @param userId - The user's unique identifier
  * @param newRole - The new role to assign
  * @param actorId - ID of the user making the change
  * @returns Result indicating success or failure
- * 
+ *
  * TODO: Implement role permission verification logic
  * - Check if actor has permission to change roles
  * - Prevent role escalation (e.g., viewer changing someone to admin)
@@ -454,26 +458,28 @@ export async function changeTripUserRole(
   userId: string,
   newRole: string,
   actorId: string
-): Promise<Result<{
-  user_id: string;
-  role: string;
-}>> {
+): Promise<
+  Result<{
+    user_id: string;
+    role: string;
+  }>
+> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // TODO: Add permission checks here
-    
+
     const { data, error } = await supabase
       .from(TABLES.TRIP_MEMBERS)
       .update({
         role: newRole,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('trip_id', tripId)
       .eq('user_id', userId)
       .select('user_id, role')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   } catch (error) {
@@ -483,7 +489,7 @@ export async function changeTripUserRole(
 
 /**
  * Transfer trip ownership to another user.
- * 
+ *
  * TODO: Implement trip ownership transfer logic
  * - Verify current user is the owner
  * - Update trip's created_by field
@@ -498,4 +504,4 @@ export async function transferTripOwnership(
 ): Promise<Result<null>> {
   // TODO: Implement transfer ownership logic
   return { success: false, error: 'Not implemented yet' };
-} 
+}

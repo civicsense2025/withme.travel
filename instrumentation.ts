@@ -12,11 +12,11 @@ export async function register() {
         // Dynamically import to avoid webpack issues
         // These modules will be treated as external due to our next.config.mjs configuration
         const { NodeSDK } = await import('@opentelemetry/sdk-node');
-        
+
         // Import and use the Resource constructor from resourceFromAttributes
         const resourcesModule = await import('@opentelemetry/resources');
         const resourceFromAttributes = resourcesModule.resourceFromAttributes;
-        
+
         // Import semantic conventions
         const semConv = await import('@opentelemetry/semantic-conventions');
         const SemanticResourceAttributes = semConv.SemanticResourceAttributes;

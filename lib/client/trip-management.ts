@@ -1,6 +1,6 @@
 /**
  * Trip Management API Client
- * 
+ *
  * Client-side wrapper for Trip Management API endpoints
  */
 
@@ -189,9 +189,9 @@ export async function respondToAccessRequest(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         status: approved ? 'approved' : 'rejected',
-        reason 
+        reason,
       }),
     }).then((response) => handleApiResponse<TripAccessRequest>(response))
   );
@@ -213,4 +213,4 @@ export async function transferTripOwnership(
       body: JSON.stringify({ new_owner_id: newOwnerId }),
     }).then((response) => handleApiResponse<{ success: boolean }>(response))
   );
-} 
+}

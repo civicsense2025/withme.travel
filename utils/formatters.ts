@@ -2,7 +2,7 @@ import { ITINERARY_CATEGORIES } from './constants/status';
 
 /**
  * Formats a category name for display
- * 
+ *
  * @param category - The category string (can be null)
  * @returns Formatted category name
  */
@@ -24,4 +24,4 @@ export function formatCategoryName(category: string | null): string {
 
   // Otherwise, just return the original with first letter capitalized
   return category.charAt(0).toUpperCase() + category.slice(1);
-} 
+}

@@ -1,6 +1,6 @@
 /**
  * Result Pattern for API Responses
- * 
+ *
  * Standardized way to handle success and error states from API calls
  */
 
@@ -72,9 +72,7 @@ export function isFailure<T>(result: Result<T>): result is Failure {
 /**
  * Helper to safely execute an async function and return a Result
  */
-export async function tryCatch<T>(
-  promise: Promise<T>
-): Promise<Result<T>> {
+export async function tryCatch<T>(promise: Promise<T>): Promise<Result<T>> {
   try {
     const data = await promise;
     return createSuccess(data);
@@ -139,10 +137,10 @@ export function combineResults<T>(results: Result<T>[]): Result<T[]> {
   const failures = results.filter(isFailure);
   if (failures.length > 0) {
     return createFailure(
-      `Multiple errors: ${failures.map(f => f.error).join(', ')}`,
-      failures.map(f => f.details)
+      `Multiple errors: ${failures.map((f) => f.error).join(', ')}`,
+      failures.map((f) => f.details)
     );
   }
-  
-  return createSuccess(results.filter(isSuccess).map(r => (r as Success<T>).data));
-} 
+
+  return createSuccess(results.filter(isSuccess).map((r) => (r as Success<T>).data));
+}

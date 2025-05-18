@@ -103,7 +103,7 @@ export async function createTask(data: Partial<Task> & { tags?: string[] }): Pro
         p_assignee_id: data.assignee_id,
         p_trip_id: data.trip_id,
         p_position: data.position ?? 0,
-        p_tags: data.tags
+        p_tags: data.tags,
       });
       if (error) return { success: false, error: error.message };
       // Fetch the created task from the view
@@ -121,7 +121,7 @@ export async function createTask(data: Partial<Task> & { tags?: string[] }): Pro
           owner_id: data.owner_id,
           assignee_id: data.assignee_id,
           trip_id: data.trip_id,
-          position: data.position ?? 0
+          position: data.position ?? 0,
         })
         .select('*')
         .single();
@@ -139,10 +139,7 @@ export async function createTask(data: Partial<Task> & { tags?: string[] }): Pro
 export async function updateTask(taskId: string, data: Partial<Task>): Promise<Result<Task>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { error } = await supabase
-      .from(TABLES.TASKS)
-      .update(data)
-      .eq('id', taskId);
+    const { error } = await supabase.from(TABLES.TASKS).update(data).eq('id', taskId);
     if (error) return { success: false, error: error.message };
     return getTask(taskId);
   } catch (error) {
@@ -156,10 +153,7 @@ export async function updateTask(taskId: string, data: Partial<Task>): Promise<R
 export async function deleteTask(taskId: string): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { error } = await supabase
-      .from(TABLES.TASKS)
-      .delete()
-      .eq('id', taskId);
+    const { error } = await supabase.from(TABLES.TASKS).delete().eq('id', taskId);
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -207,17 +201,22 @@ export async function listAssignedTasks(userId: string): Promise<Result<Task[]>>
 /**
  * Vote on a task (up/down)
  */
-export async function voteTask(taskId: string, userId: string, voteType: 'up' | 'down'): Promise<Result<null>> {
+export async function voteTask(
+  taskId: string,
+  userId: string,
+  voteType: 'up' | 'down'
+): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
     // Upsert vote (user can only vote once per task)
-    const { error } = await supabase
-      .from(TABLES.TASK_VOTES)
-      .upsert({
+    const { error } = await supabase.from(TABLES.TASK_VOTES).upsert(
+      {
         task_id: taskId,
         user_id: userId,
-        vote_type: voteType
-      }, { onConflict: 'task_id,user_id' });
+        vote_type: voteType,
+      },
+      { onConflict: 'task_id,user_id' }
+    );
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -275,4 +274,4 @@ export async function removeTagFromTask(taskId: string, tagName: string): Promis
   }
 }
 
-// (Add more as needed) 
+// (Add more as needed)

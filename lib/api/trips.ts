@@ -60,18 +60,16 @@ export const TABLES = {
 export async function listTrips(userId: string): Promise<Result<Trip[]>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { data, error } = await supabase
-      .from('trips')
-      .select('*')
-      .eq('created_by', userId);
-    
+    const { data, error } = await supabase.from('trips').select('*').eq('created_by', userId);
+
     if (error) return { success: false, error: error.message };
     // Add title field for type compatibility (can be same as name)
-    const tripsWithTitle = data?.map(trip => ({
-      ...trip,
-      title: trip.name || 'Untitled Trip',
-      destination_id: trip.city_id // Map city_id to destination_id for compatibility
-    })) || [];
+    const tripsWithTitle =
+      data?.map((trip) => ({
+        ...trip,
+        title: trip.name || 'Untitled Trip',
+        destination_id: trip.city_id, // Map city_id to destination_id for compatibility
+      })) || [];
     return { success: true, data: tripsWithTitle };
   } catch (error) {
     return handleError(error, 'Failed to fetch trips');
@@ -97,7 +95,7 @@ export async function getTrip(tripId: string): Promise<Result<Trip>> {
     const tripWithTitle: Trip = {
       ...trip,
       title: trip.name || 'Untitled Trip',
-      destination_id: trip.city_id // Map city_id to destination_id for compatibility
+      destination_id: trip.city_id, // Map city_id to destination_id for compatibility
     };
     return { success: true, data: tripWithTitle };
   } catch (error) {
@@ -117,30 +115,33 @@ export async function createTrip(data: Partial<Trip>): Promise<Result<Trip>> {
     if (!data.name && data.title) {
       data.name = data.title;
     }
-    
+
     // Ensure created_by is never undefined
     const createTripData: any = { ...data };
     if (data.destination_id && !data.city_id) {
       createTripData.city_id = data.destination_id;
     }
-    
+
     // Convert status to valid enum if needed
-    if (data.status && !['planning', 'upcoming', 'in_progress', 'completed', 'cancelled'].includes(data.status)) {
+    if (
+      data.status &&
+      !['planning', 'upcoming', 'in_progress', 'completed', 'cancelled'].includes(data.status)
+    ) {
       delete createTripData.status;
     }
-    
+
     const { data: newTrip, error } = await supabase
       .from('trips')
       .insert(createTripData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     // Add title field for type compatibility
     const tripWithTitle: Trip = {
       ...newTrip,
       title: newTrip.name || 'Untitled Trip',
-      destination_id: newTrip.city_id // Map city_id to destination_id for compatibility
+      destination_id: newTrip.city_id, // Map city_id to destination_id for compatibility
     };
     return { success: true, data: tripWithTitle };
   } catch (error) {
@@ -162,31 +163,34 @@ export async function updateTrip(tripId: string, data: Partial<Trip>): Promise<R
     if (!updateData.name && updateData.title) {
       updateData.name = updateData.title;
     }
-    
+
     // Map destination_id to city_id if provided
     if (updateData.destination_id && !updateData.city_id) {
       updateData.city_id = updateData.destination_id;
       delete updateData.destination_id;
     }
-    
+
     // Convert status to valid enum if needed
-    if (updateData.status && !['planning', 'upcoming', 'in_progress', 'completed', 'cancelled'].includes(updateData.status)) {
+    if (
+      updateData.status &&
+      !['planning', 'upcoming', 'in_progress', 'completed', 'cancelled'].includes(updateData.status)
+    ) {
       delete updateData.status;
     }
-    
+
     const { data: updatedTrip, error } = await supabase
       .from('trips')
       .update(updateData)
       .eq('id', tripId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     // Add title field for type compatibility
     const tripWithTitle: Trip = {
       ...updatedTrip,
       title: updatedTrip.name || 'Untitled Trip',
-      destination_id: updatedTrip.city_id // Map city_id to destination_id for compatibility
+      destination_id: updatedTrip.city_id, // Map city_id to destination_id for compatibility
     };
     return { success: true, data: tripWithTitle };
   } catch (error) {
@@ -202,10 +206,7 @@ export async function updateTrip(tripId: string, data: Partial<Trip>): Promise<R
 export async function deleteTrip(tripId: string): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { error } = await supabase
-      .from('trips')
-      .delete()
-      .eq('id', tripId);
+    const { error } = await supabase.from('trips').delete().eq('id', tripId);
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -218,7 +219,13 @@ export async function deleteTrip(tripId: string): Promise<Result<null>> {
  * @param params - Pagination params
  * @returns Result containing an array of public trips with cities
  */
-export async function listPublicTrips({ limit = 10, offset = 0 }: { limit?: number; offset?: number }): Promise<Result<Trip[]>> {
+export async function listPublicTrips({
+  limit = 10,
+  offset = 0,
+}: {
+  limit?: number;
+  offset?: number;
+}): Promise<Result<Trip[]>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
@@ -229,11 +236,11 @@ export async function listPublicTrips({ limit = 10, offset = 0 }: { limit?: numb
       .range(offset, offset + limit - 1);
     if (error) return { success: false, error: error.message };
     // Flatten cities
-    const trips = (data ?? []).map(trip => ({ 
-      ...trip, 
+    const trips = (data ?? []).map((trip) => ({
+      ...trip,
       cities: (trip.cities || []).map((c: any) => c.city),
       title: trip.name || 'Untitled Trip', // Add title for type compatibility
-      destination_id: trip.city_id // Map city_id to destination_id for compatibility
+      destination_id: trip.city_id, // Map city_id to destination_id for compatibility
     }));
     return { success: true, data: trips };
   } catch (error) {
@@ -252,7 +259,11 @@ export async function listPublicTrips({ limit = 10, offset = 0 }: { limit?: numb
  */
 export async function listUserTripsWithMembership(
   userId: string,
-  { includeShared = false, limit = 10, offset = 0 }: { includeShared?: boolean; limit?: number; offset?: number }
+  {
+    includeShared = false,
+    limit = 10,
+    offset = 0,
+  }: { includeShared?: boolean; limit?: number; offset?: number }
 ): Promise<Result<Trip[]>> {
   try {
     const supabase = await createRouteHandlerClient();
@@ -266,9 +277,10 @@ export async function listUserTripsWithMembership(
       if (memberError) return { success: false, error: memberError.message };
       tripIds = (memberTrips ?? []).map((m: any) => m.trip_id);
     }
-    const filter = includeShared && tripIds.length > 0
-      ? `created_by.eq.${userId},id.in.(${tripIds.join(',')})`
-      : `created_by.eq.${userId}`;
+    const filter =
+      includeShared && tripIds.length > 0
+        ? `created_by.eq.${userId},id.in.(${tripIds.join(',')})`
+        : `created_by.eq.${userId}`;
     const { data, error } = await supabase
       .from('trips')
       .select(`*, cities:trip_cities(city:city_id(*))`)
@@ -276,11 +288,11 @@ export async function listUserTripsWithMembership(
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
     if (error) return { success: false, error: error.message };
-    const trips = (data ?? []).map(trip => ({ 
-      ...trip, 
+    const trips = (data ?? []).map((trip) => ({
+      ...trip,
       cities: (trip.cities || []).map((c: any) => c.city),
       title: trip.name || 'Untitled Trip', // Add title for type compatibility
-      destination_id: trip.city_id // Map city_id to destination_id for compatibility
+      destination_id: trip.city_id, // Map city_id to destination_id for compatibility
     }));
     return { success: true, data: trips };
   } catch (error) {
@@ -296,27 +308,36 @@ export async function listUserTripsWithMembership(
  * @param tripId - The trip's unique identifier
  * @returns Result containing the trip with details
  */
-export async function getTripWithDetails(tripId: string): Promise<Result<Trip & {
-  cities?: any[];
-  members?: any[];
-}>> {
+export async function getTripWithDetails(tripId: string): Promise<
+  Result<
+    Trip & {
+      cities?: any[];
+      members?: any[];
+    }
+  >
+> {
   try {
     const supabase = await createRouteHandlerClient();
     // Remove 'status' from the select and only select user_id, role, and profiles
     const { data: trip, error } = await supabase
       .from('trips')
-      .select(`*, cities:trip_cities(city:city_id(*)), members:trip_members(user_id, role, profiles:profiles!trip_members_user_id_fkey(*))`)
+      .select(
+        `*, cities:trip_cities(city:city_id(*)), members:trip_members(user_id, role, profiles:profiles!trip_members_user_id_fkey(*))`
+      )
       .eq('id', tripId)
       .single();
     if (error) return { success: false, error: error.message };
     if (!trip) return { success: false, error: 'Trip not found' };
-    return { success: true, data: {
-      ...trip,
-      title: trip.name || 'Untitled Trip', // Add title for type compatibility
-      destination_id: trip.city_id, // Map city_id to destination_id for compatibility
-      cities: (trip.cities || []).map((c: any) => c.city),
-      members: (trip.members || []).map((m: any) => ({ ...m, profile: m.profiles })),
-    }};
+    return {
+      success: true,
+      data: {
+        ...trip,
+        title: trip.name || 'Untitled Trip', // Add title for type compatibility
+        destination_id: trip.city_id, // Map city_id to destination_id for compatibility
+        cities: (trip.cities || []).map((c: any) => c.city),
+        members: (trip.members || []).map((m: any) => ({ ...m, profile: m.profiles })),
+      },
+    };
   } catch (error) {
     return handleError(error, 'Failed to fetch trip details');
   }
@@ -333,4 +354,4 @@ export async function updateTripWithDetails(tripId: string, data: any): Promise<
   // For now, just update trip main fields
   return updateTrip(tripId, data);
 }
-// (Add more as needed) 
+// (Add more as needed)

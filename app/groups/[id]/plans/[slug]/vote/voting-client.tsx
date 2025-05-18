@@ -78,7 +78,7 @@ export default function VotingClient({
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
   const [hasShownMilestone, setHasShownMilestone] = useState(false);
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
-  
+
   // Use the voting hook
   const { isVoting, error: voteError, voteOnGroupIdea } = useVotes();
 
@@ -214,7 +214,7 @@ export default function VotingClient({
 
       // Use the votes hook to update the vote on the server
       await voteOnGroupIdea(groupId, ideaId, voteType);
-      
+
       if (voteError) {
         throw voteError;
       }
@@ -225,10 +225,10 @@ export default function VotingClient({
         description: 'Failed to save your vote. Please try again.',
         variant: 'destructive',
       });
-      
+
       // Revert to initial ideas and refetch votes on error
       setIdeas(initialIdeas);
-      
+
       async function revertAndRefetch() {
         try {
           const supabase = getBrowserClient();
@@ -249,7 +249,7 @@ export default function VotingClient({
           console.error('Error refetching votes:', error);
         }
       }
-      
+
       revertAndRefetch();
     }
   };

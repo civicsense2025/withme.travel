@@ -186,9 +186,7 @@ const PlansClient: React.FC<PlansClientProps> = ({
           <Heading level={1} size="large" className="mb-1">
             {plan.name}
           </Heading>
-          <Text className="text-sm text-muted-foreground">
-            Plan together in {plan.group_id}
-          </Text>
+          <Text className="text-sm text-muted-foreground">Plan together in {plan.group_id}</Text>
         </div>
       </div>
 
@@ -225,7 +223,7 @@ const PlansClient: React.FC<PlansClientProps> = ({
         </TabsContent>
 
         <TabsContent value="trip" className="mt-0">
-          <VotingClient 
+          <VotingClient
             groupId={groupId}
             planSlug={plan.slug}
             groupName={plan.group_id}

@@ -1,38 +1,63 @@
-'use client';
-
-import * as React from 'react';
-import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
-import { Circle } from 'lucide-react';
-
+/**
+ * RadioGroup (Molecule)
+ *
+ * A themeable, accessible radio group component with group, item, and label.
+ *
+ * @module ui/molecules
+ */
+import React from 'react';
 import { cn } from '@/lib/utils';
 
-const RadioGroup = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
->(({ className, ...props }, ref) => {
-  return <RadioGroupPrimitive.Root className={cn('grid gap-2', className)} {...props} ref={ref} />;
-});
-RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
-
-const RadioGroupItem = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
->(({ className, ...props }, ref) => {
+export interface RadioGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}
+export function RadioGroup({
+  name,
+  value,
+  onChange,
+  className,
+  children,
+  ...props
+}: RadioGroupProps) {
   return (
-    <RadioGroupPrimitive.Item
-      ref={ref}
-      className={cn(
-        'aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-        className
+    <div className={cn('flex flex-col gap-2', className)} {...props}>
+      {React.Children.map(children, (child) =>
+        React.isValidElement(child)
+          ? React.cloneElement(child as React.ReactElement<any>, {
+              name,
+              checked: value === child.props.value,
+              onChange: () => onChange(child.props.value),
+            })
+          : child
       )}
-      {...props}
-    >
-      <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-        <Circle className="h-2.5 w-2.5 fill-current text-current" />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
+    </div>
   );
-});
-RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
+}
 
-export { RadioGroup, RadioGroupItem };
+export interface RadioGroupItemProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  value: string;
+  label?: string;
+}
+export function RadioGroupItem({
+  value,
+  label,
+  checked,
+  onChange,
+  className,
+  ...props
+}: RadioGroupItemProps) {
+  return (
+    <label className={cn('inline-flex items-center gap-2 cursor-pointer', className)}>
+      <input type="radio" value={value} checked={checked} onChange={onChange} {...props} />
+      {label && <span>{label}</span>}
+    </label>
+  );
+}
+
+export interface RadioGroupLabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
+export function RadioGroupLabel({ className, ...props }: RadioGroupLabelProps) {
+  return <label className={cn('text-sm font-medium', className)} {...props} />;
+}

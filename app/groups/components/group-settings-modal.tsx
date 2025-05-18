@@ -45,7 +45,13 @@ interface GroupSettingsModalProps {
   onGroupDeleted?: () => void;
 }
 
-export function GroupSettingsModal({ group, isOpen, onOpenChange, onGroupUpdated, onGroupDeleted }: GroupSettingsModalProps) {
+export function GroupSettingsModal({
+  group,
+  isOpen,
+  onOpenChange,
+  onGroupUpdated,
+  onGroupDeleted,
+}: GroupSettingsModalProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('general');

@@ -363,6 +363,7 @@ npm run dev
 Visit: `http://localhost:3000/user-testing/survey/test-token?type=product-experience`
 
 Available survey types:
+
 - `product-experience`: General product feedback
 - `feature-feedback`: Group planning feature feedback
 - `user-demographic`: User demographic survey

@@ -1,6 +1,6 @@
 /**
  * Places API Hook
- * 
+ *
  * React hook for managing places with state, loading, and error handling
  */
 
@@ -22,7 +22,7 @@ import {
   createPlace as PlacesClientCreatePlace,
   updatePlace as PlacesClientUpdatePlace,
   deletePlace as PlacesClientDeletePlace,
-  lookupOrCreatePlace
+  lookupOrCreatePlace,
 } from '@/lib/client/places';
 import { useToast } from '@/hooks/use-toast';
 import { isSuccess } from '@/utils/result';
@@ -45,7 +45,10 @@ interface UsePlacesReturn {
   refetch: () => Promise<void>;
   createPlace: (data: CreatePlaceData) => Promise<Place | null>;
   getCategories: () => Promise<string[] | null>;
-  importPlaces: (destinationId: string, file: File) => Promise<{ added: number; errors: any[] } | null>;
+  importPlaces: (
+    destinationId: string,
+    file: File
+  ) => Promise<{ added: number; errors: any[] } | null>;
 }
 
 // ============================================================================
@@ -60,9 +63,7 @@ export function usePlaces({
   autoFetch = true,
 }: UsePlacesOptions = {}): UsePlacesReturn {
   // Initialize with a default destinationId to avoid type errors
-  const [params, setParams] = useState<ListPlacesParams>(
-    initialParams || { destinationId: '' }
-  );
+  const [params, setParams] = useState<ListPlacesParams>(initialParams || { destinationId: '' });
   const [places, setPlaces] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -78,7 +79,7 @@ export function usePlaces({
     setError(null);
 
     const result = await listPlaces(params);
-    
+
     if (isSuccess(result)) {
       setPlaces(result.data);
     } else {
@@ -101,35 +102,38 @@ export function usePlaces({
   }, [autoFetch, params, fetchPlaces]);
 
   // Create a new place
-  const addPlace = useCallback(async (data: CreatePlaceData): Promise<Place | null> => {
-    setIsLoading(true);
-    
-    const result = await createPlace(data);
-    
-    if (isSuccess(result)) {
-      setPlaces((prev) => [...prev, result.data]);
-      toast({
-        title: 'Success',
-        description: 'Place created successfully',
-      });
-      setIsLoading(false);
-      return result.data;
-    } else {
-      setError(result.error);
-      toast({
-        title: 'Error',
-        description: `Failed to create place: ${result.error.message}`,
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return null;
-    }
-  }, [toast]);
+  const addPlace = useCallback(
+    async (data: CreatePlaceData): Promise<Place | null> => {
+      setIsLoading(true);
+
+      const result = await createPlace(data);
+
+      if (isSuccess(result)) {
+        setPlaces((prev) => [...prev, result.data]);
+        toast({
+          title: 'Success',
+          description: 'Place created successfully',
+        });
+        setIsLoading(false);
+        return result.data;
+      } else {
+        setError(result.error);
+        toast({
+          title: 'Error',
+          description: `Failed to create place: ${result.error.message}`,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return null;
+      }
+    },
+    [toast]
+  );
 
   // Get place categories
   const fetchCategories = useCallback(async (): Promise<string[] | null> => {
     const result = await getPlaceCategories();
-    
+
     if (isSuccess(result)) {
       return result.data;
     } else {
@@ -143,36 +147,36 @@ export function usePlaces({
   }, [toast]);
 
   // Import places from CSV
-  const importFromCSV = useCallback(async (
-    destinationId: string, 
-    file: File
-  ): Promise<{ added: number; errors: any[] } | null> => {
-    setIsLoading(true);
-    
-    const result = await importPlacesFromCSV(destinationId, file);
-    
-    if (isSuccess(result)) {
-      toast({
-        title: 'Success',
-        description: `Added ${result.data.added} places successfully`,
-      });
-      // Refresh the places list
-      if (params.destinationId === destinationId) {
-        fetchPlaces();
+  const importFromCSV = useCallback(
+    async (destinationId: string, file: File): Promise<{ added: number; errors: any[] } | null> => {
+      setIsLoading(true);
+
+      const result = await importPlacesFromCSV(destinationId, file);
+
+      if (isSuccess(result)) {
+        toast({
+          title: 'Success',
+          description: `Added ${result.data.added} places successfully`,
+        });
+        // Refresh the places list
+        if (params.destinationId === destinationId) {
+          fetchPlaces();
+        }
+        setIsLoading(false);
+        return result.data;
+      } else {
+        setError(result.error);
+        toast({
+          title: 'Error',
+          description: `Failed to import places: ${result.error.message}`,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return null;
       }
-      setIsLoading(false);
-      return result.data;
-    } else {
-      setError(result.error);
-      toast({
-        title: 'Error',
-        description: `Failed to import places: ${result.error.message}`,
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return null;
-    }
-  }, [fetchPlaces, params.destinationId, toast]);
+    },
+    [fetchPlaces, params.destinationId, toast]
+  );
 
   return {
     places,
@@ -197,25 +201,31 @@ export function usePlaces(initialQuery?: string) {
   const [query, setQuery] = useState<string>(initialQuery || '');
 
   // Fetch places based on query and params
-  const fetchPlaces = useCallback(async (searchQuery: string, params?: {
-    category?: string;
-    limit?: number;
-    offset?: number;
-  }) => {
-    setLoading(true);
-    setError(null);
+  const fetchPlaces = useCallback(
+    async (
+      searchQuery: string,
+      params?: {
+        category?: string;
+        limit?: number;
+        offset?: number;
+      }
+    ) => {
+      setLoading(true);
+      setError(null);
 
-    const result = await searchPlaces(searchQuery, params);
+      const result = await searchPlaces(searchQuery, params);
 
-    if (result.success) {
-      setPlaces(result.data);
-    } else {
-      setError(result.error);
-    }
+      if (result.success) {
+        setPlaces(result.data);
+      } else {
+        setError(result.error);
+      }
 
-    setLoading(false);
-    return result;
-  }, []);
+      setLoading(false);
+      return result;
+    },
+    []
+  );
 
   // Fetch a single place by ID
   const fetchPlace = useCallback(async (placeId: string) => {
@@ -236,7 +246,7 @@ export function usePlaces(initialQuery?: string) {
     const result = await PlacesClientCreatePlace(data);
 
     if (result.success) {
-      setPlaces(prevPlaces => [...prevPlaces, result.data]);
+      setPlaces((prevPlaces) => [...prevPlaces, result.data]);
     } else {
       setError(result.error);
     }
@@ -253,8 +263,8 @@ export function usePlaces(initialQuery?: string) {
     const result = await PlacesClientUpdatePlace(placeId, data);
 
     if (result.success) {
-      setPlaces(prevPlaces => 
-        prevPlaces.map(place => place.id === placeId ? result.data : place)
+      setPlaces((prevPlaces) =>
+        prevPlaces.map((place) => (place.id === placeId ? result.data : place))
       );
     } else {
       setError(result.error);
@@ -272,7 +282,7 @@ export function usePlaces(initialQuery?: string) {
     const result = await PlacesClientDeletePlace(placeId);
 
     if (result.success) {
-      setPlaces(prevPlaces => prevPlaces.filter(place => place.id !== placeId));
+      setPlaces((prevPlaces) => prevPlaces.filter((place) => place.id !== placeId));
     } else {
       setError(result.error);
     }
@@ -282,31 +292,34 @@ export function usePlaces(initialQuery?: string) {
   }, []);
 
   // Lookup or create a place
-  const lookupOrCreatePlace = useCallback(async (data: {
-    name: string;
-    address?: string;
-    latitude?: number;
-    longitude?: number;
-    category?: string;
-  }) => {
-    setLoading(true);
-    setError(null);
+  const lookupOrCreatePlace = useCallback(
+    async (data: {
+      name: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      category?: string;
+    }) => {
+      setLoading(true);
+      setError(null);
 
-    const result = await lookupOrCreatePlace(data);
+      const result = await lookupOrCreatePlace(data);
 
-    if (result.success) {
-      // Check if place already exists in our list
-      const exists = places.some(place => place.id === result.data.id);
-      if (!exists) {
-        setPlaces(prevPlaces => [...prevPlaces, result.data]);
+      if (result.success) {
+        // Check if place already exists in our list
+        const exists = places.some((place) => place.id === result.data.id);
+        if (!exists) {
+          setPlaces((prevPlaces) => [...prevPlaces, result.data]);
+        }
+      } else {
+        setError(result.error);
       }
-    } else {
-      setError(result.error);
-    }
 
-    setLoading(false);
-    return result;
-  }, [places]);
+      setLoading(false);
+      return result;
+    },
+    [places]
+  );
 
   // Perform initial search if query is provided
   useEffect(() => {
@@ -326,7 +339,7 @@ export function usePlaces(initialQuery?: string) {
     createPlace,
     updatePlace,
     deletePlace,
-    lookupOrCreatePlace
+    lookupOrCreatePlace,
   };
 }
 
@@ -355,23 +368,27 @@ export function usePlaceDetails(placeId?: string) {
     return result;
   }, []);
 
-  const updatePlace = useCallback(async (data: Partial<Place>) => {
-    if (!placeId || !place) return { success: false as const, error: new Error('No place loaded') };
-    
-    setLoading(true);
-    setError(null);
+  const updatePlace = useCallback(
+    async (data: Partial<Place>) => {
+      if (!placeId || !place)
+        return { success: false as const, error: new Error('No place loaded') };
 
-    const result = await PlacesClientUpdatePlace(placeId, data);
+      setLoading(true);
+      setError(null);
 
-    if (result.success) {
-      setPlace(result.data);
-    } else {
-      setError(result.error);
-    }
+      const result = await PlacesClientUpdatePlace(placeId, data);
 
-    setLoading(false);
-    return result;
-  }, [placeId, place]);
+      if (result.success) {
+        setPlace(result.data);
+      } else {
+        setError(result.error);
+      }
+
+      setLoading(false);
+      return result;
+    },
+    [placeId, place]
+  );
 
   // Load place on mount if ID is provided
   useEffect(() => {
@@ -385,6 +402,6 @@ export function usePlaceDetails(placeId?: string) {
     loading,
     error,
     fetchPlace,
-    updatePlace
+    updatePlace,
   };
-} 
+}

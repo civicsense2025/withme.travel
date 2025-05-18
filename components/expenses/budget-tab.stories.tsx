@@ -3,6 +3,14 @@
  */
 import { Meta, StoryObj } from '@storybook/react';
 import { BudgetTab } from './budget-tab';
+import { useExpenses } from '@/hooks/use-expenses';
+import { TripMemberFromSSR } from '@/components/members-tab';
+import { GROUP_MEMBER_ROLES } from '@/utils/constants/status';
+
+// Mock the useExpenses hook
+jest.mock('@/hooks/use-expenses', () => ({
+  useExpenses: jest.fn()
+}));
 
 const mockManualExpenses = [
   {
@@ -72,38 +80,67 @@ const mockPlannedExpenses = [
   },
 ];
 
-const mockMembers = [
+const mockMembers: TripMemberFromSSR[] = [
   {
+    id: 'user1',
     user_id: 'user1',
     trip_id: 'trip1',
-    role: 'admin',
-    created_at: '2023-06-01T00:00:00Z',
+    role: GROUP_MEMBER_ROLES.ADMIN,
+    joined_at: '2023-06-01T00:00:00Z',
     profiles: {
+      id: 'profile1',
       name: 'Jane Smith',
       avatar_url: 'https://i.pravatar.cc/300?u=jane',
     },
   },
   {
+    id: 'user2',
     user_id: 'user2',
     trip_id: 'trip1',
-    role: 'editor',
-    created_at: '2023-06-02T00:00:00Z',
+    role: GROUP_MEMBER_ROLES.MEMBER,
+    joined_at: '2023-06-02T00:00:00Z',
     profiles: {
+      id: 'profile2',
       name: 'John Doe',
       avatar_url: 'https://i.pravatar.cc/300?u=john',
     },
   },
   {
+    id: 'user3',
     user_id: 'user3',
     trip_id: 'trip1',
-    role: 'viewer',
-    created_at: '2023-06-03T00:00:00Z',
+    role: GROUP_MEMBER_ROLES.MEMBER,
+    joined_at: '2023-06-03T00:00:00Z',
     profiles: {
+      id: 'profile3',
       name: 'Emily Wilson',
       avatar_url: 'https://i.pravatar.cc/300?u=emily',
     },
   },
 ];
+
+// Mock implementation of useExpenses
+const mockUseExpenses = (tripId: string) => {
+  return {
+    expenses: mockManualExpenses,
+    isLoading: false,
+    error: null,
+    summary: {
+      totalSpent: mockManualExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0),
+      categories: {
+        accommodation: 350,
+        food: 120,
+        entertainment: 60,
+        transportation: 45,
+      }
+    },
+    refresh: async () => {},
+    addExpense: async () => ({ success: true, data: mockManualExpenses[0] }),
+    editExpense: async () => ({ success: true, data: mockManualExpenses[0] }),
+    removeExpense: async () => ({ success: true, data: null }),
+    fetchSummary: async () => {},
+  };
+};
 
 /**
  * Configuring the story
@@ -127,6 +164,13 @@ export default {
       defaultValue: false,
     },
   },
+  decorators: [
+    (Story) => {
+      // Mock the hook before rendering
+      (useExpenses as jest.Mock).mockImplementation(mockUseExpenses);
+      return <Story />;
+    },
+  ],
 } as Meta<typeof BudgetTab>;
 
 /**
@@ -142,7 +186,6 @@ export const Default: Story = {
     tripId: 'trip1',
     canEdit: true,
     isTripOver: false,
-    manualExpenses: mockManualExpenses,
     plannedExpenses: mockPlannedExpenses,
     initialMembers: mockMembers,
     budget: 800,

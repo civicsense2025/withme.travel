@@ -84,7 +84,10 @@ export async function addTripMember(tripId: string, data: any): Promise<Result<a
       .select('*, profiles:profiles!trip_members_user_id_fkey(*)')
       .single();
     if (error) return { success: false, error: error.message };
-    return { success: true, data: { ...newMember, profile: newMember.profiles, profiles: newMember.profiles } };
+    return {
+      success: true,
+      data: { ...newMember, profile: newMember.profiles, profiles: newMember.profiles },
+    };
   } catch (error) {
     return handleError(error, 'Failed to add trip member');
   }
@@ -97,7 +100,11 @@ export async function addTripMember(tripId: string, data: any): Promise<Result<a
  * @param data - Partial member data to update
  * @returns Result containing the updated member
  */
-export async function updateTripMember(tripId: string, memberId: string, data: any): Promise<Result<any>> {
+export async function updateTripMember(
+  tripId: string,
+  memberId: string,
+  data: any
+): Promise<Result<any>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data: updatedMember, error } = await supabase
@@ -108,7 +115,10 @@ export async function updateTripMember(tripId: string, memberId: string, data: a
       .select('*, profiles:profiles!trip_members_user_id_fkey(*)')
       .single();
     if (error) return { success: false, error: error.message };
-    return { success: true, data: { ...updatedMember, profile: updatedMember.profiles, profiles: updatedMember.profiles } };
+    return {
+      success: true,
+      data: { ...updatedMember, profile: updatedMember.profiles, profiles: updatedMember.profiles },
+    };
   } catch (error) {
     return handleError(error, 'Failed to update trip member');
   }
@@ -166,7 +176,10 @@ export async function inviteTripMember(tripId: string, email: string): Promise<R
  * @param members - Array of member data to import (email, role, etc.)
  * @returns Result indicating success or failure
  */
-export async function importTripMembers(tripId: string, members: any[]): Promise<Result<{ added: number; invited: number }>> {
+export async function importTripMembers(
+  tripId: string,
+  members: any[]
+): Promise<Result<{ added: number; invited: number }>> {
   try {
     const supabase = await createRouteHandlerClient();
     let added = 0;
@@ -206,7 +219,11 @@ export async function importTripMembers(tripId: string, members: any[]): Promise
  * @param email - The user's email (for invitation check)
  * @returns Result indicating access status
  */
-export async function checkTripMemberAccess(tripId: string, userId: string, email?: string): Promise<Result<{ isMember: boolean; isInvited: boolean }>> {
+export async function checkTripMemberAccess(
+  tripId: string,
+  userId: string,
+  email?: string
+): Promise<Result<{ isMember: boolean; isInvited: boolean }>> {
   try {
     const supabase = await createRouteHandlerClient();
     // Check membership
@@ -241,4 +258,4 @@ export async function checkTripMemberAccess(tripId: string, userId: string, emai
  * @returns Result containing the updated member
  */
 export async function updateTripMemberRole(tripId: string, memberId: string, role: string) {}
-// (Add more as needed) 
+// (Add more as needed)

@@ -64,18 +64,3 @@ export function formatDate(
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', options).format(date);
 }
-
-/**
- * Formats a category name for display by capitalizing and removing underscores
- * @param category The category string to format
- * @returns Formatted category name
- */
-export function formatCategoryName(category: string | null): string {
-  if (!category) return '';
-  
-  // Replace underscores with spaces and capitalize each word
-  return category
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}

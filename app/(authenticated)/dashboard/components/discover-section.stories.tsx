@@ -9,4 +9,4 @@ const meta: Meta<typeof DiscoverSection> = {
 export default meta;
 type Story = StoryObj<typeof DiscoverSection>;
 
-export const Default: Story = {}; 
+export const Default: Story = {};

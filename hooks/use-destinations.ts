@@ -1,6 +1,6 @@
 /**
  * Destinations hook
- * 
+ *
  * Hook for managing destinations with state, loading, and error handling
  */
 
@@ -75,7 +75,7 @@ export function useDestinations({
     setError(null);
 
     const result = await listDestinations(filter);
-    
+
     if (result.success) {
       setDestinations(result.data);
     } else {
@@ -98,70 +98,79 @@ export function useDestinations({
   }, [autoFetch, filter, fetchDestinations]);
 
   // Get destination by ID
-  const getById = useCallback(async (id: string): Promise<Destination | null> => {
-    const result = await getDestination(id);
-    
-    if (result.success) {
-      return result.data;
-    } else {
-      toast({
-        title: 'Error',
-        description: `Failed to get destination: ${result.error}`,
-        variant: 'destructive',
-      });
-      return null;
-    }
-  }, [toast]);
+  const getById = useCallback(
+    async (id: string): Promise<Destination | null> => {
+      const result = await getDestination(id);
+
+      if (result.success) {
+        return result.data;
+      } else {
+        toast({
+          title: 'Error',
+          description: `Failed to get destination: ${result.error}`,
+          variant: 'destructive',
+        });
+        return null;
+      }
+    },
+    [toast]
+  );
 
   // Get destination by slug
-  const getBySlug = useCallback(async (slug: string): Promise<Destination | null> => {
-    const result = await getDestinationBySlug(slug);
-    
-    if (result.success) {
-      return result.data;
-    } else {
-      toast({
-        title: 'Error',
-        description: `Failed to get destination: ${result.error}`,
-        variant: 'destructive',
-      });
-      return null;
-    }
-  }, [toast]);
+  const getBySlug = useCallback(
+    async (slug: string): Promise<Destination | null> => {
+      const result = await getDestinationBySlug(slug);
+
+      if (result.success) {
+        return result.data;
+      } else {
+        toast({
+          title: 'Error',
+          description: `Failed to get destination: ${result.error}`,
+          variant: 'destructive',
+        });
+        return null;
+      }
+    },
+    [toast]
+  );
 
   // Create a new destination
-  const create = useCallback(async (data: CreateDestinationData): Promise<Destination | null> => {
-    setIsLoading(true);
-    
-    const result = await createDestination(data);
-    
-    if (result.success) {
-      setDestinations((prev) => [...prev, result.data]);
-      toast({
-        title: 'Success',
-        description: 'Destination created successfully',
-      });
-      setIsLoading(false);
-      return result.data;
-    } else {
-      setError(new Error(result.error));
-      toast({
-        title: 'Error',
-        description: `Failed to create destination: ${result.error}`,
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return null;
-    }
-  }, [toast]);
+  const create = useCallback(
+    async (data: CreateDestinationData): Promise<Destination | null> => {
+      setIsLoading(true);
+
+      const result = await createDestination(data);
+
+      if (result.success) {
+        setDestinations((prev) => [...prev, result.data]);
+        toast({
+          title: 'Success',
+          description: 'Destination created successfully',
+        });
+        setIsLoading(false);
+        return result.data;
+      } else {
+        setError(new Error(result.error));
+        toast({
+          title: 'Error',
+          description: `Failed to create destination: ${result.error}`,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return null;
+      }
+    },
+    [toast]
+  );
 
   // Update an existing destination
   const update = useCallback(
     async (id: string, data: UpdateDestinationData): Promise<Destination | null> => {
       setIsLoading(true);
-      
+
       const result = await updateDestination(id, data);
-      
+
       if (result.success) {
         setDestinations((prev) =>
           prev.map((destination) => (destination.id === id ? result.data : destination))
@@ -187,51 +196,57 @@ export function useDestinations({
   );
 
   // Delete a destination
-  const remove = useCallback(async (id: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    const result = await deleteDestination(id);
-    
-    if (result.success) {
-      setDestinations((prev) => prev.filter((destination) => destination.id !== id));
-      toast({
-        title: 'Success',
-        description: 'Destination deleted successfully',
-      });
-      setIsLoading(false);
-      return true;
-    } else {
-      setError(new Error(result.error));
-      toast({
-        title: 'Error',
-        description: `Failed to delete destination: ${result.error}`,
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return false;
-    }
-  }, [toast]);
+  const remove = useCallback(
+    async (id: string): Promise<boolean> => {
+      setIsLoading(true);
+
+      const result = await deleteDestination(id);
+
+      if (result.success) {
+        setDestinations((prev) => prev.filter((destination) => destination.id !== id));
+        toast({
+          title: 'Success',
+          description: 'Destination deleted successfully',
+        });
+        setIsLoading(false);
+        return true;
+      } else {
+        setError(new Error(result.error));
+        toast({
+          title: 'Error',
+          description: `Failed to delete destination: ${result.error}`,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return false;
+      }
+    },
+    [toast]
+  );
 
   // Get featured destinations
-  const getFeatured = useCallback(async (limit = 6): Promise<Destination[] | null> => {
-    const result = await getFeaturedDestinations(limit);
-    
-    if (result.success) {
-      return result.data;
-    } else {
-      toast({
-        title: 'Error',
-        description: `Failed to get featured destinations: ${result.error}`,
-        variant: 'destructive',
-      });
-      return null;
-    }
-  }, [toast]);
+  const getFeatured = useCallback(
+    async (limit = 6): Promise<Destination[] | null> => {
+      const result = await getFeaturedDestinations(limit);
+
+      if (result.success) {
+        return result.data;
+      } else {
+        toast({
+          title: 'Error',
+          description: `Failed to get featured destinations: ${result.error}`,
+          variant: 'destructive',
+        });
+        return null;
+      }
+    },
+    [toast]
+  );
 
   // Get destination tags
   const getTags = useCallback(async (): Promise<string[] | null> => {
     const result = await getDestinationTags();
-    
+
     if (result.success) {
       return result.data;
     } else {
@@ -259,4 +274,4 @@ export function useDestinations({
     getFeatured,
     getTags,
   };
-} 
+}

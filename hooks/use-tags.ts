@@ -13,7 +13,7 @@ import {
   createTag,
   deleteTag,
   addTagToEntity,
-  removeTagFromEntity
+  removeTagFromEntity,
 } from '@/lib/client/tags';
 
 export type TagSuggestion = {
@@ -101,105 +101,114 @@ export function useTags({
    */
   const refreshTags = useCallback(async () => {
     if (!entityType) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     const result = await listTags(entityType, entityId);
-    
+
     if (isSuccess(result)) {
       setTags(result.data);
     } else {
       setError(result.error.message || 'Failed to fetch tags');
     }
-    
+
     setIsLoading(false);
   }, [entityType, entityId]);
 
   /**
    * Adds a tag to the current entity
    */
-  const addTag = useCallback(async (tagName: string): Promise<boolean> => {
-    if (!entityType || !entityId) {
-      setError('Entity type and ID are required to add a tag');
-      return false;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    const result = await addTagToEntity(entityType, entityId, tagName);
-    
-    if (isSuccess(result)) {
-      await refreshTags();
-      return true;
-    } else {
-      setError(result.error.message || 'Failed to add tag');
-      setIsLoading(false);
-      return false;
-    }
-  }, [entityType, entityId, refreshTags]);
+  const addTag = useCallback(
+    async (tagName: string): Promise<boolean> => {
+      if (!entityType || !entityId) {
+        setError('Entity type and ID are required to add a tag');
+        return false;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      const result = await addTagToEntity(entityType, entityId, tagName);
+
+      if (isSuccess(result)) {
+        await refreshTags();
+        return true;
+      } else {
+        setError(result.error.message || 'Failed to add tag');
+        setIsLoading(false);
+        return false;
+      }
+    },
+    [entityType, entityId, refreshTags]
+  );
 
   /**
    * Removes a tag from the current entity
    */
-  const removeTag = useCallback(async (tagName: string): Promise<boolean> => {
-    if (!entityType || !entityId) {
-      setError('Entity type and ID are required to remove a tag');
-      return false;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    const result = await removeTagFromEntity(entityType, entityId, tagName);
-    
-    if (isSuccess(result)) {
-      await refreshTags();
-      return true;
-    } else {
-      setError(result.error.message || 'Failed to remove tag');
-      setIsLoading(false);
-      return false;
-    }
-  }, [entityType, entityId, refreshTags]);
+  const removeTag = useCallback(
+    async (tagName: string): Promise<boolean> => {
+      if (!entityType || !entityId) {
+        setError('Entity type and ID are required to remove a tag');
+        return false;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      const result = await removeTagFromEntity(entityType, entityId, tagName);
+
+      if (isSuccess(result)) {
+        await refreshTags();
+        return true;
+      } else {
+        setError(result.error.message || 'Failed to remove tag');
+        setIsLoading(false);
+        return false;
+      }
+    },
+    [entityType, entityId, refreshTags]
+  );
 
   /**
-   * Creates a new tag 
+   * Creates a new tag
    */
-  const createNewTag = useCallback(async (tagData: Partial<Tag>): Promise<Tag | null> => {
-    setIsLoading(true);
-    setError(null);
-    
-    const result = await createTag(tagData);
-    
-    setIsLoading(false);
-    
-    if (isSuccess(result)) {
-      if (entityType && entityId) {
-        await addTagToEntity(entityType, entityId, result.data.name);
-        await refreshTags();
+  const createNewTag = useCallback(
+    async (tagData: Partial<Tag>): Promise<Tag | null> => {
+      setIsLoading(true);
+      setError(null);
+
+      const result = await createTag(tagData);
+
+      setIsLoading(false);
+
+      if (isSuccess(result)) {
+        if (entityType && entityId) {
+          await addTagToEntity(entityType, entityId, result.data.name);
+          await refreshTags();
+        }
+        return result.data;
+      } else {
+        setError(result.error.message || 'Failed to create tag');
+        return null;
       }
-      return result.data;
-    } else {
-      setError(result.error.message || 'Failed to create tag');
-      return null;
-    }
-  }, [entityType, entityId, refreshTags]);
+    },
+    [entityType, entityId, refreshTags]
+  );
 
   /**
    * Searches for tags by query
    */
   const searchForTags = useCallback(async (query: string): Promise<Tag[]> => {
     if (!query) return [];
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     const result = await searchTags(query);
-    
+
     setIsLoading(false);
-    
+
     if (isSuccess(result)) {
       return result.data;
     } else {

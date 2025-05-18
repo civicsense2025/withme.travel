@@ -1,6 +1,6 @@
 /**
  * Client API Module
- * 
+ *
  * This file exports all client-side API wrappers for use in components and hooks.
  * It provides a single import point for all API functions.
  */
@@ -42,14 +42,14 @@ export async function handleApiResponse<T>(response: Response): Promise<T> {
       throw new Error(errorText || `API request failed with status ${response.status}`);
     }
   }
-  
+
   const text = await response.text();
   if (!text) return {} as T;
-  
+
   try {
     return JSON.parse(text);
   } catch (e) {
     console.warn('Failed to parse JSON response', e);
     return {} as T;
   }
-} 
+}

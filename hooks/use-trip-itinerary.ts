@@ -32,8 +32,13 @@ export interface UseTripItineraryResult {
   addItem: (data: Partial<ItineraryItem>) => Promise<Result<ItineraryItem>>;
   editItem: (itemId: string, data: Partial<ItineraryItem>) => Promise<Result<ItineraryItem>>;
   removeItem: (itemId: string) => Promise<Result<null>>;
-  reorderItems: (items: Array<{ id: string; position: number; day?: number }>) => Promise<Result<ItineraryItem[]>>;
-  importTemplate: (templateId: string, options?: { adjustDates?: boolean }) => Promise<Result<ItineraryItem[]>>;
+  reorderItems: (
+    items: Array<{ id: string; position: number; day?: number }>
+  ) => Promise<Result<ItineraryItem[]>>;
+  importTemplate: (
+    templateId: string,
+    options?: { adjustDates?: boolean }
+  ) => Promise<Result<ItineraryItem[]>>;
 }
 
 /**
@@ -91,9 +96,7 @@ export function useTripItinerary(tripId: string): UseTripItineraryResult {
       setIsLoading(true);
       const result = await updateItineraryItem(tripId, itemId, data);
       if (result.success) {
-        setItems((prev) =>
-          prev.map((item) => (item.id === itemId ? result.data : item))
-        );
+        setItems((prev) => prev.map((item) => (item.id === itemId ? result.data : item)));
         toast({ title: 'Item updated' });
       } else {
         setError(result.error);
@@ -160,7 +163,7 @@ export function useTripItinerary(tripId: string): UseTripItineraryResult {
       const result = await importFromTemplate(tripId, templateId, options);
       if (result.success) {
         setItems((prev) => [...prev, ...result.data]);
-        toast({ 
+        toast({
           title: 'Template imported',
           description: `${result.data.length} items added to itinerary`,
         });

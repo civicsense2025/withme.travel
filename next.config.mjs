@@ -66,7 +66,6 @@ const nextConfig = {
   async rewrites() {
     return [
       // Handle API route fallbacks to prevent 404 errors
-  
       // Any other rewrites you need to add for missing API endpoints
     ];
   },

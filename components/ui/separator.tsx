@@ -1,26 +1,28 @@
-'use client';
-
-import * as React from 'react';
-import * as SeparatorPrimitive from '@radix-ui/react-separator';
-
+/**
+ * Separator (Atom)
+ *
+ * A themeable, accessible separator component.
+ *
+ * @module ui/atoms
+ */
+import React from 'react';
 import { cn } from '@/lib/utils';
 
-const Separator = React.forwardRef<
-  React.ElementRef<typeof SeparatorPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
->(({ className, orientation = 'horizontal', decorative = true, ...props }, ref) => (
-  <SeparatorPrimitive.Root
-    ref={ref}
-    decorative={decorative}
-    orientation={orientation}
-    className={cn(
-      'shrink-0 bg-border',
-      orientation === 'horizontal' ? 'h-[1px] w-full' : 'h-full w-[1px]',
-      className
-    )}
-    {...props}
-  />
-));
-Separator.displayName = SeparatorPrimitive.Root.displayName;
+export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Orientation of the separator */
+  orientation?: 'horizontal' | 'vertical';
+}
 
-export { Separator };
+export function Separator({ orientation = 'horizontal', className, ...props }: SeparatorProps) {
+  return (
+    <div
+      role="separator"
+      aria-orientation={orientation}
+      className={cn(
+        orientation === 'vertical' ? 'w-px h-full bg-muted' : 'h-px w-full bg-muted',
+        className
+      )}
+      {...props}
+    />
+  );
+}

@@ -91,9 +91,7 @@ export function useExpenses(tripId: string): UseExpensesResult {
       setIsLoading(true);
       const result = await updateTripExpense(tripId, expenseId, data);
       if (result.success) {
-        setExpenses((prev) =>
-          prev.map((exp) => (exp.id === expenseId ? result.data : exp))
-        );
+        setExpenses((prev) => prev.map((exp) => (exp.id === expenseId ? result.data : exp)));
         toast({ title: 'Expense updated' });
       } else {
         setError(result.error);
@@ -168,4 +166,4 @@ export function useExpenses(tripId: string): UseExpensesResult {
     removeExpense,
     fetchSummary,
   };
-} 
+}

@@ -14,7 +14,7 @@ export default function TripsLoading() {
           <div className="h-8 flex-1 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
           <div className="h-8 flex-1 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
         </div>
-        
+
         {/* Trip search skeleton */}
         <div className="flex flex-wrap gap-4 items-center mb-8 justify-center">
           <div className="relative w-full max-w-md mx-auto">
@@ -28,7 +28,7 @@ export default function TripsLoading() {
             </div>
           </div>
         </div>
-      
+
         {/* Trip cards skeleton */}
         <div className="space-y-8">
           <div>
@@ -63,10 +63,13 @@ export default function TripsLoading() {
           <div className="h-7 w-48 bg-zinc-100 dark:bg-zinc-800 rounded-md mx-auto mb-2"></div>
           <div className="h-4 w-64 bg-zinc-100 dark:bg-zinc-800 rounded-md mx-auto"></div>
         </div>
-        
+
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-md animate-pulse flex flex-col items-center justify-center">
+            <div
+              key={i}
+              className="aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-md animate-pulse flex flex-col items-center justify-center"
+            >
               <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 mb-2"></div>
               <div className="h-4 w-16 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
             </div>

@@ -1,6 +1,6 @@
 /**
  * Trip Management Hook
- * 
+ *
  * React hook for managing trip members, access requests, and permissions
  */
 
@@ -24,7 +24,7 @@ import {
   type TripMember,
   type TripRole,
   type TripAccessRequest,
-  type TripInvitation
+  type TripInvitation,
 } from '@/lib/client/trip-management';
 import { isSuccess } from '@/utils/result';
 
@@ -83,21 +83,18 @@ export function useTripManagement(
   tripId: string,
   options: UseTripManagementOptions = {}
 ): UseTripManagementReturn {
-  const { 
-    fetchOnMount = true,
-    fetchAccessRequestsOnMount = true
-  } = options;
+  const { fetchOnMount = true, fetchAccessRequestsOnMount = true } = options;
   const { toast } = useToast();
 
   // State
   const [members, setMembers] = useState<TripMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState<boolean>(true);
   const [membersError, setMembersError] = useState<string | null>(null);
-  
+
   const [accessRequests, setAccessRequests] = useState<TripAccessRequest[]>([]);
   const [isLoadingAccessRequests, setIsLoadingAccessRequests] = useState<boolean>(true);
   const [accessRequestsError, setAccessRequestsError] = useState<string | null>(null);
-  
+
   const [isOperationInProgress, setIsOperationInProgress] = useState<boolean>(false);
 
   /**
@@ -155,140 +152,150 @@ export function useTripManagement(
   /**
    * Add a trip member
    */
-  const addMember = useCallback(async (userId: string, role: TripRole): Promise<boolean> => {
-    if (!tripId) return false;
+  const addMember = useCallback(
+    async (userId: string, role: TripRole): Promise<boolean> => {
+      if (!tripId) return false;
 
-    setIsOperationInProgress(true);
-    setMembersError(null);
+      setIsOperationInProgress(true);
+      setMembersError(null);
 
-    const result = await addTripMember(tripId, userId, role);
+      const result = await addTripMember(tripId, userId, role);
 
-    if (isSuccess(result)) {
-      // Optimistically update the members list
-      setMembers(prev => [...prev, result.data]);
-      toast({
-        title: 'Member added',
-        description: 'User added successfully to the trip',
-        variant: 'default',
-      });
-      setIsOperationInProgress(false);
-      return true;
-    } else {
-      const errorMessage = result.error.toString();
-      setMembersError(errorMessage);
-      toast({
-        title: 'Error adding member',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      setIsOperationInProgress(false);
-      return false;
-    }
-  }, [tripId, toast]);
+      if (isSuccess(result)) {
+        // Optimistically update the members list
+        setMembers((prev) => [...prev, result.data]);
+        toast({
+          title: 'Member added',
+          description: 'User added successfully to the trip',
+          variant: 'default',
+        });
+        setIsOperationInProgress(false);
+        return true;
+      } else {
+        const errorMessage = result.error.toString();
+        setMembersError(errorMessage);
+        toast({
+          title: 'Error adding member',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setIsOperationInProgress(false);
+        return false;
+      }
+    },
+    [tripId, toast]
+  );
 
   /**
    * Update a trip member's role
    */
-  const updateMemberRole = useCallback(async (userId: string, role: TripRole): Promise<boolean> => {
-    if (!tripId) return false;
+  const updateMemberRole = useCallback(
+    async (userId: string, role: TripRole): Promise<boolean> => {
+      if (!tripId) return false;
 
-    setIsOperationInProgress(true);
-    setMembersError(null);
+      setIsOperationInProgress(true);
+      setMembersError(null);
 
-    const result = await updateTripMember(tripId, userId, role);
+      const result = await updateTripMember(tripId, userId, role);
 
-    if (isSuccess(result)) {
-      // Optimistically update the members list
-      setMembers(prev => 
-        prev.map(member => 
-          member.user_id === userId ? { ...member, role } : member
-        )
-      );
-      toast({
-        title: 'Role updated',
-        description: 'Member role updated successfully',
-        variant: 'default',
-      });
-      setIsOperationInProgress(false);
-      return true;
-    } else {
-      const errorMessage = result.error.toString();
-      setMembersError(errorMessage);
-      toast({
-        title: 'Error updating role',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      setIsOperationInProgress(false);
-      return false;
-    }
-  }, [tripId, toast]);
+      if (isSuccess(result)) {
+        // Optimistically update the members list
+        setMembers((prev) =>
+          prev.map((member) => (member.user_id === userId ? { ...member, role } : member))
+        );
+        toast({
+          title: 'Role updated',
+          description: 'Member role updated successfully',
+          variant: 'default',
+        });
+        setIsOperationInProgress(false);
+        return true;
+      } else {
+        const errorMessage = result.error.toString();
+        setMembersError(errorMessage);
+        toast({
+          title: 'Error updating role',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setIsOperationInProgress(false);
+        return false;
+      }
+    },
+    [tripId, toast]
+  );
 
   /**
    * Remove a trip member
    */
-  const removeMember = useCallback(async (userId: string): Promise<boolean> => {
-    if (!tripId) return false;
+  const removeMember = useCallback(
+    async (userId: string): Promise<boolean> => {
+      if (!tripId) return false;
 
-    setIsOperationInProgress(true);
-    setMembersError(null);
+      setIsOperationInProgress(true);
+      setMembersError(null);
 
-    const result = await removeTripMember(tripId, userId);
+      const result = await removeTripMember(tripId, userId);
 
-    if (isSuccess(result)) {
-      // Optimistically update the members list
-      setMembers(prev => prev.filter(member => member.user_id !== userId));
-      toast({
-        title: 'Member removed',
-        description: 'User removed successfully from the trip',
-        variant: 'default',
-      });
-      setIsOperationInProgress(false);
-      return true;
-    } else {
-      const errorMessage = result.error.toString();
-      setMembersError(errorMessage);
-      toast({
-        title: 'Error removing member',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      setIsOperationInProgress(false);
-      return false;
-    }
-  }, [tripId, toast]);
+      if (isSuccess(result)) {
+        // Optimistically update the members list
+        setMembers((prev) => prev.filter((member) => member.user_id !== userId));
+        toast({
+          title: 'Member removed',
+          description: 'User removed successfully from the trip',
+          variant: 'default',
+        });
+        setIsOperationInProgress(false);
+        return true;
+      } else {
+        const errorMessage = result.error.toString();
+        setMembersError(errorMessage);
+        toast({
+          title: 'Error removing member',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setIsOperationInProgress(false);
+        return false;
+      }
+    },
+    [tripId, toast]
+  );
 
   /**
    * Send a trip invitation
    */
-  const sendInvitation = useCallback(async (email: string, role: TripRole): Promise<boolean> => {
-    if (!tripId) return false;
+  const sendInvitation = useCallback(
+    async (email: string, role: TripRole): Promise<boolean> => {
+      if (!tripId) return false;
 
-    setIsOperationInProgress(true);
-    setMembersError(null);
+      setIsOperationInProgress(true);
+      setMembersError(null);
 
-    const result = await sendTripInvitation(tripId, email, role);
+      const result = await sendTripInvitation(tripId, email, role);
 
-    if (isSuccess(result)) {
-      toast({
-        title: 'Invitation sent',
-        description: `Invitation sent to ${email}`,
-        variant: 'default',
-      });
-      setIsOperationInProgress(false);
-      return true;
-    } else {
-      const errorMessage = result.error.toString();
-      setMembersError(errorMessage);
-      toast({
-        title: 'Error sending invitation',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      setIsOperationInProgress(false);
-      return false;
-    }
-  }, [tripId, toast]);
+      if (isSuccess(result)) {
+        toast({
+          title: 'Invitation sent',
+          description: `Invitation sent to ${email}`,
+          variant: 'default',
+        });
+        setIsOperationInProgress(false);
+        return true;
+      } else {
+        const errorMessage = result.error.toString();
+        setMembersError(errorMessage);
+        toast({
+          title: 'Error sending invitation',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setIsOperationInProgress(false);
+        return false;
+      }
+    },
+    [tripId, toast]
+  );
 
   /**
    * Respond to an access request
@@ -304,10 +311,10 @@ export function useTripManagement(
 
       if (isSuccess(result)) {
         // Optimistically update the access requests list
-        setAccessRequests(prev => 
-          prev.map(request => 
-            request.id === requestId 
-              ? { ...request, status: approved ? 'approved' : 'rejected' } 
+        setAccessRequests((prev) =>
+          prev.map((request) =>
+            request.id === requestId
+              ? { ...request, status: approved ? 'approved' : 'rejected' }
               : request
           )
         );
@@ -316,12 +323,12 @@ export function useTripManagement(
           description: approved ? 'Access request approved' : 'Access request rejected',
           variant: 'default',
         });
-        
+
         // If approved, we should also fetch the updated members list
         if (approved) {
           fetchMembers();
         }
-        
+
         setIsOperationInProgress(false);
         return true;
       } else {
@@ -335,7 +342,7 @@ export function useTripManagement(
         setIsOperationInProgress(false);
         return false;
       }
-    }, 
+    },
     [tripId, toast, fetchMembers]
   );
 
@@ -357,10 +364,10 @@ export function useTripManagement(
           description: 'Trip ownership successfully transferred',
           variant: 'default',
         });
-        
+
         // Refresh the members list to reflect new ownership
         fetchMembers();
-        
+
         setIsOperationInProgress(false);
         return true;
       } else {
@@ -374,7 +381,7 @@ export function useTripManagement(
         setIsOperationInProgress(false);
         return false;
       }
-    }, 
+    },
     [tripId, toast, fetchMembers]
   );
 
@@ -453,4 +460,4 @@ export function adaptTripMemberToSSR(member: TripMember): TripMemberFromSSR {
 
 export function adaptTripMembersToSSR(members: TripMember[]): TripMemberFromSSR[] {
   return members.map(adaptTripMemberToSSR);
-} 
+}

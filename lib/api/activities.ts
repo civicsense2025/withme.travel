@@ -26,7 +26,7 @@ import { handleError, Result, Activity } from './_shared';
  * @returns Result containing an array of activities
  */
 export async function listActivities(
-  parentId: string, 
+  parentId: string,
   parentType: string
 ): Promise<Result<Activity[]>> {
   try {
@@ -35,7 +35,7 @@ export async function listActivities(
       .from(TABLES.GROUP_ACTIVITIES)
       .select('*')
       .eq(`${parentType}_id`, parentId);
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -56,7 +56,7 @@ export async function getActivity(activityId: string): Promise<Result<Activity>>
       .select('*')
       .eq('id', activityId)
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   } catch (error) {
@@ -72,24 +72,24 @@ export async function getActivity(activityId: string): Promise<Result<Activity>>
  * @returns Result containing the created activity
  */
 export async function createActivity(
-  parentId: string, 
-  parentType: string, 
+  parentId: string,
+  parentType: string,
   data: Partial<Activity>
 ): Promise<Result<Activity>> {
   try {
     const supabase = await createRouteHandlerClient();
     // Ensure parent ID is set
-    const activityData = { 
-      ...data, 
-      [`${parentType}_id`]: parentId 
+    const activityData = {
+      ...data,
+      [`${parentType}_id`]: parentId,
     };
-    
+
     const { data: newActivity, error } = await supabase
       .from(TABLES.GROUP_ACTIVITIES)
       .insert(activityData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newActivity };
   } catch (error) {
@@ -104,7 +104,7 @@ export async function createActivity(
  * @returns Result containing the updated activity
  */
 export async function updateActivity(
-  activityId: string, 
+  activityId: string,
   data: Partial<Activity>
 ): Promise<Result<Activity>> {
   try {
@@ -115,7 +115,7 @@ export async function updateActivity(
       .eq('id', activityId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedActivity };
   } catch (error) {
@@ -131,11 +131,8 @@ export async function updateActivity(
 export async function deleteActivity(activityId: string): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { error } = await supabase
-      .from(TABLES.GROUP_ACTIVITIES)
-      .delete()
-      .eq('id', activityId);
-    
+    const { error } = await supabase.from(TABLES.GROUP_ACTIVITIES).delete().eq('id', activityId);
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -150,27 +147,24 @@ export async function deleteActivity(activityId: string): Promise<Result<null>> 
  * @returns Result containing matching activities
  */
 export async function searchActivities(
-  query: string, 
+  query: string,
   params: { category?: string; location?: string }
 ): Promise<Result<Activity[]>> {
   try {
     const supabase = await createRouteHandlerClient();
-    let request = supabase
-      .from(TABLES.GROUP_ACTIVITIES)
-      .select('*')
-      .ilike('name', `%${query}%`);
-    
+    let request = supabase.from(TABLES.GROUP_ACTIVITIES).select('*').ilike('name', `%${query}%`);
+
     // Apply additional filters if provided
     if (params.category) {
       request = request.eq('category', params.category);
     }
-    
+
     if (params.location) {
       request = request.ilike('location', `%${params.location}%`);
     }
-    
+
     const { data, error } = await request;
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -186,7 +180,7 @@ export async function searchActivities(
  * Suggest a new activity for a trip or group.
  * @param parentId - The parent entity's unique identifier
  * @param parentType - The type of parent entity (e.g., 'trip', 'group')
- * @param suggestion - The activity suggestion data 
+ * @param suggestion - The activity suggestion data
  * @returns Result containing the created suggestion
  */
 export async function suggestActivity(
@@ -196,21 +190,21 @@ export async function suggestActivity(
 ): Promise<Result<Activity>> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // Add suggestion metadata
     const activityData = {
       ...suggestion,
       [`${parentType}_id`]: parentId,
       is_suggestion: true,
-      status: 'suggested'
+      status: 'suggested',
     };
-    
+
     const { data: newSuggestion, error } = await supabase
       .from(TABLES.GROUP_ACTIVITIES)
       .insert(activityData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newSuggestion };
   } catch (error) {
@@ -220,7 +214,7 @@ export async function suggestActivity(
 
 /**
  * Vote on a suggested activity.
- * 
+ *
  * TODO: Implement voting mechanism for suggested activities
  * - Add user vote tracking in a separate table
  * - Include vote count aggregation
@@ -238,7 +232,7 @@ export async function voteOnActivity(
 
 /**
  * Get activity recommendations based on trip context.
- * 
+ *
  * TODO: Implement AI-powered activity recommendations
  * - Analyze trip destination, dates, and user preferences
  * - Integrate with external APIs for real-time availability
@@ -255,7 +249,7 @@ export async function getRecommendedActivities(
 
 /**
  * Categorize activities using AI.
- * 
+ *
  * TODO: Implement AI categorization of activities
  * - Analyze activity description and details
  * - Suggest appropriate categories based on content
@@ -267,4 +261,4 @@ export async function categorizeActivity(
 ): Promise<Result<{ categories: string[]; confidence: number[] }>> {
   // TODO: Implement AI categorization
   return { success: false, error: 'Not implemented yet' };
-} 
+}

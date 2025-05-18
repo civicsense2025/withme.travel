@@ -1,27 +1,38 @@
-'use client';
-
+/**
+ * Spinner (Atom)
+ *
+ * A themeable, accessible loading spinner component.
+ *
+ * @module ui/atoms
+ */
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface SpinnerProps {
-  /** Optional size to render */
-  size?: 'sm' | 'md' | 'lg';
-  /** Optional additional class names */
-  className?: string;
+export interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Spinner size in px */
+  size?: number;
 }
 
-/**
- * Simple spinner component for loading states
- */
-export function Spinner({ size = 'md', className }: SpinnerProps) {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-6 w-6',
-    lg: 'h-8 w-8'
-  };
-
+export function Spinner({ size = 24, className, ...props }: SpinnerProps) {
   return (
-    <Loader2 className={cn('animate-spin text-primary', sizeClasses[size], className)} />
+    <div
+      className={cn('inline-block animate-spin text-primary', className)}
+      style={{ width: size, height: size }}
+      role="status"
+      aria-label="Loading"
+      {...props}
+    >
+      <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+      </svg>
+    </div>
   );
 }

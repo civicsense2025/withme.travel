@@ -36,7 +36,7 @@
 :root {
   /* Define the font variable used across the app */
   --font-helvetica-neue: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  
+
   /* Re-define critical CSS variables to ensure they're available in Storybook */
   --font-size-base: 1rem;
   --font-size-h1: 2.5rem;
@@ -45,7 +45,7 @@
   --font-size-h4: 1.25rem;
   --font-size-h5: 1rem;
   --font-size-h6: 0.875rem;
-  
+
   /* Base theme variables - copy from globals.css to ensure consistency */
   --background: 0 0% 100%; /* #ffffff */
   --foreground: 222 84% 5%; /* #0f172a */
@@ -53,12 +53,12 @@
   --card-foreground: 222 84% 5%; /* #0f172a */
   --popover: 0 0% 100%; /* #ffffff */
   --popover-foreground: 222 84% 5%; /* #0f172a */
-  
+
   /* Brand Colors - Light Mode */
   --travel-purple: 260 100% 85%; /* #d4b3ff */
   --travel-purple-dark: 260 100% 78%; /* #bb8eff */
   --travel-purple-foreground: 260 100% 20%;
-  
+
   /* Primary color using travel-purple */
   --primary: 260 100% 85%; /* #d4b3ff */
   --primary-foreground: 260 100% 20%;
@@ -74,18 +74,18 @@
 /* Dark mode adjustments - ONLY apply background to storybook context */
 .dark {
   color: #fafafa;
-  
+
   /* Dark mode variables - copy from globals.css dark theme */
   --background: 0 0% 10%; /* #1a1a1a */
   --foreground: 0 0% 98%; /* #fafafa */
   --card: 0 0% 15%; /* #262626 */
   --card-foreground: 0 0% 98%; /* #fafafa */
-  
+
   /* Dark Mode Brand Colors */
   --travel-purple: 260 100% 78%; /* #bb8eff */
   --travel-purple-dark: 260 100% 70%; /* #a366ff */
   --travel-purple-foreground: 260 100% 90%;
-  
+
   /* Primary color */
   --primary: 260 70% 70%;
   --primary-foreground: 260 100% 20%;
@@ -97,7 +97,8 @@
 }
 
 /* Ensure consistent font loading */
-html, body {
+html,
+body {
   font-family: var(--font-helvetica-neue, 'Helvetica Neue', Helvetica, Arial, sans-serif);
 }
 
@@ -188,4 +189,4 @@ h3 {
 .dark .theme-toggle {
   background: #333;
   border-color: #444;
-} 
+}

@@ -21,7 +21,7 @@ let browserClient: TypedSupabaseClient | null = null;
 export function getBrowserClient(): TypedSupabaseClient {
   // Return existing client if available
   if (browserClient) return browserClient;
-  
+
   // Check if we're in a browser environment
   if (typeof window === 'undefined') {
     throw new Error('getBrowserClient should only be called in browser environments');

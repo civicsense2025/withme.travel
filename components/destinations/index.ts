@@ -1,7 +1,7 @@
 /**
- * Destination Components
+ * Destinations Exports
  * 
- * Export all destination components from atoms, molecules, and organisms
+ * @module destinations
  */
 
 // Export atoms
@@ -12,6 +12,9 @@ export * from './molecules';
 
 // Export organisms
 export * from './organisms';
+
+// Export templates
+export * from './templates';
 
 // Legacy exports - will be moved to atomic structure over time
 export { default as PopularDestinations } from './popular-destinations';

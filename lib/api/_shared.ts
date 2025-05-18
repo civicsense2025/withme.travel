@@ -5,7 +5,7 @@
  * Used across all feature API modules for consistent error/result handling.
  *
  * @module lib/api/_shared
- * 
+ *
  * TODO: These are temporary type definitions until we have proper database.types.ts integration.
  * When database.types.ts is updated with all the needed types, these can be replaced with imports.
  */
@@ -27,9 +27,7 @@ import { z } from 'zod';
  *
  * @template T - The type of data returned on success
  */
-export type Result<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+export type Result<T> = { success: true; data: T } | { success: false; error: string };
 
 // ============================================================================
 // TEMPORARY TYPE DEFINITIONS
@@ -262,11 +260,11 @@ export interface Activity {
  */
 export function handleError(error: unknown, fallbackMsg: string): Result<never> {
   console.error(fallbackMsg, error);
-  
+
   if (error instanceof Error) {
     return { success: false, error: error.message };
   }
-  
+
   return { success: false, error: fallbackMsg };
 }
 
@@ -472,4 +470,4 @@ export const taskTagSchema = z.object({
   tag_id: z.string().uuid(),
   created_at: z.string(),
 });
-export type TaskTag = z.infer<typeof taskTagSchema>; 
+export type TaskTag = z.infer<typeof taskTagSchema>;

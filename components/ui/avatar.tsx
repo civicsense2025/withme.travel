@@ -2,53 +2,19 @@
 
 import * as React from 'react';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
-import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils';
 
-const avatarVariants = cva('relative flex shrink-0 overflow-hidden rounded-full', {
-  variants: {
-    size: {
-      sm: 'h-8 w-8',
-      md: 'h-10 w-10',
-      lg: 'h-14 w-14',
-      xl: 'h-20 w-20',
-    },
-    border: {
-      none: '',
-      'travel-purple': 'border-2 border-travel-purple',
-      'travel-blue': 'border-2 border-travel-blue',
-      'travel-pink': 'border-2 border-travel-pink',
-      'travel-yellow': 'border-2 border-travel-yellow',
-      'travel-mint': 'border-2 border-travel-mint',
-      'travel-peach': 'border-2 border-travel-peach',
-    },
-  },
-  defaultVariants: {
-    size: 'md',
-    border: 'none',
-  },
-});
-
-export interface AvatarProps
-  extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>,
-    VariantProps<typeof avatarVariants> {}
-
-/**
- * Avatar component with design system variants.
- *
- * @example
- * <Avatar size="lg" border="travel-purple">...</Avatar>
- */
-const Avatar = React.forwardRef<React.ElementRef<typeof AvatarPrimitive.Root>, AvatarProps>(
-  ({ className, size, border, ...props }, ref) => (
-    <AvatarPrimitive.Root
-      ref={ref}
-      className={cn(avatarVariants({ size, border, className }))}
-      {...props}
-    />
-  )
-);
+const Avatar = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Root
+    ref={ref}
+    className={cn('relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full', className)}
+    {...props}
+  />
+));
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
 const AvatarImage = React.forwardRef<

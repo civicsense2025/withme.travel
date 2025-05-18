@@ -9,18 +9,18 @@ console.log('Looking for Tailwind at:', tailwindPath);
 
 if (fs.existsSync(tailwindPath)) {
   console.log('Tailwind found at:', tailwindPath);
-  
+
   try {
     // Try to find the CLI path
     const cliPath = path.join(tailwindPath, 'lib/cli.js');
-    
+
     if (fs.existsSync(cliPath)) {
       console.log('Tailwind CLI found at:', cliPath);
-      
+
       // Execute Tailwind directly with Node
       const command = `node "${cliPath}" -i ./app/globals.css -o ./public/styles.css`;
       console.log('Executing command:', command);
-      
+
       execSync(command, { stdio: 'inherit' });
       console.log('Tailwind CSS compiled successfully!');
     } else {

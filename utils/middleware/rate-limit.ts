@@ -42,8 +42,10 @@ export function rateLimit(options: RateLimitOptions) {
 
     // Increase limit for expense-related routes
     let actualLimit = limit;
-    if (req.nextUrl.pathname.includes('/expenses') || 
-        req.nextUrl.pathname.includes('/planned-expenses')) {
+    if (
+      req.nextUrl.pathname.includes('/expenses') ||
+      req.nextUrl.pathname.includes('/planned-expenses')
+    ) {
       // Use a much higher limit for expense routes
       actualLimit = Math.max(limit, 300); // Minimum 300 requests per window
     }

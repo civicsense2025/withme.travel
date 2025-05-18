@@ -1,24 +1,44 @@
-import { cn } from '@/lib/utils';
-
 /**
  * ItineraryDayHeader
- * 
- * Displays a day header for itinerary sections
- * 
+ *
+ * Header component for displaying day titles in the itinerary
+ *
  * @module itinerary/atoms
  */
 
+'use client';
+
+import React from 'react';
+import { cn } from '@/lib/utils';
+
+// ============================================================================
+// COMPONENT PROPS & TYPES
+// ============================================================================
+
 export interface ItineraryDayHeaderProps {
-  /** The title text to display */
+  /** Title text to display (e.g., "Day 1") */
   title: string;
-  /** Optional className for styling customization */
+  /** Optional date string to display alongside the title */
+  date?: string;
+  /** Additional class names */
   className?: string;
 }
 
-export function ItineraryDayHeader({ title, className = '' }: ItineraryDayHeaderProps) {
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export function ItineraryDayHeader({
+  title,
+  date,
+  className,
+}: ItineraryDayHeaderProps) {
   return (
-    <h2 className={cn("text-lg font-semibold mb-2", className)}>
-      {title}
-    </h2>
+    <div className={cn('flex flex-col space-y-1 mb-4', className)}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      {date && (
+        <p className="text-sm text-muted-foreground">{date}</p>
+      )}
+    </div>
   );
 } 

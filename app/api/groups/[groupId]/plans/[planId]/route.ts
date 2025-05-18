@@ -1,6 +1,6 @@
 /**
  * Group Plan API Routes
- * 
+ *
  * Handles operations for a specific plan within a group:
  * - GET: Fetch a specific plan with its items
  * - PUT: Update a plan
@@ -10,13 +10,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
-import { 
-  getGroupPlan, 
+import {
+  getGroupPlan,
   updateGroupPlan,
   updateGroupPlanItems,
   deleteGroupPlan,
   deleteGroupPlanItem,
-  checkGroupMemberRole 
+  checkGroupMemberRole,
 } from '@/lib/api/groups';
 
 // Validation schema for updating a plan
@@ -38,7 +38,7 @@ const planItemsSchema = z.array(
     order: z.number().optional(),
     type: z.string().optional(),
     status: z.string().optional(),
-    meta: z.record(z.any()).optional()
+    meta: z.record(z.any()).optional(),
   })
 );
 
@@ -47,16 +47,19 @@ const planItemsSchema = z.array(
  * Fetch a specific plan from a group with its items
  */
 export async function GET(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: { groupId: string; planId: string } }
 ) {
   try {
     const { groupId, planId } = params;
-    
+
     if (!groupId || !planId) {
-      return NextResponse.json({ 
-        error: 'Group ID and Plan ID are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Group ID and Plan ID are required',
+        },
+        { status: 400 }
+      );
     }
 
     const supabase = await createRouteHandlerClient();
@@ -68,30 +71,23 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ 
-        error: 'Authentication required' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+        },
+        { status: 401 }
+      );
     }
 
     // Check if the user is a member of the group
-    const memberResult = await checkGroupMemberRole(
-      groupId,
-      user.id,
-      ['owner', 'admin', 'member']
-    );
+    const memberResult = await checkGroupMemberRole(groupId, user.id, ['owner', 'admin', 'member']);
 
     if (!memberResult.success) {
-      return NextResponse.json(
-        { error: 'Error checking group membership' }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
     }
 
     if (!memberResult.data) {
-      return NextResponse.json(
-        { error: 'Not a member of this group' }, 
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
     }
 
     // Fetch the plan with items
@@ -99,7 +95,7 @@ export async function GET(
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error }, 
+        { error: result.error },
         { status: result.error === 'Plan not found' ? 404 : 500 }
       );
     }
@@ -107,10 +103,7 @@ export async function GET(
     return NextResponse.json({ data: result.data });
   } catch (error) {
     console.error('Error in GET /api/groups/[groupId]/plans/[planId]:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
 
@@ -119,16 +112,19 @@ export async function GET(
  * Update a specific plan
  */
 export async function PUT(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: { groupId: string; planId: string } }
 ) {
   try {
     const { groupId, planId } = params;
-    
+
     if (!groupId || !planId) {
-      return NextResponse.json({ 
-        error: 'Group ID and Plan ID are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Group ID and Plan ID are required',
+        },
+        { status: 400 }
+      );
     }
 
     const supabase = await createRouteHandlerClient();
@@ -140,39 +136,32 @@ export async function PUT(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ 
-        error: 'Authentication required' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+        },
+        { status: 401 }
+      );
     }
 
     // Check if the user is a member of the group
-    const memberResult = await checkGroupMemberRole(
-      groupId,
-      user.id,
-      ['owner', 'admin', 'member']
-    );
+    const memberResult = await checkGroupMemberRole(groupId, user.id, ['owner', 'admin', 'member']);
 
     if (!memberResult.success) {
-      return NextResponse.json(
-        { error: 'Error checking group membership' }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
     }
 
     if (!memberResult.data) {
-      return NextResponse.json(
-        { error: 'Not a member of this group' }, 
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
     }
 
     // Parse request body
     const body = await request.json();
-    
+
     // Check what kind of update this is (plan update or items update)
     const url = new URL(request.url);
     const updateType = url.searchParams.get('type') || 'plan';
-    
+
     if (updateType === 'items') {
       // Validate items array
       try {
@@ -183,17 +172,14 @@ export async function PUT(
           { status: 400 }
         );
       }
-      
+
       // Update plan items
       const result = await updateGroupPlanItems(groupId, planId, body, user.id);
-      
+
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error }, 
-          { status: 500 }
-        );
+        return NextResponse.json({ error: result.error }, { status: 500 });
       }
-      
+
       return NextResponse.json({ data: result.data });
     } else {
       // Regular plan update
@@ -210,20 +196,14 @@ export async function PUT(
       const result = await updateGroupPlan(groupId, planId, body);
 
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error }, 
-          { status: 500 }
-        );
+        return NextResponse.json({ error: result.error }, { status: 500 });
       }
 
       return NextResponse.json({ data: result.data });
     }
   } catch (error) {
     console.error('Error in PUT /api/groups/[groupId]/plans/[planId]:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
 
@@ -232,16 +212,19 @@ export async function PUT(
  * Delete a specific plan or a plan item
  */
 export async function DELETE(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: { groupId: string; planId: string } }
 ) {
   try {
     const { groupId, planId } = params;
-    
+
     if (!groupId || !planId) {
-      return NextResponse.json({ 
-        error: 'Group ID and Plan ID are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Group ID and Plan ID are required',
+        },
+        { status: 400 }
+      );
     }
 
     const supabase = await createRouteHandlerClient();
@@ -253,66 +236,53 @@ export async function DELETE(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ 
-        error: 'Authentication required' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+        },
+        { status: 401 }
+      );
     }
 
     // Check if the user has admin rights
-    const memberResult = await checkGroupMemberRole(
-      groupId,
-      user.id,
-      ['owner', 'admin']
-    );
+    const memberResult = await checkGroupMemberRole(groupId, user.id, ['owner', 'admin']);
 
     if (!memberResult.success) {
-      return NextResponse.json(
-        { error: 'Error checking group membership' }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
     }
 
     if (!memberResult.data) {
       return NextResponse.json(
-        { error: 'You do not have permission to delete plans' }, 
+        { error: 'You do not have permission to delete plans' },
         { status: 403 }
       );
     }
-    
+
     // Check if we're deleting an item or the whole plan
     const url = new URL(request.url);
     const itemId = url.searchParams.get('itemId');
-    
+
     if (itemId) {
       // Delete specific item
       const result = await deleteGroupPlanItem(groupId, planId, itemId);
-      
+
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error }, 
-          { status: 500 }
-        );
+        return NextResponse.json({ error: result.error }, { status: 500 });
       }
-      
+
       return NextResponse.json({ success: true }, { status: 200 });
     } else {
       // Delete the plan
       const result = await deleteGroupPlan(groupId, planId);
 
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error }, 
-          { status: 500 }
-        );
+        return NextResponse.json({ error: result.error }, { status: 500 });
       }
 
       return NextResponse.json({ success: true }, { status: 200 });
     }
   } catch (error) {
     console.error('Error in DELETE /api/groups/[groupId]/plans/[planId]:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
-} 
+}

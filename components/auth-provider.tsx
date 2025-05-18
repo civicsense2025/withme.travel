@@ -1,299 +1,200 @@
-// components/auth-provider.tsx
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import type { SupabaseClient, Session, User } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
-import { FIELDS } from '@/utils/constants/database';
-import { TABLES } from '@/utils/constants/tables';
-import { toast } from '@/hooks/use-toast';
-import Link from 'next/link';
-import { getBrowserClient } from '@/utils/supabase/browser-client';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export interface ExtendedUser extends User {
-  profile?: {
-    name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-    email?: string | null;
-  };
+/**
+ * User profile data structure
+ */
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
+  created_at: string;
+  role?: string;
 }
 
-export interface AuthProviderProps {
-  initialSession: Session | null;
-  children: React.ReactNode;
-}
-
-export interface AuthContextType {
-  user: ExtendedUser | null;
-  session: Session | null;
+/**
+ * Authentication context type definition
+ */
+interface AuthContextType {
+  user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<void>;
-  refreshSession: () => Promise<void>;
-  supabase: SupabaseClient<Database>;
+  error: Error | null;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType>({
+// Create context with default values
+const AuthContext = createContext<AuthContextType>({
   user: null,
-  session: null,
   isLoading: true,
-  signIn: async () => {},
-  signOut: async () => {},
-  signUp: async () => {},
-  refreshSession: async () => {},
-  supabase: {} as SupabaseClient<Database>,
+  error: null,
+  login: async () => {},
+  signup: async () => {},
+  logout: async () => {},
+  resetPassword: async () => {},
 });
 
-export const useAuth = () => useContext(AuthContext);
+/**
+ * Auth provider component that handles authentication state
+ */
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-// Add a helper to get a cookie value by name (client-side)
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
-}
-
-export function AuthProvider({ 
-  initialSession, 
-  children,
-  className
-}: AuthProviderProps & { className?: string }) {
-  // Initialize state first
-  const [session, setSession] = useState<Session | null>(initialSession);
-  const [user, setUser] = useState<ExtendedUser | null>(
-    initialSession ? { ...initialSession.user } : null
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(!initialSession);
-  const [supabase, setSupabase] = useState<SupabaseClient<Database>>({} as SupabaseClient<Database>);
-  
-  // Use an effect to initialize Supabase client only on the client side
+  // Check authentication status on load
   useEffect(() => {
-    try {
-      const client = getBrowserClient();
-      setSupabase(client);
-    } catch (error) {
-      console.error('Error initializing Supabase client:', error);
+    async function loadUser() {
+      try {
+        setIsLoading(true);
+        const res = await fetch('/api/auth/me');
+        
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          // No user is logged in
+          setUser(null);
+        }
+      } catch (err) {
+        console.error('Error loading user:', err);
+        setError(err instanceof Error ? err : new Error('Failed to load user'));
+      } finally {
+        setIsLoading(false);
+      }
     }
+    
+    loadUser();
   }, []);
 
-  async function fetchUserProfile(userId: string) {
-    if (!supabase || !Object.keys(supabase).length) return null;
-    
-    const { data, error } = await supabase
-      .from(TABLES.PROFILES)
-      .select(['name', 'avatar_url', 'username', 'email'].join(','))
-      .eq('id', userId)
-      .single();
-
-    if (error || !data || typeof data !== 'object' || 'error' in data) {
-      console.error('[AuthProvider] fetchUserProfile error', error);
-      return null;
-    }
-
-    // Now we know data is the correct type, use as unknown first to avoid type errors
-    const profileData = data as unknown as Record<string, any>;
-    return {
-      name: profileData.name as string | null,
-      avatar_url: profileData.avatar_url as string | null,
-      username: profileData.username as string | null,
-      email: profileData.email as string | null,
-    };
-  }
-
-  useEffect(() => {
-    // Skip if no supabase client is initialized yet or initialSession exists
-    if (!supabase || !Object.keys(supabase).length) return;
-    if (initialSession) {
+  // Login function
+  const login = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Login failed');
+      }
+      
+      const data = await res.json();
+      setUser(data.user);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Login failed'));
+      throw err;
+    } finally {
       setIsLoading(false);
-      return;
     }
-    
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (error) {
-        setSession(null);
-        setUser(null);
-      } else if (data?.user) {
-        setSession((s) => ({ ...s, user: data.user }) as Session);
-        setUser({ ...data.user });
+  };
+
+  // Signup function
+  const signup = async (email: string, password: string, name: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Signup failed');
       }
+      
+      const data = await res.json();
+      setUser(data.user);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Signup failed'));
+      throw err;
+    } finally {
       setIsLoading(false);
-    });
-  }, [supabase, initialSession]);
-
-  useEffect(() => {
-    if (!session?.user || !supabase || !Object.keys(supabase).length) return;
-    
-    fetchUserProfile(session.user.id).then((profile) => {
-      if (profile) {
-        setUser((u) =>
-          u
-            ? {
-                ...u,
-                profile: {
-                  name: profile.name,
-                  avatar_url: profile.avatar_url,
-                  username: profile.username,
-                  email: profile.email,
-                },
-              }
-            : null
-        );
-      }
-    });
-  }, [session, supabase]);
-
-  useEffect(() => {
-    if (!supabase || !Object.keys(supabase).length) return;
-    
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (newSession?.user) {
-        fetchUserProfile(newSession.user.id).then((profile) => {
-          setUser({
-            ...newSession.user,
-            profile: profile || undefined,
-          });
-        });
-      } else {
-        setUser(null);
-      }
-    });
-    
-    return () => {
-      if (listener?.subscription) {
-        listener.subscription.unsubscribe();
-      }
-    };
-  }, [supabase]);
-
-  // --- GUEST TO USER GROUP CLAIM LOGIC ---
-  useEffect(() => {
-    // Skip if conditions aren't met
-    if (!user || !user.id || !supabase || !Object.keys(supabase).length) return;
-    // Only run in browser
-    if (typeof window === 'undefined') return;
-    // Check for guest_token cookie
-    const guestToken = getCookie('guest_token');
-    if (!guestToken) return;
-    // Defensive: only run once per session
-    if ((window as any)._withme_claimed_guest_groups) return;
-    (window as any)._withme_claimed_guest_groups = true;
-
-    // Claim guest groups
-    (async () => {
-      // Find all group_guest_members for this guest_token
-      const { data: guestMemberships, error } = await supabase
-        .from('group_guest_members')
-        .select('group_id')
-        .eq('guest_token', guestToken);
-      if (error || !guestMemberships || guestMemberships.length === 0) return;
-      let firstGroupId: string | null = null;
-      // For each group, insert into group_members if not already present
-      for (const [i, gm] of guestMemberships.entries()) {
-        const groupId = gm.group_id;
-        if (i === 0) firstGroupId = groupId;
-        // Check if already a member
-        const { data: existing } = await supabase
-          .from('group_members')
-          .select('id')
-          .eq('group_id', groupId ?? '')
-          .eq('user_id', user.id ?? '')
-          .maybeSingle();
-        if (!existing) {
-          await supabase.from('group_members').insert({
-            group_id: groupId ?? '',
-            user_id: user.id ?? '',
-            role: 'member',
-            status: 'active',
-          });
-        }
-        // Optionally: remove guest membership
-        await supabase
-          .from('group_guest_members')
-          .delete()
-          .eq('group_id', groupId ?? '')
-          .eq('guest_token', guestToken ?? '');
-      }
-      // Show toast/banner for first group
-      if (firstGroupId) {
-        toast({
-          title: 'Your group was saved!',
-          description: (
-            <span>
-              Click{' '}
-              <a href={`/groups/${firstGroupId}`} className="underline text-primary">
-                here
-              </a>{' '}
-              to open it.
-            </span>
-          ),
-        });
-      }
-      // Clear the guest_token cookie
-      document.cookie = 'guest_token=; Max-Age=0; path=/; SameSite=Lax';
-    })();
-  }, [user, supabase]);
-
-  const signIn = async (email: string, password: string) => {
-    if (!supabase || !Object.keys(supabase).length) 
-      throw new Error('Supabase client not initialized');
-      
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    }
   };
 
-  const signOut = async () => {
-    if (!supabase || !Object.keys(supabase).length) 
-      throw new Error('Supabase client not initialized');
+  // Logout function
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
       
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
-
-  const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
-    if (!supabase || !Object.keys(supabase).length) 
-      throw new Error('Supabase client not initialized');
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
       
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: metadata },
-    });
-    if (error) throw error;
-  };
-
-  const refreshSession = async () => {
-    if (!supabase || !Object.keys(supabase).length) 
-      throw new Error('Supabase client not initialized');
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Logout failed');
+      }
       
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data?.user) {
-      setSession(null);
       setUser(null);
-      return;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Logout failed'));
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-    setSession((s) => ({ ...s, user: data.user }) as Session);
-    setUser((u) => (u ? { ...u, profile: u.profile } : null));
   };
 
-  const value: AuthContextType = {
+  // Reset password function
+  const resetPassword = async (email: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Password reset request failed');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Password reset request failed'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value = {
     user,
-    session,
     isLoading,
-    signIn,
-    signOut,
-    signUp,
-    refreshSession,
-    supabase,
+    error,
+    login,
+    signup,
+    logout,
+    resetPassword,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      <div className={className}>{children}</div>
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+/**
+ * Hook to use authentication context
+ */
+export function useAuth() {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
+} 

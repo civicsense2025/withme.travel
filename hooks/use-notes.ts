@@ -1,6 +1,6 @@
 /**
  * Trip Notes Hook
- * 
+ *
  * React hook for managing trip notes with state management and collaborative editing support
  */
 
@@ -17,9 +17,12 @@ import {
   updateTripNotes,
   createTripNotes,
   getCollaborativeSession,
-  type Note
+  type Note,
 } from '@/lib/client/notes';
 import { isSuccess } from '@/utils/result';
+import { tryCatch } from '@/utils/result';
+import { API_ROUTES } from '@/utils/constants/routes';
+import { Result } from '@/utils/result';
 
 // ============================================================================
 // TYPES
@@ -52,143 +55,211 @@ interface UseNotesReturn {
   };
 }
 
+interface NotesState {
+  content: string;
+  isLoading: boolean;
+  isSaving: boolean;
+  error: string | null;
+  collaborationSession: {
+    sessionId: string | null;
+    accessToken: string | null;
+    error: string | null;
+  };
+}
+
 // ============================================================================
 // HOOK IMPLEMENTATION
 // ============================================================================
 
 /**
- * Hook for managing trip notes
+ * Hook for managing trip notes with collaborative editing support
  */
-export function useNotes(tripId: string, options: UseNotesOptions = {}): UseNotesReturn {
-  const { fetchOnMount = true } = options;
+export function useNotes(tripId: string) {
   const { toast } = useToast();
+  const [state, setState] = useState<NotesState>({
+    content: '',
+    isLoading: true,
+    isSaving: false,
+    error: null,
+    collaborationSession: {
+      sessionId: null,
+      accessToken: null,
+      error: null,
+    },
+  });
 
-  // State
-  const [content, setContent] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isSessionLoading, setIsSessionLoading] = useState<boolean>(false);
-  const [sessionError, setSessionError] = useState<string | null>(null);
+  // Fetch notes content when tripId changes
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!tripId) return;
 
-  /**
-   * Fetch trip notes
-   */
-  const fetchNotes = useCallback(async () => {
-    if (!tripId) return;
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    setIsLoading(true);
-    setError(null);
+      try {
+        const response = await fetch(`${API_ROUTES.TRIPS}/${tripId}/notes`);
 
-    const result = await getTripNotes(tripId);
-
-    if (isSuccess(result)) {
-      setContent(result.data.content || '');
-    } else {
-      // If notes don't exist yet, create empty notes
-      const errorMessage = result.error.toString();
-      if (errorMessage.toLowerCase().includes('not found')) {
-        const createResult = await createTripNotes(tripId);
-        if (isSuccess(createResult)) {
-          setContent(createResult.data.content || '');
-        } else {
-          const createErrorMsg = createResult.error.toString();
-          setError(createErrorMsg);
-          toast({
-            title: 'Error loading notes',
-            description: createErrorMsg,
-            variant: 'destructive',
-          });
+        if (!response.ok) {
+          throw new Error('Failed to fetch notes');
         }
-      } else {
-        setError(errorMessage);
+
+        const data = await response.json();
+        setState((prev) => ({
+          ...prev,
+          content: data.content || '',
+          isLoading: false,
+          collaborationSession: {
+            sessionId: data.collaborationSession?.sessionId || null,
+            accessToken: data.collaborationSession?.accessToken || null,
+            error: null,
+          },
+        }));
+      } catch (error) {
+        console.error('Error fetching notes:', error);
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Failed to fetch notes',
+          collaborationSession: {
+            ...prev.collaborationSession,
+            error: 'Failed to establish collaborative session',
+          },
+        }));
+      }
+    };
+
+    fetchNotes();
+  }, [tripId]);
+
+  // Update notes content
+  const updateContent = useCallback(
+    async (newContent: string) => {
+      if (!tripId) return;
+
+      setState((prev) => ({ ...prev, isSaving: true }));
+
+      try {
+        const response = await fetch(`${API_ROUTES.TRIPS}/${tripId}/notes`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: newContent }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update notes');
+        }
+
+        setState((prev) => ({
+          ...prev,
+          content: newContent,
+          isSaving: false,
+        }));
+
+        return { success: true };
+      } catch (error) {
+        console.error('Error updating notes:', error);
+        setState((prev) => ({
+          ...prev,
+          isSaving: false,
+          error: error instanceof Error ? error.message : 'Failed to update notes',
+        }));
+
         toast({
-          title: 'Error loading notes',
-          description: errorMessage,
+          title: 'Failed to save notes',
+          description: "Your changes couldn't be saved. Please try again.",
           variant: 'destructive',
         });
+
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
-    }
+    },
+    [tripId, toast]
+  );
 
-    setIsLoading(false);
-  }, [tripId, toast]);
+  // Function to create a new personal note
+  const createPersonalNote = useCallback(
+    async (title: string, content: string = ''): Promise<Result<any>> => {
+      if (!tripId) {
+        return { success: false, error: 'No trip ID provided' };
+      }
 
-  /**
-   * Fetch collaboration session info
-   */
-  const fetchCollaborationSession = useCallback(async () => {
-    if (!tripId) return;
+      return tryCatch(
+        fetch(`${API_ROUTES.TRIPS}/${tripId}/personal-notes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title, content }),
+        }).then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create personal note');
+          }
+          return response.json();
+        })
+      );
+    },
+    [tripId]
+  );
 
-    setIsSessionLoading(true);
-    setSessionError(null);
+  // Function to update a personal note
+  const updatePersonalNote = useCallback(
+    async (noteId: string, title: string, content: string): Promise<Result<any>> => {
+      if (!tripId) {
+        return { success: false, error: 'No trip ID provided' };
+      }
 
-    const result = await getCollaborativeSession(tripId);
+      return tryCatch(
+        fetch(`${API_ROUTES.TRIPS}/${tripId}/personal-notes/${noteId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title, content }),
+        }).then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update personal note');
+          }
+          return response.json();
+        })
+      );
+    },
+    [tripId]
+  );
 
-    if (isSuccess(result)) {
-      setSessionId(result.data.sessionId);
-      setAccessToken(result.data.accessToken);
-    } else {
-      const errorMessage = result.error.toString();
-      setSessionError(errorMessage);
-      toast({
-        title: 'Collaborative editing unavailable',
-        description: 'Using offline mode for notes',
-        variant: 'default',
-      });
-    }
+  // Function to delete a personal note
+  const deletePersonalNote = useCallback(
+    async (noteId: string): Promise<Result<any>> => {
+      if (!tripId) {
+        return { success: false, error: 'No trip ID provided' };
+      }
 
-    setIsSessionLoading(false);
-  }, [tripId, toast]);
-
-  /**
-   * Update notes content
-   */
-  const updateContent = useCallback(async (newContent: string) => {
-    if (!tripId) return;
-
-    setIsSaving(true);
-    setError(null);
-
-    // Optimistically update local state
-    setContent(newContent);
-
-    const result = await updateTripNotes(tripId, newContent);
-
-    if (!isSuccess(result)) {
-      const errorMessage = result.error.toString();
-      setError(errorMessage);
-      toast({
-        title: 'Error saving notes',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    }
-
-    setIsSaving(false);
-  }, [tripId, toast]);
-
-  // Load notes on mount if requested
-  useEffect(() => {
-    if (fetchOnMount) {
-      fetchNotes();
-      fetchCollaborationSession();
-    }
-  }, [fetchOnMount, fetchNotes, fetchCollaborationSession]);
+      return tryCatch(
+        fetch(`${API_ROUTES.TRIPS}/${tripId}/personal-notes/${noteId}`, {
+          method: 'DELETE',
+        }).then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to delete personal note');
+          }
+          return response.json();
+        })
+      );
+    },
+    [tripId]
+  );
 
   return {
-    content,
-    isLoading,
-    isSaving,
-    error,
+    content: state.content,
+    isLoading: state.isLoading,
+    isSaving: state.isSaving,
+    error: state.error,
+    collaborationSession: state.collaborationSession,
     updateContent,
-    refresh: fetchNotes,
-    collaborationSession: {
-      sessionId,
-      accessToken,
-      isLoading: isSessionLoading,
-      error: sessionError,
-    }
+    createPersonalNote,
+    updatePersonalNote,
+    deletePersonalNote,
   };
-} 
+}

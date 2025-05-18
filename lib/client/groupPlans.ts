@@ -80,7 +80,10 @@ export async function getGroupPlan(groupId: string, planId: string): Promise<Res
   );
 }
 
-export async function createGroupPlan(groupId: string, data: Partial<GroupPlan>): Promise<Result<GroupPlan>> {
+export async function createGroupPlan(
+  groupId: string,
+  data: Partial<GroupPlan>
+): Promise<Result<GroupPlan>> {
   return tryCatch(
     fetch(`/api/groups/${groupId}/plans`, {
       method: 'POST',
@@ -90,7 +93,11 @@ export async function createGroupPlan(groupId: string, data: Partial<GroupPlan>)
   );
 }
 
-export async function updateGroupPlan(groupId: string, planId: string, data: Partial<GroupPlan>): Promise<Result<GroupPlan>> {
+export async function updateGroupPlan(
+  groupId: string,
+  planId: string,
+  data: Partial<GroupPlan>
+): Promise<Result<GroupPlan>> {
   return tryCatch(
     fetch(`/api/groups/${groupId}/plans/${planId}`, {
       method: 'PATCH',
@@ -103,7 +110,8 @@ export async function updateGroupPlan(groupId: string, planId: string, data: Par
 export async function deleteGroupPlan(groupId: string, planId: string): Promise<Result<null>> {
   return tryCatch(
     fetch(`/api/groups/${groupId}/plans/${planId}`, {
-      method: 'DELETE' }).then((response) => handleApiResponse<null>(response))
+      method: 'DELETE',
+    }).then((response) => handleApiResponse<null>(response))
   );
 }
 
@@ -117,7 +125,10 @@ export async function listGroupIdeas(groupId: string): Promise<Result<GroupIdea[
   );
 }
 
-export async function createGroupIdea(groupId: string, data: Partial<GroupIdea>): Promise<Result<GroupIdea>> {
+export async function createGroupIdea(
+  groupId: string,
+  data: Partial<GroupIdea>
+): Promise<Result<GroupIdea>> {
   return tryCatch(
     fetch(`/api/groups/${groupId}/ideas`, {
       method: 'POST',
@@ -127,7 +138,11 @@ export async function createGroupIdea(groupId: string, data: Partial<GroupIdea>)
   );
 }
 
-export async function voteGroupIdea(groupId: string, ideaId: string, voteType: 'up' | 'down'): Promise<Result<GroupIdea>> {
+export async function voteGroupIdea(
+  groupId: string,
+  ideaId: string,
+  voteType: 'up' | 'down'
+): Promise<Result<GroupIdea>> {
   return tryCatch(
     fetch(`/api/groups/${groupId}/ideas/${ideaId}/vote`, {
       method: 'POST',
@@ -135,4 +150,4 @@ export async function voteGroupIdea(groupId: string, ideaId: string, voteType: '
       body: JSON.stringify({ voteType }),
     }).then((response) => handleApiResponse<GroupIdea>(response))
   );
-} 
+}

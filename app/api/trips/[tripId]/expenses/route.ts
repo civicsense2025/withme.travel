@@ -37,16 +37,18 @@ export async function GET(
     try {
       const { data: localExpenses, error: localError } = await supabase
         .from('expenses')
-        .select(`
+        .select(
+          `
           *,
           profiles!inner(id, name, email, avatar_url)
-        `)
+        `
+        )
         .eq('trip_id', tripId)
         .order('date', { ascending: false });
 
       if (localError) {
         console.error('Error fetching local expenses:', localError);
-        
+
         // If table doesn't exist, return empty array instead of error
         if (localError.message?.includes('does not exist')) {
           return NextResponse.json({
@@ -55,7 +57,7 @@ export async function GET(
             totalSpent: 0,
           });
         }
-        
+
         return NextResponse.json({ error: 'Failed to fetch expenses' }, { status: 500 });
       }
 
@@ -63,7 +65,7 @@ export async function GET(
       const formattedExpenses = localExpenses.map((expense) => ({
         ...expense,
         paid_by_user: expense.profiles,
-        profiles: undefined // Remove the nested profiles object
+        profiles: undefined, // Remove the nested profiles object
       }));
 
       // Group expenses by category
@@ -79,7 +81,10 @@ export async function GET(
         {} as Record<string, number>
       );
 
-      const totalSpent = formattedExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+      const totalSpent = formattedExpenses.reduce(
+        (sum, expense) => sum + Number(expense.amount),
+        0
+      );
 
       return NextResponse.json({
         expenses: formattedExpenses,
@@ -88,11 +93,11 @@ export async function GET(
       });
     } catch (processingError) {
       console.error('Error processing expenses:', processingError);
-      return NextResponse.json({ 
+      return NextResponse.json({
         expenses: [],
         categoryTotals: {},
         totalSpent: 0,
-        error: 'Failed to process expenses'
+        error: 'Failed to process expenses',
       });
     }
   } catch (error: any) {
@@ -157,10 +162,12 @@ export async function POST(
       const { data: newExpense, error } = await supabase
         .from('expenses')
         .insert(expenseData)
-        .select(`
+        .select(
+          `
           *,
           profiles!inner(id, name, email, avatar_url)
-        `)
+        `
+        )
         .single();
 
       if (error) {
@@ -172,7 +179,7 @@ export async function POST(
       const formattedExpense = {
         ...newExpense,
         paid_by_user: newExpense.profiles,
-        profiles: undefined
+        profiles: undefined,
       };
 
       return NextResponse.json({ expense: formattedExpense });

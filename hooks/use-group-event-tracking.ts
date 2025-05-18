@@ -105,4 +105,4 @@ export function useGroupEventTracking(groupId?: string) {
     trackGroupPlanIdeaCommented,
     trackEvent, // Include the original trackEvent for any other custom events
   };
-} 
+}

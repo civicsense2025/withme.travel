@@ -32,7 +32,7 @@ export async function checkAdminAuth() {
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
-      
+
       // Check user metadata as fallback
       if (user.user_metadata?.is_admin === true) {
         return {
@@ -41,7 +41,7 @@ export async function checkAdminAuth() {
           error: null,
         };
       }
-      
+
       return {
         isAdmin: false,
         supabase,

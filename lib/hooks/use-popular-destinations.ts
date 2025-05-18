@@ -55,4 +55,4 @@ export function usePopularDestinations(limit = 8) {
   }, [limit]);
 
   return { destinations, loading, error };
-} 
+}

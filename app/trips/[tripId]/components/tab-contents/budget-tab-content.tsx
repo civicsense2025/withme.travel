@@ -65,7 +65,7 @@ export function BudgetTabContent({
   // Handle refresh
   const handleBudgetUpdate = () => {
     refreshExpenses();
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   // Add Sentry breadcrumb for component load
@@ -103,11 +103,11 @@ export function BudgetTabContent({
             initialMembers={adaptedMembers}
             budget={initialBudget}
             handleBudgetUpdated={handleBudgetUpdate}
-            manualExpenses={manualExpenses} 
+            manualExpenses={manualExpenses}
             plannedExpenses={plannedExpenses}
           />
         </div>
-        
+
         {/* Right sidebar with budget snapshot */}
         <div className="md:w-64 lg:w-80">
           <BudgetSnapshotSidebar
@@ -117,10 +117,10 @@ export function BudgetTabContent({
             onLogExpenseClick={() => setShowBudgetSheet(true)}
             key={`snapshot-${refreshTrigger}`}
           />
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
+
+          <Button
+            variant="outline"
+            size="sm"
             className="mt-4 w-full gap-2"
             onClick={() => setShowExpenseDialog(true)}
           >
@@ -129,7 +129,7 @@ export function BudgetTabContent({
           </Button>
         </div>
       </div>
-      
+
       {/* Budget quick sheet */}
       <Sheet open={showBudgetSheet} onOpenChange={setShowBudgetSheet}>
         <SheetContent className="sm:max-w-md p-0">
@@ -140,7 +140,7 @@ export function BudgetTabContent({
               <h2 className="text-lg font-semibold">Trip Budget</h2>
             </div>
           </div>
-          
+
           <div className="p-6">
             <p className="text-muted-foreground mb-4">
               This feature is being expanded. For now, use the budget tab to manage your expenses.

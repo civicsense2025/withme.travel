@@ -1,5 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { listTripMembers, addTripMember, updateTripMember, removeTripMember } from '@/lib/api/tripMembers';
+import {
+  listTripMembers,
+  addTripMember,
+  updateTripMember,
+  removeTripMember,
+} from '@/lib/api/tripMembers';
 
 export async function GET(
   request: NextRequest,

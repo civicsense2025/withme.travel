@@ -45,10 +45,10 @@ export default function SimpleTripsPage() {
         // Get current user
         const { data: userData, error: userError } = await supabase.auth.getUser();
         const isAuthenticated = !userError && userData?.user;
-        
+
         // Check for guest token
         const guestToken = Cookies.get(GUEST_TOKEN_COOKIE);
-        
+
         // Set guest status
         setIsGuest(!isAuthenticated && !!guestToken);
 
@@ -70,16 +70,16 @@ export default function SimpleTripsPage() {
           if (tripsError) {
             throw new Error('Failed to fetch trips');
           }
-          
+
           tripsData = data || [];
         } else if (guestToken) {
           // Fetch trips for guest using the API
           const response = await fetch(`/api/trips/guest-trips?token=${guestToken}`);
-          
+
           if (!response.ok) {
             throw new Error('Failed to fetch guest trips');
           }
-          
+
           const data = await response.json();
           tripsData = data.trips || [];
         }
@@ -106,10 +106,8 @@ export default function SimpleTripsPage() {
   return (
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          {isGuest ? 'My Guest Trips' : 'My Trips'}
-        </h1>
-        <Link href={isGuest ? "/simple-trip-app/create?guest=true" : "/simple-trip-app/create"}>
+        <h1 className="text-2xl font-bold">{isGuest ? 'My Guest Trips' : 'My Trips'}</h1>
+        <Link href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Create New Trip
@@ -130,22 +128,20 @@ export default function SimpleTripsPage() {
         <div className="text-center py-12 bg-muted rounded-md">
           <h2 className="text-xl font-semibold mb-2">No trips found</h2>
           <p className="text-muted-foreground mb-4">
-            {isGuest 
-              ? "You don't have any guest trips yet. Create your first trip to get started!" 
+            {isGuest
+              ? "You don't have any guest trips yet. Create your first trip to get started!"
               : "You don't have any trips yet. Create your first trip to get started!"}
           </p>
-          <Link href={isGuest ? "/simple-trip-app/create?guest=true" : "/simple-trip-app/create"}>
+          <Link href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Create New Trip
             </Button>
           </Link>
-          
+
           {isGuest && (
             <div className="mt-4">
-              <p className="text-sm text-muted-foreground mb-2">
-                Want to keep your trips forever?
-              </p>
+              <p className="text-sm text-muted-foreground mb-2">Want to keep your trips forever?</p>
               <Link href="/signup">
                 <Button variant="outline" size="sm">
                   Create an Account
@@ -182,12 +178,10 @@ export default function SimpleTripsPage() {
           ))}
         </div>
       )}
-      
+
       {isGuest && trips.length > 0 && (
         <div className="mt-8 p-4 bg-primary/10 rounded-lg">
-          <p className="text-sm font-medium mb-2">
-            You're currently using a guest account.
-          </p>
+          <p className="text-sm font-medium mb-2">You're currently using a guest account.</p>
           <p className="text-sm text-muted-foreground mb-4">
             Create an account to save your trips permanently and unlock all features.
           </p>

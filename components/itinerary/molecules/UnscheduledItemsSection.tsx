@@ -1,38 +1,82 @@
-import { ItineraryDaySection } from './ItineraryDaySection';
-import { DisplayItineraryItem } from '@/types/itinerary';
-
 /**
  * UnscheduledItemsSection
- * 
- * Specialized section for displaying unscheduled itinerary items
- * 
+ *
+ * Container component for displaying unscheduled itinerary items
+ *
  * @module itinerary/molecules
  */
 
+'use client';
+
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { ItineraryDayHeader } from '../atoms/ItineraryDayHeader';
+import { ItineraryItemCard } from '../atoms/ItineraryItemCard';
+import { ItineraryItem } from './ItineraryDaySection';
+import { CalendarX2 } from 'lucide-react';
+
+// ============================================================================
+// COMPONENT PROPS & TYPES
+// ============================================================================
+
 export interface UnscheduledItemsSectionProps {
-  /** The unscheduled items to display */
-  items: DisplayItineraryItem[];
-  /** Callback when an item is edited */
-  onEdit: (item: DisplayItineraryItem) => void;
-  /** Callback when an item is deleted */
-  onDelete: (id: string) => void;
-  /** Optional className for styling customization */
+  /** Array of unscheduled itinerary items */
+  items: ItineraryItem[];
+  /** Callback for when an item is edited */
+  onEditItem?: (id: string) => void;
+  /** Callback for when an item is deleted */
+  onDeleteItem?: (id: string) => void;
+  /** Callback for when an item is voted on */
+  onVoteItem?: (id: string) => void;
+  /** Whether the user can edit items */
+  canEdit?: boolean;
+  /** Additional class names */
   className?: string;
 }
 
-export function UnscheduledItemsSection({ 
-  items, 
-  onEdit, 
-  onDelete,
-  className = ''
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export function UnscheduledItemsSection({
+  items = [],
+  onEditItem,
+  onDeleteItem,
+  onVoteItem,
+  canEdit = false,
+  className,
 }: UnscheduledItemsSectionProps) {
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
-    <ItineraryDaySection 
-      title="Unscheduled Items" 
-      items={items} 
-      onEdit={onEdit} 
-      onDelete={onDelete} 
-      className={className}
-    />
+    <div className={cn('mb-8', className)}>
+      <ItineraryDayHeader
+        title="Unscheduled Items"
+      />
+      
+      <div className="space-y-3">
+        {items.map((item) => (
+          <ItineraryItemCard
+            key={item.id}
+            id={item.id}
+            title={item.title}
+            description={item.description}
+            location={item.location}
+            startTime={item.startTime}
+            endTime={item.endTime}
+            status={item.status}
+            category={item.category}
+            voteCount={item.voteCount}
+            userVoted={item.userVoted}
+            canEdit={canEdit}
+            onEdit={onEditItem}
+            onDelete={onDeleteItem}
+            onVote={onVoteItem}
+          />
+        ))}
+      </div>
+    </div>
   );
 } 

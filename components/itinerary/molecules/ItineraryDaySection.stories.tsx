@@ -1,131 +1,74 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ItineraryDaySection } from './ItineraryDaySection';
+import { addDays } from 'date-fns';
 
 const meta: Meta<typeof ItineraryDaySection> = {
   title: 'Itinerary/Molecules/ItineraryDaySection',
   component: ItineraryDaySection,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'padded',
-  },
-  argTypes: {
-    onEdit: { action: 'edited' },
-    onDelete: { action: 'deleted' },
-  },
 };
 
 export default meta;
 type Story = StoryObj<typeof ItineraryDaySection>;
 
+// Helper to create sample items
+const createSampleItems = (count: number, baseDate: Date) => {
+  return Array.from({ length: count }).map((_, index) => ({
+    id: `item-${index + 1}`,
+    title: `Activity ${index + 1}`,
+    description: index % 2 === 0 ? `Description for activity ${index + 1}` : undefined,
+    location: index % 3 === 0 ? `Location ${index + 1}` : undefined,
+    startTime: new Date(baseDate.setHours(9 + index, 0, 0)),
+    endTime: new Date(baseDate.setHours(10 + index, 0, 0)),
+    status: index % 3 === 0 ? 'confirmed' : 'suggested',
+    category: index % 2 === 0 ? 'activity' : 'food',
+    voteCount: index,
+    userVoted: index % 2 === 0,
+  }));
+};
+
+const baseDate = new Date('2024-06-15');
+
 export const Default: Story = {
   args: {
-    title: 'Day 1',
-    items: [
-      {
-        id: '1',
-        title: 'Visit Eiffel Tower',
-        description: 'Experience the iconic landmark',
-        day_number: 1,
-        category: 'attraction',
-        votes: [],
-        creatorProfile: null,
-        section_id: 'section-1',
-        type: 'activity',
-        status: 'confirmed',
-        position: 1,
-        place_id: 'place-1',
-        details: {},
-      },
-      {
-        id: '2',
-        title: 'Lunch at Le Café Marly',
-        description: 'Enjoy the view of the Louvre Pyramid',
-        day_number: 1,
-        category: 'food',
-        votes: [],
-        creatorProfile: null,
-        section_id: 'section-1',
-        type: 'food',
-        status: 'confirmed',
-        position: 2,
-        place_id: 'place-2',
-        details: {},
-      },
-      {
-        id: '3',
-        title: 'Seine River Cruise',
-        description: 'Relaxing evening boat tour',
-        day_number: 1,
-        category: 'activity',
-        votes: [],
-        creatorProfile: null,
-        section_id: 'section-1',
-        type: 'activity',
-        status: 'confirmed',
-        position: 3,
-        place_id: 'place-3',
-        details: {},
-      },
-    ],
+    dayNumber: 1,
+    date: baseDate,
+    items: createSampleItems(3, baseDate),
+    canEdit: true,
+    onEditItem: (id) => console.log('Edit item', id),
+    onDeleteItem: (id) => console.log('Delete item', id),
+    onVoteItem: (id) => console.log('Vote for item', id),
   },
 };
 
-export const Empty: Story = {
+export const WithoutItems: Story = {
   args: {
-    title: 'Day 2',
+    dayNumber: 2,
+    date: addDays(baseDate, 1),
     items: [],
+    canEdit: true,
+    onEditItem: (id) => console.log('Edit item', id),
+    onDeleteItem: (id) => console.log('Delete item', id),
   },
 };
 
-export const WithMultipleCategories: Story = {
+export const ReadOnlyMode: Story = {
   args: {
-    title: 'Day 3',
-    items: [
-      {
-        id: '4',
-        title: 'Hotel Checkout',
-        description: 'Before 11am',
-        day_number: 3,
-        category: 'accommodation',
-        votes: [],
-        creatorProfile: null,
-        section_id: 'section-2',
-        type: 'logistics',
-        status: 'confirmed',
-        position: 1,
-        place_id: 'place-4',
-        details: {},
-      },
-      {
-        id: '5',
-        title: 'Train to Nice',
-        description: 'TGV high-speed train, 2nd class',
-        day_number: 3,
-        category: 'transportation',
-        votes: [],
-        creatorProfile: null,
-        section_id: 'section-2',
-        type: 'logistics',
-        status: 'confirmed',
-        position: 2,
-        place_id: 'place-5',
-        details: {},
-      },
-      {
-        id: '6',
-        title: 'Beach Time',
-        description: 'Relax at the Mediterranean',
-        day_number: 3,
-        category: 'activity',
-        votes: [],
-        creatorProfile: null,
-        section_id: 'section-2',
-        type: 'activity',
-        status: 'suggested',
-        position: 3,
-        place_id: 'place-6',
-        details: {},
-      },
-    ],
+    dayNumber: 3,
+    date: addDays(baseDate, 2),
+    items: createSampleItems(4, addDays(baseDate, 2)),
+    canEdit: false,
+    onVoteItem: (id) => console.log('Vote for item', id),
+  },
+};
+
+export const WithoutDate: Story = {
+  args: {
+    dayNumber: 4,
+    items: createSampleItems(2, addDays(baseDate, 3)),
+    canEdit: true,
+    onEditItem: (id) => console.log('Edit item', id),
+    onDeleteItem: (id) => console.log('Delete item', id),
+    onVoteItem: (id) => console.log('Vote for item', id),
   },
 }; 

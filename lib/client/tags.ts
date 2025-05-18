@@ -1,6 +1,6 @@
 /**
  * Tags API Client
- * 
+ *
  * Client-side wrapper for the Tags API providing type-safe access to tag operations
  */
 
@@ -12,14 +12,11 @@ import type { Tag } from '@/types';
 /**
  * List all tags for an entity
  */
-export async function listTags(
-  entityType: string, 
-  entityId?: string
-): Promise<Result<Tag[]>> {
+export async function listTags(entityType: string, entityId?: string): Promise<Result<Tag[]>> {
   const params = new URLSearchParams();
   if (entityType) params.set('entityType', entityType);
   if (entityId) params.set('entityId', entityId);
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.TAGS}?${params.toString()}`, {
       method: 'GET',
@@ -76,10 +73,7 @@ export async function createTag(data: Partial<Tag>): Promise<Result<Tag>> {
 /**
  * Update an existing tag
  */
-export async function updateTag(
-  tagId: string, 
-  data: Partial<Tag>
-): Promise<Result<Tag>> {
+export async function updateTag(tagId: string, data: Partial<Tag>): Promise<Result<Tag>> {
   return tryCatch(
     fetch(`${API_ROUTES.TAGS}/${tagId}`, {
       method: 'PATCH',
@@ -188,4 +182,4 @@ export async function removeTagFromEntity(
       return;
     })
   );
-} 
+}

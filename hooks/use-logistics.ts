@@ -1,8 +1,8 @@
 /**
  * Logistics management hook
- * 
+ *
  * Manages accommodations and transportation items for trips
- * 
+ *
  * @module hooks/logistics
  */
 
@@ -10,10 +10,10 @@
 
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  addAccommodationToTrip, 
-  addTransportationToTrip, 
-  listTripLogistics
+import {
+  addAccommodationToTrip,
+  addTransportationToTrip,
+  listTripLogistics,
 } from '@/lib/client/itinerary';
 import { isSuccess } from '@/lib/client/result';
 
@@ -66,7 +66,7 @@ export interface UseLogisticsResult {
 
 /**
  * Hook for managing trip logistics (accommodations and transportation)
- * 
+ *
  * @param tripId - The ID of the trip
  */
 export function useLogistics(tripId: string): UseLogisticsResult {
@@ -87,14 +87,14 @@ export function useLogistics(tripId: string): UseLogisticsResult {
 
     try {
       const result = await listTripLogistics(tripId);
-      
+
       if (isSuccess(result)) {
         const items = result.data || [];
-        
+
         // Split items by type
-        const accommodationItems = items.filter(item => item.type === 'accommodation');
-        const transportationItems = items.filter(item => item.type === 'transportation');
-        
+        const accommodationItems = items.filter((item) => item.type === 'accommodation');
+        const transportationItems = items.filter((item) => item.type === 'transportation');
+
         setAccommodations(accommodationItems);
         setTransportation(transportationItems);
       } else {
@@ -116,98 +116,104 @@ export function useLogistics(tripId: string): UseLogisticsResult {
   /**
    * Add an accommodation to the trip
    */
-  const addAccommodation = useCallback(async (accommodationData: AccommodationData): Promise<boolean> => {
-    if (!tripId) return false;
+  const addAccommodation = useCallback(
+    async (accommodationData: AccommodationData): Promise<boolean> => {
+      if (!tripId) return false;
 
-    setIsLoading(true);
-    try {
-      const result = await addAccommodationToTrip(tripId, accommodationData);
+      setIsLoading(true);
+      try {
+        const result = await addAccommodationToTrip(tripId, accommodationData);
 
-      if (isSuccess(result)) {
-        // Add to local state for immediate UI update
-        const newItem: LogisticsItem = {
-          id: result.data.id || `temp-${Date.now()}`,
-          type: 'accommodation',
-          title: accommodationData.title,
-          location: accommodationData.location,
-          startDate: accommodationData.startDate,
-          endDate: accommodationData.endDate,
-          description: accommodationData.description,
-          trip_id: tripId
-        };
-        
-        setAccommodations(prev => [...prev, newItem]);
-        
+        if (isSuccess(result)) {
+          // Add to local state for immediate UI update
+          const newItem: LogisticsItem = {
+            id: result.data.id || `temp-${Date.now()}`,
+            type: 'accommodation',
+            title: accommodationData.title,
+            location: accommodationData.location,
+            startDate: accommodationData.startDate,
+            endDate: accommodationData.endDate,
+            description: accommodationData.description,
+            trip_id: tripId,
+          };
+
+          setAccommodations((prev) => [...prev, newItem]);
+
+          toast({
+            title: 'Accommodation added',
+            description: 'Your accommodation has been added to the trip',
+          });
+
+          return true;
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to add accommodation';
+        setError(new Error(errorMessage));
         toast({
-          title: 'Accommodation added',
-          description: 'Your accommodation has been added to the trip',
+          title: 'Error adding accommodation',
+          description: errorMessage,
+          variant: 'destructive',
         });
-        
-        return true;
-      } else {
-        throw new Error(result.error);
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to add accommodation';
-      setError(new Error(errorMessage));
-      toast({
-        title: 'Error adding accommodation',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [tripId, toast]);
+    },
+    [tripId, toast]
+  );
 
   /**
    * Add transportation to the trip
    */
-  const addTransportation = useCallback(async (transportData: TransportationData): Promise<boolean> => {
-    if (!tripId) return false;
+  const addTransportation = useCallback(
+    async (transportData: TransportationData): Promise<boolean> => {
+      if (!tripId) return false;
 
-    setIsLoading(true);
-    try {
-      const result = await addTransportationToTrip(tripId, transportData);
+      setIsLoading(true);
+      try {
+        const result = await addTransportationToTrip(tripId, transportData);
 
-      if (isSuccess(result)) {
-        // Add to local state for immediate UI update
-        const newItem: LogisticsItem = {
-          id: result.data.id || `temp-${Date.now()}`,
-          type: 'transportation',
-          title: transportData.title,
-          location: `${transportData.departureLocation || ''} to ${transportData.arrivalLocation || ''}`,
-          startDate: transportData.departureDate,
-          endDate: transportData.arrivalDate,
-          description: transportData.description,
-          trip_id: tripId
-        };
-        
-        setTransportation(prev => [...prev, newItem]);
-        
+        if (isSuccess(result)) {
+          // Add to local state for immediate UI update
+          const newItem: LogisticsItem = {
+            id: result.data.id || `temp-${Date.now()}`,
+            type: 'transportation',
+            title: transportData.title,
+            location: `${transportData.departureLocation || ''} to ${transportData.arrivalLocation || ''}`,
+            startDate: transportData.departureDate,
+            endDate: transportData.arrivalDate,
+            description: transportData.description,
+            trip_id: tripId,
+          };
+
+          setTransportation((prev) => [...prev, newItem]);
+
+          toast({
+            title: 'Transportation added',
+            description: 'Your transportation has been added to the trip',
+          });
+
+          return true;
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to add transportation';
+        setError(new Error(errorMessage));
         toast({
-          title: 'Transportation added',
-          description: 'Your transportation has been added to the trip',
+          title: 'Error adding transportation',
+          description: errorMessage,
+          variant: 'destructive',
         });
-        
-        return true;
-      } else {
-        throw new Error(result.error);
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to add transportation';
-      setError(new Error(errorMessage));
-      toast({
-        title: 'Error adding transportation',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [tripId, toast]);
+    },
+    [tripId, toast]
+  );
 
   return {
     accommodations,
@@ -216,6 +222,6 @@ export function useLogistics(tripId: string): UseLogisticsResult {
     error,
     addAccommodation,
     addTransportation,
-    refresh
+    refresh,
   };
-} 
+}

@@ -37,10 +37,10 @@ export async function GET(
     // For now, return an empty array
     return NextResponse.json({
       expenses: [],
-      totalPlanned: 0
+      totalPlanned: 0,
     });
   } catch (error: any) {
     console.error('Error fetching planned expenses:', error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
-} 
+}

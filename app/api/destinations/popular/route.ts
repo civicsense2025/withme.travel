@@ -14,10 +14,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get('limit') || '8', 10);
 
-    const { data, error } = await supabase
-      .from(TABLES.DESTINATIONS)
-      .select('*')
-      .limit(limit);
+    const { data, error } = await supabase.from(TABLES.DESTINATIONS).select('*').limit(limit);
 
     if (error) {
       console.error('Error fetching popular destinations:', error);

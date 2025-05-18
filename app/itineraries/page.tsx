@@ -188,22 +188,22 @@ export default async function ItinerariesPage() {
     // Create the header section with title, description and submit button
     const header = (
       <main>
-             <PageHeader
-        title="Explore Itineraries"
-        description="Ready-made travel plans to inspire your next adventure"
-        centered={true}
-      />
-          <div className="mt-6">
-            <Link href="/itineraries/submit">
-              <Button
-                size="default"
-                className="mx-auto flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Submit Itinerary
-              </Button>
-            </Link>
-          </div>
+        <PageHeader
+          title="Explore Itineraries"
+          description="Ready-made travel plans to inspire your next adventure"
+          centered={true}
+        />
+        <div className="mt-6">
+          <Link href="/itineraries/submit">
+            <Button
+              size="default"
+              className="mx-auto flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Submit Itinerary
+            </Button>
+          </Link>
+        </div>
       </main>
     );
 
@@ -220,7 +220,6 @@ export default async function ItinerariesPage() {
             <Text variant="body" className="mb-4 text-muted-foreground">
               Be the first to share your travel plans with the community!
             </Text>
-
           </div>
         </PageContainer>
       );

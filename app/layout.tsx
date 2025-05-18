@@ -29,7 +29,11 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn('font-sans antialiased', helveticaNeue.variable)} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={cn('font-sans antialiased', helveticaNeue.variable)}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

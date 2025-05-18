@@ -11,12 +11,7 @@
 // API Routes - All backend API endpoints
 export const API_ROUTES = {
   // Trip routes
-  TRIPS: {
-    DETAIL: (tripId: string) => `/api/trips/${tripId}`,
-    ITINERARY: (tripId: string) => `/api/trips/${tripId}/itinerary`,
-    MEMBERS: (tripId: string) => `/api/trips/${tripId}/members`,
-    LOGISTICS: (tripId: string) => `/api/trips/${tripId}/logistics`,
-  },
+  TRIPS: '/api/trips',
   TRIP_DETAILS: (tripId: string) => `/api/trips/${tripId}`,
   TRIP_MEMBERS: (tripId: string) => `/api/trips/${tripId}/members`,
   TRIP_ITINERARY: (tripId: string) => `/api/trips/${tripId}/itinerary`,
@@ -25,7 +20,10 @@ export const API_ROUTES = {
   BUDGET_ITEM: (tripId: string, itemId: string) => `/api/trips/${tripId}/budget/${itemId}`,
   COLLABORATIVE_NOTES: (tripId: string) => `/api/trips/${tripId}/notes`,
   TRIP_NOTES: (tripId: string) => `/api/trips/${tripId}/notes`,
-  TRIP_NOTES_COLLABORATION: (tripId: string) => `/api/trips/${tripId}/notes/collaboration`,
+  TRIP_NOTES_COLLABORATION: (tripId: string) => `/api/trips/${tripId}/notes/session`,
+  TRIP_PERSONAL_NOTES: (tripId: string) => `/api/trips/${tripId}/personal-notes`,
+  TRIP_PERSONAL_NOTE: (tripId: string, noteId: string) =>
+    `/api/trips/${tripId}/personal-notes/${noteId}`,
   TRIP_MEMBER_INVITE: (tripId: string) => `/api/trips/${tripId}/members/invite`,
   TRIP_TAGS: (tripId: string) => `/api/trips/${tripId}/tags`,
   TRIP_ITINERARY_REORDER: (tripId: string) => `/api/trips/${tripId}/itinerary/reorder`,
@@ -271,7 +269,7 @@ export const ROUTE_HELPERS = {
 export const PLACE_ROUTES = {
   PLACES: '/api/places',
   PLACE_DETAILS: (placeId: string) => `/api/places/${placeId}`,
-  PLACE_LOOKUP_OR_CREATE: '/api/places/lookup-or-create'
+  PLACE_LOOKUP_OR_CREATE: '/api/places/lookup-or-create',
 };
 
 // Add to API_ROUTES if it exists

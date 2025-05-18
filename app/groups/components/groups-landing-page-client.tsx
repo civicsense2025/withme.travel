@@ -28,7 +28,9 @@ export default function GroupsLandingPageClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const [headline] = useState(() => wittyHeadlines[Math.floor(Math.random() * wittyHeadlines.length)]);
+  const [headline] = useState(
+    () => wittyHeadlines[Math.floor(Math.random() * wittyHeadlines.length)]
+  );
   const { isDark } = useThemeSync();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -52,7 +54,8 @@ export default function GroupsLandingPageClient() {
           ))}
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground mb-16 mx-auto">
-          From group brainstorming to perfectly planned trips in minutes. No endless group chats, no stress.
+          From group brainstorming to perfectly planned trips in minutes. No endless group chats, no
+          stress.
         </p>
         <form
           onSubmit={async (e) => {
@@ -81,7 +84,9 @@ export default function GroupsLandingPageClient() {
               if (!data.group?.id) throw new Error('No group ID returned.');
               router.push(`/groups/${data.group.id}`);
             } catch (err) {
-              setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+              setError(
+                err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+              );
               setLoading(false);
             }
           }}
@@ -206,4 +211,4 @@ export default function GroupsLandingPageClient() {
       />
     </Container>
   );
-} 
+}

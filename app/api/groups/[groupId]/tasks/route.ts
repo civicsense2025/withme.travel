@@ -13,4 +13,4 @@ export async function POST(req: NextRequest, { params }: { params: { groupId: st
   // Attach trip_id/groupId
   const result = await createTask({ ...body, trip_id: groupId });
   return NextResponse.json(result, { status: result.success ? 201 : 400 });
-} 
+}

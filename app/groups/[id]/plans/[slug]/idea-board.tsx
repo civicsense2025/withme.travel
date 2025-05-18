@@ -38,10 +38,16 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
   const router = useRouter();
   const supabase = getBrowserClient();
   const { toast } = useToast();
-  
+
   // Use our hooks
   const { voteOnGroupIdea, isVoting, error: voteError } = useVotes();
-  const { ideas: groupIdeasFromHook, loading: groupIdeasLoading, error: groupIdeasError, createIdea: createGroupIdea, refetch: refetchIdeas } = useGroupIdeas(groupId);
+  const {
+    ideas: groupIdeasFromHook,
+    loading: groupIdeasLoading,
+    error: groupIdeasError,
+    createIdea: createGroupIdea,
+    refetch: refetchIdeas,
+  } = useGroupIdeas(groupId);
 
   // Setup state
   const [ideas, setIdeas] = useState<GroupIdeaWithVotes[]>([]);
@@ -168,21 +174,21 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
       try {
         // Use our group ideas hook to create an idea instead of direct API call
         const newIdea = await createGroupIdea(ideaData);
-        
+
         if (newIdea) {
           // Close the modal
           setAddModalOpen(false);
           toast({
-            title: "Success",
-            description: "Idea created successfully"
+            title: 'Success',
+            description: 'Idea created successfully',
           });
         }
       } catch (err) {
         console.error('Error creating idea:', err);
         toast({
-          title: "Error",
+          title: 'Error',
           description: err instanceof Error ? err.message : 'Failed to create idea',
-          variant: "destructive"
+          variant: 'destructive',
         });
       }
     },
@@ -194,31 +200,35 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
     async (ideaId: string, voteType: 'UP' | 'DOWN') => {
       if (!isAuthenticated) {
         toast({
-          title: "Authentication Required",
-          description: "Please sign in to vote on ideas",
-          variant: "destructive"
+          title: 'Authentication Required',
+          description: 'Please sign in to vote on ideas',
+          variant: 'destructive',
         });
         return;
       }
-      
+
       try {
         // Use the voting hook instead of direct API call
-        const success = await voteOnGroupIdea(groupId, ideaId, voteType.toLowerCase() as 'up' | 'down');
-        
+        const success = await voteOnGroupIdea(
+          groupId,
+          ideaId,
+          voteType.toLowerCase() as 'up' | 'down'
+        );
+
         if (success) {
           // Optimistically update the UI
-          setIdeas(prevIdeas => 
-            prevIdeas.map(idea => {
+          setIdeas((prevIdeas) =>
+            prevIdeas.map((idea) => {
               if (idea.id === ideaId) {
                 if (voteType === 'UP') {
                   return {
                     ...idea,
-                    votes_up: (idea.votes_up || 0) + 1
+                    votes_up: (idea.votes_up || 0) + 1,
                   };
                 } else {
                   return {
                     ...idea,
-                    votes_down: (idea.votes_down || 0) + 1
+                    votes_down: (idea.votes_down || 0) + 1,
                   };
                 }
               }
@@ -231,9 +241,9 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
       } catch (err) {
         console.error('Error voting on idea:', err);
         toast({
-          title: "Error",
+          title: 'Error',
           description: err instanceof Error ? err.message : 'Failed to vote on idea',
-          variant: "destructive"
+          variant: 'destructive',
         });
         // Reload ideas to get the correct vote counts
         loadIdeas();

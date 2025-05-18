@@ -111,8 +111,6 @@ export default function DashboardClient({ user, dashboardData }: DashboardClient
 
       {/* Discover Section */}
       <DiscoverSection />
-      
-
     </main>
   );
 }

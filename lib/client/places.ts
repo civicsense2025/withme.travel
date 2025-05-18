@@ -1,6 +1,6 @@
 /**
  * Places API Client
- * 
+ *
  * Client-side wrapper for Places API endpoints
  */
 
@@ -80,15 +80,15 @@ export async function listPlaces(params?: {
   offset?: number;
 }): Promise<Result<PlaceType[]>> {
   const searchParams = new URLSearchParams();
-  
+
   if (params?.query) searchParams.set('q', params.query);
   if (params?.category) searchParams.set('category', params.category);
   if (params?.limit) searchParams.set('limit', params.limit.toString());
   if (params?.offset) searchParams.set('offset', params.offset.toString());
-  
+
   const queryString = searchParams.toString();
   const url = queryString ? `${API_ROUTES.PLACES}?${queryString}` : API_ROUTES.PLACES;
-  
+
   return tryCatch(
     fetch(url, {
       method: 'GET',
@@ -127,7 +127,10 @@ export async function createPlace(data: Partial<PlaceType>): Promise<Result<Plac
 /**
  * Update an existing place
  */
-export async function updatePlace(placeId: string, data: Partial<PlaceType>): Promise<Result<PlaceType>> {
+export async function updatePlace(
+  placeId: string,
+  data: Partial<PlaceType>
+): Promise<Result<PlaceType>> {
   return tryCatch(
     fetch(API_ROUTES.PLACE_DETAILS(placeId), {
       method: 'PUT',
@@ -174,19 +177,22 @@ export async function lookupOrCreatePlace(data: {
 /**
  * Search for places
  */
-export async function searchPlaces(query: string, params?: {
-  category?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<Result<PlaceType[]>> {
+export async function searchPlaces(
+  query: string,
+  params?: {
+    category?: string;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<Result<PlaceType[]>> {
   const searchParams = new URLSearchParams({
-    q: query
+    q: query,
   });
-  
+
   if (params?.category) searchParams.set('category', params.category);
   if (params?.limit) searchParams.set('limit', params.limit.toString());
   if (params?.offset) searchParams.set('offset', params.offset.toString());
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.PLACES}?${searchParams.toString()}`, {
       method: 'GET',
@@ -196,21 +202,20 @@ export async function searchPlaces(query: string, params?: {
 }
 
 /**
- * Get place categories 
+ * Get place categories
  */
 export async function getPlaceCategories(): Promise<Result<string[]>> {
   return tryCatch(
     Promise.resolve({
-      'attraction': 'Attraction',
-      'restaurant': 'Restaurant',
-      'cafe': 'Café',
-      'hotel': 'Hotel',
-      'landmark': 'Landmark',
-      'shopping': 'Shopping',
-      'transport': 'Transport',
-      'other': 'Other'
-    })
-    .then(categories => Object.keys(categories))
+      attraction: 'Attraction',
+      restaurant: 'Restaurant',
+      cafe: 'Café',
+      hotel: 'Hotel',
+      landmark: 'Landmark',
+      shopping: 'Shopping',
+      transport: 'Transport',
+      other: 'Other',
+    }).then((categories) => Object.keys(categories))
   );
 }
 
@@ -218,7 +223,7 @@ export async function getPlaceCategories(): Promise<Result<string[]>> {
  * Import places from CSV
  */
 export async function importPlacesFromCSV(
-  destinationId: string, 
+  destinationId: string,
   csvFile: File
 ): Promise<Result<{ added: number; errors: any[] }>> {
   if (!destinationId) {
@@ -231,11 +236,13 @@ export async function importPlacesFromCSV(
   const formData = new FormData();
   formData.append('file', csvFile);
   formData.append('destination_id', destinationId);
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.PLACES}/import-csv`, {
       method: 'POST',
       body: formData,
     }).then((response) => handleApiResponse<{ added: number; errors: any[] }>(response))
   );
-} 
+}
+
+export type { Result } from '@/lib/client/result';

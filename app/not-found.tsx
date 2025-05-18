@@ -31,10 +31,7 @@ export default function NotFound() {
             const Icon = link.icon;
             return (
               <Link key={link.href} href={link.href} className="no-underline">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12 text-base"
-                >
+                <Button variant="outline" className="w-full justify-start h-12 text-base">
                   <Icon className="mr-2 h-5 w-5" />
                   {link.label}
                   <ArrowRight className="ml-auto h-4 w-4" />
@@ -47,9 +44,12 @@ export default function NotFound() {
 
       {/* Helpful message */}
       <p className="text-sm text-muted-foreground max-w-md">
-        If you think this is an error or need any help planning your next adventure, 
-        feel free to <Link href="/support" className="underline underline-offset-4 hover:text-primary">contact our support team</Link>.
+        If you think this is an error or need any help planning your next adventure, feel free to{' '}
+        <Link href="/support" className="underline underline-offset-4 hover:text-primary">
+          contact our support team
+        </Link>
+        .
       </p>
     </div>
   );
-} 
+}

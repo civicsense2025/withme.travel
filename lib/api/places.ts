@@ -28,9 +28,7 @@ export async function listPlaces(params: any): Promise<Result<Place[]>> {
   try {
     const supabase = await createRouteHandlerClient();
     // TODO: Add search/filter logic based on params
-    const { data, error } = await supabase
-      .from(TABLES.PLACES)
-      .select('*');
+    const { data, error } = await supabase.from(TABLES.PLACES).select('*');
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -72,7 +70,7 @@ export async function createPlace(data: Partial<Place>): Promise<Result<Place>> 
       .insert(data)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newPlace };
   } catch (error) {
@@ -95,7 +93,7 @@ export async function updatePlace(placeId: string, data: Partial<Place>): Promis
       .eq('id', placeId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedPlace };
   } catch (error) {
@@ -111,15 +109,12 @@ export async function updatePlace(placeId: string, data: Partial<Place>): Promis
 export async function deletePlace(placeId: string): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { error } = await supabase
-      .from(TABLES.PLACES)
-      .delete()
-      .eq('id', placeId);
-    
+    const { error } = await supabase.from(TABLES.PLACES).delete().eq('id', placeId);
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
     return handleError(error, 'Failed to delete place');
   }
 }
-// (Add more as needed) 
+// (Add more as needed)

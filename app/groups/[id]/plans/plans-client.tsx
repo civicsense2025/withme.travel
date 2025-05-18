@@ -82,15 +82,8 @@ export default function PlansClient({
   const [formError, setFormError] = useState('');
 
   // Use our custom hook for plans management
-  const {
-    plans,
-    loading,
-    error,
-    createPlan,
-    updatePlan,
-    deletePlan,
-    refetch
-  } = useGroupPlans(groupId);
+  const { plans, loading, error, createPlan, updatePlan, deletePlan, refetch } =
+    useGroupPlans(groupId);
 
   // Initialize form state when editing
   const handleEditClick = (plan: GroupPlan) => {
@@ -120,12 +113,12 @@ export default function PlansClient({
     }
 
     const newPlan = await createPlan({ title: name, description });
-    
+
     if (newPlan) {
       setCreateDialogOpen(false);
       setName('');
       setDescription('');
-      
+
       // Redirect to the new plan
       if (newPlan.id) {
         router.push(`/groups/${groupId}/plans/${newPlan.id}`);
@@ -145,10 +138,10 @@ export default function PlansClient({
       return;
     }
 
-    const success = await updatePlan(currentPlan.id, { 
-      title: name, 
+    const success = await updatePlan(currentPlan.id, {
+      title: name,
       description,
-      is_archived: currentPlan.is_archived 
+      is_archived: currentPlan.is_archived,
     });
 
     if (success) {
@@ -162,11 +155,11 @@ export default function PlansClient({
   // Archive/unarchive a plan
   const handleToggleArchive = async (plan: GroupPlan) => {
     if (!plan.id) return;
-    
+
     await updatePlan(plan.id, {
       title: plan.name || plan.title,
       description: plan.description,
-      is_archived: !plan.is_archived
+      is_archived: !plan.is_archived,
     });
   };
 
@@ -191,12 +184,14 @@ export default function PlansClient({
           </h1>
           <p className="text-muted-foreground">Create and manage plans for your group</p>
         </div>
-        <Button onClick={() => {
-          setName('');
-          setDescription('');
-          setFormError('');
-          setCreateDialogOpen(true);
-        }}>
+        <Button
+          onClick={() => {
+            setName('');
+            setDescription('');
+            setFormError('');
+            setCreateDialogOpen(true);
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" /> New Plan
         </Button>
       </div>
@@ -217,7 +212,9 @@ export default function PlansClient({
       {!loading && !error && plans.length === 0 && (
         <div className="text-center py-12 border border-dashed rounded-lg">
           <h3 className="text-lg font-medium mb-1">No plans yet</h3>
-          <p className="text-muted-foreground mb-4">Create your first plan to start collaborating</p>
+          <p className="text-muted-foreground mb-4">
+            Create your first plan to start collaborating
+          </p>
           <Button
             onClick={() => {
               setName('');
@@ -235,9 +232,14 @@ export default function PlansClient({
         {plans.map((plan) => (
           <Card key={plan.id} className={plan.is_archived ? 'opacity-60' : ''}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center cursor-pointer" onClick={() => handlePlanClick(plan)}>
+              <CardTitle
+                className="text-lg flex items-center cursor-pointer"
+                onClick={() => handlePlanClick(plan)}
+              >
                 {plan.title || plan.name}
-                {plan.is_archived && <span className="ml-2 text-xs text-muted-foreground">(Archived)</span>}
+                {plan.is_archived && (
+                  <span className="ml-2 text-xs text-muted-foreground">(Archived)</span>
+                )}
               </CardTitle>
               <CardDescription>
                 Created {formatDistanceToNow(new Date(plan.created_at), { addSuffix: true })}
@@ -245,7 +247,9 @@ export default function PlansClient({
             </CardHeader>
             <CardContent className="pb-2">
               <p className="text-sm line-clamp-2">
-                {plan.description || <span className="text-muted-foreground italic">No description</span>}
+                {plan.description || (
+                  <span className="text-muted-foreground italic">No description</span>
+                )}
               </p>
               {plan.ideas_count !== undefined && (
                 <p className="text-sm text-muted-foreground mt-2">
@@ -301,7 +305,9 @@ export default function PlansClient({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Plan</DialogTitle>
-            <DialogDescription>Create a plan to collaborate with your group members.</DialogDescription>
+            <DialogDescription>
+              Create a plan to collaborate with your group members.
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleCreatePlan}>

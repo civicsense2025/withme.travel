@@ -151,7 +151,7 @@ export async function createServerComponentClient(): Promise<TypedSupabaseClient
 
 /**
  * Creates a Supabase client for use in route handlers
- * 
+ *
  * This implementation properly handles cookies for authentication in Next.js 15+
  *
  * @returns A configured Supabase client for server-side API routes
@@ -160,7 +160,7 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
   try {
     // Directly import cookies
     const { cookies } = await import('next/headers');
-    
+
     // Function to safely get a cookie value
     const getCookie = async (name: string): Promise<string | undefined> => {
       try {
@@ -171,7 +171,7 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
         return undefined;
       }
     };
-    
+
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
         get: getCookie,
@@ -186,7 +186,7 @@ export async function createRouteHandlerClient(): Promise<TypedSupabaseClient> {
     });
   } catch (error) {
     console.error('Error creating route handler client:', error);
-    
+
     // Create a non-cookie client as fallback
     return createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
@@ -323,7 +323,7 @@ export async function getTypedDbClient() {
       return (supabase.rpc as any)(functionName, params) as Promise<{ data: T | null; error: any }>;
     },
     // Expose auth property from the original client
-    auth: supabase.auth
+    auth: supabase.auth,
   };
 }
 

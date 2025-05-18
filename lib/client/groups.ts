@@ -1,6 +1,6 @@
 /**
  * Groups API client functions
- * 
+ *
  * Client-side wrappers for group-related API calls
  */
 
@@ -51,7 +51,7 @@ export interface GroupsListResponse {
  */
 export async function listGroups(guestToken?: string): Promise<Result<GroupsListResponse>> {
   const queryString = guestToken ? `?guestToken=${guestToken}` : '';
-  
+
   return tryCatch(
     fetch(`/api/groups${queryString}`, {
       method: 'GET',
@@ -71,7 +71,7 @@ export async function listGroups(guestToken?: string): Promise<Result<GroupsList
  */
 export async function getGroup(id: string, guestToken?: string): Promise<Result<Group>> {
   const queryString = guestToken ? `?guestToken=${guestToken}` : '';
-  
+
   return tryCatch(
     fetch(`/api/groups/${id}${queryString}`, {
       method: 'GET',
@@ -142,4 +142,4 @@ export async function deleteGroup(id: string): Promise<Result<void>> {
       }
     })
   );
-} 
+}

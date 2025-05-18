@@ -1,6 +1,6 @@
 /**
  * Trips API Client
- * 
+ *
  * Client-side wrapper for the Trips API providing type-safe access to trip operations
  */
 
@@ -67,17 +67,17 @@ export type CreateTripParams = Omit<Trip, 'id' | 'created_at' | 'updated_at'>;
  */
 export async function listTrips(params: TripListParams = {}): Promise<Result<Trip[]>> {
   const queryParams = new URLSearchParams();
-  
+
   if (params.limit) queryParams.append('limit', params.limit.toString());
   if (params.offset) queryParams.append('offset', params.offset.toString());
   if (params.includeShared) queryParams.append('includeShared', 'true');
-  
+
   const url = `/api/trips${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  
+
   return tryCatch(
     fetch(url, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Trip[]>(response))
   );
 }
@@ -89,7 +89,7 @@ export async function getTrip(tripId: string): Promise<Result<Trip>> {
   return tryCatch(
     fetch(`/api/trips/${tripId}`, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Trip>(response))
   );
 }
@@ -102,7 +102,7 @@ export async function createTrip(data: CreateTripParams): Promise<Result<Trip>> 
     fetch('/api/trips', {
       method: 'POST',
       ...API_SETTINGS.DEFAULT_OPTIONS,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     }).then((response) => handleApiResponse<Trip>(response))
   );
 }
@@ -115,7 +115,7 @@ export async function updateTrip(tripId: string, data: Partial<Trip>): Promise<R
     fetch(`/api/trips/${tripId}`, {
       method: 'PATCH',
       ...API_SETTINGS.DEFAULT_OPTIONS,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     }).then((response) => handleApiResponse<Trip>(response))
   );
 }
@@ -127,7 +127,7 @@ export async function deleteTrip(tripId: string): Promise<Result<void>> {
   return tryCatch(
     fetch(`/api/trips/${tripId}`, {
       method: 'DELETE',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<void>(response))
   );
 }
@@ -137,14 +137,14 @@ export async function deleteTrip(tripId: string): Promise<Result<void>> {
  */
 export async function listPublicTrips(params: TripListParams = {}): Promise<Result<Trip[]>> {
   const queryParams = new URLSearchParams();
-  
+
   if (params.limit) queryParams.append('limit', params.limit.toString());
   if (params.offset) queryParams.append('offset', params.offset.toString());
-  
+
   return tryCatch(
     fetch(`/api/trips/public?${queryParams.toString()}`, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Trip[]>(response))
   );
 }
@@ -152,18 +152,26 @@ export async function listPublicTrips(params: TripListParams = {}): Promise<Resu
 /**
  * Get a trip with full details including members, itinerary, etc.
  */
-export async function getTripWithDetails(tripId: string): Promise<Result<Trip & {
-  cities?: any[];
-  members?: any[];
-}>> {
+export async function getTripWithDetails(tripId: string): Promise<
+  Result<
+    Trip & {
+      cities?: any[];
+      members?: any[];
+    }
+  >
+> {
   return tryCatch(
     fetch(`/api/trips/${tripId}/details`, {
       method: 'GET',
-      ...API_SETTINGS.DEFAULT_OPTIONS
-    }).then((response) => handleApiResponse<Trip & {
-      cities?: any[];
-      members?: any[];
-    }>(response))
+      ...API_SETTINGS.DEFAULT_OPTIONS,
+    }).then((response) =>
+      handleApiResponse<
+        Trip & {
+          cities?: any[];
+          members?: any[];
+        }
+      >(response)
+    )
   );
 }
 
@@ -171,14 +179,14 @@ export async function getTripWithDetails(tripId: string): Promise<Result<Trip & 
  * Update a trip with detailed information
  */
 export async function updateTripWithDetails(
-  tripId: string, 
-  data: Partial<Trip> & { cities?: any[]; }
+  tripId: string,
+  data: Partial<Trip> & { cities?: any[] }
 ): Promise<Result<Trip>> {
   return tryCatch(
     fetch(`/api/trips/${tripId}/details`, {
       method: 'PATCH',
       ...API_SETTINGS.DEFAULT_OPTIONS,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     }).then((response) => handleApiResponse<Trip>(response))
   );
 }
@@ -191,7 +199,7 @@ export async function duplicateTrip(tripId: string, newName?: string): Promise<R
     fetch(`/api/trips/${tripId}/duplicate`, {
       method: 'POST',
       ...API_SETTINGS.DEFAULT_OPTIONS,
-      body: JSON.stringify({ newName })
+      body: JSON.stringify({ newName }),
     }).then((response) => handleApiResponse<Trip>(response))
   );
 }
@@ -203,7 +211,7 @@ export async function archiveTrip(tripId: string): Promise<Result<Trip>> {
   return tryCatch(
     fetch(`/api/trips/${tripId}/archive`, {
       method: 'PATCH',
-      ...API_SETTINGS.DEFAULT_OPTIONS
+      ...API_SETTINGS.DEFAULT_OPTIONS,
     }).then((response) => handleApiResponse<Trip>(response))
   );
 }
@@ -216,7 +224,7 @@ export async function toggleTripPublic(tripId: string, isPublic: boolean): Promi
     fetch(`/api/trips/${tripId}/public`, {
       method: 'PATCH',
       ...API_SETTINGS.DEFAULT_OPTIONS,
-      body: JSON.stringify({ isPublic })
+      body: JSON.stringify({ isPublic }),
     }).then((response) => handleApiResponse<Trip>(response))
   );
-} 
+}

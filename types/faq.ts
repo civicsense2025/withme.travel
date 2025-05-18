@@ -31,4 +31,4 @@ export interface FaqFilterParams {
   tags?: string[];
   /** Maximum number of entries to show */
   limit?: number;
-} 
+}

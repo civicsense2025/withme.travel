@@ -6,30 +6,30 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type { import('@storybook/nextjs').StorybookConfig } */
 const config = {
   stories: [
-    "../src/**/*.mdx",
+    '../src/**/*.mdx',
     // Only include tsx/jsx/mdx files to avoid duplicates
-    "../src/**/*.stories.@(tsx|jsx|mdx)",
-    "../components/**/*.stories.@(tsx|jsx|mdx)",
-    "../app/**/*.stories.@(tsx|jsx|mdx)",
-    "../stories/**/*.stories.@(tsx|jsx|mdx)",
-    "../stories/**/*.mdx"
+    '../src/**/*.stories.@(tsx|jsx|mdx)',
+    '../components/**/*.stories.@(tsx|jsx|mdx)',
+    '../app/**/*.stories.@(tsx|jsx|mdx)',
+    '../stories/**/*.stories.@(tsx|jsx|mdx)',
+    '../stories/**/*.mdx',
   ],
   addons: [
-    "@storybook/addon-essentials",
-    "@storybook/addon-onboarding",
-    "@chromatic-com/storybook",
-    "@storybook/addon-links",
-    "@storybook/addon-a11y",
-    "@storybook/addon-interactions",
-    "@storybook/addon-themes"
+    '@storybook/addon-essentials',
+    '@storybook/addon-onboarding',
+    '@chromatic-com/storybook',
+    '@storybook/addon-links',
+    '@storybook/addon-a11y',
+    '@storybook/addon-interactions',
+    '@storybook/addon-themes',
   ],
   framework: {
-    name: "@storybook/nextjs",
+    name: '@storybook/nextjs',
     options: {},
   },
   staticDirs: ['../public'],
   docs: {
-    autodocs: "tag",
+    autodocs: 'tag',
   },
   async viteFinal(config, { configType }) {
     // Add any custom Vite configuration here
@@ -38,13 +38,10 @@ const config = {
     if (!config.css) {
       config.css = {};
     }
-    
+
     if (!config.css.postcss) {
       config.css.postcss = {
-        plugins: [
-          require('tailwindcss'),
-          require('autoprefixer'),
-        ]
+        plugins: [require('tailwindcss'), require('autoprefixer')],
       };
     }
 
@@ -73,4 +70,4 @@ const config = {
   },
 };
 
-export default config; 
+export default config;

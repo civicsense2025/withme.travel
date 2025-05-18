@@ -84,9 +84,7 @@ export async function POST(request: NextRequest) {
       };
 
       // Insert into trip_members table
-      const { error: memberError } = await supabase
-        .from(TABLES.TRIP_MEMBERS)
-        .insert(memberData);
+      const { error: memberError } = await supabase.from(TABLES.TRIP_MEMBERS).insert(memberData);
 
       if (memberError) {
         console.error(chalk.red(`${LOG_PREFIX} Error adding trip member:`), memberError);

@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
     // Create a Supabase client
     const supabase = await createRouteHandlerClient();
-    
+
     // First check if the trip exists
     const { data: trip, error: tripError } = await supabase
       .from('trips')
@@ -24,10 +24,7 @@ export async function POST(request: Request) {
       .single();
 
     if (tripError || !trip) {
-      return NextResponse.json(
-        { error: 'Trip not found or access denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Trip not found or access denied' }, { status: 404 });
     }
 
     // Use supabase's raw SQL query to insert into the guest_trip_access table
@@ -38,23 +35,17 @@ export async function POST(request: Request) {
         VALUES ('${tripId}', '${guestToken}', '${role || 'member'}', NOW())
         ON CONFLICT (trip_id, guest_token) DO UPDATE 
         SET role = EXCLUDED.role, updated_at = NOW()
-      `
+      `,
     });
 
     if (error) {
       console.error('Error associating guest with trip:', error);
-      return NextResponse.json(
-        { error: 'Failed to associate guest with trip' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to associate guest with trip' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in associate-guest API route:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

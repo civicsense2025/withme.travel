@@ -1,6 +1,6 @@
 /**
  * Database Table Constants
- * 
+ *
  * This file defines all the database table names used throughout the application.
  * Table names are organized by domain area for better organization.
  */
@@ -94,7 +94,7 @@ export const TABLES = {
   USERS: 'users',
   TASKS: 'tasks',
   TASK_VOTES: 'task_votes',
-  TASK_TAGS: 'task_tags'
+  TASK_TAGS: 'task_tags',
 } as const;
 
 // ============================================================================
@@ -229,7 +229,7 @@ export const FINANCE_TABLES = {
  */
 export const FORM_TABLES = {
   FORMS: TABLES.FORMS,
-  FORM_TEMPLATES: TABLES.FORM_TEMPLATES, 
+  FORM_TEMPLATES: TABLES.FORM_TEMPLATES,
   FORM_COLLABORATORS: TABLES.FORM_COLLABORATORS,
 };
 
@@ -340,7 +340,13 @@ export const MULTI_CITY_QUERY_SNIPPETS = {
 /**
  * Type for content types that can have comments
  */
-export type CommentableContentType = 'trip' | 'destination' | 'itinerary_item' | 'collection' | 'template' | 'group_plan_idea';
+export type CommentableContentType =
+  | 'trip'
+  | 'destination'
+  | 'itinerary_item'
+  | 'collection'
+  | 'template'
+  | 'group_plan_idea';
 
 /**
  * Type for itinerary template metadata

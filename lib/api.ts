@@ -32,9 +32,7 @@ import { API_ROUTES } from '@/utils/constants/routes';
 /**
  * Discriminated union result type for API functions
  */
-export type Result<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+export type Result<T> = { success: true; data: T } | { success: false; error: string };
 
 /**
  * Error codes for better error handling
@@ -61,20 +59,16 @@ export type ApiError = {
  * Helper to handle Supabase errors and return a Result<T>
  * Safely handles null data by converting to appropriate error response
  */
-function handleSupabase<T>(
-  data: T | null,
-  error: any,
-  fallbackMsg: string
-): Result<T> {
+function handleSupabase<T>(data: T | null, error: any, fallbackMsg: string): Result<T> {
   if (error) {
     console.error(fallbackMsg, error);
     return { success: false, error: error?.message || fallbackMsg };
   }
-  
+
   if (data === null) {
     return { success: false, error: fallbackMsg };
   }
-  
+
   return { success: true, data };
 }
 
@@ -264,21 +258,28 @@ export type Destination = z.infer<typeof destinationSchema>;
 
 /**
  * Create a server-side Supabase client
- * 
+ *
  * Note: This version requires manually passing cookie handlers
  * as arguments to avoid dependencies on next/headers
  */
 function getSupabaseForServer(cookieHandlers?: {
   get: (name: string) => string | undefined;
-  set: (name: string, value: string, options?: {
-    expires?: Date;
-    httpOnly?: boolean;
-    secure?: boolean;
-    path?: string;
-  }) => void;
-  remove: (name: string, options?: {
-    path?: string;
-  }) => void;
+  set: (
+    name: string,
+    value: string,
+    options?: {
+      expires?: Date;
+      httpOnly?: boolean;
+      secure?: boolean;
+      path?: string;
+    }
+  ) => void;
+  remove: (
+    name: string,
+    options?: {
+      path?: string;
+    }
+  ) => void;
 }) {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -288,7 +289,7 @@ function getSupabaseForServer(cookieHandlers?: {
         get: (name) => undefined, // Return undefined when no cookie handler provided
         set: () => {}, // No-op
         remove: () => {}, // No-op
-      }
+      },
     }
   );
 }
@@ -316,15 +317,16 @@ function getPagination(page: number, limit: number) {
  * @param cookieHandlers - Optional cookie handlers for auth
  */
 export async function getTrip(
-  tripId: string, 
+  tripId: string,
   cookieHandlers?: Parameters<typeof getSupabaseForServer>[0]
 ): Promise<Result<Trip>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-     
+
     const { data, error } = await supabase
       .from('trips')
-      .select(`
+      .select(
+        `
         id,
         name,
         description,
@@ -353,24 +355,25 @@ export async function getTrip(
             country_code
           )
         )
-      `)
+      `
+      )
       .eq('id', tripId)
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch trip: ${error.message}` };
     }
-    
+
     if (!data) {
       return { success: false, error: `Trip not found: ${tripId}` };
     }
-    
+
     // Process and transform the data if needed
     const transformedData = {
       ...data,
-      cities: data.trip_cities?.map((tripCity: any) => tripCity.city) || []
+      cities: data.trip_cities?.map((tripCity: any) => tripCity.city) || [],
     };
-    
+
     // Validate with Zod
     try {
       const validated = tripSchema.parse(transformedData);
@@ -392,22 +395,23 @@ export async function listTrips({
   includeShared = false,
   page = 1,
   limit = 10,
-  cookieHandlers
-}: { 
-  userId?: string; 
+  cookieHandlers,
+}: {
+  userId?: string;
   includeShared?: boolean;
-  page?: number; 
+  page?: number;
   limit?: number;
   cookieHandlers?: Parameters<typeof getSupabaseForServer>[0];
 } = {}): Promise<Result<Trip[]>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
     const { from, to } = getPagination(page, limit);
-    
+
     // Base query
     let query = supabase
       .from('trips')
-      .select(`
+      .select(
+        `
         id,
         name,
         description,
@@ -420,10 +424,11 @@ export async function listTrips({
         created_by,
         is_public,
         privacy_setting
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
       .range(from, to);
-    
+
     // Apply filters if userId is provided
     if (userId) {
       if (includeShared) {
@@ -432,13 +437,16 @@ export async function listTrips({
           .from('trip_members')
           .select('trip_id')
           .eq('user_id', userId);
-        
+
         if (membershipError) {
-          return { success: false, error: `Failed to fetch trip memberships: ${membershipError.message}` };
+          return {
+            success: false,
+            error: `Failed to fetch trip memberships: ${membershipError.message}`,
+          };
         }
-        
-        const tripIds = membershipTripIds?.map(m => m.trip_id) || [];
-        
+
+        const tripIds = membershipTripIds?.map((m) => m.trip_id) || [];
+
         // Combined filter: either created by user OR in the tripIds list
         query = query.or(`created_by.eq.${userId},id.in.(${tripIds.join(',')})`);
       } else {
@@ -446,13 +454,13 @@ export async function listTrips({
         query = query.eq('created_by', userId);
       }
     }
-    
+
     const { data, error } = await query;
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch trips: ${error.message}` };
     }
-    
+
     // Validate with Zod
     try {
       const validatedTrips = z.array(tripSchema).parse(data);
@@ -474,7 +482,7 @@ export async function createTrip(
 ): Promise<Result<Trip>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     // Create the trip
     const { data: trip, error: tripError } = await supabase
       .from('trips')
@@ -492,42 +500,38 @@ export async function createTrip(
       })
       .select()
       .single();
-    
+
     if (tripError) {
       return { success: false, error: `Failed to create trip: ${tripError.message}` };
     }
-    
+
     // Add creator as a member with admin role
-    const { error: memberError } = await supabase
-      .from('trip_members')
-      .insert({
-        trip_id: trip.id,
-        user_id: tripData.created_by,
-        role: 'admin',
-      });
-    
+    const { error: memberError } = await supabase.from('trip_members').insert({
+      trip_id: trip.id,
+      user_id: tripData.created_by,
+      role: 'admin',
+    });
+
     if (memberError) {
       console.error('Failed to add trip member:', memberError);
       // Continue execution - we've created the trip, just failed to add the member
     }
-    
+
     // Add cities if provided
     if (tripData.cities && tripData.cities.length > 0) {
-      const cityInserts = tripData.cities.map(city => ({
+      const cityInserts = tripData.cities.map((city) => ({
         trip_id: trip.id,
         city_id: city.id,
       }));
-      
-      const { error: citiesError } = await supabase
-        .from('trip_cities')
-        .insert(cityInserts);
-      
+
+      const { error: citiesError } = await supabase.from('trip_cities').insert(cityInserts);
+
       if (citiesError) {
         console.error('Failed to add trip cities:', citiesError);
         // Continue execution - partial success
       }
     }
-    
+
     return { success: true, data: trip };
   } catch (error) {
     return handleError(error, 'Failed to create trip');
@@ -538,23 +542,23 @@ export async function createTrip(
  * Update an existing trip
  */
 export async function updateTrip(
-  tripId: string, 
+  tripId: string,
   tripData: Partial<Omit<Trip, 'id' | 'created_at' | 'cities'>>
 ): Promise<Result<Trip>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     const { data, error } = await supabase
       .from('trips')
       .update(tripData)
       .eq('id', tripId)
       .select()
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to update trip: ${error.message}` };
     }
-    
+
     return { success: true, data };
   } catch (error) {
     return handleError(error, `Failed to update trip ${tripId}`);
@@ -567,17 +571,14 @@ export async function updateTrip(
 export async function deleteTrip(tripId: string): Promise<Result<{ deleted: true }>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     // Delete the trip - cascade rules in the database will handle related records
-    const { error } = await supabase
-      .from('trips')
-      .delete()
-      .eq('id', tripId);
-    
+    const { error } = await supabase.from('trips').delete().eq('id', tripId);
+
     if (error) {
       return { success: false, error: `Failed to delete trip: ${error.message}` };
     }
-    
+
     return { success: true, data: { deleted: true } };
   } catch (error) {
     return handleError(error, `Failed to delete trip ${tripId}`);
@@ -588,40 +589,38 @@ export async function deleteTrip(tripId: string): Promise<Result<{ deleted: true
  * Update cities associated with a trip
  */
 export async function updateTripCities(
-  tripId: string, 
+  tripId: string,
   cities: Array<{ cityId: string; arrivalDate?: string; departureDate?: string }>
 ): Promise<Result<{ updated: true }>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     // First, delete existing trip cities
     const { error: deleteError } = await supabase
       .from('trip_cities')
       .delete()
       .eq('trip_id', tripId);
-    
+
     if (deleteError) {
       return { success: false, error: `Failed to update trip cities: ${deleteError.message}` };
     }
-    
+
     // Then insert new trip cities
     if (cities.length > 0) {
-      const insertRows = cities.map(city => ({
+      const insertRows = cities.map((city) => ({
         trip_id: tripId,
         city_id: city.cityId,
         arrival_date: city.arrivalDate || null,
         departure_date: city.departureDate || null,
       }));
-      
-      const { error: insertError } = await supabase
-        .from('trip_cities')
-        .insert(insertRows);
-      
+
+      const { error: insertError } = await supabase.from('trip_cities').insert(insertRows);
+
       if (insertError) {
         return { success: false, error: `Failed to add trip cities: ${insertError.message}` };
       }
     }
-    
+
     return { success: true, data: { updated: true } };
   } catch (error) {
     return handleError(error, `Failed to update trip cities for trip ${tripId}`);
@@ -641,17 +640,17 @@ export async function listTripExpenses(
 ): Promise<Result<Expense[]>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
+
     const { data, error } = await supabase
       .from('trip_expenses')
       .select()
       .eq('trip_id', tripId)
       .order('date', { ascending: false });
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch trip expenses: ${error.message}` };
     }
-    
+
     try {
       const validatedExpenses = z.array(expenseSchema).parse(data);
       return { success: true, data: validatedExpenses };
@@ -673,17 +672,17 @@ export async function createTripExpense(
 ): Promise<Result<Expense>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
+
     const { data, error } = await supabase
       .from('trip_expenses')
       .insert(expenseData)
       .select()
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to create expense: ${error.message}` };
     }
-    
+
     return { success: true, data };
   } catch (error) {
     return handleError(error, 'Failed to create expense');
@@ -703,17 +702,17 @@ export async function listTripNotes(
 ): Promise<Result<Note[]>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
+
     const { data, error } = await supabase
       .from('trip_notes')
       .select()
       .eq('trip_id', tripId)
       .order('created_at', { ascending: false });
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch trip notes: ${error.message}` };
     }
-    
+
     try {
       const validatedNotes = z.array(noteSchema).parse(data);
       return { success: true, data: validatedNotes };
@@ -735,17 +734,13 @@ export async function createTripNote(
 ): Promise<Result<Note>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
-    const { data, error } = await supabase
-      .from('trip_notes')
-      .insert(noteData)
-      .select()
-      .single();
-    
+
+    const { data, error } = await supabase.from('trip_notes').insert(noteData).select().single();
+
     if (error) {
       return { success: false, error: `Failed to create note: ${error.message}` };
     }
-    
+
     return { success: true, data };
   } catch (error) {
     return handleError(error, 'Failed to create note');
@@ -765,17 +760,17 @@ export async function listTripActivities(
 ): Promise<Result<Activity[]>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
+
     const { data, error } = await supabase
       .from('trip_activities')
       .select()
       .eq('trip_id', tripId)
       .order('date', { ascending: true });
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch trip activities: ${error.message}` };
     }
-    
+
     try {
       const validatedActivities = z.array(activitySchema).parse(data);
       return { success: true, data: validatedActivities };
@@ -797,17 +792,17 @@ export async function createTripActivity(
 ): Promise<Result<Activity>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
+
     const { data, error } = await supabase
       .from('trip_activities')
       .insert(activityData)
       .select()
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to create activity: ${error.message}` };
     }
-    
+
     return { success: true, data };
   } catch (error) {
     return handleError(error, 'Failed to create activity');
@@ -827,17 +822,17 @@ export async function listGroupMembers(
 ): Promise<Result<GroupMember[]>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
+
     const { data, error } = await supabase
       .from('group_members')
       .select()
       .eq('group_id', groupId)
       .eq('status', 'active');
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch group members: ${error.message}` };
     }
-    
+
     try {
       const validatedMembers = z.array(groupMemberSchema).parse(data);
       return { success: true, data: validatedMembers };
@@ -859,27 +854,27 @@ export async function inviteToGroup(
 ): Promise<Result<GroupInvitation>> {
   try {
     const supabase = getSupabaseForServer(cookieHandlers);
-    
+
     // Generate token and expiration date
     const token = crypto.randomUUID?.() || Math.random().toString(36).substring(2);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-    
+
     const { data, error } = await supabase
       .from('group_invitations')
       .insert({
         ...invitationData,
         token,
         expires_at: expiresAt.toISOString(),
-        status: 'pending'
+        status: 'pending',
       })
       .select()
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to create invitation: ${error.message}` };
     }
-    
+
     return { success: true, data };
   } catch (error) {
     return handleError(error, 'Failed to invite user to group');
@@ -896,21 +891,17 @@ export async function inviteToGroup(
 export async function getCity(cityId: string): Promise<Result<City>> {
   try {
     const supabase = await getSupabaseForServer();
-    
-    const { data, error } = await supabase
-      .from('cities')
-      .select()
-      .eq('id', cityId)
-      .single();
-    
+
+    const { data, error } = await supabase.from('cities').select().eq('id', cityId).single();
+
     if (error) {
       return { success: false, error: `Failed to fetch city: ${error.message}` };
     }
-    
+
     if (!data) {
       return { success: false, error: `City not found: ${cityId}` };
     }
-    
+
     // Validate with Zod
     try {
       const validated = citySchema.parse(data);
@@ -927,13 +918,13 @@ export async function getCity(cityId: string): Promise<Result<City>> {
 /**
  * List cities with pagination and search
  */
-export async function listCities({ 
-  page = 1, 
+export async function listCities({
+  page = 1,
   limit = 20,
   search = '',
-  countryCode = ''
-}: { 
-  page?: number; 
+  countryCode = '',
+}: {
+  page?: number;
   limit?: number;
   search?: string;
   countryCode?: string;
@@ -941,33 +932,28 @@ export async function listCities({
   try {
     const supabase = await getSupabaseForServer();
     const { from, to } = getPagination(page, limit);
-    
+
     // Base query
-    let query = supabase
-      .from('cities')
-      .select()
-      .range(from, to);
-    
+    let query = supabase.from('cities').select().range(from, to);
+
     // Apply filters
     if (search) {
       query = query.ilike('name', `%${search}%`);
     }
-    
+
     if (countryCode) {
       query = query.eq('country_code', countryCode);
     }
-    
+
     // Order by population if no search term, otherwise order by name similarity
-    query = search
-      ? query.order('name')
-      : query.order('population', { ascending: false });
-    
+    query = search ? query.order('name') : query.order('population', { ascending: false });
+
     const { data, error } = await query;
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch cities: ${error.message}` };
     }
-    
+
     // Validate with Zod
     try {
       const validatedCities = z.array(citySchema).parse(data);
@@ -991,21 +977,17 @@ export async function listCities({
 export async function getGroup(groupId: string): Promise<Result<Group>> {
   try {
     const supabase = await getSupabaseForServer();
-    
-    const { data, error } = await supabase
-      .from('groups')
-      .select()
-      .eq('id', groupId)
-      .single();
-    
+
+    const { data, error } = await supabase.from('groups').select().eq('id', groupId).single();
+
     if (error) {
       return { success: false, error: `Failed to fetch group: ${error.message}` };
     }
-    
+
     if (!data) {
       return { success: false, error: `Group not found: ${groupId}` };
     }
-    
+
     // Validate with Zod
     try {
       const validated = groupSchema.parse(data);
@@ -1022,37 +1004,40 @@ export async function getGroup(groupId: string): Promise<Result<Group>> {
 /**
  * List groups with pagination and filtering
  */
-export async function listGroups({ 
+export async function listGroups({
   userId,
-  page = 1, 
-  limit = 10 
-}: { 
+  page = 1,
+  limit = 10,
+}: {
   userId: string;
-  page?: number; 
+  page?: number;
   limit?: number;
 }): Promise<Result<Group[]>> {
   try {
     const supabase = await getSupabaseForServer();
     const { from, to } = getPagination(page, limit);
-    
+
     // Get all groups where the user is a member
     const { data: groupMemberships, error: membershipError } = await supabase
       .from('group_members')
       .select('group_id')
       .eq('user_id', userId)
       .eq('status', 'active');
-    
+
     if (membershipError) {
-      return { success: false, error: `Failed to fetch group memberships: ${membershipError.message}` };
+      return {
+        success: false,
+        error: `Failed to fetch group memberships: ${membershipError.message}`,
+      };
     }
-    
-    const groupIds = groupMemberships?.map(m => m.group_id) || [];
-    
+
+    const groupIds = groupMemberships?.map((m) => m.group_id) || [];
+
     // If user isn't a member of any groups, return empty array
     if (groupIds.length === 0) {
       return { success: true, data: [] };
     }
-    
+
     // Fetch the groups
     const { data, error } = await supabase
       .from('groups')
@@ -1060,11 +1045,11 @@ export async function listGroups({
       .in('id', groupIds)
       .order('created_at', { ascending: false })
       .range(from, to);
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch groups: ${error.message}` };
     }
-    
+
     // Validate with Zod
     try {
       const validatedGroups = z.array(groupSchema).parse(data);
@@ -1086,7 +1071,7 @@ export async function createGroup(
 ): Promise<Result<Group>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     // Create the group
     const { data: group, error: groupError } = await supabase
       .from('groups')
@@ -1100,26 +1085,24 @@ export async function createGroup(
       })
       .select()
       .single();
-    
+
     if (groupError) {
       return { success: false, error: `Failed to create group: ${groupError.message}` };
     }
-    
+
     // Add creator as a member with admin role
-    const { error: memberError } = await supabase
-      .from('group_members')
-      .insert({
-        group_id: group.id,
-        user_id: groupData.created_by,
-        role: 'admin',
-        status: 'active',
-      });
-    
+    const { error: memberError } = await supabase.from('group_members').insert({
+      group_id: group.id,
+      user_id: groupData.created_by,
+      role: 'admin',
+      status: 'active',
+    });
+
     if (memberError) {
       console.error('Failed to add group member:', memberError);
       // Continue execution - we've created the group, just failed to add the member
     }
-    
+
     return { success: true, data: group };
   } catch (error) {
     return handleError(error, 'Failed to create group');
@@ -1135,18 +1118,18 @@ export async function updateGroup(
 ): Promise<Result<Group>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     const { data, error } = await supabase
       .from('groups')
       .update(groupData)
       .eq('id', groupId)
       .select()
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to update group: ${error.message}` };
     }
-    
+
     return { success: true, data };
   } catch (error) {
     return handleError(error, `Failed to update group ${groupId}`);
@@ -1159,17 +1142,14 @@ export async function updateGroup(
 export async function deleteGroup(groupId: string): Promise<Result<{ deleted: true }>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     // Delete the group - cascade rules in the database will handle related records
-    const { error } = await supabase
-      .from('groups')
-      .delete()
-      .eq('id', groupId);
-    
+    const { error } = await supabase.from('groups').delete().eq('id', groupId);
+
     if (error) {
       return { success: false, error: `Failed to delete group: ${error.message}` };
     }
-    
+
     return { success: true, data: { deleted: true } };
   } catch (error) {
     return handleError(error, `Failed to delete group ${groupId}`);
@@ -1183,22 +1163,20 @@ export async function deleteGroup(groupId: string): Promise<Result<{ deleted: tr
 /**
  * List ideas for a group
  */
-export async function listGroupIdeas(
-  groupId: string
-): Promise<Result<GroupPlanIdea[]>> {
+export async function listGroupIdeas(groupId: string): Promise<Result<GroupPlanIdea[]>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     const { data, error } = await supabase
       .from('group_plan_ideas')
       .select()
       .eq('group_id', groupId)
       .order('created_at', { ascending: false });
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch group ideas: ${error.message}` };
     }
-    
+
     // Validate with Zod
     try {
       const validatedIdeas = z.array(groupPlanIdeaSchema).parse(data);
@@ -1220,7 +1198,7 @@ export async function createGroupIdea(
 ): Promise<Result<GroupPlanIdea>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     const { data, error } = await supabase
       .from('group_plan_ideas')
       .insert({
@@ -1235,11 +1213,11 @@ export async function createGroupIdea(
       })
       .select()
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to create group idea: ${error.message}` };
     }
-    
+
     return { success: true, data };
   } catch (error) {
     return handleError(error, 'Failed to create group idea');
@@ -1256,21 +1234,21 @@ export async function createGroupIdea(
 export async function getDestination(destinationId: string): Promise<Result<Destination>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     const { data, error } = await supabase
       .from('destinations')
       .select()
       .eq('id', destinationId)
       .single();
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch destination: ${error.message}` };
     }
-    
+
     if (!data) {
       return { success: false, error: `Destination not found: ${destinationId}` };
     }
-    
+
     // Validate with Zod
     try {
       const validated = destinationSchema.parse(data);
@@ -1287,14 +1265,14 @@ export async function getDestination(destinationId: string): Promise<Result<Dest
 /**
  * List destinations with pagination, filtering, and sorting
  */
-export async function listDestinations({ 
-  page = 1, 
+export async function listDestinations({
+  page = 1,
   limit = 10,
   continent = '',
   query = '',
-  sortBy = 'popularity'
-}: { 
-  page?: number; 
+  sortBy = 'popularity',
+}: {
+  page?: number;
   limit?: number;
   continent?: string;
   query?: string;
@@ -1303,22 +1281,19 @@ export async function listDestinations({
   try {
     const supabase = await getSupabaseForServer();
     const { from, to } = getPagination(page, limit);
-    
+
     // Base query
-    let dbQuery = supabase
-      .from('destinations')
-      .select()
-      .range(from, to);
-    
+    let dbQuery = supabase.from('destinations').select().range(from, to);
+
     // Apply filters
     if (continent) {
       dbQuery = dbQuery.eq('continent', continent);
     }
-    
+
     if (query) {
       dbQuery = dbQuery.or(`city.ilike.%${query}%,country.ilike.%${query}%`);
     }
-    
+
     // Apply sorting
     switch (sortBy) {
       case 'city':
@@ -1332,13 +1307,13 @@ export async function listDestinations({
         dbQuery = dbQuery.order('popularity', { ascending: false });
         break;
     }
-    
+
     const { data, error } = await dbQuery;
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch destinations: ${error.message}` };
     }
-    
+
     // Validate with Zod
     try {
       const validatedDestinations = z.array(destinationSchema).parse(data);
@@ -1356,22 +1331,20 @@ export async function listDestinations({
  * Get popular destinations
  * @param limit - Maximum number of destinations to return
  */
-export async function getPopularDestinations(
-  limit: number = 10
-): Promise<Result<Destination[]>> {
+export async function getPopularDestinations(limit: number = 10): Promise<Result<Destination[]>> {
   try {
     const supabase = await getSupabaseForServer();
-    
+
     const { data, error } = await supabase
       .from('destinations')
       .select()
       .order('popularity', { ascending: false })
       .limit(limit);
-    
+
     if (error) {
       return { success: false, error: `Failed to fetch popular destinations: ${error.message}` };
     }
-    
+
     // Validate with Zod
     try {
       const validatedDestinations = z.array(destinationSchema).parse(data);
@@ -1398,24 +1371,24 @@ export async function fetchWithErrorHandling<T>(
 ): Promise<Result<T>> {
   try {
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       // Try to parse error response
       try {
         const errorData = await response.json();
         return {
           success: false,
-          error: errorData.error || `HTTP error: ${response.status}`
+          error: errorData.error || `HTTP error: ${response.status}`,
         };
       } catch {
         // If error response isn't valid JSON
         return {
           success: false,
-          error: `HTTP error: ${response.status} ${response.statusText}`
+          error: `HTTP error: ${response.status} ${response.statusText}`,
         };
       }
     }
-    
+
     const data = await response.json();
     return { success: true, data };
   } catch (error) {
@@ -1430,16 +1403,16 @@ export async function fetchWithErrorHandling<T>(
  */
 export function createUrlWithParams(baseUrl: string, params: Record<string, any> = {}): string {
   const url = new URL(baseUrl, window.location.origin);
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       url.searchParams.append(key, String(value));
     }
   });
-  
+
   return url.toString();
 }
 
 // ============================================================================
 // END OF MODULE
-// ============================================================================ 
+// ============================================================================

@@ -9,11 +9,12 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatDateRange } from '@/utils/lib-utils';
-import { Trip } from '@/utils/constants/database.types';
-import { TripCardHeader } from '@/components/trips/molecules/TripCardHeader';
+import type { Trip } from '@/lib/client/trips';
+import { TripCardHeader } from '@/app/trips/components/molecules/TripCardHeader';
 
 // Define TripMember type locally
-export type TripMember = { trip: Trip };
+export type TripWithCities = Trip & { cities?: any[] };
+export type TripMember = { trip: TripWithCities };
 
 export default function TripsClientPage({
   initialTrips = [],
@@ -39,9 +40,7 @@ export default function TripsClientPage({
           tripMember.trip.name.toLowerCase().includes(query) ||
           tripMember.trip.destination_name?.toLowerCase().includes(query) ||
           // Also search through city names
-          tripMember.trip.cities?.some((city: any) => 
-            city.name?.toLowerCase().includes(query)
-          )
+          tripMember.trip.cities?.some((city: any) => city.name?.toLowerCase().includes(query))
       );
     }
 
@@ -120,20 +119,20 @@ export default function TripsClientPage({
 
   // Travel stats in a single line
   const travelStats = useMemo(() => {
-    const visitedTrips = trips.filter(t => 
-      t.trip.end_date && new Date(t.trip.end_date) < new Date()).length;
-    const upcomingTrips = trips.filter(t => 
-      t.trip.end_date && new Date(t.trip.end_date) >= new Date() || 
-      // If no end date but has start date in future, count as upcoming
-      (!t.trip.end_date && t.trip.start_date && new Date(t.trip.start_date) >= new Date())
+    const visitedTrips = trips.filter(
+      (t) => t.trip.end_date && new Date(t.trip.end_date) < new Date()
     ).length;
-    
+    const upcomingTrips = trips.filter(
+      (t) =>
+        (t.trip.end_date && new Date(t.trip.end_date) >= new Date()) ||
+        // If no end date but has start date in future, count as upcoming
+        (!t.trip.end_date && t.trip.start_date && new Date(t.trip.start_date) >= new Date())
+    ).length;
+
     // Use cities for counting unique destinations, fallback to destination_name for legacy data
     const uniqueDestinations = new Set([
-      ...trips.flatMap(t => 
-        t.trip.cities?.map((city: any) => city.name).filter(Boolean) || []
-      ),
-      ...trips.map(t => t.trip.destination_name).filter(Boolean)
+      ...trips.flatMap((t) => t.trip.cities?.map((city: any) => city.name).filter(Boolean) || []),
+      ...trips.map((t) => t.trip.destination_name).filter(Boolean),
     ]).size;
 
     return { visited: visitedTrips, upcoming: upcomingTrips, destinations: uniqueDestinations };
@@ -165,8 +164,11 @@ export default function TripsClientPage({
           {travelStats.visited > 0 && <span>{travelStats.visited} visited</span>}
           {travelStats.visited > 0 && travelStats.upcoming > 0 && <span> • </span>}
           {travelStats.upcoming > 0 && <span>{travelStats.upcoming} upcoming</span>}
-          {(travelStats.visited > 0 || travelStats.upcoming > 0) && travelStats.destinations > 0 && <span> • </span>}
-          {travelStats.destinations > 0 && <span>{travelStats.destinations} unique destinations</span>}
+          {(travelStats.visited > 0 || travelStats.upcoming > 0) &&
+            travelStats.destinations > 0 && <span> • </span>}
+          {travelStats.destinations > 0 && (
+            <span>{travelStats.destinations} unique destinations</span>
+          )}
         </div>
       )}
 
@@ -184,8 +186,8 @@ export default function TripsClientPage({
       </div>
 
       {/* Tabs Interface */}
-      <Tabs 
-        defaultValue="all" 
+      <Tabs
+        defaultValue="all"
         value={filterType}
         onValueChange={(value) => setFilterType(value as 'all' | 'upcoming' | 'past')}
         className="w-full"
@@ -207,16 +209,16 @@ export default function TripsClientPage({
         <TabsContent value="all" className="mt-0">
           <TripsList groupedTrips={groupedTrips} />
         </TabsContent>
-        
+
         <TabsContent value="upcoming" className="mt-0">
           <TripsList groupedTrips={groupedTrips} />
         </TabsContent>
-        
+
         <TabsContent value="past" className="mt-0">
           <TripsList groupedTrips={groupedTrips} />
         </TabsContent>
       </Tabs>
-      
+
       {/* Show empty state if no trips match the filters */}
       {Object.keys(groupedTrips).length === 0 && (
         <div className="text-center p-8 border rounded-lg bg-card/50">
@@ -243,14 +245,10 @@ export default function TripsClientPage({
 function MinimalTripCard({ tripMember }: { tripMember: TripMember }) {
   const trip = tripMember.trip;
   const hasDateInfo = trip.start_date || trip.end_date;
-  const dateRange = hasDateInfo 
-    ? formatDateRange(trip.start_date || '', trip.end_date || '') 
-    : '';
+  const dateRange = hasDateInfo ? formatDateRange(trip.start_date || '', trip.end_date || '') : '';
 
   // Get primary city name or fall back to destination_name
-  const locationName = trip.cities?.length 
-    ? trip.cities[0].name 
-    : trip.destination_name;
+  const locationName = trip.cities?.length ? trip.cities[0].name : trip.destination_name;
 
   return (
     <Link href={`/trips/${trip.id}`} className="no-underline block">
@@ -266,7 +264,7 @@ function MinimalTripCard({ tripMember }: { tripMember: TripMember }) {
             name={trip.name}
             destination={locationName}
             coverImageUrl={trip.cover_image_url}
-            status={trip.status}
+            status={trip.status ? String(trip.status) : undefined}
             // Add more props as needed
           />
           {/* Travelers and date info */}

@@ -66,7 +66,7 @@ module.exports = {
       // Enhanced Grid Settings
       gridTemplateColumns: {
         // Simple 12 column grid
-        '12': 'repeat(12, minmax(0, 1fr))',
+        12: 'repeat(12, minmax(0, 1fr))',
         // Fixed width column grids for strict designs
         'auto-fill-sm': 'repeat(auto-fill, minmax(12rem, 1fr))',
         'auto-fill-md': 'repeat(auto-fill, minmax(18rem, 1fr))',
@@ -77,13 +77,13 @@ module.exports = {
         'min-auto': 'min-content auto',
       },
       gap: {
-        '11': '2.75rem',
-        '13': '3.25rem',
-        '15': '3.75rem',
+        11: '2.75rem',
+        13: '3.25rem',
+        15: '3.75rem',
       },
       // Layout specific utilities
       layout: {
-        'section': {
+        section: {
           'padding-top': '4rem',
           'padding-bottom': '4rem',
         },
@@ -97,11 +97,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: [
-          'var(--font-helvetica-neue)',
-          'Helvetica Neue',
-          'sans-serif',
-        ],
+        sans: ['var(--font-helvetica-neue)', 'Helvetica Neue', 'sans-serif'],
       },
       fontWeight: {
         thin: 'var(--font-weight-thin)',
@@ -302,16 +298,17 @@ module.exports = {
           'text-wrap': 'balance',
         },
         '.transition-default': {
-          'transition-property': 'color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter',
+          'transition-property':
+            'color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter',
           'transition-timing-function': 'cubic-bezier(0.4, 0, 0.2, 1)',
           'transition-duration': '150ms',
         },
         // Force critical layout properties that might be missing
         '.grid': {
-          'display': 'grid !important',
+          display: 'grid !important',
         },
         '.flex': {
-          'display': 'flex !important',
+          display: 'flex !important',
         },
         '.flex-col': {
           'flex-direction': 'column !important',
@@ -323,26 +320,26 @@ module.exports = {
           'justify-content': 'center !important',
         },
       });
-      
+
       // Add section components
       addComponents({
         '.section': {
           'padding-top': '4rem',
           'padding-bottom': '4rem',
-          'width': '100%',
+          width: '100%',
         },
         '.section-lg': {
           'padding-top': '6rem',
           'padding-bottom': '6rem',
-          'width': '100%',
+          width: '100%',
         },
         '.section-xl': {
           'padding-top': '8rem',
           'padding-bottom': '8rem',
-          'width': '100%',
+          width: '100%',
         },
         '.section-inner': {
-          'width': '100%',
+          width: '100%',
           'margin-left': 'auto',
           'margin-right': 'auto',
           'padding-left': '1rem',

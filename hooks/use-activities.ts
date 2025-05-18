@@ -89,9 +89,7 @@ export function useActivities(tripId: string): UseActivitiesResult {
       setIsLoading(true);
       const result = await updateTripActivity(tripId, activityId, data);
       if (result.success) {
-        setActivities((prev) =>
-          prev.map((act) => (act.id === activityId ? result.data : act))
-        );
+        setActivities((prev) => prev.map((act) => (act.id === activityId ? result.data : act)));
         toast({ title: 'Activity updated' });
       } else {
         setError(result.error);
@@ -165,4 +163,4 @@ export function useActivities(tripId: string): UseActivitiesResult {
     removeActivity,
     getSuggestions,
   };
-} 
+}

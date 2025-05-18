@@ -54,26 +54,31 @@ export function ContentTabsSection({
       {/* Tabbed Interface */}
       <div className="mb-8">
         <div className="mb-4 flex justify-center">
-          <Tabs
-            defaultValue="trips"
-            className="w-full"
-            onValueChange={setActiveTab}
-          >
+          <Tabs defaultValue="trips" className="w-full" onValueChange={setActiveTab}>
             <div className="flex justify-center mb-6">
               <TabsList className="grid grid-cols-3 rounded-full p-1 w-auto min-w-[300px]">
-                <TabsTrigger value="trips" className="rounded-full data-[state=active]:bg-travel-purple/15 data-[state=active]:text-travel-purple">
+                <TabsTrigger
+                  value="trips"
+                  className="rounded-full data-[state=active]:bg-travel-purple/15 data-[state=active]:text-travel-purple"
+                >
                   <div className="flex items-center">
                     <CalendarCheck className="mr-2 h-4 w-4" />
                     My Trips
                   </div>
                 </TabsTrigger>
-                <TabsTrigger value="groups" className="rounded-full data-[state=active]:bg-travel-blue/15 data-[state=active]:text-travel-blue">
+                <TabsTrigger
+                  value="groups"
+                  className="rounded-full data-[state=active]:bg-travel-blue/15 data-[state=active]:text-travel-blue"
+                >
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4" />
                     My Groups
                   </div>
                 </TabsTrigger>
-                <TabsTrigger value="saved" className="rounded-full data-[state=active]:bg-travel-pink/15 data-[state=active]:text-travel-pink">
+                <TabsTrigger
+                  value="saved"
+                  className="rounded-full data-[state=active]:bg-travel-pink/15 data-[state=active]:text-travel-pink"
+                >
                   <div className="flex items-center">
                     <Bookmark className="mr-2 h-4 w-4" />
                     Saved
@@ -127,7 +132,10 @@ export function ContentTabsSection({
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                       Create or join a group to plan trips together with friends and family.
                     </p>
-                    <Button onClick={() => router.push('/groups/create')} className="rounded-full bg-travel-blue hover:bg-travel-blue/90">
+                    <Button
+                      onClick={() => router.push('/groups/create')}
+                      className="rounded-full bg-travel-blue hover:bg-travel-blue/90"
+                    >
                       <PlusCircle className="h-4 w-4 mr-2" />
                       Create a Group
                     </Button>
@@ -148,7 +156,11 @@ export function ContentTabsSection({
                       <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                         Save destinations and itineraries you love to find them here later.
                       </p>
-                      <Button variant="outline" onClick={() => router.push('/destinations')} className="rounded-full">
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push('/destinations')}
+                        className="rounded-full"
+                      >
                         <MapPin className="h-4 w-4 mr-2" />
                         Explore Destinations
                       </Button>

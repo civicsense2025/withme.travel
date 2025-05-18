@@ -55,13 +55,13 @@ export default function CreateTripPage() {
   // Helper function to get or create guest token
   const getOrCreateGuestToken = () => {
     let guestToken = Cookies.get(GUEST_TOKEN_COOKIE);
-    
+
     if (!guestToken) {
       guestToken = uuidv4();
       // Set cookie to expire in 30 days
       Cookies.set(GUEST_TOKEN_COOKIE, guestToken, { expires: 30 });
     }
-    
+
     return guestToken;
   };
 
@@ -93,7 +93,7 @@ export default function CreateTripPage() {
       // Check auth status
       const { data: userData, error: authError } = await supabase.auth.getUser();
       const isAuthenticated = !authError && userData?.user;
-      
+
       // Initialize variables for user or guest mode
       let createdById: string | undefined = undefined;
       let guestToken: string | null = null;
@@ -144,11 +144,11 @@ export default function CreateTripPage() {
         const guestResponse = await fetch('/api/trips/associate-guest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            tripId, 
-            guestToken, 
-            role: 'admin' 
-          })
+          body: JSON.stringify({
+            tripId,
+            guestToken,
+            role: 'admin',
+          }),
         });
 
         if (!guestResponse.ok) {
@@ -181,9 +181,9 @@ export default function CreateTripPage() {
         <CardHeader>
           <CardTitle>Create a New Trip</CardTitle>
           <CardDescription>
-            {isGuestMode 
-              ? "Creating as a guest - no account required" 
-              : "Fill in the details to start planning your trip"}
+            {isGuestMode
+              ? 'Creating as a guest - no account required'
+              : 'Fill in the details to start planning your trip'}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>

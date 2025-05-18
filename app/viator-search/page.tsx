@@ -234,7 +234,14 @@ export default function ViatorSearchPage() {
     }, 500); // Simulate loading delay
 
     return () => clearTimeout(timer);
-  }, [selectedDestination, selectedCategory, sortOption, searchQuery, mockPopularExperiences, popularDestinations]);
+  }, [
+    selectedDestination,
+    selectedCategory,
+    sortOption,
+    searchQuery,
+    mockPopularExperiences,
+    popularDestinations,
+  ]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

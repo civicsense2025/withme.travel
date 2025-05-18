@@ -78,7 +78,7 @@ export default function VotingClient({
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { trackEvent } = useResearchTracking();
-  
+
   // Use the voting hook
   const { isVoting, error: voteError, voteOnGroupIdea } = useVotes();
 
@@ -250,7 +250,7 @@ export default function VotingClient({
         description: 'Failed to save your vote. Please try again.',
         variant: 'destructive',
       });
-      
+
       // Revert the optimistic update if the API call fails
       fetchData();
     }

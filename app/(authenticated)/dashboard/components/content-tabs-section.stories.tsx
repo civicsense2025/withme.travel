@@ -25,9 +25,20 @@ export const Playground: Story = {
     ],
     savedContent: {
       destinations: [
-        { id: 'd1', city: 'Rome', country: 'Italy', name: 'Rome', image_url: '', cuisine_rating: 4, nightlife_rating: 3, cultural_attractions: 5, outdoor_activities: 4, beach_quality: 2 },
+        {
+          id: 'd1',
+          city: 'Rome',
+          country: 'Italy',
+          name: 'Rome',
+          image_url: '',
+          cuisine_rating: 4,
+          nightlife_rating: 3,
+          cultural_attractions: 5,
+          outdoor_activities: 4,
+          beach_quality: 2,
+        },
       ],
       itineraries: [],
     },
   },
-}; 
+};

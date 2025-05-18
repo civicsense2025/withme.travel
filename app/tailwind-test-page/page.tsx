@@ -6,4 +6,4 @@ export default function TailwindTestPage() {
       </h1>
     </div>
   );
-} 
+}

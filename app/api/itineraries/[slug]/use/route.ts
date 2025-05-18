@@ -126,10 +126,7 @@ export async function POST(
 
     // Fetch template sections (or items directly if sections fail)
     let templateSections: any[] = [];
-    console.log(
-      '[DEBUG] Fetching items directly for template:',
-      template.id
-    );
+    console.log('[DEBUG] Fetching items directly for template:', template.id);
     const { data: templateItemsFlat, error: itemsFlatError } = await supabase
       .from('itinerary_template_items')
       .select('*')

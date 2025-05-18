@@ -1,6 +1,6 @@
 /**
  * Trip Members API Client
- * 
+ *
  * Client-side wrapper for the Trip Members API providing type-safe access to member operations
  */
 
@@ -76,10 +76,7 @@ export async function listTripMembers(tripId: string): Promise<Result<TripMember
 /**
  * Get a specific trip member
  */
-export async function getTripMember(
-  tripId: string,
-  userId: string
-): Promise<Result<TripMember>> {
+export async function getTripMember(tripId: string, userId: string): Promise<Result<TripMember>> {
   if (!tripId || !userId) {
     return {
       success: false,
@@ -215,4 +212,6 @@ export async function checkTripMemberAccess(
       method: 'GET',
     }).then((response) => handleApiResponse<{ isMember: boolean; isInvited: boolean }>(response))
   );
-} 
+}
+
+export type { Result } from '@/lib/client/result';

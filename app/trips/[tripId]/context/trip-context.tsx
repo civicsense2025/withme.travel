@@ -16,7 +16,7 @@ const TripContext = createContext<TripContextType>({
   trip: null,
   loading: false,
   error: null,
-  refreshTrip: async () => {}
+  refreshTrip: async () => {},
 });
 
 export const useTripContext = () => useContext(TripContext);
@@ -38,7 +38,7 @@ export function TripProvider({ tripId, initialTrip = null, children }: TripProvi
       setError(null);
 
       const result = await getTrip(tripId);
-      
+
       if (isSuccess(result)) {
         setTrip(result.data);
       } else {
@@ -67,4 +67,4 @@ export function TripProvider({ tripId, initialTrip = null, children }: TripProvi
       {children}
     </TripContext.Provider>
   );
-} 
+}

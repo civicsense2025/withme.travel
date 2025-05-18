@@ -80,21 +80,21 @@ export default function GroupsClientPage({
   isGuest = false,
 }: GroupsClientPageProps) {
   // Use the groups hook
-  const guestToken = isGuest 
-    ? typeof window !== 'undefined' 
-      ? window.localStorage.getItem('guestToken') || undefined 
-      : undefined 
+  const guestToken = isGuest
+    ? typeof window !== 'undefined'
+      ? window.localStorage.getItem('guestToken') || undefined
+      : undefined
     : undefined;
-  
-  const { 
-    groups: hookGroups, 
-    isLoading, 
+
+  const {
+    groups: hookGroups,
+    isLoading,
     error: hookError,
     refresh: refreshGroups,
     createGroup: createGroupHook,
-    deleteGroup: deleteGroupHook
+    deleteGroup: deleteGroupHook,
   } = useGroups(guestToken);
-  
+
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [groups, setGroups] = useState<GroupWithDetails[]>(initialGroups);
@@ -106,11 +106,11 @@ export default function GroupsClientPage({
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Sync state with hook data when it changes
   useEffect(() => {
     if (hookGroups.length > 0) {
-      const formattedGroups: GroupWithDetails[] = hookGroups.map(group => ({
+      const formattedGroups: GroupWithDetails[] = hookGroups.map((group) => ({
         ...group,
         group_members: [], // We don't have member data from the hook
         trip_count: [{ count: 0 }], // Default trip count
@@ -146,13 +146,13 @@ export default function GroupsClientPage({
     };
 
     const result = await createGroupHook(newGroupData);
-    
+
     if (result.success) {
       trackEvent('group_created', {
         group_id: result.groupId,
         visibility: newGroupData.visibility || 'private',
       });
-      
+
       // Refresh groups to get the latest data
       refreshGroups();
       setModalOpen(false);
@@ -299,7 +299,6 @@ export default function GroupsClientPage({
 
   return (
     <div className="container max-w-4xl py-8 md:py-16 mx-auto">
-
       <Tabs defaultValue="my-groups" className="mb-12">
         <TabsList className="border-b border-zinc-200 dark:border-zinc-800 mb-8 px-0">
           <TabsTrigger value="my-groups" className="text-base">
@@ -353,7 +352,7 @@ export default function GroupsClientPage({
                       emoji: group.emoji,
                       memberCount: group.group_members?.length ?? 0,
                       tripCount: group.trip_count[0]?.count ?? 0,
-                      createdAt: group.created_at
+                      createdAt: group.created_at,
                     }}
                     isSelectable={bulkMode}
                     isSelected={selectedGroupIds.has(group.id)}
@@ -465,7 +464,11 @@ export default function GroupsClientPage({
       {hookError && <div className="text-red-500 mb-2">{hookError}</div>}
       <div className="mt-8">
         <Button onClick={refreshGroups} disabled={isLoading} className="flex items-center">
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <PlusCircle className="mr-2 h-4 w-4" />
+          )}
           Refresh Groups
         </Button>
       </div>

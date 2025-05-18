@@ -1,5 +1,5 @@
 /* 1. Import Tailwind */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* 2. Define CSS variables using OKLCH for better perceptual uniformity */
 :root {
@@ -23,19 +23,19 @@
   --travel-blue-foreground: oklch(0.15 0.05 225);
 
   --travel-pink: oklch(0.85 0.15 350); /* Light pink */
-  --travel-pink-dark: oklch(0.80 0.18 350);
+  --travel-pink-dark: oklch(0.8 0.18 350);
   --travel-pink-foreground: oklch(0.2 0.05 350);
 
   --travel-yellow: oklch(0.85 0.12 85); /* Light yellow */
-  --travel-yellow-dark: oklch(0.80 0.14 85);
+  --travel-yellow-dark: oklch(0.8 0.14 85);
   --travel-yellow-foreground: oklch(0.2 0.05 85);
 
   --travel-mint: oklch(0.85 0.12 155); /* Light mint */
-  --travel-mint-dark: oklch(0.80 0.15 155);
+  --travel-mint-dark: oklch(0.8 0.15 155);
   --travel-mint-foreground: oklch(0.2 0.05 155);
 
   --travel-peach: oklch(0.85 0.12 70); /* Light peach */
-  --travel-peach-dark: oklch(0.80 0.15 70);
+  --travel-peach-dark: oklch(0.8 0.15 70);
   --travel-peach-foreground: oklch(0.2 0.05 70);
 
   /* Neutral and UI colors */
@@ -43,7 +43,7 @@
   --text-primary: oklch(0.145 0 0);
   --text-secondary: oklch(0.34 0.01 240);
   --border-base: oklch(0.91 0.01 214);
-  --focus: oklch(0.90 0.10 293); /* Light purple for focus */
+  --focus: oklch(0.9 0.1 293); /* Light purple for focus */
   --subtle: oklch(0.96 0.01 210);
 
   /* System semantic colors */
@@ -102,7 +102,7 @@
   --background: oklch(0.145 0 0); /* Near black */
   --foreground: oklch(0.98 0 0); /* Near white */
 
-  --card: oklch(0.15 0 0); 
+  --card: oklch(0.15 0 0);
   --card-foreground: oklch(0.98 0 0);
 
   --popover: oklch(0.05 0 0);
@@ -110,40 +110,40 @@
 
   /* Dark mode brand colors */
   --travel-purple: oklch(0.78 0.18 293);
-  --travel-purple-dark: oklch(0.70 0.20 293);
-  --travel-purple-foreground: oklch(0.90 0.05 293);
+  --travel-purple-dark: oklch(0.7 0.2 293);
+  --travel-purple-foreground: oklch(0.9 0.05 293);
 
   --travel-blue: oklch(0.78 0.15 225);
-  --travel-blue-dark: oklch(0.70 0.17 225);
+  --travel-blue-dark: oklch(0.7 0.17 225);
   --travel-blue-foreground: oklch(0.85 0.05 225);
 
-  --travel-pink: oklch(0.80 0.18 350);
-  --travel-pink-dark: oklch(0.75 0.20 350);
-  --travel-pink-foreground: oklch(0.90 0.05 350);
+  --travel-pink: oklch(0.8 0.18 350);
+  --travel-pink-dark: oklch(0.75 0.2 350);
+  --travel-pink-foreground: oklch(0.9 0.05 350);
 
-  --travel-yellow: oklch(0.80 0.14 85);
+  --travel-yellow: oklch(0.8 0.14 85);
   --travel-yellow-dark: oklch(0.75 0.16 85);
   --travel-yellow-foreground: oklch(0.85 0.05 85);
 
-  --travel-mint: oklch(0.80 0.15 155);
+  --travel-mint: oklch(0.8 0.15 155);
   --travel-mint-dark: oklch(0.75 0.17 155);
-  --travel-mint-foreground: oklch(0.90 0.05 155);
+  --travel-mint-foreground: oklch(0.9 0.05 155);
 
-  --travel-peach: oklch(0.80 0.15 70);
+  --travel-peach: oklch(0.8 0.15 70);
   --travel-peach-dark: oklch(0.75 0.17 70);
-  --travel-peach-foreground: oklch(0.90 0.05 70);
+  --travel-peach-foreground: oklch(0.9 0.05 70);
 
   /* Dark mode neutrals and UI */
   --surface: oklch(0.15 0 0);
   --text-primary: oklch(0.98 0 0);
   --text-secondary: oklch(0.65 0 0);
-  --border-base: oklch(0.20 0 0);
-  --focus: oklch(0.25 0.10 293);
-  --subtle: oklch(0.20 0 0);
+  --border-base: oklch(0.2 0 0);
+  --focus: oklch(0.25 0.1 293);
+  --subtle: oklch(0.2 0 0);
 
   /* Dark mode system colors */
-  --primary: oklch(0.70 0.17 293);
-  --primary-foreground: oklch(0.20 0.05 293);
+  --primary: oklch(0.7 0.17 293);
+  --primary-foreground: oklch(0.2 0.05 293);
 
   --secondary: oklch(0.15 0 0);
   --secondary-foreground: oklch(0.98 0 0);
@@ -152,14 +152,14 @@
   --muted-foreground: oklch(0.65 0 0);
 
   --accent: oklch(0.65 0.15 225);
-  --accent-foreground: oklch(0.20 0.05 225);
+  --accent-foreground: oklch(0.2 0.05 225);
 
-  --destructive: oklch(0.50 0.20 0);
+  --destructive: oklch(0.5 0.2 0);
   --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(0.20 0 0);
-  --input: oklch(0.20 0 0);
-  --ring: oklch(0.25 0.10 293);
+  --border: oklch(0.2 0 0);
+  --input: oklch(0.2 0 0);
+  --ring: oklch(0.25 0.1 293);
 
   /* Dark mode command menu */
   --cmd-bg-gradient-from: oklch(0 0 0 / 0.95);
@@ -176,54 +176,54 @@
   /* Map CSS variables to Tailwind utility classes */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  
+
   /* Brand color mappings */
   --color-travel-purple: var(--travel-purple);
   --color-travel-purple-dark: var(--travel-purple-dark);
   --color-travel-purple-foreground: var(--travel-purple-foreground);
-  
+
   --color-travel-blue: var(--travel-blue);
   --color-travel-blue-dark: var(--travel-blue-dark);
   --color-travel-blue-foreground: var(--travel-blue-foreground);
-  
+
   --color-travel-pink: var(--travel-pink);
   --color-travel-pink-dark: var(--travel-pink-dark);
   --color-travel-pink-foreground: var(--travel-pink-foreground);
-  
+
   --color-travel-yellow: var(--travel-yellow);
   --color-travel-yellow-dark: var(--travel-yellow-dark);
   --color-travel-yellow-foreground: var(--travel-yellow-foreground);
-  
+
   --color-travel-mint: var(--travel-mint);
   --color-travel-mint-dark: var(--travel-mint-dark);
   --color-travel-mint-foreground: var(--travel-mint-foreground);
-  
+
   --color-travel-peach: var(--travel-peach);
   --color-travel-peach-dark: var(--travel-peach-dark);
   --color-travel-peach-foreground: var(--travel-peach-foreground);
-  
+
   /* Custom UI colors */
   --color-surface: var(--surface);
   --color-text-primary: var(--text-primary);
@@ -231,7 +231,7 @@
   --color-border-base: var(--border-base);
   --color-focus: var(--focus);
   --color-subtle: var(--subtle);
-  
+
   /* Border radius mapping */
   --border-radius: var(--radius);
 }
@@ -247,7 +247,7 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     font-size: var(--font-size-base);
@@ -257,34 +257,34 @@
     scroll-behavior: smooth;
     font-family: var(--font-helvetica-neue), 'Helvetica Neue', sans-serif;
   }
-  
+
   h1 {
     font-size: var(--font-size-h1);
     font-weight: var(--font-weight-bold);
     line-height: 1.2;
     font-family: var(--font-helvetica-neue), 'Helvetica Neue', sans-serif;
   }
-  
+
   h2 {
     font-size: var(--font-size-h2);
     font-weight: var(--font-weight-medium);
     line-height: 1.25;
     font-family: var(--font-helvetica-neue), 'Helvetica Neue', sans-serif;
   }
-  
+
   h3 {
     font-size: var(--font-size-h3);
     font-weight: var(--font-weight-medium);
     line-height: 1.3;
     font-family: var(--font-helvetica-neue), 'Helvetica Neue', sans-serif;
   }
-  
+
   p {
     @apply text-base leading-relaxed;
     font-weight: var(--font-weight-regular);
     font-family: var(--font-helvetica-neue), 'Helvetica Neue', sans-serif;
   }
-  
+
   ::selection {
     @apply bg-travel-purple/20 dark:bg-travel-purple/30;
   }
@@ -351,12 +351,12 @@
   .btn-secondary {
     @apply bg-transparent border border-travel-blue text-travel-blue font-medium py-2 px-4 rounded-md hover:bg-travel-blue/10 focus:outline-none focus:ring-2 focus:ring-focus;
   }
-  
+
   /* Use the new size-* utility for square elements (as mentioned in the article) */
   .avatar {
     @apply size-10 rounded-full bg-gray-200 overflow-hidden;
   }
-  
+
   /* Other component styles... */
   /* (Rest of your component styles can remain largely the same) */
 }
@@ -415,14 +415,27 @@ html.force-fullscreen div[class*='container'] {
 
 /* 10. Animation keyframes */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes pulse-soft {
-  0% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.05); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 0.5; }
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
 }
 
 /* (Rest of your animations and other styles...) */

@@ -1,6 +1,6 @@
 /**
  * Rate Limiting Utility
- * 
+ *
  * This utility provides a way to limit the rate of API requests
  * based on tokens like IP addresses or user IDs. It uses an in-memory
  * store but can be extended to use Redis or other persistent stores.
@@ -53,7 +53,7 @@ export function rateLimit(options: Options) {
     check: async (maxRequests: number, key: string): Promise<void> => {
       const tokenKey = key;
       const now = Date.now();
-      
+
       // Initialize or update token cache entry
       if (!tokenCache.has(tokenKey)) {
         tokenCache.set(tokenKey, {
@@ -85,4 +85,4 @@ export function rateLimit(options: Options) {
       return Promise.resolve();
     },
   };
-} 
+}

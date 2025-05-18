@@ -30,10 +30,13 @@ export function createPagesServerClient(context: GetServerSidePropsContext) {
  * Create a Supabase client for API routes in the Pages Router
  */
 export function createPagesApiClient(req: NextApiRequest, res: NextApiResponse) {
-  return createServerSupabaseClient<Database>({ req, res }, {
-    supabaseUrl,
-    supabaseKey: supabaseAnonKey,
-  });
+  return createServerSupabaseClient<Database>(
+    { req, res },
+    {
+      supabaseUrl,
+      supabaseKey: supabaseAnonKey,
+    }
+  );
 }
 
 /**
@@ -50,30 +53,32 @@ export function createBasicClient() {
  */
 export async function checkAdminStatusPages(context: GetServerSidePropsContext) {
   const supabase = createPagesServerClient(context);
-  
+
   // Get the current session
-  const { data: { session } } = await supabase.auth.getSession();
-  
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   if (!session) {
     return { isAdmin: false, error: 'Not authenticated' };
   }
-  
+
   // Check profile for admin status
   const { data: profile } = await supabase
     .from('profiles')
     .select('is_admin')
     .eq('id', session.user.id)
     .single();
-  
+
   // First check the database
   if (profile?.is_admin) {
     return { isAdmin: true, error: null };
   }
-  
+
   // Then check metadata as fallback
   if (session.user.user_metadata?.is_admin) {
     return { isAdmin: true, error: null };
   }
-  
+
   return { isAdmin: false, error: 'Not authorized as admin' };
-} 
+}

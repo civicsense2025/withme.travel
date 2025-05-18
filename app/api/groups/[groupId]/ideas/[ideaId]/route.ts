@@ -1,6 +1,6 @@
 /**
  * Group Plan Idea API Routes
- * 
+ *
  * Handles operations for a specific idea within a group:
  * - GET: Fetch a specific idea
  * - PUT: Update an idea
@@ -11,12 +11,12 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
 import { GROUP_PLAN_IDEA_TYPE } from '@/utils/constants/status';
-import { 
-  getGroupIdea, 
-  updateGroupIdea, 
-  deleteGroupIdea, 
+import {
+  getGroupIdea,
+  updateGroupIdea,
+  deleteGroupIdea,
   checkGroupMemberRole,
-  voteGroupIdea
+  voteGroupIdea,
 } from '@/lib/api/groups';
 
 // Validation schema for updating an idea
@@ -40,7 +40,7 @@ const updateIdeaSchema = z.object({
 
 // Validation schema for voting
 const voteSchema = z.object({
-  vote_type: z.enum(['up', 'down'])
+  vote_type: z.enum(['up', 'down']),
 });
 
 /**
@@ -48,16 +48,19 @@ const voteSchema = z.object({
  * Fetch a specific idea from a group
  */
 export async function GET(
-  request: Request, 
+  request: Request,
   { params }: { params: { groupId: string; ideaId: string } }
 ) {
   try {
     const { groupId, ideaId } = params;
-    
+
     if (!groupId || !ideaId) {
-      return NextResponse.json({ 
-        error: 'Group ID and Idea ID are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Group ID and Idea ID are required',
+        },
+        { status: 400 }
+      );
     }
 
     const supabase = await createRouteHandlerClient();
@@ -69,30 +72,23 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ 
-        error: 'Authentication required' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+        },
+        { status: 401 }
+      );
     }
 
     // Check if the user is a member of the group
-    const memberResult = await checkGroupMemberRole(
-      groupId,
-      user.id,
-      ['owner', 'admin', 'member']
-    );
+    const memberResult = await checkGroupMemberRole(groupId, user.id, ['owner', 'admin', 'member']);
 
     if (!memberResult.success) {
-      return NextResponse.json(
-        { error: 'Error checking group membership' }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
     }
 
     if (!memberResult.data) {
-      return NextResponse.json(
-        { error: 'Not a member of this group' }, 
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
     }
 
     // Fetch the idea
@@ -100,7 +96,7 @@ export async function GET(
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error }, 
+        { error: result.error },
         { status: result.error === 'Idea not found' ? 404 : 500 }
       );
     }
@@ -108,10 +104,7 @@ export async function GET(
     return NextResponse.json({ data: result.data });
   } catch (error) {
     console.error('Error in GET /api/groups/[groupId]/ideas/[ideaId]:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
 
@@ -120,16 +113,19 @@ export async function GET(
  * Update a specific idea
  */
 export async function PUT(
-  request: Request, 
+  request: Request,
   { params }: { params: { groupId: string; ideaId: string } }
 ) {
   try {
     const { groupId, ideaId } = params;
-    
+
     if (!groupId || !ideaId) {
-      return NextResponse.json({ 
-        error: 'Group ID and Idea ID are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Group ID and Idea ID are required',
+        },
+        { status: 400 }
+      );
     }
 
     const supabase = await createRouteHandlerClient();
@@ -141,30 +137,23 @@ export async function PUT(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ 
-        error: 'Authentication required' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+        },
+        { status: 401 }
+      );
     }
 
     // Check if the user is a member of the group
-    const memberResult = await checkGroupMemberRole(
-      groupId,
-      user.id,
-      ['owner', 'admin', 'member']
-    );
+    const memberResult = await checkGroupMemberRole(groupId, user.id, ['owner', 'admin', 'member']);
 
     if (!memberResult.success) {
-      return NextResponse.json(
-        { error: 'Error checking group membership' }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
     }
 
     if (!memberResult.data) {
-      return NextResponse.json(
-        { error: 'Not a member of this group' }, 
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
     }
 
     // Parse request body
@@ -177,22 +166,14 @@ export async function PUT(
     if (isVote) {
       try {
         const { vote_type } = voteSchema.parse(body);
-        
+
         // Handle vote
-        const voteResult = await voteGroupIdea(
-          groupId, 
-          ideaId,
-          user.id,
-          vote_type
-        );
-        
+        const voteResult = await voteGroupIdea(groupId, ideaId, user.id, vote_type);
+
         if (!voteResult.success) {
-          return NextResponse.json(
-            { error: voteResult.error }, 
-            { status: 500 }
-          );
+          return NextResponse.json({ error: voteResult.error }, { status: 500 });
         }
-        
+
         return NextResponse.json({ data: voteResult.data });
       } catch (validationError) {
         return NextResponse.json(
@@ -215,20 +196,14 @@ export async function PUT(
       const result = await updateGroupIdea(groupId, ideaId, body);
 
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error }, 
-          { status: 500 }
-        );
+        return NextResponse.json({ error: result.error }, { status: 500 });
       }
 
       return NextResponse.json({ data: result.data });
     }
   } catch (error) {
     console.error('Error in PUT /api/groups/[groupId]/ideas/[ideaId]:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
 
@@ -237,16 +212,19 @@ export async function PUT(
  * Delete a specific idea
  */
 export async function DELETE(
-  request: Request, 
+  request: Request,
   { params }: { params: { groupId: string; ideaId: string } }
 ) {
   try {
     const { groupId, ideaId } = params;
-    
+
     if (!groupId || !ideaId) {
-      return NextResponse.json({ 
-        error: 'Group ID and Idea ID are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Group ID and Idea ID are required',
+        },
+        { status: 400 }
+      );
     }
 
     const supabase = await createRouteHandlerClient();
@@ -258,28 +236,24 @@ export async function DELETE(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ 
-        error: 'Authentication required' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+        },
+        { status: 401 }
+      );
     }
 
     // Check if the user is a member of the group with admin rights
-    const memberResult = await checkGroupMemberRole(
-      groupId,
-      user.id,
-      ['owner', 'admin']
-    );
+    const memberResult = await checkGroupMemberRole(groupId, user.id, ['owner', 'admin']);
 
     if (!memberResult.success) {
-      return NextResponse.json(
-        { error: 'Error checking group membership' }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error checking group membership' }, { status: 500 });
     }
 
     if (!memberResult.data) {
       return NextResponse.json(
-        { error: 'You do not have permission to delete ideas' }, 
+        { error: 'You do not have permission to delete ideas' },
         { status: 403 }
       );
     }
@@ -288,18 +262,12 @@ export async function DELETE(
     const result = await deleteGroupIdea(groupId, ideaId);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('Error in DELETE /api/groups/[groupId]/ideas/[ideaId]:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
-} 
+}

@@ -1,76 +1,53 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface CollapsibleSectionProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CollapsibleSectionProps {
   title: string;
-  defaultOpen?: boolean;
-  icon?: React.ReactNode;
-  headerAction?: React.ReactNode;
   children: React.ReactNode;
-  /**
-   * If true, hides the toggle icon on desktop (md+ screens), showing it only on mobile.
-   */
-  hideToggleOnDesktop?: boolean;
+  defaultOpen?: boolean;
+  className?: string;
+  headerClassName?: string;
+  contentClassName?: string;
+  icon?: React.ReactNode;
 }
 
 export function CollapsibleSection({
   title,
-  defaultOpen = false,
-  icon,
-  headerAction,
   children,
+  defaultOpen = false,
   className,
-  hideToggleOnDesktop = false,
-  ...props
+  headerClassName,
+  contentClassName,
+  icon,
 }: CollapsibleSectionProps) {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div
-      className={cn(
-        'collapsible-section border border-border/30 rounded-2xl bg-background p-0 md:p-0 mb-4',
-        isOpen ? 'shadow-sm' : 'shadow-none',
-        className
-      )}
-      {...props}
-    >
-      <div
-        className="collapsible-section-header px-4 py-4 flex items-center justify-between cursor-pointer select-none mb-1"
+    <div className={cn('border rounded-md', className)}>
+      <button
         onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex items-center gap-2">
-          {icon && <span className="flex-shrink-0 text-2xl md:text-3xl leading-none">{icon}</span>}
-          <h3 className="font-bold text-lg md:text-xl flex items-center gap-2">
-            {title}
-            {headerAction && (
-              <span className="ml-2 flex items-center justify-center rounded-full border border-gray-300 text-xs font-semibold min-w-[24px] h-6 px-2 text-gray-700 bg-white">
-                {headerAction}
-              </span>
-            )}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>
-            {isOpen ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            )}
-          </span>
-        </div>
-      </div>
-
-      <div
         className={cn(
-          'collapsible-section-content',
-          isOpen ? 'h-auto opacity-100' : 'h-0 opacity-0 overflow-hidden'
+          'flex w-full items-center justify-between px-4 py-2 text-left font-medium',
+          'hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+          isOpen ? 'rounded-t-md' : 'rounded-md',
+          headerClassName
         )}
       >
-        {children}
-      </div>
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-muted-foreground">{icon}</span>}
+          <span>{title}</span>
+        </div>
+        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </button>
+      
+      {isOpen && (
+        <div className={cn('p-4 pt-2', contentClassName)}>
+          {children}
+        </div>
+      )}
     </div>
   );
-}
+} 

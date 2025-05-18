@@ -2,7 +2,7 @@
 
 /**
  * Task Management Hook
- * 
+ *
  * Custom React hook for managing tasks with loading states and error handling.
  * Provides CRUD operations, assignment, tagging, and voting functionality.
  *
@@ -15,12 +15,12 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { 
-  listTasks, 
+import {
+  listTasks,
   listGroupTasks,
-  getTask, 
-  createTask, 
-  updateTask, 
+  getTask,
+  createTask,
+  updateTask,
   deleteTask,
   assignTask,
   toggleTaskComplete,
@@ -29,7 +29,7 @@ import {
   removeTagFromTask,
   type Task,
   type CreateTaskParams,
-  type UpdateTaskParams
+  type UpdateTaskParams,
 } from '@/lib/client/tasks';
 import type { Result } from '@/utils/result';
 import { isSuccess } from '@/utils/result';
@@ -109,7 +109,7 @@ export function useTasks({
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // Operation loading states
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
@@ -119,36 +119,34 @@ export function useTasks({
   const [isVoting, setIsVoting] = useState<Record<string, boolean>>({});
   const [isAddingTag, setIsAddingTag] = useState<Record<string, boolean>>({});
   const [isRemovingTag, setIsRemovingTag] = useState<Record<string, Record<string, boolean>>>({});
-  
+
   const { toast } = useToast();
-  
+
   // Helper to update task in state
   const updateTaskInState = useCallback((updatedTask: Task) => {
-    setTasks(prevTasks => {
+    setTasks((prevTasks) => {
       if (!prevTasks) return [updatedTask];
-      return prevTasks.map(task => 
-        task.id === updatedTask.id ? updatedTask : task
-      );
+      return prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task));
     });
   }, []);
-  
+
   // Helper to remove task from state
   const removeTaskFromState = useCallback((taskId: string) => {
-    setTasks(prevTasks => {
+    setTasks((prevTasks) => {
       if (!prevTasks) return [];
-      return prevTasks.filter(task => task.id !== taskId);
+      return prevTasks.filter((task) => task.id !== taskId);
     });
   }, []);
-  
+
   // Fetch tasks based on groupId or userId
   const fetchTasks = useCallback(async () => {
     // Reset error state
     setError(null);
     setIsLoading(true);
-    
+
     try {
       let result;
-      
+
       if (groupId) {
         // Fetch group tasks
         result = await listGroupTasks(groupId);
@@ -156,7 +154,7 @@ export function useTasks({
         // Fetch personal tasks
         result = await listTasks(userId, assignedOnly);
       }
-      
+
       if (isSuccess(result)) {
         setTasks(result.data);
       } else {
@@ -178,345 +176,369 @@ export function useTasks({
       setIsLoading(false);
     }
   }, [groupId, userId, assignedOnly, toast]);
-  
+
   // Create a new task
-  const handleCreateTask = useCallback(async (data: CreateTaskParams) => {
-    setIsCreating(true);
-    
-    try {
-      const result = await createTask({
-        ...data,
-        tripId: groupId,
-      });
-      
-      if (isSuccess(result)) {
-        // Add new task to local state
-        setTasks(prevTasks => {
-          const newTasks = prevTasks ? [...prevTasks] : [];
-          newTasks.push(result.data);
-          return newTasks;
+  const handleCreateTask = useCallback(
+    async (data: CreateTaskParams) => {
+      setIsCreating(true);
+
+      try {
+        const result = await createTask({
+          ...data,
+          tripId: groupId,
         });
-        
-        toast({
-          title: 'Task created',
-          description: 'The task was created successfully.',
-        });
-      } else {
+
+        if (isSuccess(result)) {
+          // Add new task to local state
+          setTasks((prevTasks) => {
+            const newTasks = prevTasks ? [...prevTasks] : [];
+            newTasks.push(result.data);
+            return newTasks;
+          });
+
+          toast({
+            title: 'Task created',
+            description: 'The task was created successfully.',
+          });
+        } else {
+          toast({
+            title: 'Failed to create task',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
         toast({
           title: 'Failed to create task',
-          description: result.error,
+          description: message,
           variant: 'destructive',
         });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsCreating(false);
       }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to create task',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsCreating(false);
-    }
-  }, [groupId, toast]);
-  
+    },
+    [groupId, toast]
+  );
+
   // Update an existing task
-  const handleUpdateTask = useCallback(async (taskId: string, data: UpdateTaskParams) => {
-    // Set loading state for this task
-    setIsUpdating(prev => ({ ...prev, [taskId]: true }));
-    
-    try {
-      const result = await updateTask(taskId, data);
-      
-      if (isSuccess(result)) {
-        updateTaskInState(result.data);
-        
-        toast({
-          title: 'Task updated',
-          description: 'The task was updated successfully.',
-        });
-      } else {
+  const handleUpdateTask = useCallback(
+    async (taskId: string, data: UpdateTaskParams) => {
+      // Set loading state for this task
+      setIsUpdating((prev) => ({ ...prev, [taskId]: true }));
+
+      try {
+        const result = await updateTask(taskId, data);
+
+        if (isSuccess(result)) {
+          updateTaskInState(result.data);
+
+          toast({
+            title: 'Task updated',
+            description: 'The task was updated successfully.',
+          });
+        } else {
+          toast({
+            title: 'Failed to update task',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
         toast({
           title: 'Failed to update task',
-          description: result.error,
+          description: message,
           variant: 'destructive',
         });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsUpdating((prev) => ({ ...prev, [taskId]: false }));
       }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to update task',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsUpdating(prev => ({ ...prev, [taskId]: false }));
-    }
-  }, [toast, updateTaskInState]);
-  
+    },
+    [toast, updateTaskInState]
+  );
+
   // Delete a task
-  const handleDeleteTask = useCallback(async (taskId: string) => {
-    setIsDeleting(prev => ({ ...prev, [taskId]: true }));
-    
-    try {
-      const result = await deleteTask(taskId);
-      
-      if (isSuccess(result)) {
-        removeTaskFromState(taskId);
-        
-        toast({
-          title: 'Task deleted',
-          description: 'The task was deleted successfully.',
-        });
-      } else {
+  const handleDeleteTask = useCallback(
+    async (taskId: string) => {
+      setIsDeleting((prev) => ({ ...prev, [taskId]: true }));
+
+      try {
+        const result = await deleteTask(taskId);
+
+        if (isSuccess(result)) {
+          removeTaskFromState(taskId);
+
+          toast({
+            title: 'Task deleted',
+            description: 'The task was deleted successfully.',
+          });
+        } else {
+          toast({
+            title: 'Failed to delete task',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
         toast({
           title: 'Failed to delete task',
-          description: result.error,
+          description: message,
           variant: 'destructive',
         });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsDeleting((prev) => ({ ...prev, [taskId]: false }));
       }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to delete task',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsDeleting(prev => ({ ...prev, [taskId]: false }));
-    }
-  }, [toast, removeTaskFromState]);
-  
+    },
+    [toast, removeTaskFromState]
+  );
+
   // Toggle task completion
-  const handleToggleComplete = useCallback(async (taskId: string, isCompleted: boolean) => {
-    setIsTogglingComplete(prev => ({ ...prev, [taskId]: true }));
-    
-    try {
-      const result = await toggleTaskComplete(taskId, isCompleted);
-      
-      if (isSuccess(result)) {
-        updateTaskInState(result.data);
-      } else {
+  const handleToggleComplete = useCallback(
+    async (taskId: string, isCompleted: boolean) => {
+      setIsTogglingComplete((prev) => ({ ...prev, [taskId]: true }));
+
+      try {
+        const result = await toggleTaskComplete(taskId, isCompleted);
+
+        if (isSuccess(result)) {
+          updateTaskInState(result.data);
+        } else {
+          toast({
+            title: 'Failed to update task',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
         toast({
           title: 'Failed to update task',
-          description: result.error,
+          description: message,
           variant: 'destructive',
         });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsTogglingComplete((prev) => ({ ...prev, [taskId]: false }));
       }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to update task',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsTogglingComplete(prev => ({ ...prev, [taskId]: false }));
-    }
-  }, [toast, updateTaskInState]);
-  
+    },
+    [toast, updateTaskInState]
+  );
+
   // Assign a task
-  const handleAssignTask = useCallback(async (taskId: string, assigneeId?: string) => {
-    setIsAssigning(prev => ({ ...prev, [taskId]: true }));
-    
-    try {
-      let result;
-      
-      if (assigneeId) {
-        result = await assignTask(taskId, assigneeId);
-      } else {
-        // Update with null assignee to unassign
-        result = await updateTask(taskId, { assigneeId: undefined });
-      }
-      
-      if (isSuccess(result)) {
-        updateTaskInState(result.data);
-        
-        toast({
-          title: assigneeId ? 'Task assigned' : 'Task unassigned',
-          description: assigneeId 
-            ? 'The task was assigned successfully.' 
-            : 'The task was unassigned successfully.',
-        });
-      } else {
+  const handleAssignTask = useCallback(
+    async (taskId: string, assigneeId?: string) => {
+      setIsAssigning((prev) => ({ ...prev, [taskId]: true }));
+
+      try {
+        let result;
+
+        if (assigneeId) {
+          result = await assignTask(taskId, assigneeId);
+        } else {
+          // Update with null assignee to unassign
+          result = await updateTask(taskId, { assigneeId: undefined });
+        }
+
+        if (isSuccess(result)) {
+          updateTaskInState(result.data);
+
+          toast({
+            title: assigneeId ? 'Task assigned' : 'Task unassigned',
+            description: assigneeId
+              ? 'The task was assigned successfully.'
+              : 'The task was unassigned successfully.',
+          });
+        } else {
+          toast({
+            title: 'Failed to assign task',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
         toast({
           title: 'Failed to assign task',
-          description: result.error,
+          description: message,
           variant: 'destructive',
         });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsAssigning((prev) => ({ ...prev, [taskId]: false }));
       }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to assign task',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsAssigning(prev => ({ ...prev, [taskId]: false }));
-    }
-  }, [toast, updateTaskInState]);
-  
+    },
+    [toast, updateTaskInState]
+  );
+
   // Vote on a task
-  const handleVoteTask = useCallback(async (taskId: string, voteType: 'up' | 'down') => {
-    setIsVoting(prev => ({ ...prev, [taskId]: true }));
-    
-    try {
-      const result = await voteTask(taskId, voteType);
-      
-      if (isSuccess(result)) {
-        updateTaskInState(result.data);
-      } else {
+  const handleVoteTask = useCallback(
+    async (taskId: string, voteType: 'up' | 'down') => {
+      setIsVoting((prev) => ({ ...prev, [taskId]: true }));
+
+      try {
+        const result = await voteTask(taskId, voteType);
+
+        if (isSuccess(result)) {
+          updateTaskInState(result.data);
+        } else {
+          toast({
+            title: 'Failed to vote on task',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
         toast({
           title: 'Failed to vote on task',
-          description: result.error,
+          description: message,
           variant: 'destructive',
         });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsVoting((prev) => ({ ...prev, [taskId]: false }));
       }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to vote on task',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsVoting(prev => ({ ...prev, [taskId]: false }));
-    }
-  }, [toast, updateTaskInState]);
-  
+    },
+    [toast, updateTaskInState]
+  );
+
   // Add a tag to a task
-  const handleAddTagToTask = useCallback(async (taskId: string, tagName: string) => {
-    setIsAddingTag(prev => ({ ...prev, [taskId]: true }));
-    
-    try {
-      const result = await addTagToTask(taskId, tagName);
-      
-      if (isSuccess(result)) {
-        updateTaskInState(result.data);
-      } else {
+  const handleAddTagToTask = useCallback(
+    async (taskId: string, tagName: string) => {
+      setIsAddingTag((prev) => ({ ...prev, [taskId]: true }));
+
+      try {
+        const result = await addTagToTask(taskId, tagName);
+
+        if (isSuccess(result)) {
+          updateTaskInState(result.data);
+        } else {
+          toast({
+            title: 'Failed to add tag',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
         toast({
           title: 'Failed to add tag',
-          description: result.error,
+          description: message,
           variant: 'destructive',
         });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsAddingTag((prev) => ({ ...prev, [taskId]: false }));
       }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to add tag',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsAddingTag(prev => ({ ...prev, [taskId]: false }));
-    }
-  }, [toast, updateTaskInState]);
-  
+    },
+    [toast, updateTaskInState]
+  );
+
   // Remove a tag from a task
-  const handleRemoveTagFromTask = useCallback(async (taskId: string, tagName: string) => {
-    // Set loading state for this task and tag
-    setIsRemovingTag(prev => ({
-      ...prev,
-      [taskId]: {
-        ...(prev[taskId] || {}),
-        [tagName]: true
-      }
-    }));
-    
-    try {
-      const result = await removeTagFromTask(taskId, tagName);
-      
-      if (isSuccess(result)) {
-        updateTaskInState(result.data);
-      } else {
-        toast({
-          title: 'Failed to remove tag',
-          description: result.error,
-          variant: 'destructive',
-        });
-      }
-      
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast({
-        title: 'Failed to remove tag',
-        description: message,
-        variant: 'destructive',
-      });
-      
-      return {
-        success: false,
-        error: message,
-      };
-    } finally {
-      setIsRemovingTag(prev => ({
+  const handleRemoveTagFromTask = useCallback(
+    async (taskId: string, tagName: string) => {
+      // Set loading state for this task and tag
+      setIsRemovingTag((prev) => ({
         ...prev,
         [taskId]: {
           ...(prev[taskId] || {}),
-          [tagName]: false
-        }
+          [tagName]: true,
+        },
       }));
-    }
-  }, [toast, updateTaskInState]);
-  
+
+      try {
+        const result = await removeTagFromTask(taskId, tagName);
+
+        if (isSuccess(result)) {
+          updateTaskInState(result.data);
+        } else {
+          toast({
+            title: 'Failed to remove tag',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred';
+        toast({
+          title: 'Failed to remove tag',
+          description: message,
+          variant: 'destructive',
+        });
+
+        return {
+          success: false,
+          error: message,
+        };
+      } finally {
+        setIsRemovingTag((prev) => ({
+          ...prev,
+          [taskId]: {
+            ...(prev[taskId] || {}),
+            [tagName]: false,
+          },
+        }));
+      }
+    },
+    [toast, updateTaskInState]
+  );
+
   // Fetch tasks on mount if enabled
   useEffect(() => {
     if (fetchOnMount) {
       fetchTasks();
     }
   }, [fetchOnMount, fetchTasks]);
-  
+
   return {
     tasks,
     isLoading,
@@ -537,6 +559,6 @@ export function useTasks({
     isAssigning,
     isVoting,
     isAddingTag,
-    isRemovingTag
+    isRemovingTag,
   };
-} 
+}

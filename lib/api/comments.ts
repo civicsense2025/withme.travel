@@ -25,7 +25,10 @@ import { handleError, Result, Comment } from './_shared';
  * @param entityType - The type of entity (e.g., 'trip', 'itinerary_item')
  * @returns Result containing an array of comments
  */
-export async function listComments(entityId: string, entityType: string): Promise<Result<Comment[]>> {
+export async function listComments(
+  entityId: string,
+  entityType: string
+): Promise<Result<Comment[]>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
@@ -74,7 +77,7 @@ export async function addComment(data: Partial<Comment>): Promise<Result<Comment
       .insert(data)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newComment };
   } catch (error) {
@@ -88,7 +91,10 @@ export async function addComment(data: Partial<Comment>): Promise<Result<Comment
  * @param data - The new comment data (typically the content)
  * @returns Result containing the updated comment
  */
-export async function updateComment(commentId: string, data: Partial<Comment>): Promise<Result<Comment>> {
+export async function updateComment(
+  commentId: string,
+  data: Partial<Comment>
+): Promise<Result<Comment>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data: updatedComment, error } = await supabase
@@ -97,7 +103,7 @@ export async function updateComment(commentId: string, data: Partial<Comment>): 
       .eq('id', commentId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedComment };
   } catch (error) {
@@ -113,15 +119,12 @@ export async function updateComment(commentId: string, data: Partial<Comment>): 
 export async function deleteComment(commentId: string): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { error } = await supabase
-      .from(TABLES.COMMENTS)
-      .delete()
-      .eq('id', commentId);
-    
+    const { error } = await supabase.from(TABLES.COMMENTS).delete().eq('id', commentId);
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
     return handleError(error, 'Failed to delete comment');
   }
 }
-// (Add more as needed) 
+// (Add more as needed)

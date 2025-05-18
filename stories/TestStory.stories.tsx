@@ -27,4 +27,4 @@ export default meta;
 type Story = StoryObj<typeof TestComponent>;
 
 // Export the story
-export const Default: Story = {}; 
+export const Default: Story = {};

@@ -25,7 +25,9 @@ export async function listTripExpenses(tripId: string): Promise<Result<Expense[]
   return tryCatch(
     fetch(API_ROUTES.TRIP_EXPENSES(tripId), {
       method: 'GET',
-    }).then((response) => handleApiResponse<{ expenses: Expense[] }>(response).then(r => r.expenses))
+    }).then((response) =>
+      handleApiResponse<{ expenses: Expense[] }>(response).then((r) => r.expenses)
+    )
   );
 }
 
@@ -36,33 +38,40 @@ export async function getTripExpense(tripId: string, expenseId: string): Promise
   return tryCatch(
     fetch(API_ROUTES.TRIP_EXPENSE(tripId, expenseId), {
       method: 'GET',
-    }).then((response) => handleApiResponse<{ expense: Expense }>(response).then(r => r.expense))
+    }).then((response) => handleApiResponse<{ expense: Expense }>(response).then((r) => r.expense))
   );
 }
 
 /**
  * Create a new expense for a trip
  */
-export async function createTripExpense(tripId: string, data: Partial<Expense>): Promise<Result<Expense>> {
+export async function createTripExpense(
+  tripId: string,
+  data: Partial<Expense>
+): Promise<Result<Expense>> {
   return tryCatch(
     fetch(API_ROUTES.TRIP_EXPENSES(tripId), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    }).then((response) => handleApiResponse<{ expense: Expense }>(response).then(r => r.expense))
+    }).then((response) => handleApiResponse<{ expense: Expense }>(response).then((r) => r.expense))
   );
 }
 
 /**
  * Update an existing expense for a trip
  */
-export async function updateTripExpense(tripId: string, expenseId: string, data: Partial<Expense>): Promise<Result<Expense>> {
+export async function updateTripExpense(
+  tripId: string,
+  expenseId: string,
+  data: Partial<Expense>
+): Promise<Result<Expense>> {
   return tryCatch(
     fetch(API_ROUTES.TRIP_EXPENSE(tripId, expenseId), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    }).then((response) => handleApiResponse<{ expense: Expense }>(response).then(r => r.expense))
+    }).then((response) => handleApiResponse<{ expense: Expense }>(response).then((r) => r.expense))
   );
 }
 
@@ -86,4 +95,4 @@ export async function getTripExpenseSummary(tripId: string): Promise<Result<any>
       method: 'GET',
     }).then((response) => handleApiResponse<any>(response))
   );
-} 
+}

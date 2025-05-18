@@ -275,9 +275,12 @@ function RemoveFromPlanDialog({
   const removeFromPlan = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas/${ideaId}/remove`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/groups/${groupId}/plans/${planId}/ideas/${ideaId}/remove`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to remove idea from plan');
@@ -285,9 +288,9 @@ function RemoveFromPlanDialog({
 
       // Call the callback to update the UI
       onRemoved(ideaId);
-      
+
       setIsOpen(false);
-      
+
       toast({
         title: 'Success',
         description: 'Idea removed from plan',
@@ -311,13 +314,13 @@ function RemoveFromPlanDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Remove idea from plan</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to remove "{ideaTitle}" from this plan? This will only remove it from
-            the plan, the idea will still be available in your group.
+            Are you sure you want to remove "{ideaTitle}" from this plan? This will only remove it
+            from the plan, the idea will still be available in your group.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
               removeFromPlan();
@@ -354,8 +357,13 @@ export default function PlanIdeasClient({
   guestToken,
 }: PlanIdeasClientProps) {
   // Use the groupIdeas hook
-  const { ideas: groupIdeas, loading: groupIdeasLoading, createIdea: createGroupIdea, refetch } = useGroupIdeas(groupId);
-  
+  const {
+    ideas: groupIdeas,
+    loading: groupIdeasLoading,
+    createIdea: createGroupIdea,
+    refetch,
+  } = useGroupIdeas(groupId);
+
   const [isLoading, setIsLoading] = useState(true);
   const [ideas, setIdeas] = useState<LocalGroupIdea[]>(initialIdeas || []);
   const [createIdeaOpen, setCreateIdeaOpen] = useState(false);
@@ -378,11 +386,11 @@ export default function PlanIdeasClient({
     setIsLoading(true);
     try {
       const response = await fetch(`/api/groups/${groupId}/plans/${planId}/ideas`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch ideas');
       }
-      
+
       const data = await response.json();
       setIdeas(data.ideas || []);
     } catch (error) {
@@ -412,8 +420,8 @@ export default function PlanIdeasClient({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
-            updates: [{ ideaId, position }] 
+          body: JSON.stringify({
+            updates: [{ ideaId, position }],
           }),
         });
 

@@ -60,7 +60,7 @@ export type {
   TripStatus,
   TripType,
   UserRole,
-  VoteType
+  VoteType,
 } from './status';
 
 // ============================================================================

@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { z } from 'zod';
 import { Database } from '@/types/database.types';
+import { createAPIResponse } from '@/utils/api-response';
+import { createErrorResponse } from '@/utils/api-error';
+import { auth } from '@/utils/auth/server';
+import { canViewTrip } from '@/utils/trips/permissions';
+import { db, executeQuery } from '@/utils/db';
 
 // Define constants for trip roles and note types
 const TRIP_ROLES = {
@@ -38,75 +43,91 @@ const FIELDS = {
 };
 
 // Get all notes for a trip
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
-  const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
-
-  if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
-
+export async function GET(request: NextRequest, { params }: { params: { tripId: string } }) {
   try {
-    // Check if user is authenticated
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const tripId = params.tripId;
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    // Check authentication
+    const userId = (await auth())?.userId;
+    if (!userId) {
+      return createErrorResponse({
+        status: 401,
+        message: 'Unauthorized',
+      });
     }
 
-    // Check if user is *any* member of this trip for reading notes
-    const { data: isMember, error: memberCheckError } = await supabase.rpc(
-      'is_trip_member_with_role',
-      {
-        _trip_id: tripId,
-        _user_id: user.id,
-        _roles: [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR, TRIP_ROLES.CONTRIBUTOR, TRIP_ROLES.VIEWER],
+    // Check trip access permissions
+    const canAccess = await canViewTrip(tripId, userId);
+    if (!canAccess) {
+      return createErrorResponse({
+        status: 403,
+        message: 'You do not have permission to view this trip',
+      });
+    }
+
+    // Fetch notes
+    const notes = await db.query.collaborative_sessions.findFirst({
+      where: (notes, { eq, and }) =>
+        and(eq(notes.trip_id, tripId), eq(notes.document_type, 'notes')),
+      columns: {
+        content: true,
+        id: true,
+      },
+    });
+
+    if (!notes) {
+      // Create default notes if they don't exist
+      const sessionId = crypto.randomUUID();
+      const content = {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }],
+      };
+
+      const newNotes = await db
+        .insert(db.collaborative_sessions)
+        .values({
+          trip_id: tripId,
+          document_id: tripId,
+          document_type: 'notes',
+          content: content,
+          id: sessionId,
+        })
+        .returning();
+
+      if (!newNotes || newNotes.length === 0) {
+        throw new Error('Failed to create notes');
       }
-    );
 
-    if (memberCheckError) {
-      console.error('[Notes API GET List] Error checking trip membership:', memberCheckError);
-      return NextResponse.json({ error: 'Error checking trip membership' }, { status: 500 });
+      // Set up collaboration session
+      const sessionToken = crypto.randomUUID();
+      const collaborationSession = {
+        sessionId: sessionId,
+        accessToken: sessionToken,
+      };
+
+      return createAPIResponse({
+        content: JSON.stringify(content),
+        collaborationSession,
+      });
     }
 
-    if (!isMember) {
-      return NextResponse.json(
-        { error: "Forbidden: You don't have access to this trip's notes" },
-        { status: 403 }
-      );
-    }
+    // Set up collaboration session for existing notes
+    const sessionToken = crypto.randomUUID();
+    const collaborationSession = {
+      sessionId: notes.id,
+      accessToken: sessionToken,
+    };
 
-    // Fetch list of notes (id, title, updated_at, updated_by profile)
-    const { data: notes, error: notesError } = await supabase
-      .from('trip_notes')
-      .select(
-        `
-        id,
-        title,
-        updated_at,
-        profiles!trip_notes_updated_by_fkey (
-          id,
-          name,
-          avatar_url
-        )
-      `
-      )
-      .eq('trip_id', tripId)
-      .order('updated_at', { ascending: false });
-
-    if (notesError) {
-      console.error('[Notes API GET List] Error fetching notes:', notesError);
-      return NextResponse.json({ error: 'Error fetching notes list' }, { status: 500 });
-    }
-
-    return NextResponse.json({ notes: notes || [] });
-  } catch (error: any) {
-    console.error('[Notes API GET List] Unexpected error:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    return createAPIResponse({
+      content: notes.content ? JSON.stringify(notes.content) : '',
+      collaborationSession,
+    });
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    return createErrorResponse({
+      status: 500,
+      message: 'Failed to fetch notes',
+    });
   }
 }
 
@@ -120,107 +141,183 @@ const createNoteSchema = z.object({
 });
 
 // POST: Create a new note for a trip
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
-  const { tripId } = await params;
-  const supabase = await createRouteHandlerClient();
-
-  if (!tripId) return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
-
+export async function POST(request: NextRequest, { params }: { params: { tripId: string } }) {
   try {
-    // Check if user is authenticated
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const tripId = params.tripId;
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    // Check authentication
+    const userId = (await auth())?.userId;
+    if (!userId) {
+      return createErrorResponse({
+        status: 401,
+        message: 'Unauthorized',
+      });
     }
 
-    // Check if user has permission (Admin or Editor) to create notes
-    const { data: canCreate, error: permissionCheckError } = await supabase.rpc(
-      'is_trip_member_with_role',
-      {
-        _trip_id: tripId,
-        _user_id: user.id,
-        _roles: [TRIP_ROLES.ADMIN, TRIP_ROLES.EDITOR],
-      }
-    );
-
-    if (permissionCheckError) {
-      console.error('[Notes API POST] Error checking permission:', permissionCheckError);
-      return NextResponse.json({ error: 'Error checking create permission' }, { status: 500 });
+    // Check trip permissions
+    const canAccess = await canViewTrip(tripId, userId);
+    if (!canAccess) {
+      return createErrorResponse({
+        status: 403,
+        message: 'You do not have permission to access this trip',
+      });
     }
 
-    if (!canCreate) {
-      return NextResponse.json(
-        { error: "Forbidden: You don't have permission to create notes for this trip" },
-        { status: 403 }
-      );
+    // Check if notes already exist
+    const existingNotes = await db.query.collaborative_sessions.findFirst({
+      where: (notes, { eq, and }) =>
+        and(eq(notes.trip_id, tripId), eq(notes.document_type, 'notes')),
+    });
+
+    if (existingNotes) {
+      return createAPIResponse({
+        content: existingNotes.content ? JSON.stringify(existingNotes.content) : '',
+      });
     }
 
-    // Validate request body using Zod schema
-    let validatedData: z.infer<typeof createNoteSchema>;
-    try {
-      const body = await request.json();
-      validatedData = createNoteSchema.parse(body);
-    } catch (validationError: any) {
-      if (validationError instanceof z.ZodError) {
-        console.error('[Notes API POST] Validation failed:', validationError.issues);
-        return NextResponse.json(
-          { error: 'Invalid input', issues: validationError.issues },
-          { status: 400 }
-        );
-      } else if (validationError instanceof SyntaxError) {
-        console.error('[Notes API POST] Invalid JSON:', validationError);
-        return NextResponse.json({ error: 'Invalid JSON format in request body' }, { status: 400 });
-      }
-      console.error('[Notes API POST] Error parsing request body:', validationError);
-      return NextResponse.json({ error: 'Could not parse request body' }, { status: 400 });
-    }
+    // Create new notes
+    const sessionId = crypto.randomUUID();
+    const defaultContent = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }],
+    };
 
-    // Use validated data
-    const { title, content, type, item_id } = validatedData;
-
-    // Create new note
-    const { data: newNote, error: insertError } = await supabase
-      .from('trip_notes')
-      .insert({
+    const newNotes = await db
+      .insert(db.collaborative_sessions)
+      .values({
         trip_id: tripId,
-        title: title.trim(),
-        content: content,
-        type: type,
-        item_id: item_id,
-        updated_by: user.id,
-        // updated_at is handled by trigger
+        document_id: tripId,
+        document_type: 'notes',
+        content: defaultContent,
+        id: sessionId,
       })
-      .select(
-        `
-        id,
-        title,
-        content,
-        updated_at,
-        profiles!trip_notes_updated_by_fkey (
-          id,
-          name,
-          avatar_url
-        )
-      `
-      )
-      .single();
+      .returning();
 
-    if (insertError) {
-      console.error('[Notes API POST] Error creating note:', insertError);
-      // Handle potential unique constraint errors if needed, though unlikely with UUID
-      return NextResponse.json({ error: 'Error creating note' }, { status: 500 });
+    if (!newNotes || newNotes.length === 0) {
+      throw new Error('Failed to create notes');
     }
 
-    return NextResponse.json({ note: newNote }, { status: 201 }); // Return 201 Created status
-  } catch (error: any) {
-    console.error('[Notes API POST] Unexpected error:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    return createAPIResponse({
+      content: JSON.stringify(defaultContent),
+    });
+  } catch (error) {
+    console.error('Error creating notes:', error);
+    return createErrorResponse({
+      status: 500,
+      message: 'Failed to create notes',
+    });
+  }
+}
+
+/**
+ * PUT handler - update collaborative notes for a trip
+ */
+export async function PUT(request: NextRequest, { params }: { params: { tripId: string } }) {
+  try {
+    const tripId = params.tripId;
+
+    // Check authentication
+    const userId = (await auth())?.userId;
+    if (!userId) {
+      return createErrorResponse({
+        status: 401,
+        message: 'Unauthorized',
+      });
+    }
+
+    // Check trip edit permissions
+    const canAccess = await canViewTrip(tripId, userId);
+    if (!canAccess) {
+      return createErrorResponse({
+        status: 403,
+        message: 'You do not have permission to edit this trip',
+      });
+    }
+
+    // Get request body
+    const body = await request.json();
+    const content = body.content;
+
+    if (content === undefined) {
+      return createErrorResponse({
+        status: 400,
+        message: 'Content is required',
+      });
+    }
+
+    // Check if notes exist
+    const notes = await db.query.collaborative_sessions.findFirst({
+      where: (notes, { eq, and }) =>
+        and(eq(notes.trip_id, tripId), eq(notes.document_type, 'notes')),
+    });
+
+    if (!notes) {
+      // Create notes if they don't exist
+      const sessionId = crypto.randomUUID();
+      let contentObj;
+
+      try {
+        contentObj = typeof content === 'string' ? JSON.parse(content) : content;
+      } catch (e) {
+        contentObj = {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: content }] }],
+        };
+      }
+
+      const newNotes = await db
+        .insert(db.collaborative_sessions)
+        .values({
+          trip_id: tripId,
+          document_id: tripId,
+          document_type: 'notes',
+          content: contentObj,
+          id: sessionId,
+        })
+        .returning();
+
+      if (!newNotes || newNotes.length === 0) {
+        throw new Error('Failed to create notes');
+      }
+
+      return createAPIResponse({
+        content: typeof content === 'string' ? content : JSON.stringify(content),
+      });
+    }
+
+    // Update existing notes
+    let contentToSave;
+
+    try {
+      contentToSave = typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (e) {
+      contentToSave = {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: content }] }],
+      };
+    }
+
+    await db
+      .update(db.collaborative_sessions)
+      .set({
+        content: contentToSave,
+        updated_at: new Date().toISOString(),
+      })
+      .where(({ and, eq }) =>
+        and(
+          eq(db.collaborative_sessions.trip_id, tripId),
+          eq(db.collaborative_sessions.document_type, 'notes')
+        )
+      );
+
+    return createAPIResponse({
+      content: typeof content === 'string' ? content : JSON.stringify(content),
+    });
+  } catch (error) {
+    console.error('Error updating notes:', error);
+    return createErrorResponse({
+      status: 500,
+      message: 'Failed to update notes',
+    });
   }
 }

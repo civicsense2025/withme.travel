@@ -25,7 +25,7 @@ export * from './database';
 /**
  * Database tables constants
  */
-export { 
+export {
   TABLES,
   TRIP_TABLES,
   GROUP_TABLES,
@@ -56,10 +56,10 @@ export type { TableFieldKey } from './table-fields';
 /**
  * Database enum values and types
  */
-export { 
+export {
   // Main ENUMS object containing all enum values
   ENUMS,
-  
+
   // Individual enum objects for backward compatibility
   TRIP_ROLES,
   ITEM_STATUSES,
@@ -112,7 +112,7 @@ export { API_ROUTES, PAGE_ROUTES } from './routes';
 export * from './ui/ui';
 
 /**
- * API response constants 
+ * API response constants
  */
 export * from './api';
 

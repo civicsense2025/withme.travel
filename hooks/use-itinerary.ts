@@ -45,10 +45,17 @@ export function useItinerary(tripId: string): UseItineraryResult {
     if (isSuccess(result)) {
       setItems(result.data || []);
     } else {
-      setError(typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error));
+      setError(
+        typeof result.error === 'string'
+          ? result.error
+          : (result.error as any)?.message || String(result.error)
+      );
       toast({
         title: 'Error loading itinerary',
-        description: typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error),
+        description:
+          typeof result.error === 'string'
+            ? result.error
+            : (result.error as any)?.message || String(result.error),
         variant: 'destructive',
       });
     }
@@ -56,92 +63,132 @@ export function useItinerary(tripId: string): UseItineraryResult {
   }, [tripId, toast]);
 
   // Add a new item
-  const addItem = useCallback(async (data: Partial<ItineraryItem>) => {
-    setIsLoading(true);
-    setError(null);
-    const result = await createItineraryItem(tripId, data);
-    if (isSuccess(result)) {
-      setItems((prev) => [...prev, result.data]);
-      toast({ title: 'Item added', description: 'Itinerary updated.' });
-      setIsLoading(false);
-      return result.data;
-    } else {
-      setError(typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error));
-      toast({
-        title: 'Error adding item',
-        description: typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error),
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return null;
-    }
-  }, [tripId, toast]);
+  const addItem = useCallback(
+    async (data: Partial<ItineraryItem>) => {
+      setIsLoading(true);
+      setError(null);
+      const result = await createItineraryItem(tripId, data);
+      if (isSuccess(result)) {
+        setItems((prev) => [...prev, result.data]);
+        toast({ title: 'Item added', description: 'Itinerary updated.' });
+        setIsLoading(false);
+        return result.data;
+      } else {
+        setError(
+          typeof result.error === 'string'
+            ? result.error
+            : (result.error as any)?.message || String(result.error)
+        );
+        toast({
+          title: 'Error adding item',
+          description:
+            typeof result.error === 'string'
+              ? result.error
+              : (result.error as any)?.message || String(result.error),
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return null;
+      }
+    },
+    [tripId, toast]
+  );
 
   // Update an item
-  const updateItem = useCallback(async (itemId: string, data: Partial<ItineraryItem>) => {
-    setIsLoading(true);
-    setError(null);
-    const result = await updateItineraryItem(tripId, itemId, data);
-    if (isSuccess(result)) {
-      setItems((prev) => prev.map((item) => (item.id === itemId ? result.data : item)));
-      toast({ title: 'Item updated', description: 'Itinerary updated.' });
-      setIsLoading(false);
-      return result.data;
-    } else {
-      setError(typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error));
-      toast({
-        title: 'Error updating item',
-        description: typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error),
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return null;
-    }
-  }, [tripId, toast]);
+  const updateItem = useCallback(
+    async (itemId: string, data: Partial<ItineraryItem>) => {
+      setIsLoading(true);
+      setError(null);
+      const result = await updateItineraryItem(tripId, itemId, data);
+      if (isSuccess(result)) {
+        setItems((prev) => prev.map((item) => (item.id === itemId ? result.data : item)));
+        toast({ title: 'Item updated', description: 'Itinerary updated.' });
+        setIsLoading(false);
+        return result.data;
+      } else {
+        setError(
+          typeof result.error === 'string'
+            ? result.error
+            : (result.error as any)?.message || String(result.error)
+        );
+        toast({
+          title: 'Error updating item',
+          description:
+            typeof result.error === 'string'
+              ? result.error
+              : (result.error as any)?.message || String(result.error),
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return null;
+      }
+    },
+    [tripId, toast]
+  );
 
   // Delete an item
-  const deleteItem = useCallback(async (itemId: string) => {
-    setIsLoading(true);
-    setError(null);
-    const result = await deleteItineraryItem(tripId, itemId);
-    if (isSuccess(result)) {
-      setItems((prev) => prev.filter((item) => item.id !== itemId));
-      toast({ title: 'Item deleted', description: 'Itinerary updated.' });
-      setIsLoading(false);
-      return true;
-    } else {
-      setError(typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error));
-      toast({
-        title: 'Error deleting item',
-        description: typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error),
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return false;
-    }
-  }, [tripId, toast]);
+  const deleteItem = useCallback(
+    async (itemId: string) => {
+      setIsLoading(true);
+      setError(null);
+      const result = await deleteItineraryItem(tripId, itemId);
+      if (isSuccess(result)) {
+        setItems((prev) => prev.filter((item) => item.id !== itemId));
+        toast({ title: 'Item deleted', description: 'Itinerary updated.' });
+        setIsLoading(false);
+        return true;
+      } else {
+        setError(
+          typeof result.error === 'string'
+            ? result.error
+            : (result.error as any)?.message || String(result.error)
+        );
+        toast({
+          title: 'Error deleting item',
+          description:
+            typeof result.error === 'string'
+              ? result.error
+              : (result.error as any)?.message || String(result.error),
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return false;
+      }
+    },
+    [tripId, toast]
+  );
 
   // Reorder items
-  const reorderItems = useCallback(async (itemsToReorder: Array<{ id: string; position: number; day?: number }>) => {
-    setIsLoading(true);
-    setError(null);
-    const result = await reorderItineraryItems(tripId, itemsToReorder);
-    if (isSuccess(result)) {
-      setItems(result.data || []);
-      toast({ title: 'Itinerary reordered', description: 'Order updated.' });
-      setIsLoading(false);
-      return true;
-    } else {
-      setError(typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error));
-      toast({
-        title: 'Error reordering items',
-        description: typeof result.error === 'string' ? result.error : (result.error as any)?.message || String(result.error),
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return false;
-    }
-  }, [tripId, toast]);
+  const reorderItems = useCallback(
+    async (itemsToReorder: Array<{ id: string; position: number; day?: number }>) => {
+      setIsLoading(true);
+      setError(null);
+      const result = await reorderItineraryItems(tripId, itemsToReorder);
+      if (isSuccess(result)) {
+        setItems(result.data || []);
+        toast({ title: 'Itinerary reordered', description: 'Order updated.' });
+        setIsLoading(false);
+        return true;
+      } else {
+        setError(
+          typeof result.error === 'string'
+            ? result.error
+            : (result.error as any)?.message || String(result.error)
+        );
+        toast({
+          title: 'Error reordering items',
+          description:
+            typeof result.error === 'string'
+              ? result.error
+              : (result.error as any)?.message || String(result.error),
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return false;
+      }
+    },
+    [tripId, toast]
+  );
 
   return {
     items,
@@ -153,4 +200,4 @@ export function useItinerary(tripId: string): UseItineraryResult {
     deleteItem,
     reorderItems,
   };
-} 
+}

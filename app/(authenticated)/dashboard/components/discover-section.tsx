@@ -3,8 +3,8 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { Compass, ArrowRight } from 'lucide-react';
-import { TrendingDestinations } from '@/components/trending-destinations';
-import { PopularItineraries } from '@/components/popular-itineraries';
+import { TrendingDestinations } from '@/components/destinations/templates/TrendingDestinations';
+import { PopularItineraries } from '@/components/itinerary/templates/PopularItineraries';
 import { Button } from '@/components/ui/button';
 
 export function DiscoverSection() {
@@ -34,16 +34,16 @@ export function DiscoverSection() {
         <div className="flex flex-col items-center text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="h-10 w-10 rounded-full bg-travel-mint/10 flex items-center justify-center mr-3">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="20" 
-                height="20" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 className="text-travel-mint"
               >
                 <rect width="16" height="16" x="4" y="4" rx="2" />

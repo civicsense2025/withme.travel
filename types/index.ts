@@ -1,6 +1,6 @@
 /**
  * Core type definitions
- * 
+ *
  * This file contains essential type definitions used throughout the application.
  */
 
@@ -9,4 +9,4 @@
 
 // Import other type modules as needed
 // export * from './trips';
-// export * from './users'; 
+// export * from './users';

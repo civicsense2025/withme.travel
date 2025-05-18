@@ -22,7 +22,7 @@ export function useAuth() {
         setError(null);
 
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           throw error;
         }
@@ -41,7 +41,9 @@ export function useAuth() {
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user || null);
       setIsLoading(false);
@@ -60,4 +62,4 @@ export function useAuth() {
     error,
     isAuthenticated: !!user,
   };
-} 
+}

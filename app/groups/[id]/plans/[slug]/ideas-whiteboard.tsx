@@ -58,10 +58,9 @@ import KeyboardShortcutsBar, {
   KeyboardShortcutsShowButton,
 } from '@/components/KeyboardShortcutsBar';
 import { IdeasBoardHelpDialog } from './components/ideas-board-help-dialog';
-import { ThemeToggle } from '@/components/ui/atoms/ThemeToggle';
-import { AvatarGroup } from '@/components/ui/avatar-group';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { AvatarGroup } from '@/components/avatar-group';
 import { CollaboratorList } from './components/collaborator-list';
-import { toast } from '@/components/ui/use-toast';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { EVENT_CATEGORY, EVENT_NAME, useAnalytics } from '@/lib/analytics';
 import { useLayoutMode } from '@/app/context/layout-mode-context';
@@ -228,6 +227,11 @@ const glowButtonClass = `
   after:absolute after:inset-0 after:rounded-md after:animate-pulse after:bg-blue-500/30 after:blur-md after:-z-10
 `;
 
+// Create a custom hook for access to toast
+function useGlobalToast() {
+  return useToast();
+}
+
 export default function IdeasWhiteboard({
   groupId,
   groupName,
@@ -242,7 +246,7 @@ export default function IdeasWhiteboard({
   const { user } = useAuth();
   const params = useParams();
   const resolvedGroupId = groupId || (params?.id as string);
-  const { toast } = useToast();
+  const { toast } = useGlobalToast();
   const { theme, setTheme } = useTheme();
 
   // Get layout mode context to handle fullscreen
@@ -1946,8 +1950,8 @@ export default function IdeasWhiteboard({
                     <div className="grid gap-2">
                       <Calendar
                         mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
+                        value={selectedDate}
+                        onChange={setSelectedDate}
                         className="rounded-md border"
                       />
                     </div>
@@ -1969,6 +1973,7 @@ export default function IdeasWhiteboard({
                     <Button
                       onClick={() => {
                         if (!selectedDate) {
+                          // Access the toast function from context
                           toast({
                             title: 'No date selected',
                             description: 'Please select a date for your trip.',
@@ -2125,6 +2130,9 @@ export default function IdeasWhiteboard({
 
 // Fix the export function to not rely on boardRef
 const handleExportIdeas = () => {
+  // Get toast from the custom hook
+  const { toast } = useGlobalToast();
+  
   // Simple export implementation - just show a toast for now
   toast({
     title: 'Exporting ideas...',

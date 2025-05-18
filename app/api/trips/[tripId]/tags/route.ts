@@ -81,7 +81,10 @@ export async function PUT(
     const body = await request.json();
     const validation = tagSyncSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ error: 'Invalid request body', details: validation.error.format() }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request body', details: validation.error.format() },
+        { status: 400 }
+      );
     }
     const submittedTagNames = validation.data.tags.map((name) => name.trim()).filter(Boolean);
     // TODO: Optimize with batch upsert/delete in lib/api/tags

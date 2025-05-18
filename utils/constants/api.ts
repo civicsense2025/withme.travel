@@ -23,18 +23,18 @@ export const API_SETTINGS = {
    */
   DEFAULT_OPTIONS: {
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    cache: 'no-store' as RequestCache
+    cache: 'no-store' as RequestCache,
   },
-  
+
   /**
    * Timeouts for various API operations (in ms)
    */
   TIMEOUTS: {
     DEFAULT: 10000,
     LONG: 30000,
-    SHORT: 5000
+    SHORT: 5000,
   },
 
   /**
@@ -46,7 +46,7 @@ export const API_SETTINGS = {
     NOT_FOUND: 'The requested resource was not found.',
     SERVER: 'Something went wrong on our end. Please try again later.',
     VALIDATION: 'Please check your input and try again.',
-    UNKNOWN: 'An unknown error occurred. Please try again.'
+    UNKNOWN: 'An unknown error occurred. Please try again.',
   },
 
   /**
@@ -61,7 +61,7 @@ export const API_SETTINGS = {
     FORBIDDEN: 403,
     NOT_FOUND: 404,
     CONFLICT: 409,
-    SERVER_ERROR: 500
+    SERVER_ERROR: 500,
   },
 
   /**
@@ -72,19 +72,19 @@ export const API_SETTINGS = {
       LIMIT: 'limit',
       OFFSET: 'offset',
       PAGE: 'page',
-      PER_PAGE: 'per_page'
+      PER_PAGE: 'per_page',
     },
     SORTING: {
       SORT_BY: 'sort_by',
       SORT_ORDER: 'sort_order',
-      SORT_DIRECTION: 'sort_direction'
+      SORT_DIRECTION: 'sort_direction',
     },
     FILTERING: {
       SEARCH: 'q',
       FILTER: 'filter',
-      STATUS: 'status'
-    }
-  }
+      STATUS: 'status',
+    },
+  },
 };
 
 /**
@@ -147,15 +147,15 @@ export const API_CLIENT_CONFIG = {
   RETRY: {
     MAX_RETRIES: 3,
     INITIAL_DELAY: 500, // ms
-    BACKOFF_FACTOR: 1.5
+    BACKOFF_FACTOR: 1.5,
   },
-  
+
   /**
    * Batch request settings
    */
   BATCH: {
     MAX_BATCH_SIZE: 20,
-    DELAY_BETWEEN_BATCHES: 200 // ms
+    DELAY_BETWEEN_BATCHES: 200, // ms
   },
 
   /**
@@ -164,8 +164,8 @@ export const API_CLIENT_CONFIG = {
   CACHE: {
     DEFAULT_TTL: 60 * 1000, // 1 minute
     DESTINATIONS_TTL: 24 * 60 * 60 * 1000, // 24 hours
-    PUBLIC_CONTENT_TTL: 12 * 60 * 60 * 1000 // 12 hours
-  }
+    PUBLIC_CONTENT_TTL: 12 * 60 * 60 * 1000, // 12 hours
+  },
 };
 
 /**
@@ -174,7 +174,7 @@ export const API_CLIENT_CONFIG = {
 export enum RequestPriority {
   HIGH = 'high',
   MEDIUM = 'medium',
-  LOW = 'low'
+  LOW = 'low',
 }
 
 /**
@@ -183,7 +183,7 @@ export enum RequestPriority {
 export enum ApiModuleStatus {
   COMPLETE = 'complete',
   IN_PROGRESS = 'in-progress',
-  PENDING = 'pending'
+  PENDING = 'pending',
 }
 
 /**
@@ -194,45 +194,45 @@ export const API_MODULE_INTEGRATION = {
   TAGS: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.COMPLETE,
-    REACT_HOOK: ApiModuleStatus.COMPLETE
+    REACT_HOOK: ApiModuleStatus.COMPLETE,
   },
   COMMENTS: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.COMPLETE,
-    REACT_HOOK: ApiModuleStatus.COMPLETE
+    REACT_HOOK: ApiModuleStatus.COMPLETE,
   },
   TRIPS: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.IN_PROGRESS,
-    REACT_HOOK: ApiModuleStatus.IN_PROGRESS
+    REACT_HOOK: ApiModuleStatus.IN_PROGRESS,
   },
-  
+
   // Modules in progress
   ACTIVITIES: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.PENDING,
-    REACT_HOOK: ApiModuleStatus.PENDING
+    REACT_HOOK: ApiModuleStatus.PENDING,
   },
   PLACES: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.PENDING,
-    REACT_HOOK: ApiModuleStatus.PENDING
+    REACT_HOOK: ApiModuleStatus.PENDING,
   },
-  
+
   // Modules to implement next
   DESTINATIONS: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.PENDING,
-    REACT_HOOK: ApiModuleStatus.PENDING
+    REACT_HOOK: ApiModuleStatus.PENDING,
   },
   GROUPS: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.PENDING,
-    REACT_HOOK: ApiModuleStatus.PENDING
+    REACT_HOOK: ApiModuleStatus.PENDING,
   },
   ITINERARIES: {
     API_IMPL: ApiModuleStatus.COMPLETE,
     CLIENT_WRAPPER: ApiModuleStatus.PENDING,
-    REACT_HOOK: ApiModuleStatus.PENDING
-  }
+    REACT_HOOK: ApiModuleStatus.PENDING,
+  },
 };

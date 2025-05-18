@@ -1,6 +1,6 @@
 /**
  * LogisticsTabContent
- * 
+ *
  * Tab content for trip logistics management
  */
 
@@ -18,7 +18,7 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { useState } from 'react';
-import { LogisticsSection } from '@/components/trips/organisms/LogisticsSection';
+import { LogisticsSection } from '@/app/trips/components/organisms/LogisticsSection';
 import type { LogisticsItem } from '@/hooks/use-logistics';
 
 interface LogisticsTabContentProps {
@@ -64,18 +64,12 @@ export function LogisticsTabContent({
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <LogisticsSection
-        tripId={tripId}
-        canEdit={canEdit}
-        refetchItinerary={refetchItinerary}
-      />
-      
+      <LogisticsSection tripId={tripId} canEdit={canEdit} refetchItinerary={refetchItinerary} />
+
       {/* DragOverlay for drag-and-drop visualization */}
       <DragOverlay>
         {activeItem ? (
-          <div className="w-full max-w-md opacity-80">
-            {/* Placeholder for dragged item */}
-          </div>
+          <div className="w-full max-w-md opacity-80">{/* Placeholder for dragged item */}</div>
         ) : null}
       </DragOverlay>
     </DndContext>

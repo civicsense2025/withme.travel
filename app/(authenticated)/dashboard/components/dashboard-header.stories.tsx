@@ -33,4 +33,4 @@ export const Playground: Story = {
       countriesCount: 5,
     },
   },
-}; 
+};

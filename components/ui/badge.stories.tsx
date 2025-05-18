@@ -2,53 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { Badge } from './badge';
 
 const meta: Meta<typeof Badge> = {
-  title: 'Core UI/Data Display/Badge',
+  title: 'UI/Atoms/Badge',
   component: Badge,
-  parameters: {
-    layout: 'centered',
-    docs: {
-      description: {
-        component:
-          'Badges are used to highlight status, categories, or labels. They come in various colors and styles to convey different meanings.',
-      },
-    },
-  },
   tags: ['autodocs'],
   argTypes: {
-    variant: {
+    color: {
       control: 'select',
-      options: [
-        'default',
-        'secondary',
-        'destructive',
-        'outline',
-        'travel-purple',
-        'travel-blue',
-        'travel-pink',
-        'travel-yellow',
-        'travel-mint',
-        'travel-peach',
-        'success',
-        'warning',
-        'info',
-        'error',
-      ],
-      description: 'Badge visual style variant',
-      table: {
-        defaultValue: { summary: 'default' },
-      },
-    },
-    radius: {
-      control: 'select',
-      options: ['sm', 'md', 'lg', 'xl', 'full', 'none'],
-      description: 'Border radius of the badge',
-      table: {
-        defaultValue: { summary: 'full' },
-      },
-    },
-    children: {
-      control: 'text',
-      description: 'Badge content',
+      options: ['default', 'primary', 'secondary', 'success', 'danger', 'warning'],
+      description: 'The color variant of the badge',
     },
     className: {
       control: 'text',
@@ -63,146 +24,79 @@ type Story = StoryObj<typeof Badge>;
 export const Default: Story = {
   args: {
     children: 'Default Badge',
-    variant: 'default',
-    radius: 'full',
+    color: 'default',
   },
 };
 
-export const Variants: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-4">
-      <Badge variant="default">Default</Badge>
-      <Badge variant="secondary">Secondary</Badge>
-      <Badge variant="destructive">Destructive</Badge>
-      <Badge variant="outline">Outline</Badge>
-    </div>
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'The standard badge variants.',
-      },
-    },
-  },
-};
-
-export const TravelColors: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-4">
-      <Badge variant="travel-purple">Purple</Badge>
-      <Badge variant="travel-blue">Blue</Badge>
-      <Badge variant="travel-pink">Pink</Badge>
-      <Badge variant="travel-yellow">Yellow</Badge>
-      <Badge variant="travel-mint">Mint</Badge>
-      <Badge variant="travel-peach">Peach</Badge>
-    </div>
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'Travel-themed color variants for branding consistency.',
-      },
-    },
-  },
-};
-
-export const Status: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-4">
-      <Badge variant="success">Success</Badge>
-      <Badge variant="warning">Warning</Badge>
-      <Badge variant="info">Info</Badge>
-      <Badge variant="error">Error</Badge>
-    </div>
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'Status badges for communicating system states.',
-      },
-    },
-  },
-};
-
-export const BorderRadius: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-4">
-      <Badge radius="none">No Radius</Badge>
-      <Badge radius="sm">Small Radius</Badge>
-      <Badge radius="md">Medium Radius</Badge>
-      <Badge radius="lg">Large Radius</Badge>
-      <Badge radius="xl">Extra Large Radius</Badge>
-      <Badge radius="full">Full Radius</Badge>
-    </div>
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'Different border radius options for badges.',
-      },
-    },
-  },
-};
-
-export const Usage: Story = {
-  render: () => (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-2 items-center">
-        <span className="text-sm">Feature status:</span>
-        <Badge variant="success" radius="md">
-          Stable
-        </Badge>
-      </div>
-
-      <div className="flex gap-2 items-center">
-        <span className="text-sm">Trip category:</span>
-        <Badge variant="travel-blue" radius="md">
-          Beach Vacation
-        </Badge>
-      </div>
-
-      <div className="flex gap-2 items-center">
-        <span className="text-sm">Membership tier:</span>
-        <Badge variant="travel-purple">Premium</Badge>
-      </div>
-
-      <div className="flex gap-2 items-center">
-        <span className="text-sm">Notification:</span>
-        <Badge variant="warning" radius="md">
-          2 days left
-        </Badge>
-      </div>
-    </div>
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'Examples of badges in real-world usage scenarios.',
-      },
-    },
-  },
-};
-
-export const LightMode: Story = {
+export const Primary: Story = {
   args: {
-    children: 'Default Badge',
-    variant: 'default',
-    radius: 'full',
-  },
-  parameters: {
-    backgrounds: { default: 'light' },
-    docs: { description: { story: 'Badge in light mode.' } },
+    children: 'Primary Badge',
+    color: 'primary',
   },
 };
 
-export const DarkMode: Story = {
+export const Secondary: Story = {
   args: {
-    children: 'Default Badge',
-    variant: 'default',
-    radius: 'full',
+    children: 'Secondary Badge',
+    color: 'secondary',
   },
-  parameters: {
-    backgrounds: { default: 'dark' },
-    docs: { description: { story: 'Badge in dark mode.' } },
+};
+
+export const Success: Story = {
+  args: {
+    children: 'Success Badge',
+    color: 'success',
   },
+};
+
+export const Danger: Story = {
+  args: {
+    children: 'Danger Badge',
+    color: 'danger',
+  },
+};
+
+export const Warning: Story = {
+  args: {
+    children: 'Warning Badge',
+    color: 'warning',
+  },
+};
+
+export const WithIcon: Story = {
+  args: {
+    children: (
+      <>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="mr-1"
+        >
+          <path d="M20 6L9 17L4 12"></path>
+        </svg>
+        Badge with Icon
+      </>
+    ),
+    color: 'success',
+  },
+};
+
+export const AllColors: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-2">
+      <Badge color="default">Default</Badge>
+      <Badge color="primary">Primary</Badge>
+      <Badge color="secondary">Secondary</Badge>
+      <Badge color="success">Success</Badge>
+      <Badge color="danger">Danger</Badge>
+      <Badge color="warning">Warning</Badge>
+    </div>
+  ),
 };

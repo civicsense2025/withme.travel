@@ -377,11 +377,11 @@ export function TripPageClient({
   const supabase = createClient();
   const { user, isLoading: isAuthLoading } = useAuth(); // AppUser type from AuthProvider
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { 
-    trackItineraryItemAdded, 
-    trackItineraryItemUpdated, 
+  const {
+    trackItineraryItemAdded,
+    trackItineraryItemUpdated,
     trackItineraryItemDeleted,
-    trackItineraryVoted 
+    trackItineraryVoted,
   } = useTripEventTracking(tripId);
 
   // Get data from context
@@ -1389,7 +1389,7 @@ export function TripPageClient({
           name: newItem.title,
           category: newItem.category,
           date: newItem.date,
-          section: newItem.section_id
+          section: newItem.section_id,
         });
 
         return mapApiItemToDisplay(newItem);
@@ -1452,7 +1452,7 @@ export function TripPageClient({
           category: updatedItemData.category,
           date: updatedItemData.date,
           section: updatedItemData.section_id,
-          status: updatedItemData.status
+          status: updatedItemData.status,
         });
       } catch (error) {
         console.error('Failed to update item:', error);
@@ -1559,9 +1559,9 @@ export function TripPageClient({
             )}
             onReset={() => refetchTrip()}
           >
-            <PlacesTabContent 
-              tripId={tripId} 
-              canEdit={canEdit} 
+            <PlacesTabContent
+              tripId={tripId}
+              canEdit={canEdit}
               destinationId={tripData?.trip?.destination_id || undefined}
               onPlaceAdded={refetchItinerary}
             />

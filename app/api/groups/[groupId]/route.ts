@@ -1,10 +1,10 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { 
-  getGroupWithDetails, 
-  updateGroup, 
-  deleteGroup, 
-  checkGroupMemberRole 
+import {
+  getGroupWithDetails,
+  updateGroup,
+  deleteGroup,
+  checkGroupMemberRole,
 } from '@/lib/api/groups';
 
 // --- Types ---
@@ -92,11 +92,7 @@ export async function PUT(request: Request, { params }: { params: { groupId: str
     }
 
     // Check if user is owner or admin using the centralized API
-    const permissionResult = await checkGroupMemberRole(
-      groupId, 
-      user.id, 
-      ['owner', 'admin']
-    );
+    const permissionResult = await checkGroupMemberRole(groupId, user.id, ['owner', 'admin']);
 
     if (!permissionResult.success) {
       return NextResponse.json({ error: 'Failed to check permissions' }, { status: 500 });
@@ -123,7 +119,7 @@ export async function PUT(request: Request, { params }: { params: { groupId: str
       name,
       description,
       emoji,
-      visibility
+      visibility,
     });
 
     if (!result.success) {
@@ -158,11 +154,7 @@ export async function DELETE(request: Request, { params }: { params: { groupId: 
     }
 
     // Check if user is owner using the centralized API
-    const permissionResult = await checkGroupMemberRole(
-      groupId, 
-      user.id, 
-      ['owner']
-    );
+    const permissionResult = await checkGroupMemberRole(groupId, user.id, ['owner']);
 
     if (!permissionResult.success) {
       return NextResponse.json({ error: 'Failed to check permissions' }, { status: 500 });

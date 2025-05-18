@@ -151,9 +151,7 @@ export default function LoginPage() {
 
             <LoginForm />
           </CardContent>
-          <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2">
-          
-          </CardFooter>
+          <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2"></CardFooter>
         </Card>
       </div>
     </div>

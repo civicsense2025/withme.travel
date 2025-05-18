@@ -7,4 +7,5 @@
  */
 
 export * from './PopularDestinations';
-export * from './DestinationCarousel'; 
+export * from './DestinationCarousel';
+export * from './TrendingDestinations'; 

@@ -1,99 +1,83 @@
 /**
- * Place Type Definitions
+ * Place type definitions
+ * 
+ * Unified definition for place objects throughout the application.
  */
 
-/**
- * Place entity representing a location or venue
- */
+// Place categories enum
+export enum PlaceCategory {
+  ATTRACTION = 'attraction',
+  RESTAURANT = 'restaurant',
+  HOTEL = 'hotel',
+  CAFE = 'cafe',
+  BAR = 'bar',
+  SHOPPING = 'shopping',
+  LANDMARK = 'landmark',
+  MUSEUM = 'museum',
+  PARK = 'park',
+  BEACH = 'beach',
+  AIRPORT = 'airport',
+  TRANSPORTATION = 'transportation',
+  ENTERTAINMENT = 'entertainment',
+  NIGHTLIFE = 'nightlife',
+  SERVICE = 'service',
+  SPORTS = 'sports',
+  OTHER = 'other',
+}
+
+// Core Place interface
 export interface Place {
-  /** Unique identifier */
   id: string;
-  
-  /** Name of the place */
   name: string;
   
-  /** Optional address */
-  address?: string;
-  
-  /** Optional latitude coordinate */
-  latitude?: number;
-  
-  /** Optional longitude coordinate */
-  longitude?: number;
-  
-  /** Category or type of place (restaurant, hotel, attraction, etc.) */
-  category?: string;
-  
-  /** Optional description */
-  description?: string;
-  
-  /** Optional website URL */
-  website?: string;
-  
-  /** Optional phone number */
-  phone?: string;
-  
-  /** Optional hours of operation */
-  hours?: string;
-  
-  /** Optional price level (1-4) */
-  price_level?: number;
-  
-  /** Optional rating (0-5) */
-  rating?: number;
-  
-  /** Optional image URL */
-  image_url?: string;
-  
-  /** Optional creation date */
-  created_at?: string;
-  
-  /** Optional last update date */
-  updated_at?: string;
-}
-
-// Define the place category enum type directly, matching the SQL definition
-export type PlaceCategory =
-  | 'attraction'
-  | 'restaurant'
-  | 'cafe'
-  | 'hotel'
-  | 'landmark'
-  | 'shopping'
-  | 'transport'
-  | 'other';
-
-// Structure to match the 'places' table in your database
-export interface Place {
-  id: string; // UUID
-  google_place_id?: string | null; // Optional: Original Google Place ID
-  name: string;
-  description: string | null;
-  category: PlaceCategory | null; // Use the locally defined type
+  // Location details
   address: string | null;
-  latitude: number | null; // DECIMAL(9, 6) maps well to number
-  longitude: number | null; // DECIMAL(9, 6) maps well to number
-  destination_id: string | null; // UUID
-  price_level: number | null; // INTEGER CHECK (1-5) -> Assuming 1-4 from Google for now
-  rating: number | null; // DECIMAL(2, 1) -> Google provides float
-  rating_count: number | null; // INTEGER DEFAULT 0
-  images: string[] | null; // TEXT[] -> Will store Google Photo References here
-  tags: string[] | null; // TEXT[]
-  opening_hours: Record<string, any> | null; // JSONB -> Store Google's opening_hours object
-  is_verified: boolean; // DEFAULT FALSE
-  suggested_by: string | null; // UUID
-  created_at: string; // TIMESTAMPTZ
-  updated_at: string; // TIMESTAMPTZ
-  source: string | null; // TEXT
-  source_id: string | null; // TEXT
-  website?: string | null; // Add if you store website
-  phone_number?: string | null; // Add if you store phone number
+  latitude: number | null;
+  longitude: number | null;
+  
+  // Descriptive details
+  description: string | null;
+  category: PlaceCategory | string | null;
+  
+  // Optional commerce-related attributes
+  price_level?: number | null;
+  rating?: number | null;
+  rating_count?: number | null;
+  
+  // Optional web details
+  website?: string | null;
+  phone_number?: string | null;
+  
+  // Contextual metadata
+  destination_id?: string | null;
+  is_verified?: boolean;
+  suggested_by?: string | null;
+  source?: string | null;
+  place_type?: string | null;
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string | null;
+  
+  // Tags and additional data
+  tags?: string[] | null;
+  cover_image_url?: string | null;
+  external_id?: string | null;
+  external_source?: string | null;
 }
 
-// You might also want a type for the Google Photo Reference structure
-export interface GooglePhotoReference {
-  height: number;
-  html_attributions: string[];
-  photo_reference: string;
-  width: number;
+// Type for creating new places with minimal required fields
+export interface CreatePlaceInput {
+  name: string;
+  description?: string | null;
+  category?: PlaceCategory | string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  destination_id?: string | null;
+  website?: string | null;
+  phone_number?: string | null;
 }
+
+// Export the default Place type as a shorthand
+export default Place;

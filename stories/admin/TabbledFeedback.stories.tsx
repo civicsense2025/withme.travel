@@ -47,11 +47,11 @@ export const Default: Story = {
               data: {
                 name: 'John Smith',
                 email: 'john@example.com',
-                feedback: 'Great application, very intuitive!'
+                feedback: 'Great application, very intuitive!',
               },
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-              form_name: 'Travel Preferences Survey'
+              form_name: 'Travel Preferences Survey',
             },
             {
               id: '2',
@@ -61,11 +61,11 @@ export const Default: Story = {
               data: {
                 fullName: 'Maria Garcia',
                 email: 'maria@example.com',
-                rating: 4
+                rating: 4,
               },
               created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
               updated_at: null,
-              form_name: 'User Experience Feedback'
+              form_name: 'User Experience Feedback',
             },
           ],
         },

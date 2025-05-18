@@ -65,7 +65,7 @@ export const TABLE_FIELDS = {
     GUEST_TOKEN_TEXT: 'guest_token_text',
     DESTINATION_ID: 'destination_id',
   },
-  
+
   GROUPS: {
     ID: 'id',
     NAME: 'name',
@@ -75,7 +75,7 @@ export const TABLE_FIELDS = {
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
   },
-  
+
   GROUP_PLAN_IDEAS: {
     ID: 'id',
     GROUP_ID: 'group_id',
@@ -159,7 +159,7 @@ export const TABLE_FIELDS = {
     CITY_ID: 'city_id',
     IS_CITY_DEPRECATED: 'is_city_deprecated',
   },
-  
+
   CITIES: {
     ID: 'id',
     NAME: 'name',
@@ -199,9 +199,9 @@ export const TABLE_FIELDS = {
     CREATED_AT: 'created_at',
     UPDATED_AT: 'updated_at',
   },
-  
+
   // Add other tables' fields as needed
 } as const;
 
 // Export type for field keys
-export type TableFieldKey<T extends keyof typeof TABLE_FIELDS> = keyof typeof TABLE_FIELDS[T];
+export type TableFieldKey<T extends keyof typeof TABLE_FIELDS> = keyof (typeof TABLE_FIELDS)[T];

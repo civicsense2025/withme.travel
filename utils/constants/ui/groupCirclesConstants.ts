@@ -37,28 +37,74 @@ export interface GroupWithStyle extends GroupData {
   // Position might be adjusted for mobile, so the component will handle final style
 }
 
-
 export const BASE_GROUPS_DATA: GroupData[] = [
-    { id: 'barcelona', name: 'Barcelona Trip', emoji: '🇪🇸', date: 'June 15-22, 2025', planningStage: 'Finalizing hotels',
-      members: [ { emoji: '👩🏽', color: '#a5b4fc' }, { emoji: '👨🏻', color: '#7c83fd' }, { emoji: '👩🏼', color: '#6ad7e5' }, { emoji: '👨🏿', color: '#fcb1a6' } ],
-      position: { top: '15%', left: '25%' }
-    },
-    { id: 'japan', name: 'Japan 2025', emoji: '🇯🇵', date: 'April 5-18, 2025', planningStage: 'Researching destinations',
-      members: [ { emoji: '👩🏽', color: '#a5b4fc' }, { emoji: '👨🏻', color: '#7c83fd' }, { emoji: '👨🏿', color: '#fcb1a6' } ],
-      position: { top: '30%', left: '60%' }
-    },
-    { id: 'italy', name: 'Italian Summer', emoji: '🇮🇹', date: 'July 10-24, 2025', planningStage: 'Voting on activities',
-      members: [ { emoji: '👩🏼', color: '#6ad7e5' }, { emoji: '👨🏿', color: '#fcb1a6' }, { emoji: '👨🏻', color: '#7c83fd' }, { emoji: '👩🏻', color: '#ffa3fd' }, { emoji: '👨🏼', color: '#ff9b76' } ],
-      position: { top: '60%', left: '30%' }
-    },
-    { id: 'mexico', name: 'Mexico City', emoji: '🇲🇽', date: 'Nov 1-8, 2025', planningStage: 'Just getting started',
-      members: [ { emoji: '👩🏻', color: '#ffa3fd' }, { emoji: '👨🏼', color: '#ff9b76' } ],
-      position: { top: '20%', left: '48%' }
-    },
-    { id: 'bali', name: 'Bali Beaches', emoji: '🇮🇩', date: 'Feb 5-15, 2026', planningStage: 'Booking flights',
-      members: [ { emoji: '👩🏽', color: '#a5b4fc' }, { emoji: '👨🏻', color: '#7c83fd' }, { emoji: '👩🏼', color: '#6ad7e5' } ],
-      position: { top: '55%', left: '65%' }
-    },
+  {
+    id: 'barcelona',
+    name: 'Barcelona Trip',
+    emoji: '🇪🇸',
+    date: 'June 15-22, 2025',
+    planningStage: 'Finalizing hotels',
+    members: [
+      { emoji: '👩🏽', color: '#a5b4fc' },
+      { emoji: '👨🏻', color: '#7c83fd' },
+      { emoji: '👩🏼', color: '#6ad7e5' },
+      { emoji: '👨🏿', color: '#fcb1a6' },
+    ],
+    position: { top: '15%', left: '25%' },
+  },
+  {
+    id: 'japan',
+    name: 'Japan 2025',
+    emoji: '🇯🇵',
+    date: 'April 5-18, 2025',
+    planningStage: 'Researching destinations',
+    members: [
+      { emoji: '👩🏽', color: '#a5b4fc' },
+      { emoji: '👨🏻', color: '#7c83fd' },
+      { emoji: '👨🏿', color: '#fcb1a6' },
+    ],
+    position: { top: '30%', left: '60%' },
+  },
+  {
+    id: 'italy',
+    name: 'Italian Summer',
+    emoji: '🇮🇹',
+    date: 'July 10-24, 2025',
+    planningStage: 'Voting on activities',
+    members: [
+      { emoji: '👩🏼', color: '#6ad7e5' },
+      { emoji: '👨🏿', color: '#fcb1a6' },
+      { emoji: '👨🏻', color: '#7c83fd' },
+      { emoji: '👩🏻', color: '#ffa3fd' },
+      { emoji: '👨🏼', color: '#ff9b76' },
+    ],
+    position: { top: '60%', left: '30%' },
+  },
+  {
+    id: 'mexico',
+    name: 'Mexico City',
+    emoji: '🇲🇽',
+    date: 'Nov 1-8, 2025',
+    planningStage: 'Just getting started',
+    members: [
+      { emoji: '👩🏻', color: '#ffa3fd' },
+      { emoji: '👨🏼', color: '#ff9b76' },
+    ],
+    position: { top: '20%', left: '48%' },
+  },
+  {
+    id: 'bali',
+    name: 'Bali Beaches',
+    emoji: '🇮🇩',
+    date: 'Feb 5-15, 2026',
+    planningStage: 'Booking flights',
+    members: [
+      { emoji: '👩🏽', color: '#a5b4fc' },
+      { emoji: '👨🏻', color: '#7c83fd' },
+      { emoji: '👩🏼', color: '#6ad7e5' },
+    ],
+    position: { top: '55%', left: '65%' },
+  },
 ];
 
 export const NEW_MEMBERS_POOL: MemberData[] = [
@@ -69,12 +115,30 @@ export const NEW_MEMBERS_POOL: MemberData[] = [
 ];
 
 export const FEATURE_CALLOUTS_CONTENT = [
-  { emoji: '🗣️', title: 'No one\'s left out', description: 'Even your friend who always "just goes with the flow" can drop a pin or two. Everyone\'s voice, every wild idea—right here.' },
-  { emoji: '✨', title: 'Plans change? No sweat', description: 'You\'ll see it before your coffee gets cold. Real-time updates mean you\'re never out of the loop, even if you\'re still in your pajamas.' },
-  { emoji: '🗺️', title: 'All your chaos, organized', description: 'Every group\'s wild ideas, in one place—no more lost links, mystery spreadsheets, or "wait, where\'s that doc?" moments.' },
+  {
+    emoji: '🗣️',
+    title: "No one's left out",
+    description:
+      'Even your friend who always "just goes with the flow" can drop a pin or two. Everyone\'s voice, every wild idea—right here.',
+  },
+  {
+    emoji: '✨',
+    title: 'Plans change? No sweat',
+    description:
+      "You'll see it before your coffee gets cold. Real-time updates mean you're never out of the loop, even if you're still in your pajamas.",
+  },
+  {
+    emoji: '🗺️',
+    title: 'All your chaos, organized',
+    description:
+      'Every group\'s wild ideas, in one place—no more lost links, mystery spreadsheets, or "wait, where\'s that doc?" moments.',
+  },
 ];
 
-export const AVATAR_SIZE_STYLES: Record<LayoutType, { width: number; height: number; fontSize: string }> = {
+export const AVATAR_SIZE_STYLES: Record<
+  LayoutType,
+  { width: number; height: number; fontSize: string }
+> = {
   mobile: { width: 18, height: 18, fontSize: '0.9rem' },
   tablet: { width: 24, height: 24, fontSize: '1.1rem' },
   desktop: { width: 24, height: 24, fontSize: '1.1rem' }, // Same as tablet in original
@@ -91,4 +155,4 @@ export const FLOATING_BUBBLE_COLORS = [
   'rgba(106,215,229,0.08)',
   'rgba(252,177,166,0.08)',
   'rgba(255,163,253,0.08)',
-]; 
+];

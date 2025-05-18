@@ -27,11 +27,8 @@ import { handleError, Result, Expense } from './_shared';
 export async function listTripExpenses(tripId: string): Promise<Result<Expense[]>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { data, error } = await supabase
-      .from(TABLES.EXPENSES)
-      .select('*')
-      .eq('trip_id', tripId);
-    
+    const { data, error } = await supabase.from(TABLES.EXPENSES).select('*').eq('trip_id', tripId);
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -54,7 +51,7 @@ export async function getTripExpense(tripId: string, expenseId: string): Promise
       .eq('trip_id', tripId)
       .eq('id', expenseId)
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   } catch (error) {
@@ -68,18 +65,21 @@ export async function getTripExpense(tripId: string, expenseId: string): Promise
  * @param data - The expense data
  * @returns Result containing the created expense
  */
-export async function createTripExpense(tripId: string, data: Partial<Expense>): Promise<Result<Expense>> {
+export async function createTripExpense(
+  tripId: string,
+  data: Partial<Expense>
+): Promise<Result<Expense>> {
   try {
     const supabase = await createRouteHandlerClient();
     // Ensure tripId is set
     const expenseData = { ...data, trip_id: tripId };
-    
+
     const { data: newExpense, error } = await supabase
       .from(TABLES.EXPENSES)
       .insert(expenseData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newExpense };
   } catch (error) {
@@ -94,7 +94,11 @@ export async function createTripExpense(tripId: string, data: Partial<Expense>):
  * @param data - Partial expense data to update
  * @returns Result containing the updated expense
  */
-export async function updateTripExpense(tripId: string, expenseId: string, data: Partial<Expense>): Promise<Result<Expense>> {
+export async function updateTripExpense(
+  tripId: string,
+  expenseId: string,
+  data: Partial<Expense>
+): Promise<Result<Expense>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data: updatedExpense, error } = await supabase
@@ -104,7 +108,7 @@ export async function updateTripExpense(tripId: string, expenseId: string, data:
       .eq('id', expenseId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedExpense };
   } catch (error) {
@@ -126,7 +130,7 @@ export async function deleteTripExpense(tripId: string, expenseId: string): Prom
       .delete()
       .eq('trip_id', tripId)
       .eq('id', expenseId);
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -140,20 +144,20 @@ export async function deleteTripExpense(tripId: string, expenseId: string): Prom
  * @param expenses - Array of expense data to create
  * @returns Result containing the created expenses
  */
-export async function batchCreateExpenses(tripId: string, expenses: Partial<Expense>[]): Promise<Result<Expense[]>> {
+export async function batchCreateExpenses(
+  tripId: string,
+  expenses: Partial<Expense>[]
+): Promise<Result<Expense[]>> {
   try {
     const supabase = await createRouteHandlerClient();
     // Ensure tripId is set for all expenses
-    const expensesData = expenses.map(expense => ({ 
-      ...expense, 
-      trip_id: tripId 
+    const expensesData = expenses.map((expense) => ({
+      ...expense,
+      trip_id: tripId,
     }));
-    
-    const { data, error } = await supabase
-      .from(TABLES.EXPENSES)
-      .insert(expensesData)
-      .select('*');
-    
+
+    const { data, error } = await supabase.from(TABLES.EXPENSES).insert(expensesData).select('*');
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -170,31 +174,28 @@ export async function getTripExpenseSummary(tripId: string): Promise<Result<any>
   try {
     const supabase = await createRouteHandlerClient();
     // Get all expenses for the trip
-    const { data, error } = await supabase
-      .from(TABLES.EXPENSES)
-      .select('*')
-      .eq('trip_id', tripId);
-    
+    const { data, error } = await supabase.from(TABLES.EXPENSES).select('*').eq('trip_id', tripId);
+
     if (error) return { success: false, error: error.message };
-    
+
     // Calculate summary (simple version - can be expanded)
     const expenses = data ?? [];
     const total = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-    
+
     // Group by category
     const byCategory: Record<string, number> = {};
     for (const expense of expenses) {
       const category = expense.category || 'Uncategorized';
       byCategory[category] = (byCategory[category] || 0) + (expense.amount || 0);
     }
-    
+
     return {
       success: true,
       data: {
         total,
         byCategory,
-        count: expenses.length
-      }
+        count: expenses.length,
+      },
     };
   } catch (error) {
     return handleError(error, 'Failed to calculate expense summary');
@@ -219,4 +220,4 @@ export async function batchUpdateTripExpenses(tripId: string, expenses: any[]) {
  * @returns Result containing an array of planned expenses
  */
 export async function listPlannedExpenses(tripId: string) {}
-// (Add more as needed) 
+// (Add more as needed)

@@ -154,7 +154,7 @@ export function AddItineraryItemClient({
           hasCost: !!newItemData.estimated_cost,
           source: 'add-item-client',
           route: `/trips/${tripId}/add-item`,
-          component: 'AddItineraryItemClient'
+          component: 'AddItineraryItemClient',
         });
       } catch (trackingError) {
         // Don't let tracking failures affect the user experience
@@ -188,7 +188,7 @@ export function AddItineraryItemClient({
           error: errMsg,
           source: 'add-item-client',
           route: `/trips/${tripId}/add-item`,
-          component: 'AddItineraryItemClient'
+          component: 'AddItineraryItemClient',
         });
       } catch (trackingError) {
         console.error('Failed to track itinerary_item_creation_failed event:', trackingError);

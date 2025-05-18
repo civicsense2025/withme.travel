@@ -20,7 +20,7 @@ const config = {
   safelist: [
     // Include common class patterns that might be dynamically generated
     {
-      pattern: /^bg-/,  // All background classes
+      pattern: /^bg-/, // All background classes
       pattern: /^text-/, // All text classes
       pattern: /^border-/, // All border classes
       pattern: /^p-/, // All padding classes
@@ -38,4 +38,4 @@ const config = {
   ],
 };
 
-module.exports = config; 
+module.exports = config;

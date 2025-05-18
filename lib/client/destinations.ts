@@ -1,6 +1,6 @@
 /**
  * Destinations API client functions
- * 
+ *
  * Client-side wrappers for destination-related API calls
  */
 
@@ -90,17 +90,17 @@ export async function listDestinations(
   filters: DestinationFilter = {}
 ): Promise<Result<Destination[]>> {
   const params = new URLSearchParams();
-  
+
   if (filters.search) params.append('search', filters.search);
   if (filters.country) params.append('country', filters.country);
   if (filters.region) params.append('region', filters.region);
-  if (filters.tags) filters.tags.forEach(tag => params.append('tags', tag));
+  if (filters.tags) filters.tags.forEach((tag) => params.append('tags', tag));
   if (filters.featured !== undefined) params.append('featured', filters.featured.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
   if (filters.offset) params.append('offset', filters.offset.toString());
-  
+
   const queryString = params.toString() ? `?${params.toString()}` : '';
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.DESTINATIONS.LIST}${queryString}`, {
       method: 'GET',
@@ -145,9 +145,7 @@ export async function getDestinationBySlug(slug: string): Promise<Result<Destina
  * Create a new destination
  * @param data - The destination data to create
  */
-export async function createDestination(
-  data: CreateDestinationData
-): Promise<Result<Destination>> {
+export async function createDestination(data: CreateDestinationData): Promise<Result<Destination>> {
   return tryCatch(
     fetch(API_ROUTES.DESTINATIONS.CREATE, {
       method: 'POST',
@@ -214,4 +212,4 @@ export async function getDestinationTags(): Promise<Result<string[]>> {
       next: { revalidate: 86400 }, // Cache for 24 hours
     }).then((response) => handleApiResponse<string[]>(response))
   );
-} 
+}

@@ -11,9 +11,7 @@ const Welcome: React.FC = () => {
       <p className="mb-4">
         This is a collection of UI components and design patterns used throughout the application.
       </p>
-      <p className="text-gray-600">
-        Use the sidebar to navigate through different components.
-      </p>
+      <p className="text-gray-600">Use the sidebar to navigate through different components.</p>
     </div>
   );
 };
@@ -27,4 +25,4 @@ const meta: Meta<typeof Welcome> = {
 export default meta;
 type Story = StoryObj<typeof Welcome>;
 
-export const Default: Story = {}; 
+export const Default: Story = {};

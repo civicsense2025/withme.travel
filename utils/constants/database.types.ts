@@ -1,10 +1,10 @@
 /**
  * Database Type Definitions
- * 
+ *
  * This file contains the TypeScript type definitions for the database schema.
  * It provides type safety for database operations and should be kept in sync
  * with the actual database schema.
- * 
+ *
  * NOTE: This file should be auto-generated from the database schema.
  */
 
@@ -31,7 +31,7 @@ import {
   TripType,
   UserRole,
   VoteType,
-  ENUMS
+  ENUMS,
 } from './status';
 
 /**
@@ -42,7 +42,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 /**
  * Database Schema Type
  * This type represents the structure of the entire Supabase database.
- * 
+ *
  * NOTE: In a real implementation, this would be auto-generated from the database schema.
  * The example below is a simplified representation.
  */
@@ -97,10 +97,10 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
-          }
+          },
         ];
       };
-      
+
       // Group related tables
       groups: {
         Row: {
@@ -137,10 +137,10 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
-          }
+          },
         ];
       };
-      
+
       // User related tables
       profiles: {
         Row: {
@@ -171,10 +171,10 @@ export type Database = {
           updated_at?: string | null;
         };
       };
-      
+
       // Add other tables as needed
     };
-    
+
     /**
      * Enums from the database
      * These should match the ENUMS export from status.ts
@@ -183,7 +183,7 @@ export type Database = {
       budget_category: BudgetCategory;
       content_type: ContentType;
       group_idea_type: GroupIdeaType;
-      group_member_role: GroupMemberRole; 
+      group_member_role: GroupMemberRole;
       group_member_status: GroupMemberStatus;
       group_visibility: GroupVisibility;
       image_type: ImageType;
@@ -219,9 +219,9 @@ export interface Task {
   id: string;
   title: string;
   description?: string | null;
-  status: typeof ENUMS.TASK_STATUS[keyof typeof ENUMS.TASK_STATUS];
+  status: (typeof ENUMS.TASK_STATUS)[keyof typeof ENUMS.TASK_STATUS];
   due_date?: string | null;
-  priority: typeof ENUMS.TASK_PRIORITY[keyof typeof ENUMS.TASK_PRIORITY];
+  priority: (typeof ENUMS.TASK_PRIORITY)[keyof typeof ENUMS.TASK_PRIORITY];
   created_at: string;
   updated_at: string;
   owner_id: string;
@@ -240,7 +240,7 @@ export interface TaskVote {
   id: string;
   task_id: string;
   user_id: string;
-  vote_type: typeof ENUMS.VOTE_TYPE[keyof typeof ENUMS.VOTE_TYPE];
+  vote_type: (typeof ENUMS.VOTE_TYPE)[keyof typeof ENUMS.VOTE_TYPE];
   created_at: string;
 }
 

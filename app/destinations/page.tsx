@@ -41,7 +41,7 @@ function DestinationsErrorFallback({ error }: { error: Error }) {
 export default async function DestinationsPage() {
   // Fetch destinations from the API
   const destinationsResult = await listDestinations({ limit: DEFAULT_LIMIT });
-  
+
   // Check if the API returned an error
   if (!destinationsResult.success) {
     return (
@@ -50,29 +50,28 @@ export default async function DestinationsPage() {
       </div>
     );
   }
-  
+
   const destinations = destinationsResult.data;
 
   return (
     <main className="container py-8 md:py-12">
       <header className="text-center mb-10">
-        <h1 className="text-4xl font-bold tracking-tight mb-3">
-          Explore Destinations
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight mb-3">Explore Destinations</h1>
         <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Discover amazing places around the world and start planning your next adventure with friends.
+          Discover amazing places around the world and start planning your next adventure with
+          friends.
         </p>
       </header>
 
       <ErrorBoundary FallbackComponent={DestinationsErrorFallback}>
-      <DestinationGrid
-        destinations={destinations}
-        showSearch={true}
-        showFilters={true}
-        showSorting={true}
-        columns={{ sm: 1, md: 2, lg: 3, xl: 4 }}
+        <DestinationGrid
+          destinations={destinations}
+          showSearch={true}
+          showFilters={true}
+          showSorting={true}
+          columns={{ sm: 1, md: 2, lg: 3, xl: 4 }}
           className="mb-8"
-      />
+        />
       </ErrorBoundary>
     </main>
   );

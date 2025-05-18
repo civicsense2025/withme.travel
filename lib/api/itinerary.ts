@@ -43,7 +43,10 @@ export async function listItineraryItems(tripId: string): Promise<Result<Itinera
  * @param itemId - The itinerary item's unique identifier
  * @returns Result containing the itinerary item
  */
-export async function getItineraryItem(tripId: string, itemId: string): Promise<Result<ItineraryItem>> {
+export async function getItineraryItem(
+  tripId: string,
+  itemId: string
+): Promise<Result<ItineraryItem>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
@@ -66,18 +69,21 @@ export async function getItineraryItem(tripId: string, itemId: string): Promise<
  * @param data - The itinerary item data
  * @returns Result containing the created itinerary item
  */
-export async function createItineraryItem(tripId: string, data: Partial<ItineraryItem>): Promise<Result<ItineraryItem>> {
+export async function createItineraryItem(
+  tripId: string,
+  data: Partial<ItineraryItem>
+): Promise<Result<ItineraryItem>> {
   try {
     const supabase = await createRouteHandlerClient();
     // Ensure tripId is included in the data
     const itemData = { ...data, trip_id: tripId };
-    
+
     const { data: newItem, error } = await supabase
       .from(TABLES.ITINERARY_ITEMS)
       .insert(itemData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newItem };
   } catch (error) {
@@ -106,7 +112,7 @@ export async function updateItineraryItem(
       .eq('trip_id', tripId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedItem };
   } catch (error) {
@@ -128,7 +134,7 @@ export async function deleteItineraryItem(tripId: string, itemId: string): Promi
       .delete()
       .eq('trip_id', tripId)
       .eq('id', itemId);
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -153,22 +159,22 @@ export async function reorderItineraryItems(
   try {
     // This would typically involve a transaction to update the 'position' or 'order' field of each item
     // For now, we'll just implement a simple approach
-    
+
     const supabase = await createRouteHandlerClient();
-    
+
     // Create an array of updates, one for each item with its new position
     const updates = itemIds.map((id, index) => ({
       id,
       position: index + 1, // Use 1-based indexing for position
     }));
-    
+
     // Update each item in a single batch operation
     const { data, error } = await supabase
       .from(TABLES.ITINERARY_ITEMS)
       .upsert(updates)
       .eq('trip_id', tripId)
       .select('*');
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -179,4 +185,4 @@ export async function reorderItineraryItems(
 export async function voteOnItineraryItem(tripId: string, itemId: string, voteType: string) {}
 export async function addItineraryItemComment(tripId: string, itemId: string, comment: any) {}
 export async function addItineraryItemReaction(tripId: string, itemId: string, reaction: any) {}
-// (Add more as needed) 
+// (Add more as needed)

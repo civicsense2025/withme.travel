@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { listPermissionRequests, createPermissionRequest, updatePermissionRequest } from '@/lib/api/permissions';
+import {
+  listPermissionRequests,
+  createPermissionRequest,
+  updatePermissionRequest,
+} from '@/lib/api/permissions';
 import { z } from 'zod';
 
 // Class for API errors with status code
@@ -91,7 +95,10 @@ export async function POST(
     const requestBody = await request.json();
     const validation = permissionRequestSchema.safeParse(requestBody);
     if (!validation.success) {
-      return NextResponse.json({ error: 'Invalid request', details: validation.error.format() }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request', details: validation.error.format() },
+        { status: 400 }
+      );
     }
     const { role, message } = validation.data;
     // Map role to requested_role for PermissionRequest
@@ -115,7 +122,10 @@ export async function PATCH(
     const body = await request.json();
     const validation = patchSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ error: 'Invalid request', details: validation.error.format() }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request', details: validation.error.format() },
+        { status: 400 }
+      );
     }
     const { requestId, role, message, status } = validation.data;
     // Map role to requested_role if present

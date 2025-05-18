@@ -1,6 +1,6 @@
 /**
  * Places Tab Content
- * 
+ *
  * Displays a list of places associated with a trip, with search, filtering, and management options.
  */
 
@@ -34,15 +34,9 @@ export function PlacesTabContent({
   const [selectedTab, setSelectedTab] = useState('all');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const { toast } = useToast();
-  
+
   // Initialize usePlaces hook
-  const {
-    places,
-    loading,
-    error,
-    fetchPlaces,
-    lookupOrCreatePlace,
-  } = usePlaces();
+  const { places, loading, error, fetchPlaces, lookupOrCreatePlace } = usePlaces();
 
   // Fetch places when component mounts or destination changes
   useEffect(() => {
@@ -162,9 +156,7 @@ export function PlacesTabContent({
               </div>
             )}
             {canEdit && (
-              <Button onClick={() => handleAddToTrip(selectedPlace)}>
-                Add to Itinerary
-              </Button>
+              <Button onClick={() => handleAddToTrip(selectedPlace)}>Add to Itinerary</Button>
             )}
           </div>
         </CardContent>
@@ -253,4 +245,4 @@ export function PlacesTabContent({
   );
 }
 
-export default PlacesTabContent; 
+export default PlacesTabContent;

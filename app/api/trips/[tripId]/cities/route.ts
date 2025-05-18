@@ -1,8 +1,8 @@
 /**
  * Trip Cities API Route
- * 
+ *
  * Handles listing, adding, and removing cities for a trip.
- * 
+ *
  * @module api/trips/[tripId]/cities
  */
 
@@ -13,20 +13,19 @@ import { TABLES } from '@/utils/constants/tables';
 // ============================================================================
 // GET: List all cities for a trip
 // ============================================================================
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { tripId: string } }
-) {
+export async function GET(req: NextRequest, { params }: { params: { tripId: string } }) {
   const supabase = createRouteHandlerClient();
   const { tripId } = params;
 
   const { data, error } = await supabase
     .from(TABLES.TRIP_CITIES)
-    .select(`
+    .select(
+      `
       city:city_id (
         id, name, country, admin_name, continent, latitude, longitude, mapbox_id, population, timezone, country_code, metadata, created_at, updated_at, is_destination, emoji, iso2, description
       )
-    `)
+    `
+    )
     .eq('trip_id', tripId);
 
   if (error) {
@@ -42,10 +41,7 @@ export async function GET(
 // ============================================================================
 // POST: Add cities to a trip
 // ============================================================================
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { tripId: string } }
-) {
+export async function POST(req: NextRequest, { params }: { params: { tripId: string } }) {
   const supabase = createRouteHandlerClient();
   const { tripId } = params;
   const { cities } = await req.json();
@@ -74,10 +70,7 @@ export async function POST(
 // ============================================================================
 // DELETE: Remove a city from a trip
 // ============================================================================
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { tripId: string } }
-) {
+export async function DELETE(req: NextRequest, { params }: { params: { tripId: string } }) {
   const supabase = createRouteHandlerClient();
   const { tripId } = params;
   const { cityId } = await req.json();

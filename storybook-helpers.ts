@@ -8,7 +8,7 @@ import { storybookCategories } from './storybook-categories';
 
 /**
  * Helper function to create a story title with proper category structure
- * 
+ *
  * @param category The main category
  * @param subCategory The sub-category
  * @param component The component name
@@ -16,12 +16,8 @@ import { storybookCategories } from './storybook-categories';
  */
 export function createStoryTitle<
   C extends keyof typeof storybookCategories,
-  S extends keyof (typeof storybookCategories)[C]
->(
-  category: C,
-  subCategory: S,
-  component: string
-): string {
+  S extends keyof (typeof storybookCategories)[C],
+>(category: C, subCategory: S, component: string): string {
   return `${String(category)}/${String(subCategory)}/${component}`;
 }
 

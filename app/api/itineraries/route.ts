@@ -49,16 +49,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const isPublished = searchParams.get('published') === 'true';
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const offset = parseInt(searchParams.get('offset') || '0', 10);
-  
+
   // Call the centralized API function
   const result = await listItineraries({ isPublished, limit, offset });
-  
+
   if (!result.success) {
     console.error('[API] Error in itineraries endpoint:', result.error);
-    return NextResponse.json(
-      { error: result.error },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
   return NextResponse.json({ data: result.data });
@@ -68,19 +65,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Parse the request body
     const itineraryData = await request.json();
-    
+
     // Generate a slug if not provided
     if (!itineraryData.slug) {
       itineraryData.slug = generateSlug(itineraryData.title);
     }
-    
+
     // Call the centralized API function
     const result = await createItinerary(itineraryData);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
-    
+
     return NextResponse.json({ data: result.data });
   } catch (error: any) {
     console.error('[API] Error processing itinerary creation:', error);

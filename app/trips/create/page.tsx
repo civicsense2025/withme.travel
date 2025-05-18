@@ -137,19 +137,19 @@ export default function CreateTrip() {
 
   const onSubmit = async (data: TripFormValues) => {
     setIsSubmitting(true);
-    
+
     try {
       // Get formatted dates for API
       const formattedData = {
         ...data,
         start_date: data.date_range.from ? data.date_range.from.toISOString().split('T')[0] : null,
         end_date: data.date_range.to ? data.date_range.to.toISOString().split('T')[0] : null,
-        // Add cities data 
-        cities: selectedCities.map(city => ({
+        // Add cities data
+        cities: selectedCities.map((city) => ({
           city_id: city.id,
           name: city.name,
-          country: city.country
-        }))
+          country: city.country,
+        })),
       };
 
       // Make the actual API call in the background
@@ -177,16 +177,18 @@ export default function CreateTrip() {
 
       // If guest, show banner - using proper auth check
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const isGuest = !session?.user;
-      
+
       if (isGuest) {
         setShowGuestBanner(true);
       }
 
       // Redirect to the new trip page
       router.push(PAGE_ROUTES.TRIP_DETAILS(result.trip.id));
-      
+
       // Invalidate trips cache to reflect the new trip
       mutate(API_ROUTES.TRIPS);
     } catch (err) {

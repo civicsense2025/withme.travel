@@ -142,7 +142,7 @@ const clientGuestUtils = {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(GUEST_TOKEN_KEY);
   },
-  
+
   /**
    * Set a user testing cohort in localStorage
    */
@@ -150,7 +150,7 @@ const clientGuestUtils = {
     if (typeof window === 'undefined') return;
     localStorage.setItem(USER_TESTING_COHORT_KEY, cohort);
   },
-  
+
   /**
    * Get the current user testing cohort from localStorage
    */
@@ -174,7 +174,7 @@ const clientGuestUtils = {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(GUEST_NAME_KEY);
   },
-  
+
   /**
    * Check if the user has an active user testing session
    * First checks localStorage, then falls back to API check if user is authenticated
@@ -186,7 +186,7 @@ const clientGuestUtils = {
       try {
         // Validate the token by calling the API
         const response = await fetch(`/api/research/user-testing-session/${token}`);
-        
+
         // If successful, refresh the cohort information
         if (response.ok) {
           const data = await response.json();
@@ -195,12 +195,12 @@ const clientGuestUtils = {
           }
           return true;
         }
-        
+
         // Token exists but is invalid - clear it
         if (response.status === 404) {
           clientGuestUtils.clearToken();
         }
-        
+
         return false;
       } catch (error) {
         console.error('Error checking session token:', error);
@@ -208,34 +208,34 @@ const clientGuestUtils = {
         return false;
       }
     }
-    
+
     // No token in localStorage, check if user is logged in and has a session
     try {
       const response = await fetch('/api/research/user-testing-session');
-      
+
       if (response.ok) {
         const data = await response.json();
-        
+
         // If user has a session, store the token for future use
         if (data.session?.token) {
           clientGuestUtils.setToken(data.session.token);
-          
+
           // Also store cohort if available
           if (data.session?.cohort) {
             clientGuestUtils.setCohort(data.session.cohort);
           }
-          
+
           return true;
         }
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error checking user session:', error);
       return false;
     }
   },
-  
+
   /**
    * Fetch the user testing session details including cohort
    * Uses either localStorage token or authenticated user session
@@ -244,69 +244,69 @@ const clientGuestUtils = {
     try {
       const token = clientGuestUtils.getToken();
       let url = '/api/research/user-testing-session';
-      
+
       // If token exists in localStorage, use it to fetch the session
       if (token) {
         url = `${url}/${token}`;
       }
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch session');
       }
-      
+
       const data = await response.json();
-      
+
       // Update localStorage with latest token and cohort
       if (data.session?.token) {
         clientGuestUtils.setToken(data.session.token);
       }
-      
+
       if (data.session?.cohort) {
         clientGuestUtils.setCohort(data.session.cohort);
       }
-      
+
       return data.session;
     } catch (error) {
       console.error('Error fetching session:', error);
       return null;
     }
   },
-  
+
   /**
    * Renew an expired user testing session token
    */
   renewSession: async (token: string): Promise<boolean> => {
     try {
       const response = await fetch(`/api/research/user-testing-session/${token}/renew`, {
-        method: 'POST'
+        method: 'POST',
       });
-      
+
       if (!response.ok) {
         return false;
       }
-      
+
       const data = await response.json();
-      
+
       // Update localStorage with renewed token
       if (data.session?.token) {
         clientGuestUtils.setToken(data.session.token);
-        
+
         // Also store cohort if available
         if (data.session?.cohort) {
           clientGuestUtils.setCohort(data.session.cohort);
         }
-        
+
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error renewing session:', error);
       return false;
     }
-  }
+  },
 };
 
 /**

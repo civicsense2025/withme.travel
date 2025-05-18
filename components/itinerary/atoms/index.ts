@@ -1,3 +1,3 @@
-export * from './ItineraryDayHeader';
 export * from './ItineraryItemStatus';
-export * from './ItineraryItemAction'; 
+export * from './ItineraryItemAction';
+export * from './ItineraryDayHeader'; 

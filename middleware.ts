@@ -85,7 +85,7 @@ function isPublicPath(path: string): boolean {
   if (isProtectedPath(normalizedPath)) {
     return false;
   }
-  
+
   // Explicitly handle admin paths
   if (normalizedPath.startsWith('/admin')) {
     return false; // Admin paths are never public
@@ -149,30 +149,32 @@ export async function middleware(req: NextRequest) {
     // Implement rate limiting in two tiers - strict for intensive operations and lenient for normal API routes
     if (pathname.startsWith('/api/')) {
       // Determine which tier of rate limiting to apply
-      const isIntensiveOperation = 
-        pathname.includes('/error') || 
-        pathname.includes('/analytics') || 
+      const isIntensiveOperation =
+        pathname.includes('/error') ||
+        pathname.includes('/analytics') ||
         pathname.includes('/logging');
-        
+
       // Set rate limit options based on operation type
       const rateLimitOptions: RateLimitOptions = isIntensiveOperation
         ? {
             // More restrictive for intensive operations
-            limit: 20, 
-            windowMs: 60 * 1000 // per minute
+            limit: 20,
+            windowMs: 60 * 1000, // per minute
           }
         : {
             // More lenient for normal API operations (especially expense APIs)
             limit: pathname.includes('/expenses') ? 500 : 300,
-            windowMs: 60 * 1000 // per minute
+            windowMs: 60 * 1000, // per minute
           };
-          
+
       // Apply rate limiting
       const rateLimiter = rateLimit(rateLimitOptions);
       const rateLimitResult = await rateLimiter(req);
-      
+
       if (rateLimitResult) {
-        console.log(`Rate limit exceeded for ${isIntensiveOperation ? 'intensive' : 'regular'} API route: ${pathname}`);
+        console.log(
+          `Rate limit exceeded for ${isIntensiveOperation ? 'intensive' : 'regular'} API route: ${pathname}`
+        );
         return rateLimitResult;
       }
     }

@@ -1,6 +1,6 @@
 /**
  * Tasks API Client Wrapper
- * 
+ *
  * Provides client-side access to the tasks API with proper typing and error handling.
  * Follows the standard Result pattern and interacts with backend endpoints.
  *
@@ -129,13 +129,13 @@ export async function listTasks(userId?: string, assignedOnly = false): Promise<
   const searchParams = new URLSearchParams();
   if (userId) searchParams.append('userId', userId);
   if (assignedOnly) searchParams.append('assignedOnly', 'true');
-  
+
   const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.TASKS.LIST}${queryString}`, {
       method: 'GET',
-      next: { revalidate: 0 }
+      next: { revalidate: 0 },
     }).then((response) => handleApiResponse<Task[]>(response))
   );
 }
@@ -147,7 +147,7 @@ export async function listGroupTasks(tripId: string): Promise<Result<Task[]>> {
   return tryCatch(
     fetch(API_ROUTES.GROUPS.TASKS.LIST(tripId), {
       method: 'GET',
-      next: { revalidate: 0 }
+      next: { revalidate: 0 },
     }).then((response) => handleApiResponse<Task[]>(response))
   );
 }
@@ -159,7 +159,7 @@ export async function getTask(taskId: string): Promise<Result<Task>> {
   return tryCatch(
     fetch(API_ROUTES.TASKS.DETAIL(taskId), {
       method: 'GET',
-      next: { revalidate: 0 }
+      next: { revalidate: 0 },
     }).then((response) => handleApiResponse<Task>(response))
   );
 }
@@ -178,16 +178,16 @@ export async function createTask(data: CreateTaskParams): Promise<Result<Task>> 
     position: data.position,
     trip_id: data.tripId,
     assignee_id: data.assigneeId,
-    tags: data.tags
+    tags: data.tags,
   };
-  
+
   return tryCatch(
     fetch(API_ROUTES.TASKS.LIST, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(apiData)
+      body: JSON.stringify(apiData),
     }).then((response) => handleApiResponse<Task>(response))
   );
 }
@@ -204,16 +204,16 @@ export async function updateTask(taskId: string, data: UpdateTaskParams): Promis
     status: data.isCompleted ? 'completed' : data.status,
     priority: data.priority,
     position: data.position,
-    assignee_id: data.assigneeId
+    assignee_id: data.assigneeId,
   };
-  
+
   return tryCatch(
     fetch(API_ROUTES.TASKS.DETAIL(taskId), {
       method: 'PATCH',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(apiData)
+      body: JSON.stringify(apiData),
     }).then((response) => handleApiResponse<Task>(response))
   );
 }
@@ -224,7 +224,7 @@ export async function updateTask(taskId: string, data: UpdateTaskParams): Promis
 export async function deleteTask(taskId: string): Promise<Result<null>> {
   return tryCatch(
     fetch(API_ROUTES.TASKS.DETAIL(taskId), {
-      method: 'DELETE'
+      method: 'DELETE',
     }).then((response) => handleApiResponse<null>(response))
   );
 }
@@ -237,9 +237,9 @@ export async function assignTask(taskId: string, assigneeId: string): Promise<Re
     fetch(API_ROUTES.TASKS.ASSIGN(taskId), {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ assigneeId })
+      body: JSON.stringify({ assigneeId }),
     }).then((response) => handleApiResponse<Task>(response))
   );
 }
@@ -247,16 +247,19 @@ export async function assignTask(taskId: string, assigneeId: string): Promise<Re
 /**
  * Toggle task completion status
  */
-export async function toggleTaskComplete(taskId: string, isCompleted: boolean): Promise<Result<Task>> {
+export async function toggleTaskComplete(
+  taskId: string,
+  isCompleted: boolean
+): Promise<Result<Task>> {
   const status = isCompleted ? 'completed' : 'pending';
-  
+
   return tryCatch(
     fetch(API_ROUTES.TASKS.DETAIL(taskId), {
       method: 'PATCH',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status }),
     }).then((response) => handleApiResponse<Task>(response))
   );
 }
@@ -269,9 +272,9 @@ export async function voteTask(taskId: string, voteType: 'up' | 'down'): Promise
     fetch(API_ROUTES.TASKS.VOTE(taskId), {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ voteType })
+      body: JSON.stringify({ voteType }),
     }).then((response) => handleApiResponse<Task>(response))
   );
 }
@@ -284,9 +287,9 @@ export async function addTagToTask(taskId: string, tagName: string): Promise<Res
     fetch(API_ROUTES.TASKS.TAGS(taskId), {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ tagName })
+      body: JSON.stringify({ tagName }),
     }).then((response) => handleApiResponse<Task>(response))
   );
 }
@@ -297,10 +300,10 @@ export async function addTagToTask(taskId: string, tagName: string): Promise<Res
 export async function removeTagFromTask(taskId: string, tagName: string): Promise<Result<Task>> {
   const searchParams = new URLSearchParams();
   searchParams.append('tagName', tagName);
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.TASKS.TAGS(taskId)}?${searchParams.toString()}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     }).then((response) => handleApiResponse<Task>(response))
   );
-} 
+}

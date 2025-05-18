@@ -463,13 +463,13 @@ export function CreateTripForm() {
       localStorage.removeItem(FORM_STORAGE_KEY);
 
       toast({ title: 'Success', description: 'Trip created successfully!' });
-      trackTripCreated({ 
+      trackTripCreated({
         destination: values.destination_name,
         startDate: values.start_date,
         endDate: values.end_date,
         privacy: values.privacy_setting,
         hasGroup: !!values.group_id,
-        creationMethod: 'detailed'
+        creationMethod: 'detailed',
       });
       router.push(redirectTo || PAGE_ROUTES.TRIP_DETAILS(newTripId) + '?tripCreated=true');
     } catch (error: unknown) {
@@ -532,13 +532,13 @@ export function CreateTripForm() {
 
       localStorage.removeItem(FORM_STORAGE_KEY);
       toast({ title: 'Success!', description: 'Basic trip created quickly!' });
-      trackTripCreated({ 
+      trackTripCreated({
         destination: values.destination_name,
         startDate: values.start_date,
         endDate: values.end_date,
         privacy: values.privacy_setting,
         hasGroup: !!values.group_id,
-        creationMethod: 'quick'
+        creationMethod: 'quick',
       });
       router.push(redirectTo || PAGE_ROUTES.TRIP_DETAILS(newTripId) + '?tripCreated=true');
     } catch (error: unknown) {

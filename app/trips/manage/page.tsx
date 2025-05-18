@@ -25,13 +25,13 @@ export default async function TripsManagePage() {
   if (!user) {
     return redirect(`/login?redirect=${encodeURIComponent('/trips/manage')}`);
   }
-  
+
   try {
     // Use our new type-safe data fetching pattern
     const result = await listTrips(user.id);
     if (!result.success) throw new Error(result.error || 'Failed to fetch trips');
-    const tripMembers = result.data.map(trip => ({ trip }));
-    
+    const tripMembers = result.data.map((trip) => ({ trip }));
+
     // Fetch user profile for personalized destinations
     const supabase = await getServerSupabase();
     const { data: userProfile } = await supabase
@@ -48,9 +48,9 @@ export default async function TripsManagePage() {
           className="mb-10"
           centered={true}
         />
-        <TripTabs 
-          initialTrips={tripMembers} 
-          userId={user.id} 
+        <TripTabs
+          initialTrips={tripMembers}
+          userId={user.id}
           isGuest={isGuest}
           userProfile={userProfile || null}
         />

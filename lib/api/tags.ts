@@ -32,7 +32,7 @@ export async function listTripTags(tripId: string): Promise<Result<Tag[]>> {
       .select('*')
       .eq('entity_id', tripId)
       .eq('entity_type', 'trip');
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -50,18 +50,18 @@ export async function addTripTag(tripId: string, tag: Partial<Tag>): Promise<Res
   try {
     const supabase = await createRouteHandlerClient();
     // Ensure tripId and entity_type are set
-    const tagData = { 
-      ...tag, 
+    const tagData = {
+      ...tag,
       entity_id: tripId,
-      entity_type: 'trip'
+      entity_type: 'trip',
     };
-    
+
     const { data: newTag, error } = await supabase
       .from(TABLES.TAGS)
       .insert(tagData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newTag };
   } catch (error) {
@@ -76,7 +76,11 @@ export async function addTripTag(tripId: string, tag: Partial<Tag>): Promise<Res
  * @param tag - The updated tag data
  * @returns Result containing the updated tag
  */
-export async function updateTripTag(tripId: string, tagId: string, tag: Partial<Tag>): Promise<Result<Tag>> {
+export async function updateTripTag(
+  tripId: string,
+  tagId: string,
+  tag: Partial<Tag>
+): Promise<Result<Tag>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data: updatedTag, error } = await supabase
@@ -87,7 +91,7 @@ export async function updateTripTag(tripId: string, tagId: string, tag: Partial<
       .eq('entity_type', 'trip')
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedTag };
   } catch (error) {
@@ -110,7 +114,7 @@ export async function deleteTripTag(tripId: string, tagId: string): Promise<Resu
       .eq('id', tagId)
       .eq('entity_id', tripId)
       .eq('entity_type', 'trip');
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -132,7 +136,7 @@ export async function listEntityTags(entityId: string, entityType: string): Prom
       .select('*')
       .eq('entity_id', entityId)
       .eq('entity_type', entityType);
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -147,22 +151,26 @@ export async function listEntityTags(entityId: string, entityType: string): Prom
  * @param tag - The tag data
  * @returns Result containing the created tag
  */
-export async function addEntityTag(entityId: string, entityType: string, tag: Partial<Tag>): Promise<Result<Tag>> {
+export async function addEntityTag(
+  entityId: string,
+  entityType: string,
+  tag: Partial<Tag>
+): Promise<Result<Tag>> {
   try {
     const supabase = await createRouteHandlerClient();
     // Ensure entityId and entityType are set
-    const tagData = { 
-      ...tag, 
+    const tagData = {
+      ...tag,
       entity_id: entityId,
-      entity_type: entityType
+      entity_type: entityType,
     };
-    
+
     const { data: newTag, error } = await supabase
       .from(TABLES.TAGS)
       .insert(tagData)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: newTag };
   } catch (error) {
@@ -177,7 +185,11 @@ export async function addEntityTag(entityId: string, entityType: string, tag: Pa
  * @param tagId - The tag's unique identifier
  * @returns Result indicating success or failure
  */
-export async function deleteEntityTag(entityId: string, entityType: string, tagId: string): Promise<Result<null>> {
+export async function deleteEntityTag(
+  entityId: string,
+  entityType: string,
+  tagId: string
+): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { error } = await supabase
@@ -186,10 +198,10 @@ export async function deleteEntityTag(entityId: string, entityType: string, tagI
       .eq('id', tagId)
       .eq('entity_id', entityId)
       .eq('entity_type', entityType);
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
     return handleError(error, 'Failed to delete entity tag');
   }
-} 
+}

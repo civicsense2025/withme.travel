@@ -146,14 +146,14 @@ export async function POST(
     // Parse and validate the request body
     const requestBody = await req.json();
     const validationResult = commentSchema.safeParse(requestBody);
-    
+
     if (!validationResult.success) {
       return NextResponse.json(
         { error: 'Invalid comment data', details: validationResult.error.format() },
         { status: 400 }
       );
     }
-    
+
     const { content, parent_id } = validationResult.data;
 
     // Insert the new comment
@@ -163,7 +163,7 @@ export async function POST(
         item_id: itemId,
         user_id: user.id,
         content,
-        parent_id
+        parent_id,
       })
       .select('*')
       .single();
@@ -172,7 +172,7 @@ export async function POST(
       console.error('Error creating comment:', error);
       return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
     }
-    
+
     return NextResponse.json({ comment: newComment });
   } catch (error) {
     console.error('Error processing comment creation:', error);
@@ -216,11 +216,11 @@ export async function PATCH(
       .eq('id', commentId)
       .eq('item_id', itemId)
       .single();
-    
+
     if (commentError || !comment) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
     }
-    
+
     // Check if user owns the comment
     if (comment.user_id !== user.id) {
       return NextResponse.json({ error: 'Not authorized to edit this comment' }, { status: 403 });

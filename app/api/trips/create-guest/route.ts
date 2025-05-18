@@ -153,15 +153,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         .single();
 
       if (!existingProfile) {
-        const { error: insertProfileError } = await supabaseAdmin
-          .from(TABLES.PROFILES)
-          .insert([
-            {
-              id: userId,
-              name: 'Guest',
-              is_guest: true,
-            },
-          ]);
+        const { error: insertProfileError } = await supabaseAdmin.from(TABLES.PROFILES).insert([
+          {
+            id: userId,
+            name: 'Guest',
+            is_guest: true,
+          },
+        ]);
         if (insertProfileError) {
           console.error(
             chalk.red(`${LOG_PREFIX} Error inserting guest profile:`),

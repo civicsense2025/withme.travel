@@ -101,7 +101,7 @@ export function useGroupIdeas(groupId: string): UseGroupIdeasResult {
             return idea;
           })
         );
-        
+
         // We'll refetch ideas after a delay to get the updated vote counts
         setTimeout(fetchIdeas, 1000);
       }
@@ -109,7 +109,7 @@ export function useGroupIdeas(groupId: string): UseGroupIdeasResult {
     },
     [groupId, voteOnGroupIdea, fetchIdeas]
   );
-  
+
   // Delete an idea
   const deleteIdea = useCallback(
     async (ideaId: string): Promise<boolean> => {
@@ -117,20 +117,20 @@ export function useGroupIdeas(groupId: string): UseGroupIdeasResult {
         const response = await fetch(`/api/groups/${groupId}/ideas/${ideaId}`, {
           method: 'DELETE',
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to delete idea');
         }
-        
+
         // Optimistically update the UI
         setIdeas((prev) => prev.filter((idea) => idea.id !== ideaId));
-        
+
         toast({
           title: 'Success',
           description: 'Idea deleted successfully',
         });
-        
+
         return true;
       } catch (error) {
         console.error('Error deleting idea:', error);
@@ -144,7 +144,7 @@ export function useGroupIdeas(groupId: string): UseGroupIdeasResult {
     },
     [groupId, toast]
   );
-  
+
   // Update an idea
   const updateIdea = useCallback(
     async (ideaId: string, data: Partial<GroupIdea>): Promise<GroupIdea | null> => {
@@ -156,24 +156,22 @@ export function useGroupIdeas(groupId: string): UseGroupIdeasResult {
           },
           body: JSON.stringify(data),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to update idea');
         }
-        
+
         const result = await response.json();
-        
+
         // Update the ideas list with the updated idea
-        setIdeas((prev) => 
-          prev.map((idea) => idea.id === ideaId ? result.idea : idea)
-        );
-        
+        setIdeas((prev) => prev.map((idea) => (idea.id === ideaId ? result.idea : idea)));
+
         toast({
           title: 'Success',
           description: 'Idea updated successfully',
         });
-        
+
         return result.idea;
       } catch (error) {
         console.error('Error updating idea:', error);
@@ -198,4 +196,4 @@ export function useGroupIdeas(groupId: string): UseGroupIdeasResult {
     updateIdea,
     refetch: fetchIdeas,
   };
-} 
+}

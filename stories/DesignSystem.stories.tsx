@@ -6,7 +6,7 @@ const DesignSystem = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">WithMe.travel Design System</h1>
-      
+
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Brand Colors</h2>
         <div className="flex flex-wrap">
@@ -18,7 +18,7 @@ const DesignSystem = () => {
           <div className="color-sample color-travel-peach" data-color-name="Peach"></div>
         </div>
       </section>
-      
+
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Typography</h2>
         <div className="space-y-4">
@@ -40,7 +40,7 @@ const DesignSystem = () => {
           </div>
         </div>
       </section>
-      
+
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Buttons</h2>
         <div className="space-y-4">
@@ -52,7 +52,7 @@ const DesignSystem = () => {
           </div>
         </div>
       </section>
-      
+
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Cards</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -77,10 +77,10 @@ const meta = {
   component: DesignSystem,
   parameters: {
     layout: 'fullscreen',
-  }
+  },
 } satisfies Meta<typeof DesignSystem>;
 
 export default meta;
 type Story = StoryObj<typeof DesignSystem>;
 
-export const Overview: Story = {}; 
+export const Overview: Story = {};

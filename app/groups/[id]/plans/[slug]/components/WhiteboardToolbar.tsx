@@ -51,7 +51,7 @@ export function WhiteboardToolbar({
         <ToggleGroup
           type="single"
           value={viewMode}
-          onValueChange={(value) => {
+          onValueChange={(value: ViewMode | string) => {
             // Only update if value is a valid ViewMode
             if (value === 'grid' || value === 'kanban') {
               setViewMode(value);

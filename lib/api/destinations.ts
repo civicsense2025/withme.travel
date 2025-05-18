@@ -28,9 +28,7 @@ export async function listDestinations(params: any): Promise<Result<Destination[
   try {
     const supabase = await createRouteHandlerClient();
     // TODO: Add filter logic based on params
-    const { data, error } = await supabase
-      .from(TABLES.DESTINATIONS)
-      .select('*');
+    const { data, error } = await supabase.from(TABLES.DESTINATIONS).select('*');
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
@@ -85,7 +83,10 @@ export async function createDestination(data: Partial<Destination>): Promise<Res
  * @param data - Partial destination data to update
  * @returns Result containing the updated destination
  */
-export async function updateDestination(destinationId: string, data: Partial<Destination>): Promise<Result<Destination>> {
+export async function updateDestination(
+  destinationId: string,
+  data: Partial<Destination>
+): Promise<Result<Destination>> {
   try {
     const supabase = await createRouteHandlerClient();
     const { data: updatedDestination, error } = await supabase
@@ -94,7 +95,7 @@ export async function updateDestination(destinationId: string, data: Partial<Des
       .eq('id', destinationId)
       .select('*')
       .single();
-    
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: updatedDestination };
   } catch (error) {
@@ -110,10 +111,7 @@ export async function updateDestination(destinationId: string, data: Partial<Des
 export async function deleteDestination(destinationId: string): Promise<Result<null>> {
   try {
     const supabase = await createRouteHandlerClient();
-    const { error } = await supabase
-      .from(TABLES.DESTINATIONS)
-      .delete()
-      .eq('id', destinationId);
+    const { error } = await supabase.from(TABLES.DESTINATIONS).delete().eq('id', destinationId);
     if (error) return { success: false, error: error.message };
     return { success: true, data: null };
   } catch (error) {
@@ -133,7 +131,7 @@ export async function deleteDestination(destinationId: string): Promise<Result<n
 export async function getPopularDestinations(limit: number = 6): Promise<Result<Destination[]>> {
   try {
     const supabase = await createRouteHandlerClient();
-    
+
     // In a real implementation, this would use analytics data, ratings, or other metrics
     // For now, we'll just get a list of destinations
     const { data, error } = await supabase
@@ -141,11 +139,11 @@ export async function getPopularDestinations(limit: number = 6): Promise<Result<
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
-      
+
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
   } catch (error) {
     return handleError(error, 'Failed to fetch popular destinations');
   }
 }
-// (Add more as needed) 
+// (Add more as needed)

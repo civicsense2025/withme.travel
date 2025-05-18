@@ -17,7 +17,7 @@ export {
   addAccommodationToTrip,
   addTransportationToTrip,
   listLogisticsItems,
-  deleteLogisticsItem
+  deleteLogisticsItem,
 } from './logistics';
 
-// Add more as needed 
+// Add more as needed

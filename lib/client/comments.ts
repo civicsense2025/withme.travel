@@ -1,6 +1,6 @@
 /**
  * Comments API Client
- * 
+ *
  * Client-side wrapper for the Comments API providing type-safe access to comment operations
  */
 
@@ -30,9 +30,9 @@ export async function listComments(
 ): Promise<Result<Comment[]>> {
   const params = new URLSearchParams({
     entityId,
-    entityType
+    entityType,
   });
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.COMMENTS.LIST}?${params.toString()}`, {
       method: 'GET',
@@ -140,12 +140,14 @@ export async function removeCommentReaction(
   reactionType: string
 ): Promise<Result<void>> {
   const params = new URLSearchParams({
-    type: reactionType
+    type: reactionType,
   });
-  
+
   return tryCatch(
     fetch(`${API_ROUTES.COMMENTS.REACTIONS(commentId)}?${params.toString()}`, {
       method: 'DELETE',
     }).then((response) => handleApiResponse<void>(response))
   );
-} 
+}
+
+export type { Result } from '@/lib/client/result';

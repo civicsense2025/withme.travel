@@ -8,7 +8,9 @@ export type Result<T, E = Error> = { success: true; data: T } | { success: false
 /**
  * Type guard to check if a result is successful and narrow the type
  */
-export function isSuccess<T, E = Error>(result: Result<T, E>): result is { success: true; data: T } {
+export function isSuccess<T, E = Error>(
+  result: Result<T, E>
+): result is { success: true; data: T } {
   return result.success === true;
 }
 

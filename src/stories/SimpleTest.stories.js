@@ -8,4 +8,4 @@ export default {
 
 export const Basic = {
   render: () => <div>This is a simple test story</div>,
-}; 
+};

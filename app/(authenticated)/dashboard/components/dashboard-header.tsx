@@ -41,7 +41,7 @@ export function DashboardHeader({ userName, avatarUrl, travelStats }: DashboardH
         <AvatarImage src={avatarUrl || undefined} alt={userName} />
         <AvatarFallback className="text-xl">{initial}</AvatarFallback>
       </Avatar>
-      
+
       {/* User name with welcome message */}
       <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome, {userName}</h1>
       <p className="text-muted-foreground mb-6 text-sm flex items-center justify-center">
@@ -63,7 +63,15 @@ export function DashboardHeader({ userName, avatarUrl, travelStats }: DashboardH
   );
 }
 
-function StatItem({ label, value, color }: { label: string; value: number; color: 'purple' | 'blue' | 'pink' | 'mint' }) {
+function StatItem({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: 'purple' | 'blue' | 'pink' | 'mint';
+}) {
   const colorMap = {
     purple: 'text-travel-purple',
     blue: 'text-travel-blue',

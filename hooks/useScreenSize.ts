@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { MOBILE_MAX_WIDTH, TABLET_MAX_WIDTH, LayoutType } from '@/utils/constants/ui/groupCirclesConstants'; // Adjust path
+import {
+  MOBILE_MAX_WIDTH,
+  TABLET_MAX_WIDTH,
+  LayoutType,
+} from '@/utils/constants/ui/groupCirclesConstants'; // Adjust path
 
 interface ScreenSizeInfo {
   width: number;
@@ -10,7 +14,9 @@ interface ScreenSizeInfo {
 }
 
 export function useScreenSize(): ScreenSizeInfo {
-  const [width, setWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : TABLET_MAX_WIDTH + 1); // Default to desktop
+  const [width, setWidth] = useState<number>(
+    typeof window !== 'undefined' ? window.innerWidth : TABLET_MAX_WIDTH + 1
+  ); // Default to desktop
 
   useEffect(() => {
     const handleResize = () => setWidth(window.innerWidth);
@@ -32,4 +38,4 @@ export function useScreenSize(): ScreenSizeInfo {
     isTablet: layout === 'tablet',
     isDesktop: layout === 'desktop',
   };
-} 
+}

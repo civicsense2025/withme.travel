@@ -1,6 +1,6 @@
 /**
  * Notes API Client
- * 
+ *
  * Client-side wrapper for Notes API endpoints
  */
 
@@ -35,55 +35,183 @@ export interface Note {
 // ============================================================================
 
 /**
- * Get notes for a trip
+ * Get collaborative notes for a trip
  */
-export async function getTripNotes(tripId: string): Promise<Result<Note>> {
+export async function getTripNotes(tripId: string): Promise<Result<{ content: string }>> {
   return tryCatch(
-    fetch(API_ROUTES.TRIP_NOTES(tripId), {
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/notes`, {
       method: 'GET',
       cache: 'no-store',
-    }).then((response) => handleApiResponse<Note>(response))
+    }).then((response) => handleApiResponse<{ content: string }>(response))
   );
 }
 
 /**
- * Update notes for a trip
+ * Update collaborative notes for a trip
  */
-export async function updateTripNotes(tripId: string, content: string): Promise<Result<Note>> {
+export async function updateTripNotes(
+  tripId: string,
+  content: string
+): Promise<Result<{ content: string }>> {
   return tryCatch(
-    fetch(API_ROUTES.TRIP_NOTES(tripId), {
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/notes`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ content }),
-    }).then((response) => handleApiResponse<Note>(response))
+    }).then((response) => handleApiResponse<{ content: string }>(response))
   );
 }
 
 /**
- * Create initial notes for a trip
+ * Create collaborative notes for a trip
  */
-export async function createTripNotes(tripId: string, content: string = ""): Promise<Result<Note>> {
+export async function createTripNotes(tripId: string): Promise<Result<{ content: string }>> {
   return tryCatch(
-    fetch(API_ROUTES.TRIP_NOTES(tripId), {
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/notes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content }),
-    }).then((response) => handleApiResponse<Note>(response))
+      body: JSON.stringify({ content: '' }),
+    }).then((response) => handleApiResponse<{ content: string }>(response))
   );
 }
 
 /**
- * Get collaborative note session information
+ * Get collaboration session for a trip
  */
-export async function getCollaborativeSession(tripId: string): Promise<Result<{sessionId: string, accessToken: string}>> {
+export async function getCollaborativeSession(tripId: string): Promise<
+  Result<{
+    sessionId: string;
+    accessToken: string;
+  }>
+> {
   return tryCatch(
-    fetch(API_ROUTES.TRIP_NOTES_COLLABORATION(tripId), {
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/notes/session`, {
       method: 'GET',
       cache: 'no-store',
-    }).then((response) => handleApiResponse<{sessionId: string, accessToken: string}>(response))
+    }).then((response) =>
+      handleApiResponse<{
+        sessionId: string;
+        accessToken: string;
+      }>(response)
+    )
   );
-} 
+}
+
+/**
+ * Get all personal notes for a trip
+ */
+export async function listPersonalNotes(tripId: string): Promise<
+  Result<
+    Array<{
+      id: string;
+      title: string;
+      content: string;
+      createdAt: string;
+      updatedAt: string;
+    }>
+  >
+> {
+  return tryCatch(
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/personal-notes`, {
+      method: 'GET',
+      cache: 'no-store',
+    }).then((response) =>
+      handleApiResponse<
+        Array<{
+          id: string;
+          title: string;
+          content: string;
+          createdAt: string;
+          updatedAt: string;
+        }>
+      >(response)
+    )
+  );
+}
+
+/**
+ * Create a personal note for a trip
+ */
+export async function createPersonalNote(
+  tripId: string,
+  title: string,
+  content: string = ''
+): Promise<
+  Result<{
+    id: string;
+    title: string;
+    content: string;
+    createdAt: string;
+    updatedAt: string;
+  }>
+> {
+  return tryCatch(
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/personal-notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title, content }),
+    }).then((response) =>
+      handleApiResponse<{
+        id: string;
+        title: string;
+        content: string;
+        createdAt: string;
+        updatedAt: string;
+      }>(response)
+    )
+  );
+}
+
+/**
+ * Update a personal note
+ */
+export async function updatePersonalNote(
+  tripId: string,
+  noteId: string,
+  title: string,
+  content: string
+): Promise<
+  Result<{
+    id: string;
+    title: string;
+    content: string;
+    updatedAt: string;
+  }>
+> {
+  return tryCatch(
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/personal-notes/${noteId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title, content }),
+    }).then((response) =>
+      handleApiResponse<{
+        id: string;
+        title: string;
+        content: string;
+        updatedAt: string;
+      }>(response)
+    )
+  );
+}
+
+/**
+ * Delete a personal note
+ */
+export async function deletePersonalNote(
+  tripId: string,
+  noteId: string
+): Promise<Result<{ success: boolean }>> {
+  return tryCatch(
+    fetch(`${API_ROUTES.TRIPS}/${tripId}/personal-notes/${noteId}`, {
+      method: 'DELETE',
+    }).then((response) => handleApiResponse<{ success: boolean }>(response))
+  );
+}

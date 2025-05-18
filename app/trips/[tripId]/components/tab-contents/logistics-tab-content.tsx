@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, BedDouble, Car } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { DroppableContainer } from '@/components/itinerary/DroppableContainer';
+import { DroppableContainer } from '@/app/trips/components/atoms/DroppableContainer';
 import { useState, useEffect, useCallback } from 'react';
 import {
   DndContext,
@@ -33,10 +33,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import { DisplayItineraryItem } from '@/types/itinerary';
 import { useRouter } from 'next/navigation';
-import { 
-  addFormToTrip, 
-  addAccommodationToTrip, 
-  addTransportationToTrip 
+import {
+  addFormToTrip,
+  addAccommodationToTrip,
+  addTransportationToTrip,
 } from '@/lib/client/itinerary';
 import { isSuccess } from '@/lib/client/result';
 import { useTripContext } from '../../context/trip-context';
@@ -121,7 +121,7 @@ function LogisticsItemCard({ item }: { item: LogisticsItem }) {
 function AccommodationDialog({
   isOpen,
   onOpenChange,
-  onSubmit
+  onSubmit,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -161,16 +161,10 @@ function AccommodationDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" className="mr-2" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={onSubmit}>
-            Add Accommodation
-          </Button>
+          <Button onClick={onSubmit}>Add Accommodation</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -181,7 +175,7 @@ function AccommodationDialog({
 function TransportationDialog({
   isOpen,
   onOpenChange,
-  onSubmit
+  onSubmit,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -227,16 +221,10 @@ function TransportationDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" className="mr-2" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={onSubmit}>
-            Add Transportation
-          </Button>
+          <Button onClick={onSubmit}>Add Transportation</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -255,7 +243,9 @@ export function LogisticsTabContent({
   const [isTransportationDialogOpen, setIsTransportationDialogOpen] = useState(false);
   const { toast: useToastToast } = useToast();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'forms' | 'accommodations' | 'transportation'>('forms');
+  const [activeTab, setActiveTab] = useState<'forms' | 'accommodations' | 'transportation'>(
+    'forms'
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   // Form for adding a form
@@ -291,37 +281,40 @@ export function LogisticsTabContent({
   });
 
   // Add the missing function
-  const handleFormTemplateSelect = useCallback(async (template: any) => {
-    try {
-      const result = await addFormToTrip(tripId, {
-        title: template.title,
-        description: template.description || '',
-        template_id: template.id || null,
-      });
-
-      if (isSuccess(result)) {
-        // Show success message
-        useToastToast({
-          title: 'Form added',
-          description: 'A new form has been added to the trip.',
+  const handleFormTemplateSelect = useCallback(
+    async (template: any) => {
+      try {
+        const result = await addFormToTrip(tripId, {
+          title: template.title,
+          description: template.description || '',
+          template_id: template.id || null,
         });
 
-        // Refresh if needed
-        if (refetchItinerary) {
-          await refetchItinerary();
+        if (isSuccess(result)) {
+          // Show success message
+          useToastToast({
+            title: 'Form added',
+            description: 'A new form has been added to the trip.',
+          });
+
+          // Refresh if needed
+          if (refetchItinerary) {
+            await refetchItinerary();
+          }
+        } else {
+          throw new Error(result.error);
         }
-      } else {
-        throw new Error(result.error);
+      } catch (error) {
+        console.error('Error adding form to trip:', error);
+        useToastToast({
+          title: 'Error adding form',
+          description: 'There was a problem adding the form. Please try again.',
+          variant: 'destructive',
+        });
       }
-    } catch (error) {
-      console.error('Error adding form to trip:', error);
-      useToastToast({
-        title: 'Error adding form',
-        description: 'There was a problem adding the form. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  }, [tripId, useToastToast, refetchItinerary]);
+    },
+    [tripId, useToastToast, refetchItinerary]
+  );
 
   // Set up DnD sensors
   const sensors = useSensors(
@@ -487,14 +480,11 @@ export function LogisticsTabContent({
     const title =
       (document.getElementById('accommodation-name') as HTMLInputElement)?.value ||
       'New Accommodation';
-    const location = (
-      document.getElementById('accommodation-location') as HTMLInputElement
-    )?.value;
+    const location = (document.getElementById('accommodation-location') as HTMLInputElement)?.value;
     const startDate = (document.getElementById('check-in') as HTMLInputElement)?.value;
     const endDate = (document.getElementById('check-out') as HTMLInputElement)?.value;
-    const description = (
-      document.getElementById('accommodation-notes') as HTMLTextAreaElement
-    )?.value;
+    const description = (document.getElementById('accommodation-notes') as HTMLTextAreaElement)
+      ?.value;
 
     // Add to local state
     const newItem: LogisticsItem = {
@@ -540,20 +530,14 @@ export function LogisticsTabContent({
     const title =
       (document.getElementById('transportation-type') as HTMLInputElement)?.value ||
       'New Transportation';
-    const departureLocation = (
-      document.getElementById('departure-location') as HTMLInputElement
-    )?.value;
-    const arrivalLocation = (
-      document.getElementById('arrival-location') as HTMLInputElement
-    )?.value;
-    const departureDate = (
-      document.getElementById('departure-date') as HTMLInputElement
-    )?.value;
-    const arrivalDate = (document.getElementById('arrival-date') as HTMLInputElement)
+    const departureLocation = (document.getElementById('departure-location') as HTMLInputElement)
       ?.value;
-    const description = (
-      document.getElementById('transportation-notes') as HTMLTextAreaElement
-    )?.value;
+    const arrivalLocation = (document.getElementById('arrival-location') as HTMLInputElement)
+      ?.value;
+    const departureDate = (document.getElementById('departure-date') as HTMLInputElement)?.value;
+    const arrivalDate = (document.getElementById('arrival-date') as HTMLInputElement)?.value;
+    const description = (document.getElementById('transportation-notes') as HTMLTextAreaElement)
+      ?.value;
 
     // Add to local state
     const newItem: LogisticsItem = {
@@ -628,9 +612,11 @@ export function LogisticsTabContent({
             className="min-h-[150px]"
             disabled={!canEdit}
           >
-            {items.filter((item) => item.type === 'accommodation').map((item) => (
-              <LogisticsItemCard key={item.id} item={item} />
-            ))}
+            {items
+              .filter((item) => item.type === 'accommodation')
+              .map((item) => (
+                <LogisticsItemCard key={item.id} item={item} />
+              ))}
             {items.filter((item) => item.type === 'accommodation').length === 0 && (
               <EmptyAccommodationPlaceholder canEdit={canEdit} />
             )}
@@ -659,9 +645,11 @@ export function LogisticsTabContent({
             className="min-h-[150px]"
             disabled={!canEdit}
           >
-            {items.filter((item) => item.type === 'transportation').map((item) => (
-              <LogisticsItemCard key={item.id} item={item} />
-            ))}
+            {items
+              .filter((item) => item.type === 'transportation')
+              .map((item) => (
+                <LogisticsItemCard key={item.id} item={item} />
+              ))}
             {items.filter((item) => item.type === 'transportation').length === 0 && (
               <EmptyTransportationPlaceholder canEdit={canEdit} />
             )}
@@ -669,17 +657,15 @@ export function LogisticsTabContent({
         </section>
 
         {/* Drag overlay */}
-        <DragOverlay>
-          {activeItem ? <LogisticsItemCard item={activeItem} /> : null}
-        </DragOverlay>
+        <DragOverlay>{activeItem ? <LogisticsItemCard item={activeItem} /> : null}</DragOverlay>
       </div>
 
-      <AccommodationDialog 
+      <AccommodationDialog
         isOpen={isAccommodationDialogOpen}
         onOpenChange={setIsAccommodationDialogOpen}
         onSubmit={handleAccommodationSubmit}
       />
-      
+
       <TransportationDialog
         isOpen={isTransportationDialogOpen}
         onOpenChange={setIsTransportationDialogOpen}
@@ -687,4 +673,4 @@ export function LogisticsTabContent({
       />
     </DndContext>
   );
-} 
+}

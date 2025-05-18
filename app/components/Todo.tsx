@@ -5,13 +5,39 @@ import { Trash2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Input } from '../../components/ui/input';
+import { Trash } from 'lucide-react';
 
+/**
+ * Todo item priority levels
+ */
+export enum TodoPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+}
+
+/**
+ * Todo item categories
+ */
+export enum TodoCategory {
+  PERSONAL = 'personal',
+  WORK = 'work',
+  SHOPPING = 'shopping',
+  OTHER = 'other',
+}
+
+/**
+ * Todo item structure
+ */
 export interface TodoItem {
   id: string;
   text: string;
   completed: boolean;
+  priority?: TodoPriority;
+  category?: TodoCategory;
+  dueDate?: Date;
 }
 
 interface TodoListProps {
@@ -162,7 +188,7 @@ export function TodoList({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={item.completed}
-                  onCheckedChange={() => handleToggle(item.id)}
+                  onChange={() => handleToggle(item.id)}
                   disabled={processingId === item.id || !canEdit}
                   className={item.completed ? 'opacity-70' : ''}
                 />
@@ -211,3 +237,62 @@ export function TodoList({
     </Card>
   );
 }
+
+/**
+ * Props for the Todo component
+ */
+export interface TodoProps {
+  /** Initial todo item */
+  item: TodoItem;
+  /** Whether the todo can be edited */
+  canEdit?: boolean;
+  /** Callback when item is toggled */
+  onToggle?: (completed: boolean) => void;
+  /** Callback when item is deleted */
+  onDelete?: () => void;
+}
+
+/**
+ * Individual Todo component
+ */
+export function Todo({ item, canEdit = true, onToggle, onDelete }: TodoProps) {
+  const [checked, setChecked] = useState(item.completed);
+
+  const handleCheckedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    setChecked(isChecked);
+    onToggle?.(isChecked);
+  };
+
+  const priorityColors = {
+    [TodoPriority.LOW]: 'text-green-600',
+    [TodoPriority.MEDIUM]: 'text-amber-600',
+    [TodoPriority.HIGH]: 'text-red-600',
+  };
+
+  const priorityColor = item.priority ? priorityColors[item.priority] : '';
+
+  return (
+    <div className={`flex items-center gap-2 py-2 ${checked ? 'opacity-70' : ''}`}>
+      <Checkbox
+        id={`todo-${item.id}`}
+        checked={checked}
+        onChange={handleCheckedChange}
+        disabled={!canEdit}
+      />
+      <label
+        htmlFor={`todo-${item.id}`}
+        className={`flex-1 ${checked ? 'line-through' : ''} ${priorityColor}`}
+      >
+        {item.text}
+      </label>
+      {canEdit && onDelete && (
+        <Button variant="ghost" size="sm" onClick={onDelete}>
+          <Trash className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+export default Todo;
