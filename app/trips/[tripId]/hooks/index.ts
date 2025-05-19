@@ -13,7 +13,7 @@
 export {
   useTripBudget,
   type ManualDbExpense,
-  type -nifiedExpense,
+  type UnifiedExpense,
   type NewExpenseFormData,
 } from './use-trip-budget';
 
@@ -33,7 +33,7 @@ export default function useTripHooks(tripId: string) {
   // For now, this module primarily serves as a centralized export point,
   // but could be expanded to provide composite hook functionality
 
-  // -sage example:
+  // Usage example:
   // const {
   //   budget,
   //   itinerary,

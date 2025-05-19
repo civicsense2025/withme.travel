@@ -1,31 +1,49 @@
+/**
+ * EmojiPicker Atom
+ *
+ * Allows users to pick an emoji for group features.
+ * @module components/features/groups/atoms/EmojiPicker
+ */
+
 'use client';
 
+import React from 'react';
 import { useState } from 'react';
 import { EmojiPicker as FrimousseEmojiPicker } from 'frimousse';
 
-interface EmojiPickerProps {
-  value: string | null;
-  onChange: (emoji: string) => void;
+/**
+ * EmojiPicker component props
+ */
+export interface EmojiPickerProps {
+  /** Optional callback when emoji is selected */
+  onSelect?: (emoji: string) => void;
+  /** Currently selected emoji */
+  value?: string;
+  /** Additional className for styling */
+  className?: string;
 }
 
-export function EmojiPicker({ value, onChange }: EmojiPickerProps) {
+/**
+ * EmojiPicker atom for group features (placeholder)
+ */
+export function EmojiPicker({ onSelect, value, className }: EmojiPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <button
         type="button"
         className="h-10 w-10 text-lg rounded-full border border-input bg-background flex items-center justify-center"
         aria-label="Select emoji"
         onClick={() => setIsOpen((open) => !open)}
       >
-        {value || '🙂'}
+        {value || '😀'}
       </button>
       {isOpen && (
         <div className="absolute z-50 mt-2 bg-background rounded-xl shadow-lg border p-2">
           <FrimousseEmojiPicker.Root
             onEmojiSelect={(emoji: any) => {
-              onChange(emoji.emoji);
+              onSelect?.(emoji.emoji);
               setIsOpen(false);
             }}
             locale="en"
@@ -43,5 +61,4 @@ export function EmojiPicker({ value, onChange }: EmojiPickerProps) {
   );
 }
 
-// Default export for backward compatibility
-export default EmojiPicker; 
+export default EmojiPicker;

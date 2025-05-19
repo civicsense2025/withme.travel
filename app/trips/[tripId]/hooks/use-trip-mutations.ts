@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { useTripData } from '../context/trip-data-provider';
 import type { Tables } from '@/types/database.types';
 

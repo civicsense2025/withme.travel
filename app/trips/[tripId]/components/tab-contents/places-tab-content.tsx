@@ -10,12 +10,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlaceList, type Place } from '@/components/features/places/organisms/place-list';
+import { PlaceList } from '@/components/features/places/organisms/PlaceList';
 import { usePlaces } from '@/lib/features/places/hooks';
 import { PlusCircle, MapPin } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
+import { Place } from '@/types/places';
 interface PlacesTabContentProps {
   tripId: string;
   canEdit: boolean;
@@ -71,8 +71,12 @@ export function PlacesTabContent({
 
       if (response.ok) {
         toast({
-          title: 'Place added to itinerary',
-          description: `${place.name} has been added to your trip itinerary.`,
+          children: (
+            <>
+              <div className="font-bold">Place added to itinerary</div>
+              <div>{place.name} has been added to your trip itinerary.</div>
+            </>
+          ),
         });
         if (onPlaceAdded) onPlaceAdded();
       } else {
@@ -80,9 +84,13 @@ export function PlacesTabContent({
       }
     } catch (err) {
       toast({
-        title: 'Error',
-        description: 'Failed to add place to itinerary. Please try again.',
         variant: 'destructive',
+        children: (
+          <>
+            <div className="font-bold">Error</div>
+            <div>Failed to add place to itinerary. Please try again.</div>
+          </>
+        ),
       });
     }
   };
@@ -91,9 +99,13 @@ export function PlacesTabContent({
   const handleCreatePlace = async (name: string, category?: string, address?: string) => {
     if (!tripId) {
       toast({
-        title: 'Error',
-        description: 'Trip ID is required to add a place',
         variant: 'destructive',
+        children: (
+          <>
+            <div className="font-bold">Error</div>
+            <div>Trip ID is required to add a place</div>
+          </>
+        ),
       });
       return;
     }
@@ -107,8 +119,12 @@ export function PlacesTabContent({
 
       if (newPlace) {
         toast({
-          title: 'Place created',
-          description: `${newPlace.name} has been added successfully.`,
+          children: (
+            <>
+              <div className="font-bold">Place created</div>
+              <div>{newPlace.name} has been added successfully.</div>
+            </>
+          ),
         });
         setSelectedPlace(newPlace);
       } else {
@@ -116,9 +132,13 @@ export function PlacesTabContent({
       }
     } catch (err) {
       toast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to create place',
-        variant: 'destructive',
+          variant: 'destructive',
+        children: (
+          <>
+            <div className="font-bold">Error</div>
+            <div>{err instanceof Error ? err.message : 'Failed to create place'}</div>
+          </>
+        ),
       });
     }
   };

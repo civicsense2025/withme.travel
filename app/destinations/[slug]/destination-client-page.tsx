@@ -35,10 +35,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { DestinationReviews } from '@/components/features/destinations/destination-reviews';
+import { DestinationReviews } from '@/components/features/destinations/DestinationReviews';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { AuthContextType } from '@/components/features/auth';
-import { RelatedItinerariesWidget } from '@/components/features/destinations/related-itineraries-widget';
+import { RelatedItinerariesWidget } from '@/components/features/destinations/organisms/RelatedItinerariesWidget';
 import { DestinationPageAdminEditor } from '@/components/features/admin';
 import { ImageAttribution } from '@/components/features/images';
 import { DestinationExperiences, DestinationAttractions } from '@/components/features/viator';
@@ -90,6 +90,11 @@ interface Destination {
 
 interface DestinationClientPageProps {
   slug: string;
+}
+
+interface User {
+  name?: string | null;
+  email?: string | null;
 }
 
 export default function DestinationClientPage({ slug }: DestinationClientPageProps) {

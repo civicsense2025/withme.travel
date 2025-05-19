@@ -32,7 +32,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/DropdownMenu';
 import { GROUP_PLAN_IDEA_TYPE, VOTE_TYPES } from '@/utils/constants/status';
 import { PAGE_ROUTES } from '@/utils/constants/routes';
 

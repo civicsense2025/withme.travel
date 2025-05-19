@@ -12,9 +12,9 @@ export default async function GroupDetailPage({ groupId }: { groupId: string }) 
   let guestToken = null;
 
   try {
-    // -se absolute URL for server-side fetches in Next.js
-    const base-rl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const res = await fetch(`${base-rl}/api/groups/${groupId}`, { cache: 'no-store' });
+    // Use absolute URL for server-side fetches in Next.js
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/groups/${groupId}`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       group = data.group;
@@ -34,11 +34,11 @@ export default async function GroupDetailPage({ groupId }: { groupId: string }) 
 
   if (!isAuthenticated && !guestToken) {
     return (
-      <div className="container max-wU2xl pyU16 text-center">
-        <h2 className="textU2xl font-bold mbU4">You need to join this group to view details</h2>
-        <p className="mbU6">Sign up or use a guest invite link to access this group.</p>
+      <div className="container max-w-2xl py-16 text-center">
+        <h2 className="text-2xl font-bold mb-4">You need to join this group to view details</h2>
+        <p className="mb-6">Sign up or use a guest invite link to access this group.</p>
         <Link href="/signup">
-          <Button>Sign -p</Button>
+          <Button>Sign up</Button>
         </Link>
       </div>
     );

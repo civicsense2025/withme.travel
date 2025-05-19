@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 
 export interface SheetProps {
   children: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 export function Sheet({ children }: SheetProps) {
   return <>{children}</>;
@@ -17,6 +19,7 @@ export function Sheet({ children }: SheetProps) {
 
 export interface SheetTriggerProps {
   children: React.ReactNode;
+  asChild?: boolean;
 }
 export function SheetTrigger({ children }: SheetTriggerProps) {
   return <>{children}</>;
@@ -24,6 +27,7 @@ export function SheetTrigger({ children }: SheetTriggerProps) {
 
 export interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  side?: 'top' | 'right' | 'bottom' | 'left';
 }
 export function SheetContent({ className, children, ...props }: SheetContentProps) {
   return (

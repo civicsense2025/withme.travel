@@ -1,122 +1,46 @@
-import { getErrorMessage } from './error-handling';
+/**
+ * Result Utility
+ *
+ * Provides a standard Result type and helpers for API and client code.
+ * @module utils/result
+ */
 
 /**
- * A type that represents either a successful result or an error
+ * Result type for success/failure handling
  */
-export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+export type Result<T, E = Error> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
 
 /**
- * Type guard to check if a result is successful and narrow the type
+ * Helper to create a successful result
  */
-export function isSuccess<T, E = Error>(
-  result: Result<T, E>
-): result is { success: true; data: T } {
-  return result.success === true;
+export function ok<T>(value: T): Result<T> {
+  return { ok: true, value };
 }
 
 /**
- * Creates a successful result
+ * Helper to create a failed result
  */
-export function success<T, E = Error>(data: T): Result<T, E> {
-  return { success: true, data };
+export function err<E = Error>(error: E): Result<never, E> {
+  return { ok: false, error };
 }
 
 /**
- * Creates an error result
+ * Helper to run a promise and return a Result
  */
-export function failure<T, E = Error>(error: E): Result<T, E> {
-  return { success: false, error };
-}
-
-/**
- * Utility to wrap a promise and convert it to a Result
- * Useful for API calls and other operations that might throw
- */
-export async function tryCatch<T>(promise: Promise<T>): Promise<Result<T, Error>> {
+export async function tryCatch<T>(promise: Promise<T>): Promise<Result<T>> {
   try {
-    const data = await promise;
-    return success(data);
-  } catch (e) {
-    return failure(e instanceof Error ? e : new Error(getErrorMessage(e)));
+    const value = await promise;
+    return ok(value);
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
   }
 }
 
 /**
- * Wraps an async function to return a Result
- *
- * @example
- * const fetchUser = async (id: string): Promise<User> => {
- *   const response = await fetch(`/api/users/${id}`);
- *   if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
- *   return response.json();
- * };
- *
- * // Wrap the function to return a Result
- * const safeUserFetch = wrapAsync(fetchUser);
- *
- * // Usage
- * const result = await safeUserFetch('123');
- * if (result.success) {
- *   console.log(result.data); // User data
- * } else {
- *   console.error(result.error); // Error object
- * }
+ * Type guard for successful Result
  */
-export function wrapAsync<T, A extends any[]>(
-  fn: (...args: A) => Promise<T>
-): (...args: A) => Promise<Result<T, Error>> {
-  return async (...args: A): Promise<Result<T, Error>> => {
-    try {
-      const data = await fn(...args);
-      return success(data);
-    } catch (e) {
-      return failure(e instanceof Error ? e : new Error(getErrorMessage(e)));
-    }
-  };
-}
-
-/**
- * Wraps a synchronous function to return a Result
- */
-export function wrapSync<T, A extends any[]>(
-  fn: (...args: A) => T
-): (...args: A) => Result<T, Error> {
-  return (...args: A): Result<T, Error> => {
-    try {
-      const data = fn(...args);
-      return success(data);
-    } catch (e) {
-      return failure(e instanceof Error ? e : new Error(getErrorMessage(e)));
-    }
-  };
-}
-
-/**
- * Maps a successful result to a new result using the provided function
- * If the input is a failure, it is returned unchanged
- */
-export function map<T, U, E = Error>(result: Result<T, E>, fn: (data: T) => U): Result<U, E> {
-  if (result.success) {
-    try {
-      return success(fn(result.data));
-    } catch (e) {
-      return failure(
-        e instanceof Error ? (e as unknown as E) : (new Error(getErrorMessage(e)) as unknown as E)
-      );
-    }
-  }
-  return result;
-}
-
-/**
- * Chains multiple asynchronous operations that return Results
- */
-export async function chain<T, U, E = Error>(
-  result: Result<T, E>,
-  fn: (data: T) => Promise<Result<U, E>>
-): Promise<Result<U, E>> {
-  if (result.success) {
-    return await fn(result.data);
-  }
-  return result;
-}
+export function isSuccess<T>(result: Result<T>): result is { ok: true; value: T } {
+  return result.ok === true;
+} 

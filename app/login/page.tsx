@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LoginForm } from '@/components/ui/features/auth/molecules/LoginForm';
+import LoginForm from '@/components/features/auth/molecules/LoginForm';
 import { Logo } from '@/components/logo';
 import { AuthSellingPoints } from '@/components/features/auth';
 import { Button } from '@/components/ui/button';
@@ -108,7 +108,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-full max-w-md flex flex-col text-center">
           <div className="p-3">
-            <Spinner size="lg" />
+            <Spinner size={40} />
           </div>
           <p className="text-muted-foreground">
             {isRedirecting ? 'Redirecting you now...' : 'Checking authentication status...'}

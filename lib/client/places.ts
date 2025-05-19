@@ -9,45 +9,33 @@
 // ============================================================================
 
 import { API_ROUTES } from '@/utils/constants/routes';
-import { tryCatch } from '@/utils/result';
-import type { Result } from '@/utils/result';
+import { tryCatch } from '@/lib/client/result';
+import type { Result } from '@/lib/client/result';
 import { handleApiResponse } from './index';
-import type { Place as PlaceType } from '@/types/places';
+import type { Place, CreatePlaceInput } from '@/types/places';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 /**
- * Place type definition
- */
-export interface Place {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  address: string | null;
-  price_level: number | null;
-  destination_id: string;
-  is_verified: boolean;
-  suggested_by: string | null;
-  source: string;
-  latitude: number | null;
-  longitude: number | null;
-  rating: number | null;
-  rating_count: number;
-  place_type?: string | null;
-  website?: string | null;
-  phone_number?: string | null;
-}
-
-/**
  * Parameters for listing places
  */
 export interface ListPlacesParams {
-  destinationId: string;
+  destinationId?: string;
   query?: string;
-  type?: string;
+  category?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Search parameters
+ */
+export interface SearchPlacesParams {
+  category?: string;
+  limit?: number;
+  offset?: number;
 }
 
 /**
@@ -73,14 +61,10 @@ export interface CreatePlaceData {
 /**
  * List places with optional filtering
  */
-export async function listPlaces(params?: {
-  query?: string;
-  category?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<Result<PlaceType[]>> {
+export async function listPlaces(params?: ListPlacesParams): Promise<Result<Place[]>> {
   const searchParams = new URLSearchParams();
 
+  if (params?.destinationId) searchParams.set('destination_id', params.destinationId);
   if (params?.query) searchParams.set('q', params.query);
   if (params?.category) searchParams.set('category', params.category);
   if (params?.limit) searchParams.set('limit', params.limit.toString());
@@ -93,26 +77,26 @@ export async function listPlaces(params?: {
     fetch(url, {
       method: 'GET',
       cache: 'no-store',
-    }).then((response) => handleApiResponse<PlaceType[]>(response))
+    }).then((response) => handleApiResponse<Place[]>(response))
   );
 }
 
 /**
  * Get place details by ID
  */
-export async function getPlace(placeId: string): Promise<Result<PlaceType>> {
+export async function getPlace(placeId: string): Promise<Result<Place>> {
   return tryCatch(
     fetch(API_ROUTES.PLACE_DETAILS(placeId), {
       method: 'GET',
       cache: 'no-store',
-    }).then((response) => handleApiResponse<PlaceType>(response))
+    }).then((response) => handleApiResponse<Place>(response))
   );
 }
 
 /**
  * Create a new place
  */
-export async function createPlace(data: Partial<PlaceType>): Promise<Result<PlaceType>> {
+export async function createPlace(data: Partial<Place>): Promise<Result<Place>> {
   return tryCatch(
     fetch(API_ROUTES.PLACES, {
       method: 'POST',
@@ -120,7 +104,7 @@ export async function createPlace(data: Partial<PlaceType>): Promise<Result<Plac
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-    }).then((response) => handleApiResponse<PlaceType>(response))
+    }).then((response) => handleApiResponse<Place>(response))
   );
 }
 
@@ -129,8 +113,8 @@ export async function createPlace(data: Partial<PlaceType>): Promise<Result<Plac
  */
 export async function updatePlace(
   placeId: string,
-  data: Partial<PlaceType>
-): Promise<Result<PlaceType>> {
+  data: Partial<Place>
+): Promise<Result<Place>> {
   return tryCatch(
     fetch(API_ROUTES.PLACE_DETAILS(placeId), {
       method: 'PUT',
@@ -138,7 +122,7 @@ export async function updatePlace(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-    }).then((response) => handleApiResponse<PlaceType>(response))
+    }).then((response) => handleApiResponse<Place>(response))
   );
 }
 
@@ -162,7 +146,7 @@ export async function lookupOrCreatePlace(data: {
   latitude?: number;
   longitude?: number;
   category?: string;
-}): Promise<Result<PlaceType>> {
+}): Promise<Result<Place>> {
   return tryCatch(
     fetch(API_ROUTES.PLACE_LOOKUP_OR_CREATE, {
       method: 'POST',
@@ -170,7 +154,7 @@ export async function lookupOrCreatePlace(data: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-    }).then((response) => handleApiResponse<PlaceType>(response))
+    }).then((response) => handleApiResponse<Place>(response))
   );
 }
 
@@ -179,12 +163,8 @@ export async function lookupOrCreatePlace(data: {
  */
 export async function searchPlaces(
   query: string,
-  params?: {
-    category?: string;
-    limit?: number;
-    offset?: number;
-  }
-): Promise<Result<PlaceType[]>> {
+  params?: SearchPlacesParams
+): Promise<Result<Place[]>> {
   const searchParams = new URLSearchParams({
     q: query,
   });
@@ -197,7 +177,7 @@ export async function searchPlaces(
     fetch(`${API_ROUTES.PLACES}?${searchParams.toString()}`, {
       method: 'GET',
       cache: 'no-store',
-    }).then((response) => handleApiResponse<PlaceType[]>(response))
+    }).then((response) => handleApiResponse<Place[]>(response))
   );
 }
 
@@ -229,7 +209,7 @@ export async function importPlacesFromCSV(
   if (!destinationId) {
     return {
       success: false,
-      error: new Error('Destination ID is required'),
+      error: 'Destination ID is required',
     };
   }
 

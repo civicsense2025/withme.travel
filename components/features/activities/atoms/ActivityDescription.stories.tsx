@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ActivityDescription } from './activity-description';
+import { ActivityDescription } from './ActivityDescription';
 
 const meta: Meta<typeof ActivityDescription> = {
   title: 'Features/Activities/Atoms/ActivityDescription',
@@ -9,27 +9,29 @@ const meta: Meta<typeof ActivityDescription> = {
     layout: 'centered',
   },
   argTypes: {
-    activityType: {
-      control: 'select',
-      options: ['comment', 'create', 'update', 'delete', 'join', 'leave'],
-      description: 'Type of activity',
+    description: {
+      control: 'text',
+      description: 'The primary text description of the activity',
     },
     userName: {
       control: 'text',
       description: 'Name of the user who performed the activity',
     },
-    entityType: {
-      control: 'select',
-      options: ['trip', 'itinerary', 'comment', 'destination', 'group'],
-      description: 'Type of entity the activity is related to',
-    },
     entityName: {
       control: 'text',
       description: 'Name of the entity the activity is related to',
     },
-    highlighted: {
+    details: {
+      control: 'text',
+      description: 'Additional details about the activity',
+    },
+    truncate: {
       control: 'boolean',
-      description: 'Whether the description should be highlighted',
+      description: 'Whether to truncate long descriptions',
+    },
+    maxLength: {
+      control: 'number',
+      description: 'Maximum length before truncation',
     },
   },
 };
@@ -39,70 +41,64 @@ type Story = StoryObj<typeof ActivityDescription>;
 
 export const CommentActivity: Story = {
   args: {
-    activityType: 'comment',
+    description: '{user} commented on the {entity}',
     userName: 'Jane Doe',
-    entityType: 'trip',
     entityName: 'Weekend in Paris',
-    highlighted: false,
+    truncate: false,
   },
 };
 
 export const CreateActivity: Story = {
   args: {
-    activityType: 'create',
+    description: '{user} created a new {entity}',
     userName: 'John Smith',
-    entityType: 'itinerary',
     entityName: 'Museum Visit',
-    highlighted: false,
+    truncate: false,
   },
 };
 
-export const -pdateActivity: Story = {
+export const UpdateActivity: Story = {
   args: {
-    activityType: 'update',
+    description: '{user} updated the {entity}',
     userName: 'Alex Wong',
-    entityType: 'destination',
     entityName: 'Barcelona',
-    highlighted: false,
+    truncate: false,
   },
 };
 
 export const DeleteActivity: Story = {
   args: {
-    activityType: 'delete',
+    description: '{user} deleted the {entity}',
     userName: 'Lisa Johnson',
-    entityType: 'comment',
-    entityName: '',
-    highlighted: false,
+    entityName: 'comment',
+    truncate: false,
   },
 };
 
 export const JoinActivity: Story = {
   args: {
-    activityType: 'join',
+    description: '{user} joined the {entity}',
     userName: 'Mike Brown',
-    entityType: 'group',
     entityName: 'Europe Summer 2024',
-    highlighted: false,
+    truncate: false,
   },
 };
 
 export const LeaveActivity: Story = {
   args: {
-    activityType: 'leave',
+    description: '{user} left the {entity}',
     userName: 'Sarah Davis',
-    entityType: 'group',
     entityName: 'Beach Vacation',
-    highlighted: false,
+    truncate: false,
   },
 };
 
-export const Highlighted: Story = {
+export const Truncated: Story = {
   args: {
-    activityType: 'create',
+    description: '{user} created a very long description about {entity} that needs to be truncated because it contains a lot of details about the {entity}',
     userName: 'John Smith',
-    entityType: 'trip',
     entityName: 'Weekend in Paris',
-    highlighted: true,
+    truncate: true,
+    maxLength: 50,
   },
 }; 

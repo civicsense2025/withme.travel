@@ -15,9 +15,9 @@ import { Table, TableBody, TableCell, TableHead, TableRow } from "./table";
 
 export interface DataTableProps<T> {
   /** The data to display in the table */
-  data: T[];
+  data?: T[];
   /** The columns to display */
-  columns: {
+  columns?: {
     header: string;
     accessor: keyof T | ((item: T) => React.ReactNode);
     className?: string;
@@ -28,6 +28,8 @@ export interface DataTableProps<T> {
   showHeader?: boolean;
   /** Text to display when there's no data */
   emptyText?: string;
+  /** Alternative props: rows and columns as separate arrays */
+  rows?: T[];
   /** Additional props for the table */
   tableProps?: React.HTMLAttributes<HTMLTableElement>;
 }
@@ -42,9 +44,13 @@ export function DataTable<T>({
   className,
   showHeader = true,
   emptyText = "No data available",
+  rows,
   tableProps,
 }: DataTableProps<T>) {
-  if (!data.length) {
+  // Support both data and rows props for backward compatibility
+  const items = data || rows || [];
+  
+  if (!items.length || !columns?.length) {
     return <div className="text-center py-4 text-muted-foreground">{emptyText}</div>;
   }
 
@@ -66,13 +72,13 @@ export function DataTable<T>({
           </TableHead>
         )}
         <TableBody>
-          {data.map((row, rowIndex) => (
+          {items.map((item, rowIndex) => (
             <TableRow key={rowIndex}>
               {columns.map((column, colIndex) => (
                 <TableCell key={colIndex} className={column.className}>
                   {typeof column.accessor === "function"
-                    ? column.accessor(row)
-                    : row[column.accessor] as React.ReactNode}
+                    ? column.accessor(item)
+                    : item[column.accessor] as React.ReactNode}
                 </TableCell>
               ))}
             </TableRow>

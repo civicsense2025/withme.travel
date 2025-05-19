@@ -6,13 +6,13 @@
  */
 
 // UI hooks
-export { useToast } from '@/components/ui/use-toast';
+export { useToast } from '@/hooks/use-toast';
 
 // Auth hooks
 export { useAuth } from './use-auth';
 
 // Budget/Expenses hooks
-export { useExpenses } from '../features/budget/hooks/use-expenses';
+export { useExpenses } from './use-expenses';
 
 // Groups hooks
 export { useGroups } from './use-groups';
@@ -21,7 +21,7 @@ export { useGroupMembers } from './use-group-members';
 export { useGroupPlans } from './use-group-plans';
 
 // Tags hooks
-export { useTags } from '../features/tags/hooks/use-tags'; 
+export { useTags } from './use-tags'; 
 
 // Activities hooks
 export { useActivities } from './use-activities';
@@ -30,21 +30,33 @@ export { useActivities } from './use-activities';
 export { useComments } from './use-comments';
 
 // Destinations hooks
-// TODO: Import from feature directory once migration is complete
 export { useDestinations } from './use-destinations';
 export { usePopularDestinations } from './use-popular-destinations';
 
 // Trips hooks
-export { useLogistics } from '../features/trips/hooks/use-logistics';
+export { useLogistics } from './use-logistics';
 export { useItineraries } from './use-itineraries';
 export { useTripMembers } from './use-trip-members';
 export { usePermissions } from './use-permissions';
+export { useItinerary } from './use-itinerary';
+export { useNotes } from './use-notes';
+export { useTripBudget } from './use-trip-budget';
+export { useTripPresence } from './use-trip-presence';
+export { useTripMutations } from './use-trip-mutations';
+export { useTripItinerary } from './use-trip-itinerary';
 
 // Places hooks
-export { usePlaces } from './use-places';
+export { usePlaces } from '@/lib/features/places/hooks/use-places';
 
 // Tasks hooks
 export { useTasks } from './use-tasks';
+
+// Votes hooks
+export { useVotes } from './use-votes';
+
+// Maps and Cities hooks
+export { useMaps } from './use-maps';
+export { useCities } from './use-cities';
 
 // Shared/UI hooks
 export { useMediaQuery } from './use-media-query';

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TABLES } from '@/utils/constants/database';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
 import { MediaLibrary, Image as MediaLibraryImage } from '@/components/features/admin/MediaLibrary';
 import { Loader, Image as ImageIcon, ExternalLink } from 'lucide-react';

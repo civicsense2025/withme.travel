@@ -1,21 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createApi } from 'unsplash-js';
-
-// Ensure API key is set in environment variables
-const unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY;
-
-if (!unsplashAccessKey) {
-  console.error('UNSPLASH_ACCESS_KEY environment variable is not set.');
-}
-
-// Initialize Unsplash client (handle case where key might be missing at runtime)
-const unsplash = unsplashAccessKey ? createApi({ accessKey: unsplashAccessKey }) : null;
+import { searchUnsplashImages } from '@/lib/api/images';
 
 export async function GET(request: Request): Promise<NextResponse> {
-  if (!unsplash) {
-    return NextResponse.json({ error: 'Unsplash API key not configured.' }, { status: 500 });
-  }
-
   const { searchParams } = new URL(request.url);
   const query = searchParams?.get('query');
   const page = parseInt(searchParams?.get('page') || '1', 10);
@@ -25,50 +11,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Search query is required' }, { status: 400 });
   }
 
-  try {
-    const result = await unsplash.search.getPhotos({
-      query,
-      page,
-      perPage,
-      orientation: 'landscape', // Prefer landscape for covers
-    });
-
-    if (result.errors) {
-      console.error('Unsplash API Error:', result.errors);
-      return NextResponse.json(
-        { error: 'Failed to fetch from Unsplash', details: result.errors },
-        { status: 500 }
-      );
-    }
-
-    // Map results to a simpler format if desired, e.g., only URLs and descriptions
-    // Add type for the photo object based on accessed properties
-    type UnsplashPhoto = {
-      id: string;
-      urls: { regular: string; thumb: string };
-      alt_description: string | null;
-      description: string | null;
-      user: {
-        name: string;
-        links: { html: string };
-      };
-    };
-
-    const photos = result.response?.results.map((photo: UnsplashPhoto) => ({
-      id: photo.id,
-      url: photo.urls.regular, // Or 'full', 'small', etc.
-      thumbUrl: photo.urls.thumb,
-      description: photo.alt_description || photo.description || 'Unsplash Image',
-      photographer: photo.user.name,
-      photographerUrl: photo.user.links.html,
-    }));
-
-    return NextResponse.json({ photos: photos || [], totalPages: result.response?.total_pages });
-  } catch (error: any) {
-    console.error('Error fetching Unsplash photos:', error);
-    return NextResponse.json(
-      { error: 'Internal server error fetching Unsplash photos', details: error.message },
-      { status: 500 }
-    );
+  const result = await searchUnsplashImages(query, page, perPage);
+  if (result.success) {
+    return NextResponse.json(result.data);
+  } else {
+    return NextResponse.json({ error: result.error }, { status: 500 });
   }
 }

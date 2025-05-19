@@ -6,4 +6,4 @@
 
 export * from './ItineraryDaySection';
 export * from './UnscheduledItemsSection';
-export * from './ItineraryTemplateCard'; 
+export * from './ItineraryTemplateCard';

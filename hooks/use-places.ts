@@ -2,15 +2,17 @@
  * Places API Hook
  *
  * React hook for managing places with state, loading, and error handling
+ * 
+ * @deprecated Use the version from '@/lib/features/places/hooks/use-places' instead.
+ * This file will be removed in a future release.
  */
 
 // ============================================================================
 // IMPORTS
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Place,
   ListPlacesParams,
   CreatePlaceData,
   listPlaces,
@@ -22,8 +24,9 @@ import {
   createPlace as PlacesClientCreatePlace,
   updatePlace as PlacesClientUpdatePlace,
   deletePlace as PlacesClientDeletePlace,
-  lookupOrCreatePlace,
+  lookupOrCreatePlace as apiLookupOrCreatePlace,
 } from '@/lib/client/places';
+import type { Place } from '@/types/places';
 import { useToast } from '@/hooks/use-toast';
 import { isSuccess } from '@/utils/result';
 
@@ -57,6 +60,8 @@ interface UsePlacesReturn {
 
 /**
  * Hook for managing places
+ * 
+ * @deprecated Use the version from '@/lib/features/places/hooks/use-places' instead.
  */
 export function usePlaces({
   initialParams,
@@ -193,8 +198,32 @@ export function usePlaces({
 
 /**
  * Hook for querying and managing places
+ * 
+ * @deprecated Use the version from '@/lib/features/places/hooks/use-places' instead.
  */
-export function usePlaces(initialQuery?: string) {
+export function usePlacesQuery(initialQuery?: string): {
+  places: Place[];
+  loading: boolean;
+  error: Error | null;
+  query: string;
+  setQuery: React.Dispatch<React.SetStateAction<string>>;
+  fetchPlaces: (searchQuery: string, params?: {
+    category?: string;
+    limit?: number;
+    offset?: number;
+  }) => Promise<any>;
+  fetchPlace: (placeId: string) => Promise<any>;
+  createPlace: (data: Partial<Place>) => Promise<any>;
+  updatePlace: (placeId: string, data: Partial<Place>) => Promise<any>;
+  deletePlace: (placeId: string) => Promise<any>;
+  lookupOrCreatePlace: (data: {
+    name: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    category?: string;
+  }) => Promise<any>;
+} {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -299,11 +328,11 @@ export function usePlaces(initialQuery?: string) {
       latitude?: number;
       longitude?: number;
       category?: string;
-    }) => {
+    }): Promise<any> => {
       setLoading(true);
       setError(null);
 
-      const result = await lookupOrCreatePlace(data);
+      const result = await apiLookupOrCreatePlace(data);
 
       if (result.success) {
         // Check if place already exists in our list

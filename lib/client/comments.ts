@@ -5,8 +5,8 @@
  */
 
 import { API_ROUTES } from '@/utils/constants/routes';
-import { tryCatch } from '@/utils/result';
-import type { Result } from '@/utils/result';
+import { tryCatch } from '@/lib/client/result';
+import type { Result } from '@/lib/client/result';
 import { handleApiResponse } from './index';
 
 // Comment type based on database schema
@@ -17,24 +17,20 @@ export interface Comment {
   content: string;
   user_id: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
+  is_edited?: boolean;
+  is_deleted?: boolean;
   parent_id?: string | null;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
 }
 
 /**
  * List all comments for an entity
  */
-export async function listComments(
-  entityId: string,
-  entityType: string
-): Promise<Result<Comment[]>> {
-  const params = new URLSearchParams({
-    entityId,
-    entityType,
-  });
-
+export async function listComments(entityId: string, entityType: string): Promise<Result<Comment[]>> {
   return tryCatch(
-    fetch(`${API_ROUTES.COMMENTS.LIST}?${params.toString()}`, {
+    fetch(`${API_ROUTES.COMMENTS.LIST}?entityId=${encodeURIComponent(entityId)}&entityType=${encodeURIComponent(entityType)}`, {
       method: 'GET',
       cache: 'no-store',
     }).then((response) => handleApiResponse<Comment[]>(response))
@@ -61,6 +57,8 @@ export async function createComment(data: {
   entity_type: string;
   content: string;
   parent_id?: string;
+  attachment_url?: string;
+  attachment_type?: string;
 }): Promise<Result<Comment>> {
   return tryCatch(
     fetch(API_ROUTES.COMMENTS.CREATE, {
@@ -77,8 +75,12 @@ export async function createComment(data: {
  * Update an existing comment
  */
 export async function updateComment(
-  commentId: string,
-  data: { content: string }
+  commentId: string, 
+  data: {
+    content?: string;
+    attachment_url?: string | null;
+    attachment_type?: string | null;
+  }
 ): Promise<Result<Comment>> {
   return tryCatch(
     fetch(API_ROUTES.COMMENTS.UPDATE(commentId), {

@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { SignupForm } from '@/components/signup-form';
+import { SignupForm } from '@/components/features/auth/molecules/SignupForm';
 import { AuthSellingPoints } from '@/components/features/auth';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -94,7 +94,7 @@ export default function SignupPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-full max-w-md flex flex-col text-center">
           <div className="p-3">
-            <Spinner size="xl" variant="primary" />
+              <Spinner size={40} />
           </div>
           <p className="text-muted-foreground">
             {isRedirecting ? 'Redirecting you now...' : 'Checking authentication status...'}
@@ -137,7 +137,7 @@ export default function SignupPage() {
               </Alert>
             )}
 
-            <SignupForm onSuccess={() => router.push('/onboarding')} />
+            <SignupForm />
           </CardContent>
           <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2">
             <div className="text-center text-sm">

@@ -5,6 +5,7 @@ import { TABLES } from '@/utils/constants/tables';
 import { fromTable } from '@/utils/supabase/typed-client';
 import { isItineraryItem, ItineraryItem } from '@/utils/type-guards';
 import type { ItineraryItem as FullItineraryItem } from '@/types/itinerary';
+import { exportTripCalendar } from '@/lib/api/trips';
 
 // Define local field constants since they're not all available in central constants
 const FIELDS = {
@@ -39,168 +40,33 @@ export async function POST(
   try {
     const { tripId } = params;
     const supabase = await createRouteHandlerClient();
-
-    // Check if user is authenticated
+    const { exportOption, selectedDays }: ExportOptions = await request.json();
+    // Get session
     const {
       data: { session },
     } = await supabase.auth.getSession();
-
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Check if user is a member of this trip
-    const { data: member, error: memberError } = await supabase
-      .from(TABLES.TRIP_MEMBERS)
-      .select()
-      .eq('trip_id', tripId)
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-
-    if (memberError || !member) {
-      return NextResponse.json({ error: "You don't have access to this trip" }, { status: 403 });
+    // Delegate to centralized API logic
+    const result = await exportTripCalendar(tripId, {
+      exportOption,
+      selectedDays,
+      asIcs: false,
+      session,
+    });
+    if (!result.success) {
+      // Special handling for Google auth errors
+      if (result.error?.includes('Google')) {
+        return NextResponse.json({ error: result.error, needsGoogleAuth: true }, { status: 400 });
+      }
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
-
-    // Get export options from request
-    const { exportOption, selectedDays }: ExportOptions = await request.json();
-
-    // Get trip details
-    const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
-      .select(`name, start_date, end_date`)
-      .eq('id', tripId)
-      .single();
-
-    if (tripError) {
-      return NextResponse.json({ error: tripError.message }, { status: 500 });
-    }
-
-    if (!trip) {
-      return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
-    }
-
-    // Get itinerary items - using direct string for table name to avoid type errors
-    // This is a safer approach than using type assertions on the TABLES constant
-    let query = supabase.from('itinerary_items').select('*').eq('trip_id', tripId);
-
-    // Filter by selected days if applicable
-    if (exportOption === 'selected' && selectedDays && selectedDays.length > 0) {
-      query = query.in('date', selectedDays);
-    }
-
-    const { data: items, error: itemsError } = await query;
-
-    if (itemsError) {
-      return NextResponse.json({ error: itemsError.message }, { status: 500 });
-    }
-
-    // Check if user has connected Google account
-    const provider = session.user.app_metadata?.provider;
-    if (provider !== 'google') {
-      return NextResponse.json(
-        {
-          error: 'Google account not connected. Please sign in with Google to use this feature.',
-          needsGoogleAuth: true,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check if we have a valid Google token
-    const accessToken = session.provider_token;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        {
-          error: 'Google access token not found. Please sign in with Google again.',
-          needsGoogleAuth: true,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Format items for Google Calendar with type checking
-    const calendarEvents =
-      items && Array.isArray(items) && items.length > 0
-        ? items
-            .map((item: unknown) => {
-              // Use our ItineraryItem type and properly type guard for safety
-              if (!isItineraryItem(item)) {
-                return null; // Skip invalid items
-              }
-
-              // Default to all day event if no times specified
-              const hasStartTime = Boolean(item.start_time);
-              const hasEndTime = Boolean(item.end_time);
-
-              // Format date and times with proper null checking
-              if (!item.date) {
-                return null; // Skip items without a date
-              }
-
-              // Safely create date objects with fallbacks
-              let itemDate: Date;
-              try {
-                itemDate = new Date(item.date);
-                // Check if date is valid
-                if (isNaN(itemDate.getTime())) {
-                  return null; // Skip items with invalid dates
-                }
-              } catch (error) {
-                return null; // Skip items with invalid dates
-              }
-
-              let startDateTime: Date;
-              let endDateTime: Date;
-
-              try {
-                startDateTime =
-                  hasStartTime && item.start_time
-                    ? new Date(`${item.date}T${item.start_time}`)
-                    : new Date(itemDate.setHours(9, 0, 0));
-
-                endDateTime =
-                  hasEndTime && item.end_time
-                    ? new Date(`${item.date}T${item.end_time}`)
-                    : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default to 1 hour later
-
-                // Validate date objects
-                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-                  // Fallback to all-day event
-                  startDateTime = new Date(itemDate.setHours(9, 0, 0));
-                  endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
-                }
-              } catch (error) {
-                // Fallback to all-day event
-                startDateTime = new Date(itemDate.setHours(9, 0, 0));
-                endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
-              }
-
-              return {
-                summary: item.title || 'Untitled Event',
-                description: (item as any).notes || `Part of your trip with withme.travel`,
-                location: (item as any).location || undefined,
-                start: {
-                  dateTime: startDateTime.toISOString(),
-                  timeZone: 'UTC',
-                },
-                end: {
-                  dateTime: endDateTime.toISOString(),
-                  timeZone: 'UTC',
-                },
-              };
-            })
-            .filter(Boolean) // Remove null entries
-        : [];
-
-    // In a real implementation, we would use the Google Calendar API to create events
-    // For now, we'll just return success with the events that would be created
-
     return NextResponse.json({
       success: true,
       message: 'Calendar export successful',
-      exportedItems: calendarEvents.length,
-      events: calendarEvents,
+      exportedItems: result.data?.exportedItems ?? 0,
+      events: result.data?.events ?? [],
     });
   } catch (error) {
     console.error('Calendar export error:', error);
@@ -258,7 +124,11 @@ export async function GET(
       : [];
 
     // Sort dates chronologically
-    uniqueDays.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    uniqueDays.sort((a, b) => {
+      const dateA = typeof a === 'string' ? new Date(a) : new Date('');
+      const dateB = typeof b === 'string' ? new Date(b) : new Date('');
+      return dateA.getTime() - dateB.getTime();
+    });
 
     return NextResponse.json({
       trip,
@@ -283,98 +153,30 @@ export async function PUT(
     const { tripId } = params;
     const supabase = await createRouteHandlerClient();
     const { exportOption, selectedDays }: ExportOptions = await request.json();
-
-    // Verify user has access to trip
+    // Get session
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Get trip details
-    const { data: trip, error: tripError } = await supabase
-      .from(TABLES.TRIPS)
-      .select('name, start_date, end_date')
-      .eq('id', tripId)
-      .single();
-
-    if (tripError || !trip) {
-      return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
-    }
-
-    // Get itinerary items
-    // Using direct string to avoid type errors
-    let query = supabase.from('itinerary_items').select('*').eq('trip_id', tripId);
-
-    // Filter by selected days if applicable
-    if (exportOption === 'selected' && selectedDays && selectedDays.length > 0) {
-      query = query.in('date', selectedDays);
-    }
-
-    const { data: items, error: itemsError } = await query;
-
-    if (itemsError) {
-      return NextResponse.json({ error: itemsError.message }, { status: 500 });
-    }
-
-    // Create iCal calendar
-    const calendar = ical({
-      name: `${trip.name} Itinerary`,
-      timezone: 'UTC',
+    // Delegate to centralized API logic
+    const result = await exportTripCalendar(tripId, {
+      exportOption,
+      selectedDays,
+      asIcs: true,
+      session,
     });
-
-    // Add events to calendar
-    items?.forEach((item: unknown) => {
-      if (!isItineraryItem(item) || !item.date) {
-        return;
-      }
-
-      try {
-        // Create start and end dates
-        const itemDate = new Date(item.date);
-
-        if (isNaN(itemDate.getTime())) {
-          return; // Skip invalid dates
-        }
-
-        const hasStartTime = Boolean(item.start_time);
-        const hasEndTime = Boolean(item.end_time);
-
-        // Default times if not specified
-        let startDateTime =
-          hasStartTime && item.start_time
-            ? new Date(`${item.date}T${item.start_time}`)
-            : new Date(new Date(item.date).setHours(9, 0, 0));
-
-        let endDateTime =
-          hasEndTime && item.end_time
-            ? new Date(`${item.date}T${item.end_time}`)
-            : new Date(startDateTime.getTime() + 60 * 60 * 1000);
-
-        // Create event
-        calendar.createEvent({
-          start: startDateTime,
-          end: endDateTime,
-          summary: item.title,
-          description: (item as any).notes || '',
-          location: (item as any).location || '',
-          url: `https://withme.travel/trips/${tripId}`,
-        });
-      } catch (error) {
-        console.error('Error creating calendar event:', error);
-      }
-    });
-
-    // Generate iCal string
-    const icalString = calendar.toString();
-
-    // Return iCal data
-    return new NextResponse(icalString, {
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    // Return ICS file
+    const icsString = result.data?.icsString ?? '';
+    const tripName = result.data?.tripName ?? 'trip';
+    return new NextResponse(icsString, {
       headers: {
         'Content-Type': 'text/calendar',
-        'Content-Disposition': `attachment; filename="${trip.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.ics"`,
+        'Content-Disposition': `attachment; filename="${tripName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.ics"`,
       },
     });
   } catch (error) {

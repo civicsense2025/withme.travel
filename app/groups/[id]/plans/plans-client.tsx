@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast'
 import { PAGE_ROUTES } from '@/utils/constants/routes';
 import { Loader2, Plus, Edit, Trash, Archive, AlertCircle, FolderSymlink } from 'lucide-react';
 import Link from 'next/link';

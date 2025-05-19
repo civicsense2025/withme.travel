@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, ButtonProps } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { FeedbackType, FormStatus, QuestionType, type Question } from './types';
 import { FeedbackFormRenderer } from './FeedbackForm';
@@ -136,7 +136,7 @@ export function FeedbackFormWrapper({
   ...props
 }: FeedbackFormWrapperProps) {
   const [open, setOpen] = useState(false);
-
+  const { toast } = useToast();
   const handleSubmit = async (data: {
     formId: string;
     responses: { questionId: string; value: any }[];
@@ -163,8 +163,12 @@ export function FeedbackFormWrapper({
 
       // Show success toast
       toast({
-        title: 'Feedback submitted',
-        description: 'Thank you for your feedback!',
+        children: (
+          <>
+            <div className="font-bold">Feedback submitted</div>
+            <div>Thank you for your feedback!</div>
+          </>
+        ),
       });
 
       // Close dialog after a short delay to show the completion screen
@@ -175,8 +179,12 @@ export function FeedbackFormWrapper({
       console.error('Error submitting feedback:', error);
 
       toast({
-        title: 'Error submitting feedback',
-        description: 'Please try again later.',
+        children: (
+          <>
+            <div className="font-bold">Error submitting feedback</div>
+            <div>Please try again later.</div>
+          </>
+        ),
         variant: 'destructive',
       });
 

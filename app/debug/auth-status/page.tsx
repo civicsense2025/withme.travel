@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getBrowserClient } from '@/utils/supabase/unified';
 import { StateInspector } from '@/components/debug';
 import { ArrowLeft, RefreshCw, LogOut, UserIcon, UserX } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast'
 import { clientGuestUtils } from '@/utils/guest';
 import { API_ROUTES } from '@/utils/constants/routes';
 

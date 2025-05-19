@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import CountryAdminEditor from './CountryAdminEditor';
-import { useAuth } from '@/components/auth-provider';
+import { useAuth } from '@/components/features/auth/AuthProvider';
 
 interface CountryStats {
   destinations_count?: number;

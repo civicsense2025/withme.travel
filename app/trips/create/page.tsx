@@ -12,7 +12,7 @@ import { Container } from '@/components/container';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CityChipsAutocompleteInput } from '@/components/cities/city-chips-autocomplete-input';
+import { CityChipsAutocompleteInput } from '@/components/features/cities/city-chips-autocomplete-input';
 import { PageHeader } from '@/components/layout/page-header';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
 import { toast } from '@/hooks/use-toast';

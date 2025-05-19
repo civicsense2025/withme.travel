@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  Thumbs-p,
+  ThumbsUp,
   Map,
   Calendar,
   Clipboard,
@@ -22,7 +22,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { CreateTripModal } from './create-trip-modal';
 import { TABLES } from '@/utils/constants/database';
@@ -59,7 +59,7 @@ interface VotingClientProps {
   groupName: string;
   initialIdeas: Idea[];
   members: Member[];
-  current-serId: string;
+  currentUserId: string;
 }
 
 export default function VotingClient({
@@ -67,19 +67,20 @@ export default function VotingClient({
   groupName,
   initialIdeas,
   members,
-  current-serId,
+  currentUserId,
 }: VotingClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
   const [activeTab, setActiveTab] = useState<string>('destination');
-  const [userVotes, set-serVotes] = useState<Votes>({});
+  const [userVotes, setUserVotes] = useState<Votes>({});
   const [votingProgress, setVotingProgress] = useState(0);
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
   const [hasShownMilestone, setHasShownMilestone] = useState(false);
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
+  const [newVotingState, setNewVotingState] = useState<Votes>({});
 
-  // -se the voting hook
+  // Use the voting hook
   const { isVoting, error: voteError, voteOnGroupIdea } = useVotes();
 
   // Group ideas by their type
@@ -137,13 +138,13 @@ export default function VotingClient({
 
   // Fetch user's existing votes
   useEffect(() => {
-    async function fetch-serVotes() {
+    async function fetchUserVotes() {
       try {
         const supabase = getBrowserClient();
         const { data, error } = await supabase
           .from(TABLES.GROUP_PLAN_IDEA_VOTES)
           .select('idea_id, vote_type')
-          .eq('user_id', current-serId);
+          .eq('user_id', currentUserId);
 
         if (error) throw error;
 
@@ -152,16 +153,16 @@ export default function VotingClient({
           votes[vote.idea_id] = vote.vote_type as VoteType;
         });
 
-        set-serVotes(votes);
+        setUserVotes(votes);
       } catch (error) {
         console.error('Error fetching votes:', error);
       }
     }
 
-    if (current-serId) {
-      fetch-serVotes();
+    if (currentUserId) {
+      fetchUserVotes();
     }
-  }, [current-serId]);
+  }, [currentUserId]);
 
   const handleVote = async (ideaId: string, voteType: 'up' | 'down') => {
     try {
@@ -170,7 +171,7 @@ export default function VotingClient({
       // Check if user is removing their vote
       const isRemovingVote = userVotes[ideaId] === voteType;
 
-      // -pdate local state first for immediate feedback
+      // Update local state first for immediate feedback
       const updatedIdeas = ideas.map((idea) => {
         if (idea.id !== ideaId) return idea;
 
@@ -203,16 +204,16 @@ export default function VotingClient({
 
       setIdeas(updatedIdeas);
 
-      // -pdate user votes
-      const new-serVotes = { ...userVotes };
+      // Update user votes
+      const newUserVotes = { ...userVotes };
       if (isRemovingVote) {
-        delete new-serVotes[ideaId];
+        delete newUserVotes[ideaId];
       } else {
-        new-serVotes[ideaId] = voteType;
+        newUserVotes[ideaId] = voteType;
       }
-      set-serVotes(new-serVotes);
+      setUserVotes(newUserVotes);
 
-      // -se the votes hook to update the vote on the server
+      // Use the votes hook to update the vote on the server
       await voteOnGroupIdea(groupId, ideaId, voteType);
 
       if (voteError) {
@@ -221,9 +222,13 @@ export default function VotingClient({
     } catch (error) {
       console.error('Error saving vote:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save your vote. Please try again.',
         variant: 'destructive',
+        children: (
+          <>
+            <div className="font-bold">Error</div>
+            <div>Failed to save your vote. Please try again.</div>
+          </>
+        ),
       });
 
       // Revert to initial ideas and refetch votes on error
@@ -235,7 +240,7 @@ export default function VotingClient({
           const { data, error } = await supabase
             .from(TABLES.GROUP_PLAN_IDEA_VOTES)
             .select('idea_id, vote_type')
-            .eq('user_id', current-serId);
+            .eq('user_id', currentUserId);
 
           if (error) throw error;
 
@@ -244,7 +249,7 @@ export default function VotingClient({
             votes[vote.idea_id] = vote.vote_type as VoteType;
           });
 
-          set-serVotes(votes);
+          setUserVotes(votes);
         } catch (error) {
           console.error('Error refetching votes:', error);
         }
@@ -410,7 +415,7 @@ export default function VotingClient({
                             </div>
                             <div className="flex items-center gapU1 text-muted-foreground text-sm">
                               <span>{getTotalVotesForIdea(idea)}</span>
-                              <Thumbs-p className="hU3 wU3" />
+                              <ThumbsUp className="hU3 wU3" />
                             </div>
                           </div>
                         </CardHeader>
@@ -439,7 +444,7 @@ export default function VotingClient({
                               }
                               onClick={() => handleVote(idea.id, 'down')}
                             >
-                              <Thumbs-p className="hU4 wU4 rotateU180" />
+                              <ThumbsUp className="hU4 wU4 rotateU180" />
                               <span className="mlU1">{idea.votes_down}</span>
                             </Button>
 
@@ -453,7 +458,7 @@ export default function VotingClient({
                               }
                               onClick={() => handleVote(idea.id, 'up')}
                             >
-                              <Thumbs-p className="hU4 wU4" />
+                              <ThumbsUp className="hU4 wU4" />
                               <span className="mlU1">{idea.votes_up}</span>
                             </Button>
                           </div>
@@ -535,7 +540,7 @@ export default function VotingClient({
                         )}
                       </Avatar>
                       <span className="text-xs">
-                        {member.user_id === current-serId
+                        {member.user_id === currentUserId
                           ? 'You'
                           : member.profiles.full_name.split(' ')[0]}
                       </span>

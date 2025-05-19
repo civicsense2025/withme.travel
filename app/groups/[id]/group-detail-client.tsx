@@ -75,7 +75,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/DropdownMenu';
 import { Separator } from '@/components/ui/separator';
 import { GroupSettingsModal } from '../components/group-settings-modal';
 import { DataTable } from '@/components/ui/data-table';
@@ -89,7 +89,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ENUMS } from '@/utils/constants/database';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { EmptyState } from '@/components/shared/molecules';
 
 interface GroupDetailClientProps {

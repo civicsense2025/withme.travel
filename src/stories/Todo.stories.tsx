@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { Todo, TodoItem, TodoPriority, TodoCategory } from '@/components/Todo';
+import { Todo } from '@/components/shared/Todo';
 
 const meta: Meta<typeof Todo> = {
   title: 'Design System/Patterns/Todo',

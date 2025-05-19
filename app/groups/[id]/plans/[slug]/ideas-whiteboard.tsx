@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { AnimatePresence, motion } from 'framer-motion';
 import { debounce } from 'lodash';
 import IdeaCard from './idea-card';
@@ -10,7 +10,7 @@ import { AddIdeaModal } from './add-idea-modal';
 import { Button } from '@/components/ui/button';
 import {
   Plus,
-  -sers,
+  Users,
   Sparkles,
   ChevronRight,
   MapPin,
@@ -32,8 +32,8 @@ import {
 import { useIdeaStore, GroupIdea, ColumnId, IdeaPosition } from './store/idea-store';
 import { IdeasPresenceContext, useIdeasPresence } from './context/ideas-presence-context';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { ReadyForVotingModal } from './ready-for-voting-modal';
-import { useAuth } from '@/components/auth-provider';
+import { ReadyForVotingModal } from './components/ready-for-voting-modal';
+import { useAuth } from '@/lib/hooks/use-auth';
 import AddIdeaInput from './add-idea-input';
 import html2canvas from 'html2canvas';
 import { Badge } from '@/components/ui/badge';
@@ -58,8 +58,8 @@ import KeyboardShortcutsBar, {
   KeyboardShortcutsShowButton,
 } from '@/components/KeyboardShortcutsBar';
 import { IdeasBoardHelpDialog } from './components/ideas-board-help-dialog';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { AvatarGroup } from '@/components/avatar-group';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { AvatarGroup } from '@/components/AvatarGroup';
 import { CollaboratorList } from './components/collaborator-list';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { EVENT_CATEGORY, EVENT_NAME, useAnalytics } from '@/lib/analytics';
@@ -95,6 +95,7 @@ import { WhiteboardToolbar } from './components/WhiteboardToolbar';
 import { WhiteboardControls } from './components/whiteboard-controls';
 import { ToastAction } from '@/components/ui/toast';
 import { Label } from '@/components/ui/label';
+import { GroupIdeaWithCreator, GroupIdeaWithVotes } from '@/types/group-ideas';
 
 // Define column structure with smaller emojis
 const COLUMNS = [
@@ -187,10 +188,10 @@ function getProfileInitials(profile: any, user: any): string {
       .split(' ')
       .map((part: string) => part.charAt(0))
       .join('')
-      .to-pperCase()
+      .toUpperCase()
       .substring(0, 2);
   }
-  return user?.email?.charAt(0).to-pperCase() || 'U';
+  return user?.email?.charAt(0).toUpperCase() || 'U';
 }
 
 function SortableItem({
@@ -324,19 +325,19 @@ export default function IdeasWhiteboard({
 
   // Presence context
   const presenceContext = useIdeasPresence(resolvedGroupId);
-  const active-sers = presenceContext.active-sers || [];
-  const current-serId = user?.id || '';
+  const activeUsers = presenceContext?.activeUsers || [];
+  const currentUserId = user?.id || '';
 
   // Filter out duplicate users and get unique active users
-  const uniqueActive-sers = React.useMemo(() => {
+  const uniqueActiveUsers = React.useMemo(() => {
     const userMap = new Map();
-    active-sers.forEach((user) => {
+    activeUsers.forEach((user) => {
       if (user && user.id) {
         userMap.set(user.id, user);
       }
     });
     return Array.from(userMap.values());
-  }, [active-sers]);
+  }, [activeUsers]);
 
   // Group ideas by column
   const ideasByColumnMemo = React.useMemo(() => {
@@ -490,7 +491,7 @@ export default function IdeasWhiteboard({
   }, [planId, groupId, isAuthenticated, isGuest, fetchIdeas]);
 
   // Save position updates
-  const savePosition-pdates = useCallback(
+  const savePositionUpdates = useCallback(
     debounce(async (updates: { id: string; position: IdeaPosition }[]) => {
       if (updates.length === 0) return;
 
@@ -521,7 +522,7 @@ export default function IdeasWhiteboard({
     [toast, groupId]
   );
 
-  // -pdate idea positions after dragging
+  // Update idea positions after dragging
   const updateIdeaPositions = useCallback(
     (columnId: ColumnId) => {
       const columnIdeas = safeIdeasByColumn[columnId as ColumnId];
@@ -530,9 +531,9 @@ export default function IdeasWhiteboard({
         position: { columnId, index } as IdeaPosition,
       }));
       // Save to database
-      savePosition-pdates(updates);
+      savePositionUpdates(updates);
     },
-    [safeIdeasByColumn, savePosition-pdates]
+    [safeIdeasByColumn, savePositionUpdates]
   );
 
   // Subscribe to realtime updates
@@ -809,7 +810,7 @@ export default function IdeasWhiteboard({
           });
 
           // Save the new position to the database
-          savePosition-pdates([
+          savePositionUpdates([
             { id: activeId, position: { columnId: sourceColumnId, index: targetIndex } },
           ]);
 
@@ -981,7 +982,7 @@ export default function IdeasWhiteboard({
   const firstAddButtonRef = useRef<HTMLButtonElement>(null);
 
   // after user and ideasByColumn are available, but before any useEffect or handler that uses them ...
-  const isOwner = typeof user !== 'undefined' && user?.role === 'owner'; // fallback
+  const isOwner = user?.id && typeof user !== 'undefined' && (user as any).role === 'owner'; // type fix
   const canVote =
     (safeIdeasByColumn.destination?.length ?? 0) > 0 &&
     (safeIdeasByColumn.activity?.length ?? 0) > 0 &&
@@ -1160,8 +1161,8 @@ export default function IdeasWhiteboard({
 
   // AvatarGroup with glow and +X others logic
   const maxAvatars = 3;
-  const visible-sers = uniqueActive-sers.slice(0, maxAvatars);
-  const extraCount = uniqueActive-sers.length - maxAvatars;
+  const visibleUsers = uniqueActiveUsers.slice(0, maxAvatars);
+  const extraCount = uniqueActiveUsers.length - maxAvatars;
 
   // Calculate progress for ready to vote
   const ideasProgress = useMemo(() => {
@@ -1888,7 +1889,7 @@ export default function IdeasWhiteboard({
                   <DialogHeader>
                     <DialogTitle>Keyboard Shortcuts</DialogTitle>
                     <DialogDescription>
-                      -se these shortcuts to navigate and manage your ideas more efficiently.
+                      Use these shortcuts to navigate and manage your ideas more efficiently.
                     </DialogDescription>
                   </DialogHeader>
 

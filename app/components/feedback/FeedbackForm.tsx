@@ -267,7 +267,8 @@ export function FeedbackFormRenderer({
         return (
           <div className="space-y-4">
             <RadioGroup
-              onValueChange={(value) => setValue(fieldName, value)}
+              value={getValues(fieldName)}
+              onValueChange={(value: string) => setValue(fieldName, value)}
               defaultValue={getValues(fieldName)}
             >
               {(question as any).options?.map((option: any) => (
@@ -291,30 +292,33 @@ export function FeedbackFormRenderer({
       case QuestionType.MULTIPLE_CHOICE:
         return (
           <div className="space-y-4">
-            {(question as any).options?.map((option: any) => (
-              <div key={option.id} className="flex items-start space-x-2">
-                <Checkbox
-                  id={`${fieldName}-${option.id}`}
-                  value={option.value || option.label}
-                  onCheckedChange={(checked) => {
-                    const currentValues = getValues(fieldName) || [];
-                    const value = option.value || option.label;
-
-                    if (checked) {
-                      setValue(fieldName, [...currentValues, value]);
-                    } else {
-                      setValue(
-                        fieldName,
-                        currentValues.filter((val: string) => val !== value)
-                      );
-                    }
-                  }}
-                />
-                <Label htmlFor={`${fieldName}-${option.id}`} className="cursor-pointer">
-                  {option.label}
-                </Label>
-              </div>
-            ))}
+            {(question as any).options?.map((option: any) => {
+              const currentValues = getValues(fieldName) || [];
+              const value = option.value || option.label;
+              const isChecked = currentValues.includes(value);
+              
+              return (
+                <div key={option.id} className="flex items-start space-x-2">
+                  <Checkbox
+                    id={`${fieldName}-${option.id}`}
+                    checked={isChecked}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setValue(fieldName, [...currentValues, value]);
+                      } else {
+                        setValue(
+                          fieldName,
+                          currentValues.filter((val: string) => val !== value)
+                        );
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`${fieldName}-${option.id}`} className="cursor-pointer">
+                    {option.label}
+                  </Label>
+                </div>
+              );
+            })}
             {fieldError && (
               <p className="text-sm text-destructive">{fieldError.message as string}</p>
             )}

@@ -7,21 +7,21 @@ import { createServerComponentClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { TABLES } from '@/utils/constants/database';
-import { FIELDS, ItineraryTemplateMetadata } from '@/utils/constants/tables';
+import { ItineraryTemplateMetadata } from '@/utils/constants/tables';
 
 import { Button } from '@/components/ui/button';
 import { ClientWrapper } from './client-wrapper';
 import { Badge } from '@/components/ui/badge';
-import { ItineraryCard } from '@/components/ui/ItineraryCard';
-import { ClassErrorBoundary } from '@/components/error-boundary';
+import { ItineraryCard } from '@/components/features/itinerary/molecules/ItineraryCard';
+import { ClassErrorBoundary } from '@/components/features/error-boundary';
 import RefreshFallback from './refresh-fallback';
-import { PageContainer } from '@/components/layout/page-container';
-import { PageHeader } from '@/components/layout/page-header';
-import { Heading } from '@/components/ui/Heading';
+import { PageContainer } from '@/components/features/layout/molecules/PageContainer';
+import { PageHeader } from '@/components/features/layout/molecules/PageHeader';
+import { Heading } from '@/components/features/ui/Heading';
 import { Text } from '@/components/ui/Text';
-import { Section } from '@/components/ui/section';
-import { ItineraryTemplateCard } from '@/components/itinerary-template-card';
-import { FullBleedSection } from '@/components/ui/FullBleedSection';
+import { Section } from '@/components/ui/Section';
+import { ItineraryTemplateCard } from '@/components/features/itinerary/molecules/ItineraryTemplateCard';
+import { FullBleedSection } from '@/components/features/layout/molecules/FullBleedSection';
 
 export const dynamic = 'force-dynamic'; // Ensure dynamic rendering
 export const revalidate = 600; // Revalidate every 10 minutes

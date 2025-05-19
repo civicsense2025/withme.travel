@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { PopularDestinations } from '@/components/destinations/templates/PopularDestinations';
+import { PopularDestinations } from '@/components/features/destinations/templates/PopularDestinations';
 import { getPopularDestinations } from '@/lib/api/destinations';
 
 /**

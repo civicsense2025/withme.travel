@@ -5,11 +5,11 @@
  */
 
 import { API_ROUTES } from '@/utils/constants/routes';
-import { tryCatch } from '@/utils/result';
-import type { Result } from '@/utils/result';
+import { tryCatch } from '@/lib/client/result';
+import type { Result } from '@/lib/client/result';
 import { handleApiResponse } from './index';
 import { API_SETTINGS } from '@/utils/constants/api';
-import type { Activity } from '@/lib/api/_shared';
+import type { Activity as ApiActivity } from '@/lib/api/_shared';
 
 /**
  * Activity type definition

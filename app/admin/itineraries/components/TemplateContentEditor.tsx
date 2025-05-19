@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { TABLES } from '@/utils/constants/tables';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { Loader, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { TemplateSection, TemplateItem } from '../types';
 import {

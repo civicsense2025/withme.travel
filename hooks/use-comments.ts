@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@hooks/use-toast';
 import type { Comment } from '@/lib/client/comments';
 import {
   listComments,

@@ -1,17 +1,22 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { User as UserType } from '@/types/user';
 
 /**
- * User profile data structure
+ * Auth User interface - subset of the full User type 
+ * containing only the essential authentication properties
  */
 export interface User {
   id: string;
   email: string;
-  name?: string;
+  full_name: string;
+  display_name?: string;
   avatar_url?: string;
   created_at: string;
-  role?: string;
+  updated_at: string;
+  is_admin: boolean;
+  verified_email: boolean;
 }
 
 /**

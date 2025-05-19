@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGroups } from '@/lib/features/groups/hooks';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 
 interface CreateGroupFormProps {
   onGroupCreated?: (group: any) => void;

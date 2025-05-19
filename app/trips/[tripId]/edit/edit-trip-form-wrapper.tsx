@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast'
 // import { TripFocusContainer } from '@/components/trips/trip-focus-container';
 
 // Dynamically import the client component with no SSR

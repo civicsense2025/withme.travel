@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { MembersTab } from '@/components/members-tab';
+import { MembersTab, TripMemberFromSSR } from '@/components/MembersTab';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as Sentry from '@sentry/nextjs';
 import { TripRole } from '@/types/roles';
@@ -68,7 +68,7 @@ export function ManageTabContent({ tripId, canEdit, userRole }: ManageTabContent
       tripId={tripId}
       canEdit={canEdit}
       userRole={userRole}
-      initialMembers={adaptedMembers}
+      initialMembers={adaptedMembers as unknown as TripMemberFromSSR[]}
     />
   );
 }

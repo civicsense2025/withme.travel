@@ -14,7 +14,7 @@
 // ============================================================================
 
 import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@hooks/use-toast';
 import {
   listTasks,
   listGroupTasks,
@@ -158,10 +158,10 @@ export function useTasks({
       if (isSuccess(result)) {
         setTasks(result.data);
       } else {
-        setError(new Error(result.error));
+        setError(result.error as Error);
         toast({
           title: 'Failed to load tasks',
-          description: result.error,
+          description: result.error.message,
           variant: 'destructive',
         });
       }
@@ -203,7 +203,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to create task',
-            description: result.error,
+            description: result.error.message,
             variant: 'destructive',
           });
         }
@@ -247,7 +247,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to update task',
-            description: result.error,
+            description: result.error.message,
             variant: 'destructive',
           });
         }
@@ -290,7 +290,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to delete task',
-            description: result.error,
+            description: result.error.message,
             variant: 'destructive',
           });
         }
@@ -328,7 +328,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to update task',
-            description: result.error,
+            description: result.error.message,
             variant: 'destructive',
           });
         }
@@ -380,7 +380,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to assign task',
-            description: result.error,
+            description: result.error.message,
             variant: 'destructive',
           });
         }
@@ -418,7 +418,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to vote on task',
-            description: result.error,
+            description: result.error.message,
             variant: 'destructive',
           });
         }
@@ -456,7 +456,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to add tag',
-            description: result.error,
+            description: result.error.message,
             variant: 'destructive',
           });
         }
@@ -501,7 +501,7 @@ export function useTasks({
         } else {
           toast({
             title: 'Failed to remove tag',
-            description: result.error,
+            description: result.error.message as string,
             variant: 'destructive',
           });
         }
@@ -544,14 +544,14 @@ export function useTasks({
     isLoading,
     error,
     refresh: fetchTasks,
-    createTask: handleCreateTask,
-    updateTask: handleUpdateTask,
-    deleteTask: handleDeleteTask,
-    toggleTaskComplete: handleToggleComplete,
-    assignTask: handleAssignTask,
-    voteTask: handleVoteTask,
-    addTagToTask: handleAddTagToTask,
-    removeTagFromTask: handleRemoveTagFromTask,
+    createTask: handleCreateTask as (data: CreateTaskParams) => Promise<Result<Task>>,
+    updateTask: handleUpdateTask as (taskId: string, data: UpdateTaskParams) => Promise<Result<Task>>,
+    deleteTask: handleDeleteTask as (taskId: string) => Promise<Result<null>>,
+    toggleTaskComplete: handleToggleComplete as (taskId: string, isCompleted: boolean) => Promise<Result<Task>>,
+    assignTask: handleAssignTask as (taskId: string, assigneeId?: string) => Promise<Result<Task>>,
+    voteTask: handleVoteTask as (taskId: string, voteType: 'up' | 'down') => Promise<Result<Task>>,
+    addTagToTask: handleAddTagToTask as (taskId: string, tagName: string) => Promise<Result<Task>>,
+    removeTagFromTask: handleRemoveTagFromTask as (taskId: string, tagName: string) => Promise<Result<Task>>,
     isCreating,
     isUpdating,
     isDeleting,

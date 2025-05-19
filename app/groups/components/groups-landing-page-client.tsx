@@ -10,11 +10,11 @@ import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/container';
 import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
-import CollaborativeItinerarySection from '@/components/ui/CollaborativeItinerarySection';
+import { CollaborativeItinerarySection } from '@/components/features/groups/organisms/CollaborativeItinerarySection';
 import { DestinationsFAQ } from '@/components/features/faq';
-import { useThemeSync } from '@/components/theme-provider';
 import { useGroups } from '@/lib/features/groups/hooks';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
+import { useThemeSync } from '@/components/ui/theme-provider';
 
 const CreateGroupModal = dynamic(() => import('./create-group-modal'), { ssr: false });
 
@@ -126,7 +126,7 @@ export default function GroupsLandingPageClient() {
   const FeaturesSection = () => (
     <section className="py-24 w-full bg-subtle">
       <div className="px-6 md:px-10 max-w-7xl mx-auto">
-        <CollaborativeItinerarySection />
+        <CollaborativeItinerarySection groupId="1" planId="1" />
       </div>
     </section>
   );

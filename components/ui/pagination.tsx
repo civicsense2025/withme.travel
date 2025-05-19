@@ -31,3 +31,9 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
     </div>
   );
 }
+
+export const PaginationContent = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
+export const PaginationItem = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
+export const PaginationPrevious = ({ children }: { children: React.ReactNode }) => <button>{children}</button>;
+export const PaginationNext = ({ children }: { children: React.ReactNode }) => <button>{children}</button>;
+export const PaginationLink = ({ children }: { children: React.ReactNode }) => <a>{children}</a>;

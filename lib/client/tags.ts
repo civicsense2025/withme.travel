@@ -5,8 +5,8 @@
  */
 
 import { API_ROUTES } from '@/utils/constants/routes';
-import { tryCatch } from '@/utils/result';
-import type { Result } from '@/utils/result';
+import { tryCatch } from '@/lib/client/result';
+import type { Result } from '@/lib/client/result';
 import type { Tag } from '@/types';
 
 /**

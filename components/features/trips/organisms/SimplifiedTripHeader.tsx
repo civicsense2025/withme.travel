@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { useState } from 'react';
-import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
-import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
+import { CompactBudgetSnapshot } from '@/components/features/budget/organisms/CompactBudgetSnapshot';
+import { ImageSearchSelector } from '@/components/features/images/ImageSearchSelector';
 import {
   Sheet,
   SheetContent,

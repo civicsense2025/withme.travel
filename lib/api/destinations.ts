@@ -25,6 +25,7 @@ import { handleError, Result, Destination } from './_shared';
  * @returns Result containing an array of destinations
  */
 export async function listDestinations(params: any): Promise<Result<Destination[]>> {
+  // TODO: Implement list destinations logic
   try {
     const supabase = await createRouteHandlerClient();
     // TODO: Add filter logic based on params
@@ -42,6 +43,7 @@ export async function listDestinations(params: any): Promise<Result<Destination[
  * @returns Result containing the destination
  */
 export async function getDestination(destinationId: string): Promise<Result<Destination>> {
+  // TODO: Implement get destination by ID logic
   try {
     const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
@@ -63,6 +65,7 @@ export async function getDestination(destinationId: string): Promise<Result<Dest
  * @returns Result containing the created destination
  */
 export async function createDestination(data: Partial<Destination>): Promise<Result<Destination>> {
+  // TODO: Implement create destination logic
   try {
     const supabase = await createRouteHandlerClient();
     const { data: newDestination, error } = await supabase
@@ -87,6 +90,7 @@ export async function updateDestination(
   destinationId: string,
   data: Partial<Destination>
 ): Promise<Result<Destination>> {
+  // TODO: Implement update destination logic
   try {
     const supabase = await createRouteHandlerClient();
     const { data: updatedDestination, error } = await supabase
@@ -109,6 +113,7 @@ export async function updateDestination(
  * @returns Result indicating success or failure
  */
 export async function deleteDestination(destinationId: string): Promise<Result<null>> {
+  // TODO: Implement delete destination logic
   try {
     const supabase = await createRouteHandlerClient();
     const { error } = await supabase.from(TABLES.DESTINATIONS).delete().eq('id', destinationId);

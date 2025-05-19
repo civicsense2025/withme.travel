@@ -6,8 +6,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Place as ComponentPlace } from '@/components/features/places/organisms/place-list';
-import * as placesApi from '@/lib/client/places';
-import type { Place as ApiPlace } from '@/types/places';
+import * as placesApi from '@/lib/api/places';
+import type { Place as ApiPlace } from '@/lib/api/_shared';
 
 // ============================================================================
 // TYPES
@@ -41,12 +41,12 @@ interface UsePlacesResult {
 function mapApiPlaceToComponentPlace(apiPlace: ApiPlace): ComponentPlace {
   return {
     id: apiPlace.id,
-    name: apiPlace.name,
-    category: apiPlace.category || undefined,
-    address: apiPlace.address || undefined,
-    rating: apiPlace.rating || undefined,
-    image_url: apiPlace.cover_image_url || undefined,
-    description: apiPlace.description || undefined
+    name: apiPlace.name ?? '',
+    category: apiPlace.category ?? undefined,
+    address: apiPlace.address ?? undefined,
+    rating: undefined, // Not present in ApiPlace
+    image_url: apiPlace.cover_image_url ?? undefined,
+    description: apiPlace.description ?? undefined
   };
 }
 
@@ -82,7 +82,7 @@ export function usePlaces({ tripId }: UsePlacesProps = {}): UsePlacesResult {
       });
       
       if (!response.success) {
-        throw new Error(response.error.message || 'Failed to fetch places');
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to fetch places');
       }
       
       // Map API response to the component's Place type
@@ -119,7 +119,7 @@ export function usePlaces({ tripId }: UsePlacesProps = {}): UsePlacesResult {
       const response = await placesApi.createPlace(apiPlace);
       
       if (!response.success) {
-        throw new Error(response.error.message || 'Failed to add place');
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to add place');
       }
 
       // Map the API response to our component's Place type
@@ -153,7 +153,7 @@ export function usePlaces({ tripId }: UsePlacesProps = {}): UsePlacesResult {
       const response = await placesApi.updatePlace(id, apiUpdates);
       
       if (!response.success) {
-        throw new Error(response.error.message || 'Failed to update place');
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to update place');
       }
 
       // Map the API response to our component's Place type
@@ -180,7 +180,7 @@ export function usePlaces({ tripId }: UsePlacesProps = {}): UsePlacesResult {
       const response = await placesApi.deletePlace(id);
       
       if (!response.success) {
-        throw new Error(response.error.message || 'Failed to delete place');
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to delete place');
       }
 
       setPlaces(currentPlaces => 

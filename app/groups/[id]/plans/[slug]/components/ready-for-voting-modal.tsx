@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle2, AlertCircle, Vote, ArrowRight } from 'lucide-react';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/components/auth-provider';
 import { useIdeasPresenceContext } from '../context/ideas-presence-context';
 import { motion, AnimatePresence } from 'framer-motion';

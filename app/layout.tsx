@@ -7,18 +7,18 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { VercelAnalytics } from './vercel-analytics';
 import Script from 'next/script';
-import { ClientSideProviders } from '@/components/client-side-providers';
+import { ClientSideProviders } from '@/components/ClientSideProviders';
 import Navbar from '@/components/layout/Navbar';
 import { Footer } from '@/components/footer';
 import { LayoutModeProvider } from './context/layout-mode-context';
-import { ClientSideLayoutRenderer } from '@/components/client-side-layout-renderer';
-import { Toaster } from '@/components/ui/toaster';
+import { ClientSideLayoutRenderer } from '@/components/ClientSideLayoutRenderer';
+import { ToastProvider } from '@/components/ui/toast';
 import { helveticaNeue } from './fonts';
 import { Container } from '@/components/container';
 import { SearchProvider } from '@/contexts/search-context';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/components/ui/theme-provider';
 import React from 'react';
-import { ServerAuthProvider } from '@/components/server-auth-provider';
+import { ServerAuthProvider } from '@/components/ServerAuthProvider';
 
 // Metadata is imported from app/metadata.ts
 export const metadata = {
@@ -100,9 +100,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </LayoutModeProvider>
             </ServerAuthProvider>
           </TooltipProvider>
-          <Toaster />
-          <Analytics />
-          <SpeedInsights />
+          <ToastProvider>
+            <Analytics />
+            <SpeedInsights />
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

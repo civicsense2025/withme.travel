@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 

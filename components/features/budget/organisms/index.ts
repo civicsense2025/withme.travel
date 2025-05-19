@@ -10,6 +10,5 @@ export const BudgetOrganisms = {
 };
 
 // Export organisms as they are implemented
-export * from './expense-list';
-export * from './budget-breakdown';
-export * from './expense-list-connected';
+export * from './ExpenseListConnected';
+export * from './BudgetBreakdown';

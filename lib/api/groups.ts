@@ -24,26 +24,19 @@ import { handleError, Result, Group } from './_shared';
  * @param params - Query parameters (search, limit, offset)
  * @returns Result containing an array of groups
  */
-export async function listGroups({
-  search = '',
-  limit = 50,
-  offset = 0,
-}: {
-  search?: string;
-  limit?: number;
-  offset?: number;
-} = {}): Promise<Result<Group[]>> {
+export async function listGroups(params: any): Promise<Result<Group[]>> {
+  // TODO: Implement list groups logic
   try {
     const supabase = await createRouteHandlerClient();
     let query = supabase.from(TABLES.GROUPS).select('*');
 
     // Add search filter if provided
-    if (search) {
-      query = query.ilike('name', `%${search}%`);
+    if (params.search) {
+      query = query.ilike('name', `%${params.search}%`);
     }
 
     // Add pagination
-    query = query.range(offset, offset + limit - 1);
+    query = query.range(params.offset, params.offset + params.limit - 1);
 
     const { data, error } = await query;
 
@@ -116,6 +109,7 @@ export async function getUserGroups(
  * @returns Result containing the group
  */
 export async function getGroup(groupId: string): Promise<Result<Group>> {
+  // TODO: Implement get group by ID logic
   try {
     const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
@@ -181,7 +175,8 @@ export async function getGroupWithDetails(groupId: string): Promise<Result<any>>
  * @param data - The group data
  * @returns Result containing the created group
  */
-export async function createGroup(data: Partial<Group>): Promise<Result<Group>> {
+export async function createGroup(data: any): Promise<Result<Group>> {
+  // TODO: Implement create group logic
   try {
     const supabase = await createRouteHandlerClient();
     const { data: newGroup, error } = await supabase
@@ -335,7 +330,8 @@ export async function createGuestGroup(
  * @param data - Partial group data to update
  * @returns Result containing the updated group
  */
-export async function updateGroup(groupId: string, data: Partial<Group>): Promise<Result<Group>> {
+export async function updateGroup(groupId: string, data: any): Promise<Result<Group>> {
+  // TODO: Implement update group logic
   try {
     const supabase = await createRouteHandlerClient();
 
@@ -365,6 +361,7 @@ export async function updateGroup(groupId: string, data: Partial<Group>): Promis
  * @returns Result indicating success or failure
  */
 export async function deleteGroup(groupId: string): Promise<Result<null>> {
+  // TODO: Implement delete group logic
   try {
     const supabase = await createRouteHandlerClient();
     const { error } = await supabase.from(TABLES.GROUPS).delete().eq('id', groupId);

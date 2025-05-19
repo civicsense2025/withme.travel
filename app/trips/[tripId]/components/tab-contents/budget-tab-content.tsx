@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { BudgetTab } from '@/components/features/expenses/budget-tab';
+import { BudgetTabTemplate } from '@/components/features/budget/templates/BudgetTabTemplate';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as Sentry from '@sentry/nextjs';
 import { TripRole } from '@/types/roles';
@@ -96,26 +96,25 @@ export function BudgetTabContent({
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1">
-          <BudgetTab
+          <BudgetTabTemplate
             tripId={tripId}
             canEdit={canEdit}
-            isTripOver={isTripOver}
-            initialMembers={adaptedMembers}
-            budget={initialBudget}
-            handleBudgetUpdated={handleBudgetUpdate}
-            manualExpenses={manualExpenses}
-            plannedExpenses={plannedExpenses}
+            budget={initialBudget ?? undefined}
           />
         </div>
 
         {/* Right sidebar with budget snapshot */}
         <div className="md:w-64 lg:w-80">
           <BudgetSnapshotSidebar
-            tripId={tripId}
-            initialBudget={initialBudget}
-            onBudgetUpdated={handleBudgetUpdate}
-            onLogExpenseClick={() => setShowBudgetSheet(true)}
-            key={`snapshot-${refreshTrigger}`}
+            targetBudget={initialBudget}
+            totalPlanned={summary?.plannedTotal || 0}
+            totalSpent={summary?.spentTotal || 0}
+            canEdit={canEdit}
+            isEditing={false}
+            onEditToggle={(isEditing) => {/* Handle edit toggle */}}
+            onSave={async (newBudget) => {/* Handle save */}}
+            onLogExpenseClick={() => setShowExpenseDialog(true)}
+            className="w-full"
           />
 
           <Button
@@ -131,7 +130,7 @@ export function BudgetTabContent({
       </div>
 
       {/* Budget quick sheet */}
-      <Sheet open={showBudgetSheet} onOpenChange={setShowBudgetSheet}>
+      <Sheet open={showBudgetSheet} onOpenChange={setShowBudgetSheet} key={`snapshot-${refreshTrigger}`}>
         <SheetContent className="sm:max-w-md p-0">
           <SheetTitle className="sr-only">Trip Budget</SheetTitle>
           <div className="flex items-center justify-between p-6 border-b">

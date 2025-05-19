@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useToast, type ToastOptions } from '@/components/ui/use-toast';
+import { useToast, type ToastOptions } from '@/hooks/use-toast';
 import {
   listGroups,
   getGroup,

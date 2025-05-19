@@ -2,14 +2,14 @@ import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/utils/supabase-server';
 import { Metadata } from 'next';
 import { getGuestToken } from '@/utils/guest';
-import HeroSectionWrapper from './components/HeroSectionWrapper';
-import TripsClient from './trips-client';
-import { PageHeader } from '@/components/layout/page-header';
+import { HeroSection } from '@/components/features/trips/organisms/HeroSection';
+import TripsClient from '@/app/trips/trips-client';
+import { PageHeader } from '@/components/features/layout/organisms/PageHeader';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { SharedPresenceSection } from '@/components/ui/SharedPresenceSection';
-import { ExpenseMarketingSection } from './components/ExpenseMarketingSection';
+import { SharedPresenceSection } from '@/components/features/trips/organisms/SharedPresenceSection';
+import { ExpenseMarketingSection } from '@/components/features/trips/organisms/ExpenseMarketingSection';
 import { listTrips } from '@/lib/api/trips';
 
 // Force dynamic to ensure we get fresh data on each request
@@ -99,13 +99,7 @@ export default async function TripsPage() {
 function renderLandingPage() {
   return (
     <>
-      <HeroSectionWrapper
-        heading="Plan your perfect trip with friends and family"
-        subheading="Collaborate on itineraries, share ideas, and make memories together – all in one place."
-        ctaText="Create a Trip"
-        ctaHref="/trips/create"
-        showBackground={true}
-      />
+      <HeroSection />
       <section className="pyU16 pxU4 max-wU6xl mx-auto">
         <div className="grid grid-colsU1 md:grid-colsU2 gapU12 items-center">
           {/* Component First on Mobile, Second on Desktop */}

@@ -21,7 +21,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@hooks/*": ["./hooks/*"]
     },
     "types": ["node", "react", "react-dom", "jest"],
     "allowImportingTsExtensions": false

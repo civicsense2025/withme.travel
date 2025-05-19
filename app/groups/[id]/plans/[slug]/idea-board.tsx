@@ -17,13 +17,13 @@ import { Plus } from 'lucide-react';
 import { AddIdeaModal } from './add-idea-modal';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { clientGuest-tils } from '@/utils/guest';
+import clientGuestUtils from '@/utils/guest';
 import { IdeasBoardHelpDialog } from './components/ideas-board-help-dialog';
 import { IdeasPresenceContext, useIdeasPresenceContext } from './context/ideas-presence-context';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useVotes } from '@/hooks/use-votes';
 import { useGroupIdeas } from '@/hooks/use-group-ideas';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 
 // Make the grid responsive
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -39,7 +39,7 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
   const supabase = getBrowserClient();
   const { toast } = useToast();
 
-  // -se our hooks
+  // Use our hooks
   const { voteOnGroupIdea, isVoting, error: voteError } = useVotes();
   const {
     ideas: groupIdeasFromHook,
@@ -149,7 +149,7 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
       }));
 
       // Debounce the API call to prevent too many requests
-      const debounced-pdate = setTimeout(async () => {
+      const debouncedUpdate = setTimeout(async () => {
         try {
           await fetch(`/api/groups/${groupId}/ideas`, {
             method: 'PATCH',
@@ -163,7 +163,7 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
         }
       }, 1000);
 
-      return () => clearTimeout(debounced-pdate);
+      return () => clearTimeout(debouncedUpdate);
     },
     [groupId]
   );
@@ -172,7 +172,7 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
   const handleCreateIdea = useCallback(
     async (ideaData: any) => {
       try {
-        // -se our group ideas hook to create an idea instead of direct API call
+        // Use our group ideas hook to create an idea instead of direct API call
         const newIdea = await createGroupIdea(ideaData);
 
         if (newIdea) {
@@ -208,7 +208,7 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
       }
 
       try {
-        // -se the voting hook instead of direct API call
+        // Use the voting hook instead of direct API call
         const success = await voteOnGroupIdea(
           groupId,
           ideaId,

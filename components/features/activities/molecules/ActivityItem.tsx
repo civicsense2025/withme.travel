@@ -9,9 +9,9 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ActivityIcon, ActivityType } from '../atoms/activity-icon';
-import { ActivityTimestamp } from '../atoms/activity-timestamp';
-import { ActivityDescription } from '../atoms/activity-description';
+import { ActivityIcon, ActivityType } from '../atoms/ActivityIcon';
+import { ActivityTimestamp } from '../atoms/ActivityTimestamp';
+import { ActivityDescription } from '../atoms/ActivityDescription';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // ============================================================================

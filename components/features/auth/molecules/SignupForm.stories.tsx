@@ -15,7 +15,7 @@ type Story = StoryObj<typeof SignupForm>;
 
 export const Default: Story = {
   args: {
-    onSubmit: async (data) => {
+    onSubmit: async (data: any) => {
       console.log('Form submitted with:', data);
       // Simulate API call
       return new Promise((resolve) => setTimeout(resolve, 1000));

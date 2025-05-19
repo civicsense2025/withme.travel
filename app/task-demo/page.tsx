@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Task } from '@/components/Task';
 import { ITEM_STATUSES, type ItemStatus } from '@/utils/constants/status';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast'
 import type { TaskItem } from '@/components/Task';
 
 export default function TaskDemo() {

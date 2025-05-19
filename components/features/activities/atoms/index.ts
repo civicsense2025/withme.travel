@@ -4,6 +4,6 @@
  * @module activities/atoms
  */
 
-export * from './activity-icon';
-export * from './activity-description';
-export * from './activity-timestamp';
+export * from './ActivityIcon';
+export * from './ActivityDescription';
+export * from './ActivityTimestamp';

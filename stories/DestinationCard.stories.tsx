@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { DestinationCard } from '../components/destination-card';
+import { DestinationCard } from '@/components/features/destinations/molecules/DestinationCard';
 
 const mockDestination = {
   id: '1',

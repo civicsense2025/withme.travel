@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
 import { MediaLibrary } from '@/components/features/admin/MediaLibrary';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { Plus } from 'lucide-react';
 
 export default function MediaPage() {

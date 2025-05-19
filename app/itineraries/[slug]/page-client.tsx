@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ItineraryTemplateDisplay } from '@/components/itinerary/itinerary-template-display';
-import { UseTemplateButton } from '@/components/use-template-button';
+import { ItineraryTemplateDisplay } from '@/components/features/itinerary/organisms/ItineraryTemplateDisplay';
+import { UseTemplateButton } from '@/components/features/itinerary/molecules/UseTemplateButton';
 import { Button } from '@/components/ui/button';
 import {
   Heart,
@@ -19,20 +19,17 @@ import {
   PlusCircle,
   ListChecks,
 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAuth } from '@/components/auth-provider';
-import { ItineraryMetadataSection } from '@/components/itinerary/itinerary-metadata-section';
-import DestinationDetails from '@/components/destinations/destination-details';
-import { ImageAttribution } from '@/components/features/images';
-import { DestinationExperiences } from '@/components/features/viator/DestinationExperiences';
+import { useAuth } from '@/components/features/auth/organisms/AuthProvider';
+import { ItineraryMetadataSection } from '@/components/features/itinerary/organisms/ItineraryMetadataSection';
+import DestinationDetails from '@/components/features/destinations/molecules/DestinationDetails';
+import { ImageAttribution } from '@/components/features/images/molecules/ImageAttribution';
+import { DestinationExperiences } from '@/components/features/viator/molecules/DestinationExperiences';
 
 // Define types to match the server component and database schema
 interface ItineraryTemplateItem {

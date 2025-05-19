@@ -85,7 +85,7 @@
 // import { useTripMembers } from '@/lib/features/trips/hooks/use-trip-members';
 
 // Shared hooks - these would remain in shared directory
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 // Current hooks (will be moved to shared directory later)
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
 import { useMobileDialog } from '@/lib/hooks/use-mobile-dialog';
@@ -101,7 +101,7 @@ import { useDestinations } from '@/lib/hooks/use-destinations';
 import { useExpenses } from '@/lib/hooks/use-expenses';
 import { useGroups } from '@/lib/hooks/use-groups';
 import { useItineraries } from '@/lib/hooks/use-itineraries';
-import { usePlaces } from '@/lib/hooks/use-places';
+import { usePlaces } from '@/lib/features/places/hooks/use-places';
 import { useTags } from '@/lib/hooks/use-tags';
 import { useTasks } from '@/lib/hooks/use-tasks';
 import { useTripMembers } from '@/lib/hooks/use-trip-members';

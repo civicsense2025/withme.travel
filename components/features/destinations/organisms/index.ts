@@ -5,4 +5,5 @@
  */
 
 export { DestinationDetail } from './DestinationDetail';
-export { DestinationGrid } from './DestinationGrid'; 
+export { DestinationGrid } from './DestinationGrid';
+export { PopularDestinationsGrid } from './PopularDestinationsGrid'; 

@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import {
   Form,
   FormControl,
@@ -37,13 +37,20 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Image, MapPin, Tag } from 'lucide-react';
-import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
+import { ImageSearchSelector } from '@/components/features/images/ImageSearchSelector';
 import NextImage from 'next/image';
-import { PlaceSearch } from '@/components/place-search';
-import { useAuth } from '@/components/auth-provider';
-import { AuthModalWithProps } from '@/components/ui/features/auth/organisms/AuthModal';
+import { PlaceSearch } from '@/components/features/place-search/PlaceSearch';
+import { useAuth } from '@/components/features/auth/organisms/AuthProvider';
+import AuthModal from '@/components/features/auth/organisms/AuthModal';
 import { ActivitySuggestionsCard } from '@/components/ActivitySuggestionsCard';
 import { useTripEventTracking } from '@/hooks/use-trip-event-tracking';
+
+// Define interface for PlaceSearch component's place selection
+interface SelectedPlace {
+  placeId: string;
+  name: string;
+  location?: { lat: number; lng: number };
+}
 
 // Define the form schema
 const formSchema = z
@@ -67,6 +74,9 @@ const formSchema = z
     budget: z.string().optional(),
     trip_emoji: z.string().optional(),
     color_scheme: z.string().optional(),
+    
+    // Group information
+    group_id: z.string().nullable(),
   })
   .refine(
     (data) => {
@@ -252,7 +262,14 @@ const GroupSelect = ({
   onChange: (value: string | null) => void;
   disabled?: boolean;
 }) => {
-  const [groups, setGroups] = useState<any[]>([]);
+  // Using proper interface for groups data
+  interface Group {
+    id: string;
+    name: string;
+    [key: string]: any; // For any other properties the group might have
+  }
+  
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -315,9 +332,9 @@ export function CreateTripForm() {
   // Extract groupId from search params
   const groupIdParam = searchParams?.get('groupId');
 
-  // Initialize form
-  const form = useForm<FormValues & { group_id: string | null }>({
-    resolver: zodResolver(formSchema),
+  // Initialize form with the proper type
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema) as any, // Type assertion needed due to react-hook-form/zod compatibility issues
     defaultValues: {
       title: '',
       destination_id: '',
@@ -373,7 +390,7 @@ export function CreateTripForm() {
     return () => subscription.unsubscribe();
   }, [form]);
 
-  // Apply template function
+  // Apply template function with proper typing
   const applyTemplate = (templateId: string) => {
     const template = TRIP_TEMPLATES.find((t) => t.id === templateId);
     if (!template) return;
@@ -401,8 +418,8 @@ export function CreateTripForm() {
   const watchedValues = form.watch();
   const currentCoverImageUrl = watchedValues.cover_image_url;
 
-  // Form submission handler
-  const onSubmit = async (values: FormValues & { group_id: string | null }) => {
+  // Form submission handler with proper types - use type assertion to avoid complex generics issues
+  const onSubmit = form.handleSubmit(async (values) => {
     setLoading(true);
     try {
       // Process tags into array
@@ -482,7 +499,7 @@ export function CreateTripForm() {
     } finally {
       setLoading(false);
     }
-  };
+  });
 
   // Quick Create submission handler
   const handleQuickSubmit = async () => {
@@ -553,7 +570,7 @@ export function CreateTripForm() {
     }
   };
 
-  // Handle next step validation
+  // Handle next step validation with proper types
   const handleNext = async () => {
     let fieldsToValidate: (keyof FormValues)[] = [];
 
@@ -570,7 +587,7 @@ export function CreateTripForm() {
     }
 
     // Validate only the fields for the current step
-    const result = await form.trigger(fieldsToValidate as any);
+    const result = await form.trigger(fieldsToValidate);
 
     if (result) {
       setStep(step + 1);
@@ -635,7 +652,7 @@ export function CreateTripForm() {
 
         <FormProvider {...form}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:col-span-2">
+            <form onSubmit={onSubmit} className="space-y-4 md:col-span-2">
               <Card className="shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-0.5"></div>
                 <CardHeader className="p-4 pb-2">
@@ -710,7 +727,7 @@ export function CreateTripForm() {
                             </FormLabel>
                             <FormControl>
                               <PlaceSearch
-                                onPlaceSelect={(selectedPlace) => {
+                                onPlaceSelect={(selectedPlace: SelectedPlace | null) => {
                                   if (selectedPlace) {
                                     field.onChange(selectedPlace.placeId);
                                     form.setValue('destination_name', selectedPlace.name);
@@ -804,7 +821,10 @@ export function CreateTripForm() {
                             <FormLabel className="text-sm flex items-center gap-1">
                               <span>🧳 Trip Type</span>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select 
+                              onValueChange={(value: string) => field.onChange(value)} 
+                              value={field.value || ''}
+                            >
                               <FormControl>
                                 <SelectTrigger className="h-9">
                                   <SelectValue>
@@ -943,8 +963,9 @@ export function CreateTripForm() {
                             </FormLabel>
                             <FormControl>
                               <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                name="privacy_setting"
+                                value={field.value}
+                                onChange={field.onChange}
                                 className="space-y-2"
                               >
                                 {PRIVACY_OPTIONS.map((option) => (
@@ -1124,8 +1145,8 @@ export function CreateTripForm() {
         )}
 
         {showAuthModal && (
-          <AuthModalWithProps
-            isOpen={showAuthModal}
+          <AuthModal
+            open={showAuthModal}
             onClose={() => {
               // Save current form values
               const formValues = form.getValues();

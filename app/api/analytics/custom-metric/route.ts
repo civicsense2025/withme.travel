@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { TABLES } from '@/utils/constants/tables';
+import { recordCustomMetric } from '@/lib/api/analytics';
 
 /**
  * API route for collecting custom performance metrics
@@ -18,28 +18,18 @@ export async function POST(request: NextRequest) {
 
     // Get analytics data from request
     const analyticsData = await request.json();
+    const sessionId = request.cookies.get('analytics_session_id')?.value || undefined;
 
     if (!analyticsData.name) {
       return NextResponse.json({ error: 'Event name is required' }, { status: 400 });
     }
 
-    // Insert into analytics events table
-    const { error } = await supabase.from('analytics_events').insert({
-      user_id: userId || null,
-      event_name: analyticsData.name,
-      event_category: analyticsData.category || 'uncategorized',
-      properties: analyticsData.properties || {},
-      page_url: analyticsData.properties?.pathname || null,
-      session_id: request.cookies.get('analytics_session_id')?.value || null,
-      created_at: new Date().toISOString(),
-    });
-
-    if (error) {
-      console.error('Error saving analytics event:', error);
-      return NextResponse.json({ error: 'Failed to save analytics event' }, { status: 500 });
+    const result = await recordCustomMetric(analyticsData, userId, sessionId);
+    if (result.success) {
+      return NextResponse.json({ success: true });
+    } else {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
-
-    return NextResponse.json({ success: true });
   } catch (err) {
     console.error('Error processing analytics event:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -22,7 +22,7 @@ import {
   type Comment,
 } from '@/lib/client/comments';
 import type { Result } from '@/lib/client/comments';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Parameters for using the comments hook

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/DropdownMenu';
 import IdeaComments from './components/idea-comments';
 import { formatDateRange, formatTimeAgo } from './utils/date-utils';
 import { Input } from '@/components/ui/input';

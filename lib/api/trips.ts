@@ -13,6 +13,7 @@
 
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { handleError, Result } from './_shared';
+import ical from 'ical-generator';
 
 // ============================================================================
 // TYPES
@@ -355,3 +356,173 @@ export async function updateTripWithDetails(tripId: string, data: any): Promise<
   return updateTrip(tripId, data);
 }
 // (Add more as needed)
+
+// ============================================================================
+// CALENDAR EXPORT (ICS/GOOGLE CALENDAR)
+// ============================================================================
+
+/**
+ * Options for exporting a trip calendar
+ */
+export interface ExportTripCalendarOptions {
+  /** Export all days or only selected days */
+  exportOption: 'all' | 'selected';
+  /** List of selected day strings (YYYY-MM-DD) */
+  selectedDays?: string[];
+  /** If true, return ICS string for download; if false, return event objects for Google Calendar */
+  asIcs?: boolean;
+  /** The user's session object (must include user id, provider, and provider_token for Google export) */
+  session: {
+    user: {
+      id: string;
+      app_metadata?: { provider?: string };
+      provider_token?: string;
+    };
+  };
+}
+
+/**
+ * Centralized business logic for exporting a trip's itinerary as calendar events (Google Calendar or ICS).
+ *
+ * @param tripId - The trip's unique identifier
+ * @param options - Export options (selected days, format, session)
+ * @returns Result with either event data (for Google Calendar) or ICS string (for download)
+ */
+export async function exportTripCalendar(
+  tripId: string,
+  options: ExportTripCalendarOptions
+): Promise<Result<{ events?: any[]; icsString?: string; tripName?: string; exportedItems: number }>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    const { exportOption, selectedDays, asIcs, session } = options;
+
+    // Validate session
+    if (!session || !session.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Check if user is a member of this trip
+    const { data: member, error: memberError } = await supabase
+      .from(TABLES.TRIP_MEMBERS)
+      .select()
+      .eq('trip_id', tripId)
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    if (memberError || !member) {
+      return { success: false, error: "You don't have access to this trip" };
+    }
+
+    // Get trip details
+    const { data: trip, error: tripError } = await supabase
+      .from(TABLES.TRIPS)
+      .select('name, start_date, end_date')
+      .eq('id', tripId)
+      .single();
+    if (tripError || !trip) {
+      return { success: false, error: tripError?.message || 'Trip not found' };
+    }
+
+    // Get itinerary items
+    let query = supabase.from('itinerary_items').select('*').eq('trip_id', tripId);
+    if (exportOption === 'selected' && selectedDays && selectedDays.length > 0) {
+      query = query.in('date', selectedDays);
+    }
+    const { data: items, error: itemsError } = await query;
+    if (itemsError) {
+      return { success: false, error: itemsError.message };
+    }
+
+    // Format events for Google Calendar or ICS
+    const calendarEvents =
+      items && Array.isArray(items) && items.length > 0
+        ? items
+            .map((item: any) => {
+              // Defensive: skip items without required fields
+              if (!item || typeof item.date !== 'string' || !item.title) return null;
+              // Default to all day event if no times specified
+              const hasStartTime = Boolean(item.start_time);
+              const hasEndTime = Boolean(item.end_time);
+              let itemDate: Date;
+              try {
+                itemDate = new Date(item.date);
+                if (isNaN(itemDate.getTime())) return null;
+              } catch {
+                return null;
+              }
+              let startDateTime: Date;
+              let endDateTime: Date;
+              try {
+                startDateTime =
+                  hasStartTime && item.start_time
+                    ? new Date(`${item.date}T${item.start_time}`)
+                    : new Date(itemDate.setHours(9, 0, 0));
+                endDateTime =
+                  hasEndTime && item.end_time
+                    ? new Date(`${item.date}T${item.end_time}`)
+                    : new Date(startDateTime.getTime() + 60 * 60 * 1000);
+                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                  startDateTime = new Date(itemDate.setHours(9, 0, 0));
+                  endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+                }
+              } catch {
+                startDateTime = new Date(itemDate.setHours(9, 0, 0));
+                endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+              }
+              return {
+                summary: item.title || 'Untitled Event',
+                description: item.notes || `Part of your trip with withme.travel`,
+                location: item.location || undefined,
+                start: {
+                  dateTime: startDateTime.toISOString(),
+                  timeZone: 'UTC',
+                },
+                end: {
+                  dateTime: endDateTime.toISOString(),
+                  timeZone: 'UTC',
+                },
+              };
+            })
+            .filter(Boolean)
+        : [];
+
+    if (asIcs) {
+      // Generate ICS string using ical-generator
+      const calendar = ical({
+        name: `${trip.name} Itinerary`,
+        timezone: 'UTC',
+      });
+      calendarEvents.forEach((event: any) => {
+        calendar.createEvent({
+          start: new Date(event.start.dateTime),
+          end: new Date(event.end.dateTime),
+          summary: event.summary,
+          description: event.description,
+          location: event.location,
+          url: `https://withme.travel/trips/${tripId}`,
+        });
+      });
+      const icsString = calendar.toString();
+      return {
+        success: true,
+        data: {
+          icsString,
+          tripName: trip.name,
+          exportedItems: calendarEvents.length,
+        },
+      };
+    } else {
+      // For Google Calendar or preview
+      return {
+        success: true,
+        data: {
+          events: calendarEvents,
+          tripName: trip.name,
+          exportedItems: calendarEvents.length,
+        },
+      };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { success: false, error: errorMessage };
+  }
+}

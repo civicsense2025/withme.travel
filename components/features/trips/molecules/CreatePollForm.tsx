@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const pollSchema = z.object({
   title: z.string().min(3, {
@@ -123,8 +123,7 @@ export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormPr
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <Form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="title"
@@ -222,7 +221,7 @@ export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormPr
             <FormItem className="flex flex-col">
               <FormLabel>Expiry Date (optional)</FormLabel>
               <Popover>
-                <PopoverTrigger asChild>
+                <PopoverTrigger>
                   <FormControl>
                     <Button
                       variant="outline"
@@ -236,12 +235,12 @@ export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormPr
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date: Date) => date < new Date()}
                     initialFocus
                   />
                 </PopoverContent>
@@ -265,7 +264,6 @@ export function CreatePollForm({ tripId, onSuccess, onCancel }: CreatePollFormPr
             {isSubmitting ? 'Creating...' : 'Create Poll'}
           </Button>
         </div>
-      </form>
     </Form>
   );
 } 

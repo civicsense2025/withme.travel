@@ -8,14 +8,14 @@ import { NavbarStartPlanningDropdown } from './NavbarStartPlanningDropdown';
 import { NavbarMobileMenuButton } from './NavbarMobileMenuButton';
 import { NavbarMobileMenu } from './NavbarMobileMenu';
 import { NavbarAuthButtons } from './NavbarAuthButtons';
-import { NavbarUserMenu } from './NavbarUserMenu';
+import UserMenu from '@/components/layout/UserMenu';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
@@ -48,7 +48,7 @@ export default function Navbar() {
                 <>
                   <NavbarStartPlanningDropdown />
                   <NavbarThemeToggle />
-                  <NavbarUserMenu />
+                  <UserMenu />
                 </>
               ) : (
                 <>
@@ -75,7 +75,7 @@ export default function Navbar() {
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
           user={user ?? undefined}
-          signOut={signOut}
+          signOut={logout}
           activePath={pathname ?? undefined}
         />
       )}

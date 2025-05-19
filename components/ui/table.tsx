@@ -52,3 +52,5 @@ export interface TableHeaderCellProps {
 export function TableHeaderCell({ children }: TableHeaderCellProps) {
   return <th>{children}</th>;
 }
+
+export const TableHeader = ({ children }: { children: React.ReactNode }) => <thead>{children}</thead>;

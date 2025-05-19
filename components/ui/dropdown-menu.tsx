@@ -9,9 +9,78 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface DropdownMenuProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  options?: { label: string; value: string }[];
+  value?: string;
+  onChange?: (value: string) => void;
 }
-export function DropdownMenu({ children }: DropdownMenuProps) {
+
+export function DropdownMenu({ children, options, value, onChange }: DropdownMenuProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // If options are provided, render a simplified dropdown
+  if (options) {
+    const selectedOption = options.find(option => option.value === value);
+    
+    return (
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <span>{selectedOption?.label || 'Select option'}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`ml-2 transition-transform ${open ? 'rotate-180' : ''}`}
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        
+        {open && (
+          <div className="absolute z-50 mt-1 w-full rounded-md border border-input bg-background shadow-sm">
+            {options.map((option) => (
+              <div
+                key={option.value}
+                className="cursor-pointer px-3 py-2 hover:bg-muted"
+                onClick={() => {
+                  onChange?.(option.value);
+                  setOpen(false);
+                }}
+              >
+                {option.label}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Otherwise render children (for composable usage)
   return <>{children}</>;
 }
 
@@ -84,4 +153,4 @@ export interface DropdownMenuGroupProps {
 }
 export function DropdownMenuGroup({ children }: DropdownMenuGroupProps) {
   return <div className="space-y-1">{children}</div>;
-}
+} 

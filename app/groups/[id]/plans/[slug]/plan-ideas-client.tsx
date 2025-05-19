@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { ENUMS } from '@/utils/constants/database';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast'
 import { ChevronLeft, PlusCircle, Loader2, MoreVertical, Info } from 'lucide-react';
 import Link from 'next/link';
 import IdeaCard from './idea-card';
@@ -41,7 +41,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/DropdownMenu';
 import CreateIdeaDialog from './create-idea-dialog';
 import EditIdeaDialog from './edit-idea-dialog';
 import PlansNavigation from '../components/plans-navigation';
@@ -70,13 +70,13 @@ interface AddIdeasDialogProps {
 }
 
 // Position update interface matching the server endpoint
-interface IdeaPosition-pdate {
+interface IdeaPositionUpdate {
   ideaId: string;
   position: LocalIdeaPosition;
 }
 
 function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) {
-  const [unassignedIdeas, set-nassignedIdeas] = useState<LocalGroupIdea[]>([]);
+  const [unassignedIdeas, setUnassignedIdeas] = useState<LocalGroupIdea[]>([]);
   const [selectedIdeas, setSelectedIdeas] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -84,14 +84,14 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
   // Fetch unassigned ideas when dialog opens
   useEffect(() => {
     if (isOpen) {
-      const fetch-nassignedIdeas = async () => {
+      const fetchUnassignedIdeas = async () => {
         setIsLoading(true);
         try {
           const response = await fetch(`/api/groups/${groupId}/ideas?planId=null`);
           if (!response.ok) throw new Error('Failed to fetch unassigned ideas');
 
           const data = await response.json();
-          set-nassignedIdeas(data.ideas || []);
+          setUnassignedIdeas(data.ideas || []);
         } catch (error) {
           console.error('Error fetching unassigned ideas:', error);
           toast({
@@ -104,7 +104,7 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
         }
       };
 
-      fetch-nassignedIdeas();
+      fetchUnassignedIdeas();
     }
   }, [groupId, isOpen]);
 
@@ -486,7 +486,7 @@ export default function PlanIdeasClient({
   };
 
   // Handle updating an idea
-  const handleIdea-pdated = (updatedIdea: LocalGroupIdea) => {
+  const handleIdeaUpdated = (updatedIdea: LocalGroupIdea) => {
     setIdeas((prev) => prev.map((i) => (i.id === updatedIdea.id ? updatedIdea : i)));
   };
 
@@ -677,7 +677,7 @@ export default function PlanIdeasClient({
           open={isEditing}
           onOpenChange={setIsEditing}
           idea={selectedIdea}
-          onIdea-pdated={(updatedIdea) => {
+          onIdeaUpdated={(updatedIdea) => {
             setIdeas((prev) => prev.map((i) => (i.id === updatedIdea.id ? updatedIdea : i)));
             setIsEditing(false);
           }}

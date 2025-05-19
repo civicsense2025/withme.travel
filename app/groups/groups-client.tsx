@@ -31,7 +31,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { FriendsList } from '@/components/friends-list';
 import type { Friend } from '@/components/friends-list';
 import { API_ROUTES } from '@/utils/constants/routes';

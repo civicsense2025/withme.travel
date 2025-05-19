@@ -22,7 +22,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LocationSearch } from '@/components/location-search';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/lib/hooks/use-auth';
 interface Activity {
   id: string;

@@ -59,3 +59,5 @@ export const FormDescription = React.forwardRef<
   <p ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />
 ));
 FormDescription.displayName = 'FormDescription';
+
+export const FormMessage = ({ children }: { children: React.ReactNode }) => <div style={{ color: 'orange' }}>{children}</div>;

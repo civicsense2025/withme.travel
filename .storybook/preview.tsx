@@ -1,12 +1,13 @@
 import React from 'react';
 import type { Preview } from '@storybook/react';
-import { ThemeProvider } from '../components/theme-provider';
+import { withThemeByDataAttribute } from '@storybook/addon-themes';
+import '../app/globals.css';
+import { ThemeProvider } from '@components/ThemeProvider.tsx';
 import { fn } from '@storybook/test';
 import { withThemeByClassName } from '@storybook/addon-themes';
 import { themes } from '@storybook/theming';
 
 // Import CSS files in the correct order
-import '../app/globals.css'; // App-specific global styles second
 import './storybook.css'; // Storybook-specific styles last
 
 // Create the wrapper with storybook-specific class
@@ -24,7 +25,7 @@ const preview: Preview = {
     controls: {
       matchers: {
         color: /(background|color)$/i,
-        date: /Date$/,
+        date: /Date$/i,
       },
     },
     layout: 'centered',

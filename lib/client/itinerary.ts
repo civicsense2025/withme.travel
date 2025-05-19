@@ -9,8 +9,8 @@
 // ============================================================================
 
 import { API_ROUTES } from '@/utils/constants/routes';
-import { tryCatch } from '@/utils/result';
-import type { Result } from '@/lib/api/_shared';
+import { tryCatch } from '@/lib/client/result';
+import type { Result } from '@/lib/client/result';
 import { handleApiResponse } from './index';
 import type { ItineraryItem } from '@/lib/api/_shared';
 
@@ -32,14 +32,13 @@ function toStringResult<T, E = unknown>(
  * List all itinerary items for a trip
  */
 export async function listItineraryItems(tripId: string): Promise<Result<ItineraryItem[]>> {
-  const result: { success: true; data: ItineraryItem[] } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
-        method: 'GET',
-      }).then((response) =>
-        handleApiResponse<{ items: ItineraryItem[] }>(response).then((r) => r.items)
-      )
-    );
+  const result = await tryCatch(
+    fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
+      method: 'GET',
+    }).then((response) =>
+      handleApiResponse<{ items: ItineraryItem[] }>(response).then((r) => r.items)
+    )
+  );
   return toStringResult(result);
 }
 
@@ -50,14 +49,13 @@ export async function getItineraryItem(
   tripId: string,
   itemId: string
 ): Promise<Result<ItineraryItem>> {
-  const result: { success: true; data: ItineraryItem } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
-        method: 'GET',
-      }).then((response) =>
-        handleApiResponse<{ item: ItineraryItem }>(response).then((r) => r.item)
-      )
-    );
+  const result = await tryCatch(
+    fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
+      method: 'GET',
+    }).then((response) =>
+      handleApiResponse<{ item: ItineraryItem }>(response).then((r) => r.item)
+    )
+  );
   return toStringResult(result);
 }
 
@@ -68,16 +66,15 @@ export async function createItineraryItem(
   tripId: string,
   data: Partial<ItineraryItem>
 ): Promise<Result<ItineraryItem>> {
-  const result: { success: true; data: ItineraryItem } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }).then((response) =>
-        handleApiResponse<{ item: ItineraryItem }>(response).then((r) => r.item)
-      )
-    );
+  const result = await tryCatch(
+    fetch(API_ROUTES.TRIP_ITINERARY(tripId), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then((response) =>
+      handleApiResponse<{ item: ItineraryItem }>(response).then((r) => r.item)
+    )
+  );
   return toStringResult(result);
 }
 
@@ -89,16 +86,15 @@ export async function updateItineraryItem(
   itemId: string,
   data: Partial<ItineraryItem>
 ): Promise<Result<ItineraryItem>> {
-  const result: { success: true; data: ItineraryItem } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }).then((response) =>
-        handleApiResponse<{ item: ItineraryItem }>(response).then((r) => r.item)
-      )
-    );
+  const result = await tryCatch(
+    fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then((response) =>
+      handleApiResponse<{ item: ItineraryItem }>(response).then((r) => r.item)
+    )
+  );
   return toStringResult(result);
 }
 
@@ -106,7 +102,7 @@ export async function updateItineraryItem(
  * Delete an itinerary item
  */
 export async function deleteItineraryItem(tripId: string, itemId: string): Promise<Result<null>> {
-  const result: { success: true; data: null } | { success: false; error: Error } = await tryCatch(
+  const result = await tryCatch(
     fetch(API_ROUTES.ITINERARY_ITEM(tripId, itemId), {
       method: 'DELETE',
     }).then(() => null)
@@ -121,16 +117,15 @@ export async function reorderItineraryItems(
   tripId: string,
   items: Array<{ id: string; position: number; day?: number }>
 ): Promise<Result<ItineraryItem[]>> {
-  const result: { success: true; data: ItineraryItem[] } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(API_ROUTES.TRIP_ITINERARY_REORDER(tripId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
-      }).then((response) =>
-        handleApiResponse<{ items: ItineraryItem[] }>(response).then((r) => r.items)
-      )
-    );
+  const result = await tryCatch(
+    fetch(API_ROUTES.TRIP_ITINERARY_REORDER(tripId), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    }).then((response) =>
+      handleApiResponse<{ items: ItineraryItem[] }>(response).then((r) => r.items)
+    )
+  );
   return toStringResult(result);
 }
 
@@ -142,16 +137,15 @@ export async function importFromTemplate(
   templateId: string,
   options?: { adjustDates?: boolean }
 ): Promise<Result<ItineraryItem[]>> {
-  const result: { success: true; data: ItineraryItem[] } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(API_ROUTES.TRIP_APPLY_TEMPLATE(tripId, templateId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options || {}),
-      }).then((response) =>
-        handleApiResponse<{ items: ItineraryItem[] }>(response).then((r) => r.items)
-      )
-    );
+  const result = await tryCatch(
+    fetch(API_ROUTES.TRIP_APPLY_TEMPLATE(tripId, templateId), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options || {}),
+    }).then((response) =>
+      handleApiResponse<{ items: ItineraryItem[] }>(response).then((r) => r.items)
+    )
+  );
   return toStringResult(result);
 }
 
@@ -197,13 +191,12 @@ export interface TransportationData {
  * List all logistics items for a trip
  */
 export async function listTripLogistics(tripId: string): Promise<Result<LogisticsItem[]>> {
-  const result: { success: true; data: LogisticsItem[] } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(`${API_ROUTES.TRIPS.LOGISTICS(tripId)}`, {
-        method: 'GET',
-        cache: 'no-store',
-      }).then((response) => handleApiResponse<LogisticsItem[]>(response))
-    );
+  const result = await tryCatch(
+    fetch(`/api/trips/${tripId}/logistics`, {
+      method: 'GET',
+      cache: 'no-store',
+    }).then((response) => handleApiResponse<LogisticsItem[]>(response))
+  );
   return toStringResult(result);
 }
 
@@ -214,16 +207,15 @@ export async function addAccommodationToTrip(
   tripId: string,
   data: AccommodationData
 ): Promise<Result<LogisticsItem>> {
-  const result: { success: true; data: LogisticsItem } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(`${API_ROUTES.TRIPS.LOGISTICS(tripId)}/accommodation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      }).then((response) => handleApiResponse<LogisticsItem>(response))
-    );
+  const result = await tryCatch(
+    fetch(`/api/trips/${tripId}/logistics/accommodation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }).then((response) => handleApiResponse<LogisticsItem>(response))
+  );
   return toStringResult(result);
 }
 
@@ -234,16 +226,15 @@ export async function addTransportationToTrip(
   tripId: string,
   data: TransportationData
 ): Promise<Result<LogisticsItem>> {
-  const result: { success: true; data: LogisticsItem } | { success: false; error: Error } =
-    await tryCatch(
-      fetch(`${API_ROUTES.TRIPS.LOGISTICS(tripId)}/transportation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      }).then((response) => handleApiResponse<LogisticsItem>(response))
-    );
+  const result = await tryCatch(
+    fetch(`/api/trips/${tripId}/logistics/transportation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }).then((response) => handleApiResponse<LogisticsItem>(response))
+  );
   return toStringResult(result);
 }
 
@@ -258,13 +249,13 @@ export async function addFormToTrip(
     template_id?: string | null;
   }
 ): Promise<Result<any>> {
-  const result: { success: true; data: any } | { success: false; error: Error } = await tryCatch(
-    fetch(`${API_ROUTES.TRIPS.DETAIL(tripId)}/forms`, {
+  const result = await tryCatch(
+    fetch(`/api/trips/${tripId}/logistics`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ type: 'form', ...data }),
     }).then((response) => handleApiResponse(response))
   );
   return toStringResult(result);

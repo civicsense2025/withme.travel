@@ -8,8 +8,7 @@
 
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 
 // ============================================================================
 // COMPONENT PROPS & TYPES
@@ -42,13 +41,15 @@ export function NoteContent({ content, className, showPlaceholder = true }: Note
     <div className={cn('prose prose-sm dark:prose-invert max-w-none break-words', className)}>
       <ReactMarkdown
         components={{
-          // Custom rendering for code blocks with syntax highlighting
-          code({ node, inline, className, children, ...props }) {
+          // Custom rendering for code blocks
+          code({ node, inline, className, children, ...props }: { node: any, inline: boolean, className: string, children: React.ReactNode, props: any }) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" {...props}>
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              <pre className={cn('bg-muted p-4 rounded-md overflow-x-auto', className)} {...props}>
+                <code className={`language-${match[1]}`}>
+                  {String(children).replace(/\n$/, '')}
+                </code>
+              </pre>
             ) : (
               <code className={className} {...props}>
                 {children}

@@ -1,24 +1,44 @@
+/**
+ * useToast Hook
+ *
+ * A standardized toast notification hook for consistent UI feedback.
+ *
+ * @module hooks/use-toast
+ */
+
 'use client';
 
 // Inspired by react-hot-toast library
 import * as React from 'react';
 import { Toast, ToastProps } from '../components/ui/toast';
 import { useCallback, useState } from 'react';
+import type { ReactNode } from 'react';
 
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
 
-type ToastOptions = ToastProps & {
+/**
+ * Toast options type
+ */
+export interface ToastOptions {
   title?: string;
   description?: string;
-  action?: React.ReactNode;
-  variant?: 'default' | 'destructive';
-};
+  children?: ReactNode;
+  action?: ReactNode;
+  variant?: 'default' | 'destructive' | 'success' | 'info';
+  duration?: number;
+}
 
+/**
+ * Configuration options for the useToast hook
+ */
 export interface UseToastOptions {
   maxToasts?: number;
 }
 
+/**
+ * useToast - React hook for managing toast notifications
+ */
 export function useToast({ maxToasts = 3 }: UseToastOptions = {}) {
   const [toasts, setToasts] = useState<ToastOptions[]>([]);
 
@@ -32,10 +52,10 @@ export function useToast({ maxToasts = 3 }: UseToastOptions = {}) {
         return [...prev, options];
       });
 
-      // Auto-dismiss after 5 seconds
+      // Auto-dismiss after duration seconds or 5 seconds (default)
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t !== options));
-      }, 5000);
+      }, options.duration || 5000);
     },
     [maxToasts]
   );

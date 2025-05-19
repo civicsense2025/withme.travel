@@ -1,5 +1,5 @@
-import { tryCatch } from './result';
-import type { Result } from './result';
+import { tryCatch } from '@/lib/client/result';
+import type { Result } from '@/lib/client/result';
 import { handleApiResponse } from './index';
 
 // Types

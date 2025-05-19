@@ -23,7 +23,7 @@ import {
   type UpdateTripMemberData,
 } from '@/lib/client/tripMembers';
 import type { Result } from '@/lib/client/tripMembers';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * useTripMembers hook for managing trip members

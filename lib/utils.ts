@@ -448,3 +448,5 @@ export function formatRelativeTime(date: Date | string): string {
     return formatDate(date, 'DISPLAY_DATE');
   }
 }
+
+export { formatRelativeTime as formatTimeAgo };

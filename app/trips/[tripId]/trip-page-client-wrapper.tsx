@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { TripPageClient } from './trip-page-client';
-import { ClassErrorBoundary } from '@/components/error-boundary';
+import { ClassErrorBoundary } from '@/components/error-fallbacks/ClassErrorBoundary';
 import { TripPageError } from '@/components/features/trips';
 import { TripDataProvider, useTripData } from './context/trip-data-provider';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { SimplifiedTripHeader } from '@/components/features/trips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TABLES } from '@/utils/constants/database';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { TripProvider } from './context/trip-context';
 // TODO: Replace 'any' with the correct import from 'onborda' if available
@@ -198,16 +198,24 @@ function EnhancedTripContent({
 
           if (error) {
             toast({
-              title: 'Failed to update budget',
-              description: error.message,
+              children: (
+                <>
+                  <div className="font-bold">Failed to update budget</div>
+                  <div>{error.message}</div>
+                </>
+              ),
               variant: 'destructive',
             });
             throw error;
           }
 
           toast({
-            title: 'Budget updated',
-            description: 'Your trip budget has been updated successfully',
+            children: (
+              <>
+                <div className="font-bold">Budget updated</div>
+                <div>Your trip budget has been updated successfully</div>
+              </>
+            ),
           });
 
           // -pdate local state
@@ -297,8 +305,13 @@ function EnhancedTripContent({
               <Button
                 onClick={() => {
                   toast({
-                    title: 'Expense Logged',
-                    description: 'Your expense has been added to the trip budget.',
+                    variant: 'default',
+                    children: (
+                      <>
+                        <div className="font-bold">Expense Logged</div>
+                        <div>Your expense has been added to the trip budget.</div>
+                      </>
+                    ),
                   });
                   setIsAddExpenseOpen(false);
                 }}
@@ -383,7 +396,14 @@ export default function TripPageClientWrapper({
     <>
       <TripCreatedCelebrationModal />
       <TripTourController tripId={tripId} />
-      <ClassErrorBoundary fallback={<TripPageError tripId={tripId} />} section="trip-page-client">
+      <ClassErrorBoundary 
+        fallback={({ error, resetErrorBoundary }) => (
+          <TripPageError 
+            tripId={tripId} 
+            error={error} 
+          />
+        )}
+      >
         <QueryClientProvider client={queryClient}>
           <TripDataProvider tripId={tripId} initialData={initialTrip}>
             <TripProvider tripId={tripId} initialTrip={initialTrip}>

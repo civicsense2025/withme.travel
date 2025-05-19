@@ -73,7 +73,7 @@ export function PresenceHandler() {
   const channelRef = useRef<any>(null);
 
   // Generate a color for the user based on their ID
-  const generate-serColor = useCallback((userId: string) => {
+  const generateUserColor = useCallback((userId: string) => {
     let hash = 0;
     for (let i = 0; i < userId.length; i++) {
       hash = userId.charCodeAt(i) + ((hash << 5) - hash);
@@ -82,7 +82,7 @@ export function PresenceHandler() {
     return `hsl(${h}, 70%, 80%)`;
   }, []);
 
-  // -pdate cursor position, throttled to reduce network traffic
+  // Update cursor position, throttled to reduce network traffic
   const updateCursorPosition = useCallback(
     throttle((e: MouseEvent) => {
       setCursorPosition({ x: e.clientX, y: e.clientY });
@@ -115,7 +115,7 @@ export function PresenceHandler() {
           name: userPresence.name || 'Anonymous',
           position: userPresence.position || { x: 0, y: 0 },
           lastActive: userPresence.lastActive || Date.now(),
-          color: userPresence.color || generate-serColor(userId),
+          color: userPresence.color || generateUserColor(userId),
         };
       });
 
@@ -127,7 +127,7 @@ export function PresenceHandler() {
       updateCursorPosition(e);
     };
 
-    // -pdate presence with own cursor position when it changes
+    // Update presence with own cursor position when it changes
     // and on regular intervals to maintain "heartbeat"
     const presenceInterval = setInterval(() => {
       if (cursorPosition) {
@@ -135,7 +135,7 @@ export function PresenceHandler() {
           name: user.name || user.email?.split('@')[0] || 'Anonymous',
           position: cursorPosition,
           lastActive: Date.now(),
-          color: generate-serColor(user.id),
+          color: generateUserColor(user.id),
         });
       }
     }, 1000);
@@ -148,7 +148,7 @@ export function PresenceHandler() {
           name: user.name || user.email?.split('@')[0] || 'Anonymous',
           position: cursorPosition,
           lastActive: Date.now(),
-          color: generate-serColor(user.id),
+          color: generateUserColor(user.id),
         });
       }
     });
@@ -168,7 +168,7 @@ export function PresenceHandler() {
         channelRef.current.unsubscribe();
       }
     };
-  }, [user, groupId, cursorPosition, generate-serColor, supabase, updateCursorPosition]);
+  }, [user, groupId, cursorPosition, generateUserColor, supabase, updateCursorPosition]);
 
   if (!user) return null;
 

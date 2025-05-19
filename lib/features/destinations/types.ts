@@ -4,13 +4,13 @@
  * Exports all types related to the destinations feature
  */
 
-// Re-export API client types
+// Re-export API types from the canonical API shared types
 export type {
   Destination,
-  DestinationFilter,
-  CreateDestinationData,
-  UpdateDestinationData
-} from '@/lib/client/destinations';
+  // DestinationFilter, // Not defined in _shared, so remove
+  // CreateDestinationData, // Not defined in _shared, so remove
+  // UpdateDestinationData // Not defined in _shared, so remove
+} from '@/lib/api/_shared';
 
 // Additional component-specific types
 export interface DisplayDestination {
@@ -42,12 +42,10 @@ export interface DisplayDestination {
 export function adaptDestinationForDisplay(apiDestination: Destination): DisplayDestination {
   return {
     id: apiDestination.id,
-    name: apiDestination.name,
+    name: apiDestination.name ?? undefined,
     city: null,
     country: apiDestination.country ?? null,
     description: apiDestination.description ?? null,
-    image_url: (apiDestination as any).hero_image_url || 
-      (apiDestination as any).thumbnail_url || 
-      null
+    image_url: ((apiDestination as any).hero_image_url || (apiDestination as any).thumbnail_url) ?? undefined
   };
 } 

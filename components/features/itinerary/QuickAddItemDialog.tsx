@@ -46,7 +46,7 @@ import { TABLES } from '@/utils/constants/database';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Lazy load geocoder to reduce initial bundle size
-const MapboxGeocoderComponent = lazy(() => import('@/components/features/maps/mapbox-geocoder'));
+const MapboxGeocoderComponent = lazy(() => import('@/components/features/maps/MapboxGeocoder'));
 
 // Use the same GeocoderResult interface as defined in mapbox-geocoder.tsx
 interface GeocoderResult {

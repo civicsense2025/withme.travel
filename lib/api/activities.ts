@@ -14,6 +14,7 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/tables';
 import { handleError, Result, Activity } from './_shared';
+import { extractKeywords, generateActivityIdeas } from '@/utils/activity-generator';
 
 // ============================================================================
 // CRUD FUNCTIONS
@@ -25,16 +26,14 @@ import { handleError, Result, Activity } from './_shared';
  * @param parentType - The type of parent entity (e.g., 'trip', 'group')
  * @returns Result containing an array of activities
  */
-export async function listActivities(
-  parentId: string,
-  parentType: string
-): Promise<Result<Activity[]>> {
+export async function listActivities(params: any): Promise<Result<Activity[]>> {
+  // TODO: Implement list activities logic
   try {
     const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
       .from(TABLES.GROUP_ACTIVITIES)
       .select('*')
-      .eq(`${parentType}_id`, parentId);
+      .eq(`${params.parentType}_id`, params.parentId);
 
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
@@ -58,7 +57,7 @@ export async function getActivity(activityId: string): Promise<Result<Activity>>
       .single();
 
     if (error) return { success: false, error: error.message };
-    return { success: true, data };
+    return { success: true, data: data as Activity };
   } catch (error) {
     return handleError(error, 'Failed to fetch activity');
   }
@@ -71,17 +70,14 @@ export async function getActivity(activityId: string): Promise<Result<Activity>>
  * @param data - The activity data
  * @returns Result containing the created activity
  */
-export async function createActivity(
-  parentId: string,
-  parentType: string,
-  data: Partial<Activity>
-): Promise<Result<Activity>> {
+export async function createActivity(data: any): Promise<Result<Activity>> {
+  // TODO: Implement create activity logic
   try {
     const supabase = await createRouteHandlerClient();
     // Ensure parent ID is set
     const activityData = {
       ...data,
-      [`${parentType}_id`]: parentId,
+      [`${data.parentType}_id`]: data.parentId,
     };
 
     const { data: newActivity, error } = await supabase
@@ -103,10 +99,8 @@ export async function createActivity(
  * @param data - Partial activity data to update
  * @returns Result containing the updated activity
  */
-export async function updateActivity(
-  activityId: string,
-  data: Partial<Activity>
-): Promise<Result<Activity>> {
+export async function updateActivity(activityId: string, data: any): Promise<Result<Activity>> {
+  // TODO: Implement update activity logic
   try {
     const supabase = await createRouteHandlerClient();
     const { data: updatedActivity, error } = await supabase
@@ -129,6 +123,7 @@ export async function updateActivity(
  * @returns Result indicating success or failure
  */
 export async function deleteActivity(activityId: string): Promise<Result<null>> {
+  // TODO: Implement delete activity logic
   try {
     const supabase = await createRouteHandlerClient();
     const { error } = await supabase.from(TABLES.GROUP_ACTIVITIES).delete().eq('id', activityId);
@@ -197,6 +192,7 @@ export async function suggestActivity(
       [`${parentType}_id`]: parentId,
       is_suggestion: true,
       status: 'suggested',
+      activity_type: suggestion.category || 'other', // Ensure required field
     };
 
     const { data: newSuggestion, error } = await supabase
@@ -261,4 +257,69 @@ export async function categorizeActivity(
 ): Promise<Result<{ categories: string[]; confidence: number[] }>> {
   // TODO: Implement AI categorization
   return { success: false, error: 'Not implemented yet' };
+}
+
+/**
+ * Generate activity ideas for a destination (centralized business logic).
+ * @param destinationId - The destination's unique identifier
+ * @param tripId - (Optional) The trip's unique identifier
+ * @param count - Number of activity ideas to generate (default: 10)
+ * @returns Result containing generated activity ideas and context
+ */
+export async function generateActivityIdeasForDestination(
+  destinationId: string,
+  tripId?: string,
+  count: number = 10
+): Promise<Result<{
+  activities: any[];
+  destination: { id: string; name: string };
+  keywords: string[];
+  count: number;
+}>> {
+  try {
+    if (!destinationId) {
+      return { success: false, error: 'Destination ID is required' };
+    }
+    const supabase = await createRouteHandlerClient();
+    // Fetch destination
+    const { data: destination, error: destinationError } = await supabase
+      .from('destinations')
+      .select('name, description')
+      .eq('id', destinationId)
+      .single();
+    if (destinationError || !destination) {
+      return { success: false, error: 'Destination not found' };
+    }
+    // Fetch template items (if available)
+    const { data: tripTemplate, error: templateError } = await supabase
+      .from('itinerary_templates')
+      .select('items')
+      .eq('destination_id', destinationId)
+      .single();
+    // Extract keywords
+    const keywords = extractKeywords(destination.description || '');
+    // Safely access template items
+    let templateItems: any[] = [];
+    if (tripTemplate && !templateError && 'items' in tripTemplate) {
+      templateItems = (tripTemplate.items as any[]) || [];
+    }
+    // Generate activity ideas
+    const activities = generateActivityIdeas(
+      destination.name ?? '',
+      keywords,
+      templateItems,
+      count
+    );
+    return {
+      success: true,
+      data: {
+        activities,
+        destination: { id: destinationId, name: destination.name ?? '' },
+        keywords,
+        count: activities.length,
+      },
+    };
+  } catch (error) {
+    return handleError(error, 'Failed to generate activities');
+  }
 }

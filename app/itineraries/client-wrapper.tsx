@@ -6,10 +6,11 @@ import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
-import { ItineraryFilters } from '@/components/itinerary-filters';
-import { ItineraryTemplateCard } from '@/components/itinerary-template-card';
+
+import { ItineraryTemplateCard } from '@/components/features/itinerary/molecules/ItineraryTemplateCard';
 import { ItineraryTemplateMetadata } from '@/utils/constants/tables';
 import { Badge } from '@/components/ui/badge';
+import { ItineraryFilters } from '@/components/ItineraryFilters';
 
 // Define a minimal Destination type
 interface Destination {
@@ -203,17 +204,17 @@ const ClientWrapperContent = memo(
     return (
       <div>
         <div className="sticky top-16 z-10 bg-background/80 backdrop-blur-xl mb-10 py-4 shadow-sm">
-          <ItineraryFilters
-            durations={allDurations}
-            destinations={allDestinations}
-            tags={allTags}
-            selectedDuration={selectedDuration}
-            selectedDestination={selectedDestination}
-            selectedTags={selectedTags}
-            onDurationChange={setSelectedDuration}
-            onDestinationChange={setSelectedDestination}
-            onTagsChange={setSelectedTags}
-          />
+              <ItineraryFilters
+                durations={allDurations}
+                destinations={allDestinations}
+                tags={allTags}
+                selectedDuration={selectedDuration}
+                selectedDestination={selectedDestination}
+                selectedTags={selectedTags}
+                onDurationChange={setSelectedDuration}
+                onDestinationChange={setSelectedDestination}
+                onTagsChange={setSelectedTags}
+              />
         </div>
 
         {sortedItineraries.length === 0 ? (

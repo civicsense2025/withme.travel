@@ -10,8 +10,27 @@ import { cn } from '@/lib/utils';
 
 export interface AlertDialogProps {
   children: React.ReactNode;
+  open?: boolean;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: 'default' | 'destructive';
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
-export function AlertDialog({ children }: AlertDialogProps) {
+
+export function AlertDialog({ 
+  children,
+  open,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  variant = "default",
+  onConfirm,
+  onCancel
+}: AlertDialogProps) {
   return <>{children}</>;
 }
 
@@ -66,4 +85,4 @@ export function AlertDialogCancel({ className, ...props }: AlertDialogCancelProp
   return (
     <button className={cn('bg-muted text-foreground rounded px-4 py-2', className)} {...props} />
   );
-}
+} 

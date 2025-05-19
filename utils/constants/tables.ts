@@ -98,6 +98,7 @@ export const TABLES = {
   TASKS: 'tasks',
   TASK_VOTES: 'task_votes',
   TASK_TAGS: 'task_tags',
+  TRIP_ANALYTICS_EVENTS: 'trip_analytics_events',
 } as const;
 
 // ============================================================================

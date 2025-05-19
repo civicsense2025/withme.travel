@@ -6,7 +6,7 @@ const meta: Meta<typeof DashboardHeader> = {
   component: DashboardHeader,
   argTypes: {
     userName: { control: 'text' },
-    avatar-rl: { control: 'text' },
+    avatarUrl: { control: 'text' },
     travelStats: {
       control: 'object',
       defaultValue: {
@@ -25,7 +25,7 @@ type Story = StoryObj<typeof DashboardHeader>;
 export const Playground: Story = {
   args: {
     userName: 'Taylor',
-    avatar-rl: '',
+    avatarUrl: '',
     travelStats: {
       visitedCount: 12,
       plannedCount: 3,

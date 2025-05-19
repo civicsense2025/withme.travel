@@ -42,3 +42,14 @@ export { auth, groups };
 //   feedback,
 //   search
 // };
+
+// Re-export components from their new atomic structure locations
+// This provides backward compatibility while we transition
+
+// Layout components
+export { PageHeader } from '@/components/features/layout/organisms/PageHeader';
+
+// Trip components 
+export { HeroSection } from '@/components/features/trips/organisms/HeroSection';
+export { SharedPresenceSection } from '@/components/features/trips/organisms/SharedPresenceSection';
+export { ExpenseMarketingSection } from '@/components/features/trips/organisms/ExpenseMarketingSection';

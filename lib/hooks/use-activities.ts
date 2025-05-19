@@ -7,8 +7,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { ActivityType } from '@/components/activities/atoms/activity-icon';
+import { useToast } from '@/hooks/use-toast';
+import { ActivityType } from '@/components/features/activities/types';
+import { listActivities } from '../client/activities';
 
 // ============================================================================
 // TYPES

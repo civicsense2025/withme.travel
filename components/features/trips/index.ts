@@ -51,6 +51,10 @@ export * from './organisms/TripPresenceIndicator';
 // export * from './organisms/MultipleCitySelector';
 // export * from './organisms/TripSidebar';
 
+export { HeroSection } from './organisms/HeroSection';
+export { SharedPresenceSection } from './organisms/SharedPresenceSection';
+export { ExpenseMarketingSection } from './organisms/ExpenseMarketingSection';
+
 // Templates
 // export * from './templates/TripsOverviewTemplate';
 // export * from './templates/TripDetailTemplate';

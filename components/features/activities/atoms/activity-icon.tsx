@@ -1,69 +1,92 @@
-/**
- * ActivityIcon component displays an icon for different activity types
- *
- * @module activities/atoms
- */
-
-'use client';
-
-import { 
-  CalendarIcon, 
-  MapPinIcon, 
-  MessagesSquareIcon, 
-  PencilIcon,
-  UserIcon,
-  CheckIcon,
-  ClockIcon,
-  FileTextIcon
+import React from 'react';
+import { cn } from '@/lib/utils';
+import {
+  Utensils,
+  Wine,
+  Map,
+  Camera,
+  Compass,
+  Music,
+  Mountain,
+  Building,
+  Coffee,
+  Heart,
+  Calendar,
+  Users,
+  Star,
+  ShoppingBag
 } from 'lucide-react';
 
-// Define activity types with their corresponding icons
-export type ActivityType = 
-  | 'trip_created'
-  | 'trip_updated'
-  | 'member_joined'
-  | 'itinerary_added'
-  | 'itinerary_updated'
-  | 'comment_added'
-  | 'task_completed'
-  | 'note_added';
-
 export interface ActivityIconProps {
-  /** The type of activity to display an icon for */
-  type: ActivityType;
-  /** Additional CSS class names */
+  type: string;
   className?: string;
-  /** Size of the icon in pixels */
+  color?: string;
   size?: number;
 }
 
-/**
- * Displays an appropriate icon based on the activity type
- */
-export function ActivityIcon({ type, className = '', size = 16 }: ActivityIconProps) {
-  const iconProps = { 
-    size, 
-    className: `activity-icon ${className}`
+export function ActivityIcon({ type, className, color, size = 20 }: ActivityIconProps) {
+  const getIcon = () => {
+    const props = {
+      className: cn('', className),
+      color,
+      size
+    };
+
+    // Map activity types to icons
+    switch (type?.toLowerCase()) {
+      case 'food':
+      case 'restaurant':
+      case 'dining':
+        return <Utensils {...props} />;
+      case 'drink':
+      case 'bar':
+      case 'pub':
+      case 'wine':
+        return <Wine {...props} />;
+      case 'sightseeing':
+      case 'tour':
+        return <Map {...props} />;
+      case 'photography':
+      case 'photo':
+        return <Camera {...props} />;
+      case 'adventure':
+      case 'explore':
+        return <Compass {...props} />;
+      case 'concert':
+      case 'music':
+      case 'show':
+        return <Music {...props} />;
+      case 'hiking':
+      case 'nature':
+      case 'outdoors':
+        return <Mountain {...props} />;
+      case 'museum':
+      case 'gallery':
+      case 'history':
+        return <Building {...props} />;
+      case 'cafe':
+      case 'coffee':
+        return <Coffee {...props} />;
+      case 'wellness':
+      case 'spa':
+      case 'health':
+        return <Heart {...props} />;
+      case 'event':
+      case 'festival':
+        return <Calendar {...props} />;
+      case 'social':
+      case 'meetup':
+        return <Users {...props} />;
+      case 'shopping':
+      case 'market':
+        return <ShoppingBag {...props} />;
+      case 'featured':
+      case 'highlight':
+        return <Star {...props} />;
+      default:
+        return <Calendar {...props} />;
+    }
   };
 
-  switch (type) {
-    case 'trip_created':
-      return <CalendarIcon {...iconProps} />;
-    case 'trip_updated':
-      return <PencilIcon {...iconProps} />;
-    case 'member_joined':
-      return <UserIcon {...iconProps} />;
-    case 'itinerary_added':
-      return <MapPinIcon {...iconProps} />;
-    case 'itinerary_updated':
-      return <PencilIcon {...iconProps} />;
-    case 'comment_added':
-      return <MessagesSquareIcon {...iconProps} />;
-    case 'task_completed':
-      return <CheckIcon {...iconProps} />;
-    case 'note_added':
-      return <FileTextIcon {...iconProps} />;
-    default:
-      return <ClockIcon {...iconProps} />;
-  }
-}
+  return getIcon();
+} 

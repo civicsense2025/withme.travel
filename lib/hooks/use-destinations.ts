@@ -24,7 +24,7 @@ import {
   type DestinationFilter,
 } from '@/lib/client/destinations';
 import type { Result } from '@/lib/client/result';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * useDestinations hook for managing destinations

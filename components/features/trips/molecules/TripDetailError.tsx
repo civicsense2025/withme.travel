@@ -14,7 +14,7 @@ import { AlertCircle, RefreshCw, ArrowLeft, Home, Copy } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface TripDetailErrorProps {
   tripId: string;

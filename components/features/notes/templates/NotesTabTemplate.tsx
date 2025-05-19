@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, FileText, Loader2 } from 'lucide-react';
 import { CollaborativeEditor } from '../molecules/CollaborativeEditor';
 import { NoteCard } from '../molecules/NoteCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/ScrollArea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // ============================================================================
