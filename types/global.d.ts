@@ -7,6 +7,7 @@ declare module '@/lib/utils' {
   export function cn(...inputs: (string | undefined | null | boolean | Record<string, boolean>)[]): string;
   export function formatDate(date: Date | string | number): string;
   export function createUrl(pathname: string, params: Record<string, string | string[] | undefined>): string;
+  export function formatCurrency(amount: number, currency?: string): string;
 }
 
 declare module '@/lib/auth/supabase' {

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * useOgImage Hook
  * 
@@ -6,7 +8,7 @@
  * @module hooks/use-og-image
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 /**
  * OpenGraph image metadata
@@ -207,4 +209,39 @@ export function useOgImage(
       return getOpenGraphImage(params)[0];
     }
   }, [params]);
+}
+
+export function useOpenGraphImage(url?: string) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!url) {
+      setImageUrl(null);
+      return;
+    }
+
+    const fetchOpenGraphImage = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/og-image?url=${encodeURIComponent(url)}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch OpenGraph image: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setImageUrl(data.imageUrl);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch OpenGraph image'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOpenGraphImage();
+  }, [url]);
+
+  return { imageUrl, loading, error };
 } 

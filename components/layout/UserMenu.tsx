@@ -15,6 +15,15 @@ import {
 } from '@/components/ui/DropdownMenu';
 import { Skeleton } from '@/components/ui/skeleton';
 
+type User = {
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+  isAdmin?: boolean;
+};
+
 enum MenuStatus {
   LOADING = 'LOADING',
   LOGGED_OUT = 'LOGGED_OUT',
@@ -36,8 +45,8 @@ function getInitials(name?: string | null, email?: string | null): string {
 }
 
 interface UserMenuProps {
-  serverSession?: Session | null;
-  topPosition?: boolean; // New prop for mobile positioning
+  serverSession?: any | null;
+  topPosition?: boolean;
 }
 
 export default function UserMenu({ serverSession = null, topPosition = false }: UserMenuProps) {
@@ -83,8 +92,8 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
   const avatarUrl = user?.user_metadata?.avatar_url;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <DropdownMenu options={[]}>
+      <DropdownMenuTrigger>
         <Button variant="ghost" className="h-8 w-8 p-0 rounded-full" aria-label="Open user menu">
           <Avatar className="h-8 w-8">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
@@ -114,7 +123,7 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
         <Link href="/travel-map">
           <Button variant="link" className="w-full text-left">🗺️ Travel Map</Button>
         </Link>
-        {user?.isAdmin && (
+        {user?.role === 'admin' && (
           <Link href="/admin/dashboard">
             <Button variant="link" className="w-full text-left">🛠️ Admin Panel</Button>
           </Link>

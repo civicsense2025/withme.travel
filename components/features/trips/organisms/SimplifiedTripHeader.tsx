@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { useState } from 'react';
-import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
 import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
 import {
   Sheet,
@@ -18,6 +17,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { CompactBudgetSnapshot } from '@/components/features/budget/organisms/CompactBudgetSnapshot';
 
 interface TripDetailsProps {
   id: string;
@@ -164,12 +164,10 @@ export default function SimplifiedTripHeader({
                     Search for an image or upload your own photo for your trip cover.
                   </SheetDescription>
                 </SheetHeader>
-                <div className="p-6 pt-2">
+                <div className="absolute inset-0 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <ImageSearchSelector
-                    isOpen={true}
-                    onClose={() => setIsSheetOpen(false)}
-                    onImageSelect={(imageUrl) => handleImageSelect(imageUrl)}
-                    initialSearchTerm={normalizedTrip.destination?.name || ''}
+                    onSelect={(image) => handleImageSelect(image.url)}
+                    initialValue={normalizedTrip.destination?.name || ''}
                   />
                 </div>
               </SheetContent>
@@ -251,9 +249,9 @@ export default function SimplifiedTripHeader({
           {normalizedTrip.budgetProps && (
             <div className="absolute bottom-6 right-6 z-10">
               <CompactBudgetSnapshot
-                targetBudget={normalizedTrip.budgetProps.targetBudget}
-                totalPlanned={normalizedTrip.budgetProps.totalPlanned}
-                totalSpent={normalizedTrip.budgetProps.totalSpent}
+                targetBudget={Number(normalizedTrip.budgetProps.targetBudget)}
+                totalPlanned={Number(normalizedTrip.budgetProps.totalPlanned)}
+                totalSpent={Number(normalizedTrip.budgetProps.totalSpent)}
                 canEdit={showEditButton}
                 isEditing={normalizedTrip.budgetProps.isEditing}
                 onEditToggle={normalizedTrip.budgetProps.onEditToggle}

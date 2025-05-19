@@ -1,12 +1,11 @@
 import { redirect } from 'next/navigation';
-import { PageContainer } from '@/components/features/layout/organisms/PageContainer';
 import { PageHeader } from '@/components/features/layout/organisms/PageHeader';
 import { Metadata } from 'next';
 import { requireAuthOrGuest } from '@/utils/auth/route-helpers';
-import { TripTabs } from '@/components/features/trips/organisms/TripTabs';
 import { getServerSupabase } from '@/utils/supabase-server';
 import { TABLES } from '@/utils/constants/tables';
 import { listTrips } from '@/lib/api/trips';
+import TripTabs from '../components/molecules/TripTabs';
 
 // We need to tell search engines not to index this authenticated page
 export const metadata: Metadata = {

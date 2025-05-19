@@ -94,6 +94,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <ClientSideLayoutRenderer>
                     <Navbar />
                     {children}
+                    
                   </ClientSideLayoutRenderer>
                 </ClientSideProviders>
               </LayoutModeProvider>

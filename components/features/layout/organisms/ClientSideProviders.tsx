@@ -10,7 +10,6 @@ import { ClassErrorBoundary } from '@/components/features/error-boundary';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { Analytics } from '@vercel/analytics/react';
-import { useAuth } from '@/hooks/useAuth';
 import { ClientOpenReplayWrapper } from '@/components/analytics/ClientOpenreplayWrapper';
 
 /**

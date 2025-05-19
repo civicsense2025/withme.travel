@@ -81,6 +81,7 @@ export interface DropdownMenuProps {
   disabled?: boolean;
   /** Custom ID for the dropdown */
   id?: string;
+  children?: React.ReactNode;
 }
 
 // ============================================================================
@@ -109,6 +110,7 @@ export function DropdownMenu({
   showArrow = false,
   disabled = false,
   id,
+  children,
 }: DropdownMenuProps) {
   // State for uncontrolled component
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -311,25 +313,7 @@ export function DropdownMenu({
         className
       )}
     >
-      <button
-        ref={triggerRef}
-        type="button"
-        id={uniqueId.current}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? menuId : undefined}
-        onClick={toggleMenu}
-        className={cn(
-          'inline-flex items-center justify-between rounded font-medium focus:outline-none focus:ring-2 focus:ring-primary',
-          disabled && 'opacity-50 cursor-not-allowed',
-          fullWidth && 'w-full',
-          triggerClassName
-        )}
-        disabled={disabled}
-      >
-        {trigger || defaultTrigger}
-      </button>
-      
+      {trigger || children}
       {isOpen && (
         <div
           ref={menuRef}
@@ -347,66 +331,66 @@ export function DropdownMenu({
             maxWidth: maxWidth || 'auto',
           }}
         >
-          {/* Arrow indicator */}
-          {showArrow && (
-            <div
-              className="absolute w-3 h-3 bg-background border transform rotate-45"
-              style={{
-                top: side === 'bottom' ? -1.5 : undefined,
-                bottom: side === 'top' ? -1.5 : undefined,
-                left: align === 'start' ? 16 : align === 'center' ? '50%' : undefined,
-                right: align === 'end' ? 16 : undefined,
-                marginLeft: align === 'center' ? -6 : undefined,
-                borderTopWidth: side === 'bottom' ? 1 : 0,
-                borderLeftWidth: side === 'right' ? 1 : 0,
-                borderBottomWidth: side === 'top' ? 1 : 0,
-                borderRightWidth: side === 'left' ? 1 : 0,
-              }}
-            />
-          )}
-          
-          {/* Grouped options */}
-          {isGrouped ? (
-            <div className="py-1">
-              {(options as DropdownMenuGroup[]).map((group, groupIndex) => (
-                <div key={groupIndex}>
-                  {group.label && (
-                    <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                      {group.label}
+          {children || (
+            <>
+              {/* Arrow indicator */}
+              {showArrow && (
+                <div
+                  className="absolute w-3 h-3 bg-background border transform rotate-45"
+                  style={{
+                    top: side === 'bottom' ? -1.5 : undefined,
+                    bottom: side === 'top' ? -1.5 : undefined,
+                    left: align === 'start' ? 16 : align === 'center' ? '50%' : undefined,
+                    right: align === 'end' ? 16 : undefined,
+                    marginLeft: align === 'center' ? -6 : undefined,
+                    borderTopWidth: side === 'bottom' ? 1 : 0,
+                    borderLeftWidth: side === 'right' ? 1 : 0,
+                    borderBottomWidth: side === 'top' ? 1 : 0,
+                    borderRightWidth: side === 'left' ? 1 : 0,
+                  }}
+                />
+              )}
+              {/* Grouped or flat options */}
+              {isGrouped ? (
+                <div className="py-1">
+                  {(options as DropdownMenuGroup[]).map((group, groupIndex) => (
+                    <div key={groupIndex}>
+                      {group.label && (
+                        <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                      )}
+                      {group.options.map((option, optionIndex) => (
+                        renderOption ? (
+                          renderOption(option)
+                        ) : (
+                          <DropdownMenuItem
+                            key={optionIndex}
+                            option={option}
+                            onSelect={() => handleSelect(option)}
+                          />
+                        )
+                      ))}
+                      {groupIndex < (options as DropdownMenuGroup[]).length - 1 && (
+                        <DropdownMenuSeparator />
+                      )}
                     </div>
-                  )}
-                  {group.options.map((option, optionIndex) => (
+                  ))}
+                </div>
+              ) : (
+                <div className="py-1">
+                  {(options as DropdownMenuOption[]).map((option, index) => (
                     renderOption ? (
                       renderOption(option)
                     ) : (
                       <DropdownMenuItem
-                        key={optionIndex}
+                        key={index}
                         option={option}
                         onSelect={() => handleSelect(option)}
                       />
                     )
                   ))}
-                  {groupIndex < (options as DropdownMenuGroup[]).length - 1 && (
-                    <div className="my-1 border-t" />
-                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            // Flat options
-            <div className="py-1">
-              {(options as DropdownMenuOption[]).map((option, index) => (
-                renderOption ? (
-                  renderOption(option)
-                ) : (
-                  <DropdownMenuItem
-                    key={index}
-                    option={option}
-                    onSelect={() => handleSelect(option)}
-                  />
-                )
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -476,6 +460,62 @@ function DropdownMenuItem({ option, onSelect }: DropdownMenuItemProps) {
         <span className="ml-auto text-xs text-muted-foreground">{shortcut}</span>
       )}
     </button>
+  );
+}
+
+// ============================================================================
+// DROPDOWN MENU TRIGGER COMPONENT
+// ============================================================================
+
+export function DropdownMenuTrigger({ children, className, ...props }: React.HTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      className={cn('inline-flex items-center justify-between rounded font-medium focus:outline-none focus:ring-2 focus:ring-primary', className)}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ============================================================================
+// DROPDOWN MENU CONTENT COMPONENT
+// ============================================================================
+
+export function DropdownMenuContent({ children, className, align = 'start', side = 'bottom', ...props }: React.HTMLAttributes<HTMLDivElement> & { align?: DropdownMenuAlign; side?: DropdownMenuSide }) {
+  return (
+    <div
+      className={cn(
+        'absolute z-10 mt-1 rounded-md border bg-background shadow-lg',
+        'animate-in fade-in-80 zoom-in-95',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ============================================================================
+// DROPDOWN MENU LABEL COMPONENT
+// ============================================================================
+
+export function DropdownMenuLabel({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('px-3 py-1.5 text-xs font-semibold text-muted-foreground', className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+// ============================================================================
+// DROPDOWN MENU SEPARATOR COMPONENT
+// ============================================================================
+
+export function DropdownMenuSeparator({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('my-1 border-t', className)} {...props} />
   );
 }
 

@@ -369,26 +369,22 @@ Button.displayName = 'Button';
 // BUTTON GROUP COMPONENT
 // ============================================================================
 
-export interface ButtonGroupProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Child buttons */
-  children: React.ReactNode;
-  /** Whether to join buttons together (no gap) */
+interface ButtonGroupBaseProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactElement<ButtonProps> | React.ReactElement<ButtonProps>[];
   joined?: boolean;
-  /** Vertical orientation */
   vertical?: boolean;
-  /** Size to apply to all child buttons */
   size?: ButtonSize;
-  /** Variant to apply to all child buttons */
   variant?: ButtonVariant;
-  /** Whether all buttons should be the same width */
   equalWidth?: boolean;
-  /** Whether children are toggleable (mutually exclusive) */
-  isToggleGroup?: boolean;
-  /** Selected value when using as toggle group */
+}
+
+interface ButtonGroupToggleProps {
+  isToggleGroup: true;
   value?: string;
-  /** Called when selection changes */
   onChange?: (value: string) => void;
 }
+
+type ButtonGroupProps = ButtonGroupBaseProps & (ButtonGroupToggleProps | { isToggleGroup?: false });
 
 export const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
   ({
@@ -399,17 +395,17 @@ export const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
     variant,
     equalWidth = false,
     isToggleGroup = false,
-    value,
     onChange,
     className,
     ...props
   }, ref) => {
-    // Handle rendering children with adjusted props
     const childrenWithProps = React.Children.map(children, (child, index) => {
-      if (!React.isValidElement(child)) return child;
+      if (!React.isValidElement<ButtonProps>(child)) return child;
       
-      // Prepare props for the child button
-      const childProps: any = {};
+      const childProps: Partial<ButtonProps> & {
+        style?: React.CSSProperties;
+        isSelected?: boolean;
+      } = {};
       
       // Apply size and variant if provided
       if (size) childProps.size = size;
@@ -420,50 +416,72 @@ export const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
       
       // Apply joined styling
       if (joined) {
-        // For vertical group
+        const baseClass = child.props.className || '';
+        const style = child.props.style || {};
+        
         if (vertical) {
-          // Top element
+          // Vertical group styling
           if (index === 0) {
-            childProps.className = 'rounded-b-none';
-            childProps.style = { marginBottom: '-1px' };
+            childProps.className = `${baseClass} rounded-b-none`;
+            childProps.style = { ...style, marginBottom: '-1px' };
+          } else if (index < React.Children.count(children) - 1) {
+            childProps.className = `${baseClass} rounded-none`;
+            childProps.style = { ...style, marginBottom: '-1px' };
+          } else {
+            childProps.className = `${baseClass} rounded-t-none`;
           }
-          // Middle elements
-          else if (index < React.Children.count(children) - 1) {
-            childProps.className = 'rounded-none';
-            childProps.style = { marginBottom: '-1px' };
-          }
-          // Bottom element
-          else {
-            childProps.className = 'rounded-t-none';
-          }
-        }
-        // For horizontal group
-        else {
-          // Left element
+        } else {
+          // Horizontal group styling
           if (index === 0) {
-            childProps.className = 'rounded-r-none';
-            childProps.style = { marginRight: '-1px' };
-          }
-          // Middle elements
-          else if (index < React.Children.count(children) - 1) {
-            childProps.className = 'rounded-none';
-            childProps.style = { marginRight: '-1px' };
-          }
-          // Right element
-          else {
-            childProps.className = 'rounded-l-none';
+            childProps.className = `${baseClass} rounded-r-none`;
+            childProps.style = { ...style, marginRight: '-1px' };
+          } else if (index < React.Children.count(children) - 1) {
+            childProps.className = `${baseClass} rounded-none`;
+            childProps.style = { ...style, marginRight: '-1px' };
+          } else {
+            childProps.className = `${baseClass} rounded-l-none`;
           }
         }
       }
       
-      // Apply toggle group functionality
-      if (isToggleGroup && 'value' in child.props) {
-        childProps.isSelected = child.props.value === value;
-        childProps.onClick = (e: React.MouseEvent) => {
-          if (child.props.onClick) child.props.onClick(e);
-          if (!e.defaultPrevented) onChange?.(child.props.value);
-        };
-      }
+// First, define interfaces for the props
+interface ToggleItemProps {
+  value: string;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  // Add other props your toggle items might have
+}
+
+interface ToggleGroupProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  // Add other props your toggle group might have
+}
+
+// Then, use type guards to safely access properties
+if (isToggleGroup && React.isValidElement(child) && 'value' in child.props) {
+  // Now TypeScript knows child.props might have 'value' property
+  const childValue = (child.props as ToggleItemProps).value;
+  if (typeof childValue !== 'string') {
+    console.error('Toggle item value must be a string');
+    return child;
+  }
+
+  const toggleGroupProps = props as ToggleGroupProps;
+  const toggleItemProps = child.props as ToggleItemProps;
+  
+  childProps.isSelected = childValue === toggleGroupProps.value;
+  childProps.onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Safely call the child's onClick if it exists
+    if (typeof toggleItemProps.onClick === 'function') {
+      toggleItemProps.onClick(e);
+    }
+    
+    // If the event wasn't prevented and we have an onChange handler
+    if (!e.defaultPrevented && toggleGroupProps.onChange) {
+      toggleGroupProps.onChange(childValue);
+    }
+  };
+}
       
       return React.cloneElement(child, childProps);
     });
@@ -471,12 +489,10 @@ export const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
     return (
       <div
         ref={ref}
-        role={isToggleGroup ? 'radiogroup' : 'group'}
         className={cn(
-          'inline-flex',
+          'flex',
           vertical ? 'flex-col' : 'flex-row',
-          !joined && (vertical ? 'space-y-2' : 'space-x-2'),
-          equalWidth && 'w-full',
+          joined ? 'gap-0' : 'gap-2',
           className
         )}
         {...props}
@@ -487,6 +503,9 @@ export const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
   }
 );
 ButtonGroup.displayName = 'ButtonGroup';
+ButtonGroup.propTypes = {
+  // Add PropTypes if needed
+};
 
 // ============================================================================
 // ICON BUTTON COMPONENT

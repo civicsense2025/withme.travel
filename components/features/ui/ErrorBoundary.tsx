@@ -2,6 +2,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { ErrorBoundaryButton } from '@/components/features/ui/ErrorBoundaryButton';
 import * as Sentry from '@sentry/nextjs';
+import { FallbackProps } from 'react-error-boundary';
 
 interface ErrorBoundaryProps {
   error: Error & { digest?: string };
@@ -9,8 +10,15 @@ interface ErrorBoundaryProps {
 }
 
 // This is your Server Component
-function ErrorBoundaryComponent({ error, reset }: ErrorBoundaryProps) {
+/**
+ * Default fallback component for error boundaries
+ * 
+ * @param error The error that was caught
+ * @param resetErrorBoundary Callback to reset the error boundary state
+ */
+function ErrorBoundaryComponent({ error, resetErrorBoundary }: FallbackProps) {
   console.error('ErrorBoundary caught:', error);
+  
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
       <div className="max-w-md space-y-6">
@@ -50,7 +58,7 @@ function ErrorBoundaryComponent({ error, reset }: ErrorBoundaryProps) {
           )}
         </div>
         {/* Using the client component for interactive elements */}
-        <ErrorBoundaryButton onReset={reset} />
+        <ErrorBoundaryButton onReset={resetErrorBoundary} />
       </div>
     </div>
   );

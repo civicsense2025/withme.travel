@@ -8,6 +8,7 @@
 // IMPORTS
 // ============================================================================
 
+'use client';
 import { useState, useEffect, useCallback } from 'react';
 import {
   Destination,

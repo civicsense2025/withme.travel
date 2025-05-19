@@ -4,13 +4,29 @@ import { BudgetTabTemplate } from '@/components/features/budget/templates/Budget
 import { Skeleton } from '@/components/ui/skeleton';
 import * as Sentry from '@sentry/nextjs';
 import { TripRole } from '@/types/roles';
-import { BudgetSnapshotSidebar } from '@/components/features/trips/molecules/BudgetSnapshotSidebar';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useExpenses } from '@/hooks';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+// External dependencies
 import { Plus, Wallet2 } from 'lucide-react';
-import type { Expense } from '@/lib/api/_shared';
+
+// UI components
+import { Button } from '@/components/ui/button';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogTitle, 
+  DialogDescription 
+} from '@/components/ui/dialog';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetTrigger, 
+  SheetTitle 
+} from '@/components/ui/sheet';
+import BudgetSnapshotSidebar from '@/components/features/trips/molecules/BudgetSnapshotSidebar';
+
+// Hooks
+import { useExpenses } from '@/lib/hooks/use-expenses';
+
+// Types
 import { ManualDbExpense } from '@/types/trip';
 
 // Type for members passed from SSR
@@ -111,10 +127,9 @@ export function BudgetTabContent({
             totalSpent={summary?.spentTotal || 0}
             canEdit={canEdit}
             isEditing={false}
-            onEditToggle={(isEditing) => {/* Handle edit toggle */}}
-            onSave={async (newBudget) => {/* Handle save */}}
+            onEditToggle={(isEditing: boolean) => {/* Handle edit toggle */}}
+            onSave={async (newBudget: number) => {/* Handle save */}}
             onLogExpenseClick={() => setShowExpenseDialog(true)}
-            className="w-full"
           />
 
           <Button

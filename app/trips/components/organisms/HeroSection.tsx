@@ -8,8 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import { useOpenGraphImage } from '@/lib/hooks/use-og-image';
 import { PopularDestinationsGrid } from '@/components/features/destinations/organisms/PopularDestinationsGrid';
-import { usePopularDestinations } from '@/lib/hooks/use-popular-destinations';
-
+import { Destination, usePopularDestinations } from '@/lib/hooks/use-popular-destinations';
 
 export function HeroSection() {
   const router = useRouter();
@@ -35,11 +34,7 @@ export function HeroSection() {
   const [previewDestination, setPreviewDestination] = useState('');
 
   // Generate a preview OG image to showcase the thumbnail functionality
-  const ogImage = useOpenGraphImage({
-    type: 'generic',
-    title: 'Plan your next adventure',
-    subtitle: previewDestination || 'WithMe Travel',
-  });
+  const ogImage = useOpenGraphImage(previewDestination);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -177,7 +172,7 @@ export function HeroSection() {
     },
   };
 
-  const { destinations: popularDestinations, isLoading, error } = usePopularDestinations(8);
+  const { destinations: popularDestinations = [], isLoading, error } = usePopularDestinations();
 
   return (
     <section
@@ -377,39 +372,29 @@ export function HeroSection() {
               }
             >
               <PopularDestinationsGrid
-                destinations={
-                  // Ensure type compatibility by mapping to required shape
-                  popularDestinations.map((dest) => ({
-                    ...dest,
-                    // Fallbacks for required fields if missing
-                    name: dest.name ?? '',
-                    slug: dest.slug ?? '',
-                    emoji: dest.emoji ?? '🌍',
-                    byline: dest.byline ?? '',
-                    highlights: Array.isArray(dest.highlights)
-                      ? dest.highlights
-                      : typeof dest.highlights === 'string'
-                        ? [dest.highlights]
-                        : [],
-                  }))
-                }
-                maxItems={8}
-                // Explicitly type the parameter for type safety
-                onSelectDestination={(destination: {
-                  id: string;
-                  name: string;
-                  slug: string;
-                  emoji: string;
-                  byline: string;
-                  highlights: string[];
-                }) => {
-                  if (destination?.name) {
-                    handleSetDestination(destination.name);
-                  }
-                }}
+                destinations={popularDestinations.map((dest: any) => ({
+                  ...dest,
+                  name: dest.name || 'Unnamed Destination',
+                  byline: dest.byline || undefined,
+                  image_url: dest.image_url || undefined,
+                  highlights: Array.isArray(dest.highlights) 
+                    ? dest.highlights 
+                    : dest.highlights 
+                      ? [dest.highlights] 
+                      : undefined,
+                  description: dest.description || undefined,
+                }))}
               />
-              {isLoading && <div className="text-center py-4 text-muted-foreground">Loading destinations…</div>}
-              {error && <div className="text-center py-4 text-red-500">{error}</div>}
+              {isLoading && (
+                <div className="text-center py-4 text-muted-foreground">
+                  Loading destinations…
+                </div>
+              )}  
+              {error && (
+                <div className="text-center py-4 text-red-500">
+                  {error.message}
+                </div>
+              )}
             </Suspense>
           </div>
         </motion.div>

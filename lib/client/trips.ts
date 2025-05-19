@@ -8,11 +8,11 @@
 // IMPORTS
 // ============================================================================
 
-import { API_ROUTES } from '@/utils/constants/routes';
 import { tryCatch } from '@/lib/client/result';
 import type { Result } from '@/lib/client/result';
 import { handleApiResponse } from './index';
 import { API_SETTINGS } from '@/utils/constants/api';
+import { exportTripCalendar as apiExportTripCalendar } from '../api/trips';
 
 // ============================================================================
 // TYPES
@@ -226,5 +226,34 @@ export async function toggleTripPublic(tripId: string, isPublic: boolean): Promi
       ...API_SETTINGS.DEFAULT_OPTIONS,
       body: JSON.stringify({ isPublic }),
     }).then((response) => handleApiResponse<Trip>(response))
+  );
+}
+
+export const calendar = {
+  export: exportTripCalendar,
+};
+
+export async function exportTripCalendar(
+  tripId: string,
+  options: {
+    /** Format to export the calendar in (e.g. 'ics', 'google') */
+    format: 'ics' | 'google';
+    /** Whether to include all trip events or just confirmed ones */
+    includeAllEvents?: boolean;
+    /** Timezone to use for event times */
+    timezone?: string;
+  }
+): Promise<Result<{
+  /** URL to download the exported calendar file */
+  downloadUrl: string;
+  /** Expiration time for the download URL */
+  expiresAt: string;
+}>> {
+  return tryCatch(
+    fetch(`/api/trips/${tripId}/export-calendar`, {
+      method: 'POST',
+      ...API_SETTINGS.DEFAULT_OPTIONS,
+      body: JSON.stringify(options),
+    }).then((response) => handleApiResponse(response))
   );
 }

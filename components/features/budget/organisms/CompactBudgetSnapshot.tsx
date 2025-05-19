@@ -10,13 +10,27 @@ import { formatCurrency } from '@/lib/utils';
  */
 export interface CompactBudgetSnapshotProps {
   /** Total trip budget */
-  budget: number;
-  /** Total expenses so far */
-  expenses: number;
+  targetBudget: number;
+  /** Total planned expenses */
+  totalPlanned: number;
+  /** Total spent so far */
+  totalSpent: number;
   /** Currency code (e.g., 'USD') */
   currency?: string;
   /** Optional: show as card */
   asCard?: boolean;
+  /** Can user edit budget */
+  canEdit?: boolean;
+  /** Is currently editing */
+  isEditing?: boolean;
+  /** Toggle edit mode */
+  onEditToggle?: () => void;
+  /** Save budget */
+  onSave?: (newBudget: number) => void;
+  /** Log new expense */
+  onLogExpenseClick?: () => void;
+  /** Trip ID */
+  tripId?: string;
 }
 
 /**
@@ -27,23 +41,34 @@ export interface CompactBudgetSnapshotProps {
  * @module features/budget/organisms/CompactBudgetSnapshot
  */
 export function CompactBudgetSnapshot({
-  budget,
-  expenses,
+  targetBudget,
+  totalPlanned,
+  totalSpent,
   currency = 'USD',
   asCard = true,
+  canEdit = false,
+  isEditing = false,
+  onEditToggle,
+  onSave,
+  onLogExpenseClick,
+  tripId,
 }: CompactBudgetSnapshotProps) {
-  const remaining = budget - expenses;
-  const percentUsed = budget > 0 ? Math.min(100, Math.round((expenses / budget) * 100)) : 0;
+  const remaining = targetBudget - totalSpent;
+  const percentUsed = targetBudget > 0 ? Math.min(100, Math.round((totalSpent / targetBudget) * 100)) : 0;
 
   const content = (
     <div className="flex flex-col gap-1 w-full">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Budget</span>
-        <span>{formatCurrency(budget, currency)}</span>
+        <span>{formatCurrency(targetBudget, currency)}</span>
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>Planned</span>
+        <span>{formatCurrency(totalPlanned, currency)}</span>
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Spent</span>
-        <span>{formatCurrency(expenses, currency)}</span>
+        <span>{formatCurrency(totalSpent, currency)}</span>
       </div>
       <div className="flex items-center justify-between text-xs font-medium">
         <span>Remaining</span>

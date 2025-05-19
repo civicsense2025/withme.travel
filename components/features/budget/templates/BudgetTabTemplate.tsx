@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useExpenses } from '@/hooks';
+import { useExpenses } from '@/lib/hooks/use-expenses';
 import { ExpenseList, Expense as ExpenseListItem } from '@/components/features/budget/organisms/ExpenseList';
 import { BudgetBreakdown, Expense as BudgetExpense } from '@/components/features/budget/organisms/BudgetBreakdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

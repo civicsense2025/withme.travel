@@ -1,10 +1,9 @@
 import { redirect } from 'next/navigation';
-import { Container } from '@/components/ui/Container';
 import { Text } from '@/components/ui/Text';
 import { Metadata } from 'next';
 import { requireAuthOrGuest } from '@/utils/auth/route-helpers';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { Section } from '@/components/ui/Section';
 import Link from 'next/link';
 import GroupsClientPage from '../groups-client';
 
@@ -47,32 +46,34 @@ export default async function GroupsManagePage() {
 
   if (groups.length > 0) {
     return (
-      <Container
-        header={
-          <Text as="h1" title="My Groups" description="Manage your travel groups" className="mb-6" centered={true} actions={
-              <Link href="/groups/create" className="mt-16">
-                <Button className="flex items-center rounded-full">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Group
-                </Button>
-              </Link>
-            }
-          />
-        }
-      >
-        <GroupsClientPage initialGroups={groups} isGuest={isGuestMode} />
-      </Container>
+      <>
+        <Section className="py-20 md:py-28 bg-gradient-to-b from-background to-muted/50">
+          <div className="text-center max-w-3xl mx-auto">
+            <Text as="h1" className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+              My Groups
+          </Text>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/groups/create" passHref legacyBehavior>
+              <Button variant="default" className="px-8 py-3">
+                Create Group
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Section>
+      <GroupsClientPage initialGroups={groups} isGuest={isGuestMode} />
+      </>
     );
   }
 
   return (
-    <Container>
+    <Section>
       <div className="text-center p-8">
         <p className="mb-4">You don't have any groups yet.</p>
         <a href="/groups/create" className="text-blue-500 hover:underline">
           Create your first group
         </a>
       </div>
-    </Container>
+    </Section>
   );
 }

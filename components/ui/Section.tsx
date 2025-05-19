@@ -14,7 +14,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { Component, forwardRef, type ForwardRefRenderFunction } from 'react';
+import { forwardRef, type ForwardRefRenderFunction } from 'react';
 import { HTMLAttributes } from 'react';
 
 // ============================================================================
@@ -152,6 +152,8 @@ interface BaseSectionProps extends SectionVariantProps, HeaderVariantProps {
   headerActions?: React.ReactNode;
   /** Container element around the children */
   contentClassName?: string;
+  /** Element type to render as */
+  as?: React.ElementType;
 }
 
 // Define the exported section variant types for external use
@@ -203,6 +205,7 @@ const SectionImpl: React.ForwardRefRenderFunction<HTMLElement, BaseSectionProps>
     responsiveWidth,
     headerActions,
     contentClassName,
+    as: Tag = 'section', // Default to 'section' if not provided
     ...rest
   },
   ref
@@ -278,7 +281,7 @@ const SectionImpl: React.ForwardRefRenderFunction<HTMLElement, BaseSectionProps>
     : {};
 
   return (
-    <Component
+    <Tag
       ref={ref}
       className={cn(
         sectionVariants({
@@ -323,7 +326,7 @@ const SectionImpl: React.ForwardRefRenderFunction<HTMLElement, BaseSectionProps>
       <div className={contentClassName}>
         {children}
       </div>
-    </Component>
+    </Tag>
   );
 };
 
@@ -338,36 +341,38 @@ Section.displayName = 'Section';
 
 // Define the specialized component types with corrected TypeScript syntax
 type CardProps = Omit<
-  React.ComponentPropsWithRef<typeof Section> & { as?: 'div' },
+  React.ComponentPropsWithoutRef<typeof Section> & { as?: 'div' },
   'variant' | 'rounded' | 'padding'
 >;
 
 type ContentSectionProps = Omit<
-  React.ComponentPropsWithRef<typeof Section>,
+  React.ComponentPropsWithoutRef<typeof Section>,
   'variant' | 'padding'
 >;
 
 type PanelProps = Omit<
-  React.ComponentPropsWithRef<typeof Section> & { as?: 'div' },
+  React.ComponentPropsWithoutRef<typeof Section> & { as?: 'div' },
   'variant' | 'padding' | 'rounded'
 >;
 
 type CalloutSectionProps = Omit<
-  React.ComponentPropsWithRef<typeof Section>,
+  React.ComponentPropsWithoutRef<typeof Section>,
   'variant' | 'padding'
 >;
 
 // Card component
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  (props, ref) => (
+  ({ children, ...props }, ref) => (
     <Section
+      {...props}
       ref={ref as React.Ref<HTMLDivElement>}
       as="div"
       variant="card"
       rounded="md"
       padding="md"
-      {...props}
-    />
+    >
+      {children}
+    </Section>
   )
 );
 
@@ -375,13 +380,15 @@ Card.displayName = 'Card';
 
 // ContentSection component
 export const ContentSection = React.forwardRef<HTMLElement, ContentSectionProps>(
-  (props, ref) => (
+  ({ children, ...props }, ref) => (
     <Section
+      {...props}
       ref={ref}
       variant="default"
       padding="lg"
-      {...props}
-    />
+    >
+      {children}
+    </Section>
   )
 );
 
@@ -389,15 +396,17 @@ ContentSection.displayName = 'ContentSection';
 
 // Panel component
 export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(
-  (props, ref) => (
+  ({ children, ...props }, ref) => (
     <Section
+      {...props}
       ref={ref as React.Ref<HTMLDivElement>}
       as="div"
       variant="muted"
       padding="md"
       rounded="md"
-      {...props}
-    />
+    >
+      {children}
+    </Section>
   )
 );
 
@@ -405,13 +414,15 @@ Panel.displayName = 'Panel';
 
 // CalloutSection component
 export const CalloutSection = React.forwardRef<HTMLElement, CalloutSectionProps>(
-  (props, ref) => (
+  ({ children, ...props }, ref) => (
     <Section
+      {...props}
       ref={ref}
       variant="highlight"
       padding="md"
-      {...props}
-    />
+    >
+      {children}
+    </Section>
   )
 );
 

@@ -11,7 +11,7 @@
 // IMPORTS & SCHEMAS
 // ============================================================================
 
-import { Result, Image, handleError } from './_shared';
+import { Result, handleError } from '@/lib/client/result';
 import { searchUnsplash } from '@/lib/unsplashService';
 import { searchPexels } from '@/lib/pexelsService';
 import sharp from 'sharp';
@@ -50,8 +50,26 @@ const thumbnailOptionsSchema = z.object({
   usePadding: z.boolean().optional(),
 });
 
-type ThumbnailOptions = z.infer<typeof thumbnailOptionsSchema>;
+export type ThumbnailOptions = z.infer<typeof thumbnailOptionsSchema>;
 type ImageSaveData = z.infer<typeof imageSaveSchema>;
+
+interface Image {
+  id: string;
+  url: string;
+  image_url: string;
+  alt_text?: string;
+  source?: string;
+  external_id?: string;
+  created_by?: string;
+  photographer?: string;
+  photographer_url?: string;
+  trip_id?: string;
+  user_id?: string;
+  destination_id?: string;
+  metadata?: any;
+  created_at: string;
+  updated_at?: string;
+}
 
 // ============================================================================
 // SEARCH FUNCTIONS
@@ -60,15 +78,14 @@ type ImageSaveData = z.infer<typeof imageSaveSchema>;
 /**
  * Search Unsplash for images with pagination.
  * @param query - Search query string
- * @param page - Page number for pagination
- * @param perPage - Number of results per page
+ * @param options - Search options
  * @returns Result containing search results
  */
 export async function searchUnsplashImages(
-  query: string, 
-  page = 1, 
-  perPage = 20
+  query: string,
+  options: { page?: number; perPage?: number } = {}
 ): Promise<Result<any>> {
+  const { page = 1, perPage = 20 } = options;
   try {
     if (!query.trim()) {
       return { success: false, error: 'Search query is required' };
@@ -98,21 +115,20 @@ export async function searchUnsplashImages(
 /**
  * Search Pexels for images with pagination.
  * @param query - Search query string
- * @param page - Page number for pagination
- * @param perPage - Number of results per page
+ * @param options - Search options
  * @returns Result containing search results
  */
 export async function searchPexelsImages(
-  query: string, 
-  page = 1, 
-  perPage = 20
+  query: string,
+  options: { page?: number; perPage?: number } = {}
 ): Promise<Result<any>> {
+  const { page = 1, perPage = 20 } = options;
   try {
     if (!query.trim()) {
       return { success: false, error: 'Search query is required' };
     }
     
-    const result = await searchPexels(query, perPage, page);
+    const result = await searchPexels(query, perPage);
     
     if ('error' in result) {
       return { 
@@ -151,17 +167,17 @@ export async function searchAllImages(
     preferredSource?: 'unsplash' | 'pexels';
   } = {}
 ): Promise<Result<any>> {
+  const { page = 1, perPage = 20, preferredSource = 'unsplash' } = options;
+  
   try {
-    const { page = 1, perPage = 20, preferredSource = 'unsplash' } = options;
-    
     if (!query.trim()) {
       return { success: false, error: 'Search query is required' };
     }
     
     // Try preferred source first
     const primarySource = preferredSource === 'unsplash' 
-      ? searchUnsplashImages(query, page, perPage)
-      : searchPexelsImages(query, page, perPage);
+      ? searchUnsplashImages(query, { page, perPage })
+      : searchPexelsImages(query, { page, perPage });
       
     const primaryResult = await primarySource;
     
@@ -178,8 +194,8 @@ export async function searchAllImages(
     
     // If primary fails, try the other source
     const fallbackSource = preferredSource === 'unsplash'
-      ? searchPexelsImages(query, page, perPage)
-      : searchUnsplashImages(query, page, perPage);
+      ? searchPexelsImages(query, { page, perPage })
+      : searchUnsplashImages(query, { page, perPage });
       
     const fallbackResult = await fallbackSource;
     
@@ -443,10 +459,10 @@ export async function generateThumbnail(
       return {
         success: false,
         error: 'Invalid thumbnail options',
-        details: validationResult.error.format()
+        details: validationResult.error.errors
       };
     }
-    
+
     const width = 1200;
     const height = 630;
     const {
@@ -486,162 +502,24 @@ export async function generateThumbnail(
         : '';
     }
 
-    // Create SVG content
-    let svgContent = `
+    // Generate SVG and convert to PNG using sharp
+    const svg = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="${bgColor}" />
-            <stop offset="100%" stop-color="${adjustColor(bgColor, -30)}" />
-          </linearGradient>
-          <filter id="noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
-          <filter id="shadow">
-            <feDropShadow dx="0" dy="0" stdDeviation="6" flood-opacity="0.3"/>
-          </filter>
-        </defs>
-        ${
-          usePadding
-            ? `
-        <rect width="${width}" height="${height}" fill="white" />
-        <rect x="${paddingX}" y="${paddingY}" width="${contentWidth}" height="${contentHeight}" fill="url(#gradient)" />
-        <rect x="${paddingX}" y="${paddingY}" width="${contentWidth}" height="${contentHeight}" filter="url(#noise)" opacity="0.1" />
-        `
-            : `
-        <rect width="${width}" height="${height}" fill="url(#gradient)" />
-        <rect width="${width}" height="${height}" filter="url(#noise)" opacity="0.1" />
-        `
-        }
-        <text x="${paddingX + 50}" y="${paddingY + 60}" font-family="Arial, sans-serif" font-size="32" font-weight="800" fill="${textColor}" text-anchor="start" filter="url(#shadow)">withme.travel</text>
-        <text x="${paddingX + 50}" y="${height - paddingY - 140}" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="${textColor}" text-anchor="start" filter="url(#shadow)">${escapeXml(title)}</text>
-        <text x="${paddingX + 50}" y="${height - paddingY - 70}" font-family="Arial, sans-serif" font-size="40" fill="${textColor}" text-anchor="start" opacity="0.8" filter="url(#shadow)">${escapeXml(subtitle)}</text>
-        ${tags ? `<text x="${paddingX + 50}" y="${height - paddingY - 20}" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="${textColor}" text-anchor="start" opacity="0.7" filter="url(#shadow)">${escapeXml(tags)}</text>` : ''}
+        <rect width="100%" height="100%" fill="${bgColor}" />
+        <g transform="translate(${paddingX}, ${paddingY})">
+          <text x="0" y="40" font-family="Arial" font-size="48" fill="${textColor}">${escapeXml(title)}</text>
+          ${subtitle ? `<text x="0" y="90" font-family="Arial" font-size="24" fill="${textColor}">${escapeXml(subtitle)}</text>` : ''}
+        </g>
       </svg>
     `;
 
-    // Convert SVG to PNG with sharp
-    const pngBuffer = await sharp(Buffer.from(svgContent)).png().toBuffer();
+    const pngBuffer = await sharp(Buffer.from(svg))
+      .png()
+      .toBuffer();
+
     return { success: true, data: pngBuffer };
   } catch (error: any) {
     return handleError(error, 'Failed to generate thumbnail');
   }
 }
 
-/**
- * Generate and save a thumbnail image for an entity.
- * @param entityType - The type of entity
- * @param entityId - The entity's unique identifier
- * @param options - Thumbnail generation options
- * @returns Result containing the saved image
- */
-export async function generateAndSaveThumbnail(
-  entityType: string,
-  entityId: string,
-  options: ThumbnailOptions
-): Promise<Result<Image>> {
-  try {
-    // Generate the thumbnail
-    const thumbnailResult = await generateThumbnail(options);
-    if (!thumbnailResult.success) {
-      return thumbnailResult;
-    }
-    
-    const buffer = thumbnailResult.data;
-    
-    // Upload the image to storage
-    const supabase = await createRouteHandlerClient();
-    const fileName = `thumbnail-${entityId}-${Date.now()}.png`;
-    const bucketPath = `thumbnails/${entityType}/${fileName}`;
-    
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('images')
-      .upload(bucketPath, buffer, {
-        contentType: 'image/png',
-        cacheControl: '3600'
-      });
-      
-    if (uploadError) {
-      return { success: false, error: uploadError.message };
-    }
-    
-    // Get the public URL
-    const { data: publicUrlData } = await supabase
-      .storage
-      .from('images')
-      .getPublicUrl(bucketPath);
-      
-    const imageUrl = publicUrlData.publicUrl;
-    
-    // Save the image to the database
-    const imageData: ImageSaveData = {
-      url: imageUrl,
-      imageType: entityType as any, // Type assertion here since we're validating below
-      alt: options.title,
-      refId: entityId,
-      sourceName: 'generated',
-      metadata: {
-        generatedWith: 'thumbnailGenerator',
-        options
-      }
-    };
-    
-    // Validate the entityType
-    if (!Object.values(ENUMS.IMAGE_TYPE).includes(entityType as any)) {
-      return { success: false, error: 'Invalid entity type' };
-    }
-    
-    return saveImage(imageData);
-  } catch (error: any) {
-    return handleError(error, 'Failed to generate and save thumbnail');
-  }
-}
-
-/**
- * Convert a URL to a base64 data URI.
- * @param imageUrl - URL of the image to convert
- * @returns Result containing the base64 data URI
- */
-export async function urlToBase64(imageUrl: string): Promise<Result<string>> {
-  try {
-    // Validate URL
-    try {
-      new URL(imageUrl);
-    } catch (e) {
-      return { success: false, error: 'Invalid URL' };
-    }
-    
-    // Fetch the image
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      return { 
-        success: false, 
-        error: `Failed to fetch image: ${response.statusText}` 
-      };
-    }
-    
-    // Get content type and buffer
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-    const buffer = await response.arrayBuffer();
-    
-    // Convert to base64
-    const base64 = Buffer.from(buffer).toString('base64');
-    const dataUri = `data:${contentType};base64,${base64}`;
-    
-    return { success: true, data: dataUri };
-  } catch (error: any) {
-    return handleError(error, 'Failed to convert URL to base64');
-  }
-}
-
-/**
- * Type guard to check if an object is an Image
- */
-export function isImage(obj: any): obj is Image {
-  return obj && 
-    typeof obj.id === 'string' && 
-    typeof obj.url === 'string' &&
-    typeof obj.image_url === 'string';
-}

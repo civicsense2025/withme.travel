@@ -41,37 +41,59 @@ import {
 
 // Types
 /**
- * Destination entity for grid display
+ * Base destination type from API/backend
  */
-export interface Destination {
-  /** Unique destination ID */
+interface BaseDestination {
   id: string;
-  /** Display name */
   name: string;
-  /** Slug for URL navigation */
+  slug?: string;
+  byline?: string;
+  image_url?: string;
+  description?: string;
+  highlights?: string[];
+}
+
+/**
+ * Enhanced destination type for UI display
+ */
+export interface Destination extends BaseDestination {
+  /** Slug for URL navigation (required in UI) */
   slug: string;
   /** Emoji representing the destination */
   emoji: string;
-  /** Short byline or tagline */
+  /** Short byline or tagline (required in UI) */
   byline: string;
-  /** Optional image URL */
-  image_url?: string;
-  /** Optional description */
-  description?: string;
-  /** Optional highlights */
-  highlights?: string[];
 }
 
 /**
  * Props for PopularDestinationsGrid
  */
 export interface PopularDestinationsGridProps {
-  /** List of destinations to display */
-  destinations: Destination[];
+  /** List of base destinations to display */
+  destinations: BaseDestination[];
   /** Show details in a dialog (default: false) */
   showDialog?: boolean;
   /** Show details in a popover (default: false) */
   showPopover?: boolean;
+}
+
+/**
+ * Adapter function to convert base destinations to UI-ready format
+ */
+function adaptDestinations(destinations: BaseDestination[]): Destination[] {
+  return destinations.map(dest => {
+    if (!dest.name) {
+      console.warn('Destination missing name property', dest);
+      return null;
+    }
+
+    return {
+      ...dest,
+      slug: dest.slug || dest.name.toLowerCase().replace(/\s+/g, '-'),
+      emoji: '🌍',
+      byline: dest.byline || '',
+    };
+  }).filter(Boolean) as Destination[];
 }
 
 /**
@@ -84,6 +106,7 @@ export function PopularDestinationsGrid({
 }: PopularDestinationsGridProps) {
   const router = useRouter();
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const adaptedDestinations = adaptDestinations(destinations);
 
   // Helper: Generate random highlights for demo purposes
   const getRandomHighlights = (destination: Destination) => {
@@ -115,7 +138,8 @@ export function PopularDestinationsGrid({
   // Render
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-      {destinations.slice(0, 12).map((dest) => (
+      {adaptedDestinations.slice(0, 12).map((dest) => (
+        // ... [rest of the component remains exactly the same, just using adaptedDestinations]
         showPopover ? (
           <Popover key={dest.id}>
             <PopoverTrigger>
@@ -212,4 +236,4 @@ export function PopularDestinationsGrid({
       ))}
     </div>
   );
-} 
+}

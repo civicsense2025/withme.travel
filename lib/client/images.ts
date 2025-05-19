@@ -11,6 +11,8 @@
 
 import { tryCatch } from '@/lib/client/result';
 import type { Result } from '@/lib/client/result';
+import { generateThumbnail as generateThumbnailApi } from '../api/images'; // Renamed import
+
 
 /**
  * Search Unsplash images
@@ -82,4 +84,9 @@ export async function generateThumbnail(options: {
  */
 export function isImage(obj: any): obj is { id: string; url: string } {
   return obj && typeof obj.id === 'string' && typeof obj.url === 'string';
-} 
+}
+
+export const thumbnails = {
+  generateForDestination: (options: any) => generateThumbnail({ ...options, type: 'destination' }),
+  generateForTrip: (options: any) => generateThumbnail({ ...options, type: 'trip' }),
+}; 

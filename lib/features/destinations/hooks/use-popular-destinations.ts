@@ -19,11 +19,36 @@ import {
   formatDestinationLocation,
   getDestinationExcerpt
 } from '@/lib/features/destinations/utils/destination-formatter';
-import { FetchState, EnhancedDestination } from './use-destinations';
 
 // ============================================================================
 // TYPES
 // ============================================================================
+
+/**
+ * State of an async fetch operation
+ */
+interface FetchState {
+  /** Current status of the fetch operation */
+  status: 'idle' | 'loading' | 'success' | 'error';
+  /** Error message if status is 'error' */
+  error?: string;
+}
+
+/**
+ * Enhanced destination with display properties for UI
+ */
+interface EnhancedDestination extends Destination {
+  /** Formatted display name */
+  displayName: string;
+  /** Formatted location string */
+  locationString: string;
+  /** URL for the destination image */
+  imageUrl: string;
+  /** Short excerpt/description */
+  excerpt: string;
+  /** Path/URL for the destination page */
+  path: string;
+}
 
 /**
  * Response from the hook with all available operations and state
@@ -98,7 +123,7 @@ export function usePopularDestinations(
         : 'An unexpected error occurred';
       
       const error = new Error(errorMessage);
-      setFetchState({ status: 'error', error });
+      setFetchState({ status: 'error', error: error.message });
       
       toast({
         title: 'Error loading popular destinations',

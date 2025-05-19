@@ -533,3 +533,15 @@ export async function exportTripCalendar(
     return { success: false, error: errorMessage };
   }
 }
+
+export interface ExportCalendarOptions {
+  format: 'ics' | 'json';
+  timezone?: string;
+  includeDetails?: boolean;
+}
+
+export type ExportCalendarResult = {
+  url: string;
+  data?: string;
+};
+
