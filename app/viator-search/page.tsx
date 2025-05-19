@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import {
   ViatorExperienceCard,
   ViatorExperienceProps,
-} from '@/components/viator/ViatorExperienceCard';
-import { ViatorExperienceGrid } from '@/components/viator/ViatorExperienceGrid';
+} from '@/components/features/viator/ViatorExperienceCard';
+import { ViatorExperienceGrid } from '@/components/features/viator/ViatorExperienceGrid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

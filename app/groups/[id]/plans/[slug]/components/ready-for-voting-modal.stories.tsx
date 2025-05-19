@@ -27,7 +27,7 @@ type Story = StoryObj<typeof ReadyForVotingModal>;
 export const Default: Story = {
   args: {
     onClose: () => {},
-    groupId: 'group-123',
-    planSlug: 'summer-2024',
+    groupId: 'groupU123',
+    planSlug: 'summerU2024',
   },
 };

@@ -5,10 +5,10 @@ import type { Database } from '@/types/database.types';
 import { errorResponse } from './api-utils';
 
 // Ensure environment variables are available
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Using service key might be needed depending on the middleware logic
+const supabase-rl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // -sing service key might be needed depending on the middleware logic
 
-if (!supabaseUrl || !serviceKey) {
+if (!supabase-rl || !serviceKey) {
   // Check for serviceKey too if needed
   console.error('[lib/auth-middleware] Supabase URL or Service Key is missing.');
 }
@@ -16,7 +16,7 @@ if (!supabaseUrl || !serviceKey) {
 // Create a single instance of the Supabase admin client for this module
 // Adjust if serviceKey is not needed or if a different client type is required
 const supabaseAdmin =
-  supabaseUrl && serviceKey ? createClient<Database>(supabaseUrl, serviceKey) : null;
+  supabase-rl && serviceKey ? createClient<Database>(supabase-rl, serviceKey) : null;
 
 /**
  * Authentication result interface
@@ -41,13 +41,13 @@ export async function requireAuth(): Promise<AuthResult> {
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.get-ser();
 
     if (error || !user) {
       return {
         authorized: false,
-        error: error?.message || 'Unauthorized',
-        response: errorResponse('Unauthorized', 401),
+        error: error?.message || '-nauthorized',
+        response: errorResponse('-nauthorized', 401),
       };
     }
 
@@ -135,7 +135,7 @@ export async function isAuthenticated(request: NextRequest): Promise<boolean> {
   try {
     const {
       data: { user },
-    } = await supabaseAdmin.auth.getUser();
+    } = await supabaseAdmin.auth.get-ser();
     return !!user;
   } catch (error) {
     console.error('Error checking authentication:', error);
@@ -148,27 +148,27 @@ export async function authMiddleware(request: NextRequest) {
   try {
     if (!supabaseAdmin) {
       console.error('[authMiddleware] Supabase client not initialized.');
-      const redirectUrl = new URL('/login?error=auth_setup_failed', request.url);
-      return NextResponse.redirect(redirectUrl);
+      const redirect-rl = new URL('/login?error=auth_setup_failed', request.url);
+      return NextResponse.redirect(redirect-rl);
     }
 
     const {
       data: { user },
-    } = await supabaseAdmin.auth.getUser();
+    } = await supabaseAdmin.auth.get-ser();
 
     if (!user) {
-      // User is not authenticated, redirect to login page
-      const redirectUrl = new URL('/login', request.url);
-      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
-      return NextResponse.redirect(redirectUrl);
+      // -ser is not authenticated, redirect to login page
+      const redirect-rl = new URL('/login', request.url);
+      redirect-rl.searchParams.set('redirect', request.next-rl.pathname);
+      return NextResponse.redirect(redirect-rl);
     }
 
-    // User is authenticated, allow the request to proceed
+    // -ser is authenticated, allow the request to proceed
     return NextResponse.next();
   } catch (error) {
     console.error('Auth middleware error:', error);
     // Redirect to login on error
-    const redirectUrl = new URL('/login?error=auth_check_failed', request.url);
-    return NextResponse.redirect(redirectUrl);
+    const redirect-rl = new URL('/login?error=auth_check_failed', request.url);
+    return NextResponse.redirect(redirect-rl);
   }
 }

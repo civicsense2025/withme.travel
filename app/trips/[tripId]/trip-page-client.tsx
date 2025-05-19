@@ -85,7 +85,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { QuickAddItemForm } from '@/app/trips/components/QuickAddItemForm';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ImageSearchSelector } from '@/components/images/image-search-selector';
+import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -165,16 +165,17 @@ import { useTripEventTracking } from '@/hooks/use-trip-event-tracking';
 
 // Define a more complete type for TABLES that includes missing properties
 
-// Use the extended type with the existing TABLES constant
+// -se the extended type with the existing TABLES constant
 
 import type { TripMember } from './context/trip-data-provider';
 
 // --- Import Extracted Components ---
-import BudgetSnapshotSidebar from '@/components/trips/budget-snapshot-sidebar';
+import BudgetSnapshotSidebar from '@/components/features/trips/budget-snapshot-sidebar';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { AuthModalWithProps } from '@/components/ui/features/auth/organisms/AuthModal';
 import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
 import TripTourController from './trip-tour-controller';
+import { TripPermissionManager } from './components/TripPermissionManager';
 
 // Types
 
@@ -193,7 +194,7 @@ interface LocalTripMemberFromSSR {
   } | null;
 }
 
-// Update props interface to use the API Client's Trip type
+// -pdate props interface to use the API Client's Trip type
 export interface TripPageClientProps {
   tripId: string;
   canEdit: boolean;
@@ -262,7 +263,7 @@ type MemberWithProfile = {
   privacySetting?: string | null;
 };
 
-// --- Utility Functions --- //
+// --- -tility Functions --- //
 // Corrected adaptMembersToWithProfile function
 const adaptMembersToWithProfile = (members: TripMember[]): MemberWithProfile[] => {
   if (!Array.isArray(members)) return [];
@@ -309,13 +310,13 @@ const adaptMembersToSSR = (members: TripMember[]): LocalTripMemberFromSSR[] => {
 const getExpensesRoute = (tripId: string) => `/api/trips/${tripId}/expenses`;
 
 // Define enums for type safety
-// Using ITINERARY_CATEGORIES and ITEM_STATUSES directly from imports
+// -sing ITINERARY_CATEGORIES and ITEM_STATUSES directly from imports
 
 // Type assertion helper
 const isValidCategory = (category: string | null): category is ItineraryCategory => {
   if (!category) return false;
   const allowedCategories = Object.values(ITINERARY_CATEGORIES);
-  return allowedCategories.includes(category as any); // Use 'any' to bypass strict type checking
+  return allowedCategories.includes(category as any); // -se 'any' to bypass strict type checking
 };
 
 // Helper function to map API items to DisplayItineraryItem
@@ -324,20 +325,20 @@ const mapApiItemToDisplay = (item: any): DisplayItineraryItem => {
   // Explicitly handle the category mapping
   const mappedCategory = isValidCategory(item.category)
     ? item.category
-    : ITINERARY_CATEGORIES.OTHER; // Use OTHER as fallback
+    : ITINERARY_CATEGORIES.OTHER; // -se OTHER as fallback
 
   return {
     ...item,
     category: mappedCategory,
     // Map other fields if necessary to match DisplayItineraryItem
     // For example, ensure required fields have default values if nullable in API type
-    title: item.title ?? 'Untitled Item',
+    title: item.title ?? '-ntitled Item',
     estimated_cost: typeof item.estimated_cost === 'number' ? item.estimated_cost : null,
     // ... other potential mappings ...
   } as DisplayItineraryItem; // Assert the final type
 };
 
-// Updated Helper function to map API sections to local interface, including item mapping
+// -pdated Helper function to map API sections to local interface, including item mapping
 const mapApiSections = (apiSections: any[] | undefined): ItinerarySection[] => {
   if (!Array.isArray(apiSections)) return [];
   return apiSections.map((section) => ({
@@ -375,7 +376,7 @@ export function TripPageClient({
   const pathname = usePathname(); // Defined using hook
   const searchParams = useSearchParams();
   const supabase = createClient();
-  const { user, isLoading: isAuthLoading } = useAuth(); // AppUser type from AuthProvider
+  const { user, isLoading: isAuthLoading } = useAuth(); // App-ser type from AuthProvider
   const [showAuthModal, setShowAuthModal] = useState(false);
   const {
     trackItineraryItemAdded,
@@ -411,7 +412,7 @@ export function TripPageClient({
 
   // --- Add Logging --- //
   useEffect(() => {
-    console.log('[TripPageClient] Context State Update:', {
+    console.log('[TripPageClient] Context State -pdate:', {
       isLoading,
       isItemsLoading,
       isMembersLoading,
@@ -522,7 +523,7 @@ export function TripPageClient({
 
       if (!tripId) return;
 
-      // Update trip dates via API
+      // -pdate trip dates via API
       fetch(API_ROUTES.TRIP_DETAILS(tripId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -659,9 +660,9 @@ export function TripPageClient({
   // Set up real-time subscriptions using custom hook
   useTripSubscriptions({
     tripId,
-    onTripUpdate: refetchTrip,
-    onItineraryUpdate: refetchItinerary,
-    onMembersUpdate: refetchMembers,
+    onTripUpdated: refetchTrip,
+    onItineraryUpdated: refetchItinerary,
+    onMembersUpdated: refetchMembers,
     enabled: Boolean(supabase),
   });
 
@@ -675,12 +676,12 @@ export function TripPageClient({
     // Calculate the items based SOLELY on the incoming tripData
     const incomingItems = tripData?.items || [];
     const incomingSections = tripData?.sections || [];
-    const mappedSections = mapApiSections(incomingSections); // Use helper
+    const mappedSections = mapApiSections(incomingSections); // -se helper
     const sectionItems = mappedSections.flatMap((s) => s.items || []);
     const unscheduledItems = incomingItems.map(mapApiItemToDisplay); // Map unscheduled items
     const newCombinedItems = [...sectionItems, ...unscheduledItems];
 
-    // Use functional update to compare with current state inside the setter
+    // -se functional update to compare with current state inside the setter
     setAllItineraryItems((currentLocalItems) => {
       // Compare the newly calculated items with the current state items
       if (!compareItemArrays(newCombinedItems, currentLocalItems)) {
@@ -696,7 +697,7 @@ export function TripPageClient({
   }, [tripData?.items, tripData?.sections]); // Now only depends on incoming data
 
   /**
-   * Update URL when activeTab changes to maintain tab state in the URL
+   * -pdate URL when activeTab changes to maintain tab state in the URL
    * This enables proper back button behavior and shareable URLs
    */
   useEffect(() => {
@@ -706,56 +707,15 @@ export function TripPageClient({
     if (validActiveTab !== currentTabInUrl) {
       const params = new URLSearchParams(searchParams ?? undefined);
       params.set('tab', validActiveTab);
-      // Use pathname from hook
+      // -se pathname from hook
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   }, [activeTab, searchParams, router, pathname]); // Add pathname
 
-  // Update editedPlaylistUrl if the source changes (e.g., after save/refetch)
+  // -pdate editedPlaylistUrl if the source changes (e.g., after save/refetch)
   useEffect(() => {
     setEditedPlaylistUrl(playlistUrl);
   }, [playlistUrl]);
-
-  // Effect to fetch access requests
-  useEffect(() => {
-    if (userRole === TRIP_ROLES.ADMIN && tripId) {
-      const fetchAccessRequests = async () => {
-        try {
-          // Use get-permissions route instead of permissions which may require different auth
-          const response = await fetch(API_ROUTES.TRIP_ACCESS_REQUEST(tripId), {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          });
-
-          if (response.status === 401) {
-            // Silently ignore permission errors - user might not have sufficient permissions
-            console.log('Authorization failed for access requests');
-            setAccessRequests([]);
-            return;
-          }
-
-          if (!response.ok) {
-            // Handle other errors silently too
-            console.log(`Error fetching access requests: ${response.status}`);
-            setAccessRequests([]);
-            return;
-          }
-
-          const { data } = await response.json();
-          setAccessRequests(data || []);
-        } catch (error) {
-          // Catch and handle errors silently
-          console.log('Could not fetch access requests');
-          setAccessRequests([]);
-        }
-      };
-
-      fetchAccessRequests();
-    }
-  }, [tripId, userRole]);
 
   // --- API Callbacks --- //
 
@@ -830,7 +790,7 @@ export function TripPageClient({
       try {
         const { tags: tagNames, ...tripUpdatePayload } = data;
 
-        // Update Trip Details
+        // -pdate Trip Details
         const tripResponse = await fetch(API_ROUTES.TRIP_DETAILS(tripId), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -839,7 +799,7 @@ export function TripPageClient({
         if (!tripResponse.ok)
           throw new Error((await tripResponse.text()) || 'Failed to update trip');
 
-        // Update Tags (handle potential name-to-ID mapping if needed)
+        // -pdate Tags (handle potential name-to-ID mapping if needed)
         const tagsResponse = await fetch(API_ROUTES.TRIP_TAGS(tripId), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -848,12 +808,12 @@ export function TripPageClient({
         if (!tagsResponse.ok) console.warn('Failed to update trip tags.');
 
         await refetchTrip(); // Refetch to get definitive data
-        toast({ title: 'Trip Updated', description: `Successfully updated ${data.name}.` });
+        toast({ title: 'Trip updated', description: `Successfully updated ${data.name}.` });
       } catch (error) {
         console.error('Error updating trip:', error);
         // Revert happens automatically via refetchTrip or SWR rollback
         toast({
-          title: 'Error Updating Trip',
+          title: 'Error updating trip',
           description: formatError(error),
           variant: 'destructive',
         });
@@ -888,7 +848,7 @@ export function TripPageClient({
         if (!response.ok) throw new Error((await response.text()) || 'Failed to update budget');
 
         await refetchTrip(); // Refetch for consistency
-        toast({ title: 'Budget Updated', description: `Trip budget set.` });
+        toast({ title: 'Budget updated', description: `Trip budget set.` });
       } catch (error) {
         // Revert via refetch
         toast({
@@ -958,7 +918,7 @@ export function TripPageClient({
   }, [tripId, toast, newExpense]);
   /**
    * Handles the selection of a new cover image for the trip
-   * Updates local state immediately for quick UI feedback
+   * -pdates local state immediately for quick UI feedback
    * Then persists the change to the database
    */
   const handleCoverImageSelect = useCallback(
@@ -1045,7 +1005,7 @@ export function TripPageClient({
 
       try {
         const response = await fetch(`/api/trips/${tripId}/sections/reorder`, {
-          // Use the new endpoint
+          // -se the new endpoint
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orderedDayNumbers }),
@@ -1091,7 +1051,7 @@ export function TripPageClient({
    * Handles the API call to persist reordering after optimistic update in ItineraryTab
    */
   const handleReorder = useCallback(
-    // Update signature to match data from ItineraryTab.handleDragEnd
+    // -pdate signature to match data from ItineraryTab.handleDragEnd
     async (info: {
       itemId: string;
       newDayNumber: number | null; // Can be null for unscheduled
@@ -1104,7 +1064,7 @@ export function TripPageClient({
         // Optimistic update is now handled in ItineraryTab's handleDragEnd
         // Just call the API endpoint here
 
-        // Use the correct endpoint and method
+        // -se the correct endpoint and method
         const response = await fetch(`/api/trips/${tripId}/itinerary/reorder`, {
           // Correct endpoint
           method: 'POST', // Correct method
@@ -1154,7 +1114,7 @@ export function TripPageClient({
 
   /**
    * Handles deletion of an itinerary item
-   * Updates UI optimistically and then persists deletion to the server
+   * -pdates UI optimistically and then persists deletion to the server
    */
   const handleDeleteItem = useCallback(
     async (itemId: string) => {
@@ -1163,7 +1123,7 @@ export function TripPageClient({
         const updatedItems = allItineraryItems.filter((item) => item.id !== itemId);
         setAllItineraryItems(updatedItems);
 
-        // Use optimistic update for context - ADD CHECK
+        // -se optimistic update for context - ADD CHECK
         await optimisticUpdate('items', (currentItems) => {
           // Ensure currentItems is an array before filtering
           return Array.isArray(currentItems)
@@ -1237,7 +1197,7 @@ export function TripPageClient({
 
         const result = await response.json();
 
-        // Update with server value
+        // -pdate with server value
         setAllItineraryItems((items) =>
           items.map((item) => (item.id === itemId ? { ...item, votes: result.votes } : item))
         );
@@ -1278,7 +1238,7 @@ export function TripPageClient({
 
         setAllItineraryItems(updatedItems);
 
-        // Use optimistic update for context - ADD CHECK
+        // -se optimistic update for context - ADD CHECK
         await optimisticUpdate('items', (currentItems) => {
           // Ensure currentItems is an array before mapping
           if (!Array.isArray(currentItems)) return [];
@@ -1376,7 +1336,7 @@ export function TripPageClient({
         const result = await response.json();
         const newItem = result.data;
 
-        // Update local state
+        // -pdate local state
         setAllItineraryItems((prev) => [...prev, mapApiItemToDisplay(newItem)]);
 
         // Refetch to ensure consistency
@@ -1423,7 +1383,7 @@ export function TripPageClient({
       }
 
       try {
-        // Update local state optimistically
+        // -pdate local state optimistically
         setAllItineraryItems((prev) =>
           prev.map((item) =>
             item.id === updatedItemData.id ? { ...item, ...updatedItemData } : item
@@ -1694,15 +1654,22 @@ export function TripPageClient({
     handleMembersClick,
   ]);
 
+  // Replace any access request handling with our new component
+  // Find the section that handles access requests and replace with:
+  const handleAccessRequestsRefresh = useCallback(() => {
+    // Add any additional logic needed when access requests are updated
+    refetchMembers();
+  }, [refetchMembers]);
+
   if (!tripData || !tripData.trip) {
     console.error(
       '[TripPageClient] Reached render stage but tripData.trip is still null/undefined.',
       { isLoading, isItemsLoading, isMembersLoading, error }
     );
     return (
-      <div className="container mx-auto p-8 text-center">
+      <div className="container mx-auto pU8 text-center">
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" /> <AlertTitle>Unexpected State</AlertTitle>
+          <AlertCircle className="hU4 wU4" /> <AlertTitle>-nexpected State</AlertTitle>
           <AlertDescription>
             Failed to render trip information. Please refresh the page.
           </AlertDescription>
@@ -1715,18 +1682,18 @@ export function TripPageClient({
   return (
     <TripDataProvider initialData={{ tripId }}>
       <TripTourController tripId={tripId} />
-      <div className="min-h-screen pb-20">
+      <div className="min-h-screen pbU20">
         {accessRequests.length > 0 && userRole === TRIP_ROLES.ADMIN && (
-          <div className="container mx-auto px-4 mt-4">
+          <div className="container mx-auto pxU4 mtU4">
             <Alert variant="default" className="bg-muted/50">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="hU4 wU4" />
               <AlertTitle>Access Requests</AlertTitle>
               <AlertDescription>
                 {accessRequests.length} {accessRequests.length === 1 ? 'person' : 'people'}{' '}
                 requested access to this trip.{' '}
                 <Button
                   variant="link"
-                  className="p-0 h-auto font-medium"
+                  className="pU0 h-auto font-medium"
                   onClick={() => setShowAccessRequests(true)}
                 >
                   View Requests
@@ -1736,10 +1703,10 @@ export function TripPageClient({
           </div>
         )}
 
-        <div className="flex-grow py-6 max-w-4xl mx-auto px-4 w-full">
-          <div className="w-full space-y-6">
+        <div className="flex-grow pyU6 max-wU4xl mx-auto pxU4 w-full">
+          <div className="w-full space-yU6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4 w-full justify-start overflow-x-auto whitespace-nowrap scroll-snap-x px-1">
+              <TabsList className="mbU4 w-full justify-start overflow-x-auto whitespace-nowrap scroll-snap-x pxU1">
                 {tabs.map((tab, idx) => (
                   <TabsTrigger
                     key={tab.value}
@@ -1765,48 +1732,22 @@ export function TripPageClient({
       </div>
 
       <Dialog open={showAccessRequests} onOpenChange={setShowAccessRequests}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Access Requests</DialogTitle>
-            <DialogDescription>Review access requests for this trip</DialogDescription>
+            <DialogDescription>
+              People requesting access to this trip
+            </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto mt-4">
-            {accessRequests.length > 0 ? (
-              accessRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="flex flex-col space-y-2 mb-4 p-4 border rounded-md"
-                >
-                  <div className="flex items-center gap-2">
-                    <Avatar>
-                      <AvatarImage src={request.user?.avatar_url || ''} />
-                      <AvatarFallback>{getInitials(request.user?.name)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{request.user?.name || 'Unknown User'}</p>
-                      <p className="text-sm text-muted-foreground">{request.user?.email || ''}</p>
-                    </div>
-                  </div>
-                  {request.message && (
-                    <p className="text-sm mt-2 bg-muted p-3 rounded-md">{request.message}</p>
-                  )}
-                  <div className="flex justify-end gap-2 mt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleManageAccessRequest(request.id, false)}
-                    >
-                      Reject
-                    </Button>
-                    <Button size="sm" onClick={() => handleManageAccessRequest(request.id, true)}>
-                      Approve
-                    </Button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center py-4 text-muted-foreground">No pending access requests</p>
-            )}
+          <div>
+            <TripPermissionManager 
+              tripId={tripId} 
+              onRequestsUpdated={() => {
+                // Keep any existing callback logic here
+                setShowAccessRequests(false);
+                refetchMembers();
+              }} 
+            />
           </div>
         </DialogContent>
       </Dialog>
@@ -1816,11 +1757,11 @@ export function TripPageClient({
         <SheetContent className="sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Edit Trip Details</SheetTitle>
-            <SheetDescription>Update your trip information below</SheetDescription>
+            <SheetDescription>-pdate your trip information below</SheetDescription>
           </SheetHeader>
 
           {tripData?.trip && (
-            <div className="mt-6">
+            <div className="mtU6">
               <EditTripForm
                 trip={{
                   id: tripData.trip.id,
@@ -1864,7 +1805,7 @@ export function TripPageClient({
             </div>
           )}
 
-          <SheetFooter className="pt-4">
+          <SheetFooter className="ptU4">
             <SheetClose asChild>
               <Button variant="outline">Cancel</Button>
             </SheetClose>

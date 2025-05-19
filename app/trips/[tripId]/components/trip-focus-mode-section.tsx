@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { ClientFocusMode } from '@/components/trips/organisms';
-import { FocusSessionProvider } from '@/components/focus/focus-session-provider';
+import { FocusSessionProvider } from '@/components/features/focus/focus-session-provider';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';
 import { Coffee, RefreshCw, AlertCircle } from 'lucide-react';

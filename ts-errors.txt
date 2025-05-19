@@ -1,9 +1,0 @@
-components/ui/button/button.stories.tsx(162,73): error TS1005: ',' expected.
-components/ui/button/button.stories.tsx(162,75): error TS1005: ',' expected.
-components/ui/button/button.stories.tsx(162,80): error TS1005: ',' expected.
-components/ui/button/button.stories.tsx(162,83): error TS1005: ',' expected.
-components/ui/button/button.stories.tsx(162,86): error TS1005: ',' expected.
-components/ui/button/button.stories.tsx(162,96): error TS1005: ',' expected.
-components/ui/button/button.stories.tsx(162,97): error TS1003: Identifier expected.
-components/ui/button/button.stories.tsx(162,99): error TS1002: Unterminated string literal.
-components/ui/button/button.stories.tsx(163,7): error TS1005: ':' expected.

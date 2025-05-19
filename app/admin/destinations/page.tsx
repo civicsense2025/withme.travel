@@ -1,9 +1,5 @@
-import { getTypedDbClient } from '@/utils/supabase/server';
-import { handleQueryResult } from '@/utils/type-safety';
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/container';
-import DestinationsTable from './DestinationsTable';
-import { TABLES } from '@/utils/constants/database-multi-city';
 
 export const metadata = {
   title: 'Manage Destinations | Admin Panel',

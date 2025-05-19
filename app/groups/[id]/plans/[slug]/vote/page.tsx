@@ -32,12 +32,12 @@ export default async function VotingPage({
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.get-ser();
 
   // Check if user is authenticated
   if (userError || !user) {
-    console.warn('[VotingPage] User not authenticated or error fetching user:', userError);
-    redirect(`/login?callbackUrl=/groups/${id}/plans/${slug}/vote`);
+    console.warn('[VotingPage] -ser not authenticated or error fetching user:', userError);
+    redirect(`/login?callback-rl=/groups/${id}/plans/${slug}/vote`);
   }
 
   // Fetch the group data to verify it exists and user has access
@@ -110,7 +110,7 @@ export default async function VotingPage({
           avatar_url: member?.profiles?.[0]?.avatar_url || '',
         },
       }))}
-      currentUserId={user.id}
+      current-serId={user.id}
     />
   );
 }

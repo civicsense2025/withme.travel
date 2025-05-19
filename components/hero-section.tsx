@@ -5,14 +5,14 @@ import { LocationSearch } from '@/components/location-search';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/lib/hooks/use-auth';
-import type { AuthContextType } from '@/components/auth-provider';
+import { useAuth } from '@/lib/hooks';
+import type { AuthContextType } from '@/components/features/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarIcon, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import useOpenGraphImage from '@/lib/hooks/use-og-image';
 import { PopularDestinationsGrid } from './ui/PopularDestinationsGrid';
-import { usePopularDestinations } from '@/lib/hooks/use-popular-destinations';
+import { usePopularDestinations } from '@/lib/hooks';
 
 // Lazy load the CityBubbles component to improve initial load time
 const CityBubbles = lazy(() =>

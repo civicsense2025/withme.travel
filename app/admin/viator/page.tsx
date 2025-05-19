@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/container';
 import { toast } from '@/hooks/use-toast';
 import { ExternalLink, RefreshCw, Search, Check, X, MapPin } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/admin-layout';
+import { AdminLayout } from '@/components/features/admin/admin-layout';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
 import { TABLES } from '@/utils/constants/tables';
 

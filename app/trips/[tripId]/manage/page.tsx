@@ -42,11 +42,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { TRIP_ROLES } from '@/utils/constants/status';
-import { AuthContextType } from '@/components/auth-provider';
+import { AuthContextType } from '@/components/features/auth';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { Trip } from '@/types/trip';
 import { Database } from '@/types/supabase';
-import { PlaylistEmbed } from '@/components/trips/PlaylistEmbed';
+import { PlaylistEmbed } from '@/components/features/trips/PlaylistEmbed';
 
 interface User {
   id: string;

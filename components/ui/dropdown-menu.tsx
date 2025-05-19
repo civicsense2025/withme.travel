@@ -17,8 +17,10 @@ export function DropdownMenu({ children }: DropdownMenuProps) {
 
 export interface DropdownMenuTriggerProps {
   children: React.ReactNode;
+  asChild?: boolean;
 }
-export function DropdownMenuTrigger({ children }: DropdownMenuTriggerProps) {
+export function DropdownMenuTrigger({ children, asChild }: DropdownMenuTriggerProps) {
+  // asChild is handled by wrapper components, but we keep it for compatibility
   return <>{children}</>;
 }
 
@@ -47,8 +49,10 @@ export function DropdownMenuContent({
 
 export interface DropdownMenuItemProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  asChild?: boolean;
 }
-export function DropdownMenuItem({ className, children, ...props }: DropdownMenuItemProps) {
+export function DropdownMenuItem({ className, children, asChild, ...props }: DropdownMenuItemProps) {
+  // asChild is handled by wrapper components, but we keep it for compatibility
   return (
     <div
       className={cn('cursor-pointer rounded px-2 py-1.5 hover:bg-muted', className)}

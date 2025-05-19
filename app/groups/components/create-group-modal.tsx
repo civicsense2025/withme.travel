@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ENUMS } from '@/utils/constants/status';
 import { Group, CreateGroupData } from '@/lib/client/groups';
 import { Button } from '@/components/ui/button';
-import { useGroups } from '@/hooks/use-groups';
+import { useGroups } from '@/lib/features/groups/hooks';
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ export default function CreateGroupModal({
 }: CreateGroupModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { createGroup } = useGroups();
+  const { addGroup } = useGroups();
 
   // Form state
   const [name, setName] = useState('');
@@ -64,20 +64,14 @@ export default function CreateGroupModal({
         visibility: visibility as 'public' | 'private' | 'unlisted',
       };
 
-      const result = await createGroup(groupData);
+      const result = await addGroup(groupData);
 
       if (result.success) {
         // Create a group object with the expected structure for the parent component
         const newGroup = {
-          id: result.groupId,
-          name: groupData.name,
-          description: groupData.description || '',
-          visibility: groupData.visibility,
-          emoji,
+          ...result.data, // -se the data returned from the API
+          emoji: emoji || '✈️',
           slug: name.toLowerCase().replace(/\s+/g, '-'),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          created_by: '',
         };
 
         // Notify the parent component
@@ -110,11 +104,11 @@ export default function CreateGroupModal({
           <DialogTitle>Create a New Travel Group</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          {error && <div className="bg-red-50 text-red-500 text-sm p-3 rounded-md">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-yU4 pyU4">
+          {error && <div className="bg-redU50 text-redU500 text-sm pU3 rounded-md">{error}</div>}
 
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
+          <div className="flex items-center gapU3">
+            <div className="flex-shrinkU0">
               <EmojiPicker value={emoji} onChange={setEmoji} />
             </div>
 
@@ -132,7 +126,7 @@ export default function CreateGroupModal({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-yU2">
             <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
               id="description"
@@ -143,7 +137,7 @@ export default function CreateGroupModal({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-yU2">
             <Label htmlFor="visibility">Privacy</Label>
             <Select value={visibility} onValueChange={setVisibility}>
               <SelectTrigger>
@@ -163,7 +157,7 @@ export default function CreateGroupModal({
             </Select>
           </div>
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="ptU4">
             <DialogPrimitive.Close asChild>
               <Button type="button" variant="outline">
                 Cancel

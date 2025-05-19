@@ -22,7 +22,7 @@ const meta: Meta<typeof IdeaCard> = {
     selectedIdeasCount: { control: 'number', description: 'Selected ideas count' },
     position: { control: 'object', description: 'Idea position' },
     onPositionChange: { action: 'onPositionChange', description: 'Position change handler' },
-    userId: { control: 'text', description: 'User ID' },
+    userId: { control: 'text', description: '-ser ID' },
     isAuthenticated: { control: 'boolean', description: 'Is Authenticated' },
     groupId: { control: 'text', description: 'Group ID' },
   },
@@ -34,9 +34,9 @@ type Story = StoryObj<typeof IdeaCard>;
 export const Default: Story = {
   args: {
     idea: {
-      id: 'idea-1',
-      group_id: 'group-123',
-      created_by: 'user-1',
+      id: 'ideaU1',
+      group_id: 'groupU123',
+      created_by: 'userU1',
       guest_token: null,
       title: 'Try a tapas crawl',
       description: 'Sample idea for a group trip',
@@ -59,8 +59,8 @@ export const Default: Story = {
     selectedIdeasCount: 0,
     position: { columnId: 'activity', index: 0 },
     onPositionChange: () => {},
-    userId: 'user-1',
+    userId: 'userU1',
     isAuthenticated: true,
-    groupId: 'group-123',
+    groupId: 'groupU123',
   },
 };

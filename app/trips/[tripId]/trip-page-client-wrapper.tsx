@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { TripPageClient } from './trip-page-client';
 import { ClassErrorBoundary } from '@/components/error-boundary';
-import { TripPageError } from '@/components/trips';
+import { TripPageError } from '@/components/features/trips';
 import { TripDataProvider, useTripData } from './context/trip-data-provider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
@@ -18,11 +18,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { SimplifiedTripHeader } from '@/components/trips';
+import { SimplifiedTripHeader } from '@/components/features/trips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TABLES } from '@/utils/constants/database';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
+import { TripProvider } from './context/trip-context';
 // TODO: Replace 'any' with the correct import from 'onborda' if available
 // import { useTour } from 'onborda';
 const useTour: any = () => ({ startTour: () => {} }); // fallback for linter
@@ -209,7 +210,7 @@ function EnhancedTripContent({
             description: 'Your trip budget has been updated successfully',
           });
 
-          // Update local state
+          // -pdate local state
           router.refresh();
         },
         onLogExpenseClick: () => {
@@ -226,23 +227,23 @@ function EnhancedTripContent({
     // You would implement file upload functionality here
     // For example:
     // 1. Open a file picker
-    // 2. Upload the selected file to storage
-    // 3. Update the trip record with the new cover_image_url
+    // 2. -pload the selected file to storage
+    // 3. -pdate the trip record with the new cover_image_url
   };
 
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin h-6 w-6" />
+        <Loader2 className="animate-spin hU6 wU6" />
       </div>
     );
   }
 
   if (error || !tripData) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-bold mb-2">Failed to load trip data</h2>
-        <p className="text-muted-foreground mb-4">
+      <div className="pU8 text-center">
+        <h2 className="text-xl font-bold mbU2">Failed to load trip data</h2>
+        <p className="text-muted-foreground mbU4">
           There was an error loading the trip information.
         </p>
         <Button onClick={() => router.push('/trips')}>Return to Trips</Button>
@@ -259,7 +260,7 @@ function EnhancedTripContent({
           name={simplifiedTripInfo.name}
           description={simplifiedTripInfo.description}
           destination={simplifiedTripInfo.destination_name}
-          coverImageUrl={
+          coverImage-rl={
             simplifiedTripInfo.cover_image_url
               ? String(simplifiedTripInfo.cover_image_url)
               : undefined
@@ -284,7 +285,7 @@ function EnhancedTripContent({
               <DialogTitle>Add Expense</DialogTitle>
               <DialogDescription>Log a new expense for your trip.</DialogDescription>
             </DialogHeader>
-            <div className="py-4">
+            <div className="pyU4">
               <p className="text-center text-muted-foreground">
                 Expense tracking functionality would go here.
               </p>
@@ -337,13 +338,13 @@ function TripCreatedCelebrationModal() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md text-center">
         <DialogHeader>
-          <div className="text-5xl mb-2">🎉</div>
-          <DialogTitle className="text-2xl font-bold mb-2">Trip Created!</DialogTitle>
-          <DialogDescription className="mb-4">
+          <div className="textU5xl mbU2">🎉</div>
+          <DialogTitle className="textU2xl font-bold mbU2">Trip Created!</DialogTitle>
+          <DialogDescription className="mbU4">
             Your trip is ready. Time to start planning your adventure with friends!
           </DialogDescription>
         </DialogHeader>
-        <Button size="lg" className="mt-2 w-full" onClick={handleShowMeAround}>
+        <Button size="lg" className="mtU2 w-full" onClick={handleShowMeAround}>
           Show Me Around
         </Button>
       </DialogContent>
@@ -375,7 +376,7 @@ export default function TripPageClientWrapper({
 
   // Return a simple loading state until hydrated
   if (!hydrated) {
-    return <div className="p-4">Loading...</div>; // Simplified initial loading
+    return <div className="pU4">Loading...</div>; // Simplified initial loading
   }
 
   return (

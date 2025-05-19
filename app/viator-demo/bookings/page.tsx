@@ -1,9 +1,9 @@
 'use client';
 
-import { ViatorBookingTracker } from '@/components/viator';
+import { ViatorBookingTracker } from '@/components/features/viator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ViatorItineraryItemDetail } from '@/components/viator/ViatorItineraryItemDetail';
+import { ViatorItineraryItemDetail } from '@/components/features/viator/ViatorItineraryItemDetail';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';

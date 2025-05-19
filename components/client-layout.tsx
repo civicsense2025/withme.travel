@@ -6,10 +6,9 @@ import { CookieConsent } from '@/components/cookie-consent';
 import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { SearchProvider } from '@/contexts/search-context';
-import { CommandMenu } from '@/components/search/command-menu';
+import { CommandMenu } from '@/components/features/search/command-menu';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/components/auth-provider';
-import { AuthErrorBoundary } from '@/components/auth-error-boundary';
+import { AuthProvider, AuthErrorBoundary } from '@/components/features/auth';
 
 interface ClientLayoutProps {
   children: React.ReactNode;

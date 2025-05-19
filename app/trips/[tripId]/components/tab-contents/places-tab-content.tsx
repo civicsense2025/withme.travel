@@ -6,16 +6,14 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlaceList } from '@/components/ui/features/places/organisms/PlaceList';
-import PlaceCard from '@/components/ui/features/places/molecules/PlaceCard';
-import { usePlaces } from '@/hooks/use-places-v2';
-import { PlusCircle, MapPin, Search } from 'lucide-react';
+import { PlaceList, type Place } from '@/components/features/places/organisms/place-list';
+import { usePlaces } from '@/lib/features/places/hooks';
+import { PlusCircle, MapPin } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import type { Place } from '@/types/places';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface PlacesTabContentProps {
@@ -36,18 +34,20 @@ export function PlacesTabContent({
   const { toast } = useToast();
 
   // Initialize usePlaces hook
-  const { places, loading, error, fetchPlaces, lookupOrCreatePlace } = usePlaces();
-
-  // Fetch places when component mounts or destination changes
-  useEffect(() => {
-    if (destinationId) {
-      fetchPlaces('', { category: selectedTab !== 'all' ? selectedTab : undefined });
-    }
-  }, [destinationId, selectedTab, fetchPlaces]);
+  const { 
+    places, 
+    isLoading, 
+    error, 
+    refreshPlaces, 
+    addPlace 
+  } = usePlaces({ tripId });
 
   // Handle clicking on a place card
-  const handlePlaceClick = (place: Place) => {
-    setSelectedPlace(place);
+  const handlePlaceClick = (placeId: string) => {
+    const place = places.find(p => p.id === placeId);
+    if (place) {
+      setSelectedPlace(place);
+    }
   };
 
   // Handle adding a place to the trip
@@ -63,8 +63,6 @@ export function PlacesTabContent({
           title: place.name,
           description: place.description,
           location: place.address,
-          latitude: place.latitude,
-          longitude: place.longitude,
           item_type: 'place',
           category: place.category,
           place_id: place.id,
@@ -80,7 +78,7 @@ export function PlacesTabContent({
       } else {
         throw new Error('Failed to add place to itinerary');
       }
-    } catch (error) {
+    } catch (err) {
       toast({
         title: 'Error',
         description: 'Failed to add place to itinerary. Please try again.',
@@ -89,44 +87,37 @@ export function PlacesTabContent({
     }
   };
 
-  // Handle searching for a place
-  const handleSearch = (query: string) => {
-    fetchPlaces(query, { category: selectedTab !== 'all' ? selectedTab : undefined });
-  };
-
   // Handle creating a new place
-  const handleCreatePlace = async (data: Partial<Place>) => {
-    if (!destinationId) {
+  const handleCreatePlace = async (name: string, category?: string, address?: string) => {
+    if (!tripId) {
       toast({
         title: 'Error',
-        description: 'Destination ID is required to create a place',
+        description: 'Trip ID is required to add a place',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      const result = await lookupOrCreatePlace({
-        name: data.name || '',
-        address: data.address,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        category: data.category || 'attraction',
+      const newPlace = await addPlace({
+        name,
+        category,
+        address
       });
 
-      if (result.success) {
+      if (newPlace) {
         toast({
           title: 'Place created',
-          description: `${result.data.name} has been created successfully.`,
+          description: `${newPlace.name} has been added successfully.`,
         });
-        setSelectedPlace(result.data);
+        setSelectedPlace(newPlace);
       } else {
-        throw new Error(result.error.message);
+        throw new Error('Failed to create place');
       }
-    } catch (error) {
+    } catch (err) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create place',
+        description: err instanceof Error ? err.message : 'Failed to create place',
         variant: 'destructive',
       });
     }
@@ -176,12 +167,21 @@ export function PlacesTabContent({
     );
   }
 
+  // Filter places based on the selected tab
+  const filteredPlaces = selectedTab === 'all' 
+    ? places 
+    : places.filter(place => place.category?.toLowerCase() === selectedTab.toLowerCase());
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Places</h2>
         {canEdit && (
-          <Button size="sm" className="gap-1">
+          <Button 
+            size="sm" 
+            className="gap-1"
+            onClick={() => handleCreatePlace('New Place', 'attraction')}
+          >
             <PlusCircle className="h-4 w-4" />
             Add Place
           </Button>
@@ -196,46 +196,12 @@ export function PlacesTabContent({
           <TabsTrigger value="hotel">Hotels</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
+        <TabsContent value={selectedTab} className="space-y-4">
           <PlaceList
-            enableSearch={true}
-            enableCategoryFilter={true}
-            onPlaceSelect={handlePlaceClick}
-            searchPlaceholder="Search places in this destination..."
-            gridLayout={true}
-          />
-        </TabsContent>
-
-        <TabsContent value="restaurant" className="space-y-4">
-          <PlaceList
-            enableSearch={true}
-            enableCategoryFilter={false}
-            onPlaceSelect={handlePlaceClick}
-            searchPlaceholder="Search restaurants..."
-            gridLayout={true}
-            initialQuery=""
-          />
-        </TabsContent>
-
-        <TabsContent value="attraction" className="space-y-4">
-          <PlaceList
-            enableSearch={true}
-            enableCategoryFilter={false}
-            onPlaceSelect={handlePlaceClick}
-            searchPlaceholder="Search attractions..."
-            gridLayout={true}
-            initialQuery=""
-          />
-        </TabsContent>
-
-        <TabsContent value="hotel" className="space-y-4">
-          <PlaceList
-            enableSearch={true}
-            enableCategoryFilter={false}
-            onPlaceSelect={handlePlaceClick}
-            searchPlaceholder="Search hotels..."
-            gridLayout={true}
-            initialQuery=""
+            places={filteredPlaces}
+            isLoading={isLoading}
+            error={error || undefined}
+            onSelectPlace={handlePlaceClick}
           />
         </TabsContent>
       </Tabs>

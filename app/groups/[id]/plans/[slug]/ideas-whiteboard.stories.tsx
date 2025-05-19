@@ -32,10 +32,10 @@ type Story = StoryObj<typeof IdeasWhiteboard>;
 
 export const Default: Story = {
   args: {
-    groupId: 'group-123',
+    groupId: 'groupU123',
     groupName: 'Barcelona Crew',
-    planSlug: 'summer-2024',
-    planId: 'plan-456',
+    planSlug: 'summerU2024',
+    planId: 'planU456',
     isAuthenticated: true,
     isGuest: false,
     isAdmin: true,

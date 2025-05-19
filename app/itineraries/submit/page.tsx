@@ -17,7 +17,7 @@ export default async function CreateItineraryPage() {
   // Check if user is authenticated
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.get-ser();
 
   // If not authenticated, redirect to login page
   if (!user) {

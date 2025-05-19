@@ -35,13 +35,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { DestinationReviews } from '@/components/destinations/destination-reviews';
+import { DestinationReviews } from '@/components/features/destinations/destination-reviews';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { AuthContextType } from '@/components/auth-provider';
-import { RelatedItinerariesWidget } from '@/components/destinations/related-itineraries-widget';
-import { DestinationPageAdminEditor } from '@/components/admin';
-import { ImageAttribution } from '@/components/images';
-import { DestinationExperiences, DestinationAttractions } from '@/components/viator';
+import { AuthContextType } from '@/components/features/auth';
+import { RelatedItinerariesWidget } from '@/components/features/destinations/related-itineraries-widget';
+import { DestinationPageAdminEditor } from '@/components/features/admin';
+import { ImageAttribution } from '@/components/features/images';
+import { DestinationExperiences, DestinationAttractions } from '@/components/features/viator';
 
 interface Destination {
   id: string;
@@ -155,6 +155,9 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
           title: 'Error loading destination',
           description: 'Please try again later',
           variant: 'destructive',
+          children: (
+            <>Error loading destination</>
+          ),
         });
       } finally {
         setIsLoading(false);
@@ -261,6 +264,9 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
         title: 'Error creating trip',
         description: 'Please try again later',
         variant: 'destructive',
+        children: (
+          <>Error creating trip</>
+        ),
       });
     } finally {
       setIsCreatingTrip(false);
@@ -310,9 +316,9 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
 
   const imageData = getDestinationImageData(destination);
 
-  // Use user.profile.name and fallback to 'My' if name is not available
-  const profileName = user?.profile?.name ?? 'My';
-  const defaultTripName = `${profileName}s trip to ${destination.city}`;
+  // Use user's name and fallback to 'My' if not available
+  const profileName = user?.name ?? user?.email?.split('@')[0] ?? 'My';
+  const defaultTripName = `${profileName}'s trip to ${destination.city}`;
 
   return (
     <div className="mx-auto">

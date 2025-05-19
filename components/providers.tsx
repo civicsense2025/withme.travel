@@ -3,7 +3,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { AuthProvider } from '@/components/auth-provider';
+import { AuthProvider } from '@/components/features/auth';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { SearchProvider } from '@/contexts/search-context';

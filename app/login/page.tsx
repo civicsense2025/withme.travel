@@ -16,7 +16,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoginForm } from '@/components/ui/features/auth/molecules/LoginForm';
 import { Logo } from '@/components/logo';
-import { AuthSellingPoints } from '@/components/auth-selling-points';
+import { AuthSellingPoints } from '@/components/features/auth';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/use-toast';

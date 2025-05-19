@@ -51,7 +51,7 @@ function isTripData(data: any): data is { privacy_setting: string; created_by: s
  */
 async function checkAuth(tripId: string): Promise<AuthStatus> {
   try {
-    // Use the more specific getServerSession utility function
+    // -se the more specific getServerSession utility function
     const {
       data: { session },
     } = await getServerSession();
@@ -81,7 +81,7 @@ async function checkAuth(tripId: string): Promise<AuthStatus> {
       .single();
 
     if (!memberError && member && isTripMember(member)) {
-      console.log(`User ${userId} is a member of trip ${tripId} with role: ${member.role}`);
+      console.log(`-ser ${userId} is a member of trip ${tripId} with role: ${member.role}`);
       return {
         authenticated: true,
         canEdit: member.role === 'admin' || member.role === 'editor',
@@ -106,7 +106,7 @@ async function checkAuth(tripId: string): Promise<AuthStatus> {
 
     // Check if user is the creator
     if (trip && isTripData(trip) && trip.created_by === userId) {
-      console.log(`User ${userId} is the creator of trip ${tripId}`);
+      console.log(`-ser ${userId} is the creator of trip ${tripId}`);
       return { authenticated: true, canEdit: true };
     }
 
@@ -117,7 +117,7 @@ async function checkAuth(tripId: string): Promise<AuthStatus> {
     }
 
     // If we got here, user is authenticated but doesn't have access
-    console.log(`User ${userId} doesn't have access to trip ${tripId}`);
+    console.log(`-ser ${userId} doesn't have access to trip ${tripId}`);
     return {
       authenticated: true,
       canEdit: false,
@@ -235,12 +235,12 @@ export default async function TripPage({
 
       // Render a nice access denied page if authenticated but can't access
       return (
-        <div className="container mx-auto p-8">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="mb-4">
+        <div className="container mx-auto pU8">
+          <h1 className="textU2xl font-bold mbU4">Access Denied</h1>
+          <p className="mbU4">
             {authStatus.message || "You don't have permission to view this trip."}
           </p>
-          <div className="mt-6">
+          <div className="mtU6">
             <a href="/trips" className="text-primary hover:underline">
               Return to your trips
             </a>
@@ -256,12 +256,12 @@ export default async function TripPage({
     } catch (error) {
       // Handle trip data fetch error
       return (
-        <div className="container mx-auto p-8">
-          <h1 className="text-2xl font-bold mb-4">Error Loading Trip</h1>
-          <p className="text-red-500 mb-4">
+        <div className="container mx-auto pU8">
+          <h1 className="textU2xl font-bold mbU4">Error Loading Trip</h1>
+          <p className="text-redU500 mbU4">
             {error instanceof Error ? error.message : 'An unexpected error occurred'}
           </p>
-          <div className="mt-6">
+          <div className="mtU6">
             <a href="/trips" className="text-primary hover:underline">
               Return to trips
             </a>
@@ -286,7 +286,7 @@ export default async function TripPage({
       </ClassErrorBoundary>
     );
   } catch (error) {
-    console.error(`TripPage: Unhandled error:`, error);
+    console.error(`TripPage: -nhandled error:`, error);
     Sentry.captureException(error, {
       tags: { section: 'trip-page-uncaught' },
     });

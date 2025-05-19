@@ -1,4 +1,0 @@
-# OpenReplay integration
-# Add this to your .env or .env.local file
-
-NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY=your-openreplay-project-key-here 

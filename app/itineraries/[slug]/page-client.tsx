@@ -31,8 +31,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAuth } from '@/components/auth-provider';
 import { ItineraryMetadataSection } from '@/components/itinerary/itinerary-metadata-section';
 import DestinationDetails from '@/components/destinations/destination-details';
-import { ImageAttribution } from '@/components/images';
-import { DestinationExperiences } from '@/components/viator/DestinationExperiences';
+import { ImageAttribution } from '@/components/features/images';
+import { DestinationExperiences } from '@/components/features/viator/DestinationExperiences';
 
 // Define types to match the server component and database schema
 interface ItineraryTemplateItem {

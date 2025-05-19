@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import type { Expense } from '@/lib/api/_shared';
 import {
   listTripExpenses,
@@ -55,8 +55,7 @@ export function useExpenses(tripId: string): UseExpensesResult {
     } else {
       setError(result.error);
       toast({
-        title: 'Failed to load expenses',
-        description: result.error,
+        description: `Failed to load expenses: ${result.error}`,
         variant: 'destructive',
       });
     }
@@ -70,12 +69,11 @@ export function useExpenses(tripId: string): UseExpensesResult {
       const result = await createTripExpense(tripId, data);
       if (result.success) {
         setExpenses((prev) => [result.data, ...prev]);
-        toast({ title: 'Expense added' });
+        toast({ description: 'Expense added successfully' });
       } else {
         setError(result.error);
         toast({
-          title: 'Failed to add expense',
-          description: result.error,
+          description: `Failed to add expense: ${result.error}`,
           variant: 'destructive',
         });
       }
@@ -92,12 +90,11 @@ export function useExpenses(tripId: string): UseExpensesResult {
       const result = await updateTripExpense(tripId, expenseId, data);
       if (result.success) {
         setExpenses((prev) => prev.map((exp) => (exp.id === expenseId ? result.data : exp)));
-        toast({ title: 'Expense updated' });
+        toast({ description: 'Expense updated successfully' });
       } else {
         setError(result.error);
         toast({
-          title: 'Failed to update expense',
-          description: result.error,
+          description: `Failed to update expense: ${result.error}`,
           variant: 'destructive',
         });
       }
@@ -114,12 +111,11 @@ export function useExpenses(tripId: string): UseExpensesResult {
       const result = await deleteTripExpense(tripId, expenseId);
       if (result.success) {
         setExpenses((prev) => prev.filter((exp) => exp.id !== expenseId));
-        toast({ title: 'Expense deleted' });
+        toast({ description: 'Expense deleted successfully' });
       } else {
         setError(result.error);
         toast({
-          title: 'Failed to delete expense',
-          description: result.error,
+          description: `Failed to delete expense: ${result.error}`,
           variant: 'destructive',
         });
       }
@@ -139,8 +135,7 @@ export function useExpenses(tripId: string): UseExpensesResult {
     } else {
       setError(result.error);
       toast({
-        title: 'Failed to load expense summary',
-        description: result.error,
+        description: `Failed to load expense summary: ${result.error}`,
         variant: 'destructive',
       });
     }
@@ -166,4 +161,4 @@ export function useExpenses(tripId: string): UseExpensesResult {
     removeExpense,
     fetchSummary,
   };
-}
+} 

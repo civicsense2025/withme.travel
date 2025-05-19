@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { startOpenReplay, identifyUser } from '@/app/lib/openreplay';
-import { useAuth } from '@/components/auth-provider';
+import { useAuth } from '@/hooks/use-auth';
 
 export function OpenReplayProvider({ 
   children, 

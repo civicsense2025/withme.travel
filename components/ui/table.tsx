@@ -18,9 +18,10 @@ export function Table({ children, className }: TableProps) {
 
 export interface TableHeadProps {
   children: React.ReactNode;
+  className?: string;
 }
-export function TableHead({ children }: TableHeadProps) {
-  return <thead>{children}</thead>;
+export function TableHead({ children, className }: TableHeadProps) {
+  return <thead className={className}>{children}</thead>;
 }
 
 export interface TableBodyProps {
@@ -39,9 +40,10 @@ export function TableRow({ children }: TableRowProps) {
 
 export interface TableCellProps {
   children: React.ReactNode;
+  className?: string;
 }
-export function TableCell({ children }: TableCellProps) {
-  return <td>{children}</td>;
+export function TableCell({ children, className }: TableCellProps) {
+  return <td className={className}>{children}</td>;
 }
 
 export interface TableHeaderCellProps {

@@ -3,16 +3,16 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useItinerary } from '@/hooks/use-itinerary';
-import { Suspense, useState } from 'react';
+import { useState } from 'react';
 import {
+  ItineraryTabTemplate,
   ItineraryDaySection,
   UnscheduledItemsSection,
-  ItineraryTabTemplate,
-} from '@/components/itinerary';
-import { QuickAddItemDialog } from '@/components/itinerary/QuickAddItemDialog';
+  ItineraryItem as ComponentItineraryItem,
+} from '@/components/features/itinerary';
+import { QuickAddItemDialog } from '@/components/features/itinerary/QuickAddItemDialog';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TripsFeedbackButton } from '@/app/trips/TripsFeedbackButton';
-import { AddViatorButton } from '@/components/viator/AddViatorButton';
 import { DisplayItineraryItem } from '@/types/itinerary';
 
 // Explicitly define TripRole type here to avoid import issues
@@ -39,7 +39,7 @@ export function ItineraryTabContent({
   // State for edit/add item dialogs
   const [selectedDayNumber, setSelectedDayNumber] = useState<number | null>(null);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
-  const [currentEditItem, setCurrentEditItem] = useState(null);
+  const [currentEditItem, setCurrentEditItem] = useState<DisplayItineraryItem | null>(null);
 
   // Check if user can edit
   const canEdit = userRole === 'admin' || userRole === 'editor' || userRole === 'contributor';
@@ -51,13 +51,18 @@ export function ItineraryTabContent({
   };
 
   // Handle editing an item
-  const handleEditItem = (item: DisplayItineraryItem) => {
-    setCurrentEditItem(item);
+  const handleEditItem = (id: string) => {
+    const itemToEdit = displayItems.find(item => item.id === id) || null;
+    setCurrentEditItem(itemToEdit);
     // Implement edit item functionality here
     // You could open an edit dialog or navigate to an edit page
     toast({
-      title: 'Edit functionality',
-      description: 'Edit functionality will be implemented soon.',
+      children: (
+        <div>
+          <div className="font-semibold">Edit functionality</div>
+          <div>Edit functionality will be implemented soon.</div>
+        </div>
+      )
     });
   };
 
@@ -66,14 +71,22 @@ export function ItineraryTabContent({
     try {
       await deleteItem(itemId);
       toast({
-        title: 'Item removed',
-        description: 'The item has been removed from your itinerary',
+        children: (
+          <div>
+            <div className="font-semibold">Item removed</div>
+            <div>The item has been removed from your itinerary</div>
+          </div>
+        )
       });
     } catch (err) {
       toast({
-        title: 'Error',
-        description: 'Failed to remove the item. Please try again.',
         variant: 'destructive',
+        children: (
+          <div>
+            <div className="font-semibold">Error</div>
+            <div>Failed to remove the item. Please try again.</div>
+          </div>
+        )
       });
     }
   };
@@ -89,7 +102,7 @@ export function ItineraryTabContent({
       category: item.category || 'other',
       start_time: item.start_time,
       end_time: item.end_time,
-      votes: item.votes || 0,
+      votes: item.votes || [],
       creatorProfile: null,
       notes: item.notes || '',
       created_at: item.created_at || '',
@@ -97,58 +110,64 @@ export function ItineraryTabContent({
       trip_id: item.trip_id || tripId,
       updated_at: item.updated_at || '',
       status: item.status || 'pending',
+      section_id: item.section_id || '',
+      type: item.type || 'item',
+      position: item.position || 0,
+      place_id: item.place_id || null,
+      details: {}
     }));
   };
 
   // Group items by day
   const displayItems = transformToDisplayItems(items);
   const unscheduledItems = displayItems.filter((item) => item.day_number === null);
-  const itemsByDay = Array.from({ length: durationDays }, (_, index) => {
+  
+  // Convert to ComponentItineraryItem format for the components
+  const convertToComponentFormat = (items: DisplayItineraryItem[]): ComponentItineraryItem[] => {
+    return items.map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description || undefined,
+      location: item.location,
+      startTime: item.start_time,
+      endTime: item.end_time,
+      status: item.status,
+      category: item.category || undefined,
+      voteCount: item.votes.length,
+      userVoted: false
+    }));
+  };
+
+  // Prepare days array for ItineraryTabTemplate
+  const days = Array.from({ length: durationDays }, (_, index) => {
     const dayNumber = index + 1;
-    return displayItems.filter((item) => item.day_number === dayNumber);
+    const dayItems = displayItems.filter((item) => item.day_number === dayNumber);
+    return {
+      dayNumber,
+      date: startDate ? new Date(startDate) : undefined,
+      items: convertToComponentFormat(dayItems)
+    };
   });
 
   return (
     <TooltipProvider>
       <div className="relative">
         <ItineraryTabTemplate
+          days={days}
+          unscheduledItems={convertToComponentFormat(unscheduledItems)}
           canEdit={canEdit}
           isLoading={isLoading}
-          error={error}
           onAddItem={() => setIsAddItemDialogOpen(true)}
-          onAddItemForDay={handleAddItemForDay}
-          totalDays={durationDays}
-        >
-          {/* Unscheduled items section */}
-          {unscheduledItems.length > 0 && (
-            <UnscheduledItemsSection
-              items={unscheduledItems}
-              onEditItem={handleEditItem}
-              onDeleteItem={handleDeleteItem}
-              showActions={canEdit}
-            />
-          )}
-
-          {/* Day sections */}
-          {itemsByDay.map((dayItems, index) => (
-            <ItineraryDaySection
-              key={`day-${index + 1}`}
-              dayNumber={index + 1}
-              items={dayItems}
-              tripStartDate={startDate}
-              onEditItem={handleEditItem}
-              onDeleteItem={handleDeleteItem}
-              showActions={canEdit}
-            />
-          ))}
-        </ItineraryTabTemplate>
+          onEditItem={handleEditItem}
+          onDeleteItem={handleDeleteItem}
+        />
 
         {/* Add Item Dialog */}
         <QuickAddItemDialog
           isOpen={isAddItemDialogOpen}
           onClose={() => setIsAddItemDialogOpen(false)}
           tripId={tripId}
-          defaultDayNumber={selectedDayNumber}
+          dayNumber={selectedDayNumber}
           onItemAdded={() => {
             setIsAddItemDialogOpen(false);
             setSelectedDayNumber(null);

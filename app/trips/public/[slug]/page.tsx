@@ -5,7 +5,7 @@ import PublicTripPageClient from './public-trip-page-client';
 
 // Simple loading component
 function PublicTripPageLoading() {
-  return <div className="container py-6">Loading trip details...</div>;
+  return <div className="container pyU6">Loading trip details...</div>;
 }
 
 interface PageProps {

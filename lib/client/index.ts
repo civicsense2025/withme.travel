@@ -5,7 +5,7 @@
  * It provides a single import point for all API functions.
  */
 
-// Re-export all API wrappers
+// Re-export all client API types and functions
 export * from './tags';
 export * from './tasks';
 export * from './trips';
@@ -20,17 +20,20 @@ export * from './expenses';
 export * from './activities';
 export * from './itinerary';
 export * from './notes';
+export * from './permissions';
+export * from './logistics';
+export * from './itineraries';
+export * from './result';  // Export the Result utilities
 
 // Export trip management with namespacing to avoid conflicts with tripMembers
 import * as tripManagement from './trip-management';
 export { tripManagement };
 
-// Add additional exports as they become available
-// export * from './permissions';
-// export * from './itineraries';
-
 /**
  * Helper function to parse API responses consistently
+ * @param response The fetch Response object
+ * @returns Parsed response data
+ * @throws Error if the response is not OK
  */
 export async function handleApiResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {

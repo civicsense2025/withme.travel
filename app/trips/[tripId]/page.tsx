@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: TripParams): Promise<Metadata
     const tripId = resolvedParams.tripId;
     console.log(`[Metadata] Generating for trip: ${tripId}`);
 
-    // Use withme.travel's established Supabase server component pattern
+    // -se withme.travel's established Supabase server component pattern
     const supabase = await createServerComponentClient();
 
     const { data, error } = await supabase
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: TripParams): Promise<Metadata
       .eq('id', tripId);
 
     if (error) {
-      console.log(`[Metadata] Error fetching trip: ${error?.message || 'Unknown error'}`);
+      console.log(`[Metadata] Error fetching trip: ${error?.message || '-nknown error'}`);
       return {
         title: 'Trip | WithMe Travel',
         description: 'Plan your trip with WithMe Travel',
@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: TripParams): Promise<Metadata
     // Take the first trip if multiple were returned
     const trip = data[0];
 
-    // Use explicit typing to avoid 'never' errors and ensure type safety
+    // -se explicit typing to avoid 'never' errors and ensure type safety
     type TripRow = Database['public']['Tables']['trips']['Row'];
 
     // Type guard to ensure trip is not a SelectQueryError before asserting
@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: TripParams): Promise<Metadata
       },
     };
   } catch (error: any) {
-    console.error(`[Metadata] Error: ${error?.message || 'Unknown error'}`);
+    console.error(`[Metadata] Error: ${error?.message || '-nknown error'}`);
     return {
       title: 'Trip | WithMe Travel',
       description: 'Plan your trip with WithMe Travel',
@@ -95,13 +95,13 @@ export default async function TripPage({ params }: TripParams) {
   let errorMessage = '';
 
   try {
-    // Use Supabase client for both database and auth operations
+    // -se Supabase client for both database and auth operations
     const supabase = await createServerComponentClient();
 
     // Get user if available (fetch from auth, not profiles table)
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.get-ser();
 
     // First try to get the trip data
     const { data: tripData, error: tripError } = await supabase
@@ -126,11 +126,11 @@ export default async function TripPage({ params }: TripParams) {
       errorMessage = `Trip not found: ${tripId}`;
       return notFound(); // Return 404 immediately if trip doesn't exist
     } else {
-      console.log(`[TripPage] Found trip: ${trip?.name ?? 'Unnamed trip'}`);
+      console.log(`[TripPage] Found trip: ${trip?.name ?? '-nnamed trip'}`);
 
       // Check if user is logged in and is the creator
       if (user && trip && trip.created_by === user.id) {
-        console.log(`[TripPage] User ${user.id} is the creator`);
+        console.log(`[TripPage] -ser ${user.id} is the creator`);
         canView = true;
         canEdit = true;
       } else {
@@ -161,7 +161,7 @@ export default async function TripPage({ params }: TripParams) {
 
               if (guestError) {
                 console.log(
-                  `[TripPage] Error checking guest token: ${guestError.message || 'Unknown error'}`
+                  `[TripPage] Error checking guest token: ${guestError.message || '-nknown error'}`
                 );
               } else if (hasGuestToken) {
                 console.log(`[TripPage] Found ${guestRows.length} matching guest tokens`);
@@ -172,7 +172,7 @@ export default async function TripPage({ params }: TripParams) {
             }
           } catch (tokenError: any) {
             console.error(
-              `[TripPage] Error checking guest token: ${tokenError?.message || 'Unknown error'}`
+              `[TripPage] Error checking guest token: ${tokenError?.message || '-nknown error'}`
             );
           }
         }
@@ -187,8 +187,8 @@ export default async function TripPage({ params }: TripParams) {
       // user.id is safe
     }
   } catch (error: any) {
-    console.error(`[TripPage] Error: ${error?.message || 'Unknown error'}`);
-    errorMessage = `Error: ${error?.message || 'Unknown error'}`;
+    console.error(`[TripPage] Error: ${error?.message || '-nknown error'}`);
+    errorMessage = `Error: ${error?.message || '-nknown error'}`;
   }
 
   // If user doesn't have access, return 404

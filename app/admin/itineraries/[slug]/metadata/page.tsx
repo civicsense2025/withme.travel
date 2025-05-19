@@ -1,6 +1,6 @@
 import { createServerComponentClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/database';
-import { MetadataEditorClient } from '@/components/admin/metadata-editor-client';
+import { MetadataEditorClient } from '@/components/features/admin/metadata-editor-client';
 import { ItineraryTemplate } from '@/types/itinerary';
 import { notFound } from 'next/navigation';
 

@@ -4,9 +4,9 @@ import { Suspense, lazy, useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load the ActivityTimeline component
-const ActivityTimeline = lazy(() =>
-  import('@/components/ui/features/trips/activity-timeline').then((mod) => ({
-    default: mod.ActivityTimeline,
+const ActivityFeed = lazy(() =>
+  import('@/components/features/activities/organisms/activity-feed').then((mod) => ({
+    default: mod.ActivityFeed,
   }))
 );
 
@@ -33,7 +33,7 @@ export function HistoryTabContent({ tripId }: HistoryTabContentProps) {
             </div>
           }
         >
-          <ActivityTimeline tripId={tripId} showRefreshButton={true} maxHeight="80vh" />
+          <ActivityFeed tripId={tripId} showRefreshButton={true} maxHeight="80vh" />
         </Suspense>
       ) : (
         <div className="flex items-center justify-center h-[50vh]">

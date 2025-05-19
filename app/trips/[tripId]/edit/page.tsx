@@ -31,7 +31,7 @@ interface FetchedTripData {
   end_date: string | null;
   destination_id: string | null;
   cover_image_url: string | null;
-  // Use imported enum type or literal union type for privacy_setting
+  // -se imported enum type or literal union type for privacy_setting
   privacy_setting: 'private' | 'shared_with_link' | 'public' | null;
   // Type for the joined destination data (since it's a single record)
   destinations: {
@@ -107,7 +107,7 @@ export default function EditTripPage() {
   }, [tripId, toast]);
 
   // Handle trip update
-  const handleUpdateTrip = async (updatedTrip: any) => {
+  const handle-pdateTrip = async (updatedTrip: any) => {
     try {
       const supabase = getBrowserClient();
 
@@ -133,74 +133,74 @@ export default function EditTripPage() {
   };
 
   if (isLoading) {
-    return <div className="p-8 flex justify-center">Loading trip details...</div>;
+    return <div className="pU8 flex justify-center">Loading trip details...</div>;
   }
 
   if (!trip) {
     return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Trip not found</h1>
+      <div className="pU8 text-center">
+        <h1 className="textU2xl font-bold mbU4">Trip not found</h1>
         <p>The trip you're looking for doesn't exist or you don't have permission to edit it.</p>
       </div>
     );
   }
 
   return (
-    <div className="container py-8 max-w-3xl">
-      <h1 className="text-3xl font-bold mb-6">Edit Trip</h1>
+    <div className="container pyU8 max-wU3xl">
+      <h1 className="textU3xl font-bold mbU6">Edit Trip</h1>
 
       {/* This is just a placeholder - actual form component would be imported */}
-      <div className="bg-muted p-6 rounded-lg">
-        <div className="space-y-4">
+      <div className="bg-muted pU6 rounded-lg">
+        <div className="space-yU4">
           <div>
-            <label className="block text-sm font-medium mb-1">Trip Name</label>
-            <input type="text" className="w-full p-2 border rounded-md" defaultValue={trip.name} />
+            <label className="block text-sm font-medium mbU1">Trip Name</label>
+            <input type="text" className="w-full pU2 border rounded-md" defaultValue={trip.name} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Destination</label>
+            <label className="block text-sm font-medium mbU1">Destination</label>
             <input
               type="text"
-              className="w-full p-2 border rounded-md"
+              className="w-full pU2 border rounded-md"
               defaultValue={trip.destination}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-colsU2 gapU4">
             <div>
-              <label className="block text-sm font-medium mb-1">Start Date</label>
+              <label className="block text-sm font-medium mbU1">Start Date</label>
               <input
                 type="date"
-                className="w-full p-2 border rounded-md"
+                className="w-full pU2 border rounded-md"
                 defaultValue={trip.start_date}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">End Date</label>
+              <label className="block text-sm font-medium mbU1">End Date</label>
               <input
                 type="date"
-                className="w-full p-2 border rounded-md"
+                className="w-full pU2 border rounded-md"
                 defaultValue={trip.end_date}
               />
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end space-x-2">
+          <div className="ptU4 flex justify-end space-xU2">
             <button
-              className="px-4 py-2 border rounded-md hover:bg-gray-100"
+              className="pxU4 pyU2 border rounded-md hover:bg-grayU100"
               onClick={() => router.push(`/trips/${tripId}`)}
             >
               Cancel
             </button>
             <button
-              className="px-4 py-2 bg-travel-purple text-white rounded-md hover:bg-travel-purple/90"
+              className="pxU4 pyU2 bg-travel-purple text-white rounded-md hover:bg-travel-purple/90"
               onClick={() => {
                 // Simulate form submission
                 const updatedTrip = {
                   ...trip,
-                  name: trip.name || 'Updated Trip',
+                  name: trip.name || '-pdated Trip',
                 };
-                handleUpdateTrip(updatedTrip);
+                handle-pdateTrip(updatedTrip);
               }}
             >
               Save Changes

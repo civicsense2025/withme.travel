@@ -1,15 +1,12 @@
 /**
- * Result Pattern for API Responses
+ * Result types and utilities for handling operation outcomes
  *
- * Standardized way to handle success and error states from API calls
+ * This module provides a standardized way to handle operation results,
+ * especially for async operations that might succeed or fail.
  */
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
 /**
- * Success result with data
+ * Represents a successful operation result
  */
 export type Success<T> = {
   success: true;
@@ -17,7 +14,7 @@ export type Success<T> = {
 };
 
 /**
- * Error result with message and optional details
+ * Represents a failed operation result
  */
 export type Failure = {
   success: false;
@@ -26,16 +23,12 @@ export type Failure = {
 };
 
 /**
- * Result type combining success and failure
+ * Result type that can be either success or failure
  */
 export type Result<T> = Success<T> | Failure;
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
 /**
- * Creates a success result
+ * Create a successful result
  */
 export function createSuccess<T>(data: T): Success<T> {
   return {
@@ -45,18 +38,18 @@ export function createSuccess<T>(data: T): Success<T> {
 }
 
 /**
- * Creates a failure result
+ * Create a failure result
  */
-export function createFailure(error: string, details?: unknown): Failure {
+export function createFailure(error: string | Error, details?: unknown): Failure {
   return {
     success: false,
-    error,
+    error: error instanceof Error ? error.message : error,
     details,
   };
 }
 
 /**
- * Type guard to check if a result is successful
+ * Type guard to check if a result is a success
  */
 export function isSuccess<T>(result: Result<T>): result is Success<T> {
   return result.success === true;
@@ -70,39 +63,29 @@ export function isFailure<T>(result: Result<T>): result is Failure {
 }
 
 /**
- * Helper to safely execute an async function and return a Result
+ * Try to execute a promise and convert its result to a Result type
  */
 export async function tryCatch<T>(promise: Promise<T>): Promise<Result<T>> {
   try {
     const data = await promise;
     return createSuccess(data);
   } catch (error) {
-    if (error instanceof Error) {
-      return createFailure(error.message, error);
-    }
-    return createFailure(String(error));
+    return createFailure(error instanceof Error ? error : String(error));
   }
 }
 
 /**
- * Maps a successful result to a new value
+ * Map the data of a success result using a function
  */
 export function mapSuccess<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
   if (isSuccess(result)) {
-    try {
-      return createSuccess(fn(result.data));
-    } catch (error) {
-      if (error instanceof Error) {
-        return createFailure(error.message, error);
-      }
-      return createFailure(String(error));
-    }
+    return createSuccess(fn(result.data));
   }
   return result;
 }
 
 /**
- * Handle a result with success and error callbacks
+ * Handle a result with separate success and failure callbacks
  */
 export function handleResult<T, U = void>(
   result: Result<T>,
@@ -118,7 +101,7 @@ export function handleResult<T, U = void>(
 }
 
 /**
- * Chains multiple async operations that return Results
+ * Chain an async operation that returns a Result
  */
 export async function chainResults<T, U>(
   result: Result<T>,
@@ -127,20 +110,18 @@ export async function chainResults<T, U>(
   if (isSuccess(result)) {
     return await fn(result.data);
   }
-  return result;
+  return result as unknown as Result<U>;
 }
 
 /**
- * Combines multiple results into a single result with an array of data
+ * Combine multiple results into a single result
  */
 export function combineResults<T>(results: Result<T>[]): Result<T[]> {
   const failures = results.filter(isFailure);
   if (failures.length > 0) {
-    return createFailure(
-      `Multiple errors: ${failures.map((f) => f.error).join(', ')}`,
-      failures.map((f) => f.details)
-    );
+    const firstFailure = failures[0];
+    return createFailure(firstFailure.error, firstFailure.details);
   }
-
-  return createSuccess(results.filter(isSuccess).map((r) => (r as Success<T>).data));
+  
+  return createSuccess(results.filter(isSuccess).map(result => (result as Success<T>).data));
 }

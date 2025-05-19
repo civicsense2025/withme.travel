@@ -37,7 +37,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Image, MapPin, Tag } from 'lucide-react';
-import { ImageSearchSelector } from '@/components/images/image-search-selector';
+import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
 import NextImage from 'next/image';
 import { PlaceSearch } from '@/components/place-search';
 import { useAuth } from '@/components/auth-provider';

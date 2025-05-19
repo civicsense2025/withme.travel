@@ -70,13 +70,13 @@ interface AddIdeasDialogProps {
 }
 
 // Position update interface matching the server endpoint
-interface IdeaPositionUpdate {
+interface IdeaPosition-pdate {
   ideaId: string;
   position: LocalIdeaPosition;
 }
 
 function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) {
-  const [unassignedIdeas, setUnassignedIdeas] = useState<LocalGroupIdea[]>([]);
+  const [unassignedIdeas, set-nassignedIdeas] = useState<LocalGroupIdea[]>([]);
   const [selectedIdeas, setSelectedIdeas] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -84,14 +84,14 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
   // Fetch unassigned ideas when dialog opens
   useEffect(() => {
     if (isOpen) {
-      const fetchUnassignedIdeas = async () => {
+      const fetch-nassignedIdeas = async () => {
         setIsLoading(true);
         try {
           const response = await fetch(`/api/groups/${groupId}/ideas?planId=null`);
           if (!response.ok) throw new Error('Failed to fetch unassigned ideas');
 
           const data = await response.json();
-          setUnassignedIdeas(data.ideas || []);
+          set-nassignedIdeas(data.ideas || []);
         } catch (error) {
           console.error('Error fetching unassigned ideas:', error);
           toast({
@@ -104,7 +104,7 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
         }
       };
 
-      fetchUnassignedIdeas();
+      fetch-nassignedIdeas();
     }
   }, [groupId, isOpen]);
 
@@ -170,35 +170,35 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger>
-        <Button variant="outline" className="ml-2">
-          <PlusCircle className="h-4 w-4 mr-2" />
+        <Button variant="outline" className="mlU2">
+          <PlusCircle className="hU4 wU4 mrU2" />
           Add Existing Ideas
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-wU3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Existing Ideas to Plan</DialogTitle>
           <DialogDescription>Select ideas from the group to add to this plan</DialogDescription>
         </DialogHeader>
 
         {isLoading && (
-          <div className="flex justify-center my-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex justify-center myU8">
+            <Loader2 className="hU8 wU8 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {!isLoading && unassignedIdeas.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center pyU8 text-muted-foreground">
             No unassigned ideas available in this group
           </div>
         )}
 
         {!isLoading && unassignedIdeas.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+          <div className="grid grid-colsU1 md:grid-colsU2 gapU4 myU4">
             {unassignedIdeas.map((idea) => (
               <div
                 key={idea.id}
-                className={`border rounded-md p-3 cursor-pointer hover:bg-secondary/20 transition-colors ${
+                className={`border rounded-md pU3 cursor-pointer hover:bg-secondary/20 transition-colors ${
                   selectedIdeas.includes(idea.id) ? 'bg-secondary/20 border-primary' : ''
                 }`}
                 onClick={() => toggleIdeaSelection(idea.id)}
@@ -207,11 +207,11 @@ function AddIdeasDialog({ groupId, planId, onIdeasAdded }: AddIdeasDialogProps) 
                   <div>
                     <div className="text-sm font-medium">{idea.title}</div>
                     {idea.description && (
-                      <div className="text-xs text-muted-foreground mt-1">{idea.description}</div>
+                      <div className="text-xs text-muted-foreground mtU1">{idea.description}</div>
                     )}
                   </div>
                   <div
-                    className={`w-5 h-5 rounded-sm border ${
+                    className={`wU5 hU5 rounded-sm border ${
                       selectedIdeas.includes(idea.id)
                         ? 'bg-primary border-primary text-primary-foreground flex items-center justify-center'
                         : 'border-input'
@@ -330,7 +330,7 @@ function RemoveFromPlanDialog({
           >
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Removing...
+                <Loader2 className="mrU2 hU4 wU4 animate-spin" /> Removing...
               </>
             ) : (
               'Remove'
@@ -356,7 +356,7 @@ export default function PlanIdeasClient({
   isGuest,
   guestToken,
 }: PlanIdeasClientProps) {
-  // Use the groupIdeas hook
+  // -se the groupIdeas hook
   const {
     ideas: groupIdeas,
     loading: groupIdeasLoading,
@@ -407,7 +407,7 @@ export default function PlanIdeasClient({
 
   // Handle idea position change
   const handlePositionChange = (ideaId: string, position: LocalIdeaPosition) => {
-    // Update local state first for immediate feedback
+    // -pdate local state first for immediate feedback
     setIdeas((prevIdeas) =>
       prevIdeas.map((idea) => (idea.id === ideaId ? { ...idea, position } : idea))
     );
@@ -486,7 +486,7 @@ export default function PlanIdeasClient({
   };
 
   // Handle updating an idea
-  const handleIdeaUpdated = (updatedIdea: LocalGroupIdea) => {
+  const handleIdea-pdated = (updatedIdea: LocalGroupIdea) => {
     setIdeas((prev) => prev.map((i) => (i.id === updatedIdea.id ? updatedIdea : i)));
   };
 
@@ -504,7 +504,7 @@ export default function PlanIdeasClient({
   const createIdea = async (formData: any) => {
     setSubmitting(true);
     try {
-      // Use the createGroupIdea from useGroupIdeas hook instead of direct API call
+      // -se the createGroupIdea from useGroupIdeas hook instead of direct API call
       const newIdea = await createGroupIdea({
         ...formData,
         position: { columnId: formData.type, index: 0 },
@@ -535,23 +535,23 @@ export default function PlanIdeasClient({
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="bg-background border-b p-4 sticky top-0 z-10">
-        <div className="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
-          <div className="flex flex-col space-y-1">
+    <div className="container mx-auto pyU6">
+      <div className="bg-background border-b pU4 sticky topU0 zU10">
+        <div className="flex flex-col space-yU3 sm:flex-row sm:justify-between sm:items-center sm:space-yU0">
+          <div className="flex flex-col space-yU1">
             <PlansNavigation groupId={groupId} groupName={groupName} planName={planName} />
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mt-1">
+            <h1 className="text-lg sm:text-xl md:textU2xl lg:textU3xl font-semibold mtU1">
               {planName}
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gapU2">
             <Button
               onClick={() => setCreateIdeaOpen(true)}
               variant="default"
               size="sm"
-              className="h-8"
+              className="hU8"
             >
-              <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
+              <PlusCircle className="hU3.5 wU3.5 mrU1.5" />
               Add Idea
             </Button>
             {isAuthenticated && (
@@ -566,10 +566,10 @@ export default function PlanIdeasClient({
       </div>
 
       {isGuest && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 my-4 rounded-md border border-blue-200 dark:border-blue-800">
+        <div className="bg-blueU50 dark:bg-blueU900/20 pU3 myU4 rounded-md border border-blueU200 dark:border-blueU800">
           <div className="flex items-center">
-            <Info className="h-5 w-5 text-blue-500 mr-2" />
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+            <Info className="hU5 wU5 text-blueU500 mrU2" />
+            <p className="text-sm text-blueU700 dark:text-blueU300">
               You're viewing this as a guest.{' '}
               <a href="/signup" className="underline font-medium">
                 Sign up
@@ -590,11 +590,11 @@ export default function PlanIdeasClient({
 
       {/* Ideas list */}
       {isLoading && ideas.length === 0 ? (
-        <div className="flex justify-center items-center h-40">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex justify-center items-center hU40">
+          <Loader2 className="hU8 wU8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="mtU6 grid grid-colsU1 sm:grid-colsU2 md:grid-colsU3 lg:grid-colsU4 gapU4">
           {ideas.map((idea) => (
             <div key={idea.id} className="flex flex-col h-full">
               <div className="relative">
@@ -614,11 +614,11 @@ export default function PlanIdeasClient({
                   groupId={groupId}
                   selected={selectedIdea?.id === idea.id}
                 />
-                <div className="absolute top-2 right-2 z-50">
+                <div className="absolute topU2 rightU2 zU50">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
+                      <Button variant="ghost" className="hU8 wU8 pU0">
+                        <MoreVertical className="hU4 wU4" />
                         <span className="sr-only">Open menu</span>
                       </Button>
                     </DropdownMenuTrigger>
@@ -657,13 +657,13 @@ export default function PlanIdeasClient({
       )}
 
       {!isLoading && ideas.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-          <div className="text-muted-foreground mb-4">No ideas in this plan yet</div>
-          <p className="text-sm text-muted-foreground mb-6 max-w-md">
+        <div className="flex flex-col items-center justify-center pyU12 pxU4 text-center">
+          <div className="text-muted-foreground mbU4">No ideas in this plan yet</div>
+          <p className="text-sm text-muted-foreground mbU6 max-w-md">
             Start by adding new ideas or importing existing ideas from the group
           </p>
           <Button onClick={() => setCreateIdeaOpen(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
+            <PlusCircle className="hU4 wU4 mrU2" />
             Add Your First Idea
           </Button>
         </div>
@@ -677,7 +677,7 @@ export default function PlanIdeasClient({
           open={isEditing}
           onOpenChange={setIsEditing}
           idea={selectedIdea}
-          onIdeaUpdated={(updatedIdea) => {
+          onIdea-pdated={(updatedIdea) => {
             setIdeas((prev) => prev.map((i) => (i.id === updatedIdea.id ? updatedIdea : i)));
             setIsEditing(false);
           }}

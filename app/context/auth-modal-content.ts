@@ -186,7 +186,7 @@ const contextContent: Record<AuthModalContext, AuthModalContent> = {
     primaryButtonText: 'vote now',
     features: [
       {
-        icon: 'thumbsUp',
+        icon: 'thumbs-p',
         title: 'have your say',
         description: 'influence group decisions with your vote',
       },

@@ -208,7 +208,7 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
     // Attempt to find or create a section based on day number.
     // NOTE: This assumes items have a 'day' property. We might need section_id if not.
     // Also, we don't have section titles here!
-    const dayKey = `day-${item.day}`; // Using day number as a key
+    const dayKey = `day-${item.day}`; // -sing day number as a key
     if (!sectionsMap.has(dayKey)) {
       sectionsMap.set(dayKey, {
         id: dayKey, // Fake section ID based on day

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ActivityGeneratorWidget } from '@/components/groups/ActivityGeneratorWidget';
+import { ActivityGeneratorWidget } from '@/components/features/groups/ActivityGeneratorWidget';
 import { useWhiteboardContext } from '../context/whiteboard-context';
 import { ConvertToTripModal } from './ConvertToTripModal';
 import { cn } from '@/lib/utils';

@@ -3,8 +3,8 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { Compass, ArrowRight } from 'lucide-react';
-import { TrendingDestinations } from '@/components/destinations/templates/TrendingDestinations';
-import { PopularItineraries } from '@/components/itinerary/templates/PopularItineraries';
+import { TrendingDestinations } from '@/components/features/destinations/templates/TrendingDestinations';
+import { PopularItineraries } from '@/components/features/itinerary/templates/PopularItineraries';
 import { Button } from '@/components/ui/button';
 
 export function DiscoverSection() {

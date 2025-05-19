@@ -20,7 +20,7 @@ type Story = StoryObj<typeof PlansNavigation>;
 
 export const Default: Story = {
   args: {
-    groupId: 'group-123',
+    groupId: 'groupU123',
     groupName: 'Barcelona Crew',
     planName: 'Summer 2024',
   },
@@ -28,7 +28,7 @@ export const Default: Story = {
 
 export const NoPlanName: Story = {
   args: {
-    groupId: 'group-123',
+    groupId: 'groupU123',
     groupName: 'Barcelona Crew',
     planName: undefined,
   },

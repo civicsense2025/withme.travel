@@ -28,7 +28,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageHeader } from '@/components/page-header';
 import { getRoleDisplayName, type UserRole } from '@/types/users';
 import { Switch } from '@/components/ui/switch';
-import { ReferralLinkManager } from '@/components/user/referral-link-manager';
+import { ReferralLinkManager } from '@/components/features/user/referral-link-manager';
 import {
   Select,
   SelectContent,

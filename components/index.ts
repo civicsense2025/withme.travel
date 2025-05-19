@@ -1,33 +1,44 @@
 /**
- * @file Main component library export file for withme.travel
- *
- * This file exports all components with proper documentation for Storybook integration.
- * Components are grouped by category for easier discovery.
+ * Components Module
+ * 
+ * This file exports all components for easier imports. It's organized by:
+ * 1. Shared components that can be used across the application
+ * 2. Feature-specific components organized by feature domain
+ * 
+ * Usage examples:
+ * 
+ * - Import shared components:
+ *   import { SubmitButton } from '@/components';
+ * 
+ * - Import feature-specific components:
+ *   import { auth } from '@/components';
+ *   const { PasswordField, LoginForm } = auth;
+ *   
+ * - You can also import directly from the feature:
+ *   import { LoginForm } from '@/components/features/auth';
  */
 
-// Layout components
-export { default as Navbar } from './layout/Navbar';
-export { Footer } from './footer';
-export { Container } from './container';
-export { PageHeader } from './page-header';
+// Shared components
+export * from './shared';
 
-// Core UI components
-export { FullBleedSection } from './ui/features/core/atoms/FullBleedSection';
-export { Text } from './ui/features/core/atoms/Text';
+// Feature components
+import * as auth from './features/auth';
+import * as groups from './features/groups';
 
-// Trip components
-export { TripCard } from './ui/features/trips/molecules/TripCard';
-export { TripHeader } from './ui/features/trips/organisms/TripHeader';
-export { TripOverviewTab } from './trip-overview-tab';
-export { TripManagement } from './ui/features/trips/organisms/TripManagement';
+// Export implemented features
+export { auth, groups };
 
-// Task components
-export { Task } from './ui/features/tasks/organisms/Task';
-export { TaskItem } from './ui/features/tasks/molecules/TaskItem';
-
-// Destinations
-export { DestinationCard } from './ui/features/destinations/molecules/DestinationCard';
-
-// Legacy components (to be migrated)
-// export { Todo } from './Todo';
-// export { TodoList } from './TodoList';
+// Future features to be exported as they're implemented
+// import * as maps from './features/maps';
+// import * as destinations from './features/destinations';
+// import * as comments from './features/comments';
+// import * as feedback from './features/feedback';
+// import * as search from './features/search';
+// 
+// export {
+//   maps,
+//   destinations,
+//   comments,
+//   feedback,
+//   search
+// };

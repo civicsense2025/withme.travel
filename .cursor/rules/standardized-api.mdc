@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ONLY UI COMPONENTS NEED STORIES. NOT APIS OR CLIENTS OR ANYTHING. Do not create these as a part of the migration.

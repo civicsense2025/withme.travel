@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivityTimeline } from '@/components/trips/organisms';
+import { ActivityFeed } from '@/components/features/activities/organisms';
 
 interface ActivityTabContentProps {
   tripId: string;
@@ -9,7 +9,7 @@ interface ActivityTabContentProps {
 export function ActivityTabContent({ tripId }: ActivityTabContentProps) {
   return (
     <div className="w-full">
-      <ActivityTimeline tripId={tripId} showRefreshButton={true} maxHeight="80vh" />
+      <ActivityFeed tripId={tripId} showRefreshButton={true} maxHeight="80vh" />
     </div>
   );
 }

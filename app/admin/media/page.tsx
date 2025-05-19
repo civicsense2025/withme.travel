@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ImageSearchSelector } from '@/components/images/image-search-selector';
-import { MediaLibrary } from '@/components/admin/MediaLibrary';
+import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
+import { MediaLibrary } from '@/components/features/admin/MediaLibrary';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus } from 'lucide-react';
 

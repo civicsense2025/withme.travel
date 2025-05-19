@@ -54,9 +54,9 @@ export interface Itinerary {
 
 // Simple error fallback component for itineraries section
 const ItinerariesErrorFallback = () => (
-  <div className="p-8 border rounded-lg bg-card/50 text-center">
-    <h3 className="text-xl font-semibold mb-2">Unable to load itineraries</h3>
-    <p className="text-muted-foreground mb-4">
+  <div className="pU8 border rounded-lg bg-card/50 text-center">
+    <h3 className="text-xl font-semibold mbU2">-nable to load itineraries</h3>
+    <p className="text-muted-foreground mbU4">
       There was a problem loading the itineraries. Please try again later.
     </p>
     <Button asChild>
@@ -71,7 +71,7 @@ export default async function ItinerariesPage() {
     const supabase = await createServerComponentClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.get-ser();
 
     // Check if the user is an admin
     let isAdmin = false;
@@ -84,7 +84,7 @@ export default async function ItinerariesPage() {
       isAdmin = profileData?.is_admin || false;
     }
 
-    console.log(`[Itineraries Page] User authenticated: ${!!user}, Admin: ${isAdmin}`);
+    console.log(`[Itineraries Page] -ser authenticated: ${!!user}, Admin: ${isAdmin}`);
 
     // Fetch itineraries directly from Supabase
     let query = supabase
@@ -193,13 +193,13 @@ export default async function ItinerariesPage() {
           description="Ready-made travel plans to inspire your next adventure"
           centered={true}
         />
-        <div className="mt-6">
+        <div className="mtU6">
           <Link href="/itineraries/submit">
             <Button
               size="default"
-              className="mx-auto flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
+              className="mx-auto flex items-center rounded-full pxU5 bg-white text-black border border-grayU200 hover:bg-grayU100 hover:text-black"
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <PlusCircle className="mrU2 hU4 wU4" />
               Submit Itinerary
             </Button>
           </Link>
@@ -213,11 +213,11 @@ export default async function ItinerariesPage() {
 
       return (
         <PageContainer header={header}>
-          <div className="border rounded-lg p-8 bg-card text-center">
-            <Heading level={2} size="default" className="mb-2">
+          <div className="border rounded-lg pU8 bg-card text-center">
+            <Heading level={2} size="default" className="mbU2">
               No itineraries available
             </Heading>
-            <Text variant="body" className="mb-4 text-muted-foreground">
+            <Text variant="body" className="mbU4 text-muted-foreground">
               Be the first to share your travel plans with the community!
             </Text>
           </div>
@@ -230,7 +230,7 @@ export default async function ItinerariesPage() {
     const draftItineraries = processedItineraries.filter((i) => !i.is_published);
 
     return (
-      <PageContainer header={header} fullWidth={false} className="max-w-3xl mx-auto">
+      <PageContainer header={header} fullWidth={false} className="max-wU3xl mx-auto">
         <ClassErrorBoundary fallback={<ItinerariesErrorFallback />}>
           <ClientWrapper
             // Type assertion is safe because we've ensured all properties match
@@ -242,25 +242,25 @@ export default async function ItinerariesPage() {
 
         {/* If the user has drafts, display them in a separate section */}
         {user && draftItineraries.length > 0 && (
-          <div className="mt-16">
-            <Heading level={2} size="default" className="mb-8">
+          <div className="mtU16">
+            <Heading level={2} size="default" className="mbU8">
               Your Drafts
             </Heading>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-colsU1 md:grid-colsU2 lg:grid-colsU3 gapU6">
               {draftItineraries.map((draft, index) => (
                 <div key={draft.id} className="relative">
                   <Badge
                     variant="outline"
-                    className="absolute top-4 right-4 z-10 bg-yellow-100 text-yellow-800 border-yellow-300"
+                    className="absolute topU4 rightU4 zU10 bg-yellowU100 text-yellowU800 border-yellowU300"
                   >
                     Draft
                   </Badge>
                   <ItineraryCard
                     title={draft.title}
                     description={draft.description || ''}
-                    location={draft.destinations?.name || 'Unknown Location'}
+                    location={draft.destinations?.name || '-nknown Location'}
                     duration={`${draft.duration_days} days`}
-                    imageUrl={
+                    image-rl={
                       draft.destinations?.featured_image_url ||
                       '/images/destinations/default-cover.jpg'
                     }
@@ -274,7 +274,7 @@ export default async function ItinerariesPage() {
       </PageContainer>
     );
   } catch (error) {
-    console.error('[Itineraries Page] Unhandled error:', error);
+    console.error('[Itineraries Page] -nhandled error:', error);
     return <RefreshFallback />;
   }
 }

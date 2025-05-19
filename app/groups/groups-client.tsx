@@ -32,16 +32,15 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
-import { GroupCard, EmptyState } from '@/components/groups/molecules';
-import { DeleteConfirmationDialog } from '@/components/groups/molecules/DeleteConfirmationDialog';
 import { FriendsList } from '@/components/friends-list';
 import type { Friend } from '@/components/friends-list';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { trackEvent } from '@/lib/tracking';
 import Link from 'next/link';
 import { PageHeader } from '@/components/layout/page-header';
-import { useGroups } from '@/hooks/use-groups';
+import { useGroups } from '@/lib/features/groups/hooks';
 import { Group as ClientGroup } from '@/lib/client/groups';
+import { EmptyState } from '@/components/shared/molecules';
 
 // Locally define the detailed Group type based on Supabase query
 type TripCount = { count: number };
@@ -452,14 +451,15 @@ export default function GroupsClientPage({
         </DialogContent>
       </Dialog>
 
-      <DeleteConfirmationDialog
+      {/* TODO: Migrate DeleteConfirmationDialog to shared/atomic location if still needed */}
+      {/* <DeleteConfirmationDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeleteGroups}
         itemCount={selectedGroupIds.size}
         itemType="group"
         isDeleting={isDeleting}
-      />
+      /> */}
 
       {hookError && <div className="text-red-500 mb-2">{hookError}</div>}
       <div className="mt-8">

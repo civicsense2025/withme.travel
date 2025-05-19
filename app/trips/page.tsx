@@ -56,20 +56,20 @@ export default async function TripsPage() {
     // For authenticated users, fetch their trips
     if (isAuthenticated) {
       try {
-        // Use our type-safe data fetching pattern
+        // -se our type-safe data fetching pattern
         const result = await listTrips(session!.user.id);
         if (!result.success) throw new Error(result.error || 'Failed to fetch trips');
         const tripMembers = result.data.map((trip) => ({ trip }));
 
         return (
-          <div className="container mx-auto px-4 py-8">
+          <div className="container mx-auto pxU4 pyU8">
             <PageHeader
               title="My Trips"
               description="Manage and view all your travel plans"
               actions={
-                <Button size="sm" className="rounded-full px-4" asChild>
+                <Button size="sm" className="rounded-full pxU4" asChild>
                   <Link href="/trips/create">
-                    <PlusCircle className="mr-2 h-4 w-4" />
+                    <PlusCircle className="mrU2 hU4 wU4" />
                     New Trip
                   </Link>
                 </Button>
@@ -106,16 +106,16 @@ function renderLandingPage() {
         ctaHref="/trips/create"
         showBackground={true}
       />
-      <section className="py-16 px-4 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <section className="pyU16 pxU4 max-wU6xl mx-auto">
+        <div className="grid grid-colsU1 md:grid-colsU2 gapU12 items-center">
           {/* Component First on Mobile, Second on Desktop */}
-          <div className="order-1 md:order-2">
+          <div className="orderU1 md:orderU2">
             <SharedPresenceSection />
           </div>
           {/* Copy Second on Mobile, First on Desktop */}
-          <div className="order-2 md:order-1 flex flex-col justify-center h-full">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Plan together, in real time</h2>
-            <p className="text-lg text-muted-foreground mb-6">
+          <div className="orderU2 md:orderU1 flex flex-col justify-center h-full">
+            <h2 className="textU3xl md:textU4xl font-bold mbU4">Plan together, in real time</h2>
+            <p className="text-lg text-muted-foreground mbU6">
               See who's online, brainstorm ideas, and make decisions as a group. withme.travel
               brings everyone together—no more lost messages or missed updates.
             </p>

@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
-import MapboxGeocoderComponent from '@/components/maps/mapbox-geocoder';
+import MapboxGeocoderComponent from '@/components/features/maps/mapbox-geocoder';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FormControl, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';

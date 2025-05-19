@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CountryPageAdminEditor } from '@/components/admin';
+import { CountryPageAdminEditor } from '@/components/features/admin';
 import { useDestinationStats } from '@/hooks/use-destination-stats';
 import { Skeleton } from '@/components/ui/skeleton';
 

@@ -131,7 +131,7 @@ const PlansClient: React.FC<PlansClientProps> = ({
         // Store creator info separately
         setCreator(data.creator);
       } catch (err) {
-        console.error('Unexpected error loading plan:', err);
+        console.error('-nexpected error loading plan:', err);
         setError('Failed to load plan data');
       } finally {
         setLoading(false);
@@ -160,12 +160,12 @@ const PlansClient: React.FC<PlansClientProps> = ({
   if (error || !plan) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center">
-        <div className="text-center space-y-4">
+        <div className="text-center space-yU4">
           <h3 className="text-xl font-medium text-destructive">Error Loading Plan</h3>
           <p className="text-muted-foreground">{error || 'Plan not found'}</p>
           <button
             onClick={handleBackClick}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded-md"
+            className="mtU4 pxU4 pyU2 bg-primary text-white rounded-md"
           >
             Back to Plans
           </button>
@@ -175,15 +175,15 @@ const PlansClient: React.FC<PlansClientProps> = ({
   }
 
   return (
-    <div className="container max-w-7xl py-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="container max-wU7xl pyU4 space-yU6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gapU4">
         <div>
           <Link href={`/groups/${groupId}/plans`} passHref>
-            <Button variant="ghost" size="sm" className="mb-2">
-              <ChevronLeft className="h-4 w-4 mr-1" /> Back to plans
+            <Button variant="ghost" size="sm" className="mbU2">
+              <ChevronLeft className="hU4 wU4 mrU1" /> Back to plans
             </Button>
           </Link>
-          <Heading level={1} size="large" className="mb-1">
+          <Heading level={1} size="large" className="mbU1">
             {plan.name}
           </Heading>
           <Text className="text-sm text-muted-foreground">Plan together in {plan.group_id}</Text>
@@ -193,13 +193,13 @@ const PlansClient: React.FC<PlansClientProps> = ({
       <Separator />
 
       <Tabs defaultValue="ideas" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
+        <TabsList className="grid grid-colsU3 w-full max-w-md mbU6">
           <TabsTrigger value="ideas">Ideas</TabsTrigger>
           <TabsTrigger value="vote">Vote & Decide</TabsTrigger>
           <TabsTrigger value="trip">Create Trip</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="ideas" className="mt-0">
+        <TabsContent value="ideas" className="mtU0">
           <PlanIdeasClient
             groupId={groupId}
             planId={plan.id}
@@ -216,18 +216,18 @@ const PlansClient: React.FC<PlansClientProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="vote" className="mt-0">
+        <TabsContent value="vote" className="mtU0">
           <div className="bg-card shadow-sm rounded-lg border">
             <VoteAndDecideSection />
           </div>
         </TabsContent>
 
-        <TabsContent value="trip" className="mt-0">
+        <TabsContent value="trip" className="mtU0">
           <VotingClient
             groupId={groupId}
             planSlug={plan.slug}
             groupName={plan.group_id}
-            currentUserId={userId}
+            current-serId={userId}
           />
         </TabsContent>
       </Tabs>

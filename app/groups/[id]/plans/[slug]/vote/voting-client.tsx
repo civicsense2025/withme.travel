@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  ThumbsUp,
+  Thumbs-p,
   Map,
   Calendar,
   Clipboard,
@@ -59,7 +59,7 @@ interface VotingClientProps {
   groupName: string;
   initialIdeas: Idea[];
   members: Member[];
-  currentUserId: string;
+  current-serId: string;
 }
 
 export default function VotingClient({
@@ -67,19 +67,19 @@ export default function VotingClient({
   groupName,
   initialIdeas,
   members,
-  currentUserId,
+  current-serId,
 }: VotingClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
   const [activeTab, setActiveTab] = useState<string>('destination');
-  const [userVotes, setUserVotes] = useState<Votes>({});
+  const [userVotes, set-serVotes] = useState<Votes>({});
   const [votingProgress, setVotingProgress] = useState(0);
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
   const [hasShownMilestone, setHasShownMilestone] = useState(false);
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
 
-  // Use the voting hook
+  // -se the voting hook
   const { isVoting, error: voteError, voteOnGroupIdea } = useVotes();
 
   // Group ideas by their type
@@ -137,13 +137,13 @@ export default function VotingClient({
 
   // Fetch user's existing votes
   useEffect(() => {
-    async function fetchUserVotes() {
+    async function fetch-serVotes() {
       try {
         const supabase = getBrowserClient();
         const { data, error } = await supabase
           .from(TABLES.GROUP_PLAN_IDEA_VOTES)
           .select('idea_id, vote_type')
-          .eq('user_id', currentUserId);
+          .eq('user_id', current-serId);
 
         if (error) throw error;
 
@@ -152,16 +152,16 @@ export default function VotingClient({
           votes[vote.idea_id] = vote.vote_type as VoteType;
         });
 
-        setUserVotes(votes);
+        set-serVotes(votes);
       } catch (error) {
         console.error('Error fetching votes:', error);
       }
     }
 
-    if (currentUserId) {
-      fetchUserVotes();
+    if (current-serId) {
+      fetch-serVotes();
     }
-  }, [currentUserId]);
+  }, [current-serId]);
 
   const handleVote = async (ideaId: string, voteType: 'up' | 'down') => {
     try {
@@ -170,7 +170,7 @@ export default function VotingClient({
       // Check if user is removing their vote
       const isRemovingVote = userVotes[ideaId] === voteType;
 
-      // Update local state first for immediate feedback
+      // -pdate local state first for immediate feedback
       const updatedIdeas = ideas.map((idea) => {
         if (idea.id !== ideaId) return idea;
 
@@ -203,16 +203,16 @@ export default function VotingClient({
 
       setIdeas(updatedIdeas);
 
-      // Update user votes
-      const newUserVotes = { ...userVotes };
+      // -pdate user votes
+      const new-serVotes = { ...userVotes };
       if (isRemovingVote) {
-        delete newUserVotes[ideaId];
+        delete new-serVotes[ideaId];
       } else {
-        newUserVotes[ideaId] = voteType;
+        new-serVotes[ideaId] = voteType;
       }
-      setUserVotes(newUserVotes);
+      set-serVotes(new-serVotes);
 
-      // Use the votes hook to update the vote on the server
+      // -se the votes hook to update the vote on the server
       await voteOnGroupIdea(groupId, ideaId, voteType);
 
       if (voteError) {
@@ -235,7 +235,7 @@ export default function VotingClient({
           const { data, error } = await supabase
             .from(TABLES.GROUP_PLAN_IDEA_VOTES)
             .select('idea_id, vote_type')
-            .eq('user_id', currentUserId);
+            .eq('user_id', current-serId);
 
           if (error) throw error;
 
@@ -244,7 +244,7 @@ export default function VotingClient({
             votes[vote.idea_id] = vote.vote_type as VoteType;
           });
 
-          setUserVotes(votes);
+          set-serVotes(votes);
         } catch (error) {
           console.error('Error refetching votes:', error);
         }
@@ -257,15 +257,15 @@ export default function VotingClient({
   const getIdeaTypeIcon = (type: string) => {
     switch (type) {
       case 'destination':
-        return <Map className="h-4 w-4" />;
+        return <Map className="hU4 wU4" />;
       case 'date':
-        return <Calendar className="h-4 w-4" />;
+        return <Calendar className="hU4 wU4" />;
       case 'activity':
-        return <Clipboard className="h-4 w-4" />;
+        return <Clipboard className="hU4 wU4" />;
       case 'budget':
-        return <DollarSign className="h-4 w-4" />;
+        return <DollarSign className="hU4 wU4" />;
       default:
-        return <Tag className="h-4 w-4" />;
+        return <Tag className="hU4 wU4" />;
     }
   };
 
@@ -287,15 +287,15 @@ export default function VotingClient({
   const getIdeaTypeColor = (type: string) => {
     switch (type) {
       case 'destination':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blueU100 text-blueU800';
       case 'date':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purpleU100 text-purpleU800';
       case 'activity':
-        return 'bg-green-100 text-green-800';
+        return 'bg-greenU100 text-greenU800';
       case 'budget':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellowU100 text-yellowU800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-grayU100 text-grayU800';
     }
   };
 
@@ -331,16 +331,16 @@ export default function VotingClient({
   const winningIdeas = getWinningIdeas();
 
   return (
-    <div className="flex flex-col space-y-8">
+    <div className="flex flex-col space-yU8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">{groupName} - Vote on Ideas</h1>
+          <h1 className="textU2xl font-bold">{groupName} - Vote on Ideas</h1>
           <p className="text-muted-foreground">Choose your favorite ideas for this trip</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gapU3">
           <Button variant="outline" onClick={() => router.push(`/groups/${groupId}/ideas`)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="hU4 wU4 mrU2" />
             Back to Ideas
           </Button>
 
@@ -350,18 +350,18 @@ export default function VotingClient({
             disabled={votingProgressMemo < 100}
           >
             Create Trip
-            <ArrowRight className="h-4 w-4 ml-2" />
+            <ArrowRight className="hU4 wU4 mlU2" />
           </Button>
         </div>
       </div>
 
       {/* Voting progress */}
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pbU2">
           <CardTitle className="text-lg">Your Voting Progress</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-yU3">
             <Progress value={votingProgressMemo} />
             <p className="text-sm text-muted-foreground">{votingProgressMemo}% complete</p>
           </div>
@@ -369,9 +369,9 @@ export default function VotingClient({
       </Card>
 
       {/* Main voting interface */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-colsU1 lg:grid-colsU2 gapU8">
         {/* Left column - Categories and voting */}
-        <div className="space-y-6">
+        <div className="space-yU6">
           <h2 className="text-xl font-bold">Vote on Ideas</h2>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -379,68 +379,68 @@ export default function VotingClient({
               {allTypesTabs.map((type) => (
                 <TabsTrigger key={type} value={type} className="flex items-center">
                   {getIdeaTypeIcon(type)}
-                  <span className="ml-2">{getIdeaTypeName(type)}</span>
+                  <span className="mlU2">{getIdeaTypeName(type)}</span>
 
                   {Object.keys(userVotes).some(
                     (ideaId) => ideas.find((i) => i.id === ideaId)?.type === type
-                  ) && <CheckCircle className="h-3 w-3 ml-1 text-green-500" />}
+                  ) && <CheckCircle className="hU3 wU3 mlU1 text-greenU500" />}
                 </TabsTrigger>
               ))}
             </TabsList>
 
             {allTypesTabs.map((type) => (
-              <TabsContent key={type} value={type} className="space-y-4">
+              <TabsContent key={type} value={type} className="space-yU4">
                 <p className="text-sm text-muted-foreground">
                   Select your preferred {getIdeaTypeName(type).toLowerCase()} from the options
                   below.
                 </p>
 
                 {ideasByType[type] && ideasByType[type].length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-yU4">
                     {ideasByType[type].map((idea) => (
                       <Card key={idea.id} className="overflow-hidden">
-                        <CardHeader className="pb-2">
+                        <CardHeader className="pbU2">
                           <div className="flex justify-between items-start">
                             <div>
                               <Badge className={getIdeaTypeColor(idea.type)}>
                                 {getIdeaTypeIcon(idea.type)}
-                                <span className="ml-1">{getIdeaTypeName(idea.type)}</span>
+                                <span className="mlU1">{getIdeaTypeName(idea.type)}</span>
                               </Badge>
-                              <CardTitle className="mt-2 text-lg">{idea.title}</CardTitle>
+                              <CardTitle className="mtU2 text-lg">{idea.title}</CardTitle>
                             </div>
-                            <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                            <div className="flex items-center gapU1 text-muted-foreground text-sm">
                               <span>{getTotalVotesForIdea(idea)}</span>
-                              <ThumbsUp className="h-3 w-3" />
+                              <Thumbs-p className="hU3 wU3" />
                             </div>
                           </div>
                         </CardHeader>
 
                         {idea.description && (
-                          <CardContent className="pb-3 pt-0">
+                          <CardContent className="pbU3 ptU0">
                             <p className="text-sm text-muted-foreground">{idea.description}</p>
                           </CardContent>
                         )}
 
-                        <CardFooter className="flex justify-between pt-0">
+                        <CardFooter className="flex justify-between ptU0">
                           <p className="text-xs text-muted-foreground">
                             Added by{' '}
                             {members.find((m) => m.user_id === idea.created_by)?.profiles
                               .full_name || 'Anonymous'}
                           </p>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gapU2">
                             <Button
                               variant={userVotes[idea.id] === 'down' ? 'default' : 'outline'}
                               size="sm"
                               className={
                                 userVotes[idea.id] === 'down'
-                                  ? 'bg-red-600 hover:bg-red-700'
-                                  : 'hover:bg-red-100'
+                                  ? 'bg-redU600 hover:bg-redU700'
+                                  : 'hover:bg-redU100'
                               }
                               onClick={() => handleVote(idea.id, 'down')}
                             >
-                              <ThumbsUp className="h-4 w-4 rotate-180" />
-                              <span className="ml-1">{idea.votes_down}</span>
+                              <Thumbs-p className="hU4 wU4 rotateU180" />
+                              <span className="mlU1">{idea.votes_down}</span>
                             </Button>
 
                             <Button
@@ -448,13 +448,13 @@ export default function VotingClient({
                               size="sm"
                               className={
                                 userVotes[idea.id] === 'up'
-                                  ? 'bg-green-600 hover:bg-green-700'
-                                  : 'hover:bg-green-100'
+                                  ? 'bg-greenU600 hover:bg-greenU700'
+                                  : 'hover:bg-greenU100'
                               }
                               onClick={() => handleVote(idea.id, 'up')}
                             >
-                              <ThumbsUp className="h-4 w-4" />
-                              <span className="ml-1">{idea.votes_up}</span>
+                              <Thumbs-p className="hU4 wU4" />
+                              <span className="mlU1">{idea.votes_up}</span>
                             </Button>
                           </div>
                         </CardFooter>
@@ -462,7 +462,7 @@ export default function VotingClient({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
+                  <div className="text-center pyU8">
                     <p className="text-muted-foreground">
                       No {getIdeaTypeName(type).toLowerCase()} ideas available for voting
                     </p>
@@ -474,17 +474,17 @@ export default function VotingClient({
         </div>
 
         {/* Right column - Results */}
-        <div className="space-y-6">
+        <div className="space-yU6">
           <h2 className="text-xl font-bold">Current Results</h2>
 
           <Card>
             <CardHeader>
               <CardTitle>Your Group's Choices</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-yU6">
               {allTypesTabs.map((type) => (
-                <div key={type} className="space-y-3">
-                  <div className="flex items-center gap-2">
+                <div key={type} className="space-yU3">
+                  <div className="flex items-center gapU2">
                     {getIdeaTypeIcon(type)}
                     <h3 className="font-medium">{getIdeaTypeName(type)}</h3>
                   </div>
@@ -492,11 +492,11 @@ export default function VotingClient({
                   <Separator />
 
                   {winningIdeas[type] && winningIdeas[type].length > 0 ? (
-                    <div className="space-y-3 pl-6">
+                    <div className="space-yU3 plU6">
                       {winningIdeas[type].map((idea) => (
-                        <div key={idea.id} className="flex items-center justify-between py-1">
-                          <div className="flex items-center gap-2">
-                            <Circle className="h-2 w-2 fill-primary text-primary" />
+                        <div key={idea.id} className="flex items-center justify-between pyU1">
+                          <div className="flex items-center gapU2">
+                            <Circle className="hU2 wU2 fill-primary text-primary" />
                             <span>{idea.title}</span>
                           </div>
                           <Badge variant="outline">{getTotalVotesForIdea(idea)} votes</Badge>
@@ -504,7 +504,7 @@ export default function VotingClient({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground pl-6">No votes yet</p>
+                    <p className="text-sm text-muted-foreground plU6">No votes yet</p>
                   )}
                 </div>
               ))}
@@ -516,26 +516,26 @@ export default function VotingClient({
               <CardTitle>Who's Voted</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gapU4">
                 {members.map((member) => {
                   const hasVoted = Math.random() > 0.3; // Simulated voting status
 
                   return (
                     <div key={member.id} className="flex flex-col items-center">
-                      <Avatar className="h-12 w-12 mb-1 relative">
+                      <Avatar className="hU12 wU12 mbU1 relative">
                         <AvatarImage src={member.profiles.avatar_url} />
                         <AvatarFallback>
                           {member.profiles.full_name.charAt(0) || 'U'}
                         </AvatarFallback>
 
                         {hasVoted && (
-                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full">
-                            <CheckCircle className="h-5 w-5 text-green-500" />
+                          <div className="absolute -bottomU1 -rightU1 bg-white rounded-full">
+                            <CheckCircle className="hU5 wU5 text-greenU500" />
                           </div>
                         )}
                       </Avatar>
                       <span className="text-xs">
-                        {member.user_id === currentUserId
+                        {member.user_id === current-serId
                           ? 'You'
                           : member.profiles.full_name.split(' ')[0]}
                       </span>

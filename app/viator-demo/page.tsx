@@ -16,7 +16,7 @@ import {
   ViatorExperienceSearchDialog,
   AddViatorButton,
   DestinationExperiences,
-} from '@/components/viator';
+} from '@/components/features/viator';
 import Link from 'next/link';
 import { Search, TicketIcon, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';

@@ -10,7 +10,7 @@ import { AddIdeaModal } from './add-idea-modal';
 import { Button } from '@/components/ui/button';
 import {
   Plus,
-  Users,
+  -sers,
   Sparkles,
   ChevronRight,
   MapPin,
@@ -101,7 +101,7 @@ const COLUMNS = [
   {
     id: 'destination',
     label: 'Destination',
-    icon: <MapPin className="h-3 w-3" />,
+    icon: <MapPin className="hU3 wU3" />,
     emoji: '📍',
     color: 'travel-blue',
     gradientFrom: 'from-[hsl(var(--travel-blue)/0.05)]',
@@ -110,7 +110,7 @@ const COLUMNS = [
   {
     id: 'date',
     label: 'Date',
-    icon: <CalendarDays className="h-3 w-3" />,
+    icon: <CalendarDays className="hU3 wU3" />,
     emoji: '📅',
     color: 'travel-yellow',
     gradientFrom: 'from-[hsl(var(--travel-yellow)/0.05)]',
@@ -119,7 +119,7 @@ const COLUMNS = [
   {
     id: 'activity',
     label: 'Activity',
-    icon: <ActivitySquare className="h-3 w-3" />,
+    icon: <ActivitySquare className="hU3 wU3" />,
     emoji: '🏄‍♂️',
     color: 'travel-mint',
     gradientFrom: 'from-[hsl(var(--travel-mint)/0.05)]',
@@ -128,7 +128,7 @@ const COLUMNS = [
   {
     id: 'budget',
     label: 'Budget',
-    icon: <DollarSign className="h-3 w-3" />,
+    icon: <DollarSign className="hU3 wU3" />,
     emoji: '💰',
     color: 'travel-peach',
     gradientFrom: 'from-[hsl(var(--travel-peach)/0.05)]',
@@ -137,7 +137,7 @@ const COLUMNS = [
   {
     id: 'other',
     label: 'Other',
-    icon: <LightbulbIcon className="h-3 w-3" />,
+    icon: <LightbulbIcon className="hU3 wU3" />,
     emoji: '💭',
     color: 'travel-purple',
     gradientFrom: 'from-[hsl(var(--travel-purple)/0.05)]',
@@ -187,10 +187,10 @@ function getProfileInitials(profile: any, user: any): string {
       .split(' ')
       .map((part: string) => part.charAt(0))
       .join('')
-      .toUpperCase()
+      .to-pperCase()
       .substring(0, 2);
   }
-  return user?.email?.charAt(0).toUpperCase() || 'U';
+  return user?.email?.charAt(0).to-pperCase() || 'U';
 }
 
 function SortableItem({
@@ -222,9 +222,9 @@ function SortableItem({
 // Add this CSS for the glow effect near the other CSS constants
 const glowButtonClass = `
   relative
-  bg-gradient-to-r from-blue-500 to-blue-600 
-  hover:from-blue-600 hover:to-blue-700
-  after:absolute after:inset-0 after:rounded-md after:animate-pulse after:bg-blue-500/30 after:blur-md after:-z-10
+  bg-gradient-to-r from-blueU500 to-blueU600 
+  hover:from-blueU600 hover:to-blueU700
+  after:absolute after:insetU0 after:rounded-md after:animate-pulse after:bg-blueU500/30 after:blur-md after:-zU10
 `;
 
 // Create a custom hook for access to toast
@@ -324,19 +324,19 @@ export default function IdeasWhiteboard({
 
   // Presence context
   const presenceContext = useIdeasPresence(resolvedGroupId);
-  const activeUsers = presenceContext.activeUsers || [];
-  const currentUserId = user?.id || '';
+  const active-sers = presenceContext.active-sers || [];
+  const current-serId = user?.id || '';
 
   // Filter out duplicate users and get unique active users
-  const uniqueActiveUsers = React.useMemo(() => {
+  const uniqueActive-sers = React.useMemo(() => {
     const userMap = new Map();
-    activeUsers.forEach((user) => {
+    active-sers.forEach((user) => {
       if (user && user.id) {
         userMap.set(user.id, user);
       }
     });
     return Array.from(userMap.values());
-  }, [activeUsers]);
+  }, [active-sers]);
 
   // Group ideas by column
   const ideasByColumnMemo = React.useMemo(() => {
@@ -490,7 +490,7 @@ export default function IdeasWhiteboard({
   }, [planId, groupId, isAuthenticated, isGuest, fetchIdeas]);
 
   // Save position updates
-  const savePositionUpdates = useCallback(
+  const savePosition-pdates = useCallback(
     debounce(async (updates: { id: string; position: IdeaPosition }[]) => {
       if (updates.length === 0) return;
 
@@ -521,7 +521,7 @@ export default function IdeasWhiteboard({
     [toast, groupId]
   );
 
-  // Update idea positions after dragging
+  // -pdate idea positions after dragging
   const updateIdeaPositions = useCallback(
     (columnId: ColumnId) => {
       const columnIdeas = safeIdeasByColumn[columnId as ColumnId];
@@ -530,9 +530,9 @@ export default function IdeasWhiteboard({
         position: { columnId, index } as IdeaPosition,
       }));
       // Save to database
-      savePositionUpdates(updates);
+      savePosition-pdates(updates);
     },
-    [safeIdeasByColumn, savePositionUpdates]
+    [safeIdeasByColumn, savePosition-pdates]
   );
 
   // Subscribe to realtime updates
@@ -645,7 +645,7 @@ export default function IdeasWhiteboard({
       // Process successful response
       const { idea } = await response.json();
 
-      // Update the local state
+      // -pdate the local state
       addStoreIdea(idea);
 
       // Show success message
@@ -809,7 +809,7 @@ export default function IdeasWhiteboard({
           });
 
           // Save the new position to the database
-          savePositionUpdates([
+          savePosition-pdates([
             { id: activeId, position: { columnId: sourceColumnId, index: targetIndex } },
           ]);
 
@@ -1060,7 +1060,7 @@ export default function IdeasWhiteboard({
           e.preventDefault();
           return;
         }
-        if (e.key === 'ArrowUp') {
+        if (e.key === 'Arrow-p') {
           setHighlightedBudgetIdx((i) => (i - 1 + BUDGET_OPTIONS.length) % BUDGET_OPTIONS.length);
           e.preventDefault();
           return;
@@ -1082,7 +1082,7 @@ export default function IdeasWhiteboard({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showBudgetDialog, highlightedBudgetIdx, isOwner, canVote]);
 
-  // Use setShowReadyModal for the modal
+  // -se setShowReadyModal for the modal
   const openVotingModal =
     typeof setShowReadyModal === 'function' ? () => setShowReadyModal(true) : () => {};
 
@@ -1160,8 +1160,8 @@ export default function IdeasWhiteboard({
 
   // AvatarGroup with glow and +X others logic
   const maxAvatars = 3;
-  const visibleUsers = uniqueActiveUsers.slice(0, maxAvatars);
-  const extraCount = uniqueActiveUsers.length - maxAvatars;
+  const visible-sers = uniqueActive-sers.slice(0, maxAvatars);
+  const extraCount = uniqueActive-sers.length - maxAvatars;
 
   // Calculate progress for ready to vote
   const ideasProgress = useMemo(() => {
@@ -1249,7 +1249,7 @@ export default function IdeasWhiteboard({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showKeyboardShortcuts]);
 
-  // Update keyboard shortcut handling
+  // -pdate keyboard shortcut handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // More thorough check for input elements and editing contexts
@@ -1391,30 +1391,30 @@ export default function IdeasWhiteboard({
           ) : (
             <div
               ref={boardRef}
-              className="h-screen w-screen bg-background p-0 m-0 relative overflow-hidden"
+              className="h-screen w-screen bg-background pU0 mU0 relative overflow-hidden"
             >
               {/* Main editor */}
               <div className="h-full flex flex-col">
                 {/* Header */}
-                <header className="p-4 lg:px-8 bg-card border-b shadow-sm border-b-card z-10 sticky top-0">
-                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                    <div className="flex items-center space-x-4">
+                <header className="pU4 lg:pxU8 bg-card border-b shadow-sm border-b-card zU10 sticky topU0">
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gapU4">
+                    <div className="flex items-center space-xU4">
                       <Button variant="ghost" size="icon" asChild className="rounded-full">
                         <Link href={`/groups/${groupId}`}>
-                          <ArrowLeft className="h-6 w-6 text-muted-foreground" />
+                          <ArrowLeft className="hU6 wU6 text-muted-foreground" />
                         </Link>
                       </Button>
 
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-xU3">
                         {/* Version label - remove help menu icon */}
-                        <span className="text-xs text-muted-foreground px-2 py-1 rounded-full border">
+                        <span className="text-xs text-muted-foreground pxU2 pyU1 rounded-full border">
                           Ideas
                         </span>
                       </div>
                     </div>
 
                     {/* Theme Toggle and Actions */}
-                    <div className="flex space-x-2">
+                    <div className="flex space-xU2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -1428,14 +1428,14 @@ export default function IdeasWhiteboard({
                         variant="outline"
                         size="sm"
                         onClick={() => setSimplifiedView(!simplifiedView)}
-                        className="ml-2"
+                        className="mlU2"
                       >
                         {simplifiedView ? 'Switch to Board View' : 'Switch to Simple View'}
                       </Button>
                       <Button
                         onClick={() => setShowReadyModal(true)}
                         disabled={!readyForVoting}
-                        className={cn('ml-2', readyForVoting ? glowButtonClass : '')}
+                        className={cn('mlU2', readyForVoting ? glowButtonClass : '')}
                       >
                         Ready for Voting
                       </Button>
@@ -1443,49 +1443,49 @@ export default function IdeasWhiteboard({
                   </div>
 
                   {/* Group name and subtitle */}
-                  <div className="mb-2">
-                    <h1 className="text-2xl lg:text-4xl font-bold mb-1 lg:mb-2">{groupName}</h1>
+                  <div className="mbU2">
+                    <h1 className="textU2xl lg:textU4xl font-bold mbU1 lg:mbU2">{groupName}</h1>
                     <p className="text-base lg:text-xl text-muted-foreground">
                       Generate ideas for your trip with your group members
                     </p>
                   </div>
 
                   {/* Action bar - floating action buttons */}
-                  <div className="action-bar flex justify-between items-center px-4 py-3 mb-4 bg-background/50 backdrop-blur-sm border border-border/50 dark:border-border/30 rounded-xl shadow-sm">
-                    <div className="flex items-center gap-2">
+                  <div className="action-bar flex justify-between items-center pxU4 pyU3 mbU4 bg-background/50 backdrop-blur-sm border border-border/50 dark:border-border/30 rounded-xl shadow-sm">
+                    <div className="flex items-center gapU2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 gap-1 text-xs"
+                        className="hU8 gapU1 text-xs"
                         onClick={() => handleColumnAddClick('activity')}
                       >
-                        <PlusCircle className="h-3.5 w-3.5" />
+                        <PlusCircle className="hU3.5 wU3.5" />
                         <span>Add Idea</span>
                       </Button>
 
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 gap-1 text-xs text-muted-foreground"
+                        className="hU8 gapU1 text-xs text-muted-foreground"
                         onClick={() => setShowKeyboardShortcuts(true)}
                       >
-                        <Keyboard className="h-3.5 w-3.5" />
+                        <Keyboard className="hU3.5 wU3.5" />
                         <span>Shortcuts</span>
                       </Button>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gapU2">
                       <Button
                         variant={selectedIds.length > 0 ? 'outline' : 'ghost'}
                         size="sm"
                         className={cn(
-                          'h-8 gap-1 text-xs',
+                          'hU8 gapU1 text-xs',
                           selectedIds.length > 0 ? 'text-destructive' : 'text-muted-foreground'
                         )}
                         disabled={selectedIds.length === 0}
                         onClick={handleDeleteSelectedIdeas}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="hU3.5 wU3.5" />
                         <span>
                           {selectedIds.length > 0 ? `Delete (${selectedIds.length})` : 'Delete'}
                         </span>
@@ -1494,18 +1494,18 @@ export default function IdeasWhiteboard({
                       <Button
                         variant="default"
                         size="sm"
-                        className="h-8 gap-1 text-xs"
+                        className="hU8 gapU1 text-xs"
                         onClick={() => setShowReadyModal(true)}
                       >
-                        <CheckCircle className="h-3.5 w-3.5" />
+                        <CheckCircle className="hU3.5 wU3.5" />
                         <span>Ready for Voting</span>
                       </Button>
                     </div>
                   </div>
 
                   {/* Main Content - Columns - Full height */}
-                  <div className="flex-1 overflow-hidden flex flex-col h-[calc(100vh-220px)]">
-                    <div className="flex gap-4 h-full overflow-hidden">
+                  <div className="flexU1 overflow-hidden flex flex-col h-[calc(100vhU220px)]">
+                    <div className="flex gapU4 h-full overflow-hidden">
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCorners}
@@ -1513,12 +1513,12 @@ export default function IdeasWhiteboard({
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                       >
-                        <div className="flex w-full gap-4 h-full">
+                        <div className="flex w-full gapU4 h-full">
                           {COLUMNS.map((column) => (
                             <div
                               key={column.id}
                               className={cn(
-                                'column-container flex-1 min-w-[280px] max-w-[350px] h-full flex flex-col',
+                                'column-container flexU1 min-w-[280px] max-w-[350px] h-full flex flex-col',
                                 'rounded-xl border border-border/50 dark:border-border/30 shadow-sm',
                                 'bg-gradient-to-b',
                                 column.gradientFrom,
@@ -1528,14 +1528,14 @@ export default function IdeasWhiteboard({
                               {/* Column header */}
                               <div
                                 className={cn(
-                                  'flex items-center justify-between px-4 py-3',
+                                  'flex items-center justify-between pxU4 pyU3',
                                   'border-b border-border/50 dark:border-border/30 bg-background/50 backdrop-blur-sm'
                                 )}
                               >
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-xU2">
                                   <div
                                     className={cn(
-                                      'flex items-center justify-center h-6 w-6 rounded-md',
+                                      'flex items-center justify-center hU6 wU6 rounded-md',
                                       `bg-[hsl(var(--${column.color}))/10`
                                     )}
                                   >
@@ -1550,10 +1550,10 @@ export default function IdeasWhiteboard({
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-7 w-7 p-0 rounded-full hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors duration-200"
+                                        className="hU7 wU7 pU0 rounded-full hover:bg-grayU100/80 dark:hover:bg-grayU800/80 transition-colors durationU200"
                                         onClick={() => handleColumnAddClick(column.id as ColumnId)}
                                       >
-                                        <PlusCircle className="h-4 w-4 text-muted-foreground" />
+                                        <PlusCircle className="hU4 wU4 text-muted-foreground" />
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent side="top">Add {column.label}</TooltipContent>
@@ -1562,7 +1562,7 @@ export default function IdeasWhiteboard({
                               </div>
 
                               {/* Column content - scrollable area */}
-                              <div className="flex-grow overflow-y-auto overflow-x-hidden p-3 space-y-3 hide-scrollbar">
+                              <div className="flex-grow overflow-y-auto overflow-x-hidden pU3 space-yU3 hide-scrollbar">
                                 <SortableContext
                                   items={
                                     ideasByColumnMemo[column.id as ColumnId]?.map(
@@ -1571,17 +1571,17 @@ export default function IdeasWhiteboard({
                                   }
                                   strategy={verticalListSortingStrategy}
                                 >
-                                  <div className="flex flex-col gap-2">
+                                  <div className="flex flex-col gapU2">
                                     {/* Inline Edit Form - shown when inlineEditColumn matches this column */}
                                     {inlineEditColumn === column.id && (
                                       <div
                                         ref={inlineEditInputRefWrapper}
-                                        className="border border-border/80 rounded-lg px-3 py-2 bg-background shadow-sm"
+                                        className="border border-border/80 rounded-lg pxU3 pyU2 bg-background shadow-sm"
                                         data-editing="true"
                                       >
-                                        <div className="flex flex-col gap-2">
-                                          <div className="flex items-center gap-1 text-sm font-medium text-foreground">
-                                            <span className="w-4 h-4 flex items-center justify-center text-xs">
+                                        <div className="flex flex-col gapU2">
+                                          <div className="flex items-center gapU1 text-sm font-medium text-foreground">
+                                            <span className="wU4 hU4 flex items-center justify-center text-xs">
                                               {getEmoji(column.id as ColumnId)}
                                             </span>
                                             <span>New {column.label}</span>
@@ -1591,7 +1591,7 @@ export default function IdeasWhiteboard({
                                             value={newIdeaTitle}
                                             onChange={(e) => setNewIdeaTitle(e.target.value)}
                                             placeholder={`Add ${column.label.toLowerCase()} idea...`}
-                                            className="h-9 text-sm"
+                                            className="hU9 text-sm"
                                             onKeyDown={(e) => {
                                               if (e.key === 'Enter') {
                                                 e.preventDefault();
@@ -1604,12 +1604,12 @@ export default function IdeasWhiteboard({
                                             }}
                                             autoFocus
                                           />
-                                          <div className="flex justify-end gap-2">
+                                          <div className="flex justify-end gapU2">
                                             <Button
                                               type="button"
                                               variant="ghost"
                                               size="sm"
-                                              className="h-7 text-xs"
+                                              className="hU7 text-xs"
                                               onClick={() => {
                                                 setInlineEditColumn(null);
                                                 setNewIdeaTitle('');
@@ -1621,7 +1621,7 @@ export default function IdeasWhiteboard({
                                               type="button"
                                               variant="default"
                                               size="sm"
-                                              className="h-7 text-xs"
+                                              className="hU7 text-xs"
                                               onClick={() =>
                                                 handleInlineIdeaSubmit(column.id as ColumnId)
                                               }
@@ -1637,21 +1637,21 @@ export default function IdeasWhiteboard({
                                     {/* Empty Column State */}
                                     {(!ideasByColumnMemo[column.id as ColumnId] ||
                                       ideasByColumnMemo[column.id as ColumnId].length === 0) && (
-                                      <div className="flex flex-col items-center justify-center h-32 my-2 rounded-xl border border-dashed border-border/40 dark:border-border/20 bg-background/40">
-                                        <div className="text-center p-4">
-                                          <p className="text-xs text-muted-foreground mb-1">
+                                      <div className="flex flex-col items-center justify-center hU32 myU2 rounded-xl border border-dashed border-border/40 dark:border-border/20 bg-background/40">
+                                        <div className="text-center pU4">
+                                          <p className="text-xs text-muted-foreground mbU1">
                                             No items
                                           </p>
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="text-xs h-8 font-normal text-primary hover:text-primary/80"
+                                            className="text-xs hU8 font-normal text-primary hover:text-primary/80"
                                             onClick={() =>
                                               handleColumnAddClick(column.id as ColumnId)
                                             }
                                           >
                                             <PlusCircle
-                                              className="h-3 w-3 mr-1"
+                                              className="hU3 wU3 mrU1"
                                               strokeWidth={1.5}
                                             />
                                             Add {column.label}
@@ -1718,7 +1718,7 @@ export default function IdeasWhiteboard({
               <AnimatePresence>
                 {showAddModal && (
                   <motion.div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                    className="fixed insetU0 zU50 flex items-center justify-center bg-black/50"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -1737,10 +1737,10 @@ export default function IdeasWhiteboard({
 
               {/* Guest notification banner */}
               {isGuest && (
-                <div className="fixed top-0 left-0 right-0 bg-blue-50 dark:bg-blue-900/20 p-3 z-50 border-b border-blue-200 dark:border-blue-800">
+                <div className="fixed topU0 leftU0 rightU0 bg-blueU50 dark:bg-blueU900/20 pU3 zU50 border-b border-blueU200 dark:border-blueU800">
                   <div className="flex items-center">
-                    <Info className="h-5 w-5 text-blue-500 mr-2" />
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <Info className="hU5 wU5 text-blueU500 mrU2" />
+                    <p className="text-sm text-blueU700 dark:text-blueU300">
                       You're viewing this as a guest.{' '}
                       <a href="/signup" className="underline font-medium">
                         Sign up
@@ -1752,17 +1752,17 @@ export default function IdeasWhiteboard({
               )}
 
               {/* Fixed floating control bar */}
-              <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 flex items-center gap-3 z-50">
+              <div className="fixed bottomU8 leftU1/2 transform -translate-xU1/2 bg-white/80 dark:bg-grayU800/80 backdrop-blur-md rounded-full shadow-lg border border-grayU200 dark:border-grayU700 pxU3 pyU1.5 flex items-center gapU3 zU50">
                 <TooltipProvider>
                   {/* Progress indicator */}
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 text-xs flex items-center justify-center">
-                          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      <div className="flex items-center gapU2">
+                        <div className="wU4 hU4 text-xs flex items-center justify-center">
+                          <Sparkles className="hU3.5 wU3.5 text-amberU500" />
                         </div>
-                        <Progress value={ideasProgress} className="w-20 h-1.5" />
-                        <span className="text-xs text-gray-500">{ideas.length} ideas</span>
+                        <Progress value={ideasProgress} className="wU20 hU1.5" />
+                        <span className="text-xs text-grayU500">{ideas.length} ideas</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
@@ -1775,7 +1775,7 @@ export default function IdeasWhiteboard({
                     </TooltipContent>
                   </Tooltip>
 
-                  <Separator orientation="vertical" className="h-5 mx-1" />
+                  <Separator orientation="vertical" className="hU5 mxU1" />
 
                   {/* Start Voting button */}
                   <Tooltip>
@@ -1786,13 +1786,13 @@ export default function IdeasWhiteboard({
                         onClick={() => setShowReadyModal(true)}
                         disabled={!readyForVoting}
                         className={cn(
-                          'h-8 rounded-full',
+                          'hU8 rounded-full',
                           readyForVoting
-                            ? 'relative after:absolute after:inset-0 after:rounded-full after:animate-pulse after:bg-blue-500/30 after:blur-md after:-z-10'
+                            ? 'relative after:absolute after:insetU0 after:rounded-full after:animate-pulse after:bg-blueU500/30 after:blur-md after:-zU10'
                             : ''
                         )}
                       >
-                        <CheckCircle className="h-4 w-4 mr-2" />
+                        <CheckCircle className="hU4 wU4 mrU2" />
                         Start Voting
                       </Button>
                     </TooltipTrigger>
@@ -1809,10 +1809,10 @@ export default function IdeasWhiteboard({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="hU8 wU8 rounded-full hover:bg-grayU100 dark:hover:bg-grayU800 transition-colors"
                         onClick={() => setShowHelpDialog(true)}
                       >
-                        <HelpCircle className="h-3.5 w-3.5 text-gray-500" />
+                        <HelpCircle className="hU3.5 wU3.5 text-grayU500" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
@@ -1826,7 +1826,7 @@ export default function IdeasWhiteboard({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="hU8 wU8 rounded-full hover:bg-grayU100 dark:hover:bg-grayU800 transition-colors"
                         onClick={() => {
                           toast({
                             title: 'Exporting ideas...',
@@ -1841,7 +1841,7 @@ export default function IdeasWhiteboard({
                           }, 1500);
                         }}
                       >
-                        <Download className="h-3.5 w-3.5 text-gray-500" />
+                        <Download className="hU3.5 wU3.5 text-grayU500" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
@@ -1856,9 +1856,9 @@ export default function IdeasWhiteboard({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          className="hU8 wU8 rounded-full hover:bg-grayU100 dark:hover:bg-grayU800 transition-colors"
                         >
-                          <ArrowLeft className="h-3.5 w-3.5 text-gray-500" />
+                          <ArrowLeft className="hU3.5 wU3.5 text-grayU500" />
                         </Button>
                       </Link>
                     </TooltipTrigger>
@@ -1888,43 +1888,43 @@ export default function IdeasWhiteboard({
                   <DialogHeader>
                     <DialogTitle>Keyboard Shortcuts</DialogTitle>
                     <DialogDescription>
-                      Use these shortcuts to navigate and manage your ideas more efficiently.
+                      -se these shortcuts to navigate and manage your ideas more efficiently.
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="grid grid-cols-2 gap-4 py-4">
+                  <div className="grid grid-colsU2 gapU4 pyU4">
                     <div className="flex items-center">
-                      <kbd className="px-2 py-1 mr-2 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                      <kbd className="pxU2 pyU1 mrU2 text-xs font-semibold text-grayU800 bg-grayU100 border border-grayU200 rounded dark:bg-grayU700 dark:text-grayU200 dark:border-grayU600">
                         N
                       </kbd>
                       <span className="text-sm">Add new idea</span>
                     </div>
                     <div className="flex items-center">
-                      <kbd className="px-2 py-1 mr-2 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                      <kbd className="pxU2 pyU1 mrU2 text-xs font-semibold text-grayU800 bg-grayU100 border border-grayU200 rounded dark:bg-grayU700 dark:text-grayU200 dark:border-grayU600">
                         ⌘ + A
                       </kbd>
                       <span className="text-sm">Select all ideas</span>
                     </div>
                     <div className="flex items-center">
-                      <kbd className="px-2 py-1 mr-2 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                      <kbd className="pxU2 pyU1 mrU2 text-xs font-semibold text-grayU800 bg-grayU100 border border-grayU200 rounded dark:bg-grayU700 dark:text-grayU200 dark:border-grayU600">
                         ⌘ + D
                       </kbd>
                       <span className="text-sm">Deselect all ideas</span>
                     </div>
                     <div className="flex items-center">
-                      <kbd className="px-2 py-1 mr-2 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                      <kbd className="pxU2 pyU1 mrU2 text-xs font-semibold text-grayU800 bg-grayU100 border border-grayU200 rounded dark:bg-grayU700 dark:text-grayU200 dark:border-grayU600">
                         Delete
                       </kbd>
                       <span className="text-sm">Delete selected ideas</span>
                     </div>
                     <div className="flex items-center">
-                      <kbd className="px-2 py-1 mr-2 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                      <kbd className="pxU2 pyU1 mrU2 text-xs font-semibold text-grayU800 bg-grayU100 border border-grayU200 rounded dark:bg-grayU700 dark:text-grayU200 dark:border-grayU600">
                         V
                       </kbd>
                       <span className="text-sm">Ready for voting</span>
                     </div>
                     <div className="flex items-center">
-                      <kbd className="px-2 py-1 mr-2 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                      <kbd className="pxU2 pyU1 mrU2 text-xs font-semibold text-grayU800 bg-grayU100 border border-grayU200 rounded dark:bg-grayU700 dark:text-grayU200 dark:border-grayU600">
                         ?
                       </kbd>
                       <span className="text-sm">Show keyboard shortcuts</span>
@@ -1946,8 +1946,8 @@ export default function IdeasWhiteboard({
                     <DialogTitle>Add Date</DialogTitle>
                     <DialogDescription>Select a date range for your trip</DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
+                  <div className="grid gapU4 pyU4">
+                    <div className="grid gapU2">
                       <Calendar
                         mode="single"
                         value={selectedDate}
@@ -1955,14 +1955,14 @@ export default function IdeasWhiteboard({
                         className="rounded-md border"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-yU2">
                       <Label htmlFor="dateTitle">Title (optional)</Label>
                       <Input
                         id="dateTitle"
                         value={newIdeaTitle}
                         onChange={(e) => setNewIdeaTitle(e.target.value)}
                         placeholder="e.g., Summer 2024, Spring Break, etc."
-                        className="col-span-3"
+                        className="col-spanU3"
                       />
                     </div>
                   </div>
@@ -2017,14 +2017,14 @@ export default function IdeasWhiteboard({
                     <DialogTitle>Add Budget</DialogTitle>
                     <DialogDescription>How much are you planning to spend?</DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gapU4 pyU4">
+                    <div className="grid grid-colsU2 gapU2">
                       {['$50', '$100', '$200', '$500+'].map((amount, idx) => (
                         <Button
                           key={amount}
                           variant="outline"
                           className={cn(
-                            'h-20 text-lg',
+                            'hU20 text-lg',
                             highlightedBudgetIdx === idx ? 'border-primary bg-primary/5' : ''
                           )}
                           onClick={() => {
@@ -2033,22 +2033,22 @@ export default function IdeasWhiteboard({
                           }}
                         >
                           {amount}
-                          <span className="block text-xs text-muted-foreground mt-1">
+                          <span className="block text-xs text-muted-foreground mtU1">
                             per person
                           </span>
                         </Button>
                       ))}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-yU2">
                       <Label htmlFor="customBudget">Custom Budget</Label>
-                      <div className="flex gap-2">
+                      <div className="flex gapU2">
                         <Input
                           id="customBudget"
                           ref={budgetInputRef}
                           value={budgetCustomValue}
                           onChange={(e) => setBudgetCustomValue(e.target.value)}
                           placeholder="Enter amount"
-                          className="flex-1"
+                          className="flexU1"
                         />
                         <Button
                           onClick={() => {
@@ -2081,13 +2081,13 @@ export default function IdeasWhiteboard({
                       Search for a location or place to add as a destination idea
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
+                  <div className="grid gapU4 pyU4">
                     <MapboxDestinationInput
                       onSelect={(place) => {
                         if (!place) return;
 
                         // Create title from place data
-                        const placeTitle = place.text || place.place_name || 'Unknown Location';
+                        const placeTitle = place.text || place.place_name || '-nknown Location';
 
                         // Extract just the location name without the country/region
                         const locationParts = place.place_name?.split(',') || [];

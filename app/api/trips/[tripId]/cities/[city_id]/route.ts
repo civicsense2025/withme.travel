@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { TABLES } from '@/utils/constants/database-multi-city';
+import { TABLES } from '@/utils/constants/tables';
 
 /**
  * GET handler to retrieve a specific city in a trip
@@ -91,10 +91,10 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { trip_id: string; city_id: string } }
+  { params }: { params: { tripId: string; city_id: string } }
 ) {
   try {
-    const { trip_id: tripId, city_id: cityId } = params;
+    const { tripId, city_id: cityId } = params;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseKey) {
@@ -174,10 +174,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { trip_id: string; city_id: string } }
+  { params }: { params: { tripId: string; city_id: string } }
 ) {
   try {
-    const { trip_id: tripId, city_id: cityId } = params;
+    const { tripId, city_id: cityId } = params;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseKey) {

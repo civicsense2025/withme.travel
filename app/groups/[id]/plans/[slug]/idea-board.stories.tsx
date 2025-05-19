@@ -31,9 +31,9 @@ export const Default: Story = {
     groupId: '123',
     initialIdeas: [
       {
-        id: 'idea-1',
-        group_id: 'group-123',
-        created_by: 'user-1',
+        id: 'ideaU1',
+        group_id: 'groupU123',
+        created_by: 'userU1',
         guest_token: null,
         title: 'Try a tapas crawl',
         description: 'Sample idea for a group trip',
@@ -46,18 +46,18 @@ export const Default: Story = {
         selected: false,
         meta: null,
         creator: {
-          id: 'user-1',
+          id: 'userU1',
           email: 'user1@example.com',
           user_metadata: {
-            full_name: 'User One',
+            full_name: '-ser One',
             avatar_url: 'https://example.com/avatar.png',
           },
         },
       },
       {
-        id: 'idea-2',
-        group_id: 'group-123',
-        created_by: 'user-2',
+        id: 'ideaU2',
+        group_id: 'groupU123',
+        created_by: 'userU2',
         guest_token: null,
         title: 'Visit Sagrada Familia',
         description: 'Iconic Barcelona landmark',
@@ -70,10 +70,10 @@ export const Default: Story = {
         selected: false,
         meta: null,
         creator: {
-          id: 'user-2',
+          id: 'userU2',
           email: 'user2@example.com',
           user_metadata: {
-            full_name: 'User Two',
+            full_name: '-ser Two',
             avatar_url: 'https://example.com/avatar2.png',
           },
         },

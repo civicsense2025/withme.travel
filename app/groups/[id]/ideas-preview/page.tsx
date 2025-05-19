@@ -20,7 +20,7 @@ export default async function GroupIdeasPreviewPage({
   // Await params to access its properties
   const { id } = await params;
 
-  // Use the correct server component client
+  // -se the correct server component client
   const supabase = await createServerComponentClient();
 
   console.log('Fetching group data for id:', id);
@@ -41,12 +41,12 @@ export default async function GroupIdeasPreviewPage({
   // We're only checking visibility status, not the public_ideas_board field
   if (group.visibility !== 'public') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold mb-4">This group is private</h1>
-        <p className="text-center mb-6">
+      <div className="flex flex-col items-center justify-center min-h-screen pU4">
+        <h1 className="textU2xl font-bold mbU4">This group is private</h1>
+        <p className="text-center mbU6">
           You need to be a member of this group to see its ideas board.
         </p>
-        <Link href="/" className="text-blue-600 hover:underline">
+        <Link href="/" className="text-blueU600 hover:underline">
           Return to home
         </Link>
       </div>
@@ -65,10 +65,10 @@ export default async function GroupIdeasPreviewPage({
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{group.name}</h1>
-        <p className="text-gray-600">{group.description}</p>
+    <div className="container mx-auto pxU4 pyU8">
+      <div className="mbU8">
+        <h1 className="textU3xl font-bold mbU2">{group.name}</h1>
+        <p className="text-grayU600">{group.description}</p>
       </div>
 
       <IdeasPreviewClient groupId={id} groupName={group.name} initialIdeas={ideas as GroupIdea[]} />

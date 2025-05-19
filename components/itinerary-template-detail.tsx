@@ -13,7 +13,7 @@ import { ChevronRight } from 'lucide-react';
 import { LikeButton } from './like-button';
 import { UseTemplateButton } from './use-template-button';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { ImageAttribution } from './images';
+import { ImageAttribution } from './features/images';
 
 interface ItineraryDay {
   day: number;

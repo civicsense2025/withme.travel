@@ -4,7 +4,7 @@ import { DataTable } from '../components/DataTable';
 import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { TABLES } from '@/utils/constants/database-multi-city';
+import { TABLES } from '@/utils/constants/tables';
 import { Badge } from '@/components/ui/badge';
 
 type City = {

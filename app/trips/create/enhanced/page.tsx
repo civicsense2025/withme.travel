@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Container } from '@/components/container';
 import { PageHeader } from '@/components/layout/page-header';
-import { TripCreationForm } from '@/components/trips';
+import { TripCreationForm } from '@/components/features/trips';
 import { PopularDestinationsCarousel } from '@/components/destinations/popular-destinations-carousel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 

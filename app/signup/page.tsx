@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SignupForm } from '@/components/signup-form';
-import { AuthSellingPoints } from '@/components/auth-selling-points';
+import { AuthSellingPoints } from '@/components/features/auth';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/lib/hooks/use-auth';
 

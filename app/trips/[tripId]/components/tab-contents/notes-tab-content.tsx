@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { useNotes } from '@/hooks/use-notes';
 import { Skeleton } from '@/components/ui/skeleton';
-import { NotesTabTemplate } from '@/components/notes';
+import { NotesTabTemplate } from '@/components/features/notes';
 import { useToast } from '@/hooks/use-toast';
 
 interface NotesTabContentProps {

@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useGroups } from '@/lib/features/groups/hooks';
+import { useToast } from '@/components/ui/use-toast';
 
 interface CreateGroupFormProps {
   onGroupCreated?: (group: any) => void;
@@ -18,6 +20,8 @@ export default function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps
   const [emoji, setEmoji] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { addGroup } = useGroups(false); // Don't fetch on mount
+  const { toast } = useToast();
 
   // Hidden field for spam prevention
   const [website, setWebsite] = useState('');
@@ -27,16 +31,23 @@ export default function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
-      });
-      if (!res.ok) throw new Error('Failed to create group');
-      const data = await res.json();
-      onGroupCreated?.(data.group);
+      const result = await addGroup({ name, description });
+      if (result.success) {
+        toast({
+          title: 'Group created successfully',
+        });
+        onGroupCreated?.(result.data);
+      } else {
+        throw new Error(result.error);
+      }
     } catch (err) {
-      setError('Failed to create group');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create group';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -93,7 +104,7 @@ export default function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert className="bg-destructive/15 text-destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>

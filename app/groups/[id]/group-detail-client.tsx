@@ -90,7 +90,7 @@ import {
 } from '@/components/ui/table';
 import { ENUMS } from '@/utils/constants/database';
 import { useToast } from '@/components/ui/use-toast';
-import { EmptyState } from '@/components/groups/molecules';
+import { EmptyState } from '@/components/shared/molecules';
 
 interface GroupDetailClientProps {
   group: Group;

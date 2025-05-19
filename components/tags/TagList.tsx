@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useTags, Tag } from '@/hooks/use-tags';
+import { useTags } from '@/hooks';
+import type { Tag } from '@/components/features/tags/types';
 import { cn } from '@/lib/utils';
 
 interface TagListProps {

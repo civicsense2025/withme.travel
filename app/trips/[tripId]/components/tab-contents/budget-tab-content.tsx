@@ -1,12 +1,12 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { BudgetTab } from '@/components/expenses/budget-tab';
+import { BudgetTab } from '@/components/features/expenses/budget-tab';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as Sentry from '@sentry/nextjs';
 import { TripRole } from '@/types/roles';
-import { BudgetSnapshotSidebar } from '@/components/ui/features/trips/organisms/BudgetSnapshotSidebar';
+import { BudgetSnapshotSidebar } from '@/components/features/trips/molecules/BudgetSnapshotSidebar';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useExpenses } from '@/hooks/use-expenses';
+import { useExpenses } from '@/hooks';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Plus, Wallet2 } from 'lucide-react';

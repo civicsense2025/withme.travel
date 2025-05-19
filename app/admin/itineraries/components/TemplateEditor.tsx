@@ -20,14 +20,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TABLES } from '@/utils/constants/database';
 import { useToast } from '@/components/ui/use-toast';
-import { ImageSearchSelector } from '@/components/images/image-search-selector';
-import { MediaLibrary, Image as MediaLibraryImage } from '@/components/admin/MediaLibrary';
+import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
+import { MediaLibrary, Image as MediaLibraryImage } from '@/components/features/admin/MediaLibrary';
 import { Loader, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import TemplateContentEditor from './TemplateContentEditor';
 import TemplateDebugger from './TemplateDebugger';
 import { TemplateData, TemplateSection, TemplateItem } from '../types';
 import Image from 'next/image';
-import { ImageAttribution } from '@/components/images';
+import { ImageAttribution } from '@/components/features/images';
 
 interface TemplateEditorProps {
   template?: TemplateData;

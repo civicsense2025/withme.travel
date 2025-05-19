@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NavbarThemeToggle } from './NavbarThemeToggle';
-import UserMenu from './user-menu';
+import -serMenu from './user-menu';
 import { cn } from '@/lib/utils';
 
 interface NavbarMobileMenuProps {
@@ -36,35 +36,35 @@ export function NavbarMobileMenu({
   const navLinks = user ? privateLinks : publicLinks;
   
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end md:hidden">
+    <div className="fixed insetU0 z-[9999] flex justify-end md:hidden">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute insetU0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       
       {/* Slide-in Menu Panel */}
-      <div className="relative w-4/5 max-w-xs h-screen bg-background border-l border-border flex flex-col z-10 animate-in slide-in-from-right duration-300">
+      <div className="relative wU4/5 max-w-xs h-screen bg-background border-l border-border flex flex-col zU10 animate-in slide-in-from-right durationU300">
         {/* Close Button - Top right */}
-        <div className="absolute top-4 right-4">
+        <div className="absolute topU4 rightU4">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0"
+            className="hU8 wU8 pU0"
             onClick={onClose}
             aria-label="Close menu"
           >
-            <X className="h-5 w-5" />
+            <X className="hU5 wU5" />
           </Button>
         </div>
         
         {/* Menu Items */}
-        <div className="flex flex-col h-full px-6 pt-8 pb-6">
+        <div className="flex flex-col h-full pxU6 ptU8 pbU6">
           <div className="overflow-y-auto">
             {user && (
               <div>
-                <UserMenu topPosition />
+                <-serMenu topPosition />
               </div>
             )}
             
-            <nav className="flex flex-col gap-4 mt-2">
+            <nav className="flex flex-col gapU4 mtU2">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -80,14 +80,14 @@ export function NavbarMobileMenu({
               ))}
             </nav>
             
-            <div className="mt-6 flex items-center">
+            <div className="mtU6 flex items-center">
               <NavbarThemeToggle mobileStyling={true} />
             </div>
           </div>
           
           {user ? (
             <button
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 text-base shadow-lg border-none focus:outline-none focus:ring-2 focus:ring-red-400 mt-auto"
+              className="w-full bg-redU600 hover:bg-redU700 text-white font-medium pyU3 rounded-xl flex items-center justify-center gapU2 text-base shadow-lg border-none focus:outline-none focus:ringU2 focus:ring-redU400 mt-auto"
               style={{ marginBottom: 'env(safe-area-inset-bottom, 1rem)' }}
               onClick={async () => {
                 await signOut();
@@ -101,7 +101,7 @@ export function NavbarMobileMenu({
               <Link 
                 href="/login" 
                 onClick={onClose}
-                className="w-full bg-travel-purple text-purple-900 hover:bg-purple-300 font-medium py-3 rounded-xl flex items-center justify-center gap-2 text-base shadow-lg border-none focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full bg-travel-purple text-purpleU900 hover:bg-purpleU300 font-medium pyU3 rounded-xl flex items-center justify-center gapU2 text-base shadow-lg border-none focus:outline-none focus:ringU2 focus:ring-purpleU400"
               >
                 Sign In
               </Link>

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import AdminAccessCheck from '@/components/admin/AdminAccessCheck';
+import AdminAccessCheck from '@/components/features/admin/AdminAccessCheck';
 import { EnhancedContentEditor } from '../components/EnhancedContentEditor';
 import { VirtualizedDataTable } from '../components/VirtualizedDataTable';
 import { BulkImportExport } from '../components/BulkImportExport';

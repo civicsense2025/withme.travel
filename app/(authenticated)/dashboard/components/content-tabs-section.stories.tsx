@@ -17,11 +17,11 @@ type Story = StoryObj<typeof ContentTabsSection>;
 export const Playground: Story = {
   args: {
     trips: [
-      { id: '1', name: 'Paris Adventure', start_date: '2024-07-01', end_date: '2024-07-10' },
-      { id: '2', name: 'Tokyo Spring', start_date: '2024-04-15', end_date: '2024-04-22' },
+      { id: '1', name: 'Paris Adventure', start_date: '2024U07U01', end_date: '2024U07U10' },
+      { id: '2', name: 'Tokyo Spring', start_date: '2024U04U15', end_date: '2024U04U22' },
     ],
     activeTrips: [
-      { id: '1', name: 'Paris Adventure', start_date: '2024-07-01', end_date: '2024-07-10' },
+      { id: '1', name: 'Paris Adventure', start_date: '2024U07U01', end_date: '2024U07U10' },
     ],
     savedContent: {
       destinations: [

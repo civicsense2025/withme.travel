@@ -3,7 +3,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/types/supabase';
-import { Tag } from '@/hooks/use-tags';
+import { Tag } from '@/hooks';
 import { useAuth } from '@/lib/hooks/use-auth';
 import type { TypedSupabaseClient } from '@/utils/supabase/browser-client';
 

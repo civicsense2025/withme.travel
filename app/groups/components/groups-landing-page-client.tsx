@@ -11,8 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Container } from '@/components/container';
 import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
 import CollaborativeItinerarySection from '@/components/ui/CollaborativeItinerarySection';
-import { DestinationsFAQ } from '@/components/faq';
+import { DestinationsFAQ } from '@/components/features/faq';
 import { useThemeSync } from '@/components/theme-provider';
+import { useGroups } from '@/lib/features/groups/hooks';
+import { useToast } from '@/components/ui/use-toast';
 
 const CreateGroupModal = dynamic(() => import('./create-group-modal'), { ssr: false });
 
@@ -35,6 +37,8 @@ export default function GroupsLandingPageClient() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [success, setSuccess] = useState(false);
+  const { addGroup } = useGroups(false); // Don't fetch on mount
+  const { toast } = useToast();
 
   // --------------------------------------------------------------------------
   // HERO SECTION
@@ -74,15 +78,12 @@ export default function GroupsLandingPageClient() {
               return;
             }
             try {
-              const res = await fetch('/api/groups', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: groupName, website }),
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error || 'Failed to create group.');
-              if (!data.group?.id) throw new Error('No group ID returned.');
-              router.push(`/groups/${data.group.id}`);
+              const result = await addGroup({ name: groupName });
+              if (result.success) {
+                router.push(`/groups/${result.data.id}`);
+              } else {
+                throw new Error(result.error || 'Failed to create group.');
+              }
             } catch (err) {
               setError(
                 err instanceof Error ? err.message : 'Something went wrong. Please try again.'
@@ -177,17 +178,25 @@ export default function GroupsLandingPageClient() {
     setError(null);
     setSuccess(false);
     try {
-      const res = await fetch('/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
-      });
-      if (!res.ok) throw new Error('Failed to create group');
-      setSuccess(true);
-      setName('');
-      setDescription('');
+      const result = await addGroup({ name, description });
+      if (result.success) {
+        setSuccess(true);
+        setName('');
+        setDescription('');
+        toast({
+          title: 'Group created successfully',
+        });
+      } else {
+        throw new Error(result.error || 'Failed to create group');
+      }
     } catch (err) {
-      setError('Failed to create group');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create group';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
