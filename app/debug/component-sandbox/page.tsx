@@ -51,7 +51,7 @@ export default function ComponentSandboxPage() {
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="flex items-center mb-6">
-        <Link href="/debug" className="mr-2">
+        <Link href="/debug" className="mr-2" legacyBehavior>
           <ArrowLeft className="h-4 w-4 inline-block" />
         </Link>
         <h1 className="text-3xl font-bold">Component Sandbox</h1>
@@ -63,7 +63,6 @@ export default function ComponentSandboxPage() {
           </Button>
         </div>
       </div>
-
       <div className="mb-6 bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-700 text-sm flex items-start">
         <div className="flex-shrink-0 mr-3 mt-0.5">
           <AlertCircle className="h-5 w-5" />
@@ -77,7 +76,6 @@ export default function ComponentSandboxPage() {
           </p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
@@ -155,7 +153,6 @@ export default function ComponentSandboxPage() {
           </CardFooter>
         </Card>
       </div>
-
       <Tabs defaultValue="layout">
         <TabsList className="mb-4">
           <TabsTrigger value="layout">Layout Debug</TabsTrigger>
@@ -351,7 +348,6 @@ export default function ComponentSandboxPage() {
           </Card>
         </TabsContent>
       </Tabs>
-
       <div className="mt-8 text-sm text-gray-500">
         <p>
           These debug components are found in{' '}

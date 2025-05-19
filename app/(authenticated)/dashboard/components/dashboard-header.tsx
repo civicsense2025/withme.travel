@@ -29,26 +29,23 @@ export function DashboardHeader({ userName, avatarUrl, travelStats }: DashboardH
       {/* Settings button - positioned absolutely to maintain clean centered layout */}
       <div className="absolute right-0 top-0">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/settings" className="flex items-center gap-2">
+          <Link href="/settings" className="flex items-center gap-2" legacyBehavior>
             <Settings className="h-4 w-4" />
             <span className="sr-only sm:not-sr-only">Settings</span>
           </Link>
         </Button>
       </div>
-
       {/* Avatar with border */}
       <Avatar className="h-24 w-24 border-4 border-background shadow-md mb-4">
         <AvatarImage src={avatarUrl || undefined} alt={userName} />
         <AvatarFallback className="text-xl">{initial}</AvatarFallback>
       </Avatar>
-
       {/* User name with welcome message */}
       <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome, {userName}</h1>
       <p className="text-muted-foreground mb-6 text-sm flex items-center justify-center">
         <UserIcon className="h-4 w-4 mr-1.5 inline" />
         Your personal travel organizer
       </p>
-
       {/* Stats row - compact, single line */}
       <div className="flex items-center justify-center gap-6 md:gap-10 py-2">
         <StatItem label="Visited" value={travelStats.visitedCount} color="purple" />

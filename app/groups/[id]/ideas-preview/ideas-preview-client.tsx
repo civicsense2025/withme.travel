@@ -83,7 +83,6 @@ export default function IdeasPreviewClient({
         <div className="text-3xl mr-2">{groupEmoji || '💡'}</div>
         <h1 className="text-2xl font-bold">{groupName} Ideas Preview</h1>
       </div>
-
       <div className="mb-4">
         <Card>
           <CardHeader>
@@ -102,7 +101,6 @@ export default function IdeasPreviewClient({
           </CardContent>
         </Card>
       </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="all">All</TabsTrigger>
@@ -112,7 +110,6 @@ export default function IdeasPreviewClient({
           <TabsTrigger value="budget">Budget</TabsTrigger>
         </TabsList>
       </Tabs>
-
       {filteredIdeas.length > 0 ? (
         <div className="space-y-4">
           {filteredIdeas.map((idea) => (
@@ -149,9 +146,8 @@ export default function IdeasPreviewClient({
           </CardContent>
         </Card>
       )}
-
       <div className="mt-6">
-        <Link href={`/groups/${groupId}`}>
+        <Link href={`/groups/${groupId}`} legacyBehavior>
           <Button variant="outline">Back to Group</Button>
         </Link>
       </div>

@@ -17,6 +17,7 @@
 // ============================================================================
 
 import type { Trip, Profile } from '@/utils/constants/database.types';
+import { PaginationParams } from 'unsplash-js/dist/types/request';
 import { z } from 'zod';
 
 // ============================================================================
@@ -532,12 +533,9 @@ export type PaginationMeta = {
  *
  * @template T - The type of data returned in the paginated result
  */
-export type PaginatedResult<T> = {
-  /** Array of items of type T */
+type PaginatedResult<T> = {
   items: T[];
-  /** Pagination metadata */
   meta: PaginationMeta;
 };
 
-// Export types
-export { PaginationMeta, PaginatedResult };
+export type { PaginatedResult, PaginationParams };

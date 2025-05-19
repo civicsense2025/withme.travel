@@ -140,47 +140,47 @@ export function PopularDestinationsGrid({
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
       {adaptedDestinations.slice(0, 12).map((dest) => (
         // ... [rest of the component remains exactly the same, just using adaptedDestinations]
-        showPopover ? (
-          <Popover key={dest.id}>
-            <PopoverTrigger>
-              <Card
-                className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square transform hover:scale-105"
-                tabIndex={0}
-                onMouseEnter={() => setOpenPopoverId(dest.id)}
-                onMouseLeave={() => setOpenPopoverId(null)}
-                onFocus={() => setOpenPopoverId(dest.id)}
-                onBlur={() => setOpenPopoverId(null)}
-                aria-haspopup="dialog"
-                aria-expanded={openPopoverId === dest.id}
-              >
+        (showPopover ? (<Popover key={dest.id}>
+          <PopoverTrigger>
+            <Card
+              className="cursor-pointer hover:shadow-lg transition text-center p-4 flex flex-col items-center justify-center aspect-square transform hover:scale-105"
+              tabIndex={0}
+              onMouseEnter={() => setOpenPopoverId(dest.id)}
+              onMouseLeave={() => setOpenPopoverId(null)}
+              onFocus={() => setOpenPopoverId(dest.id)}
+              onBlur={() => setOpenPopoverId(null)}
+              aria-haspopup="dialog"
+              aria-expanded={openPopoverId === dest.id}
+            >
+              <span className="text-4xl mb-2">{dest.emoji}</span>
+              <div className="font-medium text-sm">{dest.name}</div>
+            </Card>
+          </PopoverTrigger>
+          {openPopoverId === dest.id && (
+            <PopoverContent className="p-4">
+              <div className="flex flex-col items-center">
                 <span className="text-4xl mb-2">{dest.emoji}</span>
                 <div className="font-medium text-sm">{dest.name}</div>
-              </Card>
-            </PopoverTrigger>
-            {openPopoverId === dest.id && (
-              <PopoverContent className="p-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-4xl mb-2">{dest.emoji}</span>
-                  <div className="font-medium text-sm">{dest.name}</div>
-                  <div className="text-xs text-muted-foreground">{dest.byline}</div>
-                  <div className="mt-4">
-                    <h4 className="font-medium mb-2">Highlights</h4>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {(dest.highlights || getRandomHighlights(dest)).map((highlight, idx) => (
-                        <li key={idx} className="text-sm">{highlight}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="mt-4">
-                    <Link href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}>
-                      <Button size="sm">Plan a Trip</Button>
-                    </Link>
-                  </div>
+                <div className="text-xs text-muted-foreground">{dest.byline}</div>
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Highlights</h4>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {(dest.highlights || getRandomHighlights(dest)).map((highlight, idx) => (
+                      <li key={idx} className="text-sm">{highlight}</li>
+                    ))}
+                  </ul>
                 </div>
-              </PopoverContent>
-            )}
-          </Popover>
-        ) : showDialog ? (
+                <div className="mt-4">
+                  <Link
+                    href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
+                    legacyBehavior>
+                    <Button size="sm">Plan a Trip</Button>
+                  </Link>
+                </div>
+              </div>
+            </PopoverContent>
+          )}
+        </Popover>) : showDialog ? (
           <Dialog key={dest.id}>
             <DialogTrigger>
               <Card
@@ -207,7 +207,9 @@ export function PopularDestinationsGrid({
                   </ul>
                 </div>
                 <div className="flex justify-end">
-                  <Link href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}>
+                  <Link
+                    href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
+                    legacyBehavior>
                     <Button size="sm">Plan a Trip</Button>
                   </Link>
                 </div>
@@ -232,7 +234,7 @@ export function PopularDestinationsGrid({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        )
+        ))
       ))}
     </div>
   );

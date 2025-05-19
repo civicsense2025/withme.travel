@@ -9,7 +9,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import { DestinationCard } from '@/components/destination-card';
+import { DestinationCard } from '@/components/features/destinations/molecules/DestinationCard';
 import { Button } from '@/components/ui/button';
 
 interface DestinationsCarouselProps {
@@ -38,7 +38,7 @@ export function DestinationsCarousel({
 
   return (
     <div className="relative">
-      <Carousel className="w-full" opts={{ align: 'start', loop: false }}>
+      <Carousel className="w-full" autoScroll={true} scrollInterval={3000}>
         <CarouselContent className="-ml-2 md:-ml-4">
           {visibleDestinations.map((destination, index) => (
             <CarouselItem
@@ -58,14 +58,6 @@ export function DestinationsCarousel({
                   image_url: destination.image_url,
                   emoji: destination.emoji || null,
                   image_metadata: destination.image_metadata || undefined,
-                  cuisine_rating: destination.cuisine_rating || 0,
-                  nightlife_rating: destination.nightlife_rating || 0,
-                  cultural_attractions: destination.cultural_attractions || 0,
-                  outdoor_activities: destination.outdoor_activities || 0,
-                  beach_quality: destination.beach_quality || 0,
-                  best_season: destination.best_season || '',
-                  avg_cost_per_day: destination.avg_cost_per_day || undefined,
-                  safety_rating: destination.safety_rating || undefined,
                   name: destination.name || undefined,
                 }}
               />

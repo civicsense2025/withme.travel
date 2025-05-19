@@ -6,6 +6,7 @@ import { getServerSupabase } from '@/utils/supabase-server';
 import { TABLES } from '@/utils/constants/tables';
 import { listTrips } from '@/lib/api/trips';
 import TripTabs from '../components/molecules/TripTabs';
+import { getServerSession } from '@/lib/auth/supabase';
 
 // We need to tell search engines not to index this authenticated page
 export const metadata: Metadata = {
@@ -18,16 +19,16 @@ export const metadata: Metadata = {
 // Set revalidation to prevent constant refreshing
 export const revalidate = 3600; // 1 hour
 
-export default async function TripsManagePage() {
-  // Get session and authentication info
-  const { user, isGuest } = await requireAuthOrGuest();
-  if (!user) {
-    return redirect(`/login?redirect=${encodeURIComponent('/trips/manage')}`);
+export default async function ManageTripsPage() {
+  const session = await getServerSession();
+  
+  if (!session?.user) {
+    return redirect('/trips');
   }
 
   try {
     // Use our new type-safe data fetching pattern
-    const result = await listTrips(user.id);
+    const result = await listTrips(session.user.id);
     if (!result.success) throw new Error(result.error || 'Failed to fetch trips');
     const tripMembers = result.data.map((trip) => ({ trip }));
 
@@ -36,7 +37,7 @@ export default async function TripsManagePage() {
     const { data: userProfile } = await supabase
       .from(TABLES.PROFILES)
       .select('id, interests, home_location_name, travel_personality')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
 
     return (
@@ -49,8 +50,8 @@ export default async function TripsManagePage() {
         />
         <TripTabs
           initialTrips={tripMembers}
-          userId={user.id}
-          isGuest={isGuest}
+          userId={session.user.id}
+          isGuest={false}
           userProfile={userProfile || null}
         />
       </div>

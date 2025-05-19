@@ -36,7 +36,7 @@ export default function Navbar() {
           </div>
         ) : (
           // Placeholder for mobile to maintain layout balance, or remove if not needed
-          <div className="flex-1" />
+          (<div className="flex-1" />)
         )}
         
         {/* Right: Auth + Theme + Planning */}
@@ -68,7 +68,6 @@ export default function Navbar() {
           )}
         </div>
       </div>
-      
       {/* Conditionally render NavbarMobileMenu based on isDesktop */}
       {!isDesktop && (
         <NavbarMobileMenu

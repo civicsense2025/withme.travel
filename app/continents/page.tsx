@@ -84,7 +84,6 @@ export default function ContinentsPage() {
         title="Explore Continents"
         description="Discover destinations across the world organized by continent"
       />
-
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10"
         variants={containerVariants}
@@ -101,7 +100,10 @@ export default function ContinentsPage() {
               transition: { duration: 0.2 },
             }}
           >
-            <Link href={`/continents/${continent.slug}`} className="block h-full">
+            <Link
+              href={`/continents/${continent.slug}`}
+              className="block h-full"
+              legacyBehavior>
               <div className="relative rounded-xl overflow-hidden h-64 group">
                 <div
                   className={`absolute inset-0 bg-${continent.accentColor} mix-blend-multiply opacity-60 group-hover:opacity-70 transition-opacity z-10`}
@@ -124,7 +126,6 @@ export default function ContinentsPage() {
           </motion.div>
         ))}
       </motion.div>
-
       <div className="mt-16 bg-muted/30 p-8 rounded-xl">
         <h2 className="text-2xl font-bold mb-4">Plan Your Continental Adventure</h2>
         <p className="mb-6 text-muted-foreground">

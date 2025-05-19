@@ -116,7 +116,6 @@ export function DestinationCarousel({
         <h2 className="text-3xl font-bold tracking-tight mb-2">{title}</h2>
         <p className="text-muted-foreground">{subtitle}</p>
       </div>
-
       {/* Navigation buttons */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 z-10">
         <Button 
@@ -129,7 +128,6 @@ export function DestinationCarousel({
           <span className="sr-only">Previous</span>
         </Button>
       </div>
-      
       <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 z-10">
         <Button 
           variant="outline" 
@@ -141,7 +139,6 @@ export function DestinationCarousel({
           <span className="sr-only">Next</span>
         </Button>
       </div>
-
       {/* Carousel container */}
       <div 
         ref={carouselRef}
@@ -161,7 +158,6 @@ export function DestinationCarousel({
           </div>
         ))}
       </div>
-
       {/* Slide indicators */}
       <div className="flex justify-center mt-4 gap-2">
         {destinations.map((_, index) => (
@@ -178,12 +174,11 @@ export function DestinationCarousel({
           />
         ))}
       </div>
-
       {/* View all link */}
       {showViewAll && (
         <div className="mt-6 text-right">
           <Button asChild variant="link">
-            <Link href={viewAllUrl}>
+            <Link href={viewAllUrl} legacyBehavior>
               View all destinations
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>

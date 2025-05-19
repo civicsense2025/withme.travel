@@ -69,7 +69,7 @@ export function ActivityDescription({
   const formattedDescription = formatDescription(description, {
     user: userName || 'Someone',
     entity: entityName || 'something',
-    ...details ? { details } : {},
+    ...(details ? { details } : {}),
   });
   
   // Truncate if needed

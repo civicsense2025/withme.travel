@@ -91,37 +91,37 @@ function UserNavContent() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/trips">
+            <Link href="/trips" legacyBehavior>
               <Map className="mr-2 h-4 w-4" />
               <span className="capitalize">Trips</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/itineraries">
+            <Link href="/itineraries" legacyBehavior>
               <Map className="mr-2 h-4 w-4" />
               <span className="capitalize">Itineraries</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/saved">
+            <Link href="/saved" legacyBehavior>
               <Bookmark className="mr-2 h-4 w-4" />
               <span className="capitalize">Saved Items</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={PAGE_ROUTES.SETTINGS}>
+            <Link href={PAGE_ROUTES.SETTINGS} legacyBehavior>
               <User className="mr-2 h-4 w-4" />
               <span className="capitalize">Account</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/travel-map">
+            <Link href="/travel-map" legacyBehavior>
               <MapPin className="mr-2 h-4 w-4" />
               <span className="capitalize">Travel Map</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/support">
+            <Link href="/support" legacyBehavior>
               <span className="mr-2 text-sm">❤️</span>
               <span className="capitalize">Support Us</span>
             </Link>

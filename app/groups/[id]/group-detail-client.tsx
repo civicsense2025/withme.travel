@@ -135,7 +135,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
         
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/groups/${group.id}/plans`}>
+            <Link href={`/groups/${group.id}/plans`} legacyBehavior>
               <Calendar className="mr-2 h-4 w-4" /> Plans
             </Link>
           </Button>
@@ -145,13 +145,12 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
           </Button>
           
           <Button variant="outline" asChild>
-            <Link href={`/groups/${group.id}/ideas-preview`}>
+            <Link href={`/groups/${group.id}/ideas-preview`} legacyBehavior>
               <TrendingUp className="mr-2 h-4 w-4" /> Ideas
             </Link>
           </Button>
         </div>
       </div>
-      
       {/* Group Header */}
       <div className="mb-8">
         <div className="flex justify-between items-start">
@@ -169,13 +168,12 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
           </div>
           
           <Button variant="outline" asChild>
-            <Link href="#edit-settings">
+            <Link href="#edit-settings" legacyBehavior>
               <Settings className="mr-2 h-4 w-4" /> Settings
             </Link>
           </Button>
         </div>
       </div>
-      
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={v => setActiveTab(v as typeof activeTab)} className="mb-10">
         <TabsList className="mb-6">
@@ -211,7 +209,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
                 </CardContent>
                 <CardFooter>
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="#edit-description">
+                    <Link href="#edit-description" legacyBehavior>
                       <PencilIcon className="mr-2 h-4 w-4" /> Edit Details
                     </Link>
                   </Button>
@@ -271,7 +269,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
                   </CardContent>
                   <CardFooter>
                     <Button variant="outline" className="w-full" asChild>
-                      <Link href="#all-members">
+                      <Link href="#all-members" legacyBehavior>
                         <UsersIcon className="mr-2 h-4 w-4" /> View All Members
                       </Link>
                     </Button>

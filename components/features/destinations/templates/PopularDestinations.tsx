@@ -61,7 +61,7 @@ export async function PopularDestinations({
   className,
 }: PopularDestinationsProps) {
   // If destinations aren't provided via props, fetch them
-  const destinations = propDestinations || await getPopularDestinations(limit);
+  const destinations = propDestinations || (await getPopularDestinations(limit));
 
   if (!destinations?.length) {
     return null;
@@ -73,7 +73,6 @@ export async function PopularDestinations({
         <h2 className="text-3xl font-bold tracking-tight mb-2">{title}</h2>
         <p className="text-muted-foreground">{subtitle}</p>
       </div>
-
       <DestinationGrid 
         destinations={destinations}
         columns={columns}
@@ -81,11 +80,10 @@ export async function PopularDestinations({
         showFilters={showFilters}
         showSorting={false}
       />
-
       {showViewAll && (
         <div className="mt-8 text-center">
           <Button asChild variant="outline">
-            <Link href={viewAllUrl}>
+            <Link href={viewAllUrl} legacyBehavior>
               View all destinations
               <ChevronRight className="ml-2 h-4 w-4" />
             </Link>

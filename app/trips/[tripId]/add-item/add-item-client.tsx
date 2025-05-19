@@ -210,14 +210,13 @@ export function AddItineraryItemClient({
   return (
     <div className="container max-w-screen-md py-8">
       <div className="mb-6">
-        <Link href={`/trips/${tripId}?tab=itinerary`}>
+        <Link href={`/trips/${tripId}?tab=itinerary`} legacyBehavior>
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" />
             Back to Itinerary
           </Button>
         </Link>
       </div>
-
       <Tabs defaultValue="quickAdd" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="quickAdd">Bulk Add Places</TabsTrigger>

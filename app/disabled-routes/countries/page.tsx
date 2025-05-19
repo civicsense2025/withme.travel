@@ -99,7 +99,6 @@ export default function CountriesPage() {
         heading="Explore Countries"
         description="Discover destinations and travel experiences by country"
       />
-
       {/* Breadcrumbs */}
       <div className="text-sm text-muted-foreground mb-6">
         <Link href="/" className="hover:text-foreground">
@@ -111,7 +110,6 @@ export default function CountriesPage() {
         </Link>{' '}
         / <span className="text-foreground">Countries</span>
       </div>
-
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
           {[...Array(6)].map((_, i) => (
@@ -137,7 +135,10 @@ export default function CountriesPage() {
                 transition: { duration: 0.2 },
               }}
             >
-              <Link href={`/countries/${country.slug}`} className="block h-full">
+              <Link
+                href={`/countries/${country.slug}`}
+                className="block h-full"
+                legacyBehavior>
                 <div className="relative rounded-xl overflow-hidden h-64 group">
                   <div
                     className={`absolute inset-0 bg-${country.accentColor} mix-blend-multiply opacity-60 group-hover:opacity-70 transition-opacity z-10`}

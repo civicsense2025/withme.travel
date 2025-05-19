@@ -107,14 +107,15 @@ export default function SimpleTripsPage() {
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">{isGuest ? 'My Guest Trips' : 'My Trips'}</h1>
-        <Link href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}>
+        <Link
+          href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}
+          legacyBehavior>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Create New Trip
           </Button>
         </Link>
       </div>
-
       {isLoading ? (
         <div className="flex justify-center items-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -132,7 +133,9 @@ export default function SimpleTripsPage() {
               ? "You don't have any guest trips yet. Create your first trip to get started!"
               : "You don't have any trips yet. Create your first trip to get started!"}
           </p>
-          <Link href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}>
+          <Link
+            href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}
+            legacyBehavior>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Create New Trip
@@ -142,7 +145,7 @@ export default function SimpleTripsPage() {
           {isGuest && (
             <div className="mt-4">
               <p className="text-sm text-muted-foreground mb-2">Want to keep your trips forever?</p>
-              <Link href="/signup">
+              <Link href="/signup" legacyBehavior>
                 <Button variant="outline" size="sm">
                   Create an Account
                 </Button>
@@ -168,7 +171,7 @@ export default function SimpleTripsPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Link href={`/simple-trip-app/${trip.id}`} className="w-full">
+                <Link href={`/simple-trip-app/${trip.id}`} className="w-full" legacyBehavior>
                   <Button variant="outline" className="w-full">
                     View Trip
                   </Button>
@@ -178,14 +181,13 @@ export default function SimpleTripsPage() {
           ))}
         </div>
       )}
-
       {isGuest && trips.length > 0 && (
         <div className="mt-8 p-4 bg-primary/10 rounded-lg">
           <p className="text-sm font-medium mb-2">You're currently using a guest account.</p>
           <p className="text-sm text-muted-foreground mb-4">
             Create an account to save your trips permanently and unlock all features.
           </p>
-          <Link href="/signup">
+          <Link href="/signup" legacyBehavior>
             <Button variant="default" size="sm">
               Create an Account
             </Button>

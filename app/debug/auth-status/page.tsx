@@ -304,7 +304,7 @@ export default function AuthStatusPage() {
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="flex items-center mb-6">
-        <Link href="/debug" className="mr-2">
+        <Link href="/debug" className="mr-2" legacyBehavior>
           <ArrowLeft className="h-4 w-4 inline-block" />
         </Link>
         <h1 className="text-3xl font-bold">Authentication Status</h1>
@@ -326,14 +326,12 @@ export default function AuthStatusPage() {
           </Button>
         </div>
       </div>
-
       <div className="mb-6 bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800 text-sm">
         <p>
           This page shows the current authentication state and allows debugging auth-related issues.
           You can view auth details, storage contents, and manually test endpoints.
         </p>
       </div>
-
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         <Card>
           <CardHeader>
@@ -386,7 +384,7 @@ export default function AuthStatusPage() {
             )}
           </CardContent>
           <CardFooter>
-            <Link href="/test-auth">
+            <Link href="/test-auth" legacyBehavior>
               <Button variant="outline" size="sm">
                 Go to Auth Testing Page
               </Button>
@@ -394,7 +392,6 @@ export default function AuthStatusPage() {
           </CardFooter>
         </Card>
       </div>
-
       <Tabs defaultValue="cookies">
         <TabsList className="mb-4">
           <TabsTrigger value="cookies">Cookies</TabsTrigger>
@@ -569,7 +566,6 @@ export default function AuthStatusPage() {
           </Card>
         </TabsContent>
       </Tabs>
-
       <div className="mt-8 text-sm text-gray-500">
         <p>
           Debug tools are only available in development mode. Add additional auth tests in{' '}

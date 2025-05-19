@@ -14,6 +14,7 @@ declare module '@/lib/auth/supabase' {
   import { SupabaseClient, Session } from '@supabase/supabase-js';
   export function createClient(): SupabaseClient;
   export function getSession(): Promise<Session | null>;
+  export function getServerSession(): Promise<Session | null>;
 }
 
 declare module '@/utils/constants' {

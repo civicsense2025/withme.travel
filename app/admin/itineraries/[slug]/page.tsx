@@ -159,7 +159,7 @@ export default async function TemplateDetailPage(props: PageProps) {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Template: {safeTemplate.title}</h1>
-          <Link href={`/admin/itineraries/${safeTemplate.slug}/metadata`}>
+          <Link href={`/admin/itineraries/${safeTemplate.slug}/metadata`} legacyBehavior>
             <Button>
               <Pencil className="h-4 w-4 mr-2" />
               Edit Template

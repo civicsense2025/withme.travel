@@ -397,7 +397,7 @@ export default function ManageTripPage() {
       <div className="container max-w-5xl py-6">
         <div className="flex items-center mb-6">
           {tripId && (
-            <Link href={`/trips/${tripId}`}>
+            <Link href={`/trips/${tripId}`} legacyBehavior>
               <Button variant="ghost" size="sm" className="gap-1">
                 <ArrowLeft className="h-4 w-4" />
                 back to trip

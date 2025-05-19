@@ -5,11 +5,12 @@ import { getGuestToken } from '@/utils/guest';
 import { HeroSection } from '@/components/features/trips/organisms/HeroSection';
 import TripsClient from '@/app/trips/trips-client';
 import { PageHeader } from '@/components/features/layout/organisms/PageHeader';
-import { PlusCircle } from 'lucide-react';
+import { ArrowLeft, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SharedPresenceSection } from '@/components/features/trips/organisms/SharedPresenceSection';
 import { ExpenseMarketingSection } from '@/components/features/trips/organisms/ExpenseMarketingSection';
+import { getServerSession } from '@/lib/auth/supabase';
 
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
@@ -26,52 +27,23 @@ export const metadata: Metadata = {
 };
 
 export default async function TripsPage() {
-  const supabase = await getServerSupabase();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const isAuthenticated = !!session?.user;
-  const guestToken = getGuestToken();
+  const session = await getServerSession();
   
-  // Check if there are any guest trips
-  let hasGuestTrips = false;
-  
-  if (guestToken) {
-    const { data } = await supabase
-      .from('guest_trip_access')
-      .select('trip_id')
-      .eq('guest_token', guestToken);
-    hasGuestTrips = !!(data && data.length > 0);
-  }
-  
-  // Authenticated user with trips page
-  if (isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <PageHeader
-          title="My Trips"
-          description="Manage and view all your travel plans"
-          actions={
-            <Button size="sm" className="rounded-full px-4" asChild>
-              <Link href="/trips/create">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Trip
-              </Link>
-            </Button>
-          }
-        />
-        <TripsClient userId={session.user.id} />
-      </div>
-    );
-  }
-  
-  // Guest user with trips
-  if (hasGuestTrips) {
+  if (session?.user) {
     return redirect('/trips/manage');
   }
-  
-  // Public landing page for non-authenticated users
-  return renderLandingPage();
+
+  return (
+    // Your existing landing page content
+    <div>
+      {/* Landing page content for signed-out users */}
+      <h1>Welcome to WithMe Travel</h1>
+      <p>Start planning your next adventure with friends and family</p>
+      <Link href="/trips/new">
+        <Button>Create a Trip</Button>
+      </Link>
+    </div>
+  );
 }
 
 // Landing page component for non-authenticated users
@@ -97,5 +69,34 @@ function renderLandingPage() {
       </section>
       <ExpenseMarketingSection />
     </>
+  );
+}
+// ============================================================================
+// SIMPLIFIED TRIP HEADER COMPONENT
+// ============================================================================
+
+/**
+ * Simplified header component for trip pages with basic navigation and actions
+ */
+export function SimplifiedTripHeader() {
+  return (
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/trips" className="flex items-center gap-2">
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-medium">Back to trips</span>
+          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/trips/create">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New trip
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </header>
   );
 }

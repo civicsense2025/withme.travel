@@ -116,7 +116,7 @@ export default function FeedbackTable({ initialData }: FeedbackTableProps) {
 
         return (
           <div className="flex items-center gap-2">
-            <Link href={`/admin/feedback/${id}`}>
+            <Link href={`/admin/feedback/${id}`} legacyBehavior>
               <Button variant="ghost" size="sm">
                 View
               </Button>

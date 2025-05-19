@@ -73,11 +73,11 @@ export function RelatedItinerariesWidget({
         ) : displayItineraries.length > 0 ? (
           <div className="space-y-4">
             {displayItineraries.map((itinerary) => (
-              <Link 
-                href={`/itineraries/${itinerary.slug}`} 
+              <Link
+                href={`/itineraries/${itinerary.slug}`}
                 key={itinerary.id}
                 className="flex items-center gap-3 group hover:bg-gray-50 p-2 rounded-md transition-colors"
-              >
+                legacyBehavior>
                 <div className="relative w-16 h-16 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
                   {itinerary.image_url ? (
                     <Image

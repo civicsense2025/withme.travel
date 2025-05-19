@@ -145,14 +145,12 @@ export default function CountryPageClient({
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-
       {/* Header Section */}
       <PageHeader
         heading={countryData.name}
         description={countryData.description}
         className="pb-8"
       />
-
       {/* Content Section */}
       <div className="container mx-auto px-4 py-12">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -276,7 +274,7 @@ export default function CountryPageClient({
                     key={it.id}
                     className="bg-card p-4 rounded-lg shadow-sm border"
                   >
-                    <Link href={`/itineraries/${it.id}`} className="block h-full">
+                    <Link href={`/itineraries/${it.id}`} className="block h-full" legacyBehavior>
                       <div className="mb-2 flex justify-between items-start">
                         <h3 className="text-lg font-semibold">{it.title}</h3>
                         {it.location && (

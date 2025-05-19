@@ -150,7 +150,6 @@ export function AdminDebugPanel({
           </div>
         </CardHeader>
       )}
-
       <CardContent className="p-5">
         <Tabs defaultValue={initialTab}>
           <TabsList className="grid grid-cols-4 mb-6 bg-muted/30 p-1 rounded-full">
@@ -236,7 +235,7 @@ export function AdminDebugPanel({
                   asChild
                   className="rounded-full transition-all duration-300 hover:shadow-md"
                 >
-                  <Link href="/debug/schema-check">
+                  <Link href="/debug/schema-check" legacyBehavior>
                     <Shield className="h-4 w-4 mr-2" />
                     Run Schema Check
                   </Link>
@@ -284,7 +283,7 @@ export function AdminDebugPanel({
                     asChild
                     className="rounded-full transition-all duration-300 hover:shadow-md"
                   >
-                    <Link href="/api/debug/route-check">
+                    <Link href="/api/debug/route-check" legacyBehavior>
                       <Eye className="h-4 w-4 mr-2" />
                       Check Routes
                       <ArrowRight className="h-4 w-4 ml-2" />

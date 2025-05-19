@@ -253,7 +253,7 @@ export default async function ItinerariesPage() {
           centered={true}
         />
         <div className="mt-6">
-          <Link href="/itineraries/submit">
+          <Link href="/itineraries/submit" legacyBehavior>
             <Button
               size="default"
               className="mx-auto flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"

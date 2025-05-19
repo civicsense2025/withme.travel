@@ -50,7 +50,6 @@ export default async function HomePage() {
           </div>
         </Container>
       </Section>
-
       {/* Features section */}
       <Section className="py-16 md:py-24 bg-muted/30">
         <Container>
@@ -87,7 +86,6 @@ export default async function HomePage() {
           </div>
         </Container>
       </Section>
-
       {/* Popular Destinations section */}
       {destinations && (
         <Section className="py-16 bg-background">
@@ -104,7 +102,6 @@ export default async function HomePage() {
           </Container>
         </Section>
       )}
-
       {/* Testimonials section */}
       <TestimonialsSection />
     </main>

@@ -36,7 +36,7 @@ export function NavbarLinks({ activePath, user }: NavbarLinksProps) {
             useMediaQuery('(min-width: 641px) and (max-width: 1024px)') ? 'text-lg' : '',
             useMediaQuery('(min-width: 1025px)') ? 'text-xl' : ''
           )}
-        >
+          legacyBehavior>
           {link.label}
         </Link>
       ))}

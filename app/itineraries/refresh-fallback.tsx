@@ -10,7 +10,6 @@ export default function RefreshFallback() {
       <p className="text-muted-foreground mb-8 max-w-2xl">
         Ready-made travel plans to inspire your next adventure
       </p>
-
       <div className="border rounded-lg p-8 bg-card text-center">
         <h2 className="text-xl font-semibold mb-2">Unable to load itineraries</h2>
         <p className="mb-4 text-muted-foreground">
@@ -18,7 +17,7 @@ export default function RefreshFallback() {
         </p>
         <div className="flex justify-center gap-4">
           <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-          <Link href="/">
+          <Link href="/" legacyBehavior>
             <Button variant="outline">Return Home</Button>
           </Link>
         </div>

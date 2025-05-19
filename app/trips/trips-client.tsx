@@ -313,7 +313,7 @@ function TripCard({ trip }: { trip: Trip }) {
   const locationName = trip.destination_name || '';
   
   return (
-    <Link href={`/trips/${trip.id}`} className="block no-underline">
+    <Link href={`/trips/${trip.id}`} className="block no-underline" legacyBehavior>
       <Card className="h-full hover:shadow-md transition-shadow duration-200 overflow-hidden">
         <CardContent className="p-4">
           <TripCardHeader

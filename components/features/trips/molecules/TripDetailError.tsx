@@ -93,7 +93,6 @@ export function TripDetailError({
         </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-
       <CardContent className="space-y-4">
         {errorDetails && (
           <Alert variant="destructive" className="text-sm">
@@ -141,14 +140,13 @@ export function TripDetailError({
           </div>
         )}
       </CardContent>
-
       <CardFooter className="flex flex-col sm:flex-row gap-2">
         <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Go Back
         </Button>
 
-        <Link href="/trips" className="w-full sm:w-auto">
+        <Link href="/trips" className="w-full sm:w-auto" legacyBehavior>
           <Button variant="outline" className="w-full">
             <Home className="mr-2 h-4 w-4" />
             My Trips

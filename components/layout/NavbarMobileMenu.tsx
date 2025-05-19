@@ -39,7 +39,6 @@ export function NavbarMobileMenu({
     <div className="fixed inset-0 z-[9999] flex justify-end md:hidden">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      
       {/* Slide-in Menu Panel */}
       <div className="relative w-4/5 max-w-xs h-screen bg-background border-l border-border flex flex-col z-10 animate-in slide-in-from-right duration-300">
         {/* Close Button - Top right */}
@@ -74,7 +73,7 @@ export function NavbarMobileMenu({
                     activePath === link.href ? 'text-primary' : 'text-muted-foreground'
                   )}
                   onClick={onClose}
-                >
+                  legacyBehavior>
                   {link.label}
                 </Link>
               ))}

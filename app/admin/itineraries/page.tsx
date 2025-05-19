@@ -153,11 +153,10 @@ export default async function AdminItinerariesPage({ searchParams }: AdminItiner
     <div className="container py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight mb-4">Itinerary Management</h1>
-        <Link href="/admin/itineraries/create">
+        <Link href="/admin/itineraries/create" legacyBehavior>
           <Button>Create New Template</Button>
         </Link>
       </div>
-
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -184,7 +183,6 @@ export default async function AdminItinerariesPage({ searchParams }: AdminItiner
           </p>
         </CardContent>
       </Card>
-
       <Alert className="mb-6">
         <AlertTitle>Template Management</AlertTitle>
         <AlertDescription>
@@ -192,7 +190,6 @@ export default async function AdminItinerariesPage({ searchParams }: AdminItiner
           Templates can be created, edited, and published for users to discover.
         </AlertDescription>
       </Alert>
-
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4">
           <Card className="w-60">

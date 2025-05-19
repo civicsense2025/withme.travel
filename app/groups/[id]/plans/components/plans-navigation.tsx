@@ -23,7 +23,7 @@ export default function PlansNavigation({ groupId, groupName, planName }: PlansN
           <Link
             href={`/groups/${groupId}`}
             className="text-muted-foreground hover:text-foreground transition-colors"
-          >
+            legacyBehavior>
             {groupName}
           </Link>
         </li>

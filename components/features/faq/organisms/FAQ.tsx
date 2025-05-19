@@ -102,7 +102,6 @@ export function FAQ({
     <div className={cn(containerClasses[layout], className)}>
       {/* For SEO - Structured Data */}
       {structuredDataScript}
-      
       {/* Title and Filter Section */}
       <div className={layout === 'sidebar' ? 'md:col-span-1' : ''}>
         {title && (
@@ -125,12 +124,11 @@ export function FAQ({
           </div>
         )}
       </div>
-      
       {/* FAQ Items - Different layouts */}
       <div className={listContainerClasses[layout]}>
         {layout === 'grid' ? (
           // Grid layout - items in cards
-          filteredItems.map((item, index) => (
+          (filteredItems.map((item, index) => (
             <Card key={item.id || index}>
               <CardHeader>
                 <CardTitle className="text-base">{item.question}</CardTitle>
@@ -149,10 +147,10 @@ export function FAQ({
                 </div>
               </CardContent>
             </Card>
-          ))
+          )))
         ) : (
           // Regular accordion list
-          <FAQList 
+          (<FAQList 
             items={filteredItems}
             allowHtml={allowHtml}
             className={cn(
@@ -161,7 +159,7 @@ export function FAQ({
             itemClassName={cn(
               layout === 'compact' && 'py-2',
             )}
-          />
+          />)
         )}
       </div>
     </div>

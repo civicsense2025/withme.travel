@@ -33,7 +33,7 @@ export function ActiveTripsList({ trips }: ActiveTripsListProps) {
   return (
     <div className="space-y-4">
       {trips.map((trip) => (
-        <Link href={`/trips/${trip.id}`} key={trip.id}>
+        <Link href={`/trips/${trip.id}`} key={trip.id} legacyBehavior>
           <div className="flex items-start p-4 rounded-lg hover:bg-muted/50 transition-colors border">
             <div className="w-16 h-16 rounded-md overflow-hidden relative flex-shrink-0 bg-muted">
               {trip.cover_image_url ? (

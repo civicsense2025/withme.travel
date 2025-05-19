@@ -146,7 +146,7 @@ export default async function FeedbackDetailPage({ params }: FeedbackDetailProps
   return (
     <Container>
       <div className="mb-6">
-        <Link href="/admin/feedback">
+        <Link href="/admin/feedback" legacyBehavior>
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Feedback
@@ -161,7 +161,6 @@ export default async function FeedbackDetailPage({ params }: FeedbackDetailProps
           </div>
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card>
@@ -216,7 +215,7 @@ export default async function FeedbackDetailPage({ params }: FeedbackDetailProps
                   </div>
 
                   <div>
-                    <Link href={`/admin/users/${user.id}`}>
+                    <Link href={`/admin/users/${user.id}`} legacyBehavior>
                       <Button variant="outline" size="sm" className="w-full">
                         View User Profile
                       </Button>

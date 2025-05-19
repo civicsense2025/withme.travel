@@ -221,7 +221,6 @@ export function FriendsList({
   return (
     <div className="w-full">
       {title && <h3 className="font-medium mb-2">{title}</h3>}
-
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -231,7 +230,6 @@ export function FriendsList({
           className="pl-9"
         />
       </div>
-
       <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
         {sortedFriends.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">No matching friends found</p>
@@ -268,23 +266,20 @@ export function FriendsList({
                     }
                   />
                 )}
-
                 <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage src={friend.friend_profile.avatar_url || ''} />
                   <AvatarFallback>
                     {friend.friend_profile.full_name.substring(0, 2).toUpperCase() || 'FR'}
                   </AvatarFallback>
                 </Avatar>
-
                 <div className="flex-1">
                   <Link
                     href={`/profile/${friend.friend_id}`}
                     className="font-medium hover:underline"
-                  >
+                    legacyBehavior>
                     {friend.friend_profile.full_name}
                   </Link>
                 </div>
-
                 {isAlreadyAdded ? (
                   <span className="text-xs text-muted-foreground flex items-center">
                     <Check className="h-3 w-3 mr-1" />
@@ -310,7 +305,6 @@ export function FriendsList({
           })
         )}
       </div>
-
       {mode === 'select' && (
         <div className="mt-4 flex justify-between">
           <p className="text-sm text-muted-foreground">

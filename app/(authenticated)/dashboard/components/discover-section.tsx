@@ -19,7 +19,7 @@ export function DiscoverSection() {
             Explore trending destinations and find your next adventure
           </p>
           <Button variant="outline" className="rounded-full" asChild>
-            <Link href="/destinations" className="flex items-center">
+            <Link href="/destinations" className="flex items-center" legacyBehavior>
               View all destinations
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -29,7 +29,6 @@ export function DiscoverSection() {
           <TrendingDestinations />
         </Suspense>
       </section>
-
       <section>
         <div className="flex flex-col items-center text-center mb-8">
           <div className="flex items-center justify-center mb-4">

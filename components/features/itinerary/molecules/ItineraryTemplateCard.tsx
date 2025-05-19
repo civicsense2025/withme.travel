@@ -58,7 +58,10 @@ export function ItineraryTemplateCard({
   
   return (
     <Card className={cn("overflow-hidden group transition-all duration-300 hover:shadow-md h-full flex flex-col", className)}>
-      <Link href={`/itineraries/${slug}`} className="flex-1 flex flex-col h-full">
+      <Link
+        href={`/itineraries/${slug}`}
+        className="flex-1 flex flex-col h-full"
+        legacyBehavior>
         <div className="relative w-full h-40 overflow-hidden">
           {cover_image_url ? (
             <Image

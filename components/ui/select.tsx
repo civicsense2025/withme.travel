@@ -568,7 +568,7 @@ export function Select({
                   // OPTIONS LIST RENDERING (WITH TYPE SAFETY)
                   // ============================================================================
 
-                  <div className="virtual-list-placeholder">
+                  (<div className="virtual-list-placeholder">
                     {/* Virtualized list would go here using a library like react-window */}
                     {/* This is a placeholder since full virtualization would require additional dependencies */}
                     {filteredOptions.map((option, index) => {
@@ -595,7 +595,7 @@ export function Select({
                         />
                       );
                     })}
-                  </div>
+                  </div>)
                 ) : (
                   filteredOptions.map((option, index) => {
                     if ('options' in option) {

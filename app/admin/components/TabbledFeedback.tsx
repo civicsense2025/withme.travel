@@ -150,11 +150,14 @@ export function TabbledFeedback() {
           Survey Responses
         </TabsTrigger>
       </TabsList>
-
       <TabsContent value="feedback" className="space-y-5">
         {feedbackItems.length > 0 ? (
           feedbackItems.map((item) => (
-            <Link href={`/admin/feedback/${item.id}`} key={item.id} className="block">
+            <Link
+              href={`/admin/feedback/${item.id}`}
+              key={item.id}
+              className="block"
+              legacyBehavior>
               <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                 <Avatar className="h-10 w-10">
                   {item.user.avatar ? (
@@ -193,7 +196,6 @@ export function TabbledFeedback() {
           <div className="text-center py-6 text-muted-foreground">No recent feedback available</div>
         )}
       </TabsContent>
-
       <TabsContent value="surveys" className="space-y-5">
         {surveyResponses.length > 0 ? (
           surveyResponses.map((response) => (
@@ -201,7 +203,7 @@ export function TabbledFeedback() {
               href={`/admin/surveys/${response.form_id}/responses/${response.id}`}
               key={response.id}
               className="block"
-            >
+              legacyBehavior>
               <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback>{getUserName(response).charAt(0)}</AvatarFallback>

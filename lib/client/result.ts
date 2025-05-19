@@ -135,3 +135,12 @@ export function combineResults<T>(results: Result<T>[]): Result<T[]> {
   
   return createSuccess(results.filter(isSuccess).map(result => result.data));
 }
+
+/**
+ * Creates a failure result object
+ * @param error - Error message or Error object
+ * @param details - Additional error details
+ */
+export function createFailure(error: string, details?: unknown): Failure {
+  return { success: false, error, details };
+}

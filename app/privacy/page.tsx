@@ -18,14 +18,13 @@ export default function PrivacyPage() {
   return (
     <div className="container max-w-5xl mx-auto px-4 py-12">
       <div className="mb-6">
-        <Link href="/">
+        <Link href="/" legacyBehavior>
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" />
             Back to home
           </Button>
         </Link>
       </div>
-
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main content column */}
         <div className="flex-1">

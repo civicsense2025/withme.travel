@@ -34,7 +34,7 @@ export default function OfflinePage() {
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button className="w-full" asChild variant="default">
-              <Link href="/">
+              <Link href="/" legacyBehavior>
                 <Home className="w-4 h-4 mr-2" />
                 Go to Homepage
               </Link>

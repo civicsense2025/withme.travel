@@ -111,7 +111,7 @@ export function ActivityTabTemplate({ entityId, entityType, className }: Activit
     <div className={cn('', className)}>
       {isLoading && activities.length === 0 ? (
         // Loading skeleton
-        <ActivityFeedSkeleton />
+        (<ActivityFeedSkeleton />)
       ) : (
         <ActivityFeed
           activities={activities}

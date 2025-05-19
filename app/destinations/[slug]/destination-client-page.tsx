@@ -37,11 +37,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/lib/hooks/use-toast';
 import { DestinationReviews } from '@/components/features/destinations/DestinationReviews';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { AuthContextType } from '@/components/features/auth';
 import { RelatedItinerariesWidget } from '@/components/features/destinations/organisms/RelatedItinerariesWidget';
 import { DestinationPageAdminEditor } from '@/components/features/admin';
 import { ImageAttribution } from '@/components/features/images';
 import { DestinationExperiences, DestinationAttractions } from '@/components/features/viator';
+import { useDestinations } from '@/lib/hooks/use-destinations';
 
 interface Destination {
   id: string;
@@ -100,7 +100,7 @@ interface User {
 export default function DestinationClientPage({ slug }: DestinationClientPageProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth() as unknown as AuthContextType;
+  const { user } = useAuth();
   const [destination, setDestination] = useState<Destination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -282,7 +282,7 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">
-          <Link href="/destinations">
+          <Link href="/destinations" legacyBehavior>
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               back to destinations
@@ -301,7 +301,7 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">
-          <Link href="/destinations">
+          <Link href="/destinations" legacyBehavior>
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               back to destinations
@@ -320,23 +320,21 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
   }
 
   const imageData = getDestinationImageData(destination);
-
-  // Use user's name and fallback to 'My' if not available
-  const profileName = user?.name ?? user?.email?.split('@')[0] ?? 'My';
+  // Use user's display name and fallback to 'My' if not available
+  const profileName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'My';
   const defaultTripName = `${profileName}'s trip to ${destination.city}`;
 
   return (
     <div className="mx-auto">
       {/* Back navigation */}
       <div className="max-w-screen-2xl mx-auto px-6 py-4 mb-2">
-        <Link href="/destinations">
+        <Link href="/destinations" legacyBehavior>
           <Button variant="ghost" size="sm" className="gap-1 text-sm font-normal">
             <ArrowLeft className="h-4 w-4" />
             back to destinations
           </Button>
         </Link>
       </div>
-
       {/* Hero image section with large title overlay */}
       <div className="relative w-full h-[70vh] mb-16 overflow-hidden">
         <Image
@@ -378,7 +376,6 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
           />
         )}
       </div>
-
       <div className="max-w-screen-xl mx-auto px-6 pb-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="md:col-span-2 space-y-16">

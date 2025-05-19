@@ -136,7 +136,7 @@ export default function AddActivityPage() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="icon">
-            <Link href={`/trips/${tripId}`}>
+            <Link href={`/trips/${tripId}`} legacyBehavior>
               <ChevronLeft className="h-5 w-5" />
             </Link>
           </Button>
@@ -158,7 +158,6 @@ export default function AddActivityPage() {
           )}
         </Button>
       </div>
-
       <div className="grid grid-cols-1 gap-8">
         <Tabs defaultValue="suggestions" className="w-full">
           <TabsList className="mb-6">

@@ -67,7 +67,6 @@ export function TripListError({
         </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-
       <CardContent className="space-y-4">
         {errorDetails && (
           <Alert variant="destructive" className="text-sm">
@@ -88,7 +87,6 @@ export function TripListError({
           </ul>
         </div>
       </CardContent>
-
       <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
         <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
           <Button
@@ -109,7 +107,7 @@ export function TripListError({
               </>
             )}
           </Button>
-          <Link href="/" className="w-full sm:w-auto">
+          <Link href="/" className="w-full sm:w-auto" legacyBehavior>
             <Button variant="outline" className="w-full">
               <Home className="mr-2 h-4 w-4" />
               Home
@@ -117,7 +115,7 @@ export function TripListError({
           </Link>
         </div>
 
-        <Link href="/destinations" className="w-full sm:w-auto">
+        <Link href="/destinations" className="w-full sm:w-auto" legacyBehavior>
           <Button variant="secondary" className="w-full">
             <Search className="mr-2 h-4 w-4" />
             Explore Destinations

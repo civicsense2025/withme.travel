@@ -83,7 +83,6 @@ export default function ViatorDestinationsPage() {
         integration. Viator uses numeric destination IDs that need to be mapped to your internal
         destination data.
       </p>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList>
           <TabsTrigger value="destinations">Destinations</TabsTrigger>

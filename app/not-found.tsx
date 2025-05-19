@@ -22,7 +22,6 @@ export default function NotFound() {
           The page you're looking for seems to have wandered off on its own adventure.
         </p>
       </div>
-
       {/* Navigation options */}
       <div className="mb-12 w-full max-w-md">
         <h2 className="text-xl font-semibold mb-4">Where would you like to go?</h2>
@@ -30,7 +29,7 @@ export default function NotFound() {
           {mainLinks.map((link) => {
             const Icon = link.icon;
             return (
-              <Link key={link.href} href={link.href} className="no-underline">
+              <Link key={link.href} href={link.href} className="no-underline" legacyBehavior>
                 <Button variant="outline" className="w-full justify-start h-12 text-base">
                   <Icon className="mr-2 h-5 w-5" />
                   {link.label}
@@ -41,7 +40,6 @@ export default function NotFound() {
           })}
         </div>
       </div>
-
       {/* Helpful message */}
       <p className="text-sm text-muted-foreground max-w-md">
         If you think this is an error or need any help planning your next adventure, feel free to{' '}

@@ -343,7 +343,7 @@ export default function SystemStatusPage() {
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="flex items-center mb-6">
-        <Link href="/debug" className="mr-2">
+        <Link href="/debug" className="mr-2" legacyBehavior>
           <ArrowLeft className="h-4 w-4 inline-block" />
         </Link>
         <h1 className="text-3xl font-bold">System Status</h1>
@@ -360,7 +360,6 @@ export default function SystemStatusPage() {
           </Button>
         </div>
       </div>
-
       <div className="mb-6 bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-700 text-sm flex items-start">
         <div className="flex-shrink-0 mr-3 mt-0.5">
           <AlertCircle className="h-5 w-5" />
@@ -373,7 +372,6 @@ export default function SystemStatusPage() {
           </p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="col-span-1">
           <CardHeader className="pb-2">
@@ -431,7 +429,6 @@ export default function SystemStatusPage() {
           </CardContent>
         </Card>
       </div>
-
       <Tabs defaultValue="overview">
         <TabsList className="mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -535,7 +532,7 @@ export default function SystemStatusPage() {
                       {systemInfo.auth.session ? 'User is authenticated' : 'No active user session'}
                     </p>
                     <div className="mt-4">
-                      <Link href="/debug/auth-status">
+                      <Link href="/debug/auth-status" legacyBehavior>
                         <Button variant="outline" size="sm">
                           View Full Auth Details
                         </Button>
@@ -566,7 +563,6 @@ export default function SystemStatusPage() {
           </div>
         </TabsContent>
       </Tabs>
-
       <div className="mt-8 text-sm text-gray-500">
         <p>
           Debug tools are only available in development mode. Add additional system checks in{' '}

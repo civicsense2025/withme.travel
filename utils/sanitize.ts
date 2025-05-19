@@ -17,21 +17,19 @@ export function sanitizeString(input: string | null | undefined): string {
   // Convert to string in case a number or other type is passed
   const str = String(input);
 
-  return (
-    str
-      // Replace HTML special chars with entities
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-      // Remove potential script injections
-      .replace(/javascript:/gi, '')
-      .replace(/on\w+=/gi, '')
-      .replace(/data:/gi, '')
-      // Normalize whitespace
-      .trim()
-  );
+  return (str
+    // Replace HTML special chars with entities
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    // Remove potential script injections
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .replace(/data:/gi, '')
+    // Normalize whitespace
+    .trim());
 }
 
 /**

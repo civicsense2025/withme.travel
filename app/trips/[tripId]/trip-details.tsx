@@ -184,7 +184,7 @@ function TripActions({ trip, canEdit }: { trip: ExtendedTrip; canEdit?: boolean 
       {canEdit && (
         <>
           <Button asChild size="sm" variant="outline">
-            <Link href={`/trips/${trip.id}/edit`}>
+            <Link href={`/trips/${trip.id}/edit`} legacyBehavior>
               <Edit className="mr-2 h-4 w-4" />
               Edit Trip
             </Link>
@@ -201,7 +201,6 @@ function TripActions({ trip, canEdit }: { trip: ExtendedTrip; canEdit?: boolean 
           </Button>
         </>
       )}
-      
       <Button variant="secondary" size="sm" onClick={handleShare}>
         <Share className="mr-2 h-4 w-4" />
         Share
@@ -217,14 +216,15 @@ function TripHeader({ trip }: { trip: ExtendedTrip }) {
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2 text-muted-foreground mb-2">
-        <Link href="/trips" className="flex items-center hover:text-primary transition-colors">
+        <Link
+          href="/trips"
+          className="flex items-center hover:text-primary transition-colors"
+          legacyBehavior>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to trips
         </Link>
       </div>
-      
       <h1 className="text-3xl font-bold tracking-tight">{trip.name}</h1>
-      
       <div className="flex flex-wrap gap-4 mt-2">
         {trip.destination_name && (
           <div className="flex items-center text-muted-foreground">
@@ -347,9 +347,7 @@ export default function TripDetails({ canEdit = false }: TripDetailsProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <TripHeader trip={trip} />
-      
       <TripActions trip={trip} canEdit={canEdit} />
-      
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Trip overview */}
         <Card className="md:col-span-2">
@@ -396,13 +394,13 @@ export default function TripDetails({ canEdit = false }: TripDetailsProps) {
             <CardContent>
               <div className="space-y-2">
                 <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link href={`/trips/${trip.id}/itinerary`}>
+                  <Link href={`/trips/${trip.id}/itinerary`} legacyBehavior>
                     <Calendar className="mr-2 h-4 w-4" />
                     Itinerary
                   </Link>
                 </Button>
                 <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link href={`/trips/${trip.id}/members`}>
+                  <Link href={`/trips/${trip.id}/members`} legacyBehavior>
                     <Users className="mr-2 h-4 w-4" />
                     Members
                   </Link>
@@ -413,7 +411,6 @@ export default function TripDetails({ canEdit = false }: TripDetailsProps) {
           </Card>
         </div>
       </div>
-      
       {/* Trip tabs for different features */}
       <Tabs defaultValue="itinerary" className="mt-10">
         <TabsList className="mb-4">

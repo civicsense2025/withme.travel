@@ -57,7 +57,6 @@ export function ActivitySuggestionsCard({
         </CardTitle>
         <CardDescription>Personalized suggestions for your trip</CardDescription>
       </CardHeader>
-
       <CardContent>
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
@@ -108,7 +107,6 @@ export function ActivitySuggestionsCard({
           </div>
         )}
       </CardContent>
-
       <CardFooter className="flex justify-between">
         <Button
           variant="outline"
@@ -121,7 +119,7 @@ export function ActivitySuggestionsCard({
 
         {tripId ? (
           <Button asChild size="sm">
-            <Link href={`/trips/${tripId}/add-activity`}>
+            <Link href={`/trips/${tripId}/add-activity`} legacyBehavior>
               Add Activities <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

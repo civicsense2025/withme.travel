@@ -125,7 +125,9 @@ export function PopularDestinationsGrid({
                   </ul>
                 </div>
                 <div className="mt-4">
-                  <Link href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}>
+                  <Link
+                    href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
+                    legacyBehavior>
                     <Button size="sm">
                       Plan a Trip
                     </Button>
@@ -161,7 +163,9 @@ export function PopularDestinationsGrid({
                   </ul>
                 </div>
                 <div className="flex justify-end">
-                  <Link href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}>
+                  <Link
+                    href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
+                    legacyBehavior>
                     <Button size="sm">
                       Plan a Trip
                     </Button>
@@ -288,13 +292,13 @@ export function PopularDestinations({
         <PopularDestinationsGrid destinations={destinations} showDialog={showDialog} showPopover={showPopover} />
       ) : (
         // fallback: original card layout (not used in new design)
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        (<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {destinations.map((dest) => (
-            <Link 
-              key={dest.id} 
+            <Link
+              key={dest.id}
               href={dest.slug ? `/destinations/${dest.slug}` : '#'}
               passHref
-            >
+              legacyBehavior>
               <Card
                 className="cursor-pointer hover:shadow-lg transition h-full transform hover:scale-105"
                 onClick={() => onSelect?.(dest)}
@@ -309,7 +313,7 @@ export function PopularDestinations({
               </Card>
             </Link>
           ))}
-        </div>
+        </div>)
       )}
     </div>
   );

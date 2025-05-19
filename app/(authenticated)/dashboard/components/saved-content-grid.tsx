@@ -62,7 +62,7 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
                 <Link
                   href={`/destinations/${dest.destinations?.slug || dest.item_id}`}
                   className="block h-full"
-                >
+                  legacyBehavior>
                   <div className="relative h-full">
                     {/* Background image */}
                     <div className="absolute inset-0">
@@ -110,7 +110,7 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
               <Link
                 href="/saved"
                 className="text-sm text-muted-foreground hover:underline inline-flex items-center"
-              >
+                legacyBehavior>
                 View all saved destinations
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Link>
@@ -126,7 +126,10 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
                 key={itin.id}
                 className="overflow-hidden hover:shadow-md transition-shadow h-[180px]"
               >
-                <Link href={`/itineraries/${itin.slug || itin.id}`} className="block h-full">
+                <Link
+                  href={`/itineraries/${itin.slug || itin.id}`}
+                  className="block h-full"
+                  legacyBehavior>
                   <div className="relative h-full">
                     {/* Background image */}
                     <div className="absolute inset-0">
@@ -179,7 +182,7 @@ export function SavedContentGrid({ savedContent }: SavedContentGridProps) {
               <Link
                 href="/saved"
                 className="text-sm text-muted-foreground hover:underline inline-flex items-center"
-              >
+                legacyBehavior>
                 View all saved itineraries
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Link>

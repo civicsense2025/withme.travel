@@ -8,9 +8,12 @@ import React from 'react';
 import { DestinationGrid } from '@/components/features/destinations/organisms/DestinationGrid';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { listDestinations } from '@/lib/api/destinations';
 
 // Centralized API and utility imports
 import { useDestinations } from '@/lib/hooks/use-destinations';
+import DestinationsClient from './destinations-client';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 const DEFAULT_LIMIT = 20;
 
 /**
@@ -31,47 +34,13 @@ function DestinationsErrorFallback({ error }: { error: Error }) {
 /**
  * Destinations page showing all available destinations with filtering
  */
-export default function DestinationsPage() {
-  // NOTE: Fixing hook usage to match the correct return type and options for useDestinations.
-  // - Remove 'data' and 'reload' destructuring (not present on UseDestinationsReturn)
-  // - Pass no options, as 'limit' is not a valid option
-  // - Use 'destinations', 'isLoading', and 'error' as returned by the hook
-
-  const { destinations, isLoading, error } = useDestinations();
+export default async function DestinationsPage() {
+  const result = await listDestinations();
+  const destinations = result.success ? result.data : [];
 
   return (
     <main className="container py-8 md:py-12">
-      <header className="text-center mb-10">
-        <h1 className="text-4xl font-bold tracking-tight mb-3">Explore Destinations</h1>
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Discover amazing places around the world and start planning your next adventure with
-          friends.
-        </p>
-      </header>
-
-      {isLoading && (
-        <div className="py-12 text-center text-muted-foreground">Loading destinations…</div>
-      )}
-      {error && <DestinationsErrorFallback error={error} />}
-      {!isLoading && !error && destinations && destinations.length === 0 && (
-        <div className="py-12 text-center text-muted-foreground">No destinations found.</div>
-      )}
-      {!isLoading && !error && destinations && destinations.length > 0 && (
-        <DestinationGrid
-          destinations={destinations.map((dest: Destination) => ({
-            id: dest.id,
-            city: dest.name || '',
-            country: dest.country || '',
-            image_url: dest.image_url || '/images/default-destination.jpg',
-            // 'emoji' property does not exist on type 'Destination', so we omit it to fix the type error
-          }))}
-          showSearch={false}
-          showFilters={false}
-          showSorting={false}
-          columns={{ sm: 1, md: 2, lg: 3 }}
-          className="mb-8"
-        />
-      )}
+      <DestinationsClient destinations={result.success ? result.data.destinations : []} />
     </main>
   );
 }

@@ -21,7 +21,7 @@ export default function ViatorBookingsDemo() {
   return (
     <div className="container mx-auto py-10">
       <div className="mb-6 flex items-center">
-        <Link href="/viator-demo">
+        <Link href="/viator-demo" legacyBehavior>
           <Button variant="ghost" className="mr-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Viator Demo
@@ -29,7 +29,6 @@ export default function ViatorBookingsDemo() {
         </Link>
         <h1 className="text-3xl font-bold">Viator Bookings Demo</h1>
       </div>
-
       <Tabs defaultValue="bookings">
         <TabsList className="mb-6">
           <TabsTrigger value="bookings">My Bookings</TabsTrigger>

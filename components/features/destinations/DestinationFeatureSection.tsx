@@ -69,7 +69,7 @@ export function DestinationFeatureSection({
 
   // Generate actions for section if CTA is provided
   const actions = cta ? (
-    <Link href={cta.href}>
+    <Link href={cta.href} legacyBehavior>
       <Button>{cta.text}</Button>
     </Link>
   ) : undefined;
@@ -89,7 +89,7 @@ export function DestinationFeatureSection({
     >
       {variant === 'grid' ? (
         // Grid layout - all features in a grid
-        <>
+        (<>
           {features.map((feature, index) => (
             <ContentBlock
               key={index}
@@ -105,10 +105,10 @@ export function DestinationFeatureSection({
               <p>{feature.description}</p>
             </ContentBlock>
           ))}
-        </>
+        </>)
       ) : variant === 'cards' ? (
         // Cards layout - all features as cards
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <ContentBlock
               key={index}
@@ -121,7 +121,7 @@ export function DestinationFeatureSection({
               hover={!!feature.link}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href}>
+                  <Link href={feature.link.href} legacyBehavior>
                     <Button size="sm">{feature.link.text}</Button>
                   </Link>
                 ) : undefined
@@ -130,10 +130,10 @@ export function DestinationFeatureSection({
               <p>{feature.description}</p>
             </ContentBlock>
           ))}
-        </div>
+        </div>)
       ) : variant === 'alternating' ? (
         // Alternating layout - features alternate sides
-        <div className="space-y-16">
+        (<div className="space-y-16">
           {features.map((feature, index) => (
             <ContentBlock
               key={index}
@@ -145,7 +145,7 @@ export function DestinationFeatureSection({
               icon={feature.icon}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href}>
+                  <Link href={feature.link.href} legacyBehavior>
                     <Button size="sm">{feature.link.text}</Button>
                   </Link>
                 ) : undefined
@@ -155,10 +155,10 @@ export function DestinationFeatureSection({
               <p>{feature.description}</p>
             </ContentBlock>
           ))}
-        </div>
+        </div>)
       ) : variant === 'compact' ? (
         // Compact layout - condensed list of features
-        <div className="space-y-4">
+        (<div className="space-y-4">
           {features.map((feature, index) => (
             <ContentBlock
               key={index}
@@ -168,7 +168,7 @@ export function DestinationFeatureSection({
               icon={feature.icon}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href}>
+                  <Link href={feature.link.href} legacyBehavior>
                     <Button size="sm" variant="link">
                       {feature.link.text}
                     </Button>
@@ -179,10 +179,10 @@ export function DestinationFeatureSection({
               <p>{feature.description}</p>
             </ContentBlock>
           ))}
-        </div>
+        </div>)
       ) : (
         // Default layout - stacked features with images if available
-        <div className="space-y-12">
+        (<div className="space-y-12">
           {features.map((feature, index) => (
             <ContentBlock
               key={index}
@@ -194,7 +194,7 @@ export function DestinationFeatureSection({
               icon={feature.icon}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href}>
+                  <Link href={feature.link.href} legacyBehavior>
                     <Button size="sm">{feature.link.text}</Button>
                   </Link>
                 ) : undefined
@@ -203,7 +203,7 @@ export function DestinationFeatureSection({
               <p>{feature.description}</p>
             </ContentBlock>
           ))}
-        </div>
+        </div>)
       )}
     </Section>
   );

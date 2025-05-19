@@ -41,16 +41,14 @@ export default async function ContinentPage({ params }: ContinentPageProps) {
     return (
       <div className="container pyU6 max-wU6xl mx-auto">
         <div className="flex items-center mb-6">
-          <Link href="/destinations">
+          <Link href="/destinations" legacyBehavior>
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="hU4 wU4" />
               Back to destinations
             </Button>
           </Link>
         </div>
-
         <h1 className="textU3xl font-bold mb-4">{continentName}</h1>
-
         <div className="grid grid-cols-1 gap-8">
           <Suspense fallback={<p>Loading continent information...</p>}>
             <ContinentStatsClientWrapper
@@ -68,7 +66,7 @@ export default async function ContinentPage({ params }: ContinentPageProps) {
                   key={country}
                   href={`/countries/${encodeURIComponent(country)}`}
                   className="pU4 border rounded-lg hover:bg-muted transition-colors"
-                >
+                  legacyBehavior>
                   <h3 className="font-medium">{country}</h3>
                   <p className="text-sm text-muted-foreground">
                     {destinations.filter((d) => d.country === country).length} destinations

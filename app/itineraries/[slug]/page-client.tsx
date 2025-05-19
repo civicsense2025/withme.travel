@@ -321,14 +321,13 @@ export default function ItineraryTemplatePageClient({
     <div className="max-w-screen-2xl mx-auto">
       {/* Back navigation */}
       <div className="px-6 py-4">
-        <Link href="/itineraries">
+        <Link href="/itineraries" legacyBehavior>
           <Button variant="ghost" size="sm" className="gap-1 font-normal">
             <ArrowLeft className="h-4 w-4" />
             Back to itineraries
           </Button>
         </Link>
       </div>
-
       {/* Hero section - reduced height to 420px max */}
       <div className="relative w-full h-[420px] mb-12 overflow-hidden rounded-xl">
         <Image
@@ -379,7 +378,6 @@ export default function ItineraryTemplatePageClient({
           />
         )}
       </div>
-
       <div className="px-6 mb-24">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
           {/* Main content */}

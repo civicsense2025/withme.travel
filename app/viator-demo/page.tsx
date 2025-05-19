@@ -103,9 +103,8 @@ export default function ViatorDemoPage() {
       <p className="mb-8 text-xl text-secondary-text">
         Book tours, activities and attractions with our Viator integration
       </p>
-
       <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <Link href="/viator-search" className="block">
+        <Link href="/viator-search" className="block" legacyBehavior>
           <Card className="h-full transition-all hover:shadow-lg">
             <CardContent className="flex h-full flex-col items-center justify-center p-6">
               <Search className="mb-4 h-10 w-10 text-accent-purple" />
@@ -117,7 +116,7 @@ export default function ViatorDemoPage() {
           </Card>
         </Link>
 
-        <Link href="/viator-demo/bookings" className="block">
+        <Link href="/viator-demo/bookings" className="block" legacyBehavior>
           <Card className="h-full transition-all hover:shadow-lg">
             <CardContent className="flex h-full flex-col items-center justify-center p-6">
               <TicketIcon className="mb-4 h-10 w-10 text-accent-purple" />
@@ -142,7 +141,6 @@ export default function ViatorDemoPage() {
           </CardContent>
         </Card>
       </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="demo">Live Demo</TabsTrigger>

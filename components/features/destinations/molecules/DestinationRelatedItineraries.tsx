@@ -141,17 +141,20 @@ export function DestinationRelatedItineraries({
         <h2 className="text-xl font-bold lowercase">{title}</h2>
         {trips.length > 0 && (
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/trips" className="flex items-center gap-1 text-sm">
+            <Link href="/trips" className="flex items-center gap-1 text-sm" legacyBehavior>
               View all
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         )}
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {trips.map((trip) => (
-          <Link key={trip.id} href={`/trips/public/${trip.publicSlug}`} className="group block">
+          <Link
+            key={trip.id}
+            href={`/trips/public/${trip.publicSlug}`}
+            className="group block"
+            legacyBehavior>
             <Card className="overflow-hidden border border-border/30 dark:border-border/10 bg-card shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col md:flex-row">
               {/* Image section */}
               <div className="relative h-36 md:h-auto md:w-1/3 overflow-hidden bg-muted">

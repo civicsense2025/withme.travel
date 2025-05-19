@@ -180,7 +180,7 @@ export default function ItineraryTemplateEditor({
           <Link
             href="/admin/itineraries"
             className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-          >
+            legacyBehavior>
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Templates
           </Link>
@@ -203,13 +203,11 @@ export default function ItineraryTemplateEditor({
           </div>
         </div>
       </div>
-
       {/* Success/Error messages */}
       {errorMessage && <div className="bg-red-100 text-red-800 p-3 rounded-md">{errorMessage}</div>}
       {successMessage && (
         <div className="bg-green-100 text-green-800 p-3 rounded-md">{successMessage}</div>
       )}
-
       {/* Tabs for different sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">

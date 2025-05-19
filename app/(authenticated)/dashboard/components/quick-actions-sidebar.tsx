@@ -28,7 +28,7 @@ export function QuickActionsSidebar({ travelStats }: QuickActionsSidebarProps) {
           <Link
             href="/trips/create"
             className="w-full flex items-center px-4 py-3 rounded-lg bg-travel-purple/10 hover:bg-travel-purple/20 transition-colors"
-          >
+            legacyBehavior>
             <PlusCircle className="mr-3 h-5 w-5 text-travel-purple" />
             <span className="font-medium">Plan a new trip</span>
           </Link>
@@ -36,7 +36,7 @@ export function QuickActionsSidebar({ travelStats }: QuickActionsSidebarProps) {
           <Link
             href="/destinations"
             className="w-full flex items-center px-4 py-3 rounded-lg bg-travel-blue/10 hover:bg-travel-blue/20 transition-colors"
-          >
+            legacyBehavior>
             <MapPin className="mr-3 h-5 w-5 text-travel-blue" />
             <span className="font-medium">Explore destinations</span>
           </Link>
@@ -44,7 +44,7 @@ export function QuickActionsSidebar({ travelStats }: QuickActionsSidebarProps) {
           <Link
             href="/itineraries"
             className="w-full flex items-center px-4 py-3 rounded-lg bg-travel-pink/10 hover:bg-travel-pink/20 transition-colors"
-          >
+            legacyBehavior>
             <CalendarCheck className="mr-3 h-5 w-5 text-travel-pink" />
             <span className="font-medium">Browse itineraries</span>
           </Link>
@@ -52,13 +52,12 @@ export function QuickActionsSidebar({ travelStats }: QuickActionsSidebarProps) {
           <Link
             href="/travel-map"
             className="w-full flex items-center px-4 py-3 rounded-lg bg-travel-mint/10 hover:bg-travel-mint/20 transition-colors"
-          >
+            legacyBehavior>
             <Globe className="mr-3 h-5 w-5 text-travel-mint" />
             <span className="font-medium">Your travel map</span>
           </Link>
         </CardContent>
       </Card>
-
       {/* Travel Stats Card */}
       <Card>
         <CardHeader className="pb-2">

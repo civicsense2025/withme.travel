@@ -59,7 +59,7 @@ export function TripPageError({ tripId, error }: TripPageErrorProps) {
             Try Again
           </Button>
 
-          <Link href="/trips" className="flex-1">
+          <Link href="/trips" className="flex-1" legacyBehavior>
             <Button className="w-full">
               <Home className="h-4 w-4 mr-2" />
               Return to Trips
