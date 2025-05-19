@@ -6,31 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/use-auth';
 
-interface DashboardProfileProps {
-  user: {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      name?: string;
-      avatar_url?: string;
-    };
-  };
-  profile?: {
-    id: string;
-    name?: string;
-    avatar_url?: string;
-    bio?: string;
-  } | null;
-}
-
-export function DashboardProfile({ user, profile }: DashboardProfileProps) {
+export function DashboardProfile({ profile }: { profile?: { id: string; name?: string; avatar_url?: string; bio?: string } | null }) {
+  const { user } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   // Get display name from profile or user metadata
   const displayName =
-    profile?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+    profile?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
 
   // Get avatar URL from profile or user metadata
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || '';

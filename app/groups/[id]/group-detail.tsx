@@ -1,56 +1,101 @@
-import { notFound } from 'next/navigation';
-import GroupDetailClient from './group-detail-client';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+/**
+ * Group Details Server Component
+ * 
+ * Responsible for fetching group data and rendering the client component
+ */
 
-// Group details page - Shows details for a specific group
-export default async function GroupDetailPage({ groupId }: { groupId: string }) {
-  let group = null;
-  let membership = null;
-  let recentTrips = [];
-  let isAuthenticated = false;
-  let guestToken = null;
+// ============================================================================
+// IMPORTS
+// ============================================================================
+
+import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { createServerClient } from '@supabase/ssr';
+import GroupDetailClient from './group-detail-client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { TABLES } from '@/utils/constants/database';
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
+interface GroupDetailProps {
+  params: {
+    id: string;
+  };
+}
+
+export default async function GroupDetail({ params }: GroupDetailProps) {
+  const { id: groupId } = params;
+  
+  if (!groupId) {
+    return notFound();
+  }
 
   try {
-    // Use absolute URL for server-side fetches in Next.js
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/groups/${groupId}`, { cache: 'no-store' });
-    if (res.ok) {
-      const data = await res.json();
-      group = data.group;
-      membership = data.membership || null;
-      recentTrips = data.recentTrips || [];
-      isAuthenticated = data.isAuthenticated || false;
-      guestToken = data.guestToken || null;
+    // Create a server client to check if the user has access to the group
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set(name, value, options);
+          },
+          remove(name: string, options: any) {
+            cookieStore.set(name, '', { ...options, maxAge: 0 });
+          },
+        },
+      }
+    );
+
+    // Get the user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Verify group exists and user has access
+    const { data: group, error } = await supabase
+      .from(TABLES.GROUPS)
+      .select('id, name')
+      .eq('id', groupId)
+      .limit(1)
+      .single();
+
+    if (error || !group) {
+      if (error?.code === 'PGRST116') {
+        return notFound();
+      }
+      
+      throw new Error(error?.message || 'Failed to fetch group');
     }
-  } catch (err) {
-    console.error('Error loading group:', err);
-    return notFound();
-  }
 
-  if (!group) {
-    return notFound();
-  }
-
-  if (!isAuthenticated && !guestToken) {
+    // Render the client component with the group ID
+    return <GroupDetailClient groupId={groupId} />;
+  } catch (error) {
+    console.error('Error in GroupDetail server component:', error);
+    
     return (
-      <div className="container max-w-2xl py-16 text-center">
-        <h2 className="text-2xl font-bold mb-4">You need to join this group to view details</h2>
-        <p className="mb-6">Sign up or use a guest invite link to access this group.</p>
-        <Link href="/signup">
-          <Button>Sign up</Button>
-        </Link>
+      <div className="container max-w-7xl mx-auto py-8">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load group details. Please try again later.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="mt-4">
+          <Button asChild>
+            <Link href="/groups">Back to Groups</Link>
+          </Button>
+        </div>
       </div>
     );
   }
-
-  return (
-    <GroupDetailClient
-      group={group}
-      membership={membership}
-      recentTrips={recentTrips}
-      isAuthenticated={isAuthenticated}
-      guestToken={guestToken}
-    />
-  );
 }

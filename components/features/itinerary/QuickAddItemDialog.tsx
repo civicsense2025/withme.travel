@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { ITINERARY_CATEGORIES } from '@/utils/constants/status';
 import { CATEGORY_DISPLAY } from '@/utils/constants/ui/ui';
 import { z } from 'zod';

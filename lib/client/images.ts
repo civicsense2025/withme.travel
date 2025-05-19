@@ -75,4 +75,11 @@ export async function generateThumbnail(options: {
       body: JSON.stringify(options),
     }).then((response) => response.json())
   );
+}
+
+/**
+ * Type guard to check if an object is an Image
+ */
+export function isImage(obj: any): obj is { id: string; url: string } {
+  return obj && typeof obj.id === 'string' && typeof obj.url === 'string';
 } 

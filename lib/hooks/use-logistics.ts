@@ -1,341 +1,227 @@
 /**
- * Feature-specific logistics hook for trips
- * 
- * This hook manages trip logistics items including accommodations, 
- * transportation, and forms using the centralized client API.
+ * Logistics management hook
+ *
+ * Manages accommodations and transportation items for trips
+ *
+ * @module hooks/logistics
  */
 
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useCallback } from 'react';
+import { useToast } from '@/lib/hooks/use-toast';
 import {
-  listLogisticsItems,
-  addAccommodation,
-  addTransportation,
-  addForm,
-  deleteLogisticsItem,
-  updateLogisticsItem,
-  type FormData,
-  type LogisticsItem,
-  type AccommodationData,
-  type TransportationData,
-} from '@/lib/client';
-import type { Result } from '@/lib/client/result';
-import { isSuccess, createFailure } from '@/lib/client/result';
+  addAccommodationToTrip,
+  addTransportationToTrip,
+  listTripLogistics,
+} from '@/lib/client/itinerary';
+import { isSuccess } from '@/lib/client/result';
 
-/**
- * Hook return type for useLogistics
- */
-export interface UseLogisticsResult {
-  /** List of all logistics items for the trip */
-  items: LogisticsItem[];
-  /** Generic logistics items for simpler UI */
-  logistics: Array<{ id: string; title: string; details: string | null }>;
-  /** Loading state */
-  isLoading: boolean;
-  /** Error state */
-  error: string | null;
-  /** Refresh logistics items */
-  refresh: () => Promise<void>;
-  /** Alternative name for refresh */
-  refreshLogistics: () => Promise<void>;
-  /** Add an accommodation to the trip */
-  addAccommodationItem: (data: AccommodationData) => Promise<Result<LogisticsItem>>;
-  /** Add transportation to the trip */
-  addTransportationItem: (data: TransportationData) => Promise<Result<LogisticsItem>>;
-  /** Add a form to the trip */
-  addFormItem: (data: FormData) => Promise<Result<LogisticsItem>>;
-  /** Delete a logistics item */
-  deleteItem: (itemId: string) => Promise<Result<void>>;
-  /** Alternative name for deleteItem */
-  deleteLogisticsItem: (itemId: string) => Promise<Result<void>>;
-  /** Update a logistics item */
-  updateItem: (
-    itemId: string,
-    data: Partial<AccommodationData | TransportationData | FormData> & { type: string }
-  ) => Promise<Result<LogisticsItem>>;
-  /** Add a generic logistics item */
-  addLogisticsItem: (data: { title: string; details: string | null }) => Promise<Result<LogisticsItem>>;
-  /** Update a generic logistics item */
-  updateLogisticsItem: (itemId: string, data: { title: string; details: string | null }) => Promise<Result<LogisticsItem>>;
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export interface LogisticsItem {
+  id: string;
+  type: 'accommodation' | 'transportation';
+  title: string;
+  description?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  trip_id?: string;
+  meta?: Record<string, any>;
 }
 
-/**
- * useLogistics - React hook for managing trip logistics
- */
-export function useLogistics(
-  /** Trip ID to manage logistics for */
-  tripId: string,
-  /** Whether to fetch logistics on mount */
-  fetchOnMount = true
-): UseLogisticsResult {
-  const { toast } = useToast();
-  const [items, setItems] = useState<LogisticsItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export interface AccommodationData {
+  title: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+}
 
-  // Fetch logistics items
+export interface TransportationData {
+  title: string;
+  departureLocation?: string;
+  arrivalLocation?: string;
+  departureDate?: string;
+  arrivalDate?: string;
+  description?: string;
+}
+
+export interface UseLogisticsResult {
+  accommodations: LogisticsItem[];
+  transportation: LogisticsItem[];
+  isLoading: boolean;
+  error: Error | null;
+  addAccommodation: (data: AccommodationData) => Promise<boolean>;
+  addTransportation: (data: TransportationData) => Promise<boolean>;
+  refresh: () => Promise<void>;
+}
+
+// ============================================================================
+// HOOK IMPLEMENTATION
+// ============================================================================
+
+/**
+ * Hook for managing trip logistics (accommodations and transportation)
+ *
+ * @param tripId - The ID of the trip
+ */
+export function useLogistics(tripId: string): UseLogisticsResult {
+  const [accommodations, setAccommodations] = useState<LogisticsItem[]>([]);
+  const [transportation, setTransportation] = useState<LogisticsItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
+
+  /**
+   * Fetch all logistics items for a trip
+   */
   const refresh = useCallback(async () => {
     if (!tripId) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
-    const result = await listLogisticsItems(tripId);
-    
-    if (isSuccess(result)) {
-      setItems(result.data);
-    } else {
-      setError(result.error);
+
+    try {
+      const result = await listTripLogistics(tripId);
+
+      if (isSuccess(result)) {
+        const items = result.data || [];
+
+        // Split items by type
+        const accommodationItems = items.filter((item) => item.type === 'accommodation');
+        const transportationItems = items.filter((item) => item.type === 'transportation');
+
+        setAccommodations(accommodationItems);
+        setTransportation(transportationItems);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load logistics';
+      setError(new Error(errorMessage));
       toast({
-        title: "Error",
-        description: `Failed to load logistics items: ${result.error}`,
+        title: 'Error loading logistics',
+        description: errorMessage,
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, [tripId, toast]);
 
-  // Add accommodation
-  const addAccommodationItem = useCallback(
-    async (data: AccommodationData): Promise<Result<LogisticsItem>> => {
+  /**
+   * Add an accommodation to the trip
+   */
+  const addAccommodation = useCallback(
+    async (accommodationData: AccommodationData): Promise<boolean> => {
+      if (!tripId) return false;
+
       setIsLoading(true);
-      
-      const result = await addAccommodation(tripId, data);
-      
-      if (isSuccess(result)) {
-        setItems((prev) => [...prev, result.data]);
+      try {
+        const result = await addAccommodationToTrip(tripId, accommodationData);
+
+        if (isSuccess(result)) {
+          // Add to local state for immediate UI update
+          const newItem: LogisticsItem = {
+            id: result.data.id || `temp-${Date.now()}`,
+            type: 'accommodation',
+            title: accommodationData.title,
+            location: accommodationData.location,
+            startDate: accommodationData.startDate,
+            endDate: accommodationData.endDate,
+            description: accommodationData.description,
+            trip_id: tripId,
+          };
+
+          setAccommodations((prev) => [...prev, newItem]);
+
+          toast({
+            title: 'Accommodation added',
+            description: 'Your accommodation has been added to the trip',
+          });
+
+          return true;
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to add accommodation';
+        setError(new Error(errorMessage));
         toast({
-          title: "Success",
-          description: 'Accommodation added successfully',
-        });
-        await refresh();
-      } else {
-        setError(result.error);
-        toast({
-          title: "Error",
-          description: `Failed to add accommodation: ${result.error}`,
+          title: 'Error adding accommodation',
+          description: errorMessage,
           variant: 'destructive',
         });
-      }
-      
-      setIsLoading(false);
-      return result;
-    },
-    [tripId, refresh, toast]
-  );
-
-  // Add transportation
-  const addTransportationItem = useCallback(
-    async (data: TransportationData): Promise<Result<LogisticsItem>> => {
-      setIsLoading(true);
-      
-      const result = await addTransportation(tripId, data);
-      
-      if (isSuccess(result)) {
-        setItems((prev) => [...prev, result.data]);
-        toast({
-          title: "Success",
-          description: 'Transportation added successfully',
-        });
-        await refresh();
-      } else {
-        setError(result.error);
-        toast({
-          title: "Error",
-          description: `Failed to add transportation: ${result.error}`,
-          variant: 'destructive',
-        });
-      }
-      
-      setIsLoading(false);
-      return result;
-    },
-    [tripId, refresh, toast]
-  );
-
-  // Add form
-  const addFormItem = useCallback(
-    async (data: FormData): Promise<Result<LogisticsItem>> => {
-      setIsLoading(true);
-      
-      const result = await addForm(tripId, data);
-      
-      if (isSuccess(result)) {
-        setItems((prev) => [...prev, result.data]);
-        toast({
-          title: "Success",
-          description: 'Form added successfully',
-        });
-        await refresh();
-      } else {
-        setError(result.error);
-        toast({
-          title: "Error",
-          description: `Failed to add form: ${result.error}`,
-          variant: 'destructive',
-        });
-      }
-      
-      setIsLoading(false);
-      return result;
-    },
-    [tripId, refresh, toast]
-  );
-
-  // Add generic logistics item (for simpler UI)
-  const addLogisticsItem = useCallback(
-    async (data: { title: string; details: string | null }): Promise<Result<LogisticsItem>> => {
-      setIsLoading(true);
-      
-      // Use the form API for generic logistics items
-      const formData: FormData = {
-        title: data.title,
-        description: data.details || '',
-        templateId: null,
-      };
-      
-      const result = await addForm(tripId, formData);
-      
-      if (isSuccess(result)) {
-        setItems((prev) => [...prev, result.data]);
-        await refresh();
-      } else {
-        setError(result.error);
-      }
-      
-      setIsLoading(false);
-      return result;
-    },
-    [tripId, refresh]
-  );
-
-  // Delete item
-  const deleteItem = useCallback(
-    async (itemId: string): Promise<Result<void>> => {
-      setIsLoading(true);
-      
-      const result = await deleteLogisticsItem(tripId, itemId);
-      
-      if (isSuccess(result)) {
-        setItems((prev) => prev.filter((item) => item.id !== itemId));
-        toast({
-          title: "Success",
-          description: 'Item deleted successfully',
-        });
-      } else {
-        setError(result.error);
-        toast({
-          title: "Error",
-          description: `Failed to delete item: ${result.error}`,
-          variant: 'destructive',
-        });
-      }
-      
-      setIsLoading(false);
-      return result;
-    },
-    [tripId, toast]
-  );
-
-  // Update item
-  const updateItem = useCallback(
-    async (
-      itemId: string,
-      data: Partial<AccommodationData | TransportationData | FormData> & { type: string }
-    ): Promise<Result<LogisticsItem>> => {
-      setIsLoading(true);
-      
-      const result = await updateLogisticsItem(tripId, itemId, data);
-      
-      if (isSuccess(result)) {
-        setItems((prev) =>
-          prev.map((item) => (item.id === itemId ? result.data : item))
-        );
-        toast({
-          title: "Success",
-          description: 'Item updated successfully',
-        });
-      } else {
-        setError(result.error);
-        toast({
-          title: "Error",
-          description: `Failed to update item: ${result.error}`,
-          variant: 'destructive',
-        });
-      }
-      
-      setIsLoading(false);
-      return result;
-    },
-    [tripId, toast]
-  );
-
-  // Update generic logistics item (for simpler UI)
-  const updateGenericItem = useCallback(
-    async (itemId: string, data: { title: string; details: string | null }): Promise<Result<LogisticsItem>> => {
-      setIsLoading(true);
-      
-      const item = items.find(i => i.id === itemId);
-      if (!item) {
+        return false;
+      } finally {
         setIsLoading(false);
-        return createFailure('Item not found');
       }
-      
-      const updateData = {
-        ...item,
-        title: data.title,
-        description: data.details || '',
-        type: 'form',
-      };
-      
-      const result = await updateLogisticsItem(tripId, itemId, updateData);
-      
-      if (isSuccess(result)) {
-        setItems(prev => prev.map(i => i.id === itemId ? result.data : i));
-        await refresh();
-      } else {
-        setError(result.error);
-      }
-      
-      setIsLoading(false);
-      return result;
     },
-    [tripId, items, refresh]
+    [tripId, toast]
   );
 
-  // Compute simplified logistics items for generic UI
-  const logistics = useMemo(() => {
-    return items.map(item => ({
-      id: item.id,
-      title: item.title,
-      details: item.description || null
-    }));
-  }, [items]);
+  /**
+   * Add transportation to the trip
+   */
+  const addTransportation = useCallback(
+    async (transportData: TransportationData): Promise<boolean> => {
+      if (!tripId) return false;
 
-  // Initial load
-  useEffect(() => {
-    if (fetchOnMount && tripId) {
-      refresh();
-    }
-  }, [fetchOnMount, tripId, refresh]);
+      setIsLoading(true);
+      try {
+        const result = await addTransportationToTrip(tripId, transportData);
+
+        if (isSuccess(result)) {
+          // Add to local state for immediate UI update
+          const newItem: LogisticsItem = {
+            id: result.data.id || `temp-${Date.now()}`,
+            type: 'transportation',
+            title: transportData.title,
+            location: `${transportData.departureLocation || ''} to ${transportData.arrivalLocation || ''}`,
+            startDate: transportData.departureDate,
+            endDate: transportData.arrivalDate,
+            description: transportData.description,
+            trip_id: tripId,
+          };
+
+          setTransportation((prev) => [...prev, newItem]);
+
+          toast({
+            title: 'Transportation added',
+            description: 'Your transportation has been added to the trip',
+          });
+
+          return true;
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to add transportation';
+        setError(new Error(errorMessage));
+        toast({
+          title: 'Error adding transportation',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [tripId, toast]
+  );
 
   return {
-    items,
-    logistics,
+    accommodations,
+    transportation,
     isLoading,
     error,
+    addAccommodation,
+    addTransportation,
     refresh,
-    refreshLogistics: refresh, // Alias for compatibility
-    addAccommodationItem,
-    addTransportationItem,
-    addFormItem,
-    deleteItem,
-    deleteLogisticsItem: deleteItem, // Alias for compatibility
-    updateItem,
-    addLogisticsItem,
-    updateLogisticsItem: updateGenericItem,
   };
-} 
+}

@@ -20,8 +20,8 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import type { LogisticsItem } from '@/hooks/use-logistics';
+import { useToast } from '@/lib/hooks/use-toast';
+import type { LogisticsItem } from '@/lib/hooks/use-logistics';
 
 /**
  * Props for the LogisticsSection component

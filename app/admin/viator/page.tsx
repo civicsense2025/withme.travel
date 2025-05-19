@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/container';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/lib/hooks/use-toast';
 import { ExternalLink, RefreshCw, Search, Check, X, MapPin } from 'lucide-react';
 import { AdminLayout } from '@/components/features/admin/admin-layout';
 import { getBrowserClient } from '@/utils/supabase/browser-client';

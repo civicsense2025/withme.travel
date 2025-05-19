@@ -31,7 +31,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { type DisplayItineraryItem } from '@/types/itinerary';
 import { LocationSearch, type MapboxPlace } from '@/components/location-search';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';

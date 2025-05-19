@@ -34,16 +34,16 @@ export default async function CountryPage({ params }: CountryPageProps) {
 
   return (
     <div className="container pyU6 max-wU6xl mx-auto">
-      <div className="flex items-center mbU6">
+      <div className="flex items-center mb-6">
         <Link href="/destinations">
-          <Button variant="ghost" size="sm" className="gapU1">
+          <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="hU4 wU4" />
             Back to destinations
           </Button>
         </Link>
       </div>
-      <h1 className="textU3xl font-bold mbU4">{countryName}</h1>
-      <div className="grid grid-colsU1 gapU8">
+      <h1 className="textU3xl font-bold mb-4">{countryName}</h1>
+      <div className="grid grid-cols-1 gap-8">
         <Suspense fallback={<p>Loading country information...</p>}>
           <CountryStatsClientWrapper
             country={countryName}
@@ -52,8 +52,8 @@ export default async function CountryPage({ params }: CountryPageProps) {
         </Suspense>
 
         <div>
-          <h2 className="textU2xl font-semibold mbU4">Destinations in {countryName}</h2>
-          <div className="grid grid-colsU1 md:grid-colsU2 lg:grid-colsU3 gapU4">
+          <h2 className="textU2xl font-semibold mb-4">Destinations in {countryName}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {destinations.map((destination) => (
               <Link
                 key={destination.id ?? destination.city ?? Math.random()}

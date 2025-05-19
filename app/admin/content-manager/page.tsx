@@ -10,7 +10,7 @@ import { EnhancedContentEditor } from '../components/EnhancedContentEditor';
 import { VirtualizedDataTable } from '../components/VirtualizedDataTable';
 import { BulkImportExport } from '../components/BulkImportExport';
 import { FilePlus, Upload, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { TABLES } from '@/utils/constants/database';
 
 // Define interface for destinations data

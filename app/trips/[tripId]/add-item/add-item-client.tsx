@@ -34,7 +34,7 @@ import { Calendar } from '@/components/ui/calendar';
 import MapboxGeocoderComponent from '@/components/features/maps/mapbox-geocoder';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FormControl, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useResearchTracking } from '@/hooks/use-research-tracking';
 

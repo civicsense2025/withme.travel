@@ -1,23 +1,18 @@
 'use client';
 
 import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
-import { LocationSearch } from '@/components/LocationSearch';
+import { LocationSearch } from '@/components/features/places/molecules/LocationSearch';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useAuth } from '@/lib/hooks';
-import type { AuthContextType } from '@/components/features/auth';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarIcon, MapPin } from 'lucide-react';
-import Image from 'next/image';
-import useOpenGraphImage from '@/lib/hooks/use-og-image';
+import { MapPin } from 'lucide-react';
+import { useOpenGraphImage } from '@/lib/hooks/use-og-image';
 import { PopularDestinationsGrid } from '@/components/features/destinations/organisms/PopularDestinationsGrid';
-import { usePopularDestinations } from '@/lib/hooks';
+import { usePopularDestinations } from '@/lib/hooks/use-popular-destinations';
 
 
 export function HeroSection() {
   const router = useRouter();
-  const { user } = useAuth() as AuthContextType;
   const [destination, setDestination] = useState('');
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
 
@@ -182,7 +177,7 @@ export function HeroSection() {
     },
   };
 
-  const { destinations: popularDestinations, loading, error } = usePopularDestinations(8);
+  const { destinations: popularDestinations, isLoading, error } = usePopularDestinations(8);
 
   return (
     <section
@@ -382,15 +377,38 @@ export function HeroSection() {
               }
             >
               <PopularDestinationsGrid
-                destinations={popularDestinations}
+                destinations={
+                  // Ensure type compatibility by mapping to required shape
+                  popularDestinations.map((dest) => ({
+                    ...dest,
+                    // Fallbacks for required fields if missing
+                    name: dest.name ?? '',
+                    slug: dest.slug ?? '',
+                    emoji: dest.emoji ?? '🌍',
+                    byline: dest.byline ?? '',
+                    highlights: Array.isArray(dest.highlights)
+                      ? dest.highlights
+                      : typeof dest.highlights === 'string'
+                        ? [dest.highlights]
+                        : [],
+                  }))
+                }
                 maxItems={8}
-                onSelectDestination={(destination) => {
+                // Explicitly type the parameter for type safety
+                onSelectDestination={(destination: {
+                  id: string;
+                  name: string;
+                  slug: string;
+                  emoji: string;
+                  byline: string;
+                  highlights: string[];
+                }) => {
                   if (destination?.name) {
                     handleSetDestination(destination.name);
                   }
                 }}
               />
-              {loading && <div className="text-center py-4 text-muted-foreground">Loading destinations…</div>}
+              {isLoading && <div className="text-center py-4 text-muted-foreground">Loading destinations…</div>}
               {error && <div className="text-center py-4 text-red-500">{error}</div>}
             </Suspense>
           </div>

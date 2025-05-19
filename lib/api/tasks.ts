@@ -274,4 +274,11 @@ export async function removeTagFromTask(taskId: string, tagName: string): Promis
   }
 }
 
+/**
+ * Type guard to check if an object is a Task
+ */
+export function isTask(obj: any): obj is Task {
+  return obj && typeof obj.id === 'string' && typeof obj.title === 'string';
+}
+
 // (Add more as needed)

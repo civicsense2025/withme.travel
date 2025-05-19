@@ -28,7 +28,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, Link as LinkIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/features/auth/AuthProvider';
 import { format } from 'date-fns';

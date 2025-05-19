@@ -22,7 +22,7 @@ const meta: Meta<typeof IdeaCard> = {
     selectedIdeasCount: { control: 'number', description: 'Selected ideas count' },
     position: { control: 'object', description: 'Idea position' },
     onPositionChange: { action: 'onPositionChange', description: 'Position change handler' },
-    userId: { control: 'text', description: '-ser ID' },
+    userId: { control: 'text', description: 'User ID' },
     isAuthenticated: { control: 'boolean', description: 'Is Authenticated' },
     groupId: { control: 'text', description: 'Group ID' },
   },

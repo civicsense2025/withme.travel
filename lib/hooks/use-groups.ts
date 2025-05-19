@@ -1,269 +1,202 @@
 /**
- * useGroups Hook
+ * Groups hooks
  *
- * Manages groups state, CRUD operations, and group-related functionality.
+ * React hooks for group-related functionality
  */
 
-'use client';
-
-import { useState, useCallback, useEffect } from 'react';
-import { useToast, type ToastOptions } from '@/hooks/use-toast';
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from './use-toast';
 import {
   listGroups,
-  getGroup,
   createGroup,
   updateGroup,
   deleteGroup,
-  type Group,
-  type CreateGroupData,
-  type UpdateGroupData,
+  getGroup,
+  Group,
+  CreateGroupData,
+  UpdateGroupData,
 } from '@/lib/client/groups';
-import type { Result } from '@/lib/client/result';
+import { isSuccess } from '@/lib/client/result';
+
+// ============================================================================
+// HOOKS
+// ============================================================================
 
 /**
- * Hook return type for useGroups
+ * Hook for managing groups data and operations
  */
-export interface UseGroupsResult {
-  groups: Group[];
-  isLoading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
-  addGroup: (data: CreateGroupData) => Promise<Result<Group>>;
-  updateGroupDetails: (groupId: string, data: UpdateGroupData) => Promise<Result<Group>>;
-  removeGroup: (groupId: string) => Promise<Result<void>>;
-  getGroupById: (groupId: string) => Promise<Result<Group>>;
-  selectedGroup: Group | null;
-  selectGroup: (group: Group | null) => void;
-}
-
-/**
- * useGroups - React hook for managing groups
- */
-export function useGroups(
-  /** Whether to fetch groups on component mount */
-  fetchOnMount = true
-): UseGroupsResult {
-  const { toast } = useToast();
+export function useGroups(guestToken?: string) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
-  // Fetch all groups
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
+  /**
+   * Fetches a single group with all its related details
+   * 
+   * @param groupId - ID of the group to fetch
+   * @returns Promise with the group and its related data
+   */
+  const fetchGroupWithDetails = useCallback(async (groupId: string) => {
     try {
-      const result = await listGroups();
+      setIsLoading(true);
+      setError(null);
       
-      if (result.success) {
-        setGroups(result.data.groups || []);
-      } else {
-        setError(result.error);
-        toast({
-          title: 'Failed to load groups',
-          description: result.error,
-        });
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error loading groups';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  // Add a new group
-  const addGroup = useCallback(async (data: CreateGroupData): Promise<Result<Group>> => {
-    setIsLoading(true);
-    
-    try {
-      const result = await createGroup(data);
+      // Get the basic group data
+      const result = await getGroup(groupId, guestToken);
       
-      if (result.success) {
-        setGroups((prev) => [result.data, ...prev]);
-        toast({
-          title: 'Group created successfully',
-        });
-      } else {
-        setError(result.error);
-        toast({
-          title: 'Failed to create group',
-          description: result.error,
-        });
+      if (!isSuccess(result)) {
+        throw new Error(result.error || 'Failed to fetch group');
       }
       
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error creating group';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-      });
+      // Also fetch related data like membership, plans, trips, etc.
+      // You might need to implement these in your groups client module
+      
+      // For now, just return the base group data
+      return {
+        success: true,
+        data: result.data
+      };
+    } catch (error) {
+      console.error('Error fetching group details:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       
       return {
         success: false,
-        error: errorMessage,
+        error: errorMessage
       };
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [guestToken]);
 
-  // Update a group
-  const updateGroupDetails = useCallback(
-    async (groupId: string, data: UpdateGroupData): Promise<Result<Group>> => {
+  /**
+   * Fetches all groups for the current user
+   */
+  const fetchGroups = useCallback(async () => {
+    try {
       setIsLoading(true);
-      
+      setError(null);
+      const result = await listGroups();
+
+      if (!isSuccess(result)) {
+        throw new Error(result.error || 'Failed to fetch groups');
+      }
+
+      setGroups(result.data);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      setError(error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  /**
+   * Creates a new group
+   */
+  const handleCreateGroup = useCallback(
+    async (data: CreateGroupData) => {
       try {
-        const result = await updateGroup(groupId, data);
-        
-        if (result.success) {
-          setGroups((prev) => 
-            prev.map((group) => (group.id === groupId ? result.data : group))
-          );
-          
-          // Update selected group if it's the one being edited
-          if (selectedGroup && selectedGroup.id === groupId) {
-            setSelectedGroup(result.data);
-          }
-          
-          toast({
-            title: 'Group updated successfully',
-          });
-        } else {
-          setError(result.error);
-          toast({
-            title: 'Failed to update group',
-            description: result.error,
-          });
+        setIsLoading(true);
+        const result = await createGroup(data);
+
+        if (!isSuccess(result)) {
+          throw new Error(result.error || 'Failed to create group');
         }
-        
-        return result;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error updating group';
-        setError(errorMessage);
+
+        await fetchGroups();
+        return { success: true, data: result.data };
+      } catch (error) {
+        console.error('Error creating group:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         toast({
-          title: 'Error',
+          title: 'Error creating group',
           description: errorMessage,
+          variant: 'destructive',
         });
-        
-        return {
-          success: false,
-          error: errorMessage,
-        };
+        return { success: false, error: errorMessage };
       } finally {
         setIsLoading(false);
       }
     },
-    [selectedGroup, toast]
+    [fetchGroups, toast]
   );
 
-  // Delete a group
-  const removeGroup = useCallback(async (groupId: string): Promise<Result<void>> => {
-    setIsLoading(true);
-    
-    try {
-      const result = await deleteGroup(groupId);
-      
-      if (result.success) {
-        setGroups((prev) => prev.filter((group) => group.id !== groupId));
-        
-        // Clear selected group if it's the one being deleted
-        if (selectedGroup && selectedGroup.id === groupId) {
-          setSelectedGroup(null);
+  /**
+   * Updates an existing group
+   */
+  const handleUpdateGroup = useCallback(
+    async (groupId: string, data: UpdateGroupData) => {
+      try {
+        setIsLoading(true);
+        const result = await updateGroup(groupId, data);
+
+        if (!isSuccess(result)) {
+          throw new Error(result.error || 'Failed to update group');
         }
-        
+
+        await fetchGroups();
+        return { success: true, data: result.data };
+      } catch (error) {
+        console.error('Error updating group:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         toast({
-          title: 'Group deleted successfully',
+          title: 'Error updating group',
+          description: errorMessage,
+          variant: 'destructive',
         });
-      } else {
-        setError(result.error);
-        toast({
-          title: 'Failed to delete group',
-          description: result.error,
-        });
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error deleting group';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-      });
-      
-      return {
-        success: false,
-        error: errorMessage,
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedGroup, toast]);
+    },
+    [fetchGroups, toast]
+  );
 
-  // Get a group by ID
-  const getGroupById = useCallback(async (groupId: string): Promise<Result<Group>> => {
-    setIsLoading(true);
-    
-    try {
-      const result = await getGroup(groupId);
-      
-      if (!result.success) {
-        setError(result.error);
+  /**
+   * Deletes a group
+   */
+  const handleDeleteGroup = useCallback(
+    async (groupId: string) => {
+      try {
+        setIsLoading(true);
+        const result = await deleteGroup(groupId);
+
+        if (!isSuccess(result)) {
+          throw new Error(result.error || 'Failed to delete group');
+        }
+
+        await fetchGroups();
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting group:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         toast({
-          title: 'Failed to get group',
-          description: result.error,
+          title: 'Error deleting group',
+          description: errorMessage,
+          variant: 'destructive',
         });
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error getting group';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-      });
-      
-      return {
-        success: false,
-        error: errorMessage,
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  // Select a group
-  const selectGroup = useCallback((group: Group | null) => {
-    setSelectedGroup(group);
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    if (fetchOnMount) {
-      refresh();
-    }
-  }, [fetchOnMount, refresh]);
+    },
+    [fetchGroups, toast]
+  );
 
   return {
     groups,
     isLoading,
     error,
-    refresh,
-    addGroup,
-    updateGroupDetails,
-    removeGroup,
-    getGroupById,
-    selectedGroup,
-    selectGroup,
+    fetchGroups,
+    createGroup: handleCreateGroup,
+    updateGroup: handleUpdateGroup,
+    deleteGroup: handleDeleteGroup,
+    fetchGroupWithDetails
   };
-} 
+}

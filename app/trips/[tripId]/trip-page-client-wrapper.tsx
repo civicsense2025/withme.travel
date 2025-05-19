@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { SimplifiedTripHeader } from '@/components/features/trips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TABLES } from '@/utils/constants/database';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { TripProvider } from './context/trip-context';
 // TODO: Replace 'any' with the correct import from 'onborda' if available
@@ -250,8 +250,8 @@ function EnhancedTripContent({
   if (error || !tripData) {
     return (
       <div className="pU8 text-center">
-        <h2 className="text-xl font-bold mbU2">Failed to load trip data</h2>
-        <p className="text-muted-foreground mbU4">
+        <h2 className="text-xl font-bold mb-2">Failed to load trip data</h2>
+        <p className="text-muted-foreground mb-4">
           There was an error loading the trip information.
         </p>
         <Button onClick={() => router.push('/trips')}>Return to Trips</Button>
@@ -351,13 +351,13 @@ function TripCreatedCelebrationModal() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md text-center">
         <DialogHeader>
-          <div className="textU5xl mbU2">🎉</div>
-          <DialogTitle className="textU2xl font-bold mbU2">Trip Created!</DialogTitle>
-          <DialogDescription className="mbU4">
+          <div className="textU5xl mb-2">🎉</div>
+          <DialogTitle className="textU2xl font-bold mb-2">Trip Created!</DialogTitle>
+          <DialogDescription className="mb-4">
             Your trip is ready. Time to start planning your adventure with friends!
           </DialogDescription>
         </DialogHeader>
-        <Button size="lg" className="mtU2 w-full" onClick={handleShowMeAround}>
+        <Button size="lg" className="mt-2 w-full" onClick={handleShowMeAround}>
           Show Me Around
         </Button>
       </DialogContent>

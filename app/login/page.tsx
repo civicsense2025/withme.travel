@@ -2,24 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+// Core UI components
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import LoginForm from '@/components/features/auth/molecules/LoginForm';
-import { Logo } from '@/components/logo';
-import { AuthSellingPoints } from '@/components/features/auth';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
+
+// Feature components
+import { AuthSellingPoints, LoginForm } from '@/components/features/auth';
+import { login } from '@/lib/api/auth';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -37,19 +30,13 @@ export default function LoginPage() {
   // Process the redirect path safely
   useEffect(() => {
     try {
-      // Remove leading/trailing whitespace
       let cleanPath = redirectPath.trim();
-
-      // Try to decode if it looks URL-encoded
       if (cleanPath.includes('%')) {
         cleanPath = decodeURIComponent(cleanPath);
       }
-
-      // Ensure path starts with a slash if it's a relative path
       if (!cleanPath.startsWith('/') && !cleanPath.startsWith('http')) {
         cleanPath = '/' + cleanPath;
       }
-
       setSafeRedirectPath(cleanPath);
     } catch (e) {
       console.error('Error processing redirect path:', e);
@@ -61,24 +48,18 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isLoading && user) {
       setIsRedirecting(true);
-
-      // Add small delay for UI feedback
       const timer = setTimeout(() => {
         return router.push('/dashboard?justLoggedIn=1');
       }, 300);
-
       return () => clearTimeout(timer);
     }
   }, [user, isLoading, safeRedirectPath, router]);
 
   // Process URL parameters - message and login context
   useEffect(() => {
-    // Handle message from query params
     const message = searchParams?.get('message');
     if (message) {
       setMessage(message);
-
-      // Show toast for important messages
       if (message.includes('expired') || message.includes('out') || message.includes('failed')) {
         toast({
           title: 'Authentication Notice',
@@ -87,7 +68,6 @@ export default function LoginPage() {
       }
     }
 
-    // Detect login context from redirect path
     const redirectParam = searchParams?.get('redirect');
     if (redirectParam) {
       if (redirectParam.includes('/trips/create')) {
@@ -126,7 +106,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center bg-background pt-10 md:pt-16">
       <div className="w-full flex flex-col items-center" style={{ maxWidth: 400 }}>
-        {/* Move AuthSellingPoints above card for all screen sizes, reduce margin */}
         <div className="mb-4 mt-0">
           <AuthSellingPoints small />
         </div>
@@ -149,7 +128,9 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <LoginForm />
+            <LoginForm onSubmit={async (values) => {
+                await login({ email: values.email, password: values.password });
+            }} />
           </CardContent>
           <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2"></CardFooter>
         </Card>

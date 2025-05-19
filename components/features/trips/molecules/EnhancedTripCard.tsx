@@ -27,7 +27,7 @@ interface EnhancedTripCardProps {
  * Enhanced Trip Card component that displays a trip as an image card
  * with hover effects and basic trip info
  */
-export function EnhancedTripCard({ trip, disableNavigation }: EnhancedTripCardProps) {
+const EnhancedTripCard = memo(({ trip, disableNavigation }: EnhancedTripCardProps) => {
   const router = useRouter();
 
   const handleNavigate = useCallback((): void => {
@@ -114,4 +114,9 @@ export function EnhancedTripCard({ trip, disableNavigation }: EnhancedTripCardPr
       </div>
     </div>
   );
-} 
+});
+
+// Important for React DevTools
+EnhancedTripCard.displayName = 'EnhancedTripCard';
+
+export default EnhancedTripCard;

@@ -1,234 +1,209 @@
-/**
- * Collaborative Editor
- *
- * Molecule component for real-time collaborative markdown editing
- *
- * @module notes/molecules
- */
+'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { NoteEditor } from '../atoms/NoteEditor';
-import { NoteContent } from '../atoms/NoteContent';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { Button } from '@/components/ui/button';
-import { Save, UserIcon, Eye, Edit, Users } from 'lucide-react';
-import { useNotes } from '@/hooks/use-notes';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2, Bold, Italic, List, ListOrdered, Save, X } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useToast } from '@/lib/hooks/use-toast';
+import * as Y from 'yjs';
+import { WebrtcProvider } from 'y-webrtc';
 
-// ============================================================================
-// COMPONENT PROPS & TYPES
-// ============================================================================
-
-export interface CollaborativeEditorProps {
-  /** ID of the trip to fetch notes for */
+interface CollaborativeEditorProps {
+  initialContent: string;
+  documentId: string;
   tripId: string;
-  /** Initial content (optional) */
-  initialContent?: string;
-  /** Whether the editor is read-only */
-  readOnly?: boolean;
-  /** Optional callback when content changes */
-  onChange?: (content: string) => void;
-  /** Optional additional CSS classes */
-  className?: string;
+  onSave: (content: any) => void;
+  onCancel: () => void;
 }
-
-/**
- * Type for a collaborator in the editor
- */
-interface Collaborator {
-  id: string;
-  name: string;
-  avatarUrl?: string;
-  lastActive: Date;
-}
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 
 export function CollaborativeEditor({
+  initialContent,
+  documentId,
   tripId,
-  initialContent = '',
-  readOnly = false,
-  onChange,
-  className,
+  onSave,
+  onCancel,
 }: CollaborativeEditorProps) {
-  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [isUserActive, setIsUserActive] = useState(true);
-  const userActivityTimeout = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
+  const [provider, setProvider] = useState<WebrtcProvider | null>(null);
 
-  // Use the notes hook
-  const { content, isLoading, isSaving, error, updateContent, collaborationSession } =
-    useNotes(tripId);
-
-  // Update content when it changes from the hook
+  // Initialize the collaborative editing session
   useEffect(() => {
-    if (onChange && content) {
-      onChange(content);
-    }
-  }, [content, onChange]);
+    const doc = new Y.Doc();
+    const roomName = `withme-travel-${tripId}-${documentId}`;
 
-  // Track user activity
-  useEffect(() => {
-    const trackActivity = () => {
-      setIsUserActive(true);
-
-      // Reset timeout
-      if (userActivityTimeout.current) {
-        clearTimeout(userActivityTimeout.current);
-      }
-
-      // Set inactive after 5 minutes of no activity
-      userActivityTimeout.current = setTimeout(
-        () => {
-          setIsUserActive(false);
-        },
-        5 * 60 * 1000
-      );
-    };
-
-    // Set up event listeners for activity tracking
-    const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'];
-    events.forEach((event) => {
-      window.addEventListener(event, trackActivity);
+    // In a production app, you would use a more secure provider
+    // This is just for demonstration purposes
+    const webrtcProvider = new WebrtcProvider(roomName, doc, {
+      signaling: ['wss://signaling.yjs.dev'],
     });
 
-    // Initial activity tracking
-    trackActivity();
+    setYdoc(doc);
+    setProvider(webrtcProvider);
 
-    // Clean up
+    // Set initial content if the document is empty
+    const ytext = doc.getText('content');
+    if (ytext.toString() === '' && initialContent) {
+      ytext.insert(0, initialContent);
+    }
+
+    setIsLoading(false);
+
     return () => {
-      if (userActivityTimeout.current) {
-        clearTimeout(userActivityTimeout.current);
-      }
-
-      events.forEach((event) => {
-        window.removeEventListener(event, trackActivity);
-      });
+      webrtcProvider.destroy();
     };
-  }, []);
+  }, [tripId, documentId, initialContent]);
 
-  // Handle content changes and propagate to the API
-  const handleContentChange = (newContent: string) => {
-    if (readOnly) return;
-    updateContent(newContent);
+  // Set up the editor with collaboration extensions
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit,
+        Collaboration.configure({
+          document: ydoc,
+        }),
+        CollaborationCursor.configure({
+          provider: provider,
+          user: {
+            name: user?.profile?.name || user?.email?.split('@')[0] || 'Anonymous',
+            color: getRandomColor(),
+            avatar:
+              user?.profile?.avatar_url ||
+              `/api/avatar?name=${encodeURIComponent(user?.profile?.name || 'User')}`,
+          },
+        }),
+      ],
+      content: '',
+      editorProps: {
+        attributes: {
+          class: 'prose prose-sm focus:outline-none min-h-[100px] p-4',
+        },
+      },
+    },
+    [ydoc, provider]
+  );
+
+  // Handle save
+  const handleSave = () => {
+    if (!editor) return;
+
+    setIsSaving(true);
+
+    try {
+      const content = editor.getHTML();
+      onSave(content);
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save content',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Auto-save content periodically
-  const handleAutoSave = (newContent: string) => {
-    if (readOnly) return;
-    updateContent(newContent);
-  };
-
-  // Determine if collaboration is available
-  const isCollaborationAvailable =
-    collaborationSession?.sessionId && collaborationSession?.accessToken && !error;
-
-  // If loading, show skeleton
   if (isLoading) {
     return (
-      <Card className={cn('w-full', className)}>
-        <CardContent className="p-4">
-          <Skeleton className="h-8 w-1/3 mb-4" />
-          <Skeleton className="h-24 w-full mb-2" />
-          <Skeleton className="h-24 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // If error, show error message
-  if (error) {
-    return (
-      <Card className={cn('w-full bg-destructive/10', className)}>
-        <CardContent className="p-4">
-          <h3 className="text-lg font-semibold mb-2">Error Loading Notes</h3>
-          <p className="text-sm">{error}</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
   return (
-    <Card className={cn('w-full', className)}>
-      <div className="flex justify-between items-center p-2 border-b">
-        <Tabs
-          value={activeTab}
-          onValueChange={(v: string) => setActiveTab(v as 'edit' | 'preview')}
+    <div className="border rounded-md">
+      <div className="flex items-center gap-1 p-1 border-b bg-muted/50">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => editor?.chain().focus().toggleBold().run()}
+          data-active={editor?.isActive('bold')}
         >
-          <TabsList className="grid w-[200px] grid-cols-2">
-            <TabsTrigger value="edit" disabled={readOnly}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </TabsTrigger>
-            <TabsTrigger value="preview">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => editor?.chain().focus().toggleItalic().run()}
+          data-active={editor?.isActive('italic')}
+        >
+          <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          data-active={editor?.isActive('bulletList')}
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+          data-active={editor?.isActive('orderedList')}
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Button>
+      </div>
 
-        {/* Collaboration status indicator */}
-        <div className="flex items-center">
-          {isCollaborationAvailable ? (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              <Users className="h-4 w-4 mx-1" />
-              <span>Collaborative</span>
-            </div>
+      <EditorContent editor={editor} className="min-h-[150px]" />
+
+      <div className="flex justify-end gap-2 p-2 border-t bg-muted/50">
+        <Button variant="outline" size="sm" onClick={onCancel}>
+          <X className="h-4 w-4 mr-1" />
+          Cancel
+        </Button>
+        <Button size="sm" onClick={handleSave} disabled={isSaving}>
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              Saving...
+            </>
           ) : (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span className="relative flex h-2 w-2">
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-              </span>
-              <UserIcon className="h-4 w-4 mx-1" />
-              <span>Local editing</span>
-            </div>
+            <>
+              <Save className="h-4 w-4 mr-1" />
+              Save
+            </>
           )}
-
-          {isSaving && (
-            <div className="ml-2 text-xs text-muted-foreground animate-pulse">Saving...</div>
-          )}
-        </div>
+        </Button>
       </div>
-
-      <div className="p-4">
-        {activeTab === 'edit' && !readOnly ? (
-          <NoteEditor
-            value={content}
-            onChange={handleContentChange}
-            onAutoSave={handleAutoSave}
-            autoSaveDelay={2000}
-            minHeight="300px"
-          />
-        ) : (
-          <NoteContent content={content} className="min-h-[300px]" />
-        )}
-      </div>
-
-      {collaborators.length > 0 && (
-        <div className="px-4 py-2 border-t flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">People editing:</span>
-          <div className="flex -space-x-2">
-            {collaborators.map((user) => (
-              <Avatar key={user.id} className="h-6 w-6 border-2 border-background">
-                {user.avatarUrl ? (
-                  <AvatarImage src={user.avatarUrl} alt={user.name} />
-                ) : (
-                  <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                )}
-              </Avatar>
-            ))}
-          </div>
-        </div>
-      )}
-    </Card>
+    </div>
   );
+}
+
+// Helper function to generate random colors for user cursors
+function getRandomColor() {
+  const colors = [
+    '#f44336',
+    '#e91e63',
+    '#9c27b0',
+    '#673ab7',
+    '#3f51b5',
+    '#2196f3',
+    '#03a9f4',
+    '#00bcd4',
+    '#009688',
+    '#4caf50',
+    '#8bc34a',
+    '#cddc39',
+    '#ffeb3b',
+    '#ffc107',
+    '#ff9800',
+    '#ff5722',
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
 }

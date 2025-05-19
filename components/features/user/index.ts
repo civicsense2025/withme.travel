@@ -6,8 +6,8 @@
  */
 
 // Authentication Components
-export { LoginForm } from './LoginForm';
-export { SignupForm } from './SignupForm';
+// export { LoginForm } from './LoginForm';
+// export { SignupForm } from './SignupForm';
 
 // Profile Components
 export { UserProfile, type UserProfile as UserProfileType } from './UserProfile';

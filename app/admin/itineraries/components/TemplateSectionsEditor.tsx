@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { TABLES } from '@/utils/constants/database';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Loader, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { TemplateSection, TemplateItem } from '../types';
 import {

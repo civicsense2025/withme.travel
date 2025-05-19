@@ -11,7 +11,7 @@ import {
 import { TripVoting } from '@/components/trips/organisms';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, VoteIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { createClient } from '@/utils/supabase/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { CreatePollModal } from './CreatePollModal';

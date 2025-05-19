@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useTags } from '@/hooks';
-import { useToast } from '@/hooks/use-toast'
+import { useTags } from '@/lib/hooks/use-tags';
+import { useToast } from '@/lib/hooks/use-toast'
 import { Loader2 } from 'lucide-react';
 import { InterestTag } from '@/components/features/onboarding/molecules/InterestTag';
 import type { Tag } from '@/types/tags';
@@ -45,7 +45,7 @@ export function InterestSelector({
     const loadTags = async () => {
       const fetchedTags = await getTags();
       setTags(
-        (fetchedTags || []).map((t) => ({
+        (fetchedTags || []).map((t: TagExtended) => ({
           ...t,
           category: t.category ?? '',
           created_at: t.created_at ?? '',
@@ -65,7 +65,7 @@ export function InterestSelector({
       // Pre-select interests based on personality type
       if (Object.keys(suggestedInterests).length > 0) {
         const tagSuggestions: Record<string, number> = {};
-        fetchedTags.forEach((tag) => {
+        fetchedTags.forEach((tag: TagExtended) => {
           if (suggestedInterests[tag.slug]) {
             tagSuggestions[tag.id] = suggestedInterests[tag.slug];
           }

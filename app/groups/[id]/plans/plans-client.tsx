@@ -22,14 +22,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { PAGE_ROUTES } from '@/utils/constants/routes';
 import { Loader2, Plus, Edit, Trash, Archive, AlertCircle, FolderSymlink } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { City } from '@/types/multi-city';
 import { createBrowserClient } from '@supabase/ssr';
-import { useGroupPlans } from '@/hooks/use-group-plans';
+import { useGroupPlans } from '@/lib/hooks/use-group-plans';
 import { GroupPlan } from '@/lib/client/groupPlans';
 
 interface PlansClientProps {

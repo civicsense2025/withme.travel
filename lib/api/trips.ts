@@ -43,6 +43,13 @@ export interface Trip {
   destination_id?: string | null; // Added for compatibility with hooks/use-trips.ts
 }
 
+/**
+ * Type guard to check if an object is a Trip
+ */
+export function isTrip(obj: any): obj is Trip {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}
+
 // ============================================================================
 // CRUD FUNCTIONS
 // ============================================================================

@@ -14,6 +14,7 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/tables';
 import { handleError, Result, PermissionRequest } from './_shared';
+import { PermissionCheck } from '@/app/api/trips/[tripId]/permissions/route';
 
 // ============================================================================
 // CRUD FUNCTIONS
@@ -504,4 +505,18 @@ export async function transferTripOwnership(
 ): Promise<Result<null>> {
   // TODO: Implement transfer ownership logic
   return { success: false, error: 'Not implemented yet' };
+}
+
+/**
+ * Type guard to check if an object is a PermissionRequest
+ */
+export function isPermissionRequest(obj: any): obj is PermissionRequest {
+  return obj && typeof obj.id === 'string' && typeof obj.trip_id === 'string';
+}
+
+/**
+ * Type guard to check if an object is a PermissionCheck
+ */
+export function isPermissionCheck(obj: any): obj is PermissionCheck {
+  return obj && typeof obj.canView === 'boolean' && typeof obj.role === 'string';
 }

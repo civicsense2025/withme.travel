@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { EventUrlInput } from '@/components/features/itinerary/EventUrlInput';
 
 // Mock the toast provider
-jest.mock('@/hooks/use-toast', () => ({
+jest.mock('@/lib/hooks/use-toast', () => ({
   useToast: () => ({
     toast: jest.fn(),
   }),

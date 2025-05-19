@@ -10,7 +10,7 @@ import { NavbarMobileMenu } from './NavbarMobileMenu';
 import { NavbarAuthButtons } from './NavbarAuthButtons';
 import UserMenu from '@/components/layout/UserMenu';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
 
 export default function Navbar() {
@@ -75,7 +75,7 @@ export default function Navbar() {
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
           user={user ?? undefined}
-          signOut={logout}
+          signOut={async () => { await logout(); }}
           activePath={pathname ?? undefined}
         />
       )}

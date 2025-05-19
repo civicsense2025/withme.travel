@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { InputField } from '../atoms/InputField';
-import { PasswordField } from '../atoms/PasswordField';
+import PasswordField from '../atoms/PasswordField';
 import { AuthError } from '../atoms/AuthError';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export interface SignupFormProps {
   /** Function called on form submission with form data */
-  onSubmit: (data: {
+  onSubmit?: (data: {
     email: string;
     password: string;
     name: string;
@@ -26,8 +27,8 @@ export interface SignupFormProps {
 
 export function SignupForm({
   onSubmit,
-  isLoading = false,
-  error,
+  isLoading: isLoadingProp,
+  error: errorProp,
   success,
   loginUrl = '/login',
 }: SignupFormProps) {
@@ -41,6 +42,10 @@ export function SignupForm({
     name?: string;
     terms?: string;
   }>({});
+  const [successMessage, setSuccessMessage] = useState<string | undefined>(success);
+
+  // Use standardized auth hook
+  const { signup, isLoading, error } = useAuth();
 
   const validateForm = () => {
     const errors: typeof formErrors = {};
@@ -59,65 +64,69 @@ export function SignupForm({
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSuccessMessage(undefined);
     if (!validateForm()) return;
-    
     try {
-      await onSubmit({ email, password, name, acceptTerms });
+      if (onSubmit) {
+        await onSubmit({ email, password, name, acceptTerms });
+      } else {
+        await signup(email, password, name);
+        setSuccessMessage('Account created successfully! Please check your email for verification.');
+        setEmail('');
+        setPassword('');
+        setName('');
+        setAcceptTerms(false);
+      }
     } catch (err) {
-      // Error handling is managed by the parent through the error prop
+      // Error is handled by the hook
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <AuthError message={error} />}
-      
-      {success && (
+      {(errorProp || error) && <AuthError message={errorProp || error?.message || ''} />}
+      {successMessage && (
         <div className="bg-green-50 text-green-800 px-4 py-3 rounded-md">
-          {success}
+          {successMessage}
         </div>
       )}
-      
       <InputField
         label="Name"
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Enter your name"
-        disabled={isLoading}
+        disabled={isLoadingProp || isLoading}
         error={formErrors.name}
         required
       />
-      
       <InputField
         label="Email"
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
-        disabled={isLoading}
+        disabled={isLoadingProp || isLoading}
         error={formErrors.email}
         required
       />
-      
       <PasswordField
         label="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Create a password"
-        disabled={isLoading}
+        disabled={isLoadingProp || isLoading}
         error={formErrors.password}
         required
       />
-      
       <div className="flex items-start gap-2">
         <Checkbox
           id="terms"
           checked={acceptTerms}
           onCheckedChange={(checked) => setAcceptTerms(!!checked)}
-          disabled={isLoading}
+          disabled={isLoadingProp || isLoading}
         />
         <div className="grid gap-1.5 leading-none">
           <Label
@@ -131,15 +140,13 @@ export function SignupForm({
           )}
         </div>
       </div>
-      
       <Button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoadingProp || isLoading}
         className="w-full"
       >
-        {isLoading ? 'Creating account...' : 'Create account'}
+        {(isLoadingProp || isLoading) ? 'Creating account...' : 'Create account'}
       </Button>
-      
       <div className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
         <a href={loginUrl} className="text-primary hover:underline">

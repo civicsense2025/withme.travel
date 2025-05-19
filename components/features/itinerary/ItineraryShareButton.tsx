@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Share2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast' // Assuming you have a toast component
+import { useToast } from '@/lib/hooks/use-toast' // Assuming you have a toast component
 
 export function ItineraryShareButton() {
   const { toast } = useToast();

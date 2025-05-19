@@ -1,14 +1,10 @@
 /**
- * Destinations Feature Hooks
+ * Destinations Hooks Index
  * 
- * Central export point for all destinations-related hooks.
+ * Re-exports all destination-related hooks for easy access.
  * 
- * Note: Currently re-exporting from main hooks directory. In the future,
- * the actual implementations will move here, and the main hooks directory
- * will re-export from this location instead.
+ * @module features/destinations/hooks
  */
 
-export {
-  useDestinations,
-  usePopularDestinations
-} from '@/lib/hooks'; 
+export * from './use-destinations';
+export * from './use-popular-destinations'; 

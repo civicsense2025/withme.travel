@@ -52,14 +52,32 @@ export const EVENT_NAME = {
   CONTENT_VIEWED: 'content_viewed',
 };
 
-// Define interface for event properties
+/**
+ * Interface for event properties sent to analytics
+ */
 export interface EventProperties {
   [key: string]: string | number | boolean | null | undefined;
 }
 
 /**
+ * Generic event properties type for stricter event typing
+ */
+export type EventPropertiesGeneric<T extends object = {}> = {
+  [K in keyof T]: T[K];
+} & {
+  [key: string]: string | number | boolean | null | undefined;
+};
+
+/**
+ * Default global event properties for platform analytics
+ */
+export const GLOBAL_EVENT_PROPERTIES: EventProperties = {
+  app: 'withme.travel',
+  env: process.env.NODE_ENV || 'development',
+};
+
+/**
  * Track an event in the analytics system
- *
  * @param eventName The name of the event
  * @param category The category of the event
  * @param properties Additional properties for the event
@@ -105,7 +123,6 @@ export const trackEvent = (eventName: string, category: string, properties?: Eve
 
 /**
  * Track a page view
- *
  * @param pageName The name of the page
  * @param properties Additional properties for the page view
  */
@@ -118,7 +135,6 @@ export const trackPageView = (pageName: string, properties?: EventProperties) =>
 
 /**
  * Initialize analytics for a specific page
- *
  * @param pageName The name of the page
  */
 export const initPageAnalytics = (pageName: string) => {
@@ -148,7 +164,6 @@ export const initPageAnalytics = (pageName: string) => {
 
 /**
  * Analytics hook to track events in a component
- *
  * @param category The category of events for this component
  * @param componentName Optional component name
  */
@@ -166,6 +181,8 @@ export const useAnalytics = (category: string, componentName?: string) => {
 /**
  * Track server-side events (in API routes)
  * This is a special version for server-side tracking
+ * @param eventName The name of the event
+ * @param properties Additional properties for the event
  */
 export function trackServerEvent(eventName: string, properties?: Record<string, any>) {
   // Log the event to the console in development
@@ -213,4 +230,27 @@ declare global {
     };
     gtag?: (command: string, action: string, params?: Record<string, any>) => void;
   }
+}
+
+/**
+ * Type guard to check if an object is EventProperties
+ * @param obj The object to check
+ */
+export function isEventProperties(obj: any): obj is EventProperties {
+  if (typeof obj !== 'object' || obj === null) return false;
+  return Object.values(obj).every(
+    v => ['string', 'number', 'boolean', 'undefined'].includes(typeof v) || v === null
+  );
+}
+
+/**
+ * Merge default/global event properties with custom ones
+ * @param base The base event properties
+ * @param custom Custom event properties to merge
+ */
+export function mergeEventProperties(
+  base: EventProperties,
+  custom?: EventProperties
+): EventProperties {
+  return { ...base, ...(custom || {}) };
 }

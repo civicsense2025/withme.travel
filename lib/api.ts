@@ -1413,6 +1413,13 @@ export function createUrlWithParams(baseUrl: string, params: Record<string, any>
   return url.toString();
 }
 
+/**
+ * Type guard to check if an object is an API error
+ */
+export function isApiError(obj: any): obj is { error: string } {
+  return obj && typeof obj.error === 'string';
+}
+
 // ============================================================================
 // END OF MODULE
 // ============================================================================

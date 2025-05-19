@@ -1,7 +1,7 @@
 'use client';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { formatError } from '@/utils/lib-utils';
 import { ITEM_STATUSES, type ItemStatus } from '@/utils/constants/status';
 import type { DisplayItineraryItem, ItinerarySection } from '@/types/itinerary';

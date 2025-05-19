@@ -13,11 +13,11 @@ export default async function TripTourPage({ params }: { params: { tripId: strin
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.get-ser();
+  } = await supabase.auth.getUser();
 
   // Check if user is authenticated
   if (userError || !user) {
-    console.warn('[TripTourPage] -ser not authenticated or error fetching user:', userError);
+    console.warn('[TripTourPage] User not authenticated or error fetching user:', userError);
     redirect(`/login?callback-rl=/trips/${params.tripId}/tour`);
   }
 

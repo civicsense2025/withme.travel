@@ -1,6 +1,3 @@
-// Replace the 'use client' directive since this is a server component and update the catch block
-// Remove the 'use client' directive at the top of the file since this should be a server component
-
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import { createServerComponentClient } from '@/utils/supabase/server';
@@ -13,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ClientWrapper } from './client-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { ItineraryCard } from '@/components/features/itinerary/molecules/ItineraryCard';
-import { ClassErrorBoundary } from '@/components/features/error-boundary';
+import { ErrorBoundary } from '@/components/features/ui/ErrorBoundary';
 import RefreshFallback from './refresh-fallback';
 import { PageContainer } from '@/components/features/layout/molecules/PageContainer';
 import { PageHeader } from '@/components/features/layout/molecules/PageHeader';
@@ -23,10 +20,9 @@ import { Section } from '@/components/ui/Section';
 import { ItineraryTemplateCard } from '@/components/features/itinerary/molecules/ItineraryTemplateCard';
 import { FullBleedSection } from '@/components/features/layout/molecules/FullBleedSection';
 
-export const dynamic = 'force-dynamic'; // Ensure dynamic rendering
-export const revalidate = 600; // Revalidate every 10 minutes
+export const dynamic = 'force-dynamic';
+export const revalidate = 600;
 
-// Define the Itinerary type based on expected data from the query
 export interface Itinerary {
   id: string;
   title: string;
@@ -52,11 +48,10 @@ export interface Itinerary {
   } | null;
 }
 
-// Simple error fallback component for itineraries section
 const ItinerariesErrorFallback = () => (
-  <div className="pU8 border rounded-lg bg-card/50 text-center">
-    <h3 className="text-xl font-semibold mbU2">-nable to load itineraries</h3>
-    <p className="text-muted-foreground mbU4">
+  <div className="p-8 border rounded-lg bg-card/50 text-center">
+    <h3 className="text-xl font-semibold mb-2">Unable to load itineraries</h3>
+    <p className="text-muted-foreground mb-4">
       There was a problem loading the itineraries. Please try again later.
     </p>
     <Button asChild>
@@ -67,13 +62,11 @@ const ItinerariesErrorFallback = () => (
 
 export default async function ItinerariesPage() {
   try {
-    // Check if we have a logged-in user
     const supabase = await createServerComponentClient();
     const {
       data: { user },
-    } = await supabase.auth.get-ser();
+    } = await supabase.auth.getUser();
 
-    // Check if the user is an admin
     let isAdmin = false;
     if (user) {
       const { data: profileData } = await supabase
@@ -84,9 +77,8 @@ export default async function ItinerariesPage() {
       isAdmin = profileData?.is_admin || false;
     }
 
-    console.log(`[Itineraries Page] -ser authenticated: ${!!user}, Admin: ${isAdmin}`);
+    console.log(`[Itineraries Page] User authenticated: ${!!user}, Admin: ${isAdmin}`);
 
-    // Fetch itineraries directly from Supabase
     let query = supabase
       .from('itinerary_templates')
       .select('*, destinations(*)')
@@ -95,18 +87,15 @@ export default async function ItinerariesPage() {
     let templatesError;
     if (user) {
       if (isAdmin) {
-        // Admin users can see all templates
         const result = await query;
         data = result.data;
         templatesError = result.error;
       } else {
-        // Regular authenticated users: show published templates + their drafts
         const result = await query.or(`is_published.eq.true,created_by.eq.${user.id}`);
         data = result.data;
         templatesError = result.error;
       }
     } else {
-      // For unauthenticated users: only show published templates
       const result = await query.eq('is_published', true);
       data = result.data;
       templatesError = result.error;
@@ -117,7 +106,6 @@ export default async function ItinerariesPage() {
       return <RefreshFallback />;
     }
 
-    // Define a type assertion function to properly convert database records to our Itinerary type
     function assertAsItinerary(item: any): Itinerary {
       return {
         id: item.id,
@@ -147,10 +135,8 @@ export default async function ItinerariesPage() {
       };
     }
 
-    // Process data to match our Itinerary interface
     let processedItineraries: Itinerary[] = [];
 
-    // Associate author profiles with templates
     if (data.length > 0) {
       const creatorIds = Array.from(new Set(data.map((t) => t.created_by)));
       if (creatorIds.length > 0) {
@@ -161,7 +147,6 @@ export default async function ItinerariesPage() {
 
         if (!profilesError && profilesData) {
           const profilesMap = new Map(profilesData.map((p) => [p.id, p]));
-          // Add profile data to each template
           data = data.map((template) => ({
             ...template,
             profile: profilesMap.get(template.created_by) || null,
@@ -169,23 +154,19 @@ export default async function ItinerariesPage() {
         }
       }
 
-      // Convert to our Itinerary interface and ensure slug is always a string
       processedItineraries = data.map((item) => {
         const itinerary = assertAsItinerary(item);
-        // Always enforce slug as a string - this is crucial for the client wrapper
         itinerary.slug = itinerary.slug || '';
         return itinerary;
       });
     }
 
-    // Log how many we processed
     const publishedCount = processedItineraries.filter((i) => i.is_published).length;
     const draftCount = processedItineraries.filter((i) => !i.is_published).length;
     console.log(
       `[Itineraries Page] Processed ${processedItineraries.length} itineraries (${publishedCount} published, ${draftCount} drafts)`
     );
 
-    // Create the header section with title, description and submit button
     const header = (
       <main>
         <PageHeader
@@ -193,13 +174,13 @@ export default async function ItinerariesPage() {
           description="Ready-made travel plans to inspire your next adventure"
           centered={true}
         />
-        <div className="mtU6">
+        <div className="mt-6">
           <Link href="/itineraries/submit">
             <Button
               size="default"
-              className="mx-auto flex items-center rounded-full pxU5 bg-white text-black border border-grayU200 hover:bg-grayU100 hover:text-black"
+                className="mx-auto flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
             >
-              <PlusCircle className="mrU2 hU4 wU4" />
+              <PlusCircle className="mr-2 h-4 w-4" />
               Submit Itinerary
             </Button>
           </Link>
@@ -207,17 +188,16 @@ export default async function ItinerariesPage() {
       </main>
     );
 
-    // Early return if no itineraries
     if (processedItineraries.length === 0) {
       console.log('[Itineraries Page] No itineraries found');
 
       return (
         <PageContainer header={header}>
-          <div className="border rounded-lg pU8 bg-card text-center">
-            <Heading level={2} size="default" className="mbU2">
+          <div className="border rounded-lg p-8 bg-card text-center">
+            <Heading level={2} size="default" className="mb-2">
               No itineraries available
             </Heading>
-            <Text variant="body" className="mbU4 text-muted-foreground">
+            <Text variant="body" className="mb-4 text-muted-foreground">
               Be the first to share your travel plans with the community!
             </Text>
           </div>
@@ -225,40 +205,37 @@ export default async function ItinerariesPage() {
       );
     }
 
-    // Split into published and drafts
     const publishedItineraries = processedItineraries.filter((i) => i.is_published);
     const draftItineraries = processedItineraries.filter((i) => !i.is_published);
 
     return (
-      <PageContainer header={header} fullWidth={false} className="max-wU3xl mx-auto">
-        <ClassErrorBoundary fallback={<ItinerariesErrorFallback />}>
+      <PageContainer header={header} fullWidth={false} className="max-w-3xl mx-auto">
+        <ErrorBoundary fallback={<ItinerariesErrorFallback />}>
           <ClientWrapper
-            // Type assertion is safe because we've ensured all properties match
-            itineraries={processedItineraries as any}
+            itineraries={processedItineraries}
             isAdmin={isAdmin}
             userId={user?.id || null}
           />
-        </ClassErrorBoundary>
+        </ErrorBoundary>
 
-        {/* If the user has drafts, display them in a separate section */}
         {user && draftItineraries.length > 0 && (
-          <div className="mtU16">
-            <Heading level={2} size="default" className="mbU8">
+          <div className="mt-16">
+            <Heading level={2} size="default" className="mb-8">
               Your Drafts
             </Heading>
-            <div className="grid grid-colsU1 md:grid-colsU2 lg:grid-colsU3 gapU6">
-              {draftItineraries.map((draft, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {draftItineraries.map((draft) => (
                 <div key={draft.id} className="relative">
                   <Badge
                     variant="outline"
-                    className="absolute topU4 rightU4 zU10 bg-yellowU100 text-yellowU800 border-yellowU300"
+                    className="absolute top-2 right-2 z-10 bg-yellow-100 text-yellow-800 border-yellow-300"
                   >
                     Draft
                   </Badge>
                   <ItineraryCard
                     title={draft.title}
                     description={draft.description || ''}
-                    location={draft.destinations?.name || '-nknown Location'}
+                    location={draft.destinations?.name || 'Unknown Location'}
                     duration={`${draft.duration_days} days`}
                     image-rl={
                       draft.destinations?.featured_image_url ||
@@ -274,7 +251,7 @@ export default async function ItinerariesPage() {
       </PageContainer>
     );
   } catch (error) {
-    console.error('[Itineraries Page] -nhandled error:', error);
+    console.error('[Itineraries Page] Unhandled error:', error);
     return <RefreshFallback />;
   }
 }

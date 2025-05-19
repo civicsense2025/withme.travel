@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { useState } from 'react';
-import { CompactBudgetSnapshot } from '@/components/features/budget/organisms/CompactBudgetSnapshot';
-import { ImageSearchSelector } from '@/components/features/images/ImageSearchSelector';
+import { CompactBudgetSnapshot } from '@/components/ui/features/trips/molecules/CompactBudgetSnapshot';
+import { ImageSearchSelector } from '@/components/features/images/image-search-selector';
 import {
   Sheet,
   SheetContent,
@@ -45,14 +45,14 @@ interface SimplifiedTripHeaderProps {
   membersCount?: number;
   onEditClick?: (tripId: string) => void;
   onShareClick?: (tripId: string) => void;
-  onImageSelect?: (imageUrl: string | null) => void;
   showEditButton?: boolean;
   showShareButton?: boolean;
   showBackButton?: boolean;
+  onImageSelect?: (imageUrl: string | null) => void;
   budgetProps?: any;
 }
 
-export function SimplifiedTripHeader({
+export default function SimplifiedTripHeader({
   trip,
   tripId,
   name,
@@ -64,10 +64,10 @@ export function SimplifiedTripHeader({
   membersCount,
   onEditClick,
   onShareClick,
-  onImageSelect,
   showEditButton = false,
   showShareButton = false,
   showBackButton = true,
+  onImageSelect,
   budgetProps,
 }: SimplifiedTripHeaderProps) {
   // Create a normalized trip object from either the trip prop or the individual props
@@ -190,7 +190,7 @@ export function SimplifiedTripHeader({
             </div>
 
             {/* Private/Public Badge */}
-            <Badge className="hidden md:inline-flex self-start">
+            <Badge variant="outline" className="hidden md:inline-flex self-start">
               Private Trip
             </Badge>
           </div>
@@ -267,4 +267,4 @@ export function SimplifiedTripHeader({
       </div>
     </div>
   );
-} 
+}

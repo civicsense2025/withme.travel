@@ -1,3 +1,7 @@
+/**
+ * @deprecated This component has been moved to components/features/trips/molecules/TripPageError.tsx
+ * Please update your imports to use the new location.
+ */
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -65,4 +69,4 @@ export function TripPageError({ tripId, error }: TripPageErrorProps) {
       </div>
     </div>
   );
-} 
+}

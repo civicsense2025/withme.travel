@@ -1,3 +1,7 @@
+/**
+ * @deprecated This component has been moved to components/features/trips/molecules/SimplifiedItemForm.tsx
+ * Please update your imports to use the new location.
+ */
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -17,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 
 // Form schema validation for simplified add item
 const simpleAddItemSchema = z.object({
@@ -150,7 +154,7 @@ export function SimplifiedItemForm({
                 className={`w-36 ${errors.item_type ? 'border-red-500' : ''}`}
                 id="item-type"
               >
-                <SelectValue placeholder="Select type" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="activity">Activity</SelectItem>
@@ -368,7 +372,7 @@ export function BulkItemForm({
             disabled={isSubmitting}
           >
             <SelectTrigger className="w-full" id="multi-item-type">
-              <SelectValue placeholder="Select type" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="activity">Activity</SelectItem>
@@ -434,4 +438,4 @@ export function BulkItemForm({
       </form>
     </Card>
   );
-} 
+}

@@ -1,7 +1,18 @@
-import { useEffect, useState } from 'react';
+/**
+ * usePopularDestinations Hook
+ * 
+ * A hook to fetch and manage popular destinations.
+ * 
+ * @module hooks/use-popular-destinations
+ */
+
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from './use-toast';
 
 /**
- * Destination type for popular destinations
+ * Destination interface
  */
 export interface Destination {
   id: string;
@@ -26,33 +37,49 @@ export interface Destination {
 }
 
 /**
- * Fetches popular destinations from the API
- * @param limit - Maximum number of destinations to fetch
- * @returns { destinations, loading, error }
+ * Hook to fetch popular destinations
  */
 export function usePopularDestinations(limit = 8) {
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    setLoading(true);
+  const fetchDestinations = useCallback(async () => {
+    setIsLoading(true);
     setError(null);
-
-    fetch(`/api/destinations/popular?limit=${limit}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch destinations');
-        return res.json();
-      })
-      .then((data) => {
-        setDestinations(data.destinations || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
+    
+    try {
+      const response = await fetch(`/api/destinations/popular?limit=${limit}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch popular destinations: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setDestinations(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err : new Error('Failed to fetch destinations');
+      setError(errorMessage as Error);
+      toast({
+        title: 'Error',
+        description: errorMessage instanceof Error ? errorMessage.message : 'Failed to load destinations',
+        variant: 'destructive',
       });
-  }, [limit]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [limit, toast]);
 
-  return { destinations, loading, error };
-}
+  // Fetch on component mount
+  useEffect(() => {
+    fetchDestinations();
+  }, [fetchDestinations]);
+
+  return {
+    destinations,
+    isLoading,
+    error,
+    refreshDestinations: fetchDestinations,
+  };
+} 

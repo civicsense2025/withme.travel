@@ -1,8 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { EnhancedTripCard } from './EnhancedTripCard';
+import EnhancedTripCard from './EnhancedTripCard';
+
+const COMPONENT_CATEGORIES = {
+  TRIP: 'Trip Features',
+};
 
 const meta: Meta<typeof EnhancedTripCard> = {
-  title: 'Features/Trips/Molecules/EnhancedTripCard',
+  title: 'Trip Features/EnhancedTripCard',
   component: EnhancedTripCard,
   parameters: {
     layout: 'centered',
@@ -40,36 +44,3 @@ export const NoNavigation: Story = {
     disableNavigation: true,
   },
 };
-
-export const WithImage: Story = {
-  args: {
-    trip: {
-      id: '2',
-      name: 'Italian Adventure',
-      destination_name: 'Rome, Italy',
-      cover_image_url: 'https://source.unsplash.com/random/800x600/?rome',
-      description: 'Exploring the ancient ruins and enjoying authentic cuisine.',
-      start_date: '2024-08-10',
-      end_date: '2024-08-20',
-      memberCount: 2,
-      role: 'admin',
-    },
-    disableNavigation: false,
-  },
-};
-
-export const LongTitle: Story = {
-  args: {
-    trip: {
-      id: '3',
-      name: 'This is a very long trip title that should be handled gracefully by the card component to ensure proper display',
-      destination_name: 'Tokyo, Japan',
-      description: 'Cherry blossoms and city lights.',
-      start_date: '2024-04-01',
-      end_date: '2024-04-15',
-      memberCount: 1,
-      role: 'admin',
-    },
-    disableNavigation: false,
-  },
-}; 

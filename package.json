@@ -12,6 +12,7 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:dir": "node scripts/format-code.js",
+    "check:lib-integration": "node scripts/check-lib-integration.js",
     "download-images": "ts-node scripts/download-destination-images.ts",
     "update-images": "tsx scripts/update-image-metadata.ts",
     "test": "jest",
@@ -307,7 +308,11 @@
     "doc": "docs",
     "lib": "lib",
     "test": "tests",
-    "exclude": ["mobile", "mobile/withme-app", "scripts"]
+    "exclude": [
+      "mobile",
+      "mobile/withme-app",
+      "scripts"
+    ]
   },
   "repository": {
     "type": "git",

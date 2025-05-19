@@ -205,3 +205,10 @@ export async function deleteEntityTag(
     return handleError(error, 'Failed to delete entity tag');
   }
 }
+
+/**
+ * Type guard to check if an object is a Tag
+ */
+export function isTag(obj: any): obj is Tag {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}

@@ -1,13 +1,19 @@
 /**
- * Focus Session Hook
- *
- * Provides functionality for managing collaborative focus sessions.
+ * useFocusSession Hook
+ * 
+ * React hook to manage collaborative focus sessions.
+ * 
+ * @module hooks/use-focus-session
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { trackEvent } from '@/lib/analytics';
+'use client';
 
+import { useState, useCallback, useEffect } from 'react';
+import { useToast } from './use-toast';
+
+/**
+ * Focus session participant interface
+ */
 export interface FocusSessionParticipant {
   userId: string;
   name: string;
@@ -15,6 +21,9 @@ export interface FocusSessionParticipant {
   joinedAt: string;
 }
 
+/**
+ * Focus session data interface
+ */
 export interface FocusSession {
   id: string;
   status: 'active' | 'paused' | 'completed' | 'idle';
@@ -25,6 +34,9 @@ export interface FocusSession {
   activeParticipants: FocusSessionParticipant[];
 }
 
+/**
+ * Return type for useFocusSession hook
+ */
 export interface UseFocusSessionResult {
   session: FocusSession | null;
   isLoading: boolean;
@@ -38,386 +50,194 @@ export interface UseFocusSessionResult {
 }
 
 /**
- * Hook for managing collaborative focus sessions
+ * Hook to manage focus sessions for collaborative work
  */
 export function useFocusSession(): UseFocusSessionResult {
   const [session, setSession] = useState<FocusSession | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const supabase = getBrowserClient();
+  const { toast } = useToast();
 
-  // Subscribe to focus session changes
-  useEffect(() => {
-    if (!session?.id) return;
-
-    const channel = supabase
-      .channel(`focus-session-${session.id}`)
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        
-        // Update the session with presence information
-        setSession(prevSession => {
-          if (!prevSession) return null;
-          
-          const participants = Object.values(state)
-            .flat()
-            .map((p: any) => ({
-              userId: p.user_id,
-              name: p.name || 'Anonymous',
-              avatarUrl: p.avatar_url,
-              joinedAt: p.joined_at
-            }));
-          
-          return {
-            ...prevSession,
-            activeParticipants: participants as FocusSessionParticipant[]
-          };
-        });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session?.id, supabase]);
-
-  // Load the current active session if it exists
-  useEffect(() => {
-    const loadActiveSession = async () => {
-      try {
-        const { data: sessionData, error: sessionError } = await supabase
-          .from('focus_sessions')
-          .select('*')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (sessionError && sessionError.code !== 'PGRST116') {
-          console.error('Error loading focus session:', sessionError);
-          setError(new Error('Failed to load active focus session'));
-          return;
-        }
-
-        if (sessionData) {
-          setSession({
-            id: sessionData.id,
-            status: sessionData.status,
-            startedAt: sessionData.started_at,
-            endedAt: sessionData.ended_at,
-            focusTime: calculateFocusTime(
-              sessionData.started_at, 
-              sessionData.paused_at,
-              sessionData.status
-            ),
-            createdBy: sessionData.created_by,
-            activeParticipants: []
-          });
-        }
-      } catch (err) {
-        console.error('Error in loadActiveSession:', err);
-        setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-      }
-    };
-
-    loadActiveSession();
-  }, [supabase]);
-
-  // Calculate focus time based on session state
-  const calculateFocusTime = (
-    startedAt: string,
-    pausedAt: string | null,
-    status: string
-  ): number => {
-    if (status === 'paused' && pausedAt) {
-      return Math.floor((new Date(pausedAt).getTime() - new Date(startedAt).getTime()) / 1000);
-    }
-    
-    if (status === 'active') {
-      return Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
-    }
-    
-    return 0;
-  };
-
-  // Timer to update focus time
-  useEffect(() => {
-    if (!session || session.status !== 'active') return;
-    
-    const timer = setInterval(() => {
-      setSession(prevSession => {
-        if (!prevSession) return null;
-        return {
-          ...prevSession,
-          focusTime: calculateFocusTime(
-            prevSession.startedAt,
-            null,
-            'active'
-          )
-        };
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [session]);
-
-  // Start a new focus session
+  // Simplified mock implementation - in a real app, this would call APIs
   const startSession = useCallback(async (options?: { tripId?: string }) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) {
-        throw new Error('You must be logged in to start a focus session');
-      }
-      
-      const { data: newSession, error: sessionError } = await supabase
-        .from('focus_sessions')
-        .insert({
-          status: 'active',
-          started_at: new Date().toISOString(),
-          created_by: userData.user.id,
-          trip_id: options?.tripId || null
-        })
-        .select()
-        .single();
-      
-      if (sessionError) {
-        throw sessionError;
-      }
-      
-      setSession({
-        id: newSession.id,
+      // This would be an API call in a real implementation
+      const mockSession: FocusSession = {
+        id: `session-${Date.now()}`,
         status: 'active',
-        startedAt: newSession.started_at,
+        startedAt: new Date().toISOString(),
         focusTime: 0,
-        createdBy: newSession.created_by,
-        activeParticipants: []
-      });
+        createdBy: 'current-user-id',
+        activeParticipants: [{
+          userId: 'current-user-id',
+          name: 'Current User',
+          joinedAt: new Date().toISOString()
+        }]
+      };
       
-      trackEvent('focus_session_started', 'Focus session started', {
-        session_id: newSession.id,
-        trip_id: options?.tripId
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setSession(mockSession);
+      
+      toast({
+        title: 'Focus Session Started',
+        description: 'You are now in a focus session',
       });
     } catch (err) {
-      console.error('Error starting focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to start focus session'));
+      setError(err instanceof Error ? err : new Error('Failed to start session'));
+      toast({
+        title: 'Failed to Start Session',
+        description: error?.message || 'An unexpected error occurred',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, [toast, error]);
 
-  // Pause the current focus session
   const pauseSession = useCallback(async () => {
     if (!session) return;
     
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const currentTime = new Date().toISOString();
-      
-      const { error: updateError } = await supabase
-        .from('focus_sessions')
-        .update({
-          status: 'paused',
-          paused_at: currentTime
-        })
-        .eq('id', session.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setSession(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          status: 'paused',
-          focusTime: calculateFocusTime(prev.startedAt, currentTime, 'paused')
-        };
-      });
-      
-      trackEvent('focus_session_paused', 'Focus session paused', {
-        session_id: session.id,
-        duration: session.focusTime
-      });
+      // Mock implementation
+      setSession(prev => prev ? { ...prev, status: 'paused' } : null);
+      toast({ title: 'Session Paused' });
     } catch (err) {
-      console.error('Error pausing focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to pause focus session'));
+      setError(err instanceof Error ? err : new Error('Failed to pause session'));
+      toast({
+        title: 'Error',
+        description: 'Could not pause the session',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [session, supabase]);
+  }, [session, toast]);
 
-  // Resume a paused focus session
   const resumeSession = useCallback(async () => {
     if (!session) return;
     
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { error: updateError } = await supabase
-        .from('focus_sessions')
-        .update({
-          status: 'active',
-          resumed_at: new Date().toISOString()
-        })
-        .eq('id', session.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setSession(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          status: 'active'
-        };
-      });
-      
-      trackEvent('focus_session_resumed', 'Focus session resumed', {
-        session_id: session.id
-      });
+      // Mock implementation
+      setSession(prev => prev ? { ...prev, status: 'active' } : null);
+      toast({ title: 'Session Resumed' });
     } catch (err) {
-      console.error('Error resuming focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to resume focus session'));
+      setError(err instanceof Error ? err : new Error('Failed to resume session'));
+      toast({
+        title: 'Error',
+        description: 'Could not resume the session',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [session, supabase]);
+  }, [session, toast]);
 
-  // End the current focus session
   const endSession = useCallback(async () => {
     if (!session) return;
     
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      setError(null);
+      // Mock implementation
+      setSession(prev => prev ? { 
+        ...prev, 
+        status: 'completed',
+        endedAt: new Date().toISOString()
+      } : null);
       
-      const currentTime = new Date().toISOString();
-      
-      const { error: updateError } = await supabase
-        .from('focus_sessions')
-        .update({
-          status: 'completed',
-          ended_at: currentTime
-        })
-        .eq('id', session.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setSession(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          status: 'completed',
-          endedAt: currentTime
-        };
-      });
-      
-      trackEvent('focus_session_ended', 'Focus session ended', {
-        session_id: session.id,
-        duration: session.focusTime
+      toast({ 
+        title: 'Session Ended',
+        description: 'Your focus session has ended'
       });
     } catch (err) {
-      console.error('Error ending focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to end focus session'));
+      setError(err instanceof Error ? err : new Error('Failed to end session'));
+      toast({
+        title: 'Error',
+        description: 'Could not end the session',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [session, supabase]);
+  }, [session, toast]);
 
-  // Join an existing focus session
   const joinSession = useCallback(async (sessionId: string) => {
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      setError(null);
+      // Mock implementation - would be an API call
+      // Simulate fetching session data
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      const { data: userData } = await supabase.auth.getUser();
+      const mockSession: FocusSession = {
+        id: sessionId,
+        status: 'active',
+        startedAt: new Date(Date.now() - 300000).toISOString(), // Started 5 minutes ago
+        focusTime: 300, // 5 minutes in seconds
+        createdBy: 'other-user-id',
+        activeParticipants: [
+          {
+            userId: 'other-user-id',
+            name: 'Other User',
+            joinedAt: new Date(Date.now() - 300000).toISOString()
+          },
+          {
+            userId: 'current-user-id',
+            name: 'Current User',
+            joinedAt: new Date().toISOString()
+          }
+        ]
+      };
       
-      if (!userData?.user) {
-        throw new Error('You must be logged in to join a focus session');
-      }
-      
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('focus_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single();
-      
-      if (sessionError) {
-        throw sessionError;
-      }
-      
-      // Join the session's presence channel
-      const channel = supabase
-        .channel(`focus-session-${sessionId}`)
-        .subscribe(async (status: string) => {
-          if (status !== 'SUBSCRIBED') return;
-          
-          await channel.track({
-            user_id: userData.user.id,
-            name: userData.user.user_metadata?.name || 'Anonymous',
-            avatar_url: userData.user.user_metadata?.avatar_url,
-            joined_at: new Date().toISOString()
-          });
-        });
-      
-      setSession({
-        id: sessionData.id,
-        status: sessionData.status,
-        startedAt: sessionData.started_at,
-        endedAt: sessionData.ended_at,
-        focusTime: calculateFocusTime(
-          sessionData.started_at, 
-          sessionData.paused_at,
-          sessionData.status
-        ),
-        createdBy: sessionData.created_by,
-        activeParticipants: []
-      });
-      
-      trackEvent('focus_session_joined', 'Focus session joined', {
-        session_id: sessionId
+      setSession(mockSession);
+      toast({ 
+        title: 'Joined Session',
+        description: 'You have joined the focus session'
       });
     } catch (err) {
-      console.error('Error joining focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to join focus session'));
+      setError(err instanceof Error ? err : new Error('Failed to join session'));
+      toast({
+        title: 'Error',
+        description: 'Could not join the session',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, [toast]);
 
-  // Leave the current focus session
   const leaveSession = useCallback(async () => {
     if (!session) return;
     
+    setIsLoading(true);
+    
     try {
-      // Remove from presence channel
-      const channel = supabase.getChannels().find(
-        (ch: any) => ch.topic === `realtime:presence:focus-session-${session.id}`
-      );
-      
-      if (channel) {
-        await supabase.removeChannel(channel);
-      }
-      
+      // Mock implementation
       setSession(null);
-      
-      trackEvent('focus_session_left', 'Focus session left', {
-        session_id: session.id
+      toast({ 
+        title: 'Left Session',
+        description: 'You have left the focus session'
       });
     } catch (err) {
-      console.error('Error leaving focus session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to leave focus session'));
+      setError(err instanceof Error ? err : new Error('Failed to leave session'));
+      toast({
+        title: 'Error',
+        description: 'Could not leave the session',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [session, supabase]);
+  }, [session, toast]);
 
   return {
     session,

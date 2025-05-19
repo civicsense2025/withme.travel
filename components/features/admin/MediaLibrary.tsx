@@ -19,7 +19,7 @@ import { TABLES, ENUMS } from '@/utils/constants/database';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Search, Edit, Trash, Plus, Image as ImageIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
@@ -158,7 +158,7 @@ export function MediaLibrary({
         .insert({
           url: imageUrl,
           image_url: imageUrl,
-          thumb_url: metadata?.thumbUrl || imageUrl,
+          thumb_url: metadata?.thumb-rl || imageUrl,
           alt_text: metadata?.alt || 'Image',
           source: metadata?.sourceName || null,
           external_id: metadata?.id || null,

@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClientFocusMode } from '../organisms/ClientFocusMode';
+import { ClientFocusMode } from '@/components/features/trips/organisms/ClientFocusMode';
 import { Coffee, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -61,4 +61,4 @@ export function FocusModeDemo({ tripId }: FocusModeDemoProps) {
       )}
     </div>
   );
-} 
+}

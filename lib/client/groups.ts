@@ -143,3 +143,10 @@ export async function deleteGroup(id: string): Promise<Result<void>> {
     })
   );
 }
+
+/**
+ * Type guard to check if an object is a Group
+ */
+export function isGroup(obj: any): obj is Group {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}

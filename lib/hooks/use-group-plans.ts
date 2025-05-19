@@ -1,145 +1,140 @@
-/**
- * Group Plans Hook
- * 
- * Provides functionality for working with group plans
- */
+'use client';
 
-import { useState, useCallback } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  listGroupPlans,
+  createGroupPlan,
+  updateGroupPlan,
+  deleteGroupPlan,
+  GroupPlan,
+} from '@/lib/client/groupPlans';
+import { useToast } from '@/lib/hooks/use-toast';
 
-interface GroupPlan {
-  id: string;
-  group_id: string;
-  title: string;
-  description?: string;
-  start_date?: string;
-  end_date?: string;
-  status: string;
-  created_at: string;
-  created_by: string;
-}
-
-export interface UseGroupPlansResult {
-  loading: boolean;
-  error: string | null;
+interface UseGroupPlansResult {
   plans: GroupPlan[];
-  fetchPlans: (groupId: string) => Promise<void>;
-  createPlan: (groupId: string, data: Partial<GroupPlan>) => Promise<{ success: boolean; planId?: string; error?: string }>;
-  updatePlan: (groupId: string, planId: string, data: Partial<GroupPlan>) => Promise<{ success: boolean; error?: string }>;
-  deletePlan: (groupId: string, planId: string) => Promise<{ success: boolean; error?: string }>;
-  convertPlanToTrip: (groupId: string, planId: string) => Promise<{ success: boolean; tripId?: string; error?: string }>;
+  loading: boolean;
+  error: Error | null;
+  createPlan: (data: Partial<GroupPlan>) => Promise<GroupPlan | null>;
+  updatePlan: (id: string, data: Partial<GroupPlan>) => Promise<boolean>;
+  deletePlan: (id: string) => Promise<boolean>;
+  refetch: () => Promise<void>;
 }
 
-export function useGroupPlans(): UseGroupPlansResult {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function useGroupPlans(groupId: string): UseGroupPlansResult {
   const [plans, setPlans] = useState<GroupPlan[]>([]);
-  const { user } = useAuth();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
-  const fetchPlans = useCallback(async (groupId: string) => {
+  // Fetch group plans
+  const fetchPlans = useCallback(async () => {
+    if (!groupId) return;
     setLoading(true);
     setError(null);
-
-    try {
-      const res = await fetch(`/api/groups/${groupId}/plans`);
-      if (!res.ok) throw new Error('Failed to fetch plans');
-      const data = await res.json();
-      setPlans(data.plans || []);
-    } catch (err) {
-      setError('Failed to fetch plans');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const createPlan = useCallback(async (groupId: string, data: Partial<GroupPlan>): Promise<{ success: boolean; planId?: string; error?: string }> => {
-    try {
-      const res = await fetch(`/api/groups/${groupId}/plans`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+    const result = await listGroupPlans(groupId);
+    if (result.success) {
+      setPlans(result.data);
+    } else {
+      setError(new Error(result.error));
+      toast({
+        title: 'Error',
+        description: 'Failed to load group plans',
+        variant: 'destructive',
       });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        return { success: false, error: errorData.error || 'Failed to create plan' };
-      }
-      
-      const responseData = await res.json();
-      return { success: true, planId: responseData.plan?.id };
-    } catch (err) {
-      console.error('Error creating plan:', err);
-      return { success: false, error: 'Failed to create plan' };
     }
-  }, []);
+    setLoading(false);
+  }, [groupId, toast]);
 
-  const updatePlan = useCallback(async (groupId: string, planId: string, data: Partial<GroupPlan>): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const res = await fetch(`/api/groups/${groupId}/plans/${planId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        return { success: false, error: errorData.error || 'Failed to update plan' };
-      }
-      
-      return { success: true };
-    } catch (err) {
-      console.error('Error updating plan:', err);
-      return { success: false, error: 'Failed to update plan' };
-    }
-  }, []);
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
 
-  const deletePlan = useCallback(async (groupId: string, planId: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const res = await fetch(`/api/groups/${groupId}/plans/${planId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        return { success: false, error: errorData.error || 'Failed to delete plan' };
+  // Create a new plan
+  const createPlan = useCallback(
+    async (data: Partial<GroupPlan>): Promise<GroupPlan | null> => {
+      if (!groupId || !data.title) {
+        toast({
+          title: 'Error',
+          description: 'Group ID and title are required',
+          variant: 'destructive',
+        });
+        return null;
       }
-      
-      return { success: true };
-    } catch (err) {
-      console.error('Error deleting plan:', err);
-      return { success: false, error: 'Failed to delete plan' };
-    }
-  }, []);
+      const result = await createGroupPlan(groupId, data);
+      if (result.success) {
+        setPlans((prev) => [result.data, ...prev]);
+        toast({
+          title: 'Success',
+          description: 'Group plan created',
+        });
+        return result.data;
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return null;
+      }
+    },
+    [groupId, toast]
+  );
 
-  const convertPlanToTrip = useCallback(async (groupId: string, planId: string): Promise<{ success: boolean; tripId?: string; error?: string }> => {
-    try {
-      const res = await fetch(`/api/groups/${groupId}/plans/${planId}/convert-to-trip`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        return { success: false, error: errorData.error || 'Failed to convert plan to trip' };
+  // Update a plan
+  const updatePlan = useCallback(
+    async (id: string, data: Partial<GroupPlan>): Promise<boolean> => {
+      if (!groupId || !id) return false;
+      const result = await updateGroupPlan(groupId, id, data);
+      if (result.success) {
+        setPlans((prev) => prev.map((plan) => (plan.id === id ? result.data : plan)));
+        toast({
+          title: 'Success',
+          description: 'Group plan updated',
+        });
+        return true;
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return false;
       }
-      
-      const responseData = await res.json();
-      return { success: true, tripId: responseData.tripId };
-    } catch (err) {
-      console.error('Error converting plan to trip:', err);
-      return { success: false, error: 'Failed to convert plan to trip' };
-    }
-  }, []);
+    },
+    [groupId, toast]
+  );
+
+  // Delete a plan
+  const deletePlan = useCallback(
+    async (id: string): Promise<boolean> => {
+      if (!groupId || !id) return false;
+      const result = await deleteGroupPlan(groupId, id);
+      if (result.success) {
+        setPlans((prev) => prev.filter((plan) => plan.id !== id));
+        toast({
+          title: 'Success',
+          description: 'Group plan deleted',
+        });
+        return true;
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [groupId, toast]
+  );
 
   return {
+    plans,
     loading,
     error,
-    plans,
-    fetchPlans,
     createPlan,
     updatePlan,
     deletePlan,
-    convertPlanToTrip,
+    refetch: fetchPlans,
   };
-} 
+}

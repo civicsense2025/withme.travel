@@ -8,19 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Container } from '@/components/container';
+import { PageContainer } from '@/components/features/layout/molecules/PageContainer';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CityChipsAutocompleteInput } from '@/components/features/cities/city-chips-autocomplete-input';
-import { PageHeader } from '@/components/layout/page-header';
+import { LocationSearch } from '@/components/features/places/molecules/LocationSearch';
+import { PageHeader } from '@/components/features/layout/molecules/PageHeader';
 import { API_ROUTES, PAGE_ROUTES } from '@/utils/constants/routes';
-import { toast } from '@/hooks/use-toast';
+import { Toast } from '@/lib/hooks/use-toast';
 import { mutate } from 'swr';
-import LoadingOverlay from '@/components/shared/loading-overlay';
+import LoadingOverlay from '@/components/features/ui/LoadingOverlay';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { toast } from 'sonner';
 
 // Simple schema for trip creation
 const tripSchema = z.object({
@@ -200,7 +201,7 @@ export default function CreateTrip() {
   };
 
   return (
-    <Container size="wide">
+    <PageContainer size="wide">
       <div className="py-10 max-w-2xl mx-auto">
         <PageHeader
           title="Create a New Trip"
@@ -210,7 +211,7 @@ export default function CreateTrip() {
 
         {/* Display error message if there is one */}
         {error && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert className="mb-6">
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <AlertTitle>Error</AlertTitle>
@@ -297,8 +298,7 @@ export default function CreateTrip() {
                     <Label htmlFor="cities" className="text-sm font-medium">
                       Destinations*
                     </Label>
-                    <CityChipsAutocompleteInput
-                      selectedCities={selectedCities}
+                    <LocationSearch
                       onChange={handleCitiesChange}
                       disabled={isSubmitting}
                       placeholder="Find places by searching or click on suggestions from the right"
@@ -338,6 +338,6 @@ export default function CreateTrip() {
         </div>
       </div>
       {isSubmitting && <LoadingOverlay message="Creating your trip..." />}
-    </Container>
+    </PageContainer>
   );
 }

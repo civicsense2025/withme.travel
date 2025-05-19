@@ -17,9 +17,10 @@ import {
 } from '@/components/ui/dialog';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { API_ROUTES } from '@/utils/constants/routes';
-import { useResearchTracking } from '@/hooks/use-research-tracking';
+import { useResearchTracking } from '@/lib/hooks/use-research-tracking';
+import { AnalyticsEvents } from '@/lib/analytics';
 
 interface CreateTripFromTemplateDialogProps {
   templateSlug: string;
@@ -74,7 +75,7 @@ export function CreateTripFromTemplateDialog({
       // Track both the template usage and trip creation events
       try {
         // Track that a template was used to create a trip
-        await trackEvent('template_used', { 
+        await trackEvent(AnalyticsEvents.TEMPLATE_USED, { 
           templateSlug,
           templateTitle,
           tripId: result.trip_id,
@@ -84,7 +85,7 @@ export function CreateTripFromTemplateDialog({
         });
         
         // Track the trip creation event
-        await trackEvent('trip_created', { 
+        await trackEvent(AnalyticsEvents.TRIP_CREATED, { 
           tripId: result.trip_id, 
           title: tripName,
           startDate: startDate ? format(startDate, 'yyyy-MM-dd') : null,
@@ -113,7 +114,7 @@ export function CreateTripFromTemplateDialog({
       
       // Track the failure event
       try {
-        await trackEvent('trip_creation_failed', {
+        await trackEvent(AnalyticsEvents.TRIP_CREATION_FAILED, {
           templateSlug,
           templateTitle,
           error: error.message || 'Unknown error',

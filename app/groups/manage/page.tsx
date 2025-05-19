@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { PageContainer } from '@/components/layout/page-container';
-import { PageHeader } from '@/components/layout/page-header';
+import { Container } from '@/components/ui/Container';
+import { Text } from '@/components/ui/Text';
 import { Metadata } from 'next';
 import { requireAuthOrGuest } from '@/utils/auth/route-helpers';
 import { Button } from '@/components/ui/button';
@@ -47,14 +47,9 @@ export default async function GroupsManagePage() {
 
   if (groups.length > 0) {
     return (
-      <PageContainer
+      <Container
         header={
-          <PageHeader
-            title="My Groups"
-            description="Manage your travel groups"
-            className="mb-6"
-            centered={true}
-            actions={
+          <Text as="h1" title="My Groups" description="Manage your travel groups" className="mb-6" centered={true} actions={
               <Link href="/groups/create" className="mt-16">
                 <Button className="flex items-center rounded-full">
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -66,18 +61,18 @@ export default async function GroupsManagePage() {
         }
       >
         <GroupsClientPage initialGroups={groups} isGuest={isGuestMode} />
-      </PageContainer>
+      </Container>
     );
   }
 
   return (
-    <PageContainer>
+    <Container>
       <div className="text-center p-8">
         <p className="mb-4">You don't have any groups yet.</p>
         <a href="/groups/create" className="text-blue-500 hover:underline">
           Create your first group
         </a>
       </div>
-    </PageContainer>
+    </Container>
   );
 }

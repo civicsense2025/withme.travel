@@ -102,7 +102,7 @@ export async function listDestinations(
   const queryString = params.toString() ? `?${params.toString()}` : '';
 
   return tryCatch(
-    fetch(`${API_ROUTES.DESTINATIONS.LIST}${queryString}`, {
+    fetch(`/api/destinations${queryString}`, {
       method: 'GET',
       next: { revalidate: 3600 }, // Cache for 1 hour
     }).then((response) => handleApiResponse<Destination[]>(response))
@@ -115,7 +115,7 @@ export async function listDestinations(
  */
 export async function getDestination(id: string): Promise<Result<Destination>> {
   return tryCatch(
-    fetch(API_ROUTES.DESTINATIONS.DETAIL(id), {
+    fetch(`/api/destinations/${id}`, {
       method: 'GET',
       next: { revalidate: 3600 }, // Cache for 1 hour
     }).then((response) => handleApiResponse<Destination>(response))
@@ -128,7 +128,7 @@ export async function getDestination(id: string): Promise<Result<Destination>> {
  */
 export async function getDestinationBySlug(slug: string): Promise<Result<Destination>> {
   return tryCatch(
-    fetch(`${API_ROUTES.DESTINATIONS.LIST}?slug=${slug}`, {
+    fetch(`/api/destinations?slug=${slug}`, {
       method: 'GET',
       next: { revalidate: 3600 }, // Cache for 1 hour
     }).then(async (response) => {
@@ -147,7 +147,7 @@ export async function getDestinationBySlug(slug: string): Promise<Result<Destina
  */
 export async function createDestination(data: CreateDestinationData): Promise<Result<Destination>> {
   return tryCatch(
-    fetch(API_ROUTES.DESTINATIONS.CREATE, {
+    fetch('/api/destinations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ export async function updateDestination(
   data: UpdateDestinationData
 ): Promise<Result<Destination>> {
   return tryCatch(
-    fetch(API_ROUTES.DESTINATIONS.UPDATE(id), {
+    fetch(`/api/destinations/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ export async function updateDestination(
  */
 export async function deleteDestination(id: string): Promise<Result<null>> {
   return tryCatch(
-    fetch(API_ROUTES.DESTINATIONS.DELETE(id), {
+    fetch(`/api/destinations/${id}`, {
       method: 'DELETE',
     }).then((response) => handleApiResponse<null>(response))
   );
@@ -195,7 +195,7 @@ export async function deleteDestination(id: string): Promise<Result<null>> {
  */
 export async function getFeaturedDestinations(limit = 6): Promise<Result<Destination[]>> {
   return tryCatch(
-    fetch(`${API_ROUTES.DESTINATIONS.LIST}?featured=true&limit=${limit}`, {
+    fetch(`/api/destinations?featured=true&limit=${limit}`, {
       method: 'GET',
       next: { revalidate: 3600 }, // Cache for 1 hour
     }).then((response) => handleApiResponse<Destination[]>(response))
@@ -207,9 +207,16 @@ export async function getFeaturedDestinations(limit = 6): Promise<Result<Destina
  */
 export async function getDestinationTags(): Promise<Result<string[]>> {
   return tryCatch(
-    fetch(API_ROUTES.DESTINATIONS.TAGS, {
+    fetch('/api/destinations/tags', {
       method: 'GET',
       next: { revalidate: 86400 }, // Cache for 24 hours
     }).then((response) => handleApiResponse<string[]>(response))
   );
+}
+
+/**
+ * Type guard to check if an object is a Destination
+ */
+export function isDestination(obj: any): obj is Destination {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
 }

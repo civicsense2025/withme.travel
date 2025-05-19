@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from './use-toast';
 import {
   listPermissionRequests,
   getPermissionRequest,
@@ -76,7 +76,8 @@ export function usePermissions(
       } else {
         setError(result.error);
         toast({
-          description: `Failed to load permission requests: ${result.error}`,
+          title: 'Failed to load permission requests',
+          description: result.error,
           variant: 'destructive',
         });
       }
@@ -84,7 +85,8 @@ export function usePermissions(
       const errorMessage = err instanceof Error ? err.message : 'Unknown error loading permission requests';
       setError(errorMessage);
       toast({
-        description: `Error: ${errorMessage}`,
+        title: 'Error',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -107,7 +109,8 @@ export function usePermissions(
       } else {
         setError(result.error);
         toast({
-          description: `Failed to check permissions: ${result.error}`,
+          title: 'Permission Check Failed',
+          description: result.error,
           variant: 'destructive',
         });
       }
@@ -115,7 +118,8 @@ export function usePermissions(
       const errorMessage = err instanceof Error ? err.message : 'Unknown error checking permissions';
       setError(errorMessage);
       toast({
-        description: `Error: ${errorMessage}`,
+        title: 'Error',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -133,13 +137,15 @@ export function usePermissions(
         
         if (result.success) {
           toast({
+            title: 'Access Requested',
             description: 'Your request has been sent to the trip administrators',
           });
           await refreshRequests();
         } else {
           setError(result.error);
           toast({
-            description: `Failed to request access: ${result.error}`,
+            title: 'Failed to request access',
+            description: result.error,
             variant: 'destructive',
           });
         }
@@ -149,7 +155,8 @@ export function usePermissions(
         const errorMessage = err instanceof Error ? err.message : 'Unknown error requesting access';
         setError(errorMessage);
         toast({
-          description: `Error: ${errorMessage}`,
+          title: 'Error',
+          description: errorMessage,
           variant: 'destructive',
         });
         
@@ -177,12 +184,14 @@ export function usePermissions(
             prev.map((req) => (req.id === requestId ? result.data : req))
           );
           toast({
+            title: 'Request Approved',
             description: 'The access request has been approved',
           });
         } else {
           setError(result.error);
           toast({
-            description: `Failed to approve request: ${result.error}`,
+            title: 'Failed to approve request',
+            description: result.error,
             variant: 'destructive',
           });
         }
@@ -192,7 +201,8 @@ export function usePermissions(
         const errorMessage = err instanceof Error ? err.message : 'Unknown error approving request';
         setError(errorMessage);
         toast({
-          description: `Error: ${errorMessage}`,
+          title: 'Error',
+          description: errorMessage,
           variant: 'destructive',
         });
         
@@ -220,12 +230,14 @@ export function usePermissions(
             prev.map((req) => (req.id === requestId ? result.data : req))
           );
           toast({
+            title: 'Request Rejected',
             description: 'The access request has been rejected',
           });
         } else {
           setError(result.error);
           toast({
-            description: `Failed to reject request: ${result.error}`,
+            title: 'Failed to reject request',
+            description: result.error,
             variant: 'destructive',
           });
         }
@@ -235,7 +247,8 @@ export function usePermissions(
         const errorMessage = err instanceof Error ? err.message : 'Unknown error rejecting request';
         setError(errorMessage);
         toast({
-          description: `Error: ${errorMessage}`,
+          title: 'Error',
+          description: errorMessage,
           variant: 'destructive',
         });
         
@@ -261,7 +274,8 @@ export function usePermissions(
         if (!result.success) {
           setError(result.error);
           toast({
-            description: `Failed to get permission request: ${result.error}`,
+            title: 'Failed to get permission request',
+            description: result.error,
             variant: 'destructive',
           });
         }
@@ -271,7 +285,8 @@ export function usePermissions(
         const errorMessage = err instanceof Error ? err.message : 'Unknown error getting request';
         setError(errorMessage);
         toast({
-          description: `Error: ${errorMessage}`,
+          title: 'Error',
+          description: errorMessage,
           variant: 'destructive',
         });
         

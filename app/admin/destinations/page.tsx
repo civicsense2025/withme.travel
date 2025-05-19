@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { Container } from '@/components/container';
 
 export const metadata = {
   title: 'Manage Destinations | Admin Panel',

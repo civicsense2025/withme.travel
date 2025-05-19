@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlaceList } from '@/components/features/places/organisms/PlaceList';
 import { usePlaces } from '@/lib/features/places/hooks';
 import { PlusCircle, MapPin } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Place } from '@/types/places';
 interface PlacesTabContentProps {

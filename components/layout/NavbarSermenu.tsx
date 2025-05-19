@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import Link from 'next/link';
 
 export function NavbarUserMenu() {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   
   if (!user) {
     return null;
@@ -63,7 +63,7 @@ export function NavbarUserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="py-3 text-rose-500 dark:text-rose-400 cursor-pointer"
-          onClick={() => signOut()}
+          onClick={() => logout()}
         >
           Sign Out
         </DropdownMenuItem>

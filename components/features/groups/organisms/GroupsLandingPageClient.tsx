@@ -8,13 +8,13 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { Container } from '@/components/container';
+import { Container } from '@/components/features/layout/organisms/container';
 import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
 import { DestinationsFAQ } from '@/components/features/faq';
-import { useThemeSync } from '@/components/ThemeProvider';
+import { useThemeSync } from '@/components/features/ui/ThemeProvider';
 import { CollaborativeItinerarySection } from '@/components/features/groups/organisms/CollaborativeItinerarySection';
 import { useGroups } from '@/lib/features/groups/hooks';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 
 const CreateGroupModal = dynamic(() => import('@/components/features/groups/molecules/CreateGroupModal'), { ssr: false });
 

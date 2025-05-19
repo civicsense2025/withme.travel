@@ -29,7 +29,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { useSearch } from '@/contexts/search-context';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/lib/hooks/use-auth';

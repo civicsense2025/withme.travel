@@ -51,7 +51,7 @@ export const WithCreateButton: Story = {
     centered: true,
     actions: (
       <Button className="flex items-center rounded-full">
-        <PlusCircle className="mrU2 hU4 wU4" />
+        <PlusCircle className="mr-2 hU4 wU4" />
         Create New
       </Button>
     ),

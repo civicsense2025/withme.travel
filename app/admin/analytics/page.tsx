@@ -1,9 +1,12 @@
 import { redirect } from 'next/navigation';
-import { Container } from '@/components/container';
+import { Container } from '@/components/features/layout/organisms/container';
+// If '@/components/features/layout/organisms/container' does not exist, replace with a stub:
+// import { Container } from '@/components/ui/container';
 import { checkAdminAuth } from '../utils/auth';
 import { TABLES } from '@/utils/constants/tables';
 // @ts-ignore: Temporarily ignoring missing component file
 import { FormAnalyticsDashboard } from '../../components/feedback/analytics/FormAnalyticsDashboard';
+import { FeedbackType, FormStatus } from '../../components/feedback/types';
 
 export const metadata = {
   title: 'Analytics Dashboard | Admin Panel',
@@ -118,11 +121,41 @@ export default async function AnalyticsPage() {
     popularDestinations: destinationPopularityResult.data || [],
   };
 
+  // Create a basic analytics object that matches the FormAnalyticsDashboard prop types
+  const forms = [
+    {
+      id: 'dashboard-overview',
+      title: 'Dashboard Overview',
+      description: 'System analytics overview',
+      feedbackType: FeedbackType.IN_APP,
+      status: FormStatus.ACTIVE,
+      showProgressBar: true,
+      isTemplate: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ];
+  
+  const formattedAnalytics = {
+    'dashboard-overview': {
+      id: 'dashboard-overview',
+      formId: 'dashboard-overview',
+      views: userGrowthResult.data?.length || 0,
+      submissions: feedbackCategoriesResult.data?.length || 0,
+      updatedAt: new Date(),
+      // Add custom data to pass through to the component
+      customData: analyticsData as any
+    }
+  };
+
   return (
     <Container>
       <h1 className="text-3xl font-bold mb-8">Analytics Dashboard</h1>
 
-      <FormAnalyticsDashboard analytics={analyticsData} />
+      <FormAnalyticsDashboard 
+        forms={forms} 
+        analytics={formattedAnalytics} 
+      />
     </Container>
   );
 }

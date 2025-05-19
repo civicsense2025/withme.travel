@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { Input } from '@/components/ui/input';
 import { Place } from '@/types/places'; // Assuming Place type exists
-import { useToast } from '@/hooks/use-toast' // Assuming you use Shadcn toasts
+import { useToast } from '@/lib/hooks/use-toast' // Assuming you use Shadcn toasts
 
 interface PlaceAutocompleteProps {
   onPlaceSelect: (place: Place | null, googlePlaceDetails?: google.maps.places.PlaceResult) => void;
@@ -46,7 +46,6 @@ export function PlaceAutocomplete({
           latitude: googlePlace.geometry.location.lat(),
           longitude: googlePlace.geometry.location.lng(),
           // Map other relevant fields if needed (types, etc.)
-          google_place_id: googlePlace.place_id, // Store original ID if needed
           tags: googlePlace.types || [],
         };
 

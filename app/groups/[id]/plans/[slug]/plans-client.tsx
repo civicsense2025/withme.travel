@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Heading } from '@/components/ui/Heading';
-import { Text } from '@/components/ui/Text';
+import { Text } from '@/components/ui/text';
 import { VoteAndDecideSection } from '@/components/ui/VoteAndDecideSection';
 import PlanIdeasClient from './plan-ideas-client';
 import VotingClient from './voting-client';
@@ -165,7 +165,7 @@ const PlansClient: React.FC<PlansClientProps> = ({
           <p className="text-muted-foreground">{error || 'Plan not found'}</p>
           <button
             onClick={handleBackClick}
-            className="mtU4 pxU4 pyU2 bg-primary text-white rounded-md"
+            className="mt-4 pxU4 pyU2 bg-primary text-white rounded-md"
           >
             Back to Plans
           </button>
@@ -176,14 +176,14 @@ const PlansClient: React.FC<PlansClientProps> = ({
 
   return (
     <div className="container max-wU7xl pyU4 space-yU6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gapU4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <Link href={`/groups/${groupId}/plans`} passHref>
-            <Button variant="ghost" size="sm" className="mbU2">
-              <ChevronLeft className="hU4 wU4 mrU1" /> Back to plans
+            <Button variant="ghost" size="sm" className="mb-2">
+              <ChevronLeft className="hU4 wU4 mr-1" /> Back to plans
             </Button>
           </Link>
-          <Heading level={1} size="large" className="mbU1">
+          <Heading level={1} size="large" className="mb-1">
             {plan.name}
           </Heading>
           <Text className="text-sm text-muted-foreground">Plan together in {plan.group_id}</Text>
@@ -193,13 +193,13 @@ const PlansClient: React.FC<PlansClientProps> = ({
       <Separator />
 
       <Tabs defaultValue="ideas" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-colsU3 w-full max-w-md mbU6">
+        <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
           <TabsTrigger value="ideas">Ideas</TabsTrigger>
           <TabsTrigger value="vote">Vote & Decide</TabsTrigger>
           <TabsTrigger value="trip">Create Trip</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="ideas" className="mtU0">
+        <TabsContent value="ideas" className="mt-0">
           <PlanIdeasClient
             groupId={groupId}
             planId={plan.id}
@@ -216,18 +216,18 @@ const PlansClient: React.FC<PlansClientProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="vote" className="mtU0">
+        <TabsContent value="vote" className="mt-0">
           <div className="bg-card shadow-sm rounded-lg border">
             <VoteAndDecideSection />
           </div>
         </TabsContent>
 
-        <TabsContent value="trip" className="mtU0">
+        <TabsContent value="trip" className="mt-0">
           <VotingClient
             groupId={groupId}
             planSlug={plan.slug}
             groupName={plan.group_id}
-            current-serId={userId}
+            currentUserId={userId}
           />
         </TabsContent>
       </Tabs>

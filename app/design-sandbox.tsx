@@ -40,19 +40,18 @@ export default function DesignSandbox() {
       <Container size="xl">
         <Tabs defaultValue="ui" className="mb-8">
           <TabsList>
-            <TabsTrigger value="ui" onClick={() => setActiveTab('ui')} variant="default">
+            <TabsTrigger value="ui" onClick={() => setActiveTab('ui')}>
               UI Components
             </TabsTrigger>
-            <TabsTrigger value="cards" onClick={() => setActiveTab('cards')} variant="default">
+            <TabsTrigger value="cards" onClick={() => setActiveTab('cards')}>
               Cards
             </TabsTrigger>
-            <TabsTrigger value="forms" onClick={() => setActiveTab('forms')} variant="default">
+            <TabsTrigger value="forms" onClick={() => setActiveTab('forms')}>
               Forms & Inputs
             </TabsTrigger>
             <TabsTrigger
               value="feedback"
               onClick={() => setActiveTab('feedback')}
-              variant="default"
             >
               Feedback
             </TabsTrigger>
@@ -197,7 +196,7 @@ export default function DesignSandbox() {
 
             <section>
               <h2 className="text-2xl font-bold mb-4">Accordion</h2>
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion className="w-full">
                 <AccordionItem value="item-1">
                   <AccordionTrigger>Travel Information</AccordionTrigger>
                   <AccordionContent>

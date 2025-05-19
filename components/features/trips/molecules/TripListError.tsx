@@ -1,3 +1,7 @@
+/**
+ * @deprecated This component has been moved to components/features/trips/molecules/TripListError.tsx
+ * Please update your imports to use the new location.
+ */
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -122,4 +126,4 @@ export function TripListError({
       </CardFooter>
     </Card>
   );
-} 
+}

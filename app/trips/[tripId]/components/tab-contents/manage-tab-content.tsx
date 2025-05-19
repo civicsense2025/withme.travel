@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { MembersTab, TripMemberFromSSR } from '@/components/MembersTab';
+import { MembersTab, TripMemberFromSSR } from '@/components/trips/organisms/MembersTab';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as Sentry from '@sentry/nextjs';
 import { TripRole } from '@/types/roles';
-import { useTripManagement, adaptTripMembersToSSR } from '@/hooks/use-trip-management';
+import { useTripManagement, adaptTripMembersToSSR } from '@/lib/hooks/use-trip-management';
 
 interface ManageTabContentProps {
   tripId: string;

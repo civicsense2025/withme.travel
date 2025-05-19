@@ -57,14 +57,14 @@ export interface UserNavProps {
 }
 
 function UserNavContent() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleSignOut = async () => {
-    // TODO: Implement sign out logic if available
+    await logout();
   };
 
-  const displayName = user?.email ?? 'User';
-  const avatarUrl = null;
+  const displayName = user?.user_metadata?.full_name || user?.email || 'User';
+  const avatarUrl = user?.user_metadata?.avatar_url || null;
 
   return (
     <DropdownMenu>
@@ -128,10 +128,7 @@ function UserNavContent() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={handleSignOut}
-          className="text-destructive focus:text-destructive focus:bg-destructive/10"
-        >
+        <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-100">
           <LogOut className="mr-2 h-4 w-4" />
           <span className="capitalize">Log Out</span>
         </DropdownMenuItem>

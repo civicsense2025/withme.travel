@@ -1,6 +1,30 @@
 import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { Result } from '@/utils/result';
+import { Result, handleError } from '@/lib/api/_shared';
 import { TABLES } from '@/utils/constants/tables';
+
+/**
+ * Interface for logistics items returned by the API
+ */
+export interface LogisticsItem {
+  id: string;
+  type: string | null;
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  trip_id?: string | null;
+  created_at: string | null;
+  meta?: Record<string, any>;
+  [key: string]: any; // Allow additional properties from database
+}
+
+/**
+ * Type guard to check if an object is a LogisticsItem
+ */
+export function isLogisticsItem(obj: any): obj is LogisticsItem {
+  return obj && typeof obj.id === 'string' && typeof obj.title === 'string';
+}
 
 /**
  * Add a form to a trip itinerary
@@ -16,7 +40,7 @@ export async function addFormToTrip(
     description?: string;
     template_id?: string | null;
   }
-): Promise<Result<any>> {
+): Promise<Result<LogisticsItem>> {
   try {
     const supabase = await createRouteHandlerClient();
 
@@ -29,7 +53,7 @@ export async function addFormToTrip(
         description: data.description || null,
         type: 'form',
         template_id: data.template_id || null,
-        category: 'LOGISTICS',
+        category: 'Other',
       })
       .select()
       .single();
@@ -44,7 +68,7 @@ export async function addFormToTrip(
       // Continue even if this fails - the item was still added
     }
 
-    return { success: true, data: form };
+    return { success: true, data: form as unknown as LogisticsItem };
   } catch (error) {
     return {
       success: false,
@@ -69,7 +93,7 @@ export async function addAccommodationToTrip(
     endDate?: string;
     description?: string;
   }
-): Promise<Result<any>> {
+): Promise<Result<LogisticsItem>> {
   try {
     const supabase = await createRouteHandlerClient();
 
@@ -81,7 +105,7 @@ export async function addAccommodationToTrip(
         title: data.title,
         description: data.description || null,
         type: 'accommodation',
-        category: 'LOGISTICS',
+        category: 'Accommodations',
         location: data.location || null,
         start_date: data.startDate || null,
         end_date: data.endDate || null,
@@ -99,7 +123,7 @@ export async function addAccommodationToTrip(
       // Continue even if this fails - the item was still added
     }
 
-    return { success: true, data: accommodation };
+    return { success: true, data: accommodation as unknown as LogisticsItem };
   } catch (error) {
     return {
       success: false,
@@ -125,7 +149,7 @@ export async function addTransportationToTrip(
     arrivalDate?: string;
     description?: string;
   }
-): Promise<Result<any>> {
+): Promise<Result<LogisticsItem>> {
   try {
     const supabase = await createRouteHandlerClient();
 
@@ -137,7 +161,7 @@ export async function addTransportationToTrip(
         title: data.title,
         description: data.description || null,
         type: 'transportation',
-        category: 'LOGISTICS',
+        category: 'Transportation',
         departure_location: data.departureLocation || null,
         arrival_location: data.arrivalLocation || null,
         start_date: data.departureDate || null,
@@ -156,7 +180,7 @@ export async function addTransportationToTrip(
       // Continue even if this fails - the item was still added
     }
 
-    return { success: true, data: transportation };
+    return { success: true, data: transportation as unknown as LogisticsItem };
   } catch (error) {
     return {
       success: false,
@@ -171,7 +195,7 @@ export async function addTransportationToTrip(
  * @param tripId - The ID of the trip to get items for
  * @returns Result containing the array of logistics items
  */
-export async function listLogisticsItems(tripId: string): Promise<Result<any[]>> {
+export async function listLogisticsItems(tripId: string): Promise<Result<LogisticsItem[]>> {
   try {
     const supabase = await createRouteHandlerClient();
 
@@ -179,7 +203,9 @@ export async function listLogisticsItems(tripId: string): Promise<Result<any[]>>
       .from(TABLES.ITINERARY_ITEMS)
       .select('*')
       .eq('trip_id', tripId)
-      .eq('category', 'LOGISTICS')
+      .eq('category', 'Other')
+      .eq('category', 'Accommodations')
+      .eq('category', 'Transportation')
       .order('created_at', { ascending: false });
 
     if (error) return { success: false, error: error.message };
@@ -213,10 +239,16 @@ async function updateItineraryOrder(tripId: string): Promise<Result<void>> {
 
     if (error) return { success: false, error: error.message };
 
-    // Create a basic order based on date and type
-    // This is a simplified version - in a real app you might have a more complex ordering logic
-    const itemOrder = (items || []).map((item, index) => ({
-      id: item.id,
+    if (!Array.isArray(items)) {
+      console.error('Unexpected items result in updateItineraryOrder:', items);
+      return { success: false, error: 'Failed to fetch itinerary items for ordering' };
+    }
+    // Only map over items that are objects and have a string 'id' property
+    const validItems = items.filter(
+      (item) => typeof item === 'object' && item !== null && 'id' in item && typeof (item as any).id === 'string'
+    );
+    const itemOrder = validItems.map((item, index) => ({
+      id: (item as any).id,
       position: index + 1,
     }));
 

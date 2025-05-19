@@ -81,7 +81,7 @@ async function checkAuth(tripId: string): Promise<AuthStatus> {
       .single();
 
     if (!memberError && member && isTripMember(member)) {
-      console.log(`-ser ${userId} is a member of trip ${tripId} with role: ${member.role}`);
+      console.log(`User ${userId} is a member of trip ${tripId} with role: ${member.role}`);
       return {
         authenticated: true,
         canEdit: member.role === 'admin' || member.role === 'editor',
@@ -106,7 +106,7 @@ async function checkAuth(tripId: string): Promise<AuthStatus> {
 
     // Check if user is the creator
     if (trip && isTripData(trip) && trip.created_by === userId) {
-      console.log(`-ser ${userId} is the creator of trip ${tripId}`);
+      console.log(`User ${userId} is the creator of trip ${tripId}`);
       return { authenticated: true, canEdit: true };
     }
 
@@ -236,11 +236,11 @@ export default async function TripPage({
       // Render a nice access denied page if authenticated but can't access
       return (
         <div className="container mx-auto pU8">
-          <h1 className="textU2xl font-bold mbU4">Access Denied</h1>
-          <p className="mbU4">
+          <h1 className="textU2xl font-bold mb-4">Access Denied</h1>
+          <p className="mb-4">
             {authStatus.message || "You don't have permission to view this trip."}
           </p>
-          <div className="mtU6">
+          <div className="mt-6">
             <a href="/trips" className="text-primary hover:underline">
               Return to your trips
             </a>
@@ -257,11 +257,11 @@ export default async function TripPage({
       // Handle trip data fetch error
       return (
         <div className="container mx-auto pU8">
-          <h1 className="textU2xl font-bold mbU4">Error Loading Trip</h1>
-          <p className="text-redU500 mbU4">
+          <h1 className="textU2xl font-bold mb-4">Error Loading Trip</h1>
+          <p className="text-redU500 mb-4">
             {error instanceof Error ? error.message : 'An unexpected error occurred'}
           </p>
-          <div className="mtU6">
+          <div className="mt-6">
             <a href="/trips" className="text-primary hover:underline">
               Return to trips
             </a>

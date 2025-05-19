@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@/utils/supabase/server';
-import { rateLimit } from '@/utils/middleware/rate-limit';
 import { z } from 'zod';
 import { captureException } from '@sentry/nextjs';
 import { sanitizeAuthCredentials } from '@/utils/sanitize';
+import { rateLimit } from '@/utils/middleware/rate-limit';
+import { login } from '@/lib/api/auth';
+import { isSuccess } from '@/utils/result';
 
 // Simple schema for login validation
 const loginSchema = z.object({
@@ -53,30 +54,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Sanitize credentials
     const { email, password } = sanitizeAuthCredentials(body);
 
-    // Use the server-specific client creator
-    const supabase = await createRouteHandlerClient();
+    // Use the API module
+    const result = await login({ email, password });
 
-    // Attempt to sign in
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    // Handle authentication errors
-    if (error) {
-      console.error('Authentication error:', error);
-      captureException(error);
-
-      const statusCode = error.status || 400;
-      let errorMessage = error.message || 'Authentication failed';
+    if (!isSuccess(result)) {
+      console.error('Authentication error:', result.error);
+      
+      let errorMessage = result.error?.message || 'Authentication failed';
+      let statusCode = 400;
 
       // Provide more user-friendly error messages
-      if (error.message?.includes('Invalid login credentials')) {
+      if (errorMessage.includes('Invalid login credentials')) {
         errorMessage = 'The email or password you entered is incorrect.';
-      } else if (error.message?.includes('Email not confirmed')) {
+      } else if (errorMessage.includes('Email not confirmed')) {
         errorMessage = 'Please confirm your email address before logging in.';
-      } else if (error.message?.includes('Too many requests')) {
+      } else if (errorMessage.includes('Too many requests')) {
         errorMessage = 'Too many login attempts. Please try again later.';
+        statusCode = 429;
       }
 
       return NextResponse.json(
@@ -85,22 +79,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check for valid user data
-    if (!data?.user) {
-      return NextResponse.json(
-        { error: 'No user data returned' },
-        { status: 500, headers: responseHeaders }
-      );
-    }
-
     // Return successful login response
     return NextResponse.json(
       {
         success: true,
-        user: {
-          id: data.user.id,
-          email: data.user.email,
-        },
       },
       { status: 200, headers: responseHeaders }
     );

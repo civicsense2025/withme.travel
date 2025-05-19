@@ -58,42 +58,6 @@ export interface UserProfileCardProps {
   className?: string;
 }
 
-// LoginForm Types
-export interface LoginFormProps {
-  /** Optional callback function to call when login is successful */
-  onSuccess?: () => void;
-  /** Optional custom text for the primary button */
-  primaryButtonText?: string;
-  /** Whether to redirect after successful login */
-  redirectAfterLogin?: boolean;
-  /** Custom redirect URL (defaults to /dashboard) */
-  redirectUrl?: string;
-  /** Show the registration link */
-  showSignUpLink?: boolean;
-  /** Custom sign up link text */
-  signUpLinkText?: string;
-  /** Additional CSS class names */
-  className?: string;
-}
-
-// SignupForm Types
-export interface SignupFormProps {
-  /** Optional callback function to call when signup is successful */
-  onSuccess?: () => void;
-  /** Optional custom text for the primary button */
-  primaryButtonText?: string;
-  /** Whether to redirect after successful signup */
-  redirectAfterSignup?: boolean;
-  /** Custom redirect URL (defaults to /onboarding) */
-  redirectUrl?: string;
-  /** Show the login link */
-  showLoginLink?: boolean;
-  /** Custom login link text */
-  loginLinkText?: string;
-  /** Additional CSS class names */
-  className?: string;
-}
-
 // UserSettings Types
 export interface UserSettingsProps {
   /** User profile data */

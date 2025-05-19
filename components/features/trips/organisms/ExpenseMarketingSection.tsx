@@ -13,7 +13,7 @@ export function ExpenseMarketingSection() {
       <div className="text-center mb-10">
         <h2 className="text-3xl md:text-4xl font-bold mb-4">Track expenses together</h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Split costs, track who paid what, and make sure everyone gets reimbursed fairly.
+          Split costs, track who paid what, and make sure everyone gets reimb-rsed fairly.
         </p>
       </div>
 

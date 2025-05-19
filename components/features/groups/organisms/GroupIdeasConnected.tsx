@@ -9,13 +9,25 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useGroupIdeas } from '@/lib/features/groups/hooks';
 import { Button } from '@/components/ui/button';
 import { GroupIdeaCard } from '../molecules/GroupIdeaCard';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import type { GroupIdea } from '@/types/group-ideas';
+// Import from the client where the hook gets its type
+import { GroupIdea as ClientGroupIdea } from '@/lib/client/groupPlans';
+// Also import types from the types directory for the card component
+import type { GroupIdea as TypesGroupIdea, IdeaType } from '@/types/group-ideas';
+
+// Define the same ExtendedGroupIdea interface used in GroupIdeaCard
+// Based on the types/group-ideas.ts definition
+interface ExtendedGroupIdea extends TypesGroupIdea {
+  comment_count?: number;
+  link?: string | null; 
+  start_date?: string | null;
+  end_date?: string | null;
+}
 
 // ============================================================================
 // COMPONENT PROPS
@@ -48,20 +60,12 @@ export function GroupIdeasConnected({
   className,
   onIdeaAdded,
 }: GroupIdeasConnectedProps) {
-  const { ideas, loading, error, fetchIdeas, voteOnIdea, deleteIdea } = useGroupIdeas();
+  // Use the hook with groupId parameter to automatically fetch data
+  const { ideas: hookIdeas, loading, error, createIdea, voteOnIdea, deleteIdea, refetch } = useGroupIdeas(groupId);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Fetch ideas on mount
-  useEffect(() => {
-    if (groupId) {
-      fetchIdeas(groupId).catch(err => {
-        console.error('Error fetching ideas:', err);
-      });
-    }
-  }, [groupId, fetchIdeas]);
-  
   // Filtered ideas based on search
-  const filteredIdeas = ideas.filter(idea => 
+  const filteredIdeas = hookIdeas.filter(idea => 
     idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (idea.description && idea.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -69,49 +73,37 @@ export function GroupIdeasConnected({
   // Handlers
   const handleVoteUp = useCallback(async (ideaId: string) => {
     try {
-      const result = await voteOnIdea(groupId, ideaId, 'up');
-      if (!result.success && result.error) {
-        console.error('Error voting on idea:', result.error);
-      }
+      const success = await voteOnIdea(ideaId, 'up');
     } catch (err) {
       console.error('Error voting on idea:', err);
     }
-  }, [groupId, voteOnIdea]);
+  }, [voteOnIdea]);
   
   const handleVoteDown = useCallback(async (ideaId: string) => {
     try {
-      const result = await voteOnIdea(groupId, ideaId, 'down');
-      if (!result.success && result.error) {
-        console.error('Error voting on idea:', result.error);
-      }
+      const success = await voteOnIdea(ideaId, 'down');
     } catch (err) {
       console.error('Error voting on idea:', err);
     }
-  }, [groupId, voteOnIdea]);
+  }, [voteOnIdea]);
   
   const handleDelete = useCallback(async (ideaId: string) => {
     try {
-      const result = await deleteIdea(groupId, ideaId);
-      if (!result.success && result.error) {
-        console.error('Error deleting idea:', result.error);
-      } else {
-        // Refresh ideas after successful deletion
-        fetchIdeas(groupId).catch(err => {
-          console.error('Error refreshing ideas after deletion:', err);
-        });
-      }
+      const success = await deleteIdea(ideaId);
     } catch (err) {
       console.error('Error deleting idea:', err);
     }
-  }, [groupId, deleteIdea, fetchIdeas]);
+  }, [deleteIdea]);
 
   // Error state
   if (error) {
-    return <div className="p-4 bg-red-50 text-red-700 rounded-md">{error}</div>;
+    return <div className="p-4 bg-red-50 text-red-700 rounded-md">
+      {typeof error === 'string' ? error : 'Failed to load ideas'}
+    </div>;
   }
   
   // Loading state
-  if (loading && ideas.length === 0) {
+  if (loading && hookIdeas.length === 0) {
     return <div className="p-4 text-muted-foreground">Loading ideas...</div>;
   }
 
@@ -131,26 +123,46 @@ export function GroupIdeasConnected({
       {/* Ideas list */}
       {filteredIdeas.length > 0 ? (
         <div className="space-y-3">
-          {filteredIdeas.map((idea) => (
-            <GroupIdeaCard
-              key={idea.id}
-              idea={{
-                ...idea,
-                comment_count: 0,
-                position: idea.position || null,
-                guest_token: idea.guest_token || null,
-                selected: idea.selected || false
-              }}
-              onDelete={canEdit ? () => handleDelete(idea.id) : undefined}
-              onEdit={canEdit ? () => console.log('Edit idea', idea.id) : undefined}
-              userId={userId}
-              isAuthenticated={isAuthenticated}
-              groupId={groupId}
-              showActions={canEdit}
-              onVoteUp={() => handleVoteUp(idea.id)}
-              onVoteDown={() => handleVoteDown(idea.id)}
-            />
-          ))}
+          {filteredIdeas.map((clientIdea) => {
+            // Convert from client GroupIdea to the TypesGroupIdea expected by the card
+            const extendedIdea: ExtendedGroupIdea = {
+              id: clientIdea.id,
+              group_id: clientIdea.group_id,
+              title: clientIdea.title,
+              description: clientIdea.description || null,
+              type: (clientIdea.type as IdeaType) || 'other',
+              created_by: clientIdea.created_by,
+              created_at: clientIdea.created_at,
+              updated_at: clientIdea.updated_at,
+              votes_up: clientIdea.votes_up || 0,
+              votes_down: clientIdea.votes_down || 0,
+              // Fields from ExtendedGroupIdea
+              comment_count: 0,
+              // Add the required fields from TypesGroupIdea
+              guest_token: null,
+              position: null,
+              selected: false,
+              meta: null,
+              // Add the optional fields from ClientGroupIdea if they exist
+              start_date: clientIdea.start_date || null,
+              end_date: clientIdea.end_date || null,
+            };
+            
+            return (
+              <GroupIdeaCard
+                key={clientIdea.id}
+                idea={extendedIdea}
+                onDelete={canEdit ? () => handleDelete(clientIdea.id) : undefined}
+                onEdit={canEdit ? () => console.log('Edit idea', clientIdea.id) : undefined}
+                userId={userId}
+                isAuthenticated={isAuthenticated}
+                groupId={groupId}
+                showActions={canEdit}
+                onVoteUp={() => handleVoteUp(clientIdea.id)}
+                onVoteDown={() => handleVoteDown(clientIdea.id)}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="py-8 text-center text-muted-foreground">

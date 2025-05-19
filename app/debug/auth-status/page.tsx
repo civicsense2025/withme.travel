@@ -15,8 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getBrowserClient } from '@/utils/supabase/unified';
 import { StateInspector } from '@/components/debug';
 import { ArrowLeft, RefreshCw, LogOut, UserIcon, UserX } from 'lucide-react';
-import { toast } from '@/hooks/use-toast'
-import { clientGuestUtils } from '@/utils/guest';
+import { useToast } from '@/lib/hooks/use-toast';
+import clientGuestUtils from '@/utils/guest';
 import { API_ROUTES } from '@/utils/constants/routes';
 
 type CookieInfo = {
@@ -42,6 +42,7 @@ interface AuthState {
 }
 
 export default function AuthStatusPage() {
+  const { toast } = useToast();
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
     user: null,
@@ -279,7 +280,7 @@ export default function AuthStatusPage() {
   // Function to remove guest token
   const removeGuestToken = () => {
     try {
-      clientGuestUtils.removeToken();
+      clientGuestUtils.clearToken();
 
       // Also remove from cookies
       document.cookie = 'guest_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';

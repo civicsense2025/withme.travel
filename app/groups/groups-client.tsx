@@ -31,7 +31,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
+import { useInvitations } from '@/lib/hooks/use-invitations';
 import { FriendsList } from '@/components/friends-list';
 import type { Friend } from '@/components/friends-list';
 import { API_ROUTES } from '@/utils/constants/routes';
@@ -95,6 +96,7 @@ export default function GroupsClientPage({
   } = useGroups(guestToken);
 
   const { toast } = useToast();
+  const { sendReferralInvite, isLoading: isInvitationLoading } = useInvitations();
   const [searchQuery, setSearchQuery] = useState('');
   const [groups, setGroups] = useState<GroupWithDetails[]>(initialGroups);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -242,40 +244,12 @@ export default function GroupsClientPage({
       return;
     }
 
-    setIsInviting(true);
-    try {
-      const response = await fetch('/api/invitations/referral', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: emailInvite }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send invitation');
-      }
-
-      trackEvent('friend_invite_email_sent', {
-        email: emailInvite,
-        source: 'groups_page',
-      });
-
-      toast({
-        title: 'Invitation sent!',
-        description: `We've sent an invitation to ${emailInvite}`,
-      });
+    const success = await sendReferralInvite(emailInvite);
+    
+    if (success) {
       setEmailInvite('');
       setInviteFriendDialogOpen(false);
-    } catch (error: any) {
-      toast({
-        title: 'Failed to send invitation',
-        description: error.message || 'Please try again later',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsInviting(false);
+      trackEvent('friend_invited', { type: 'email' });
     }
   };
 

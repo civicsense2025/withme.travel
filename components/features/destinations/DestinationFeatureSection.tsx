@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { Section } from '@/components/ui/section';
-import { ContentBlock } from '@/components/ui/content-block';
+import { Section } from '@/components/ui/Section';
+import { ContentBlock } from '@/components/ui/ContentBlock';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 

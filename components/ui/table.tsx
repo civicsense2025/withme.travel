@@ -41,9 +41,11 @@ export function TableRow({ children }: TableRowProps) {
 export interface TableCellProps {
   children: React.ReactNode;
   className?: string;
+  colSpan?: number;
+  [key: string]: any;
 }
-export function TableCell({ children, className }: TableCellProps) {
-  return <td className={className}>{children}</td>;
+export function TableCell({ children, className, colSpan, ...props }: TableCellProps) {
+  return <td className={className} colSpan={colSpan} {...props}>{children}</td>;
 }
 
 export interface TableHeaderCellProps {

@@ -10,6 +10,7 @@ export * as activities from './activities';
 export * as comments from './comments';
 export * as trips from './trips';
 export * as places from './places';
+export * as auth from './auth';
 
 // Export logistics API functions
 export {

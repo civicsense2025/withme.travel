@@ -41,13 +41,9 @@ interface BudgetSnapshotSidebarProps {
    * If true, renders without the Card wrapper (for use inside CollapsibleSection)
    */
   noCardWrapper?: boolean;
-  /**
-   * Additional CSS class names for the component
-   */
-  className?: string;
 }
 
-export function BudgetSnapshotSidebar({
+export default function BudgetSnapshotSidebar({
   targetBudget,
   totalPlanned,
   totalSpent,
@@ -57,7 +53,6 @@ export function BudgetSnapshotSidebar({
   onSave,
   onLogExpenseClick,
   noCardWrapper = false,
-  className,
 }: BudgetSnapshotSidebarProps) {
   const [editedBudget, setEditedBudget] = useState<string>(targetBudget?.toString() ?? '');
   const [isSaving, setIsSaving] = useState(false);
@@ -155,6 +150,7 @@ export function BudgetSnapshotSidebar({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge
+                        variant="outline"
                         className="bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 cursor-help"
                       >
                         Planned: {formatCurrency(totalPlanned)}
@@ -232,7 +228,7 @@ export function BudgetSnapshotSidebar({
 
   // Render with card wrapper
   return (
-    <Card className={className}>
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Budget Snapshot</CardTitle>
         {canEdit && !isEditing && (
@@ -251,5 +247,3 @@ export function BudgetSnapshotSidebar({
     </Card>
   );
 }
-
-export default BudgetSnapshotSidebar; 

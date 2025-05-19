@@ -8,12 +8,12 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { Container } from '@/components/container';
+import { PageContainer } from '@/components/features/layout/molecules/PageContainer';
 import HeroEmojiExplosion from '@/components/HeroEmojiExplosion';
 import { CollaborativeItinerarySection } from '@/components/features/groups/organisms/CollaborativeItinerarySection';
 import { DestinationsFAQ } from '@/components/features/faq';
 import { useGroups } from '@/lib/features/groups/hooks';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { useThemeSync } from '@/components/ui/theme-provider';
 
 const CreateGroupModal = dynamic(() => import('./create-group-modal'), { ssr: false });
@@ -206,7 +206,7 @@ export default function GroupsLandingPageClient() {
   // MAIN RENDER
   // --------------------------------------------------------------------------
   return (
-    <Container size="full">
+    <PageContainer size="full">
       <main className="flex min-h-screen flex-col w-full bg-background overflow-hidden">
         <HeroSection />
         <FeaturesSection />
@@ -218,6 +218,6 @@ export default function GroupsLandingPageClient() {
         onClose={() => setModalOpen(false)}
         onGroupCreated={(group) => router.push(`/groups/${group.id}`)}
       />
-    </Container>
+    </PageContainer>
   );
 }

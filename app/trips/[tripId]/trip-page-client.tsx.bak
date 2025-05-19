@@ -126,7 +126,7 @@ import {
 } from '@/components/ui/sheet';
 import { ItineraryItemForm } from '@/components/itinerary/itinerary-item-form';
 import { EditTripForm, type EditTripFormValues } from '@/app/trips/components/EditTripForm';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MapIcon, Share, Calendar, FileEdit, UserPlus2, LogOut, Settings, Heart } from 'lucide-react';
 import {

@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast'
+import { toast } from '@/lib/hooks/use-toast'
 import { Loader2 } from 'lucide-react';
 import { GroupIdea, ColumnId } from './store/idea-store';
 import { DatePicker } from '@/components/ui/date-picker';

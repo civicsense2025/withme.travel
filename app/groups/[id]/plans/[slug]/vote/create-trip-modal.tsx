@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Map, Clipboard, DollarSign, Tag, CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TRIP_ROLES } from '@/utils/constants/status';

@@ -19,7 +19,7 @@ import {
   PlusCircle,
   ListChecks,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';

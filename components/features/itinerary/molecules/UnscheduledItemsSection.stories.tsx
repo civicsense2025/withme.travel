@@ -36,7 +36,7 @@ const unscheduledItems = [
     id: '103',
     title: 'Dinner at Per Se',
     description: 'Fine dining experience at one of the best restaurants in NYC',
-    location: '10 Columbus Circle, New York, NY 10019',
+    location: '10 Columb-s Circle, New York, NY 10019',
     status: 'suggested',
     category: 'food',
     voteCount: 3,

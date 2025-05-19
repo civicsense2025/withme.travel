@@ -21,9 +21,9 @@ import clientGuestUtils from '@/utils/guest';
 import { IdeasBoardHelpDialog } from './components/ideas-board-help-dialog';
 import { IdeasPresenceContext, useIdeasPresenceContext } from './context/ideas-presence-context';
 import { API_ROUTES } from '@/utils/constants/routes';
-import { useVotes } from '@/hooks/use-votes';
-import { useGroupIdeas } from '@/hooks/use-group-ideas';
-import { useToast } from '@/hooks/use-toast'
+import { } from '@/lib/features/votes/hooks/use-votes';
+import { useGroupIdeas } from '@/lib/hooks/use-group-ideas';
+import { useToast } from '@/lib/hooks/use-toast'
 
 // Make the grid responsive
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -302,14 +302,14 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
 
   // If loading or error, show appropriate UI
   if (loading) {
-    return <div className="pU4 text-center">Loading idea board...</div>;
+    return <div className="p-4 text-center">Loading idea board...</div>;
   }
 
   if (error) {
     return (
-      <div className="pU4 text-center text-redU500">
+      <div className="p-4 text-center text-red-500">
         <div>Error: {error}</div>
-        <Button onClick={loadIdeas} className="mtU2">
+        <Button onClick={loadIdeas} className="mt-2">
           Try Again
         </Button>
       </div>
@@ -317,7 +317,7 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
   }
 
   return (
-    <div className="idea-board-container relative min-h-[600px] border rounded-lg pU4 md:gapU6 lg:gapU8">
+      <div className="idea-board-container relative min-h-[600px] border rounded-lg p-4 md:gap-6 lg:gap-8">
       {/* Responsive Grid Layout for idea cards */}
       <ResponsiveGridLayout
         className="layout"
@@ -358,9 +358,9 @@ export function IdeaBoard({ groupId, initialIdeas = [], isAuthenticated }: IdeaB
       </ResponsiveGridLayout>
 
       {/* Add idea button */}
-      <div className="fixed bottomU4 rightU4">
-        <Button onClick={() => setAddModalOpen(true)} className="rounded-full wU12 hU12 pU0">
-          <Plus className="wU6 hU6" />
+      <div className="fixed bottom-4 right-4">
+        <Button onClick={() => setAddModalOpen(true)} className="rounded-full w-12 h-12 p-0">
+          <Plus className="w-6 h-6" />
         </Button>
       </div>
 

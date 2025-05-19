@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { MapPin, Calendar, Loader2, Heart } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { useSearch } from '@/contexts/search-context';
 import { LikeButton } from '@/components/like-button';
 

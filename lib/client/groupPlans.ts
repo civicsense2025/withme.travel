@@ -151,3 +151,10 @@ export async function voteGroupIdea(
     }).then((response) => handleApiResponse<GroupIdea>(response))
   );
 }
+
+/**
+ * Type guard to check if an object is a GroupPlan
+ */
+export function isGroupPlan(obj: any): obj is GroupPlan {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}

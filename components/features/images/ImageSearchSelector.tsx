@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 interface ImageResult {
   id: string;
   url: string;
-  thumbUrl: string;
+  thumb-rl: string;
   description: string;
   photographer: string;
   photographerUrl: string;
@@ -192,7 +192,7 @@ export function ImageSearchSelector({
           onClick={() => handleSelect(img)}
         >
           <Image
-            src={img.thumbUrl}
+            src={img.thumb-rl}
             alt={img.description}
             fill
             className="object-cover transition-transform hover:scale-105"

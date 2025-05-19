@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
-import { useNotes } from '@/hooks/use-notes';
+import { useNotes } from '@/lib/hooks/use-notes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NotesTabTemplate } from '@/components/features/notes';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 
 interface NotesTabContentProps {
   tripId: string;

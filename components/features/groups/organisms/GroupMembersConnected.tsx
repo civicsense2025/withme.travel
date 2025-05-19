@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/DropdownMenu';
 import { Search, UserPlus, MoreVertical, UserMinus, Shield, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 
 // ============================================================================
 // COMPONENT PROPS & TYPES

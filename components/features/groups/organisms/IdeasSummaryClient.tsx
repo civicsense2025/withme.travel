@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/DropdownMenu';
 import { GROUP_PLAN_IDEA_TYPE, VOTE_TYPES } from '@/utils/constants/status';
 import { PAGE_ROUTES } from '@/utils/constants/routes';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 
 // ============================================================================
 // TYPES

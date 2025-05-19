@@ -5,12 +5,13 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 // UI Components
 import { DashboardHeader } from './components/dashboard-header';
 import { ContentTabsSection } from './components/content-tabs-section';
 import { DiscoverSection } from './components/discover-section';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 
 // Dashboard data structure from server actions
 interface DashboardData {

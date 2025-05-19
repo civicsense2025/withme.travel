@@ -2,7 +2,7 @@
 
 import { API_ROUTES } from '@/utils/constants/routes';
 import { useState, useCallback, useMemo } from 'react';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { formatError } from '@/utils/lib-utils';
 import type { DisplayItineraryItem } from '@/types/itinerary';
 

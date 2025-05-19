@@ -115,7 +115,7 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { ItineraryItemForm } from '@/components/features/itinerary/ItineraryItemForm';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Trip as ApiTrip,
@@ -147,7 +147,7 @@ import * as Sentry from '@sentry/nextjs';
 // Context providers
 
 // Custom hooks
-import { useTripEventTracking } from '@/hooks/use-trip-event-tracking';
+import { useTripEventTracking } from '@/lib/hooks/use-trip-event-tracking';
 
 // Tab content components
 
@@ -383,7 +383,7 @@ export function TripPageClient({
   const pathname = usePathname(); // Defined using hook
   const searchParams = useSearchParams();
   const supabase = createClient();
-  const { user, isLoading: isAuthLoading } = useAuth(); // App-ser type from AuthProvider
+  const { user, isLoading: isAuthLoading } = useAuth(); // App-user type from AuthProvider
   const [showAuthModal, setShowAuthModal] = useState(false);
   const {
     trackItineraryItemAdded,

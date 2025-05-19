@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ItineraryTemplateCard } from '@/components/features/itinerary/molecules/ItineraryTemplateCard';
 import { ItineraryTemplateMetadata } from '@/utils/constants/tables';
 import { Badge } from '@/components/ui/badge';
-import { ItineraryFilters } from '@/components/ItineraryFilters';
+import { ItineraryFilters } from '@/components/features/itinerary/molecules/ItineraryFilters';
 
 // Define a minimal Destination type
 interface Destination {

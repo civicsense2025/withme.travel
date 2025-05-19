@@ -1,63 +1,40 @@
-/**
- * useComments Hook
- *
- * Custom React hook for managing comments with full CRUD capabilities,
- * replies, reactions, and loading states.
- *
- * @module hooks/use-comments
- */
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { useToast } from '@/lib/hooks/use-toast';
+import type { Comment } from '@/lib/client/comments';
 import {
   listComments,
-  getComment,
   createComment,
   updateComment,
   deleteComment,
   getCommentReplies,
   addCommentReaction,
   removeCommentReaction,
-  type Comment,
 } from '@/lib/client/comments';
-import type { Result } from '@/lib/client/comments';
-import { useToast } from '@/hooks/use-toast';
 
 /**
- * Parameters for using the comments hook
+ * Comment data with additional UI state
  */
-export interface UseCommentsParams {
-  /** The ID of the entity the comments are for */
-  entityId: string;
-  /** The type of entity the comments are for */
-  entityType: string;
-  /** Whether to fetch comments on component mount */
-  fetchOnMount?: boolean;
+interface CommentWithState extends Comment {
+  isEditing?: boolean;
+  showReplies?: boolean;
+  replies?: CommentWithState[];
+  isLoadingReplies?: boolean;
 }
 
 /**
- * useComments hook for managing comments
- * @param params - Hook parameters
- * @returns Object with comments, loading states, error handling, and CRUD operations
+ * Hook for working with comments on an entity
  */
-export function useComments({ entityId, entityType, fetchOnMount = true }: UseCommentsParams) {
-  // State
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [currentComment, setCurrentComment] = useState<Comment | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // Loading states
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isLoadingReplies, setIsLoadingReplies] = useState(false);
-  const [isReacting, setIsReacting] = useState(false);
-
+export function useComments(entityId: string, entityType: string) {
   const { toast } = useToast();
+  const [comments, setComments] = useState<CommentWithState[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Fetch all comments for the entity
+  /**
+   * Fetch comments for the entity
+   */
   const fetchComments = useCallback(async () => {
     if (!entityId || !entityType) return;
 
@@ -67,289 +44,355 @@ export function useComments({ entityId, entityType, fetchOnMount = true }: UseCo
     const result = await listComments(entityId, entityType);
 
     if (result.success) {
-      setComments(result.data);
+      setComments(
+        result.data.map((comment) => ({
+          ...comment,
+          isEditing: false,
+          showReplies: false,
+          replies: [],
+        }))
+      );
     } else {
-      setError(String(result.error));
+      setError(new Error(result.error));
       toast({
-        title: 'Failed to load comments',
-        description: String(result.error),
+        title: 'Error loading comments',
+        description: result.error,
         variant: 'destructive',
       });
     }
 
     setIsLoading(false);
-    return result;
   }, [entityId, entityType, toast]);
 
-  // Fetch a single comment by ID
-  const fetchComment = useCallback(
-    async (commentId: string) => {
-      setIsLoading(true);
-      setError(null);
-
-      const result = await getComment(commentId);
-
-      if (result.success) {
-        setCurrentComment(result.data);
-      } else {
-        setError(String(result.error));
-        toast({
-          title: 'Failed to load comment',
-          description: String(result.error),
-          variant: 'destructive',
-        });
-      }
-
-      setIsLoading(false);
-      return result;
-    },
-    [toast]
-  );
-
-  // Fetch replies to a comment
-  const fetchCommentReplies = useCallback(
-    async (commentId: string) => {
-      setIsLoadingReplies(true);
-      setError(null);
-
-      const result = await getCommentReplies(commentId);
-
-      if (result.success) {
-        // Store the replies somewhere - we could add them to a map of comment ID -> replies
-        // or update the comments list directly, depending on the UI structure
-
-        // For this example, we'll just return the result
-        toast({
-          title: 'Replies loaded',
-          description: `${result.data.length} replies found.`,
-        });
-      } else {
-        setError(String(result.error));
-        toast({
-          title: 'Failed to load replies',
-          description: String(result.error),
-          variant: 'destructive',
-        });
-      }
-
-      setIsLoadingReplies(false);
-      return result;
-    },
-    [toast]
-  );
-
-  // Create a new comment
+  /**
+   * Add a new comment
+   */
   const addComment = useCallback(
-    async (content: string, parentId?: string) => {
-      if (!entityId || !entityType || !content.trim()) return;
+    async (content: string, parentId?: string): Promise<boolean> => {
+      try {
+        const result = await createComment({
+          entity_id: entityId,
+          entity_type: entityType,
+          content,
+          parent_id: parentId,
+        });
 
-      setIsCreating(true);
-      setError(null);
+        if (result.success) {
+          if (parentId) {
+            // If this is a reply, add it to the parent comment's replies
+            setComments((prevComments) =>
+              prevComments.map((comment) =>
+                comment.id === parentId
+                  ? {
+                      ...comment,
+                      replies: [
+                        ...(comment.replies || []),
+                        {
+                          ...result.data,
+                          isEditing: false,
+                          showReplies: false,
+                          replies: [],
+                        },
+                      ],
+                    }
+                  : comment
+              )
+            );
+          } else {
+            // Otherwise add it to the main comments list
+            setComments((prevComments) => [
+              {
+                ...result.data,
+                isEditing: false,
+                showReplies: false,
+                replies: [],
+              },
+              ...prevComments,
+            ]);
+          }
 
-      const commentData = {
-        entity_id: entityId,
-        entity_type: entityType,
-        content,
-        parent_id: parentId,
-      };
-
-      const result = await createComment(commentData);
-
-      if (result.success) {
-        // If it's a reply and we're viewing the parent, add it to replies
-        if (parentId && currentComment?.id === parentId) {
-          // We might need to fetch replies again to get the updated list
-          fetchCommentReplies(parentId);
+          return true;
         } else {
-          // Otherwise add to main comments list
-          setComments((prev) => [result.data, ...prev]);
+          toast({
+            title: 'Error adding comment',
+            description: result.error,
+            variant: 'destructive',
+          });
+          return false;
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        toast({
+          title: 'Error adding comment',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [entityId, entityType, toast]
+  );
+
+  /**
+   * Update an existing comment
+   */
+  const editComment = useCallback(
+    async (commentId: string, content: string): Promise<boolean> => {
+      try {
+        const result = await updateComment(commentId, { content });
+
+        if (result.success) {
+          // Update the comment in the state
+          setComments((prevComments) => {
+            // Check if it's a top-level comment
+            const topLevelIndex = prevComments.findIndex((c) => c.id === commentId);
+
+            if (topLevelIndex >= 0) {
+              return prevComments.map((comment) =>
+                comment.id === commentId
+                  ? { ...comment, ...result.data, isEditing: false }
+                  : comment
+              );
+            }
+
+            // Check if it's a reply
+            return prevComments.map((comment) => {
+              if (!comment.replies?.length) return comment;
+
+              const replyIndex = comment.replies.findIndex((r) => r.id === commentId);
+              if (replyIndex >= 0) {
+                const updatedReplies = [...comment.replies];
+                updatedReplies[replyIndex] = {
+                  ...updatedReplies[replyIndex],
+                  ...result.data,
+                  isEditing: false,
+                };
+
+                return {
+                  ...comment,
+                  replies: updatedReplies,
+                };
+              }
+
+              return comment;
+            });
+          });
+
+          return true;
+        } else {
+          toast({
+            title: 'Error updating comment',
+            description: result.error,
+            variant: 'destructive',
+          });
+          return false;
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        toast({
+          title: 'Error updating comment',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [toast]
+  );
+
+  /**
+   * Remove a comment
+   */
+  const removeComment = useCallback(
+    async (commentId: string): Promise<boolean> => {
+      try {
+        const result = await deleteComment(commentId);
+
+        if (result.success) {
+          // Remove the comment from state
+          setComments((prevComments) => {
+            // Check if it's a top-level comment
+            const filtered = prevComments.filter((comment) => comment.id !== commentId);
+
+            if (filtered.length !== prevComments.length) {
+              return filtered;
+            }
+
+            // Check if it's a reply
+            return prevComments.map((comment) => {
+              if (!comment.replies?.length) return comment;
+
+              return {
+                ...comment,
+                replies: comment.replies.filter((reply) => reply.id !== commentId),
+              };
+            });
+          });
+
+          return true;
+        } else {
+          toast({
+            title: 'Error removing comment',
+            description: result.error,
+            variant: 'destructive',
+          });
+          return false;
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        toast({
+          title: 'Error removing comment',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [toast]
+  );
+
+  /**
+   * Toggle the editing state of a comment
+   */
+  const toggleEditMode = useCallback((commentId: string) => {
+    setComments((prevComments) => {
+      // Check if it's a top-level comment
+      const topLevelIndex = prevComments.findIndex((c) => c.id === commentId);
+
+      if (topLevelIndex >= 0) {
+        return prevComments.map((comment) =>
+          comment.id === commentId ? { ...comment, isEditing: !comment.isEditing } : comment
+        );
+      }
+
+      // Check if it's a reply
+      return prevComments.map((comment) => {
+        if (!comment.replies?.length) return comment;
+
+        const replyIndex = comment.replies.findIndex((r) => r.id === commentId);
+        if (replyIndex >= 0) {
+          const updatedReplies = [...comment.replies];
+          updatedReplies[replyIndex] = {
+            ...updatedReplies[replyIndex],
+            isEditing: !updatedReplies[replyIndex].isEditing,
+          };
+
+          return {
+            ...comment,
+            replies: updatedReplies,
+          };
         }
 
-        toast({
-          title: parentId ? 'Reply added' : 'Comment added',
-          description: 'Your comment has been posted successfully.',
-        });
-      } else {
-        setError(String(result.error));
-        toast({
-          title: 'Failed to add comment',
-          description: String(result.error),
-          variant: 'destructive',
-        });
-      }
+        return comment;
+      });
+    });
+  }, []);
 
-      setIsCreating(false);
-      return result;
-    },
-    [entityId, entityType, currentComment, fetchCommentReplies, toast]
-  );
+  /**
+   * Load replies for a comment
+   */
+  const loadReplies = useCallback(
+    async (commentId: string): Promise<boolean> => {
+      // Find the comment
+      const comment = comments.find((c) => c.id === commentId);
+      if (!comment) return false;
 
-  // Update an existing comment
-  const editComment = useCallback(
-    async (commentId: string, content: string) => {
-      if (!content.trim()) return;
+      // Update the loading state
+      setComments((prevComments) =>
+        prevComments.map((c) =>
+          c.id === commentId ? { ...c, isLoadingReplies: true, showReplies: true } : c
+        )
+      );
 
-      setIsUpdating(true);
-      setError(null);
+      try {
+        const result = await getCommentReplies(commentId);
 
-      const result = await updateComment(commentId, { content });
+        if (result.success) {
+          setComments((prevComments) =>
+            prevComments.map((c) =>
+              c.id === commentId
+                ? {
+                    ...c,
+                    replies: result.data.map((reply) => ({
+                      ...reply,
+                      isEditing: false,
+                      showReplies: false,
+                      replies: [],
+                    })),
+                    isLoadingReplies: false,
+                  }
+                : c
+            )
+          );
+          return true;
+        } else {
+          setComments((prevComments) =>
+            prevComments.map((c) => (c.id === commentId ? { ...c, isLoadingReplies: false } : c))
+          );
 
-      if (result.success) {
-        // Update in comments list
-        setComments((prev) =>
-          prev.map((comment) => (comment.id === commentId ? result.data : comment))
+          toast({
+            title: 'Error loading replies',
+            description: result.error,
+            variant: 'destructive',
+          });
+          return false;
+        }
+      } catch (err) {
+        setComments((prevComments) =>
+          prevComments.map((c) => (c.id === commentId ? { ...c, isLoadingReplies: false } : c))
         );
 
-        // Update current comment if it's the one being edited
-        if (currentComment?.id === commentId) {
-          setCurrentComment(result.data);
-        }
-
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         toast({
-          title: 'Comment updated',
-          description: 'Your comment has been updated successfully.',
-        });
-      } else {
-        setError(String(result.error));
-        toast({
-          title: 'Failed to update comment',
-          description: String(result.error),
+          title: 'Error loading replies',
+          description: errorMessage,
           variant: 'destructive',
         });
+        return false;
       }
-
-      setIsUpdating(false);
-      return result;
     },
-    [currentComment, toast]
+    [comments, toast]
   );
 
-  // Delete a comment
-  const removeComment = useCallback(
-    async (commentId: string) => {
-      setIsDeleting(true);
-      setError(null);
+  /**
+   * Toggle showing replies for a comment
+   */
+  const toggleReplies = useCallback(
+    (commentId: string) => {
+      const comment = comments.find((c) => c.id === commentId);
+      if (!comment) return;
 
-      const result = await deleteComment(commentId);
-
-      if (result.success) {
-        // Remove from comments list
-        setComments((prev) => prev.filter((comment) => comment.id !== commentId));
-
-        // Clear current comment if it's the one being deleted
-        if (currentComment?.id === commentId) {
-          setCurrentComment(null);
-        }
-
-        toast({
-          title: 'Comment deleted',
-          description: 'The comment has been deleted successfully.',
-        });
-      } else {
-        setError(String(result.error));
-        toast({
-          title: 'Failed to delete comment',
-          description: String(result.error),
-          variant: 'destructive',
-        });
+      // If replies are already loaded, just toggle visibility
+      if (comment.replies?.length) {
+        setComments((prevComments) =>
+          prevComments.map((c) => (c.id === commentId ? { ...c, showReplies: !c.showReplies } : c))
+        );
+        return;
       }
 
-      setIsDeleting(false);
-      return result;
+      // Otherwise load the replies
+      loadReplies(commentId);
     },
-    [currentComment, toast]
+    [comments, loadReplies]
   );
 
-  // Add a reaction to a comment
-  const addReaction = useCallback(
-    async (commentId: string, reactionType: string) => {
-      setIsReacting(true);
-      setError(null);
-
-      const result = await addCommentReaction(commentId, reactionType);
-
-      if (result.success) {
-        toast({
-          title: 'Reaction added',
-          description: `You reacted with ${reactionType}.`,
-        });
-
-        // In a real implementation, we would update the comment with the new reaction
-        // This would require us to know the structure of the reaction data
-      } else {
-        setError(String(result.error));
-        toast({
-          title: 'Failed to add reaction',
-          description: String(result.error),
-          variant: 'destructive',
-        });
-      }
-
-      setIsReacting(false);
-      return result;
-    },
-    [toast]
-  );
-
-  // Remove a reaction from a comment
-  const removeReaction = useCallback(
-    async (commentId: string, reactionType: string) => {
-      setIsReacting(true);
-      setError(null);
-
-      const result = await removeCommentReaction(commentId, reactionType);
-
-      if (result.success) {
-        toast({
-          title: 'Reaction removed',
-          description: `You removed your ${reactionType} reaction.`,
-        });
-
-        // In a real implementation, we would update the comment with the removed reaction
-      } else {
-        setError(String(result.error));
-        toast({
-          title: 'Failed to remove reaction',
-          description: String(result.error),
-          variant: 'destructive',
-        });
-      }
-
-      setIsReacting(false);
-      return result;
-    },
-    [toast]
-  );
-
-  // Fetch comments on mount if enabled
+  // Initial load of comments
   useEffect(() => {
-    if (fetchOnMount && entityId && entityType) {
+    if (entityId && entityType) {
       fetchComments();
     }
-  }, [fetchOnMount, entityId, entityType, fetchComments]);
+  }, [entityId, entityType, fetchComments]);
 
   return {
-    // Data
     comments,
-    currentComment,
-    error,
-
-    // Loading states
     isLoading,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    isLoadingReplies,
-    isReacting,
-
-    // Actions
-    fetchComments,
-    fetchComment,
+    error,
     addComment,
     editComment,
     removeComment,
-    fetchReplies: fetchCommentReplies,
-    addReaction,
-    removeReaction,
+    toggleEditMode,
+    loadReplies,
+    toggleReplies,
+    refreshComments: fetchComments,
   };
 }

@@ -107,7 +107,7 @@ export default function CreateGroupModal({
         <form onSubmit={handleSubmit} className="space-yU4 pyU4">
           {error && <div className="bg-redU50 text-redU500 text-sm pU3 rounded-md">{error}</div>}
 
-          <div className="flex items-center gapU3">
+          <div className="flex items-center gap-3">
             <div className="flex-shrinkU0">
               <EmojiPicker value={emoji} onChange={setEmoji} />
             </div>

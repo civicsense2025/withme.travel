@@ -1,14 +1,42 @@
-import React from 'react';
+// ============================================================================
+// STORYBOOK GLOBAL PREVIEW CONFIGURATION
+// ============================================================================
+
+/**
+ * Storybook global preview configuration for withme.travel
+ *
+ * - Sets up global styles and theming for Storybook stories.
+ * - Ensures correct theme provider and CSS order for consistent appearance.
+ * - Imports all required Storybook and project dependencies.
+ *
+ * @file This file configures Storybook's preview environment, including
+ *       theme support, global decorators, and CSS imports.
+ */
+
+// -----------------------------------------------------------------------------
+// External Dependencies
+// -----------------------------------------------------------------------------
+
+import * as React from 'react';
 import type { Preview } from '@storybook/react';
-import { withThemeByDataAttribute } from '@storybook/addon-themes';
-import '../app/globals.css';
-import { ThemeProvider } from '@components/ThemeProvider.tsx';
-import { fn } from '@storybook/test';
-import { withThemeByClassName } from '@storybook/addon-themes';
 import { themes } from '@storybook/theming';
 
-// Import CSS files in the correct order
-import './storybook.css'; // Storybook-specific styles last
+// Storybook Addons
+import { withThemeByDataAttribute, withThemeByClassName } from '@storybook/addon-themes';
+import { fn } from '@storybook/test';
+
+// -----------------------------------------------------------------------------
+// Global Styles
+// -----------------------------------------------------------------------------
+
+import '../app/globals.css';      // Project global styles
+import './storybook.css';         // Storybook-specific styles (should be last)
+
+// -----------------------------------------------------------------------------
+// Internal Modules
+// -----------------------------------------------------------------------------
+
+import { ThemeProvider } from '@/components/ui/theme-provider';
 
 // Create the wrapper with storybook-specific class
 const StorybookWrapper = ({

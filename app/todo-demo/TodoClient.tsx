@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Todo, TodoItem } from '@/components/Todo';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast'
+import { toast } from '@/lib/hooks/use-toast'
 import { TodoClientProps } from './types';
 
 export function TodoClient({ travelTodos, workTodos, personalTodos }: TodoClientProps) {

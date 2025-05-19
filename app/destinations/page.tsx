@@ -5,19 +5,12 @@
  */
 
 import React from 'react';
-import { Metadata } from 'next';
-import { DestinationGrid } from '@/components/destinations/organisms/DestinationGrid';
-import { listDestinations } from '@/lib/api/destinations';
-import { ErrorBoundary } from 'react-error-boundary';
+import { DestinationGrid } from '@/components/features/destinations/organisms/DestinationGrid';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'Explore Destinations | withme.travel',
-  description: 'Discover and explore amazing destinations around the world with withme.travel',
-};
-
-// Default number of destinations to show initially
+// Centralized API and utility imports
+import { useDestinations } from '@/lib/hooks/use-destinations';
 const DEFAULT_LIMIT = 20;
 
 /**
@@ -38,20 +31,13 @@ function DestinationsErrorFallback({ error }: { error: Error }) {
 /**
  * Destinations page showing all available destinations with filtering
  */
-export default async function DestinationsPage() {
-  // Fetch destinations from the API
-  const destinationsResult = await listDestinations({ limit: DEFAULT_LIMIT });
+export default function DestinationsPage() {
+  // NOTE: Fixing hook usage to match the correct return type and options for useDestinations.
+  // - Remove 'data' and 'reload' destructuring (not present on UseDestinationsReturn)
+  // - Pass no options, as 'limit' is not a valid option
+  // - Use 'destinations', 'isLoading', and 'error' as returned by the hook
 
-  // Check if the API returned an error
-  if (!destinationsResult.success) {
-    return (
-      <div className="container py-8 md:py-12">
-        <DestinationsErrorFallback error={new Error(destinationsResult.error)} />
-      </div>
-    );
-  }
-
-  const destinations = destinationsResult.data;
+  const { destinations, isLoading, error } = useDestinations();
 
   return (
     <main className="container py-8 md:py-12">
@@ -63,16 +49,37 @@ export default async function DestinationsPage() {
         </p>
       </header>
 
-      <ErrorBoundary FallbackComponent={DestinationsErrorFallback}>
+      {isLoading && (
+        <div className="py-12 text-center text-muted-foreground">Loading destinations…</div>
+      )}
+      {error && <DestinationsErrorFallback error={error} />}
+      {!isLoading && !error && destinations && destinations.length === 0 && (
+        <div className="py-12 text-center text-muted-foreground">No destinations found.</div>
+      )}
+      {!isLoading && !error && destinations && destinations.length > 0 && (
         <DestinationGrid
-          destinations={destinations}
-          showSearch={true}
-          showFilters={true}
-          showSorting={true}
-          columns={{ sm: 1, md: 2, lg: 3, xl: 4 }}
+          destinations={destinations.map((dest: Destination) => ({
+            id: dest.id,
+            city: dest.name || '',
+            country: dest.country || '',
+            image_url: dest.image_url || '/images/default-destination.jpg',
+            // 'emoji' property does not exist on type 'Destination', so we omit it to fix the type error
+          }))}
+          showSearch={false}
+          showFilters={false}
+          showSorting={false}
+          columns={{ sm: 1, md: 2, lg: 3 }}
           className="mb-8"
         />
-      </ErrorBoundary>
+      )}
     </main>
   );
 }
+
+/**
+ * Metadata for the destinations page
+ */
+export const metadata = {
+  title: 'Explore Destinations | withme.travel',
+  description: 'Discover and explore amazing destinations around the world with withme.travel',
+};

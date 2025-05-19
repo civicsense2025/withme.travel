@@ -119,3 +119,10 @@ export async function checkUserAccessToTrip(tripId: string): Promise<AccessCheck
     };
   }
 }
+
+/**
+ * Type guard to check if an object is a TripAuthResult
+ */
+export function isTripAuthResult(obj: any): obj is AccessCheckResult {
+  return obj && typeof obj.success === 'boolean' && (obj.success ? 'data' in obj : 'error' in obj);
+}

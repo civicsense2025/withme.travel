@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
-import { ClientFocusMode } from '@/components/trips/organisms';
-import { FocusSessionProvider } from '@/components/features/focus/focus-session-provider';
+import { ClientFocusMode } from '@/components/features/trips/organisms/ClientFocusMode';
+import { FocusSessionProvider } from '@/components/features/focus/FocusSessionProvider';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';
 import { Coffee, RefreshCw, AlertCircle } from 'lucide-react';
@@ -33,7 +33,7 @@ function FocusModeErrorFallback({
   }, [error]);
 
   return (
-    <Alert variant="destructive" className="mb-4">
+    <Alert className="mb-4">
       <AlertCircle className="h-4 w-4" />
       <AlertTitle>Focus Mode Error</AlertTitle>
       <AlertDescription className="flex flex-col gap-2">

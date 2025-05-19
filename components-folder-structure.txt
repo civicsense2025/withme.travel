@@ -1,0 +1,851 @@
+components
+├── analytics
+│   ├── ClientOpenreplayWrapper.tsx
+│   └── OpenreplayProvider.tsx
+├── CityBubbles.tsx
+├── container.tsx
+├── CreateTripFromTemplateDialog.tsx
+├── debug
+│   ├── ImageDebug.tsx
+│   ├── index.ts
+│   ├── LayoutDebug.tsx
+│   └── StateInspector.tsx
+├── DebugPanel.tsx
+├── error-fallbacks
+│   ├── ClassErrorBoundary.tsx
+│   ├── index.ts
+│   ├── index.tsx
+│   ├── TabErrorFallback.tsx
+│   └── TripDataErrorFallback.tsx
+├── examples
+│   ├── BeforeAfterExample.tsx
+│   └── HookSageexample.tsx
+├── features
+│   ├── activities
+│   │   ├── atoms
+│   │   │   ├── activity-icon.tsx
+│   │   │   ├── ActivityDescription.stories.tsx
+│   │   │   ├── ActivityDescription.tsx
+│   │   │   ├── ActivityIcon.stories.tsx
+│   │   │   ├── ActivityIcon.tsx
+│   │   │   ├── ActivityTimestamp.stories.tsx
+│   │   │   ├── ActivityTimestamp.tsx
+│   │   │   └── index.ts
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── ActivityFilter.stories.tsx
+│   │   │   ├── ActivityFilter.tsx
+│   │   │   ├── ActivityItem.stories.tsx
+│   │   │   ├── ActivityItem.tsx
+│   │   │   └── index.ts
+│   │   ├── organisms
+│   │   │   ├── activity-feed.tsx
+│   │   │   ├── ActivityFeed.stories.tsx
+│   │   │   ├── ActivityFeed.tsx
+│   │   │   ├── ActivitySuggestions.tsx
+│   │   │   ├── ActivitySuggestionsCard.tsx
+│   │   │   ├── ActivityTimeline.stories.tsx
+│   │   │   ├── ActivityTimeline.tsx
+│   │   │   ├── FirstLikeTour.tsx
+│   │   │   └── index.ts
+│   │   └── templates
+│   │       ├── ActivityTabTemplate.stories.tsx
+│   │       ├── ActivityTabTemplate.tsx
+│   │       └── index.ts
+│   ├── admin
+│   │   ├── admin-layout.tsx
+│   │   ├── AdminAccessCheck.tsx
+│   │   ├── AdminLayout.tsx
+│   │   ├── AdminSidebar.tsx
+│   │   ├── atoms
+│   │   ├── ContinentAdminEditor.tsx
+│   │   ├── ContinentPageAdminEditor.tsx
+│   │   ├── CountryAdminEditor.tsx
+│   │   ├── CountryPageAdminEditor.tsx
+│   │   ├── DestinationAdminEditor.tsx
+│   │   ├── DestinationPageAdminEditor.tsx
+│   │   ├── index.ts
+│   │   ├── InlineAdminEditor.tsx
+│   │   ├── MediaLibrary.tsx
+│   │   ├── metadata-editor-client.tsx
+│   │   ├── MetadataEditorClient.tsx
+│   │   ├── molecules
+│   │   ├── organisms
+│   │   ├── README.md
+│   │   ├── SurveyEditDialog.tsx
+│   │   ├── SurveyPreviewModal.tsx
+│   │   └── types.ts
+│   ├── auth
+│   │   ├── atoms
+│   │   │   ├── AuthError.stories.tsx
+│   │   │   ├── AuthError.tsx
+│   │   │   ├── AuthSellingPoints.tsx
+│   │   │   ├── InputField.stories.tsx
+│   │   │   ├── InputField.tsx
+│   │   │   └── PasswordField.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── LoginForm.tsx
+│   │   │   ├── SignupForm.stories.tsx
+│   │   │   └── SignupForm.tsx
+│   │   ├── organisms
+│   │   │   ├── AuthDebugger.tsx
+│   │   │   ├── AuthErrorBoundary.tsx
+│   │   │   ├── AuthModal.tsx
+│   │   │   ├── AuthModalDemo.tsx
+│   │   │   └── AuthTestPanel.tsx
+│   │   ├── providers.tsx
+│   │   └── SignupForm.tsx
+│   ├── budget
+│   │   ├── atoms
+│   │   │   ├── budget-progress.tsx
+│   │   │   ├── BudgetProgress.stories.tsx
+│   │   │   ├── BudgetProgress.tsx
+│   │   │   ├── expense-amount.tsx
+│   │   │   ├── expense-category-badge.tsx
+│   │   │   ├── ExpenseAmount.stories.tsx
+│   │   │   ├── ExpenseAmount.tsx
+│   │   │   ├── ExpenseCategoryBadge.stories.tsx
+│   │   │   ├── ExpenseCategoryBadge.tsx
+│   │   │   └── index.ts
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── budget-summary.tsx
+│   │   │   ├── BudgetSummary.stories.tsx
+│   │   │   ├── BudgetSummary.tsx
+│   │   │   ├── expense-filter.tsx
+│   │   │   ├── expense-item.tsx
+│   │   │   ├── ExpenseFilter.stories.tsx
+│   │   │   ├── ExpenseFilter.tsx
+│   │   │   ├── ExpenseItem.stories.tsx
+│   │   │   ├── ExpenseItem.tsx
+│   │   │   └── index.ts
+│   │   ├── organisms
+│   │   │   ├── budget-breakdown.tsx
+│   │   │   ├── BudgetBreakdown.stories.tsx
+│   │   │   ├── BudgetBreakdown.tsx
+│   │   │   ├── CompactBudgetSnapshot.tsx
+│   │   │   ├── expense-list.tsx
+│   │   │   ├── ExpenseList.stories.tsx
+│   │   │   ├── ExpenseList.tsx
+│   │   │   ├── ExpenseListConnected.tsx
+│   │   │   └── index.ts
+│   │   └── templates
+│   │       ├── budget-tab-template.tsx
+│   │       ├── BudgetTabTemplate.stories.tsx
+│   │       ├── BudgetTabTemplate.tsx
+│   │       └── index.ts
+│   ├── cities
+│   ├── comments
+│   │   ├── atoms
+│   │   ├── comment-form.tsx
+│   │   ├── comment-item.tsx
+│   │   ├── CommentForm.stories.tsx
+│   │   ├── CommentForm.tsx
+│   │   ├── CommentItem.stories.tsx
+│   │   ├── CommentItem.tsx
+│   │   ├── comments-list.tsx
+│   │   ├── CommentsList.stories.tsx
+│   │   ├── CommentsList.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   └── organisms
+│   ├── destinations
+│   │   ├── atoms
+│   │   │   ├── DestinationBadge.stories.tsx
+│   │   │   ├── DestinationBadge.tsx
+│   │   │   ├── DestinationImage.stories.tsx
+│   │   │   ├── DestinationImage.tsx
+│   │   │   ├── DestinationRating.stories.tsx
+│   │   │   ├── DestinationRating.tsx
+│   │   │   └── index.ts
+│   │   ├── destination-details-clean.tsx
+│   │   ├── destination-details-minimal.tsx
+│   │   ├── destination-details.tsx
+│   │   ├── destination-feature-section.tsx
+│   │   ├── destination-reviews.tsx
+│   │   ├── DestinationDetails.stories.tsx
+│   │   ├── DestinationDetails.tsx
+│   │   ├── DestinationDetailsClean.stories.tsx
+│   │   ├── DestinationDetailsClean.tsx
+│   │   ├── DestinationDetailsMinimal.stories.tsx
+│   │   ├── DestinationDetailsMinimal.tsx
+│   │   ├── DestinationFeatureSection.stories.tsx
+│   │   ├── DestinationFeatureSection.tsx
+│   │   ├── DestinationReviews.stories.tsx
+│   │   ├── DestinationReviews.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── DestinationCard.stories.tsx
+│   │   │   ├── DestinationCard.tsx
+│   │   │   ├── DestinationCategorySelector.stories.tsx
+│   │   │   ├── DestinationCategorySelector.tsx
+│   │   │   ├── DestinationFeature.stories.tsx
+│   │   │   ├── DestinationFeature.tsx
+│   │   │   ├── DestinationFilters.stories.tsx
+│   │   │   ├── DestinationFilters.tsx
+│   │   │   ├── DestinationHeader.stories.tsx
+│   │   │   ├── DestinationHeader.tsx
+│   │   │   ├── DestinationHighlightsGrid.stories.tsx
+│   │   │   ├── DestinationHighlightsGrid.tsx
+│   │   │   ├── DestinationMetaBadges.stories.tsx
+│   │   │   ├── DestinationMetaBadges.tsx
+│   │   │   ├── DestinationRatingsCard.stories.tsx
+│   │   │   ├── DestinationRatingsCard.tsx
+│   │   │   ├── DestinationRegionSelector.stories.tsx
+│   │   │   ├── DestinationRegionSelector.tsx
+│   │   │   ├── DestinationRelatedItineraries.stories.tsx
+│   │   │   ├── DestinationRelatedItineraries.tsx
+│   │   │   ├── DestinationReviews.stories.tsx
+│   │   │   ├── DestinationReviews.tsx
+│   │   │   ├── DestinationSearch.stories.tsx
+│   │   │   ├── DestinationSearch.tsx
+│   │   │   ├── DestinationStatCard.stories.tsx
+│   │   │   ├── DestinationStatCard.tsx
+│   │   │   └── index.ts
+│   │   ├── organisms
+│   │   │   ├── DestinationDetail.stories.tsx
+│   │   │   ├── DestinationDetail.tsx
+│   │   │   ├── DestinationGrid.stories.tsx
+│   │   │   ├── DestinationGrid.tsx
+│   │   │   ├── DestinationPopularPlaces.stories.tsx
+│   │   │   ├── DestinationPopularPlaces.tsx
+│   │   │   ├── DestinationRelated.stories.tsx
+│   │   │   ├── DestinationRelated.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── PopularDestinationsGrid.tsx
+│   │   │   ├── related-itineraries-widget.tsx
+│   │   │   ├── RelatedItinerariesWidget.stories.tsx
+│   │   │   └── RelatedItinerariesWidget.tsx
+│   │   ├── popular-destinations-carousel.tsx
+│   │   ├── popular-destinations.tsx
+│   │   ├── PopularDestinationCard.stories.tsx
+│   │   ├── PopularDestinationCard.tsx
+│   │   ├── PopularDestinations.stories.tsx
+│   │   ├── PopularDestinations.tsx
+│   │   ├── PopularDestinationsCarousel.stories.tsx
+│   │   ├── PopularDestinationsCarousel.tsx
+│   │   ├── README.md
+│   │   └── templates
+│   │       ├── DestinationCarousel.stories.tsx
+│   │       ├── DestinationCarousel.tsx
+│   │       ├── DestinationDetails.stories.tsx
+│   │       ├── DestinationDetails.tsx
+│   │       ├── DestinationTripPlanner.stories.tsx
+│   │       ├── DestinationTripPlanner.tsx
+│   │       ├── index.ts
+│   │       ├── PopularDestinations.stories.tsx
+│   │       ├── PopularDestinations.tsx
+│   │       ├── TrendingDestinations.stories.tsx
+│   │       └── TrendingDestinations.tsx
+│   ├── error-boundary.tsx
+│   ├── faq
+│   │   ├── atoms
+│   │   │   ├── FAQAnswer.stories.tsx
+│   │   │   ├── FAQAnswer.tsx
+│   │   │   ├── FAQQuestion.stories.tsx
+│   │   │   ├── FAQQuestion.tsx
+│   │   │   ├── FAQTag.stories.tsx
+│   │   │   ├── FAQTag.tsx
+│   │   │   └── index.ts
+│   │   ├── FAQ.mdx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── FAQFilter.stories.tsx.bak
+│   │   │   ├── FAQFilter.tsx
+│   │   │   ├── FAQItem.stories.tsx.bak
+│   │   │   ├── FAQItem.tsx
+│   │   │   ├── FAQList.stories.tsx
+│   │   │   ├── FAQList.tsx
+│   │   │   └── index.ts
+│   │   ├── organisms
+│   │   │   ├── FAQ.stories.tsx
+│   │   │   ├── FAQ.tsx
+│   │   │   └── index.ts
+│   │   ├── README.md
+│   │   └── variants
+│   │       ├── DestinationsFAQ.stories.tsx
+│   │       ├── DestinationsFAQ.tsx
+│   │       ├── index.ts
+│   │       ├── TripPlanningFAQ.stories.tsx
+│   │       └── TripPlanningFAQ.tsx
+│   ├── feedback
+│   │   ├── analytics
+│   │   │   └── index.ts
+│   │   ├── atoms
+│   │   ├── molecules
+│   │   ├── organisms
+│   │   └── templates
+│   │       ├── feedback-form.stories.tsx.bak
+│   │       ├── FeedbackForm.tsx
+│   │       └── index.ts
+│   ├── focus
+│   │   └── FocusSessionProvider.tsx
+│   ├── groups
+│   │   ├── ActivityGeneratorWidget.tsx
+│   │   ├── atoms
+│   │   │   ├── EmojiPicker.stories.tsx
+│   │   │   ├── EmojiPicker.tsx
+│   │   │   ├── GroupIdeaAction.stories.tsx
+│   │   │   ├── GroupIdeaAction.tsx
+│   │   │   ├── GroupIdeaBadge.stories.tsx
+│   │   │   ├── GroupIdeaBadge.tsx
+│   │   │   ├── GroupIdeaVoteCount.stories.tsx
+│   │   │   ├── GroupIdeaVoteCount.tsx
+│   │   │   ├── GroupMemberActions.stories.tsx
+│   │   │   ├── GroupMemberActions.tsx
+│   │   │   ├── GroupMemberAvatar.stories.tsx
+│   │   │   ├── GroupMemberAvatar.tsx
+│   │   │   ├── GroupMemberBadge.stories.tsx
+│   │   │   ├── GroupMemberBadge.tsx
+│   │   │   └── index.ts
+│   │   ├── GroupIdeaCard.tsx
+│   │   ├── GroupIdeaForm.stories.tsx
+│   │   ├── GroupIdeaForm.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── CreateGroupForm.stories.tsx
+│   │   │   ├── CreateGroupForm.tsx
+│   │   │   ├── CreateGroupModal.tsx
+│   │   │   ├── GroupIdeaCard.stories.tsx
+│   │   │   ├── GroupIdeaCard.tsx
+│   │   │   ├── GroupIdeasStepper.stories.tsx
+│   │   │   ├── GroupIdeasStepper.tsx
+│   │   │   ├── GroupMemberItem.stories.tsx
+│   │   │   ├── GroupMemberItem.tsx
+│   │   │   ├── GroupMemberSearch.stories.tsx
+│   │   │   ├── GroupMemberSearch.tsx
+│   │   │   ├── GroupPlanCard.stories.tsx
+│   │   │   ├── GroupPlanCard.tsx
+│   │   │   ├── IdeaStepper.stories.tsx
+│   │   │   ├── IdeaStepper.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── InviteLinkBox.stories.tsx
+│   │   │   ├── InviteLinkBox.tsx
+│   │   │   ├── PlansNavigation.stories.tsx
+│   │   │   └── PlansNavigation.tsx
+│   │   ├── organisms
+│   │   │   ├── ActivityGeneratorWidget.stories.tsx
+│   │   │   ├── ActivityGeneratorWidget.tsx
+│   │   │   ├── AuthModal.stories.tsx
+│   │   │   ├── AuthModal.tsx
+│   │   │   ├── CollaborativeItinerarySection.tsx
+│   │   │   ├── CreateGroupModal.stories.tsx
+│   │   │   ├── CreateGroupModal.tsx
+│   │   │   ├── FriendsList.tsx
+│   │   │   ├── GroupDetailClient.stories.tsx
+│   │   │   ├── GroupDetailClient.tsx
+│   │   │   ├── GroupIdeaForm.stories.tsx
+│   │   │   ├── GroupIdeaForm.tsx
+│   │   │   ├── GroupIdeasConnected.tsx
+│   │   │   ├── GroupMemberList.stories.tsx
+│   │   │   ├── GroupMemberList.tsx
+│   │   │   ├── GroupMembersConnected.stories.tsx
+│   │   │   ├── GroupMembersConnected.tsx
+│   │   │   ├── GroupPlanList.stories.tsx
+│   │   │   ├── GroupPlanList.tsx
+│   │   │   ├── GroupPlansConnected.stories.tsx
+│   │   │   ├── GroupPlansConnected.tsx
+│   │   │   ├── GroupSettingsModal.stories.tsx
+│   │   │   ├── GroupSettingsModal.tsx
+│   │   │   ├── GroupsLandingPageClient.stories.tsx
+│   │   │   ├── GroupsLandingPageClient.tsx
+│   │   │   ├── IdeasPreviewClient.stories.tsx
+│   │   │   ├── IdeasPreviewClient.tsx
+│   │   │   ├── IdeasSummaryClient.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── InviteFriendsDialog.tsx
+│   │   │   ├── PlansClient.tsx
+│   │   │   └── RoleFixButton.tsx
+│   │   └── README.md
+│   ├── images
+│   │   ├── atoms
+│   │   ├── image-search-selector.tsx
+│   │   ├── ImageAttribution.tsx
+│   │   ├── ImageSearchSelector.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   └── organisms
+│   ├── index.ts
+│   ├── itinerary
+│   │   ├── __tests__
+│   │   │   └── EventUrlInput.test.tsx
+│   │   ├── atoms
+│   │   │   ├── index.ts
+│   │   │   ├── ItineraryDayHeader.stories.tsx
+│   │   │   ├── ItineraryDayHeader.tsx
+│   │   │   ├── ItineraryItemAction.stories.tsx
+│   │   │   ├── ItineraryItemAction.tsx
+│   │   │   ├── ItineraryItemCard.stories.tsx
+│   │   │   ├── ItineraryItemCard.tsx
+│   │   │   ├── ItineraryItemStatus.stories.tsx
+│   │   │   ├── ItineraryItemStatus.tsx
+│   │   │   ├── ItineraryTimeDisplay.stories.tsx
+│   │   │   └── ItineraryTimeDisplay.tsx
+│   │   ├── DayDropZone.tsx
+│   │   ├── DroppableContainer.tsx
+│   │   ├── event-url-input-summary.md
+│   │   ├── EventUrlInput.tsx
+│   │   ├── EventUrlInputBestPractices.md
+│   │   ├── EventUrlInputTesting.md
+│   │   ├── EventUrlIntegration.md
+│   │   ├── final-conclusion.md
+│   │   ├── implementation-notes.md
+│   │   ├── index.ts
+│   │   ├── ItineraryDisplay.stories.tsx
+│   │   ├── ItineraryDisplay.tsx
+│   │   ├── ItineraryFilterControls.tsx
+│   │   ├── ItineraryItemForm.tsx
+│   │   ├── ItineraryMetadataSection.tsx
+│   │   ├── ItineraryShareButton.tsx
+│   │   ├── ItineraryTab.tsx
+│   │   ├── ItineraryTemplateDisplay.tsx
+│   │   ├── MobileStepper.tsx
+│   │   ├── molecules
+│   │   │   ├── index.ts
+│   │   │   ├── ItineraryCard.tsx
+│   │   │   ├── ItineraryDaySection.stories.tsx
+│   │   │   ├── ItineraryDaySection.tsx
+│   │   │   ├── ItineraryFilters.tsx
+│   │   │   ├── ItineraryItemNotes.tsx
+│   │   │   ├── ItineraryTemplateCard.stories.tsx
+│   │   │   ├── ItineraryTemplateCard.tsx
+│   │   │   ├── ItineraryTemplateDetail.tsx
+│   │   │   ├── UnscheduledItemsSection.stories.tsx
+│   │   │   └── UnscheduledItemsSection.tsx
+│   │   ├── organisms
+│   │   │   ├── ItineraryTabTemplate.stories.tsx
+│   │   │   └── ItineraryTabTemplate.tsx
+│   │   ├── PlaceAutocomplete.tsx
+│   │   ├── QuickAddItemDialog.tsx
+│   │   ├── SortableItem.tsx
+│   │   ├── templates
+│   │   │   ├── index.ts
+│   │   │   ├── ItineraryTabLayout.stories.tsx
+│   │   │   ├── ItineraryTabLayout.tsx
+│   │   │   ├── PopularItineraries.stories.tsx
+│   │   │   └── PopularItineraries.tsx
+│   │   ├── TripDetailsSection.tsx
+│   │   ├── UseItineraryButton.tsx
+│   │   └── VerticalStepper.tsx
+│   ├── layout
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── Container.tsx
+│   │   │   ├── FullBleedSection.tsx
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── PageContainer.tsx
+│   │   │   └── PageHeader.tsx
+│   │   └── organisms
+│   │       ├── ClientLayout.tsx
+│   │       ├── ClientSideLayoutRenderer.tsx
+│   │       ├── ClientSideProviders.tsx
+│   │       ├── ClientTime.tsx
+│   │       ├── container.tsx
+│   │       ├── footer.tsx
+│   │       └── PageHeader.tsx
+│   ├── locations
+│   │   ├── atoms
+│   │   │   ├── CityChipInput.tsx
+│   │   │   ├── CityChipsAutocompleteInput.tsx
+│   │   │   ├── CitySearchAutocomplete.tsx
+│   │   │   └── CitySearchInput.tsx
+│   │   ├── molecules
+│   │   └── organisms
+│   ├── manage
+│   │   ├── atoms
+│   │   │   ├── EntityPrivacyBadge.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── MemberRoleBadge.tsx
+│   │   │   └── MemberStatusBadge.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── index.ts
+│   │   │   ├── MemberListItem.tsx
+│   │   │   └── PrivacySettingsCard.tsx
+│   │   ├── organisms
+│   │   │   ├── index.ts
+│   │   │   └── MemberManagement.tsx
+│   │   └── templates
+│   │       ├── index.ts
+│   │       └── ManageTabTemplate.tsx
+│   ├── maps
+│   │   ├── atoms
+│   │   │   ├── MapMarker.stories.tsx
+│   │   │   ├── MapMarker.tsx
+│   │   │   ├── MapPin.stories.tsx
+│   │   │   └── MapPin.tsx
+│   │   ├── index.ts
+│   │   ├── MapboxGeocoder.tsx
+│   │   ├── molecules
+│   │   │   ├── MapboxGeocoder.tsx
+│   │   │   ├── MapPopup.stories.tsx
+│   │   │   └── MapPopup.tsx
+│   │   ├── MultimodalMapView.tsx
+│   │   ├── organisms
+│   │   │   ├── PublicItineraryMap.stories.tsx
+│   │   │   └── PublicItineraryMap.tsx
+│   │   ├── PublicItineraryMap.tsx
+│   │   └── TransitRoute.tsx
+│   ├── notes
+│   │   ├── atoms
+│   │   │   ├── index.ts
+│   │   │   ├── NoteContent.stories.tsx
+│   │   │   ├── NoteContent.tsx
+│   │   │   ├── NoteEditor.stories.tsx
+│   │   │   ├── NoteEditor.tsx
+│   │   │   ├── NoteTitle.stories.tsx
+│   │   │   └── NoteTitle.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── CollaborativeEditor.stories.tsx
+│   │   │   ├── CollaborativeEditor.tsx
+│   │   │   ├── CollaborativeNotes.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── NoteCard.stories.tsx
+│   │   │   ├── NoteCard.tsx
+│   │   │   └── TripNotesEditor.tsx
+│   │   └── templates
+│   │       ├── index.ts
+│   │       ├── NotesTabTemplate.stories.tsx
+│   │       └── NotesTabTemplate.tsx
+│   ├── onboarding
+│   │   ├── AppTourScreen.tsx
+│   │   ├── atoms
+│   │   ├── BasicInfoScreen.tsx
+│   │   ├── InterestSelector.tsx
+│   │   ├── molecules
+│   │   │   ├── InterestTag.stories.tsx
+│   │   │   └── InterestTag.tsx
+│   │   ├── organisms
+│   │   │   ├── AppTourScreen.stories.tsx
+│   │   │   ├── AppTourScreen.tsx
+│   │   │   ├── BasicInfoScreen.stories.tsx
+│   │   │   ├── BasicInfoScreen.tsx
+│   │   │   ├── InterestSelector.stories.tsx
+│   │   │   ├── InterestSelector.tsx
+│   │   │   ├── SuccessScreen.stories.tsx
+│   │   │   ├── SuccessScreen.tsx
+│   │   │   ├── TravelPersonalityScreen.tsx
+│   │   │   ├── WelcomeScreen.stories.tsx
+│   │   │   └── WelcomeScreen.tsx
+│   │   ├── SuccessScreen.tsx
+│   │   ├── TravelPersonalityScreen.tsx
+│   │   ├── TravelSquadScreen.tsx
+│   │   └── WelcomeScreen.tsx
+│   ├── places
+│   │   ├── atoms
+│   │   │   ├── index.ts
+│   │   │   ├── PlaceAddress.stories.tsx
+│   │   │   ├── PlaceAddress.tsx
+│   │   │   ├── PlaceCard.stories.tsx
+│   │   │   ├── PlaceCard.tsx
+│   │   │   ├── PlaceCategory.stories.tsx
+│   │   │   ├── PlaceCategory.tsx
+│   │   │   ├── PlaceIcon.stories.tsx
+│   │   │   ├── PlaceIcon.tsx
+│   │   │   ├── PlaceRating.stories.tsx
+│   │   │   └── PlaceRating.tsx
+│   │   ├── molecules
+│   │   │   ├── GooglePlacesAutocomplete.tsx
+│   │   │   ├── LocationSearch.tsx
+│   │   │   ├── PlaceCard.stories.tsx
+│   │   │   ├── PlaceCard.tsx
+│   │   │   ├── PlaceCsvImportDialog.tsx
+│   │   │   ├── PlaceCsvImporter.tsx
+│   │   │   └── PlaceSearch.tsx
+│   │   ├── organisms
+│   │   │   ├── AddPlaceDialog.tsx
+│   │   │   ├── PlaceList.stories.tsx
+│   │   │   ├── PlaceList.tsx
+│   │   │   ├── TripPlaces.stories.tsx
+│   │   │   └── TripPlaces.tsx
+│   │   └── types.ts
+│   ├── providers
+│   │   ├── ClientSideProviders.tsx
+│   │   └── ServerAuthProvider.tsx
+│   ├── search
+│   │   ├── atoms
+│   │   ├── CommandMenu.tsx
+│   │   ├── molecules
+│   │   ├── organisms
+│   │   ├── SearchButton.tsx
+│   │   ├── SearchDialog.tsx
+│   │   └── SearchForm.tsx
+│   ├── tags
+│   │   ├── atoms
+│   │   │   ├── TagBadge.tsx
+│   │   │   ├── TagInput.tsx
+│   │   │   └── TagVoteButtons.tsx
+│   │   ├── molecules
+│   │   │   ├── InteractiveTag.tsx
+│   │   │   └── TagCreator.tsx
+│   │   ├── organisms
+│   │   │   ├── TagList.tsx
+│   │   │   └── TagManager.tsx
+│   │   └── types.ts
+│   ├── trips
+│   │   ├── atoms
+│   │   │   └── PresenceIndicator.tsx
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   │   ├── AddFriendButton.tsx
+│   │   │   ├── AvatarGroup.tsx
+│   │   │   ├── BudgetSnapshotSidebar.stories.tsx
+│   │   │   ├── BudgetSnapshotSidebar.tsx
+│   │   │   ├── CreatePollForm.stories.tsx
+│   │   │   ├── CreatePollForm.tsx
+│   │   │   ├── EmptyTrips.tsx
+│   │   │   ├── EnhancedTripCard.stories.tsx
+│   │   │   ├── EnhancedTripCard.tsx
+│   │   │   ├── ExportCalendarDialog.tsx
+│   │   │   ├── FeatureTabs.tsx
+│   │   │   ├── FocusModeDemo.stories.tsx
+│   │   │   ├── FocusModeDemo.tsx
+│   │   │   ├── ItemComments.stories.tsx
+│   │   │   ├── ItemComments.tsx
+│   │   │   ├── LikeButton.tsx
+│   │   │   ├── MembersTab.tsx
+│   │   │   ├── PermissionRequest.tsx
+│   │   │   ├── PermissionRequests.tsx
+│   │   │   ├── PopularItineraries.tsx
+│   │   │   ├── RequestAccessDialog.tsx
+│   │   │   ├── SimplifiedItemForm.stories.tsx
+│   │   │   ├── SimplifiedItemForm.tsx
+│   │   │   ├── TrendingDestinations.tsx
+│   │   │   ├── TripCard.stories.tsx
+│   │   │   ├── TripDetailError.tsx
+│   │   │   ├── TripListError.tsx
+│   │   │   ├── TripOverviewTab.tsx
+│   │   │   ├── TripPageError.tsx
+│   │   │   ├── TripPresenceIndicator.stories.tsx
+│   │   │   └── UseTemplateButton.tsx
+│   │   ├── organisms
+│   │   │   ├── ClientFocusMode.stories.tsx
+│   │   │   ├── ClientFocusMode.tsx
+│   │   │   ├── ExpenseMarketingSection.tsx
+│   │   │   ├── HeroSection.tsx
+│   │   │   ├── PlaylistEmbed.tsx
+│   │   │   ├── SharedPresenceSection.tsx
+│   │   │   ├── SimplifiedTripHeader.tsx
+│   │   │   ├── TripPresenceIndicator.stories.tsx
+│   │   │   └── TripPresenceIndicator.tsx
+│   │   ├── README.md
+│   │   └── TripPresenceIndicator.tsx
+│   ├── ui
+│   │   ├── CookieConsent.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   ├── ErrorBoundaryButton.tsx
+│   │   ├── GlobalErrorBoundary.tsx
+│   │   ├── Heading.tsx
+│   │   ├── icons.tsx
+│   │   ├── KeyboardShortcutsBar.stories.tsx
+│   │   ├── KeyboardShortcutsBar.tsx
+│   │   ├── logo.tsx
+│   │   ├── PrivacyDialog.tsx
+│   │   ├── README.md
+│   │   ├── SkeletonCard.tsx
+│   │   ├── TermsDialog.tsx
+│   │   ├── ThemeProvider.tsx
+│   │   ├── ThemeToggle.tsx
+│   │   ├── toast.tsx
+│   │   └── ui.tsx
+│   ├── user
+│   │   ├── atoms
+│   │   ├── index.ts
+│   │   ├── molecules
+│   │   ├── onboarding
+│   │   │   ├── atoms
+│   │   │   │   ├── OnboardingButton.tsx
+│   │   │   │   ├── OnboardingCompletionIllustration.tsx
+│   │   │   │   ├── OnboardingInput.tsx
+│   │   │   │   └── OnboardingStepIndicator.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── molecules
+│   │   │   │   ├── OnboardingCompletionCard.tsx
+│   │   │   │   └── OnboardingStepForm.tsx
+│   │   │   └── organisms
+│   │   │       ├── OnboardingCompletion.tsx
+│   │   │       └── OnboardingFlow.tsx
+│   │   ├── organisms
+│   │   ├── ReferralLinkManager.tsx
+│   │   ├── types.ts
+│   │   ├── UserProfile.tsx
+│   │   ├── UserProfileCard.tsx
+│   │   └── UserSettings.tsx
+│   └── viator
+│       ├── AddViatorButton.tsx
+│       ├── atoms
+│       ├── DestinationAttractions.tsx
+│       ├── DestinationExperiences.tsx
+│       ├── index.ts
+│       ├── molecules
+│       ├── organisms
+│       ├── ViatorBookingTracker.tsx
+│       ├── ViatorExperienceCard.tsx
+│       ├── ViatorExperienceGrid.tsx
+│       ├── ViatorExperienceSearchDialog.tsx
+│       ├── ViatorItineraryItem.tsx
+│       └── ViatorItineraryItemDetail.tsx
+├── HeroEmojiExplosion.tsx
+├── HeroSection.tsx
+├── index.ts
+├── layout
+│   ├── FooterCompanyLinks.stories.tsx
+│   ├── FooterCompanyLinks.tsx
+│   ├── FooterCopyright.tsx
+│   ├── FooterExploreLinks.tsx
+│   ├── FooterLogoAndSubscribe.tsx
+│   ├── FooterSocials.tsx
+│   ├── Navbar.stories.tsx
+│   ├── Navbar.tsx
+│   ├── NavbarAuthButtons.tsx
+│   ├── NavbarLinks.tsx
+│   ├── NavbarLogo.tsx
+│   ├── NavbarMobileMenu.tsx
+│   ├── NavbarMobileMenuButton.tsx
+│   ├── NavbarSermenu.tsx
+│   ├── NavbarStartPlanningDropdown.tsx
+│   ├── NavbarThemeToggle.tsx
+│   ├── page-container.stories.tsx.bak
+│   ├── page-header.stories.tsx.bak
+│   ├── PageContainer.stories.tsx
+│   ├── PageContainer.tsx
+│   ├── PageHeader.tsx
+│   ├── UserMenu.tsx
+│   ├── UserNav.stories.tsx
+│   └── UserNav.tsx
+├── shared
+│   ├── atoms
+│   │   ├── avatars
+│   │   ├── brand
+│   │   ├── buttons
+│   │   │   └── SubmitButton.tsx
+│   │   ├── forms
+│   │   ├── icons
+│   │   ├── navigation
+│   │   ├── theme
+│   │   └── ui
+│   ├── index.ts
+│   ├── LoadingOverlay.tsx
+│   ├── molecules
+│   │   ├── EmptyState.tsx
+│   │   ├── forms
+│   │   ├── index.ts
+│   │   ├── layout
+│   │   ├── navigation
+│   │   └── user
+│   ├── organisms
+│   │   └── layout
+│   └── Todo.tsx
+├── skeletons
+│   ├── TripCardSkeleton.tsx
+│   └── TripPageSkeleton.tsx
+├── tags
+│   └── TagList.tsx
+├── TiptapEditor.tsx
+├── TravelTracker.tsx
+├── TripHeader.tsx
+└── ui
+    ├── accordion.stories.tsx
+    ├── accordion.tsx
+    ├── alert-dialog.tsx
+    ├── alert.stories.tsx
+    ├── alert.tsx
+    ├── AlertDialog.stories.tsx
+    ├── AlertDialog.tsx
+    ├── atoms
+    │   └── ThemeToggle.tsx
+    ├── avatar.stories.tsx
+    ├── avatar.tsx
+    ├── badge.stories.tsx
+    ├── badge.tsx
+    ├── button.stories.tsx
+    ├── button.tsx
+    ├── calendar.stories.tsx
+    ├── calendar.tsx
+    ├── card.stories.tsx
+    ├── card.tsx
+    ├── checkbox.stories.tsx
+    ├── checkbox.tsx
+    ├── collapsible-section.stories.tsx
+    ├── collapsible-section.tsx
+    ├── Collapsible.tsx
+    ├── CollapsibleSection.tsx
+    ├── data-table.tsx
+    ├── DataTable.stories.tsx
+    ├── DataTable.tsx
+    ├── date-picker.tsx
+    ├── DatePicker.stories.tsx
+    ├── DatePicker.tsx
+    ├── dialog.stories.tsx
+    ├── dialog.tsx
+    ├── dropdown-menu.tsx
+    ├── DropdownMenu.stories.tsx
+    ├── DropdownMenu.tsx
+    ├── features
+    │   └── trips
+    │       └── molecules
+    │           └── TripCard.tsx
+    ├── focus-trap.tsx
+    ├── FocusTrap.stories.tsx
+    ├── FocusTrap.tsx
+    ├── form.stories.tsx
+    ├── form.tsx
+    ├── input.stories.tsx
+    ├── input.tsx
+    ├── label.stories.tsx
+    ├── label.tsx
+    ├── live-region.tsx
+    ├── LiveRegion.stories.tsx
+    ├── LiveRegion.tsx
+    ├── molecules
+    │   └── themetoggle
+    ├── MultiCityItinerary.tsx
+    ├── pagination.tsx
+    ├── popover.tsx
+    ├── progress.stories.tsx
+    ├── progress.tsx
+    ├── radio-group.tsx
+    ├── RadioGroup.stories.tsx
+    ├── RadioGroup.tsx
+    ├── ScrollArea.stories.tsx
+    ├── ScrollArea.tsx
+    ├── Section.tsx
+    ├── select.tsx
+    ├── separator.stories.tsx
+    ├── separator.tsx
+    ├── sheet.stories.tsx
+    ├── sheet.tsx
+    ├── skeleton.stories.tsx
+    ├── skeleton.tsx
+    ├── Slider.stories.tsx
+    ├── Slider.tsx
+    ├── spinner.stories.tsx
+    ├── spinner.tsx
+    ├── switch.stories.tsx
+    ├── switch.tsx
+    ├── table.tsx
+    ├── tabs.stories.tsx
+    ├── tabs.tsx
+    ├── tag-input.tsx
+    ├── TagInput.stories.tsx
+    ├── TagInput.tsx
+    ├── Text.tsx
+    ├── textarea.stories.tsx
+    ├── textarea.tsx
+    ├── theme-provider.tsx
+    ├── time-picker.tsx
+    ├── toast.stories.tsx
+    ├── toast.tsx
+    ├── toggle-group.tsx
+    ├── ToggleGroup.stories.tsx
+    ├── ToggleGroup.tsx
+    ├── tooltip.stories.tsx
+    ├── tooltip.tsx
+    ├── UseToast.ts
+    ├── visually-hidden.tsx
+    ├── VisuallyHidden.stories.tsx
+    └── VisuallyHidden.tsx
+
+141 directories, 708 files

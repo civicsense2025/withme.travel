@@ -261,7 +261,7 @@ export async function listItems(): Promise<Result<Item[]>> {
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { listItems, createItem, updateItem, deleteItem } from '@/lib/client/[module]';
 
 export function useModule(params) {

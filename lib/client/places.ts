@@ -12,7 +12,7 @@ import { API_ROUTES } from '@/utils/constants/routes';
 import { tryCatch } from '@/lib/client/result';
 import type { Result } from '@/lib/client/result';
 import { handleApiResponse } from './index';
-import type { Place, CreatePlaceInput } from '@/types/places';
+import type { Place, CreatePlaceInput, PlaceWithTrips } from '@/types/places';
 
 // ============================================================================
 // TYPES
@@ -222,6 +222,25 @@ export async function importPlacesFromCSV(
       method: 'POST',
       body: formData,
     }).then((response) => handleApiResponse<{ added: number; errors: any[] }>(response))
+  );
+}
+
+/**
+ * Get places with associated trips for a specific trip
+ */
+export async function getPlacesWithTrips(tripId: string): Promise<Result<PlaceWithTrips[]>> {
+  if (!tripId) {
+    return {
+      success: false,
+      error: 'Trip ID is required',
+    };
+  }
+
+  return tryCatch(
+    fetch(`${API_ROUTES.PLACES}/with-trips?trip_id=${tripId}`, {
+      method: 'GET',
+      cache: 'no-store',
+    }).then((response) => handleApiResponse<PlaceWithTrips[]>(response))
   );
 }
 

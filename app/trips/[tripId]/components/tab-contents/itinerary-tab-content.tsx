@@ -1,8 +1,8 @@
 'use client';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { useItinerary } from '@/hooks/use-itinerary';
+import { useToast } from '@/lib/hooks/use-toast';
+import { useItinerary } from '@/lib/hooks';
 import { useState } from 'react';
 import {
   ItineraryTabTemplate,

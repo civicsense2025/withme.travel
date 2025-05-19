@@ -79,5 +79,17 @@ export interface CreatePlaceInput {
   phone_number?: string | null;
 }
 
+// Place with associated trips
+export interface PlaceWithTrips extends Place {
+  trips: {
+    id: string;
+    name: string;
+    start_date: string | null;
+    end_date: string | null;
+    destination_name: string | null;
+    is_draft: boolean;
+  }[];
+}
+
 // Export the default Place type as a shorthand
 export default Place;

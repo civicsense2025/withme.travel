@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ItemComments } from './ItemComments';
+import { ItemComments } from '@/components/features/trips/molecules/ItemComments';
 
 const meta: Meta<typeof ItemComments> = {
-  title: 'Features/Trips/Molecules/ItemComments',
+  title: 'Product/Features/ItemComments',
   component: ItemComments,
   parameters: { layout: 'centered' },
 };
@@ -11,19 +11,16 @@ type Story = StoryObj<typeof ItemComments>;
 
 const mockProps = {
   itemId: 'item-1',
-  tripId: 'trip-1',
   comments: [
     {
       id: 'c1',
-      user: { name: 'Alice' },
-      content: 'Great idea!',
-      created_at: '2024-07-01T10:00:00Z',
+      author: 'Alice',
+      text: 'Great idea!',
     },
     {
       id: 'c2',
-      user: { name: 'Bob' },
-      content: "Let's do it!",
-      created_at: '2024-07-01T11:00:00Z',
+      author: 'Bob',
+      text: "Let's do it!",
     },
   ],
   onAddComment: (text: string) => alert('Add comment: ' + text),
@@ -37,4 +34,4 @@ export const LightMode: Story = {
 export const DarkMode: Story = {
   args: { ...mockProps },
   parameters: { backgrounds: { default: 'dark' } },
-}; 
+};

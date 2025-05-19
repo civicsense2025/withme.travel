@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, ButtonProps } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { FeedbackType, FormStatus, QuestionType, type Question } from './types';
 import { FeedbackFormRenderer } from './FeedbackForm';

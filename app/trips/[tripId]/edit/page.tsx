@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getBrowserClient } from '@/utils/supabase/client';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { PAGE_ROUTES } from '@/utils/constants/routes';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

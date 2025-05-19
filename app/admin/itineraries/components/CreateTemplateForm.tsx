@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { TABLES } from '@/utils/constants/database';
 import { slugify } from '@/utils/text-utils'; // Create this utility if needed
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Loader } from 'lucide-react';
 
 interface Destination {

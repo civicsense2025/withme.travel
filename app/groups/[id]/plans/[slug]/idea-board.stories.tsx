@@ -49,7 +49,7 @@ export const Default: Story = {
           id: 'userU1',
           email: 'user1@example.com',
           user_metadata: {
-            full_name: '-ser One',
+            full_name: 'User One',
             avatar_url: 'https://example.com/avatar.png',
           },
         },
@@ -73,7 +73,7 @@ export const Default: Story = {
           id: 'userU2',
           email: 'user2@example.com',
           user_metadata: {
-            full_name: '-ser Two',
+            full_name: 'User Two',
             avatar_url: 'https://example.com/avatar2.png',
           },
         },

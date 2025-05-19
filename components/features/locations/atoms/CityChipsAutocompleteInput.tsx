@@ -74,7 +74,7 @@ export function CityChipsAutocompleteInput({
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const resultsRef = useRef<HTMLUListElement>(null);
+  const resultsRef = useRef<HTml-ListElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -1,11 +1,22 @@
+
+/**
+ * LoginForm - A form for user authentication
+ * 
+ * This is a molecule component in the auth feature that uses:
+ * - PasswordField atom (feature-specific)
+ * - SubmitButton atom (shared)
+ */
+
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import PasswordField from '@/components/features/auth/atoms/PasswordField';
 import { SubmitButton } from '@/components/shared/atoms/buttons/SubmitButton';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { AuthError } from '../atoms/AuthError';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -15,18 +26,12 @@ const formSchema = z.object({
 export type LoginFormValues = z.infer<typeof formSchema>;
 
 interface LoginFormProps {
-  onSubmit: (values: LoginFormValues) => Promise<void>;
+  onSubmit?: (values: LoginFormValues) => Promise<void>;
   error?: string;
 }
 
-/**
- * LoginForm - A form for user authentication
- * 
- * This is a molecule component in the auth feature that uses:
- * - PasswordField atom (feature-specific)
- * - SubmitButton atom (shared)
- */
-const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
+
+const LoginForm = ({ onSubmit, error: errorProp }: LoginFormProps) => {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,33 +40,38 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
     },
   });
 
-  const isSubmitting = form.formState.isSubmitting;
+  const { login, isLoading, error } = useAuth();
+  const isSubmitting = form.formState.isSubmitting || isLoading;
 
-  const handleSubmit = async (values: LoginFormValues) => {
+  const handleSubmit: SubmitHandler<LoginFormValues> = async (values) => {
     try {
-      await onSubmit(values);
+      if (onSubmit) {
+        await onSubmit(values);
+      } else {
+        await login(values.email, values.password);
+      }
     } catch (err) {
-      console.error('Login error:', err);
+      // Error is handled by the hook
     }
   };
 
   return (
     <div className="space-y-4">
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      {(errorProp || error) && <AuthError message={errorProp || error?.message || ''} />}
+      <Form form={form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  autoComplete="email"
-                  {...field} 
-                />
-              </FormControl>
+              <Input 
+                type="email" 
+                placeholder="Enter your email" 
+                autoComplete="email"
+                {...field} 
+                disabled={isSubmitting}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -73,23 +83,16 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
-              <FormControl>
-                <PasswordField 
-                  placeholder="Enter your password" 
-                  autoComplete="current-password"
-                  {...field} 
-                />
-              </FormControl>
+              <PasswordField 
+                placeholder="Enter your password" 
+                autoComplete="current-password"
+                {...field} 
+                disabled={isSubmitting}
+              />
               <FormMessage />
             </FormItem>
           )}
         />
-
-        {error && (
-          <div className="rounded-md bg-red-50 p-3">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
 
         <SubmitButton
           className="w-full"
@@ -98,9 +101,9 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
         >
           Log In
         </SubmitButton>
-      </form>
+      </Form>
     </div>
   );
 };
 
-export default LoginForm; 
+export default LoginForm;

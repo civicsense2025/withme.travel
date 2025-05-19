@@ -8,6 +8,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+/**
+ * Props for the Textarea component
+ */
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   /** Textarea size */
   size?: 'sm' | 'md' | 'lg';

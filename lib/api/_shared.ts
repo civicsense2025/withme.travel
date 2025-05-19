@@ -10,6 +10,8 @@
  * When database.types.ts is updated with all the needed types, these can be replaced with imports.
  */
 
+// NOTE: This is the canonical Result type for API modules. Do not use utils/result.ts (deprecated).
+
 // ============================================================================
 // IMPORTS
 // ============================================================================
@@ -37,7 +39,7 @@ export type Result<T> = { success: true; data: T } | { success: false; error: st
  * Temporary type definition for Destination
  * TODO: Replace with proper import from database.types.ts when available
  */
-export type Destination = {
+export type TempDestination = {
   id: string;
   name: string | null;
   description: string | null;
@@ -50,7 +52,7 @@ export type Destination = {
  * Temporary type definition for Group
  * TODO: Replace with proper import from database.types.ts when available
  */
-export type Group = {
+export type TempGroup = {
   id: string;
   name: string | null;
   description: string | null;
@@ -65,7 +67,7 @@ export type Group = {
  * Temporary type definition for Comment
  * TODO: Replace with proper import from database.types.ts when available
  */
-export type Comment = {
+export type TempComment = {
   id: string;
   entity_id: string;
   entity_type: string;
@@ -80,7 +82,7 @@ export type Comment = {
  * Temporary type definition for ItineraryItem
  * TODO: Replace with proper import from database.types.ts when available
  */
-export type ItineraryItem = {
+export type TempItineraryItem = {
   id: string;
   trip_id: string;
   title: string | null;
@@ -96,7 +98,7 @@ export type ItineraryItem = {
  * Temporary type definition for Place
  * TODO: Replace with proper import from database.types.ts when available
  */
-export type Place = {
+export type TempPlace = {
   id: string;
   name: string | null;
   description: string | null;
@@ -119,9 +121,10 @@ export interface Group {
   id: string;
   name: string;
   description?: string;
-  created_at?: string;
+  created_at: string;
   created_by?: string;
   cover_image_url?: string;
+  [key: string]: any;
 }
 
 /**
@@ -137,8 +140,9 @@ export interface Destination {
   latitude?: number;
   longitude?: number;
   image_url?: string;
-  created_at?: string;
+  created_at: string;
   popularity?: number;
+  [key: string]: any;
 }
 
 /**
@@ -150,7 +154,7 @@ export interface Tag {
   entity_id: string;
   entity_type: string;
   color?: string;
-  created_at?: string;
+  created_at: string;
   created_by?: string;
 }
 
@@ -165,10 +169,14 @@ export interface Expense {
   amount: number;
   category?: string;
   date?: string;
-  currency?: string;
+  currency: string;
   is_paid?: boolean;
-  created_at?: string;
-  created_by?: string;
+  created_at: string;
+  created_by: string;
+  updated_at?: string;
+  notes?: string | null;
+  paid_by: string;
+  paid_at: string;
 }
 
 /**
@@ -179,7 +187,7 @@ export interface Comment {
   entity_id: string;
   entity_type: string;
   content: string;
-  created_at?: string;
+  created_at: string;
   created_by?: string;
   updated_at?: string;
 }
@@ -195,7 +203,7 @@ export interface ItineraryItem {
   start_time?: string;
   end_time?: string;
   location?: string;
-  created_at?: string;
+  created_at: string;
   created_by?: string;
   updated_at?: string;
   status?: string;
@@ -214,7 +222,7 @@ export interface Place {
   longitude?: number;
   category?: string;
   image_url?: string;
-  created_at?: string;
+  created_at: string;
   created_by?: string;
 }
 
@@ -226,9 +234,12 @@ export interface PermissionRequest {
   trip_id: string;
   user_id: string;
   status: 'pending' | 'approved' | 'rejected';
+  requested_role: string;
   requested_at: string;
   resolved_at?: string;
   resolved_by?: string;
+  message?: string | null;
+  updated_at?: string | null;
 }
 
 /**
@@ -236,14 +247,18 @@ export interface PermissionRequest {
  */
 export interface Activity {
   id: string;
+  entity_id: string;
+  entity_type: string;
+  action_type: string;
+  user_id: string;
   name: string;
   description?: string;
   location?: string;
   duration?: number;
   category?: string;
   image_url?: string;
-  created_at?: string;
-  created_by?: string;
+  created_at: string;
+  metadata?: any;
 }
 
 // ============================================================================
@@ -278,131 +293,131 @@ export function handleError(error: unknown, fallbackMsg: string): Result<never> 
 export { Trip, Profile };
 
 /**
- * Comment entity type
+ * Comment entity type with enhanced fields
  */
-export interface Comment {
+export interface CommentV2 {
   id: string;
   content: string;
   user_id: string;
   entity_id: string;
   entity_type: string;
   created_at: string;
-  updated_at?: string | null;
+  updated_at?: string;
   is_edited: boolean;
   is_deleted: boolean;
-  parent_id?: string | null;
-  attachment_url?: string | null;
-  attachment_type?: string | null;
+  parent_id?: string;
+  attachment_url?: string;
+  attachment_type?: string;
 }
 
 /**
- * Place entity type
+ * Place entity type with enhanced fields
  */
-export interface Place {
+export interface PlaceV2 {
   id: string;
   name: string;
-  description?: string | null;
-  address?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  external_id?: string | null;
-  external_source?: string | null;
+  description?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  external_id?: string;
+  external_source?: string;
   created_at: string;
-  updated_at?: string | null;
-  created_by?: string | null;
-  category?: string | null;
-  tags?: string[] | null;
-  cover_image_url?: string | null;
+  updated_at?: string;
+  created_by?: string;
+  category?: string;
+  tags?: string[];
+  cover_image_url?: string;
 }
 
 /**
- * Destination entity type
+ * Destination entity type with enhanced fields
  */
-export interface Destination {
+export interface DestinationV2 {
   id: string;
   name: string;
-  description?: string | null;
-  country?: string | null;
-  region?: string | null;
-  city?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
+  description?: string;
+  country?: string;
+  region?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
   created_at: string;
-  updated_at?: string | null;
-  cover_image_url?: string | null;
-  popularity?: number | null;
+  updated_at?: string;
+  cover_image_url?: string;
+  popularity?: number;
   slug?: string;
 }
 
 /**
- * Itinerary Item entity type
+ * Itinerary Item entity type with enhanced fields
  */
-export interface ItineraryItem {
+export interface ItineraryItemV2 {
   id: string;
   trip_id: string;
   title: string;
-  description?: string | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  place_id?: string | null;
-  day?: number | null;
-  position?: number | null;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  place_id?: string;
+  day?: number;
+  position?: number;
   status?: string;
   category?: string;
   created_at: string;
-  updated_at?: string | null;
+  updated_at?: string;
   created_by: string;
 }
 
 /**
- * Tag entity type
+ * Tag entity type with consistent properties
  */
-export interface Tag {
+export interface TagV2 {
   id: string;
   name: string;
   entity_id: string;
   entity_type: string;
   color?: string;
-  created_at?: string;
+  created_at: string;
   created_by?: string;
 }
 
 /**
- * Permission Request entity type
+ * Permission Request entity type with consistent properties
  */
-export interface PermissionRequest {
+export interface PermissionRequestV2 {
   id: string;
   trip_id: string;
   user_id: string;
-  status: string;
+  status: 'pending' | 'approved' | 'rejected';
   requested_role: string;
   created_at: string;
-  updated_at?: string | null;
-  message?: string | null;
+  updated_at?: string;
+  message?: string;
 }
 
 /**
- * Expense entity type
+ * Expense entity type with consistent properties
  */
-export interface Expense {
+export interface ExpenseV2 {
   id: string;
   trip_id: string;
   title: string;
   amount: number;
   currency: string;
-  category?: string | null;
+  category?: string;
   paid_by: string;
   paid_at: string;
   created_at: string;
-  updated_at?: string | null;
+  updated_at?: string;
   created_by: string;
-  notes?: string | null;
+  notes?: string;
 }
 
 /**
- * Activity entity type
+ * Activity entity type with consistent properties
  */
-export interface Activity {
+export interface ActivityV2 {
   id: string;
   entity_id: string;
   entity_type: string;
@@ -410,6 +425,12 @@ export interface Activity {
   user_id: string;
   created_at: string;
   metadata?: any;
+  name: string;
+  description?: string;
+  location?: string;
+  duration?: number;
+  category?: string;
+  image_url?: string;
 }
 
 /**
@@ -421,7 +442,7 @@ export interface TripMember {
   user_id: string;
   role: string;
   joined_at: string;
-  invited_by?: string | null;
+  invited_by?: string;
   status: string;
 }
 
@@ -463,7 +484,7 @@ export const tagSchema = z.object({
   name: z.string(),
   created_at: z.string(),
 });
-export type Tag = z.infer<typeof tagSchema>;
+export type TagType = z.infer<typeof tagSchema>;
 
 export const taskTagSchema = z.object({
   task_id: z.string().uuid(),
@@ -471,3 +492,52 @@ export const taskTagSchema = z.object({
   created_at: z.string(),
 });
 export type TaskTag = z.infer<typeof taskTagSchema>;
+
+/**
+ * Type guard to check if an object is a Group
+ */
+export function isGroup(obj: any): obj is Group {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}
+
+/**
+ * Type guard to check if an object is a Destination
+ */
+export function isDestination(obj: any): obj is Destination {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}
+
+// ============================================================================
+// PAGINATION TYPES
+// ============================================================================
+
+/**
+ * Pagination metadata type
+ */
+export type PaginationMeta = {
+  /** Total number of items available */
+  totalItems: number;
+  /** Number of items in the current page */
+  itemCount: number;
+  /** Number of items per page */
+  itemsPerPage: number;
+  /** Total number of pages available */
+  totalPages: number;
+  /** Current page number */
+  currentPage: number;
+};
+
+/**
+ * Paginated result type
+ *
+ * @template T - The type of data returned in the paginated result
+ */
+export type PaginatedResult<T> = {
+  /** Array of items of type T */
+  items: T[];
+  /** Pagination metadata */
+  meta: PaginationMeta;
+};
+
+// Export types
+export { PaginationMeta, PaginatedResult };

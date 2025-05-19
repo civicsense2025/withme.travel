@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLogistics, type UseLogisticsResult } from '@/hooks/use-logistics';
+import { useLogistics, type UseLogisticsResult } from '@/lib/hooks/use-logistics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,7 +40,7 @@ export function LogisticsManager({ tripId }: LogisticsManagerProps) {
   const handleAddAccommodation = async () => {
     if (!newAccommodation.title) return;
     
-    const result = await logistics.addAccommodationItem({
+    const result = await logistics.addAccommodation({
       title: newAccommodation.title,
       location: newAccommodation.location,
       description: newAccommodation.description,
@@ -58,7 +58,7 @@ export function LogisticsManager({ tripId }: LogisticsManagerProps) {
   const handleAddTransportation = async () => {
     if (!newTransportation.title) return;
     
-    const result = await logistics.addTransportationItem({
+    const result = await logistics.addTransportation({
       title: newTransportation.title,
       departureLocation: newTransportation.departureLocation,
       arrivalLocation: newTransportation.arrivalLocation,
@@ -111,7 +111,7 @@ export function LogisticsManager({ tripId }: LogisticsManagerProps) {
   if (logistics.error) {
     return (
       <div className="p-4 bg-red-50 text-red-600 rounded-md">
-        Error loading logistics: {logistics.error}
+        Error loading logistics: {logistics.error.message}
       </div>
     );
   }

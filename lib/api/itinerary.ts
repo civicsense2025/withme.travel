@@ -182,7 +182,21 @@ export async function reorderItineraryItems(
   }
 }
 
-export async function voteOnItineraryItem(tripId: string, itemId: string, voteType: string) {}
-export async function addItineraryItemComment(tripId: string, itemId: string, comment: any) {}
-export async function addItineraryItemReaction(tripId: string, itemId: string, reaction: any) {}
-// (Add more as needed)
+export async function voteOnItineraryItem(tripId: string, itemId: string, voteType: string): Promise<Result<null>> {
+  return { success: false, error: 'Not implemented yet' };
+}
+
+export async function addItineraryItemComment(tripId: string, itemId: string, comment: any): Promise<Result<null>> {
+  return { success: false, error: 'Not implemented yet' };
+}
+
+export async function addItineraryItemReaction(tripId: string, itemId: string, reaction: any): Promise<Result<null>> {
+  return { success: false, error: 'Not implemented yet' };
+}
+
+/**
+ * Type guard to check if an object is an ItineraryItem
+ */
+export function isItineraryItem(obj: any): obj is ItineraryItem {
+  return obj && typeof obj.id === 'string' && typeof obj.title === 'string';
+}

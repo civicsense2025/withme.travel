@@ -1,175 +1,166 @@
 /**
- * Activities Hook
+ * useActivities Hook
  *
- * Custom React hook for managing activities data with API integration
+ * Manages trip activities state, CRUD actions, and loading/error handling.
+ * Uses the standardized Result pattern and client API wrapper.
  */
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { ActivityType } from '@/components/features/activities/types';
-import { listActivities } from '../client/activities';
+import { useState, useCallback, useEffect } from 'react';
+import { useToast } from '@/lib/hooks/use-toast';
+import type { Activity } from '@/lib/api/_shared';
+import {
+  listTripActivities,
+  getTripActivity,
+  createTripActivity,
+  updateTripActivity,
+  deleteTripActivity,
+  generateActivitySuggestions,
+} from '@/lib/client/activities';
+import type { Result } from '@/lib/client/result';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-export interface Activity {
-  id: string;
-  type: ActivityType;
-  user: {
-    id: string;
-    name: string;
-    avatarUrl?: string;
-  };
-  timestamp: string;
-  description: string;
-  entityName?: string;
-  details?: string;
-  entityId?: string;
-  entityType?: string;
+/**
+ * Hook return type for useActivities
+ */
+export interface UseActivitiesResult {
+  activities: Activity[];
+  isLoading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  addActivity: (data: Partial<Activity>) => Promise<Result<Activity>>;
+  editActivity: (activityId: string, data: Partial<Activity>) => Promise<Result<Activity>>;
+  removeActivity: (activityId: string) => Promise<Result<null>>;
+  getSuggestions: (params?: { count?: number; category?: string }) => Promise<Result<Activity[]>>;
 }
 
-export interface UseActivitiesParams {
-  /** ID of the entity (trip/group) */
-  entityId: string;
-  /** Type of entity */
-  entityType: 'trip' | 'group';
-  /** Whether to fetch on mount */
-  fetchOnMount?: boolean;
-  /** Maximum activities to fetch */
-  limit?: number;
-}
-
-// ============================================================================
-// HOOK
-// ============================================================================
-
-export function useActivities({
-  entityId,
-  entityType,
-  fetchOnMount = true,
-  limit = 20,
-}: UseActivitiesParams) {
+/**
+ * useActivities - React hook for managing trip activities
+ */
+export function useActivities(tripId: string): UseActivitiesResult {
+  const { toast } = useToast();
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [activeFilters, setActiveFilters] = useState<(ActivityType | 'all')[]>(['all']);
 
-  const { toast } = useToast();
+  // Fetch all activities for the trip
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    const result = await listTripActivities(tripId);
+    if (result.success) {
+      setActivities(result.data);
+    } else {
+      setError(result.error);
+      toast({
+        title: 'Failed to load activities',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+    setIsLoading(false);
+  }, [tripId, toast]);
 
-  // Fetch activities from the API
-  const fetchActivities = useCallback(
-    async (pageNum = 1, replace = true) => {
-      if (!entityId) return;
-
+  // Add a new activity
+  const addActivity = useCallback(
+    async (data: Partial<Activity>) => {
       setIsLoading(true);
-      setError(null);
-
-      try {
-        // Construct API endpoint based on entity type
-        const endpoint =
-          entityType === 'trip'
-            ? `/api/trips/${entityId}/activity?page=${pageNum}&limit=${limit}`
-            : `/api/groups/${entityId}/activity?page=${pageNum}&limit=${limit}`;
-
-        const response = await fetch(endpoint);
-
-        if (!response.ok) {
-          throw new Error(`Error fetching activities: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        // Transform API response to match our component format
-        const transformedActivities: Activity[] = data.activities.map((activity: any) => ({
-          id: activity.id,
-          type: activity.activity_type || 'default',
-          user: {
-            id: activity.user_id,
-            name: activity.user_name || 'Anonymous',
-            avatarUrl: activity.user_avatar_url,
-          },
-          timestamp: activity.created_at,
-          description: activity.description || '',
-          entityName: activity.entity_name,
-          details: activity.details,
-          entityId: activity.entity_id,
-          entityType: activity.entity_type,
-        }));
-
-        // Update state
-        if (replace) {
-          setActivities(transformedActivities);
-        } else {
-          setActivities((prev) => [...prev, ...transformedActivities]);
-        }
-
-        // Check if more items are available
-        setHasMore(transformedActivities.length === limit);
-        setPage(pageNum);
-      } catch (err) {
-        console.error('Failed to fetch activities:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch activities');
+      const result = await createTripActivity(tripId, data);
+      if (result.success) {
+        setActivities((prev) => [result.data, ...prev]);
+        toast({ title: 'Activity added' });
+      } else {
+        setError(result.error);
         toast({
-          title: 'Error',
-          description: 'Failed to load activities',
+          title: 'Failed to add activity',
+          description: result.error,
           variant: 'destructive',
         });
-      } finally {
-        setIsLoading(false);
       }
+      setIsLoading(false);
+      return result;
     },
-    [entityId, entityType, limit, toast]
+    [tripId, toast]
   );
 
-  // Load more activities
-  const loadMore = useCallback(() => {
-    if (hasMore && !isLoading) {
-      fetchActivities(page + 1, false);
-    }
-  }, [fetchActivities, hasMore, isLoading, page]);
-
-  // Filter activities by type
-  const filterActivities = useCallback(
-    (filters: (ActivityType | 'all')[]) => {
-      setActiveFilters(filters);
-
-      if (filters.includes('all')) {
-        setFilteredActivities(activities);
-        return;
+  // Edit an existing activity
+  const editActivity = useCallback(
+    async (activityId: string, data: Partial<Activity>) => {
+      setIsLoading(true);
+      const result = await updateTripActivity(tripId, activityId, data);
+      if (result.success) {
+        setActivities((prev) => prev.map((act) => (act.id === activityId ? result.data : act)));
+        toast({ title: 'Activity updated' });
+      } else {
+        setError(result.error);
+        toast({
+          title: 'Failed to update activity',
+          description: result.error,
+          variant: 'destructive',
+        });
       }
-
-      const filtered = activities.filter((activity) => filters.includes(activity.type));
-
-      setFilteredActivities(filtered);
+      setIsLoading(false);
+      return result;
     },
-    [activities]
+    [tripId, toast]
   );
 
-  // Fetch activities on mount
-  useEffect(() => {
-    if (fetchOnMount && entityId) {
-      fetchActivities(1, true);
-    }
-  }, [fetchOnMount, entityId, fetchActivities]);
+  // Remove an activity
+  const removeActivity = useCallback(
+    async (activityId: string) => {
+      setIsLoading(true);
+      const result = await deleteTripActivity(tripId, activityId);
+      if (result.success) {
+        setActivities((prev) => prev.filter((act) => act.id !== activityId));
+        toast({ title: 'Activity deleted' });
+      } else {
+        setError(result.error);
+        toast({
+          title: 'Failed to delete activity',
+          description: result.error,
+          variant: 'destructive',
+        });
+      }
+      setIsLoading(false);
+      return result;
+    },
+    [tripId, toast]
+  );
 
-  // Apply filters whenever activities change
+  // Get activity suggestions
+  const getSuggestions = useCallback(
+    async (params?: { count?: number; category?: string }) => {
+      setIsLoading(true);
+      const result = await generateActivitySuggestions(tripId, params || {});
+      if (!result.success) {
+        setError(result.error);
+        toast({
+          title: 'Failed to get activity suggestions',
+          description: result.error,
+          variant: 'destructive',
+        });
+      }
+      setIsLoading(false);
+      return result;
+    },
+    [tripId, toast]
+  );
+
+  // Initial load
   useEffect(() => {
-    filterActivities(activeFilters);
-  }, [activities, activeFilters, filterActivities]);
+    if (tripId) {
+      refresh();
+    }
+  }, [tripId, refresh]);
 
   return {
-    activities: filteredActivities,
+    activities,
     isLoading,
     error,
-    hasMore,
-    loadMore,
-    refresh: () => fetchActivities(1, true),
-    filterActivities,
+    refresh,
+    addActivity,
+    editActivity,
+    removeActivity,
+    getSuggestions,
   };
 }

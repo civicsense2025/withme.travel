@@ -34,7 +34,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { DestinationReviews } from '@/components/features/destinations/DestinationReviews';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { AuthContextType } from '@/components/features/auth';
@@ -100,7 +100,7 @@ interface User {
 export default function DestinationClientPage({ slug }: DestinationClientPageProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth() as AuthContextType;
+  const { user } = useAuth() as unknown as AuthContextType;
   const [destination, setDestination] = useState<Destination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -2,9 +2,10 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useFocusSession } from '@/hooks/use-focus-session';
 import { Clock, Play, Pause, StopCircle, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useFocusSession } from '@/lib/hooks/use-focus-session';
+import { FocusSessionProvider } from '@/components/features/focus/FocusSessionProvider';
 
 export interface ClientFocusModeProps {
   tripId: string;
@@ -126,7 +127,7 @@ export function ClientFocusMode({ tripId, children }: ClientFocusModeProps) {
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-medium">Focus Mode</h3>
           {session && session.status !== 'completed' && (
-            <Badge className={session.status === 'active' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}>
+            <Badge variant={session.status === 'active' ? 'default' : 'outline'}>
               {session.status === 'active' ? 'Active' : 'Paused'}
             </Badge>
           )}
@@ -154,4 +155,6 @@ export function ClientFocusMode({ tripId, children }: ClientFocusModeProps) {
       {children}
     </div>
   );
-} 
+}
+
+export default ClientFocusMode;

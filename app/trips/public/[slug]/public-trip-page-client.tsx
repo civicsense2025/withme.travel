@@ -11,13 +11,13 @@ import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TripHeader } from '@/components/ui/features/trips/organisms/TripHeader';
-import { useToast } from '@/hooks/use-toast';
+import { TripHeader } from '@/components/ui/trips/organisms/TripHeader';
+import { useToast } from '@/lib/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import PublicItineraryMap from '@/components/features/maps/public-itinerary-map';
-import { PlaylistEmbed } from '@/components/features/trips/PlaylistEmbed';
+import PublicItineraryMap from '@/components/maps/PublicItineraryMap';
+import { PlaylistEmbed } from '@/components/trips/PlaylistEmbed';
 import { type TravelInfo } from '@/lib/mapbox';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { ItineraryItemCard } from '@/components/itinerary/ItineraryItemCard';

@@ -22,7 +22,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { getBrowserClient } from '@/utils/supabase/client';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Progress } from '@/components/ui/progress';
 import { CreateTripModal } from './vote/create-trip-modal';
 import { API_ROUTES } from '@/utils/constants/routes';

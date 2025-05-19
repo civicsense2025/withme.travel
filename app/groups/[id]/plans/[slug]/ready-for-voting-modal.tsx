@@ -27,7 +27,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { useAuth } from '@/components/auth-provider';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';

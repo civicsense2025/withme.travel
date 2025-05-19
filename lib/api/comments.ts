@@ -1,45 +1,62 @@
-/**
- * Comments API
- *
- * Provides CRUD operations and custom actions for comments on trips, itinerary items, group ideas, etc.
- * Used for managing collaborative discussions and feedback.
- *
- * @module lib/api/comments
- */
-
-// ============================================================================
-// IMPORTS & SCHEMAS
-// ============================================================================
-
+// lib/api/comments.ts
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/tables';
-import { handleError, Result, Comment } from './_shared';
-
-// ============================================================================
-// CRUD FUNCTIONS
-// ============================================================================
+import { handleError, Result, Comment, commentSchema } from './_shared';
+import { z } from 'zod';
 
 /**
- * List all comments for a given entity.
- * @param entityId - The entity's unique identifier (trip, item, etc.)
- * @param entityType - The type of entity (e.g., 'trip', 'itinerary_item')
- * @returns Result containing an array of comments
+ * List all comments for a given entity with efficient pagination.
  */
 export async function listComments(
   entityId: string,
-  entityType: string
-): Promise<Result<Comment[]>> {
+  entityType: string,
+  options: {
+    limit?: number;
+    page?: number;
+    includeReplies?: boolean;
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+): Promise<Result<{ comments: Comment[]; total: number }>> {
   try {
+    const { limit = 20, page = 1, includeReplies = false, sortOrder = 'desc' } = options;
+    const offset = (page - 1) * limit;
+    
     const supabase = await createRouteHandlerClient();
-    const { data, error } = await supabase
+    
+    // Get total count first (more efficient than counting full result set)
+    const countQuery = supabase
+      .from(TABLES.COMMENTS)
+      .select('*', { count: 'exact', head: true })
+      .eq('content_id', entityId)
+      .eq('content_type', entityType);
+      
+    if (!includeReplies) {
+      countQuery.is('parent_id', null);
+    }
+    
+    const { count, error: countError } = await countQuery;
+    
+    if (countError) return { success: false, error: countError.message };
+    
+    // Then get paginated data
+    let query = supabase
       .from(TABLES.COMMENTS)
       .select('*')
       .eq('content_id', entityId)
-      .eq('content_type', entityType);
+      .eq('content_type', entityType)
+      .order('created_at', { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
+      
+    if (!includeReplies) {
+      query = query.is('parent_id', null);
+    }
+    
+    const { data, error } = await query;
+    
     if (error) return { success: false, error: error.message };
     
-    // Transform data to match Comment interface if needed
-    const comments = data?.map(item => ({
+    // Transform data to match Comment interface
+    const comments = data.map(item => ({
       id: item.id,
       entity_id: item.content_id,
       entity_type: item.content_type,
@@ -52,27 +69,37 @@ export async function listComments(
       is_deleted: item.is_deleted || false,
       attachment_url: item.attachment_url || null,
       attachment_type: item.attachment_type || null
-    })) || [];
+    }));
     
-    return { success: true, data: comments };
+    return { 
+      success: true, 
+      data: { 
+        comments, 
+        total: count || 0 
+      } 
+    };
   } catch (error) {
     return handleError(error, 'Failed to fetch comments');
   }
 }
 
 /**
- * Get a single comment by ID.
- * @param commentId - The comment's unique identifier
- * @returns Result containing the comment
+ * Get a single comment by ID with optimistic caching support.
  */
-export async function getComment(commentId: string): Promise<Result<Comment>> {
+export async function getComment(
+  commentId: string, 
+  options: { includeReplies?: boolean } = {}
+): Promise<Result<Comment & { replies?: Comment[] }>> {
   try {
     const supabase = await createRouteHandlerClient();
+    
+    // Get the comment
     const { data, error } = await supabase
       .from(TABLES.COMMENTS)
       .select('*')
       .eq('id', commentId)
       .single();
+      
     if (error) return { success: false, error: error.message };
     if (!data) return { success: false, error: 'Comment not found' };
     
@@ -92,6 +119,17 @@ export async function getComment(commentId: string): Promise<Result<Comment>> {
       attachment_type: data.attachment_type || null
     };
     
+    // Include replies if requested
+    if (options.includeReplies) {
+      const repliesResult = await getCommentReplies(commentId);
+      if (repliesResult.success) {
+        return { 
+          success: true, 
+          data: { ...comment, replies: repliesResult.data } 
+        };
+      }
+    }
+    
     return { success: true, data: comment };
   } catch (error) {
     return handleError(error, 'Failed to fetch comment');
@@ -99,21 +137,21 @@ export async function getComment(commentId: string): Promise<Result<Comment>> {
 }
 
 /**
- * Add a new comment to an entity.
- * @param data - The comment data including entityId, entityType, and content
- * @returns Result containing the created comment
+ * Add a new comment to an entity with input validation.
  */
 export async function addComment(data: Partial<Comment>): Promise<Result<Comment>> {
   try {
-    const supabase = await createRouteHandlerClient();
-    
-    // Validate required fields
-    if (!data.entity_id || !data.entity_type || !data.content || !data.user_id) {
+    // Validate input data
+    const validationResult = commentSchema.safeParse(data);
+    if (!validationResult.success) {
       return { 
         success: false, 
-        error: 'Missing required fields: entity_id, entity_type, content and user_id are required' 
+        error: 'Invalid comment data', 
+        details: validationResult.error.format() 
       };
     }
+    
+    const supabase = await createRouteHandlerClient();
     
     // Prepare the comment data for insertion with correct field mapping
     const commentData = {
@@ -159,17 +197,32 @@ export async function addComment(data: Partial<Comment>): Promise<Result<Comment
 }
 
 /**
- * Update a comment.
- * @param commentId - The comment's unique identifier
- * @param data - The new comment data (typically the content)
- * @returns Result containing the updated comment
+ * Update a comment with optimistic concurrency control.
  */
 export async function updateComment(
   commentId: string,
-  data: Partial<Comment>
+  data: Partial<Comment>,
+  options: { checkVersion?: string } = {}
 ): Promise<Result<Comment>> {
   try {
     const supabase = await createRouteHandlerClient();
+    
+    // If version checking is enabled, verify the comment hasn't been modified
+    if (options.checkVersion) {
+      const { data: current } = await supabase
+        .from(TABLES.COMMENTS)
+        .select('updated_at')
+        .eq('id', commentId)
+        .single();
+        
+      if (current && current.updated_at !== options.checkVersion) {
+        return { 
+          success: false, 
+          error: 'Comment has been modified since you last loaded it',
+          code: 'STALE_DATA'
+        };
+      }
+    }
     
     // Map entity_id/entity_type to content_id/content_type if present
     const updateData: Record<string, any> = {
@@ -216,43 +269,28 @@ export async function updateComment(
 }
 
 /**
- * Delete a comment.
- * @param commentId - The comment's unique identifier
- * @returns Result indicating success or failure
+ * Get replies to a comment with optional pagination.
  */
-export async function deleteComment(commentId: string): Promise<Result<null>> {
+export async function getCommentReplies(
+  commentId: string,
+  options: { limit?: number; page?: number } = {}
+): Promise<Result<Comment[]>> {
   try {
-    const supabase = await createRouteHandlerClient();
-    const { error } = await supabase.from(TABLES.COMMENTS).delete().eq('id', commentId);
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, data: null };
-  } catch (error) {
-    return handleError(error, 'Failed to delete comment');
-  }
-}
-
-// ============================================================================
-// ADDITIONAL FUNCTIONS
-// ============================================================================
-
-/**
- * Get replies to a comment.
- * @param commentId - The parent comment's unique identifier
- * @returns Result containing an array of reply comments
- */
-export async function getCommentReplies(commentId: string): Promise<Result<Comment[]>> {
-  try {
+    const { limit = 20, page = 1 } = options;
+    const offset = (page - 1) * limit;
+    
     const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
       .from(TABLES.COMMENTS)
       .select('*')
-      .eq('parent_id', commentId);
+      .eq('parent_id', commentId)
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (error) return { success: false, error: error.message };
     
     // Transform data to match Comment interface
-    const replies = data?.map(item => ({
+    const replies = data.map(item => ({
       id: item.id,
       entity_id: item.content_id,
       entity_type: item.content_type,
@@ -265,10 +303,50 @@ export async function getCommentReplies(commentId: string): Promise<Result<Comme
       is_deleted: item.is_deleted || false,
       attachment_url: item.attachment_url || null,
       attachment_type: item.attachment_type || null
-    })) || [];
+    }));
     
     return { success: true, data: replies };
   } catch (error) {
     return handleError(error, 'Failed to fetch comment replies');
+  }
+}
+
+/**
+ * Soft delete a comment instead of hard deleting.
+ */
+export async function softDeleteComment(commentId: string): Promise<Result<null>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    const { error } = await supabase
+      .from(TABLES.COMMENTS)
+      .update({ 
+        is_deleted: true,
+        content: '[deleted]',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', commentId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: null };
+  } catch (error) {
+    return handleError(error, 'Failed to delete comment');
+  }
+}
+
+/**
+ * Hard delete a comment (admin only).
+ */
+export async function deleteComment(commentId: string): Promise<Result<null>> {
+  try {
+    const supabase = await createRouteHandlerClient();
+    const { error } = await supabase
+      .from(TABLES.COMMENTS)
+      .delete()
+      .eq('id', commentId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: null };
+  } catch (error) {
+    return handleError(error, 'Failed to delete comment');
   }
 }

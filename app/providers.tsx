@@ -1,5 +1,5 @@
-import { ThemeProvider } from '@/components/theme-provider';
-import { ClientSideProviders } from '@/components/client-side-providers';
+import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ClientSideProviders } from '@/components/features/layout/organisms/ClientSideProviders';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

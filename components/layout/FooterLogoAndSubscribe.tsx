@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Logo } from '@/components/logo';
+import { Logo } from '@/components/features/ui/logo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { SendHorizonal, CheckCircle } from 'lucide-react';

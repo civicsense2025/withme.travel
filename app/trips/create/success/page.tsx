@@ -7,7 +7,7 @@ import { CheckCircle, Globe2, Copy, AlertTriangle, Frown, PartyPopper } from 'lu
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Icons } from '@/components/icons';

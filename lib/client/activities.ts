@@ -352,3 +352,10 @@ export async function generateActivitySuggestions(
     )
   );
 }
+
+/**
+ * Type guard to check if an object is an Activity
+ */
+export function isActivity(obj: any): obj is Activity {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}

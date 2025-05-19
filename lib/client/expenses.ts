@@ -96,3 +96,10 @@ export async function getTripExpenseSummary(tripId: string): Promise<Result<any>
     }).then((response) => handleApiResponse<any>(response))
   );
 }
+
+/**
+ * Type guard to check if an object is an Expense
+ */
+export function isExpense(obj: any): obj is Expense {
+  return obj && typeof obj.id === 'string' && typeof obj.title === 'string';
+}

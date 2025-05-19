@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getBrowserClient } from '@/utils/supabase/browser-client';
-import { useAuth } from '@/components/auth-provider';
+import { useAuth } from '@/components/features/auth/auth-provider';
 import { UserPresenceStatus } from '@/types/presence';
 
 // Define types for the presence system

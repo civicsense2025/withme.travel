@@ -27,7 +27,7 @@ export default async function GroupIdeasSummaryPage({ params }: { params: { id: 
     // Check authentication
     const {
       data: { user },
-    } = await supabase.auth.get-ser();
+    } = await supabase.auth.getUser();
     isAuthenticated = !!user;
 
     // Fetch group data

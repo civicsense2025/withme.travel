@@ -21,11 +21,13 @@ import type { ItineraryItem } from '@/lib/api/_shared';
 function toStringResult<T, E = unknown>(
   result: { success: true; data: T } | { success: false; error: E }
 ): Result<T> {
-  if (result.success) return { success: true, data: result.data };
-  return {
-    success: false,
-    error: result.error instanceof Error ? result.error.message : String(result.error),
-  };
+  if (!result.success) {
+    return { 
+      success: false, 
+      error: typeof result.error === 'string' ? result.error : 'Unknown error' 
+    };
+  }
+  return { success: true, data: result.data };
 }
 
 /**

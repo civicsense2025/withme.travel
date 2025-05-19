@@ -58,7 +58,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Container } from '@/components/container';
+import { Container } from '@/components/features/layout/organisms/container';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
@@ -87,7 +87,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ENUMS } from '@/utils/constants/database';
-import { useToast } from '@/hooks';
+import { useToast } from '@/lib/hooks/use-toast';
 import { EmptyState } from '@/components/shared/molecules';
 
 interface GroupDetailClientProps {

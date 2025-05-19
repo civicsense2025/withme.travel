@@ -1,64 +1,82 @@
 /**
- * Hooks Index
+ * Hooks Export Index
  *
  * Central export point for all hooks in the application.
- * This maintains backward compatibility during migration to feature-first organization.
+ * Organized by functional domain to improve discoverability and maintainability.
  */
 
-// UI hooks
-export { useToast } from '@/hooks/use-toast';
+// ============================================================================
+// UI AND INTERACTION HOOKS
+// ============================================================================
+export { useToast } from './use-toast';
+export { useMediaQuery } from '@/lib/hooks/use-media-query'; 
+export { useMobileDialog } from '@/lib/hooks/use-mobile-dialog';
+export { useFocusSession } from '@/lib/hooks/use-focus-session';
+export { useOgImage } from '@/lib/hooks/use-og-image';
+export { useAsyncData } from '@/lib/hooks/use-async-data';
+export { useDebounce } from '@/lib/hooks/use-debounce';
+export { useLocalStorage } from '@/lib/hooks/use-local-storage';
+export { useIsMobile } from '@/lib/hooks/use-mobile';
 
-// Auth hooks
-export { useAuth } from './use-auth';
+// ============================================================================
+// TRIPS AND ITINERARY HOOKS
+// ============================================================================
+export { useTrips } from '@/lib/hooks/use-trips';
+export { useTripMembers } from '@/lib/hooks/use-trip-members';
+export { useTripItinerary } from '@/lib/hooks/use-trip-itinerary';
+export { useItinerary } from '@/lib/hooks/use-itinerary';
+export { useItineraryTemplates } from '@/lib/hooks/use-itinerary-templates';
+export { useItineraryTemplate } from '@/lib/hooks/use-itinerary-template';
+export { useLogistics } from '@/lib/hooks/use-logistics';
+export { useTripManagement } from '@/lib/hooks/use-trip-management';
+export { useTripEventTracking } from '@/lib/hooks/use-trip-event-tracking';
 
-// Budget/Expenses hooks
-export { useExpenses } from './use-expenses';
+// ============================================================================
+// GROUPS AND COLLABORATION HOOKS
+// ============================================================================
+export { useGroups } from '@/lib/hooks/use-groups';
+export { useGroupIdeas } from '@/lib/hooks/use-group-ideas';
+export { useGroupMembers } from '@/lib/hooks/use-group-members';
+export { useGroupPlans } from '@/lib/hooks/use-group-plans';
+export { useGroupEventTracking } from '@/lib/hooks/use-group-event-tracking';
+export { useVotes } from '@/lib/hooks/use-votes';
+export { useNotes } from '@/lib/hooks/use-notes';
+export { useComments } from '@/lib/hooks/use-comments';
+export { useLikes } from '@/lib/hooks/use-likes';
 
-// Groups hooks
-export { useGroups } from './use-groups';
-export { useGroupIdeas } from './use-group-ideas';
-export { useGroupMembers } from './use-group-members';
-export { useGroupPlans } from './use-group-plans';
-
-// Tags hooks
-export { useTags } from './use-tags'; 
-
-// Activities hooks
-export { useActivities } from './use-activities';
-
-// Comments hooks
-export { useComments } from './use-comments';
-
-// Destinations hooks
-export { useDestinations } from './use-destinations';
-export { usePopularDestinations } from './use-popular-destinations';
-
-// Trips hooks
-export { useLogistics } from './use-logistics';
-export { useItineraries } from './use-itineraries';
-export { useTripMembers } from './use-trip-members';
-export { usePermissions } from './use-permissions';
-export { useItinerary } from './use-itinerary';
-export { useNotes } from './use-notes';
-export { useTripBudget } from './use-trip-budget';
-export { useTripPresence } from './use-trip-presence';
-export { useTripMutations } from './use-trip-mutations';
-export { useTripItinerary } from './use-trip-itinerary';
-
-// Places hooks
+// ============================================================================
+// DESTINATIONS AND PLACES HOOKS
+// ============================================================================
+export { useDestinations } from '@/lib/features/destinations/hooks/use-destinations';
+export { usePopularDestinations } from '@/lib/features/destinations/hooks/use-popular-destinations';
 export { usePlaces } from '@/lib/features/places/hooks/use-places';
+export { useDestinationStats } from '@/lib/hooks/use-destination-stats';
 
-// Tasks hooks
-export { useTasks } from './use-tasks';
+// ============================================================================
+// ACTIVITY AND TASK HOOKS
+// ============================================================================
+export { useActivities } from '@/lib/hooks/use-activities';
+export { useActivitySuggestions } from '@/lib/hooks/useActivitySuggestions';
+export { useActivityTimeline } from '@/lib/hooks/use-activity-timeline';
+export { useTasks } from '@/lib/hooks/use-tasks';
 
-// Votes hooks
-export { useVotes } from './use-votes';
+// ============================================================================
+// USER AND AUTHENTICATION HOOKS
+// ============================================================================
+export { useAuth } from '@/lib/hooks/use-auth';
+export { usePermissions } from '@/lib/hooks/use-permissions';
+export { useReferral } from '@/lib/hooks/use-referral';
 
-// Maps and Cities hooks
-export { useMaps } from './use-maps';
-export { useCities } from './use-cities';
+// ============================================================================
+// DATA MANAGEMENT HOOKS
+// ============================================================================
+export { useExpenses } from '@/lib/features/budget/hooks/use-expenses';
+export { useImmer } from '@/lib/hooks/use-immer';
+export { useInterests } from '@/lib/hooks/use-interests';
+export { useTags } from '@/lib/hooks/use-tags';
+export { useTagPicker } from '@/lib/hooks/use-tag-picker';
 
-// Shared/UI hooks
-export { useMediaQuery } from './use-media-query';
-export { useMobileDialog } from './use-mobile-dialog';
-export { default as useOgImage } from './use-og-image'; 
+// ============================================================================
+// ANALYTICS AND TRACKING HOOKS
+// ============================================================================
+export { useResearchTracking } from '@/lib/hooks/use-research-tracking';

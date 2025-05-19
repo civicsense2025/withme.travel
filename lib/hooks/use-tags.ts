@@ -1,199 +1,421 @@
 /**
- * Tags Custom Hook
+ * Tags Management Hook
  * 
- * Provides tag management functionality for components
+ * Provides functionality for fetching, creating, and managing tags for various entities.
+ * Supports searching, adding, removing, and creating tags with proper error handling.
+ * 
+ * @module hooks/use-tags
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import { 
-  listTags,
-  getTag, 
-  createTag, 
-  deleteTag, 
-  addTagToEntity, 
-  removeTagFromEntity,
-  searchTags 
-} from '@/lib/client/tags';
-import { isSuccess } from '@/utils/result';
-import type { Tag, TagInput, VoteDirection } from '@/components/features/tags/types';
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useToast } from '@/lib/hooks/use-toast';
+import { createTag, deleteTag, listTags, searchTags as apiSearchTags } from '@/lib/client/tags';
+import { Tag } from '@/lib/api/_shared';
+import { isSuccess, isFailure, Result } from '@/lib/utils/result';
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 /**
- * UseTags hook parameters
+ * Tag suggestion from admin or user
  */
-interface UseTagsParams {
-  /** Entity ID to manage tags for */
-  entityId?: string;
-  /** Entity type to manage tags for */
+export type TagSuggestion = {
+  /** Unique identifier for the suggestion */
+  id: string;
+  /** Reference to the tag that was suggested */
+  tag_id: string;
+  /** Reference to the destination this tag is suggested for */
+  destination_id: string;
+  /** Current status of the suggestion */
+  status: 'pending' | 'approved' | 'rejected';
+  /** Optional notes from an admin about the suggestion */
+  admin_notes: string | null;
+};
+
+/**
+ * Parameters for useTags hook
+ */
+export interface UseTagsParams {
+  /** Type of entity to fetch tags for (e.g., "trip", "destination") */
   entityType?: string;
+  /** ID of entity to fetch tags for */
+  entityId?: string;
+  /** Whether to fetch tags on mount (default: true) */
+  fetchOnMount?: boolean;
 }
 
 /**
- * UseTags hook return value
+ * Return type for useTags hook
  */
-interface UseTagsReturn {
-  /** Tags data */
+export interface UseTagsResult {
+  /** Array of tags for the entity */
   tags: Tag[];
-  /** Whether tags are loading */
+  /** Whether tags are currently loading */
   isLoading: boolean;
-  /** Any error that occurred */
-  error: Error | null;
-  /** Refresh tags data */
-  refresh: () => Promise<void>;
-  /** Add a new tag */
-  addTag: (tagInput: TagInput) => Promise<Tag | null>;
-  /** Remove a tag */
-  removeTag: (tagId: string) => Promise<void>;
-  /** Vote on a tag (not currently implemented in the API) */
-  voteOnTag: (tag: Tag, direction: VoteDirection) => Promise<void>;
-  /** Add an existing tag to the entity */
-  addExistingTag: (tagId: string) => Promise<void>;
-  /** Remove a tag from the entity */
-  removeTagFromEntity: (tagId: string) => Promise<void>;
+  /** Error message if any operation failed */
+  error: string | null;
+  /** Function to refresh tags data */
+  refreshTags: () => Promise<void>;
+  /** Function to add a tag to the current entity */
+  addTag: (tagName: string) => Promise<boolean>;
+  /** Function to remove a tag from the current entity */
+  removeTag: (tagName: string) => Promise<boolean>;
+  /** Function to create a new tag with custom data */
+  createNewTag: (tagData: Partial<Tag>) => Promise<Tag | null>;
+  /** Function to search for tags across the system */
+  searchForTags: (query: string) => Promise<Tag[]>;
+  /** Alias for addTag (for compatibility) */
+  addTagToEntity: (tagName: string) => Promise<boolean>;
+  /** Alias for removeTag (for compatibility) */
+  removeTagFromEntity: (tagName: string) => Promise<boolean>;
+  /** Alias for searchForTags (for compatibility) */
+  searchTags: (query: string) => Promise<Tag[]>;
 }
 
-/**
- * Custom hook for tag management
- */
-export function useTags({ entityId, entityType = 'general' }: UseTagsParams = {}): UseTagsReturn {
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+// ============================================================================
+// HOOK IMPLEMENTATION
+// ============================================================================
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+/**
+ * Hook for managing tags for entities
+ * 
+ * @param params - Configuration options for the hook
+ * @returns Object containing tags data and management functions
+ */
+export function useTags({
+  entityType,
+  entityId,
+  fetchOnMount = true,
+}: UseTagsParams = {}): UseTagsResult {
+  // ========== State ==========
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // ========== Dependencies ==========
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // ========== Fetch Logic ==========
+  const refreshTags = useCallback(async (): Promise<void> => {
+    // Skip if we don't have necessary parameters
+    if (!entityType || !entityId) {
+      setTags([]);
+      return;
+    }
 
     try {
-      const response = await listTags(entityType, entityId);
+      setIsLoading(true);
+      setError(null);
       
-      if (!isSuccess(response)) {
-        throw new Error(response.error.message || String(response.error));
+      const result = await listTags(entityType, entityId);
+      
+      if (isSuccess(result)) {
+        setTags(result.data);
+      } else {
+        setError(result.error);
+        toast({
+          title: 'Error',
+          description: `Failed to load tags: ${result.error}`,
+          variant: 'destructive',
+        });
       }
-      
-      setTags(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch tags'));
-      console.error('Error fetching tags:', err);
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'An unexpected error occurred';
+      
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: `Failed to load tags: ${errorMessage}`,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [entityId, entityType]);
+  }, [entityType, entityId, toast]);
 
-  const addTag = useCallback(async (tagInput: TagInput): Promise<Tag | null> => {
-    try {
-      const response = await createTag(tagInput);
-      
-      if (!isSuccess(response)) {
-        throw new Error(response.error.message || String(response.error));
+  // ========== Add Tag Logic ==========
+  const addTag = useCallback(
+    async (tagName: string): Promise<boolean> => {
+      // Validate inputs
+      if (!entityType || !entityId) {
+        const errorMessage = 'Entity type and ID are required';
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
       }
-      
-      const newTag = response.data;
-      
-      if (newTag && entityId && entityType) {
-        // If we have an entity, also add the tag to it
-        const addResult = await addTagToEntity(entityType, entityId, newTag.id);
+
+      if (!tagName.trim()) {
+        const errorMessage = 'Tag name is required';
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
         
-        if (!isSuccess(addResult)) {
-          console.warn('Failed to associate tag with entity:', addResult.error.message || String(addResult.error));
+        // Create tag data with proper entity information
+        const tagData: Partial<Tag> = {
+          name: tagName.trim(),
+          entity_type: entityType,
+          entity_id: entityId,
+          created_by: user?.id,
+        };
+        
+        const result = await createTag(tagData);
+        
+        if (isSuccess(result)) {
+          // Optimistically update UI
+          setTags(prevTags => [...prevTags, result.data]);
+          
+          toast({
+            title: 'Success',
+            description: `Tag "${tagName}" added successfully`,
+          });
+          
+          return true;
+        } else {
+          throw new Error(result.error);
         }
+      } catch (err) {
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to add tag';
+        
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-      
-      await refresh();
-      return newTag || null;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to create tag'));
-      console.error('Error creating tag:', err);
-      return null;
-    }
-  }, [entityId, entityType, refresh]);
+    },
+    [entityType, entityId, user?.id, toast]
+  );
 
-  const removeTag = useCallback(async (tagId: string): Promise<void> => {
-    try {
-      const response = await deleteTag(tagId);
-      
-      if (!isSuccess(response)) {
-        throw new Error(response.error.message || String(response.error));
+  // ========== Remove Tag Logic ==========
+  const removeTag = useCallback(
+    async (tagName: string): Promise<boolean> => {
+      // Validate inputs
+      if (!entityType || !entityId) {
+        const errorMessage = 'Entity type and ID are required';
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
       }
-      
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to delete tag'));
-      console.error('Error deleting tag:', err);
-    }
-  }, [refresh]);
 
-  const voteOnTag = useCallback(async (tag: Tag, direction: VoteDirection): Promise<void> => {
-    // Note: This functionality doesn't exist in the API yet
-    // This is a placeholder for future implementation
-    try {
-      console.warn('Tag voting is not implemented in the API yet');
-      // When implemented, it would be something like:
-      // const response = await voteTag(tag.id, direction);
-      // if (!isSuccess(response)) {
-      //   throw new Error(response.error.message || String(response.error));
-      // }
-      
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to vote on tag'));
-      console.error('Error voting on tag:', err);
-    }
-  }, [refresh]);
-
-  const addExistingTag = useCallback(async (tagId: string): Promise<void> => {
-    if (!entityId || !entityType) {
-      setError(new Error('Entity ID and type required to add tags'));
-      return;
-    }
-
-    try {
-      const response = await addTagToEntity(entityType, entityId, tagId);
-      
-      if (!isSuccess(response)) {
-        throw new Error(response.error.message || String(response.error));
+      if (!tagName.trim()) {
+        const errorMessage = 'Tag name is required';
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
       }
-      
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to add tag to entity'));
-      console.error('Error adding tag to entity:', err);
-    }
-  }, [entityId, entityType, refresh]);
 
-  const removeFromEntity = useCallback(async (tagId: string): Promise<void> => {
-    if (!entityId || !entityType) {
-      setError(new Error('Entity ID and type required to remove tags'));
-      return;
-    }
-
-    try {
-      const response = await removeTagFromEntity(entityType, entityId, tagId);
-      
-      if (!isSuccess(response)) {
-        throw new Error(response.error.message || String(response.error));
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Find the tag ID first by searching
+        const searchResult = await apiSearchTags(tagName);
+        
+        if (isSuccess(searchResult)) {
+          // Find the exact tag for this entity
+          const tagToRemove = searchResult.data.find(tag => 
+            tag.name === tagName && 
+            tag.entity_type === entityType && 
+            tag.entity_id === entityId
+          );
+          
+          if (!tagToRemove) {
+            throw new Error('Tag not found for this entity');
+          }
+          
+          const deleteResult = await deleteTag(tagToRemove.id);
+          
+          if (isSuccess(deleteResult)) {
+            // Optimistically update UI
+            setTags(prevTags => 
+              prevTags.filter(tag => tag.id !== tagToRemove.id)
+            );
+            
+            toast({
+              title: 'Success',
+              description: `Tag "${tagName}" removed successfully`,
+            });
+            
+            return true;
+          } else {
+            throw new Error(deleteResult.error);
+          }
+        } else {
+          throw new Error(searchResult.error);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to remove tag';
+        
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-      
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to remove tag from entity'));
-      console.error('Error removing tag from entity:', err);
-    }
-  }, [entityId, entityType, refresh]);
+    },
+    [entityType, entityId, toast]
+  );
 
-  // Load tags on mount
+  // ========== Create Tag Logic ==========
+  const createNewTag = useCallback(
+    async (tagData: Partial<Tag>): Promise<Tag | null> => {
+      if (!tagData.name?.trim()) {
+        toast({
+          title: 'Error',
+          description: 'Tag name is required',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Ensure creator ID is included
+        const enrichedTagData: Partial<Tag> = {
+          ...tagData,
+          created_by: tagData.created_by || user?.id,
+        };
+        
+        const result = await createTag(enrichedTagData);
+        
+        if (isSuccess(result)) {
+          // If this tag was created for the current entity, update our local state
+          if (
+            enrichedTagData.entity_type === entityType &&
+            enrichedTagData.entity_id === entityId
+          ) {
+            setTags(prevTags => [...prevTags, result.data]);
+          }
+          
+          toast({
+            title: 'Success',
+            description: `Tag "${tagData.name}" created successfully`,
+          });
+          
+          return result.data;
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to create tag';
+        
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [entityType, entityId, user?.id, toast]
+  );
+
+  // ========== Search Logic ==========
+  const searchForTags = useCallback(
+    async (query: string): Promise<Tag[]> => {
+      if (!query.trim()) {
+        return [];
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const result = await apiSearchTags(query);
+        
+        if (isSuccess(result)) {
+          return result.data;
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to search tags';
+        
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        
+        return [];
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [toast]
+  );
+
+  // ========== Initial Data Loading ==========
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (fetchOnMount && entityType && entityId) {
+      refreshTags();
+    }
+  }, [fetchOnMount, entityType, entityId, refreshTags]);
 
+  // Return the hook's API
   return {
     tags,
     isLoading,
     error,
-    refresh,
+    refreshTags,
     addTag,
     removeTag,
-    voteOnTag,
-    addExistingTag,
-    removeTagFromEntity: removeFromEntity
+    createNewTag,
+    searchForTags,
+    // Compatibility aliases
+    addTagToEntity: addTag,
+    removeTagFromEntity: removeTag,
+    searchTags: searchForTags,
   };
-} 
+}

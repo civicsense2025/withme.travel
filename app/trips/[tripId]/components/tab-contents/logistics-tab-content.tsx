@@ -19,7 +19,7 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { API_ROUTES } from '@/utils/constants/routes';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import {
   Dialog,
   DialogContent,

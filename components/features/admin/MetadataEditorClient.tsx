@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { mergeMetadata } from '@/utils/itinerary/metadata-helpers';
 import { COMPLETE_SAMPLE_METADATA } from '@/utils/itinerary/sample-metadata';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Label } from '@/components/ui/label';
 import {
   Card,

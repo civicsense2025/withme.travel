@@ -33,7 +33,7 @@ import { DisplayItineraryItem } from '@/types/itinerary';
 import { Profile } from '@/types/profile';
 import { ItineraryItemCard } from '@/components/itinerary/ItineraryItemCard';
 import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { ItineraryDaySection } from './ItineraryDaySection';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';

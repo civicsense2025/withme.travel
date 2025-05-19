@@ -336,7 +336,7 @@ export function DataTable<T>({
     };
 
     return (
-      <Pagination className="pt-4">
+      <Pagination page={pageIndex} pageCount={pageCount} onPageChange={pagination?.onPageChange || setPageIndex} className="pt-4">
         <PaginationContent className="rounded-full border bg-white/50 dark:bg-black/50 shadow-sm backdrop-blur-sm p-1">
           <PaginationItem>
             <PaginationPrevious
@@ -462,7 +462,7 @@ export function DataTable<T>({
           )}
         </div>
 
-        <DropdownMenu open={filterDropdownOpen} onOpenChange={setFilterDropdownOpen}>
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
@@ -689,7 +689,7 @@ export function DataTable<T>({
                 <TableHead className="w-[40px] p-2">
                   <Checkbox
                     checked={selectAll}
-                    onCheckedChange={(checked) => {
+                    onChange={(checked) => {
                       setSelectAll(!!checked);
                       handleSelectAll(!!checked);
                     }}
@@ -701,7 +701,6 @@ export function DataTable<T>({
                 <TableHead
                   key={String(index)}
                   className={column.sortable ? 'cursor-pointer select-none' : ''}
-                  onClick={() => handleSort(column)}
                 >
                   <div className="flex items-center">
                     <span>{column.header}</span>
@@ -746,7 +745,7 @@ export function DataTable<T>({
                       <TableCell className="p-2">
                         <Checkbox
                           checked={isSelected(row)}
-                          onCheckedChange={(checked) => handleRowSelect(row, !!checked)}
+                          onChange={(checked) => handleRowSelect(row, !!checked)}
                           className="transition-transform duration-300 data-[state=checked]:scale-105"
                         />
                       </TableCell>

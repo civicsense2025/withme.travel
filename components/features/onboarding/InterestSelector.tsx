@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { useTags } from '@/hooks';
-import { useToast } from '@/hooks/use-toast'
+import { useTags } from '@/lib/hooks/use-tags';
+import { useToast } from '@/lib/hooks/use-toast'
 import { Loader2 } from 'lucide-react';
 import type { Tag } from '@/components/features/tags/types';
 
@@ -51,7 +51,7 @@ export function InterestSelector({
       // Pre-select interests based on personality type
       if (Object.keys(suggestedInterests).length > 0) {
         const tagSuggestions: Record<string, number> = {};
-        fetchedTags.forEach((tag) => {
+        fetchedTags.forEach((tag: Tag) => {
           if (suggestedInterests[tag.slug]) {
             tagSuggestions[tag.id] = suggestedInterests[tag.slug];
           }

@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ActivityFeed, Activity } from '@/components/features/activities/organisms/ActivityFeed';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 
 // ============================================================================
 // COMPONENT PROPS & TYPES

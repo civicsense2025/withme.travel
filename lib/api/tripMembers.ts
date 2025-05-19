@@ -257,5 +257,13 @@ export async function checkTripMemberAccess(
  * @param role - The new role for the member
  * @returns Result containing the updated member
  */
-export async function updateTripMemberRole(tripId: string, memberId: string, role: string) {}
-// (Add more as needed)
+export async function updateTripMemberRole(tripId: string, memberId: string, role: string): Promise<Result<null>> {
+  return { success: false, error: 'Not implemented yet' };
+}
+
+/**
+ * Type guard to check if an object is a TripMember
+ */
+export function isTripMember(obj: any): obj is TripMember {
+  return obj && typeof obj.id === 'string' && typeof obj.trip_id === 'string' && typeof obj.user_id === 'string';
+}

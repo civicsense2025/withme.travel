@@ -434,4 +434,12 @@ export async function deleteItinerary(itineraryId: string): Promise<Result<null>
     return handleError(error, 'Failed to delete itinerary');
   }
 }
+
+/**
+ * Type guard to check if an object is an ItineraryItem
+ */
+export function isItineraryItem(obj: any): obj is ItineraryItem {
+  return obj && typeof obj.id === 'string' && typeof obj.title === 'string';
+}
+
 // (Add more as needed)

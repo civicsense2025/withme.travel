@@ -37,4 +37,11 @@ export async function recordCustomMetric(analyticsData: any, userId?: string, se
       body: JSON.stringify({ ...analyticsData, userId, sessionId }),
     }).then((res) => res.json())
   );
+}
+
+/**
+ * Type guard to check if an object is an AnalyticsEvent
+ */
+export function isAnalyticsEvent(obj: any): obj is AnalyticsEvent {
+  return obj && typeof obj.event === 'string' && typeof obj.timestamp === 'string';
 } 

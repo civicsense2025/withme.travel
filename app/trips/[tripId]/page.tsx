@@ -101,7 +101,7 @@ export default async function TripPage({ params }: TripParams) {
     // Get user if available (fetch from auth, not profiles table)
     const {
       data: { user },
-    } = await supabase.auth.get-ser();
+    } = await supabase.auth.getUser();
 
     // First try to get the trip data
     const { data: tripData, error: tripError } = await supabase
@@ -130,7 +130,7 @@ export default async function TripPage({ params }: TripParams) {
 
       // Check if user is logged in and is the creator
       if (user && trip && trip.created_by === user.id) {
-        console.log(`[TripPage] -ser ${user.id} is the creator`);
+        console.log(`[TripPage] -User ${user.id} is the creator`);
         canView = true;
         canEdit = true;
       } else {

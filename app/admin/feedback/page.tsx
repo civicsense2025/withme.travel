@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { Container } from '@/components/container';
+import { Container } from '@/components/features/layout/organisms/container';
 import { checkAdminAuth } from '../utils/auth';
 import FeedbackTable from './FeedbackTable';
 import { TABLES } from '@/utils/constants/tables';

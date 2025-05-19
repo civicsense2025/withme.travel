@@ -117,4 +117,12 @@ export async function deletePlace(placeId: string): Promise<Result<null>> {
     return handleError(error, 'Failed to delete place');
   }
 }
+
+/**
+ * Type guard to check if an object is a Place
+ */
+export function isPlace(obj: any): obj is Place {
+  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+}
+
 // (Add more as needed)

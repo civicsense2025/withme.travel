@@ -16,7 +16,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search, Plus, Calendar, MapPin, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -101,7 +101,7 @@ export function GroupPlansConnected({
   className = '',
   onPlanSelected,
 }: GroupPlansConnectedProps) {
-  const { plans, loading, error, fetchPlans, createPlan, updatePlan, deletePlan } = useGroupPlans();
+  const { plans, loading, error, createPlan, updatePlan, deletePlan, refetch } = useGroupPlans(groupId);
   const [searchQuery, setSearchQuery] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newPlanTitle, setNewPlanTitle] = useState('');
@@ -112,11 +112,11 @@ export function GroupPlansConnected({
   // Fetch plans on mount
   useEffect(() => {
     if (groupId) {
-      fetchPlans(groupId).catch(err => {
+      refetch().catch(err => {
         console.error('Error fetching plans:', err);
       });
     }
-  }, [groupId, fetchPlans]);
+  }, [groupId, refetch]);
 
   // Filtered plans based on search
   const filteredPlans = plans.filter(plan =>
@@ -136,12 +136,12 @@ export function GroupPlansConnected({
 
     setIsCreating(true);
     try {
-      const result = await createPlan(groupId, {
+      const result = await createPlan({
         title: newPlanTitle,
         description: newPlanDescription || undefined,
       });
       
-      if (result.success) {
+      if (result) {
         toast({
           description: `Plan "${newPlanTitle}" created successfully`,
         });
@@ -149,16 +149,16 @@ export function GroupPlansConnected({
         setNewPlanTitle('');
         setNewPlanDescription('');
         // Refresh plans list
-        fetchPlans(groupId);
+        refetch();
         
         // If there's a callback for plan selection, call it
-        if (onPlanSelected && result.planId) {
-          onPlanSelected(result.planId);
+        if (onPlanSelected && result.id) {
+          onPlanSelected(result.id);
         }
       } else {
         toast({
           title: "Failed to create plan",
-          description: result.error || "An error occurred",
+          description: "An error occurred",
           variant: "destructive"
         });
       }
@@ -172,11 +172,11 @@ export function GroupPlansConnected({
     } finally {
       setIsCreating(false);
     }
-  }, [groupId, newPlanTitle, newPlanDescription, createPlan, toast, fetchPlans, onPlanSelected]);
+  }, [newPlanTitle, newPlanDescription, createPlan, toast, refetch, onPlanSelected]);
 
   // Error state
   if (error) {
-    return <div className="p-4 bg-red-50 text-red-700 rounded-md">{error}</div>;
+    return <div className="p-4 bg-red-50 text-red-700 rounded-md">{error.message || error.toString()}</div>;
   }
 
   return (

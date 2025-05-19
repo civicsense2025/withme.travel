@@ -1,3 +1,7 @@
+/**
+ * @deprecated This component has been moved to components/features/trips/molecules/TripDetailError.tsx
+ * Please update your imports to use the new location.
+ */
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -14,7 +18,7 @@ import { AlertCircle, RefreshCw, ArrowLeft, Home, Copy } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 
 interface TripDetailErrorProps {
   tripId: string;
@@ -92,7 +96,7 @@ export function TripDetailError({
 
       <CardContent className="space-y-4">
         {errorDetails && (
-          <Alert className="text-sm">
+          <Alert variant="destructive" className="text-sm">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error Details</AlertTitle>
             <AlertDescription className="mt-2 font-mono text-xs overflow-x-auto whitespace-pre-wrap">
@@ -174,4 +178,4 @@ export function TripDetailError({
       </CardFooter>
     </Card>
   );
-} 
+}

@@ -1,24 +1,23 @@
 import '@/app/globals.css'; // Keep this for dev mode
 
 import { cn } from '@/lib/utils';
-import { Providers } from '@/components/providers';
+import { Providers } from '@/app/providers';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { VercelAnalytics } from './vercel-analytics';
 import Script from 'next/script';
-import { ClientSideProviders } from '@/components/ClientSideProviders';
+import { ClientSideProviders } from '@/components/features/layout/organisms/ClientSideProviders';
 import Navbar from '@/components/layout/Navbar';
-import { Footer } from '@/components/footer';
+import { Footer } from '@/components/features/layout/organisms/footer';
 import { LayoutModeProvider } from './context/layout-mode-context';
-import { ClientSideLayoutRenderer } from '@/components/ClientSideLayoutRenderer';
+import { ClientSideLayoutRenderer } from '@/components/features/layout/organisms/ClientSideLayoutRenderer';
 import { ToastProvider } from '@/components/ui/toast';
 import { helveticaNeue } from './fonts';
-import { Container } from '@/components/container';
+import { PageContainer } from '@/components/features/layout/molecules/PageContainer';
 import { SearchProvider } from '@/contexts/search-context';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import React from 'react';
-import { ServerAuthProvider } from '@/components/ServerAuthProvider';
 
 // Metadata is imported from app/metadata.ts
 export const metadata = {
@@ -46,40 +45,40 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="mobile-web-app-capable" content="yes" />
 
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-iconU152x152.png" />
-        <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-iconU120x120.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png" />
         <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
 
         {/* <link rel="apple-touch-startup-image" href="/splash/apple-splashU2048U2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /> */}
         {/* <link rel="apple-touch-startup-image" href="/splash/apple-splashU1668U2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /> */}
         <link
           rel="apple-touch-startup-image"
-          href="/splash/apple-splashU1536U2048.png"
+          href="/splash/apple-splash-1536x2048.png"
           media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
         />
         <link
           rel="apple-touch-startup-image"
-          href="/splash/apple-splashU1125U2436.png"
+          href="/splash/apple-splash-1125x2436.png"
           media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
         />
         <link
           rel="apple-touch-startup-image"
-          href="/splash/apple-splashU1242U2688.png"
+          href="/splash/apple-splash-1242x2688.png"
           media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
         />
         <link
           rel="apple-touch-startup-image"
-          href="/splash/apple-splashU828U1792.png"
+          href="/splash/apple-splash-828x1792.png"
           media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
         />
         <link
           rel="apple-touch-startup-image"
-          href="/splash/apple-splashU750U1334.png"
+          href="/splash/apple-splash-750x1334.png"
           media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
         />
         <link
           rel="apple-touch-startup-image"
-          href="/splash/apple-splashU640U1136.png"
+          href="/splash/apple-splash-640x1136.png"
           media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
         />
       </head>
@@ -89,7 +88,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
           <TooltipProvider>
-            <ServerAuthProvider>
+         
               <LayoutModeProvider>
                 <ClientSideProviders>
                   <ClientSideLayoutRenderer>
@@ -98,7 +97,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   </ClientSideLayoutRenderer>
                 </ClientSideProviders>
               </LayoutModeProvider>
-            </ServerAuthProvider>
+           
           </TooltipProvider>
           <ToastProvider>
             <Analytics />

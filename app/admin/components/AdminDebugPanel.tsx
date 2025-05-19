@@ -253,14 +253,10 @@ export function AdminDebugPanel({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               >
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion>
                   {Object.entries(debugInfo.routes).map(([category, routes]) => (
-                    <AccordionItem
-                      key={category}
-                      value={category}
-                      className="border-b overflow-hidden"
-                    >
-                      <AccordionTrigger className="py-3 hover:no-underline rounded-lg px-2 transition-all duration-300 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <AccordionItem key={category} value={category}>
+                      <AccordionTrigger>
                         <span className="capitalize">{category} Routes</span>
                       </AccordionTrigger>
                       <AccordionContent>
@@ -336,14 +332,10 @@ export function AdminDebugPanel({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               >
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion>
                   {Object.entries(ENUMS).map(([enumName, enumValues]) => (
-                    <AccordionItem
-                      key={enumName}
-                      value={enumName}
-                      className="border-b overflow-hidden"
-                    >
-                      <AccordionTrigger className="py-3 hover:no-underline rounded-lg px-2 transition-all duration-300 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <AccordionItem key={enumName} value={enumName}>
+                      <AccordionTrigger>
                         <span className="font-mono text-sm">{enumName}</span>
                       </AccordionTrigger>
                       <AccordionContent>

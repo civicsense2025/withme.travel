@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -38,7 +38,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/ScrollArea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { TRIP_ROLES } from '@/utils/constants/status';
@@ -46,7 +46,7 @@ import { AuthContextType } from '@/components/features/auth';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { Trip } from '@/types/trip';
 import { Database } from '@/types/supabase';
-import { PlaylistEmbed } from '@/components/features/trips/PlaylistEmbed';
+import { PlaylistEmbed } from '@/components/features/trips/organisms/PlaylistEmbed';
 
 interface User {
   id: string;

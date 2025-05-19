@@ -152,4 +152,11 @@ export async function removeCommentReaction(
   );
 }
 
+/**
+ * Type guard to check if an object is a Comment
+ */
+export function isComment(obj: any): obj is Comment {
+  return obj && typeof obj.id === 'string' && typeof obj.content === 'string';
+}
+
 export type { Result } from '@/lib/client/result';
