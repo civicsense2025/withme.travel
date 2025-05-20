@@ -83,7 +83,7 @@ export async function PopularDestinations({
       {showViewAll && (
         <div className="mt-8 text-center">
           <Button asChild variant="outline">
-            <Link href={viewAllUrl} legacyBehavior>
+            <Link href={viewAllUrl}>
               View all destinations
               <ChevronRight className="ml-2 h-4 w-4" />
             </Link>

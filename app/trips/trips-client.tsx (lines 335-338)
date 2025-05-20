@@ -1,0 +1,7 @@
+                key={trip.id} 
+                trip={{
+                  ...trip,
+                  cover_image_url: trip.cover_image_url || undefined,
+                  destination_name: trip.destination_name || undefined,
+                  start_date: trip.start_date === null ? undefined : trip.start_date,
+                  end_date: trip.end_date === null ? undefined : trip.end_date,

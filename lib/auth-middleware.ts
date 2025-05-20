@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { Database } from '@/types/database.types';
 import { errorResponse } from './api-utils';
+import { createMiddlewareClient } from '@/utils/supabase/middleware';
 
 // Ensure environment variables are available
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -220,40 +221,13 @@ export async function isAuthenticated(request: NextRequest): Promise<boolean> {
 }
 
 // Middleware function to protect routes
-export async function authMiddleware(request: NextRequest): Promise<NextResponse> {
-  try {
-    if (!supabaseAdmin) {
-      console.error('[authMiddleware] Supabase client not initialized.');
-      const redirectUrl = new URL('/login?error=auth_setup_failed', request.url);
-      return NextResponse.redirect(redirectUrl);
-    }
+export async function middleware(request: NextRequest) {
+  const { supabase, response } = createMiddlewareClient(request);
+  const { data: { session } } = await supabase.auth.getSession();
 
-    const {
-      data: { user },
-      error
-    } = await supabaseAdmin.auth.getUser();
-
-    if (error) {
-      logAuthError('authMiddleware', error, request);
-      const redirectUrl = new URL('/login?error=auth_error', request.url);
-      redirectUrl.searchParams.set('message', encodeURIComponent(error.message));
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    if (!user) {
-      // User is not authenticated, redirect to login page
-      const redirectUrl = new URL('/login', request.url);
-      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // User is authenticated, allow the request to proceed
-    return NextResponse.next();
-  } catch (error) {
-    logAuthError('authMiddleware', error, request);
-    
-    // Redirect to login on error
-    const redirectUrl = new URL('/login?error=auth_check_failed', request.url);
-    return NextResponse.redirect(redirectUrl);
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
+
+  return response;
 }

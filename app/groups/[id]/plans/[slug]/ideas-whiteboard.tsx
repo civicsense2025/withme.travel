@@ -1400,7 +1400,7 @@ export default function IdeasWhiteboard({
                   <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
                       <Button variant="ghost" size="icon" asChild className="rounded-full">
-                        <Link href={`/groups/${groupId}`} legacyBehavior>
+                        <Link href={`/groups/${groupId}`}>
                           <ArrowLeft className="h-6 w-6 text-muted-foreground" />
                         </Link>
                       </Button>
@@ -1852,7 +1852,7 @@ export default function IdeasWhiteboard({
                   {/* Back to group button */}
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Link href={`/groups/${resolvedGroupId}`} passHref legacyBehavior>
+                      <Link href={`/groups/${resolvedGroupId}`} passHref>
                         <Button
                           variant="ghost"
                           size="icon"

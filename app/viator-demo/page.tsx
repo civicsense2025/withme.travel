@@ -104,7 +104,7 @@ export default function ViatorDemoPage() {
         Book tours, activities and attractions with our Viator integration
       </p>
       <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <Link href="/viator-search" className="block" legacyBehavior>
+        <Link href="/viator-search" className="block">
           <Card className="h-full transition-all hover:shadow-lg">
             <CardContent className="flex h-full flex-col items-center justify-center p-6">
               <Search className="mb-4 h-10 w-10 text-accent-purple" />
@@ -116,7 +116,7 @@ export default function ViatorDemoPage() {
           </Card>
         </Link>
 
-        <Link href="/viator-demo/bookings" className="block" legacyBehavior>
+        <Link href="/viator-demo/bookings" className="block">
           <Card className="h-full transition-all hover:shadow-lg">
             <CardContent className="flex h-full flex-col items-center justify-center p-6">
               <TicketIcon className="mb-4 h-10 w-10 text-accent-purple" />

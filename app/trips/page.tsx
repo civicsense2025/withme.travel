@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/utils/supabase-server';
 import { Metadata } from 'next';
 import { getGuestToken } from '@/utils/guest';
 import { HeroSection } from '@/components/features/trips/organisms/HeroSection';
@@ -10,7 +9,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SharedPresenceSection } from '@/components/features/trips/organisms/SharedPresenceSection';
 import { ExpenseMarketingSection } from '@/components/features/trips/organisms/ExpenseMarketingSection';
-import { getServerSession } from '@/lib/auth/supabase';
+import { supabase } from '@/lib/supabase';
 
 // Force dynamic to ensure we get fresh data on each request
 export const dynamic = 'force-dynamic';
@@ -27,21 +26,18 @@ export const metadata: Metadata = {
 };
 
 export default async function TripsPage() {
-  const session = await getServerSession();
-  
-  if (session?.user) {
-    return redirect('/trips/manage');
+  // Retrieve the user
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return <div>Please sign in to view your trips.</div>;
   }
 
   return (
-    // Your existing landing page content
     <div>
-      {/* Landing page content for signed-out users */}
-      <h1>Welcome to WithMe Travel</h1>
-      <p>Start planning your next adventure with friends and family</p>
-      <Link href="/trips/new">
-        <Button>Create a Trip</Button>
-      </Link>
+      <h1>Your Trips</h1>
+      <p>Welcome back, {user.email}!</p>
+      {/* Render your trips here */}
     </div>
   );
 }

@@ -184,7 +184,7 @@ function TripActions({ trip, canEdit }: { trip: ExtendedTrip; canEdit?: boolean 
       {canEdit && (
         <>
           <Button asChild size="sm" variant="outline">
-            <Link href={`/trips/${trip.id}/edit`} legacyBehavior>
+            <Link href={`/trips/${trip.id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Trip
             </Link>
@@ -219,7 +219,7 @@ function TripHeader({ trip }: { trip: ExtendedTrip }) {
         <Link
           href="/trips"
           className="flex items-center hover:text-primary transition-colors"
-          legacyBehavior>
+         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to trips
         </Link>
@@ -394,13 +394,13 @@ export default function TripDetails({ canEdit = false }: TripDetailsProps) {
             <CardContent>
               <div className="space-y-2">
                 <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link href={`/trips/${trip.id}/itinerary`} legacyBehavior>
+                  <Link href={`/trips/${trip.id}/itinerary`}>
                     <Calendar className="mr-2 h-4 w-4" />
                     Itinerary
                   </Link>
                 </Button>
                 <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link href={`/trips/${trip.id}/members`} legacyBehavior>
+                  <Link href={`/trips/${trip.id}/members`}>
                     <Users className="mr-2 h-4 w-4" />
                     Members
                   </Link>

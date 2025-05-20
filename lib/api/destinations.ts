@@ -548,8 +548,7 @@ export async function getPopularDestinations(limit: number = 10): Promise<Extend
       .order('popular_index', { ascending: false })
       .limit(limit);
 
-    if (error) return { success: false, error: error.message };
-    
+    if (error) return { success: false, error: error.message };    
     // Convert database results to Destination type with proper type assertion
     const destinations = (data || []).map((dbDest) => 
       toDestination(dbDest as unknown as DatabaseDestination)

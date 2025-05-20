@@ -127,7 +127,7 @@ export function EmptyTrips() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
             >
-              <Link href={PAGE_ROUTES.CREATE_TRIP} legacyBehavior>
+              <Link href={PAGE_ROUTES.CREATE_TRIP}>
                 <Button
                   size="lg"
                   className="rounded-xl gap-2 px-8 bg-gradient-to-r from-travel-purple to-travel-blue hover:from-travel-purple/90 hover:to-travel-blue/90 transition-all shadow-md hover:shadow-lg group"
@@ -138,7 +138,7 @@ export function EmptyTrips() {
                 </Button>
               </Link>
 
-              <Link href="/destinations" legacyBehavior>
+              <Link href="/destinations">
                 <Button
                   variant="outline"
                   size="lg"

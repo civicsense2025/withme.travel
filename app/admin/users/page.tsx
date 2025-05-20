@@ -224,7 +224,7 @@ export default async function AdminUsersPage({
                         ? 'text-gray-300 dark:text-gray-600 cursor-default'
                         : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
-                    legacyBehavior>
+                   >
                     <span className="sr-only">Previous</span>
                     <svg
                       className="h-5 w-5"
@@ -263,7 +263,7 @@ export default async function AdminUsersPage({
                             ? 'z-10 bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300'
                             : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                         }`}
-                        legacyBehavior>
+                       >
                         {pageNum}
                       </Link>
                     );
@@ -276,7 +276,7 @@ export default async function AdminUsersPage({
                         ? 'text-gray-300 dark:text-gray-600 cursor-default'
                         : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
-                    legacyBehavior>
+                   >
                     <span className="sr-only">Next</span>
                     <svg
                       className="h-5 w-5"

@@ -21,7 +21,7 @@ export default function ViatorBookingsDemo() {
   return (
     <div className="container mx-auto py-10">
       <div className="mb-6 flex items-center">
-        <Link href="/viator-demo" legacyBehavior>
+        <Link href="/viator-demo">
           <Button variant="ghost" className="mr-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Viator Demo

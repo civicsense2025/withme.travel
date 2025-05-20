@@ -274,7 +274,7 @@ export default function CountryPageClient({
                     key={it.id}
                     className="bg-card p-4 rounded-lg shadow-sm border"
                   >
-                    <Link href={`/itineraries/${it.id}`} className="block h-full" legacyBehavior>
+                    <Link href={`/itineraries/${it.id}`} className="block h-full">
                       <div className="mb-2 flex justify-between items-start">
                         <h3 className="text-lg font-semibold">{it.title}</h3>
                         {it.location && (

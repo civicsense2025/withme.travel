@@ -135,7 +135,7 @@ export default function SearchPage() {
                       setActiveTab('destinations');
                     }}
                     className="text-primary hover:underline"
-                    legacyBehavior>
+                   >
                     View all {destinations.length} destinations
                   </Link>
                 </div>
@@ -160,7 +160,7 @@ export default function SearchPage() {
                       setActiveTab('trips');
                     }}
                     className="text-primary hover:underline"
-                    legacyBehavior>
+                   >
                     View all {trips.length} trips
                   </Link>
                 </div>
@@ -244,7 +244,7 @@ function DestinationCard({ destination }: { destination: Destination }) {
   return (
     <Link
       href={`/destinations/${destination.city.toLowerCase().replace(/\s+/g, '-')}`}
-      legacyBehavior>
+     >
       <div className="rounded-3xl overflow-hidden bg-white dark:bg-gray-900 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col h-full border">
         <div className="relative h-48 w-full bg-travel-purple/10">
           <div className="absolute top-3 right-3 z-10">
@@ -305,7 +305,7 @@ function DestinationCard({ destination }: { destination: Destination }) {
 
 function TripCard({ trip }: { trip: Trip }) {
   return (
-    <Link href={`/trips/${trip.id}`} legacyBehavior>
+    <Link href={`/trips/${trip.id}`}>
       <Card className="overflow-hidden hover:shadow-md transition-shadow h-full">
         <div className="relative h-40 w-full">
           <Image

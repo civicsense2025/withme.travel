@@ -180,7 +180,7 @@ export default function ItineraryTemplateEditor({
           <Link
             href="/admin/itineraries"
             className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-            legacyBehavior>
+           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Templates
           </Link>

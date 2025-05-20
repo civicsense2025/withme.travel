@@ -19,7 +19,7 @@ export function DiscoverSection() {
             Explore trending destinations and find your next adventure
           </p>
           <Button variant="outline" className="rounded-full" asChild>
-            <Link href="/destinations" className="flex items-center" legacyBehavior>
+            <Link href="/destinations" className="flex items-center">
               View all destinations
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

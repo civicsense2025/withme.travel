@@ -109,7 +109,7 @@ export default function SimpleTripsPage() {
         <h1 className="text-2xl font-bold">{isGuest ? 'My Guest Trips' : 'My Trips'}</h1>
         <Link
           href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}
-          legacyBehavior>
+         >
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Create New Trip
@@ -135,7 +135,7 @@ export default function SimpleTripsPage() {
           </p>
           <Link
             href={isGuest ? '/simple-trip-app/create?guest=true' : '/simple-trip-app/create'}
-            legacyBehavior>
+           >
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Create New Trip
@@ -145,7 +145,7 @@ export default function SimpleTripsPage() {
           {isGuest && (
             <div className="mt-4">
               <p className="text-sm text-muted-foreground mb-2">Want to keep your trips forever?</p>
-              <Link href="/signup" legacyBehavior>
+              <Link href="/signup">
                 <Button variant="outline" size="sm">
                   Create an Account
                 </Button>
@@ -171,7 +171,7 @@ export default function SimpleTripsPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Link href={`/simple-trip-app/${trip.id}`} className="w-full" legacyBehavior>
+                <Link href={`/simple-trip-app/${trip.id}`} className="w-full">
                   <Button variant="outline" className="w-full">
                     View Trip
                   </Button>
@@ -187,7 +187,7 @@ export default function SimpleTripsPage() {
           <p className="text-sm text-muted-foreground mb-4">
             Create an account to save your trips permanently and unlock all features.
           </p>
-          <Link href="/signup" legacyBehavior>
+          <Link href="/signup">
             <Button variant="default" size="sm">
               Create an Account
             </Button>

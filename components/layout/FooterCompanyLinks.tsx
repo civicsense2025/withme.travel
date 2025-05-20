@@ -23,7 +23,7 @@ export function FooterCompanyLinks({ isAdmin }: FooterCompanyLinksProps) {
             <Link
               href={link.href}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors capitalize"
-              legacyBehavior>
+              >
               {link.label}
             </Link>
           </li>

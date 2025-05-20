@@ -29,7 +29,7 @@ export default function NotFound() {
           {mainLinks.map((link) => {
             const Icon = link.icon;
             return (
-              <Link key={link.href} href={link.href} className="no-underline" legacyBehavior>
+              <Link key={link.href} href={link.href} className="no-underline">
                 <Button variant="outline" className="w-full justify-start h-12 text-base">
                   <Icon className="mr-2 h-5 w-5" />
                   {link.label}

@@ -121,7 +121,7 @@ export default function SimplifiedTripHeader({
           {/* Back Button */}
           {showBackButton && (
             <div className="absolute top-4 left-4 z-20">
-              <Link href="/trips" legacyBehavior>
+              <Link href="/trips">
                 <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Back to Trips
@@ -133,7 +133,7 @@ export default function SimplifiedTripHeader({
           {/* Edit Button (if user can edit) */}
           {showEditButton && (
             <div className="absolute top-4 right-4 z-20">
-              <Link href={`/trips/${normalizedTrip.id}/edit`} legacyBehavior>
+              <Link href={`/trips/${normalizedTrip.id}/edit`}>
                 <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
                   <Edit className="h-4 w-4 mr-1" />
                   Edit Trip

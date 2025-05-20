@@ -69,7 +69,7 @@ export function DestinationFeatureSection({
 
   // Generate actions for section if CTA is provided
   const actions = cta ? (
-    <Link href={cta.href} legacyBehavior>
+    <Link href={cta.href}>
       <Button>{cta.text}</Button>
     </Link>
   ) : undefined;
@@ -121,7 +121,7 @@ export function DestinationFeatureSection({
               hover={!!feature.link}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href} legacyBehavior>
+                  <Link href={feature.link.href}>
                     <Button size="sm">{feature.link.text}</Button>
                   </Link>
                 ) : undefined
@@ -145,7 +145,7 @@ export function DestinationFeatureSection({
               icon={feature.icon}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href} legacyBehavior>
+                  <Link href={feature.link.href}>
                     <Button size="sm">{feature.link.text}</Button>
                   </Link>
                 ) : undefined
@@ -168,7 +168,7 @@ export function DestinationFeatureSection({
               icon={feature.icon}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href} legacyBehavior>
+                  <Link href={feature.link.href}>
                     <Button size="sm" variant="link">
                       {feature.link.text}
                     </Button>
@@ -194,7 +194,7 @@ export function DestinationFeatureSection({
               icon={feature.icon}
               actions={
                 feature.link ? (
-                  <Link href={feature.link.href} legacyBehavior>
+                  <Link href={feature.link.href}>
                     <Button size="sm">{feature.link.text}</Button>
                   </Link>
                 ) : undefined

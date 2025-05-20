@@ -15,13 +15,12 @@ import {
   deleteTrip,
   getTripWithDetails,
   Trip as TripType,
-  CreateTripData,
-  UpdateTripData,
   listPublicTrips,
   updateTripWithDetails,
   duplicateTrip,
   archiveTrip,
   toggleTripPublic,
+  TripListParams,
 } from '@/lib/client/trips';
 import { isSuccess } from '@/lib/client/result';
 
@@ -39,6 +38,9 @@ export interface Trip {
   status?: string | null;
   duration_days?: number | null;
   destination_name?: string | null;
+  is_public: boolean;
+  cover_image_url?: string | null;
+  cover_image?: string;
 }
 
 /**
@@ -98,10 +100,10 @@ export function useTrips({
       if (result.success) {
         setTrips(result.data);
       } else {
-        setError(result.error);
+        setError(new Error(result.error));
         toast({
           title: 'Error loading trips',
-          description: result.error.message,
+          description: result.error,
           variant: 'destructive',
         });
       }
@@ -131,10 +133,10 @@ export function useTrips({
       if (result.success) {
         setTrips(result.data);
       } else {
-        setError(result.error);
+        setError(new Error(result.error));
         toast({
           title: 'Error loading public trips',
-          description: result.error.message,
+          description: result.error,
           variant: 'destructive',
         });
       }
@@ -158,10 +160,10 @@ export function useTrips({
       setIsLoading(false);
 
       if (!result.success) {
-        setError(result.error);
+        setError(new Error(result.error));
         toast({
           title: 'Error loading trip',
-          description: result.error.message,
+          description: result.error,
           variant: 'destructive',
         });
       }
@@ -184,10 +186,10 @@ export function useTrips({
       setIsLoading(false);
 
       if (!result.success) {
-        setError(result.error);
+        setError(new Error(result.error));
         toast({
           title: 'Error loading trip details',
-          description: result.error.message,
+            description: result.error,
           variant: 'destructive',
         });
       }
@@ -204,7 +206,11 @@ export function useTrips({
     async (data: Omit<Trip, 'id' | 'created_at' | 'updated_at'>) => {
       setIsLoading(true);
 
-      const result = await createTrip(data);
+      const result = await createTrip({
+        ...data,
+        is_public: false,
+        status: 'planning',
+      }); 
 
       if (result.success) {
         setTrips((prev) => [...prev, result.data]);
@@ -215,7 +221,7 @@ export function useTrips({
       } else {
         toast({
           title: 'Error creating trip',
-          description: result.error.message,
+          description: result.error,
           variant: 'destructive',
         });
       }
@@ -233,7 +239,11 @@ export function useTrips({
     async (tripId: string, data: Partial<Trip>) => {
       setIsLoading(true);
 
-      const result = await updateTrip(tripId, data);
+      const result = await updateTrip(tripId, {
+        ...data,
+        is_public: false,
+        status: 'planning',
+      });
 
       if (result.success) {
         setTrips((prev) =>
@@ -246,7 +256,7 @@ export function useTrips({
       } else {
         toast({
           title: 'Error updating trip',
-          description: result.error.message,
+            description: result.error,
           variant: 'destructive',
         });
       }
@@ -264,7 +274,11 @@ export function useTrips({
     async (tripId: string, data: Partial<Trip> & { cities?: any[] }) => {
       setIsLoading(true);
 
-      const result = await updateTripWithDetails(tripId, data);
+      const result = await updateTripWithDetails(tripId, {
+        ...data,
+        is_public: false,
+        status: 'planning',
+      });
 
       if (result.success) {
         setTrips((prev) =>
@@ -277,7 +291,7 @@ export function useTrips({
       } else {
         toast({
           title: 'Error updating trip',
-          description: result.error.message,
+            description: result.error,
           variant: 'destructive',
         });
       }
@@ -306,7 +320,7 @@ export function useTrips({
       } else {
         toast({
           title: 'Error deleting trip',
-          description: result.error.message,
+            description: result.error,
           variant: 'destructive',
         });
       }
@@ -335,7 +349,7 @@ export function useTrips({
       } else {
         toast({
           title: 'Error duplicating trip',
-          description: result.error.message,
+            description: result.error,
           variant: 'destructive',
         });
       }
@@ -366,7 +380,7 @@ export function useTrips({
       } else {
         toast({
           title: 'Error archiving trip',
-          description: result.error.message,
+            description: result.error,
           variant: 'destructive',
         });
       }
@@ -397,7 +411,7 @@ export function useTrips({
       } else {
         toast({
           title: 'Error updating trip',
-          description: result.error.message,
+          description: result.error,
           variant: 'destructive',
         });
       }

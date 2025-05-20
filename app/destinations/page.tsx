@@ -11,7 +11,6 @@ import { AlertCircle } from 'lucide-react';
 import { listDestinations } from '@/lib/api/destinations';
 
 // Centralized API and utility imports
-import { useDestinations } from '@/lib/hooks/use-destinations';
 import DestinationsClient from './destinations-client';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 const DEFAULT_LIMIT = 20;
@@ -34,13 +33,10 @@ function DestinationsErrorFallback({ error }: { error: Error }) {
 /**
  * Destinations page showing all available destinations with filtering
  */
-export default async function DestinationsPage() {
-  const result = await listDestinations();
-  const destinations = result.success ? result.data : [];
-
+export default function DestinationsPage() {
   return (
     <main className="container py-8 md:py-12">
-      <DestinationsClient destinations={result.success ? result.data.destinations : []} />
+      <DestinationsClient destinations={[]} />
     </main>
   );
 }

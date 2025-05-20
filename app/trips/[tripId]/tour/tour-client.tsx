@@ -98,7 +98,7 @@ export default function TripTourClient({ trip, groupName }: TripTourClientProps)
     <div className="min-h-screen py-12 px-4 flex flex-col items-center justify-center">
       {/* Top navigation */}
       <div className="w-full max-w-4xl flex justify-between items-center mb-8">
-        <Link href="/" className="flex items-center gap-2" legacyBehavior>
+        <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-white font-bold">
             W
           </div>

@@ -138,7 +138,7 @@ export default function CountriesPage() {
               <Link
                 href={`/countries/${country.slug}`}
                 className="block h-full"
-                legacyBehavior>
+               >
                 <div className="relative rounded-xl overflow-hidden h-64 group">
                   <div
                     className={`absolute inset-0 bg-${country.accentColor} mix-blend-multiply opacity-60 group-hover:opacity-70 transition-opacity z-10`}

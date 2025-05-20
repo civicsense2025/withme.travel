@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { TripCard } from '@/components/ui/features/trips/molecules/TripCard';
+import { TripCard } from '@/components/features/trips/molecules/TripCard';
 
 const meta: Meta<typeof TripCard> = {
   title: 'Trip Features/Trip Card',
@@ -65,7 +65,7 @@ export const WithLocation: Story = {
   args: {
     trip: {
       ...mockTrip,
-      location: 'Downtown Paris, France',
+      destination_name: 'Downtown Paris, France',
     },
   },
 };

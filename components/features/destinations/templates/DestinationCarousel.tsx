@@ -178,7 +178,7 @@ export function DestinationCarousel({
       {showViewAll && (
         <div className="mt-6 text-right">
           <Button asChild variant="link">
-            <Link href={viewAllUrl} legacyBehavior>
+            <Link href={viewAllUrl}>
               View all destinations
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>

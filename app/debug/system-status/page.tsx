@@ -343,7 +343,7 @@ export default function SystemStatusPage() {
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="flex items-center mb-6">
-        <Link href="/debug" className="mr-2" legacyBehavior>
+        <Link href="/debug" className="mr-2">
           <ArrowLeft className="h-4 w-4 inline-block" />
         </Link>
         <h1 className="text-3xl font-bold">System Status</h1>
@@ -532,7 +532,7 @@ export default function SystemStatusPage() {
                       {systemInfo.auth.session ? 'User is authenticated' : 'No active user session'}
                     </p>
                     <div className="mt-4">
-                      <Link href="/debug/auth-status" legacyBehavior>
+                      <Link href="/debug/auth-status">
                         <Button variant="outline" size="sm">
                           View Full Auth Details
                         </Button>

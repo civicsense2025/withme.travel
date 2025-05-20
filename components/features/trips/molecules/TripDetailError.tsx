@@ -146,7 +146,7 @@ export function TripDetailError({
           Go Back
         </Button>
 
-        <Link href="/trips" className="w-full sm:w-auto" legacyBehavior>
+        <Link href="/trips" className="w-full sm:w-auto">
           <Button variant="outline" className="w-full">
             <Home className="mr-2 h-4 w-4" />
             My Trips

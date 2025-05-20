@@ -18,7 +18,9 @@ import { PageContainer } from '@/components/features/layout/molecules/PageContai
 import { SearchProvider } from '@/contexts/search-context';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import React from 'react';
-
+import { createServerComponentClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 // Metadata is imported from app/metadata.ts
 export const metadata = {
   title: 'WithMe Travel - Plan Group Travel Together',
@@ -27,6 +29,16 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createServerComponentClient();
+  
+  let user = null;
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    user = authUser;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+  }
+
   return (
     <html
       lang="en"

@@ -81,7 +81,7 @@ export default function DebugPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Link href="/debug/auth-status" className="w-full" legacyBehavior>
+            <Link href="/debug/auth-status" className="w-full">
               <Button variant="default" className="w-full">
                 Auth Status
               </Button>
@@ -114,7 +114,7 @@ export default function DebugPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Link href="/debug/system-status" className="w-full" legacyBehavior>
+            <Link href="/debug/system-status" className="w-full">
               <Button variant="default" className="w-full">
                 System Status
               </Button>
@@ -147,7 +147,7 @@ export default function DebugPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Link href="/api/debug/schema-check" className="w-full" legacyBehavior>
+            <Link href="/api/debug/schema-check" className="w-full">
               <Button variant="outline" className="w-full flex items-center">
                 Check Schema <ExternalLink className="h-3 w-3 ml-1" />
               </Button>
@@ -180,7 +180,7 @@ export default function DebugPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Link href="/debug/component-sandbox" className="w-full" legacyBehavior>
+            <Link href="/debug/component-sandbox" className="w-full">
               <Button variant="default" className="w-full">
                 Component Sandbox
               </Button>
@@ -213,12 +213,12 @@ export default function DebugPage() {
             </ul>
           </CardContent>
           <CardFooter className="flex gap-2">
-            <Link href="/api/auth/me" className="flex-1" legacyBehavior>
+            <Link href="/api/auth/me" className="flex-1">
               <Button variant="outline" className="w-full flex items-center justify-center">
                 /auth/me <ExternalLink className="h-3 w-3 ml-1" />
               </Button>
             </Link>
-            <Link href="/api/auth/status" className="flex-1" legacyBehavior>
+            <Link href="/api/auth/status" className="flex-1">
               <Button variant="outline" className="w-full flex items-center justify-center">
                 /auth/status <ExternalLink className="h-3 w-3 ml-1" />
               </Button>
@@ -251,7 +251,7 @@ export default function DebugPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Link href="/user-testing" className="w-full" legacyBehavior>
+            <Link href="/user-testing" className="w-full">
               <Button variant="default" className="w-full">
                 User Testing Hub
               </Button>
@@ -266,7 +266,7 @@ export default function DebugPage() {
             href="https://nextjs.org/docs"
             target="_blank"
             rel="noopener noreferrer"
-            legacyBehavior>
+           >
             <Button variant="outline" className="w-full flex items-center justify-center">
               <FileCode className="h-4 w-4 mr-2" />
               Next.js Documentation
@@ -277,7 +277,7 @@ export default function DebugPage() {
             href="https://supabase.com/docs"
             target="_blank"
             rel="noopener noreferrer"
-            legacyBehavior>
+           >
             <Button variant="outline" className="w-full flex items-center justify-center">
               <Database className="h-4 w-4 mr-2" />
               Supabase Documentation
@@ -288,7 +288,7 @@ export default function DebugPage() {
             href="https://github.com/withmetravel"
             target="_blank"
             rel="noopener noreferrer"
-            legacyBehavior>
+           >
             <Button variant="outline" className="w-full flex items-center justify-center">
               <Bug className="h-4 w-4 mr-2" />
               Report an Issue

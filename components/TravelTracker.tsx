@@ -105,7 +105,7 @@ const TravelTracker: React.FC<TravelTrackerProps> = ({ userId }) => {
             className="w-full justify-start lowercase mt-2 px-0 text-sm h-auto py-1"
             asChild
           >
-            <Link href="/travel-map" legacyBehavior>
+            <Link href="/travel-map">
               {' '}
               {/* Link to the future map page */}
               view all {destinations.length} destinations

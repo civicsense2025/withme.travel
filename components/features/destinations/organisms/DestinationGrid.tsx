@@ -7,7 +7,7 @@
  */
 'use client';
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { Search, Filter, ChevronDown, Check } from 'lucide-react';
 import { DestinationCard } from '../molecules/DestinationCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,8 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/DropdownMenu';
@@ -220,37 +220,50 @@ export function DestinationGrid({
           <div className="flex gap-2 w-full sm:w-auto">
             {/* Continent Filter */}
             {showFilters && continents.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex gap-1">
+              <DropdownMenu
+                trigger={
+                  <Button variant="outline" className="flex gap-1 items-center">
                     <Filter className="h-4 w-4" />
-                    {continentFilter || 'All Continents'}
+                    <span>{continentFilter || 'All Continents'}</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
-                </DropdownMenuTrigger>
+                }
+                options={[
+                  {
+                    label: 'All Continents',
+                    value: 'all',
+                    checked: !continentFilter,
+                    onSelect: () => setContinentFilter(null)
+                  },
+                  ...continents.map(continent => ({
+                    label: continent,
+                    value: continent,
+                    checked: continentFilter === continent,
+                    onSelect: () => setContinentFilter(continent)
+                  }))
+                ]}
+                renderOption={(option) => (
+                  <div className="flex items-center">
+                    {option.checked && (
+                      <Check className="mr-2 h-4 w-4 text-primary" />
+                    )}
+                    <span>{option.label}</span>
+                  </div>
+                )}
+                stayOpenOnSelect
+              >
                 <DropdownMenuContent>
                   <DropdownMenuLabel>Filter by Continent</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={continentFilter || 'all'}
-                    onValueChange={(value) => setContinentFilter(value === 'all' ? null : value)}
-                  >
-                    <DropdownMenuRadioItem value="all">All Continents</DropdownMenuRadioItem>
-                    {continents.map(continent => (
-                      <DropdownMenuRadioItem key={continent} value={continent}>
-                        {continent}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
             
             {/* Sort control */}
             {showSorting && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-1">
+              <DropdownMenu options={[]}>
+                <DropdownMenuTrigger className="flex items-center gap-1">
+                  <Button variant="outline">
                     Sort
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -258,24 +271,40 @@ export function DestinationGrid({
                 <DropdownMenuContent>
                   <DropdownMenuLabel>Sort by</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={sortField}
-                    onValueChange={(value) => setSortField(value as SortField)}
-                  >
-                    <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="country">Country</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="rating">Rating</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="cost">Cost</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
+                  {[
+                    { value: 'name', label: 'Name' },
+                    { value: 'country', label: 'Country' },
+                    { value: 'rating', label: 'Rating' },
+                    { value: 'cost', label: 'Cost' },
+                  ].map((item) => (
+                    <DropdownMenuItem
+                      key={item.value}
+                      option={{
+                        label: item.label,
+                        value: item.value,
+                        checked: sortField === item.value,
+                        onSelect: () => setSortField(item.value as SortField)
+                      }}
+                      onSelect={() => setSortField(item.value as SortField)}
+                    />
+                  ))}
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>Direction</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup
-                    value={sortDirection}
-                    onValueChange={(value) => setSortDirection(value as SortDirection)}
-                  >
-                    <DropdownMenuRadioItem value="asc">Ascending</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="desc">Descending</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
+                  {[
+                    { value: 'asc', label: 'Ascending' },
+                    { value: 'desc', label: 'Descending' },
+                  ].map((item) => (
+                    <DropdownMenuItem
+                      key={item.value}
+                      option={{
+                        label: item.label,
+                        value: item.value,
+                        checked: sortDirection === item.value,
+                        onSelect: () => setSortDirection(item.value as SortDirection)
+                      }}
+                      onSelect={() => setSortDirection(item.value as SortDirection)}
+                    />
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

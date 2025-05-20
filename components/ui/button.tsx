@@ -113,6 +113,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   gradientDirection?: 'to-r' | 'to-l' | 'to-t' | 'to-b' | 'to-tr' | 'to-tl' | 'to-br' | 'to-bl';
   /** Maximum width in pixels */
   maxWidth?: number;
+  /** Whether to render the button as a child element */
+  asChild?: boolean;
 }
 
 // ============================================================================

@@ -17,7 +17,7 @@ export default function RefreshFallback() {
         </p>
         <div className="flex justify-center gap-4">
           <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-          <Link href="/" legacyBehavior>
+          <Link href="/">
             <Button variant="outline">Return Home</Button>
           </Link>
         </div>

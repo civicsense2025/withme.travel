@@ -235,7 +235,7 @@ export function AdminDebugPanel({
                   asChild
                   className="rounded-full transition-all duration-300 hover:shadow-md"
                 >
-                  <Link href="/debug/schema-check" legacyBehavior>
+                  <Link href="/debug/schema-check">
                     <Shield className="h-4 w-4 mr-2" />
                     Run Schema Check
                   </Link>
@@ -283,7 +283,7 @@ export function AdminDebugPanel({
                     asChild
                     className="rounded-full transition-all duration-300 hover:shadow-md"
                   >
-                    <Link href="/api/debug/route-check" legacyBehavior>
+                    <Link href="/api/debug/route-check">
                       <Eye className="h-4 w-4 mr-2" />
                       Check Routes
                       <ArrowRight className="h-4 w-4 ml-2" />

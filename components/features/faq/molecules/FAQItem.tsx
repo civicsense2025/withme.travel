@@ -6,7 +6,11 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FAQQuestion, FAQAnswer } from '../atoms';
 import { ChevronDown } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from  '@/components/ui/Collapsible';
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from '@/components/ui/Collapsible';
 
 export interface FAQItemProps {
   /** The question to display */

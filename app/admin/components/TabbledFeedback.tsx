@@ -157,7 +157,7 @@ export function TabbledFeedback() {
               href={`/admin/feedback/${item.id}`}
               key={item.id}
               className="block"
-              legacyBehavior>
+             >
               <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                 <Avatar className="h-10 w-10">
                   {item.user.avatar ? (
@@ -203,7 +203,7 @@ export function TabbledFeedback() {
               href={`/admin/surveys/${response.form_id}/responses/${response.id}`}
               key={response.id}
               className="block"
-              legacyBehavior>
+             >
               <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback>{getUserName(response).charAt(0)}</AvatarFallback>

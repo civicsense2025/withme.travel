@@ -107,7 +107,7 @@ export function TripListError({
               </>
             )}
           </Button>
-          <Link href="/" className="w-full sm:w-auto" legacyBehavior>
+          <Link href="/" className="w-full sm:w-auto">
             <Button variant="outline" className="w-full">
               <Home className="mr-2 h-4 w-4" />
               Home
@@ -115,7 +115,7 @@ export function TripListError({
           </Link>
         </div>
 
-        <Link href="/destinations" className="w-full sm:w-auto" legacyBehavior>
+        <Link href="/destinations" className="w-full sm:w-auto">
           <Button variant="secondary" className="w-full">
             <Search className="mr-2 h-4 w-4" />
             Explore Destinations

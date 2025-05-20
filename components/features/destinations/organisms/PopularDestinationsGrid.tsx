@@ -173,7 +173,7 @@ export function PopularDestinationsGrid({
                 <div className="mt-4">
                   <Link
                     href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
-                    legacyBehavior>
+                   >
                     <Button size="sm">Plan a Trip</Button>
                   </Link>
                 </div>
@@ -209,7 +209,7 @@ export function PopularDestinationsGrid({
                 <div className="flex justify-end">
                   <Link
                     href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
-                    legacyBehavior>
+                   >
                     <Button size="sm">Plan a Trip</Button>
                   </Link>
                 </div>

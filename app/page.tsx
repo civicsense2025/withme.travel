@@ -4,17 +4,21 @@ import { PopularDestinations } from '@/components/features/destinations/template
 import { getPopularDestinations } from '@/lib/api/destinations';
 import Link from 'next/link';
 import { createServerComponentClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 import { Button } from '@/components/ui/button';
 import { Section } from '@/components/ui/Section';
 import { Heading, Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/card';
 import { Container } from '@/components/container';
 import { TestimonialsSection } from '@/app/trips/components/organisms/TestimonialsSection';
+import LoginForm from '@/components/features/auth/molecules/LoginForm';
+import { cookies } from 'next/headers'; 
+import { RequestCookies } from 'next/dist/server/web/spec-extension/cookies';
 
 export default async function HomePage() {
+  const cookieStore = await cookies();
   const supabase = await createServerComponentClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
+
 
   let destinations;
   try {
@@ -37,11 +41,11 @@ export default async function HomePage() {
             </Text>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/trips/new" passHref>
-                <Button variant="default" className="px-8 py-3" asChild>
+                <Button variant="primary" className="px-8 py-3">
                   Start planning
                 </Button>
               </Link>
-              <Link href="/destinations" passHref legacyBehavior>
+              <Link href="/destinations" passHref>
                 <Button variant="secondary" className="px-8 py-3">
                   Explore destinations
                 </Button>

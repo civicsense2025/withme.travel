@@ -53,7 +53,7 @@ export default async function GroupsManagePage() {
               My Groups
           </Text>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/groups/create" passHref legacyBehavior>
+            <Link href="/groups/create" passHref>
               <Button variant="default" className="px-8 py-3">
                 Create Group
               </Button>

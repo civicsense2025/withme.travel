@@ -257,13 +257,13 @@ export default function ItineraryTemplatesTable({
             href={`/itineraries/${row.slug || value}`}
             className="text-blue-600 hover:text-blue-800"
             target="_blank"
-            legacyBehavior>
+           >
             <Eye size={18} />
           </Link>
           <Link
             href={`/admin/itineraries/${row.slug || value}`}
             className="text-amber-600 hover:text-amber-800"
-            legacyBehavior>
+           >
             <Edit size={18} />
           </Link>
           <button
@@ -415,7 +415,7 @@ export default function ItineraryTemplatesTable({
             className="px-4 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 w-60"
             onChange={(e) => handleSearch(e.target.value)}
           />
-          <Link href="/admin/itineraries/create" legacyBehavior>
+          <Link href="/admin/itineraries/create">
             <Button size="sm">Create New</Button>
           </Link>
         </div>

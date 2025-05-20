@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,8 +13,8 @@ import {
 
 export function NavbarStartPlanningDropdown() {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <DropdownMenu options={[]}>
+      <DropdownMenuTrigger>
         <Button
           size="sm"
           className="rounded-full font-semibold px-6 py-5 bg-travel-purple text-purple-900 hover:bg-purple-300 transition-colors"
@@ -22,10 +24,10 @@ export function NavbarStartPlanningDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem asChild className="py-3 cursor-pointer">
+        <DropdownMenuItem option={{ label: 'Plan a Trip', value: '/trips/create' }} onSelect={() => {}} className="py-3 cursor-pointer">
           <Link href="/trips/create">Plan a Trip</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild className="py-3 cursor-pointer">
+        <DropdownMenuItem option={{ label: 'Form a Group', value: '/groups/create' }} onSelect={() => {}} className="py-3 cursor-pointer">
           <Link href="/groups/create">Form a Group</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

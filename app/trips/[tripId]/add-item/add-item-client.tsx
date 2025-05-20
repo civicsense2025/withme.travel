@@ -210,7 +210,7 @@ export function AddItineraryItemClient({
   return (
     <div className="container max-w-screen-md py-8">
       <div className="mb-6">
-        <Link href={`/trips/${tripId}?tab=itinerary`} legacyBehavior>
+        <Link href={`/trips/${tripId}?tab=itinerary`}>
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" />
             Back to Itinerary

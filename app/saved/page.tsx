@@ -58,7 +58,7 @@ function DestinationCard({ destination, onUnlike }: { destination: any; onUnlike
   return (
     <Link
       href={`/destinations/${destination.city ? destination.city.toLowerCase().replace(/\s+/g, '-') : `destination-${destination.id}`}`}
-      legacyBehavior>
+     >
       <div className="rounded-3xl overflow-hidden bg-white dark:bg-gray-900 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col h-full border">
         <div className="relative h-48 w-full bg-travel-purple/10">
           <div className="absolute top-3 right-3 z-10">

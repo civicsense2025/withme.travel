@@ -8,10 +8,12 @@ let Sentry: any;
 try {
   Sentry = require('@sentry/nextjs');
 } catch (e) {
-  // Fallback if Sentry is not available
+  // Fallback if Sentry is not available - silent in production
   Sentry = {
     captureException: (error: Error) => {
-      console.error('Error captured (Sentry not available):', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error captured (Sentry not available):', error);
+      }
     },
   };
 }
@@ -21,7 +23,9 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     try {
       Sentry.captureException(error);
     } catch (e) {
-      console.error('Failed to report error to Sentry:', e);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to report error to Sentry:', e);
+      }
     }
   }, [error]);
 

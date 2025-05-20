@@ -741,7 +741,7 @@ export default function GroupDetailClient({
                     {recentTrips && recentTrips.length > 0 ? (
                       <div className="space-y-4">
                         {recentTrips.map((gt) => (
-                          <Link href={`/trips/${gt.trip?.id}`} key={gt.trip?.id} legacyBehavior>
+                          <Link href={`/trips/${gt.trip?.id}`} key={gt.trip?.id}>
                             <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                               <div className="w-12 h-12 rounded-md overflow-hidden relative flex-shrink-0">
                                 {gt.trip?.destination?.image_url ? (
@@ -821,7 +821,7 @@ export default function GroupDetailClient({
                           <Link
                             href={`/groups/${group.id}/plans/${plan.id}`}
                             key={plan.id}
-                            legacyBehavior>
+                           >
                             <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                               <div className="w-12 h-12 rounded-md overflow-hidden bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <Lightbulb className="h-6 w-6 text-primary/70" />
@@ -861,7 +861,7 @@ export default function GroupDetailClient({
                         <Link
                           href={`/groups/${group.id}/ideas-summary`}
                           className="text-sm text-muted-foreground hover:text-foreground hover:underline flex items-center gap-1"
-                          legacyBehavior>
+                         >
                           <Lightbulb className="h-3.5 w-3.5" />
                           View all ideas summary
                           <ChevronRight className="h-3.5 w-3.5" />
@@ -1034,7 +1034,7 @@ export default function GroupDetailClient({
                             </TableCell>
                             <TableCell>
                               {idea.plan_id ? (
-                                <Link href={`/groups/${group.id}/plans/${idea.plan_id}`} legacyBehavior>
+                                <Link href={`/groups/${group.id}/plans/${idea.plan_id}`}>
                                   <span className="text-primary hover:underline">
                                     {getPlanName(idea.plan_id)}
                                   </span>

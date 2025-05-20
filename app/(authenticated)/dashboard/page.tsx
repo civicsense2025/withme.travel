@@ -11,19 +11,19 @@ export const revalidate = 300; // Revalidate every 5 minutes
 
 // Main dashboard page - a server component
 export default async function DashboardPage() {
-  // Check authentication
-  const { data } = await getServerSession();
-  const user = data.user;
-
-  // Redirect to login if not authenticated
-  if (!user) {
+  // Safely get user with null check
+  const session = await getServerSession();
+  
+  // Handle case where user is null
+  if (!session?.user) {
     redirect('/login?from=dashboard');
   }
 
-  // Get comprehensive dashboard data
+  // Destructure with type safety
+  const user = session.user;
   const userId = user.id;
 
-  // Try to get dashboard data but handle errors gracefully
+  // Get comprehensive dashboard data
   let dashboardData;
   try {
     dashboardData = await getDashboardOverview(userId);

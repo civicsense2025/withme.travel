@@ -321,7 +321,7 @@ export default function ItineraryTemplatePageClient({
     <div className="max-w-screen-2xl mx-auto">
       {/* Back navigation */}
       <div className="px-6 py-4">
-        <Link href="/itineraries" legacyBehavior>
+        <Link href="/itineraries">
           <Button variant="ghost" size="sm" className="gap-1 font-normal">
             <ArrowLeft className="h-4 w-4" />
             Back to itineraries

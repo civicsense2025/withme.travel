@@ -18,7 +18,7 @@ export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
           <Button onClick={onNext} size="lg" className="w-full lowercase">
             sign up
           </Button>
-          <Link href="/login" legacyBehavior>
+          <Link href="/login">
             <Button variant="outline" size="lg" className="w-full lowercase">
               log in
             </Button>

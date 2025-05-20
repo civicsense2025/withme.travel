@@ -136,7 +136,7 @@ export default function AddActivityPage() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="icon">
-            <Link href={`/trips/${tripId}`} legacyBehavior>
+            <Link href={`/trips/${tripId}`}>
               <ChevronLeft className="h-5 w-5" />
             </Link>
           </Button>

@@ -1,13 +1,13 @@
+
 /**
  * usePlaces Hook
  * 
  * Custom hook for fetching and managing places data for a trip
  */
-
 import { useState, useCallback, useEffect } from 'react';
-import { Place as ComponentPlace } from '@/components/features/places/organisms/place-list';
 import * as placesApi from '@/lib/api/places';
 import type { Place as ApiPlace } from '@/lib/api/_shared';
+import type { Place } from '@/components/features/places/types';
 
 // ============================================================================
 // TYPES
@@ -20,7 +20,7 @@ interface UsePlacesProps {
 
 interface UsePlacesResult {
   /** List of places for the trip */
-  places: ComponentPlace[];
+  places: Place[];
   /** Whether data is currently loading */
   isLoading: boolean;
   /** Error message if places failed to load */
@@ -28,24 +28,24 @@ interface UsePlacesResult {
   /** Function to refresh places data */
   refreshPlaces: () => Promise<void>;
   /** Function to add a new place */
-  addPlace: (place: Omit<ComponentPlace, 'id'>) => Promise<ComponentPlace | null>;
+  addPlace: (place: Omit<Place, 'id'>) => Promise<Place | null>;
   /** Function to update an existing place */
-  updatePlace: (id: string, updates: Partial<Omit<ComponentPlace, 'id'>>) => Promise<ComponentPlace | null>;
+  updatePlace: (id: string, updates: Partial<Omit<Place, 'id'>>) => Promise<Place | null>;
   /** Function to delete a place */
   deletePlace: (id: string) => Promise<boolean>;
 }
 
 /**
- * Convert from API Place to component Place
+ * Convert from API Place to component Place format
  */
-function mapApiPlaceToComponentPlace(apiPlace: ApiPlace): ComponentPlace {
+function mapApiPlaceToComponentPlace(apiPlace: ApiPlace): Place {
   return {
     id: apiPlace.id,
     name: apiPlace.name ?? '',
     category: apiPlace.category ?? undefined,
     address: apiPlace.address ?? undefined,
     rating: undefined, // Not present in ApiPlace
-    image_url: apiPlace.cover_image_url ?? undefined,
+    image_url: apiPlace.image_url ?? undefined,
     description: apiPlace.description ?? undefined
   };
 }
@@ -61,7 +61,7 @@ function mapApiPlaceToComponentPlace(apiPlace: ApiPlace): ComponentPlace {
  * @returns places, loading state, error state, and mutation functions
  */
 export function usePlaces({ tripId }: UsePlacesProps = {}): UsePlacesResult {
-  const [places, setPlaces] = useState<ComponentPlace[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,16 +104,15 @@ export function usePlaces({ tripId }: UsePlacesProps = {}): UsePlacesResult {
   }, [fetchPlaces]);
 
   // Add a new place
-  const addPlace = async (place: Omit<ComponentPlace, 'id'>): Promise<ComponentPlace | null> => {
+  const addPlace = async (place: Omit<Place, 'id'>): Promise<Place | null> => {
     if (!tripId) return null;
 
     try {
       const apiPlace: Partial<ApiPlace> = {
-        name: place.name,
+        name: place.name, 
         category: place.category || 'other',
-        description: place.description || null,
-        address: place.address || null,
-        // Add trip relation if API supports it
+        description: place.description || undefined,
+        address: place.address || undefined,
       };
 
       const response = await placesApi.createPlace(apiPlace);
@@ -137,17 +136,18 @@ export function usePlaces({ tripId }: UsePlacesProps = {}): UsePlacesResult {
   // Update an existing place
   const updatePlace = async (
     id: string, 
-    updates: Partial<Omit<ComponentPlace, 'id'>>
-  ): Promise<ComponentPlace | null> => {
+    updates: Partial<Omit<Place, 'id'>>
+  ): Promise<Place | null> => {
     if (!tripId) return null;
 
     try {
       // Map our component's Place updates to the API's expected format
       const apiUpdates: Partial<ApiPlace> = {
         name: updates.name,
-        category: updates.category || null,
-        description: updates.description || null,
-        address: updates.address || null,
+        id: id,
+        category: updates.category || undefined,
+        description: updates.description || undefined,
+        address: updates.address || undefined,
       };
       
       const response = await placesApi.updatePlace(id, apiUpdates);

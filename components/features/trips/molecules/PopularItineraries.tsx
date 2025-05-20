@@ -107,7 +107,7 @@ export function PopularItineraries() {
       <div className="text-center p-6 border rounded-lg bg-muted/20">
         <p className="text-muted-foreground">No itineraries available at the moment.</p>
         <Button variant="outline" asChild className="mt-4">
-          <Link href="/itineraries" legacyBehavior>
+          <Link href="/itineraries">
             Browse all itineraries
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
@@ -134,7 +134,7 @@ export function PopularItineraries() {
       </div>
       <div className="flex justify-center mt-6">
         <Button variant="outline" asChild>
-          <Link href="/itineraries" legacyBehavior>
+          <Link href="/itineraries">
             Browse all itineraries
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

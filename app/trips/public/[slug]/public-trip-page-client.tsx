@@ -194,7 +194,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
     return (
       <div className="container py-6">
         <div className="flex items-center mb-6">
-          <Link href="/" legacyBehavior>
+          <Link href="/">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               Home
@@ -211,7 +211,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
     return (
       <div className="container py-6">
         <div className="flex items-center mb-6">
-          <Link href="/" legacyBehavior>
+          <Link href="/">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               Home
@@ -226,7 +226,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
         </Alert>
         <div className="mt-6 text-center">
           <p className="mb-4 text-muted-foreground">Want to plan your own trip?</p>
-          <Link href="/trips/create" legacyBehavior>
+          <Link href="/trips/create">
             <Button>Create a Trip</Button>
           </Link>
         </div>
@@ -249,7 +249,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
     <div className="container py-6 max-w-3xl mx-auto">
       <div className="bg-background rounded-lg shadow-md p-6 md:p-8 mb-24">
         <div className="flex items-center mb-6">
-          <Link href="/" legacyBehavior>
+          <Link href="/">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               Home
@@ -260,7 +260,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
               <Share2 className="h-4 w-4" />
               Share
             </Button>
-            <Link href="/trips/create" legacyBehavior>
+            <Link href="/trips/create">
               <Button>Plan Your Own Trip</Button>
             </Link>
           </div>
@@ -462,7 +462,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
               grab a free account to plan trips with your crew!
             </p>
             <div className="flex flex-col gap-2">
-              <Link href="/signup?redirect=/trips/create" legacyBehavior>
+              <Link href="/signup?redirect=/trips/create">
                 <Button
                   size="sm"
                   className="w-full bg-travel-purple hover:bg-purple-400 text-purple-900 text-xs sm:text-sm lowercase"
@@ -470,7 +470,7 @@ export default function PublicTripPageClient({ slug }: { slug: string }) {
                   ✨ sign up free
                 </Button>
               </Link>
-              <Link href={`/login?redirect=/dashboard`} legacyBehavior>
+              <Link href={`/login?redirect=/dashboard`}>
                 <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm lowercase">
                   log in
                 </Button>

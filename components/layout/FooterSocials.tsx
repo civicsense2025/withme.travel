@@ -8,7 +8,7 @@ export function FooterSocials() {
         href="https://twitter.com/withmetravel"
         className="text-muted-foreground hover:text-foreground transition-colors"
         aria-label="Twitter"
-        legacyBehavior>
+        >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -28,7 +28,7 @@ export function FooterSocials() {
         href="https://instagram.com/withmetravel"
         className="text-muted-foreground hover:text-foreground transition-colors"
         aria-label="Instagram"
-        legacyBehavior>
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"

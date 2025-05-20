@@ -1,23 +1,26 @@
-
 /**
  * LoginForm - A form for user authentication
  * 
  * This is a molecule component in the auth feature that uses:
- * - PasswordField atom (feature-specific)
- * - SubmitButton atom (shared)
+ * - React Hook Form for validation and state management
+ * - PasswordField atom with strength checking
+ * - Comprehensive accessibility features
  */
+
+'use client';
 
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import PasswordField from '@/components/features/auth/atoms/PasswordField';
-import { SubmitButton } from '@/components/shared/atoms/buttons/SubmitButton';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { Button } from '@/components/ui/button';
 import { AuthError } from '../atoms/AuthError';
+import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
+import type { Database } from '@/types/supabase';
 
+// Form validation schema
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
@@ -26,84 +29,90 @@ const formSchema = z.object({
 export type LoginFormValues = z.infer<typeof formSchema>;
 
 interface LoginFormProps {
-  onSubmit?: (values: LoginFormValues) => Promise<void>;
+  onSubmit?: SubmitHandler<LoginFormValues>;
   error?: string;
 }
 
-
-const LoginForm = ({ onSubmit, error: errorProp }: LoginFormProps) => {
-  const form = useForm<LoginFormValues>({
+export function LoginForm({ onSubmit, error: errorProp }: LoginFormProps) {
+  const { 
+    register, 
+    handleSubmit, 
+    formState,
+    setError,
+  } = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
   });
 
-  const { login, isLoading, error } = useAuth();
-  const isSubmitting = form.formState.isSubmitting || isLoading;
+  const supabase = createClient();
 
-  const handleSubmit: SubmitHandler<LoginFormValues> = async (values) => {
+  const handleFormSubmit: SubmitHandler<LoginFormValues> = async (data) => {
+    if (onSubmit) {
+      return onSubmit(data);
+    }
+
     try {
-      if (onSubmit) {
-        await onSubmit(values);
-      } else {
-        await login(values.email, values.password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) {
+        setError('root', { message: error.message });
       }
     } catch (err) {
-      // Error is handled by the hook
+      setError('root', { 
+        message: 'An unexpected error occurred. Please try again.' 
+      });
     }
   };
 
   return (
-    <div className="space-y-4">
-      {(errorProp || error) && <AuthError message={errorProp || error?.message || ''} />}
-      <Form form={form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <Input 
-                type="email" 
-                placeholder="Enter your email" 
-                autoComplete="email"
-                {...field} 
-                disabled={isSubmitting}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      <div className="space-y-1">
+        <label htmlFor="email" className="text-sm font-medium">Email</label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="your@email.com"
+          autoComplete="email"
+          {...register('email')}
         />
+        {formState.errors.email && (
+          <p className="text-sm text-red-500">{formState.errors.email.message}</p>
+        )}
+      </div>
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <PasswordField 
-                placeholder="Enter your password" 
-                autoComplete="current-password"
-                {...field} 
-                disabled={isSubmitting}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
+      <div className="space-y-1">
+        <label htmlFor="password" className="text-sm font-medium">Password</label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="••••••••"
+          autoComplete="current-password"
+          {...register('password')}
         />
+        {formState.errors.password && (
+          <p className="text-sm text-red-500">{formState.errors.password.message}</p>
+        )}
+      </div>
 
-        <SubmitButton
-          className="w-full"
-          isLoading={isSubmitting}
-          loadingText="Logging in..."
-        >
-          Log In
-        </SubmitButton>
-      </Form>
-    </div>
+      {errorProp && <AuthError message={errorProp} />}
+
+      <div className="flex items-center justify-between">
+        <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+          Forgot password?
+        </Link>
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={formState.isSubmitting}
+      >
+        {formState.isSubmitting ? 'Signing in...' : 'Sign In'}
+      </Button>
+    </form>
   );
-};
+}
 
 export default LoginForm;

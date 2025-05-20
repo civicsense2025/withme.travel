@@ -29,7 +29,7 @@ export function DashboardHeader({ userName, avatarUrl, travelStats }: DashboardH
       {/* Settings button - positioned absolutely to maintain clean centered layout */}
       <div className="absolute right-0 top-0">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/settings" className="flex items-center gap-2" legacyBehavior>
+          <Link href="/settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span className="sr-only sm:not-sr-only">Settings</span>
           </Link>

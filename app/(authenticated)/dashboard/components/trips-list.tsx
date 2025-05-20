@@ -1,8 +1,8 @@
 'use client';
-import { TripCard } from '@/components/ui/features/trips/molecules/TripCard';
+import TripCard from '@/app/trips/trips-client';
 
 import { TripRole } from '@/utils/constants/status';
-// import type { Database } from '@/types/database.types';
+// import type {  Database } from '@/types/database.types';
 // type TripRole = Database['public']['Enums']['trip_role'];
 
 import Link from 'next/link';
@@ -51,15 +51,10 @@ export function TripsList({ trips }: { trips: Trip[] }) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {trips.map((trip) => (
         <TripCard 
-          key={trip.id} 
-          id={trip.id}
-          name={trip.name}
-          destination={trip.destination_name}
-          startDate={trip.start_date}
-          endDate={trip.end_date}
-          coverImageUrl={trip.cover_image_url}
-          memberCount={trip.members}
-          isPublic={trip.is_public}
+          key={trip.id}
+          {...trip}
+          userId={trip.created_by}
+          isGuest={false}
         />
       ))}
     </div>

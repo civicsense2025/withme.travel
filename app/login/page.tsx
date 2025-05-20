@@ -12,7 +12,7 @@ import { useToast } from '@/lib/hooks/use-toast';
 
 // Feature components
 import { AuthSellingPoints, LoginForm } from '@/components/features/auth';
-import { login } from '@/lib/api/auth';
+import { login } from './actions'; // We'll create this next
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [loginContext, setLoginContext] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Get redirect path and decode safely
   const redirectPath = searchParams?.get('redirect') || '/';
@@ -82,6 +83,17 @@ export default function LoginPage() {
     }
   }, [searchParams, toast]);
 
+  // Handle login submission
+  const handleLogin = async (values: { email: string; password: string }) => {
+    try {
+      const { error } = await login(values);
+      if (error) throw error;
+      router.refresh();
+    } catch (error: any) {
+      setLoginError(error.message);
+    }
+  };
+
   // Show loading state while checking auth or redirecting
   if (isLoading || isRedirecting) {
     return (
@@ -128,9 +140,10 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <LoginForm onSubmit={async (values) => {
-                await login({ email: values.email, password: values.password });
-            }} />
+            <LoginForm 
+              onSubmit={handleLogin}
+              error={loginError || undefined}
+            />
           </CardContent>
           <CardFooter className="flex flex-col items-center justify-center space-y-4 pt-2"></CardFooter>
         </Card>

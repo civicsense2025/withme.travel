@@ -370,3 +370,5 @@ export type ItineraryTemplateMetadata = {
   categories?: string[];
   tags?: string[];
 };
+
+export type TableName = keyof typeof TABLES;

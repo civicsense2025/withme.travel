@@ -401,66 +401,36 @@ export function DropdownMenu({
 // ============================================================================
 // DROPDOWN MENU ITEM COMPONENT
 // ============================================================================
-
-interface DropdownMenuItemProps {
-  option: DropdownMenuOption;
-  onSelect: () => void;
+/**
+ * DropdownMenuItem (Atom)
+ * 
+ * An individual selectable item within a DropdownMenu. Handles rendering of menu items
+ * with support for icons, descriptions, shortcuts, and various states.
+ */
+export function DropdownMenuItem({ option, onSelect, children, ...props }: DropdownMenuItemProps & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      {...props}
+      role="menuitem"
+      onClick={(e) => {
+        e.preventDefault();
+        onSelect();
+        props.onClick?.(e);
+      }}
+    >
+      {children || option.label}
+    </div>
+  );
 }
 
-function DropdownMenuItem({ option, onSelect }: DropdownMenuItemProps) {
-  const {
-    label,
-    icon,
-    disabled,
-    variant,
-    description,
-    shortcut,
-    checked,
-  } = option;
-  
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      className={cn(
-        'flex w-full items-center px-3 py-2 text-sm',
-        'focus:bg-muted focus:outline-none',
-        disabled && 'opacity-50 cursor-not-allowed',
-        !disabled && 'hover:bg-muted',
-        variant === 'destructive' && 'text-destructive',
-        checked && 'bg-muted/50'
-      )}
-      onClick={disabled ? undefined : onSelect}
-      disabled={disabled}
-    >
-      {checked && (
-        <span className="mr-2 h-4 w-4 text-primary">
-          <Check className="h-4 w-4" />
-        </span>
-      )}
-      
-      {icon && !checked && (
-        <span className="mr-2 h-4 w-4">
-          {icon}
-        </span>
-      )}
-      
-      {!icon && !checked && (
-        <span className="mr-2 h-4 w-4" />
-      )}
-      
-      <div className="flex flex-col flex-grow">
-        <span>{label}</span>
-        {description && (
-          <span className="text-xs text-muted-foreground">{description}</span>
-        )}
-      </div>
-      
-      {shortcut && (
-        <span className="ml-auto text-xs text-muted-foreground">{shortcut}</span>
-      )}
-    </button>
-  );
+/**
+ * Props for the DropdownMenuItem component
+ */
+interface DropdownMenuItemProps {
+  /** The menu option configuration */
+  option: DropdownMenuOption;
+  /** Handler for when the item is selected */
+  onSelect: () => void;
 }
 
 // ============================================================================

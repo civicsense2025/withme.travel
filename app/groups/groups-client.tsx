@@ -33,12 +33,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/lib/hooks/use-toast'
 import { useInvitations } from '@/lib/hooks/use-invitations';
-import { FriendsList } from '@/components/friends-list';
-import type { Friend } from '@/components/friends-list';
+import { FriendsList } from '@/components/features/groups/organisms/FriendsList';
+import type { Friend } from '@/components/features/groups/organisms/FriendsList';
 import { API_ROUTES } from '@/utils/constants/routes';
 import { trackEvent } from '@/lib/tracking';
 import Link from 'next/link';
-import { PageHeader } from '@/components/layout/page-header';
 import { useGroups } from '@/lib/features/groups/hooks';
 import { Group as ClientGroup } from '@/lib/client/groups';
 import { EmptyState } from '@/components/shared/molecules';
@@ -90,7 +89,7 @@ export default function GroupsClientPage({
     groups: hookGroups,
     isLoading,
     error: hookError,
-    refresh: refreshGroups,
+    fetchGroups: refreshGroups,
     createGroup: createGroupHook,
     deleteGroup: deleteGroupHook,
   } = useGroups(guestToken);
@@ -150,7 +149,7 @@ export default function GroupsClientPage({
 
     if (result.success) {
       trackEvent('group_created', {
-        group_id: result.groupId,
+        group_id: result.data?.id,
         visibility: newGroupData.visibility || 'private',
       });
 

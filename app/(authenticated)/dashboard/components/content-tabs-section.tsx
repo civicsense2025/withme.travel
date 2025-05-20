@@ -93,7 +93,7 @@ export function ContentTabsSection({
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold">Your Trips</h3>
-                        <Link href="/trips/create" legacyBehavior>
+                        <Link href="/trips/create">
                           <Button size="sm" variant="outline" className="rounded-full">
                             <PlusCircle className="h-4 w-4 mr-2" />
                             New Trip

@@ -127,7 +127,7 @@ export function PopularDestinationsGrid({
                 <div className="mt-4">
                   <Link
                     href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
-                    legacyBehavior>
+                   >
                     <Button size="sm">
                       Plan a Trip
                     </Button>
@@ -165,7 +165,7 @@ export function PopularDestinationsGrid({
                 <div className="flex justify-end">
                   <Link
                     href={`/trips/create?destination=${dest.slug}&name=Trip to ${dest.name}`}
-                    legacyBehavior>
+                   >
                     <Button size="sm">
                       Plan a Trip
                     </Button>
@@ -298,7 +298,7 @@ export function PopularDestinations({
               key={dest.id}
               href={dest.slug ? `/destinations/${dest.slug}` : '#'}
               passHref
-              legacyBehavior>
+             >
               <Card
                 className="cursor-pointer hover:shadow-lg transition h-full transform hover:scale-105"
                 onClick={() => onSelect?.(dest)}

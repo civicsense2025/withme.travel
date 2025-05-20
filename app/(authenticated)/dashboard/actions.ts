@@ -8,7 +8,7 @@ import { Session } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { TABLES } from '@/utils/constants/database';
 import { createServerComponentClient } from '@/utils/supabase/server';
-
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 // Utility function to create a Supabase client for server-side code
 function createServerClient() {
   return createClient(
@@ -49,6 +49,7 @@ export async function getTripCount(userId: string) {
  */
 export async function getUserProfile(userId: string) {
   try {
+    const cookieStore = cookies();
     const supabase = await createServerComponentClient();
     // Fetch profile from the database
     const { data: profile, error } = await supabase
@@ -78,7 +79,8 @@ export async function getUserProfile(userId: string) {
  */
 export async function getDashboardOverview(userId: string) {
   try {
-    const supabase = createServerClient();
+    const cookieStore = cookies();
+    const supabase = await createServerComponentClient();
 
     // Fetch recent trips, stats, and saved content in parallel
     const [recentTrips, tripCount, userProfile, travelStats, savedContent] = await Promise.all([
@@ -119,7 +121,8 @@ export async function getDashboardOverview(userId: string) {
  */
 export async function getActiveTripsWithUpdates(userId: string) {
   try {
-    const supabase = createServerClient();
+    const cookieStore = cookies();
+    const supabase = await createServerComponentClient();
 
     // Check if the trip_members table exists
     const { error: tableError } = await supabase
@@ -225,7 +228,8 @@ export async function getActiveTripsWithUpdates(userId: string) {
  */
 export async function getUserTravelStats(userId: string) {
   try {
-    const supabase = createServerClient();
+    const cookieStore = cookies();
+    const supabase = await createServerComponentClient();
 
     // Define default stats
     const defaultStats = {
@@ -318,7 +322,8 @@ export async function getUserTravelStats(userId: string) {
  */
 export async function getSavedContent(userId: string, limit: number = 4) {
   try {
-    const supabase = createServerClient();
+    const cookieStore = cookies();
+      const supabase = await createServerComponentClient();
 
     // Get saved destinations - Use separate queries instead of join
     const { data: likedDestinations, error: likedDestError } = await supabase

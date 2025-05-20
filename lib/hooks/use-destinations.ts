@@ -75,21 +75,22 @@ export function useDestinations({
     setIsLoading(true);
     setError(null);
 
-    const result = await listDestinations(filter);
-
-    if (result.success) {
-      setDestinations(result.data);
-    } else {
-      setError(new Error(result.error));
+    try {
+      const response = await fetch('/api/destinations');
+      if (!response.ok) throw new Error('Failed to fetch destinations');
+      const data = await response.json();
+      setDestinations(data);
+    } catch (err) {
+      setError(err as Error);
       toast({
         title: 'Error',
-        description: `Failed to load destinations: ${result.error}`,
+        description: `Failed to load destinations: ${err instanceof Error ? err.message : 'Unknown error occurred'}`,
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
-  }, [filter, toast]);
+  }, [toast]);
 
   // Effect to fetch destinations when filter changes
   useEffect(() => {

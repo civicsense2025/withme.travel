@@ -282,7 +282,7 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">
-          <Link href="/destinations" legacyBehavior>
+          <Link href="/destinations">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               back to destinations
@@ -301,7 +301,7 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex items-center mb-6">
-          <Link href="/destinations" legacyBehavior>
+          <Link href="/destinations">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               back to destinations
@@ -328,7 +328,7 @@ export default function DestinationClientPage({ slug }: DestinationClientPagePro
     <div className="mx-auto">
       {/* Back navigation */}
       <div className="max-w-screen-2xl mx-auto px-6 py-4 mb-2">
-        <Link href="/destinations" legacyBehavior>
+        <Link href="/destinations">
           <Button variant="ghost" size="sm" className="gap-1 text-sm font-normal">
             <ArrowLeft className="h-4 w-4" />
             back to destinations

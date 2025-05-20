@@ -119,7 +119,7 @@ export function ActivitySuggestionsCard({
 
         {tripId ? (
           <Button asChild size="sm">
-            <Link href={`/trips/${tripId}/add-activity`} legacyBehavior>
+            <Link href={`/trips/${tripId}/add-activity`}>
               Add Activities <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

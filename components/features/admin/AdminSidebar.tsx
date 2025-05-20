@@ -50,7 +50,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <LayoutDashboard className="mr-2 h-4 w-4 text-travel-purple" />
                   Overview
                 </Link>
@@ -59,7 +59,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/analytics"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <BarChart className="mr-2 h-4 w-4 text-travel-purple" />
                   Analytics
                 </Link>
@@ -76,7 +76,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/destinations"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <MapPin className="mr-2 h-4 w-4 text-travel-purple" />
                   Destinations
                 </Link>
@@ -85,7 +85,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/itineraries"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <CalendarDays className="mr-2 h-4 w-4 text-travel-purple" />
                   Itineraries
                 </Link>
@@ -94,7 +94,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/media"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <ImageIcon className="mr-2 h-4 w-4 text-travel-purple" />
                   Media Library
                 </Link>
@@ -103,7 +103,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/content"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <FileText className="mr-2 h-4 w-4 text-travel-purple" />
                   Content
                 </Link>
@@ -112,7 +112,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/places"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <Globe className="mr-2 h-4 w-4 text-travel-purple" />
                   Places
                 </Link>
@@ -129,7 +129,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/research/analytics"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <ClipboardCheck className="mr-2 h-4 w-4 text-travel-purple" />
                   Analytics
                 </Link>
@@ -138,7 +138,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/research/surveys"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <ClipboardCheck className="mr-2 h-4 w-4 text-travel-purple" />
                   Surveys
                 </Link>
@@ -147,7 +147,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/research/events"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <ClipboardCheck className="mr-2 h-4 w-4 text-travel-purple" />
                   Event Log
                 </Link>
@@ -164,7 +164,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/users"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <Users className="mr-2 h-4 w-4 text-travel-purple" />
                   User Management
                 </Link>
@@ -173,7 +173,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/auth-modal"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <UserCheck className="mr-2 h-4 w-4 text-travel-purple" />
                   Auth Analytics
                 </Link>
@@ -182,7 +182,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/surveys"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <ClipboardList className="mr-2 h-4 w-4 text-travel-purple" />
                   Surveys
                 </Link>
@@ -199,7 +199,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/security"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <Lock className="mr-2 h-4 w-4 text-travel-purple" />
                   Security
                 </Link>
@@ -208,7 +208,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/settings"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <Settings className="mr-2 h-4 w-4 text-travel-purple" />
                   Settings
                 </Link>
@@ -225,7 +225,7 @@ export function AdminSidebar() {
                 <Link
                   href="/admin/viator"
                   className="flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm transition-colors"
-                  legacyBehavior>
+                 >
                   <Palmtree className="mr-2 h-4 w-4 text-travel-purple" />
                   Viator Integration
                 </Link>
@@ -238,7 +238,7 @@ export function AdminSidebar() {
           <Link
             href="/logout"
             className="flex items-center px-2 py-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors"
-            legacyBehavior>
+           >
             <LogOut className="mr-2 h-4 w-4" />
             Logout
           </Link>

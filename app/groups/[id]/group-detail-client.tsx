@@ -135,7 +135,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
         
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/groups/${group.id}/plans`} legacyBehavior>
+            <Link href={`/groups/${group.id}/plans`}>
               <Calendar className="mr-2 h-4 w-4" /> Plans
             </Link>
           </Button>
@@ -145,7 +145,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
           </Button>
           
           <Button variant="outline" asChild>
-            <Link href={`/groups/${group.id}/ideas-preview`} legacyBehavior>
+            <Link href={`/groups/${group.id}/ideas-preview`}>
               <TrendingUp className="mr-2 h-4 w-4" /> Ideas
             </Link>
           </Button>
@@ -168,7 +168,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
           </div>
           
           <Button variant="outline" asChild>
-            <Link href="#edit-settings" legacyBehavior>
+            <Link href="#edit-settings">
               <Settings className="mr-2 h-4 w-4" /> Settings
             </Link>
           </Button>
@@ -209,7 +209,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
                 </CardContent>
                 <CardFooter>
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="#edit-description" legacyBehavior>
+                    <Link href="#edit-description">
                       <PencilIcon className="mr-2 h-4 w-4" /> Edit Details
                     </Link>
                   </Button>
@@ -269,7 +269,7 @@ export default function GroupDetailClient({ groupId }: GroupDetailClientProps) {
                   </CardContent>
                   <CardFooter>
                     <Button variant="outline" className="w-full" asChild>
-                      <Link href="#all-members" legacyBehavior>
+                      <Link href="#all-members">
                         <UsersIcon className="mr-2 h-4 w-4" /> View All Members
                       </Link>
                     </Button>

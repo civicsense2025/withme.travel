@@ -6,6 +6,7 @@
 
 import { createServerComponentClient } from '@/utils/supabase/server';
 import { Result, ok, err } from '@/utils/result';
+import { cookies } from 'next/headers';
 
 // ============================================================================
 // TYPES
@@ -211,4 +212,9 @@ export async function getProfile(): Promise<Result<any>> {
     console.error('[AUTH API] getProfile error:', error);
     return err(error instanceof Error ? error : new Error(String(error)));
   }
+}
+
+export async function signInWithEmail(email: string, password: string) {
+  const supabase = await createServerComponentClient();
+  return await supabase.auth.signInWithPassword({ email, password });
 } 

@@ -18,7 +18,7 @@ export default function TermsPage() {
   return (
     <div className="container max-w-5xl mx-auto px-4 py-12">
       <div className="mb-6">
-        <Link href="/" legacyBehavior>
+        <Link href="/">
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" />
             Back to home

@@ -73,7 +73,7 @@ export function NavbarMobileMenu({
                     activePath === link.href ? 'text-primary' : 'text-muted-foreground'
                   )}
                   onClick={onClose}
-                  legacyBehavior>
+                 >
                   {link.label}
                 </Link>
               ))}

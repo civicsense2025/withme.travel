@@ -147,7 +147,7 @@ export default function IdeasPreviewClient({
         </Card>
       )}
       <div className="mt-6">
-        <Link href={`/groups/${groupId}`} legacyBehavior>
+        <Link href={`/groups/${groupId}`}>
           <Button variant="outline">Back to Group</Button>
         </Link>
       </div>

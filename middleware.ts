@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import type { Database } from '@/utils/constants/database';
+import type { Database } from '@/types/supabase';
 import { rateLimit, RateLimitOptions } from '@/utils/middleware/rate-limit';
 import { GROUP_VISIBILITY } from '@/utils/constants/status';
+import { getTypedDbClient } from '@/utils/supabase/server';
+import type { Database as DatabaseTypes } from '@/types/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES, USER_TABLES, TableName, GROUP_TABLES} from './utils/constants/tables';
 
 // Define public paths that don't require authentication
 const publicPaths = [
@@ -130,249 +134,57 @@ function isGroupPath(path: string): boolean {
 /**
  * Next.js middleware function
  */
-export async function middleware(req: NextRequest) {
-  try {
-    const { pathname } = req.nextUrl;
-
-    // Handle direct destination image requests with potential errors
-    if (
-      pathname.startsWith('/destinations/') &&
-      pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico|avif)$/i) &&
-      (pathname.includes('null') ||
-        pathname.includes('undefined') ||
-        pathname.includes('placeholder'))
-    ) {
-      // Redirect problem images to the placeholder
-      return NextResponse.redirect(new URL('/images/placeholder-destination.jpg', req.url));
-    }
-
-    // Implement rate limiting in two tiers - strict for intensive operations and lenient for normal API routes
-    if (pathname.startsWith('/api/')) {
-      // Determine which tier of rate limiting to apply
-      const isIntensiveOperation =
-        pathname.includes('/error') ||
-        pathname.includes('/analytics') ||
-        pathname.includes('/logging');
-
-      // Set rate limit options based on operation type
-      const rateLimitOptions: RateLimitOptions = isIntensiveOperation
-        ? {
-            // More restrictive for intensive operations
-            limit: 20,
-            windowMs: 60 * 1000, // per minute
-          }
-        : {
-            // More lenient for normal API operations (especially expense APIs)
-            limit: pathname.includes('/expenses') ? 500 : 300,
-            windowMs: 60 * 1000, // per minute
-          };
-
-      // Apply rate limiting
-      const rateLimiter = rateLimit(rateLimitOptions);
-      const rateLimitResult = await rateLimiter(req);
-
-      if (rateLimitResult) {
-        console.log(
-          `Rate limit exceeded for ${isIntensiveOperation ? 'intensive' : 'regular'} API route: ${pathname}`
-        );
-        return rateLimitResult;
-      }
-    }
-
-    // Special handling for destination API image requests
-    if (
-      pathname.startsWith('/api/destinations') &&
-      pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico|avif)$/i)
-    ) {
-      // Redirect image requests directly to static assets
-      return NextResponse.redirect(new URL('/images/placeholder-destination.jpg', req.url));
-    }
-
-    // Handle null-prefixed slugs in the API
-    if (
-      pathname.startsWith('/api/destinations/by-slug/null') ||
-      pathname.includes('/undefined') ||
-      pathname.includes('/[object%20Object]')
-    ) {
-      // Redirect to a valid API endpoint
-      const cleanPath = pathname.replace(/\/by-slug\/.*/, '/by-slug/placeholder');
-      return NextResponse.redirect(new URL(cleanPath, req.url));
-    }
-
-    // Check for guest token in cookies for group plan paths
-    if (
-      pathname.includes('/plans/') ||
-      (pathname.includes('/api/groups/') && pathname.includes('/plans/'))
-    ) {
-      const guestToken = req.cookies.get('guest_token')?.value;
-      if (guestToken) {
-        console.log(`[Middleware] Guest token found for path: ${pathname}`);
-        return NextResponse.next();
-      }
-    }
-
-    // Special handling for ideas-preview paths - they're always public
-    if (pathname.includes('/ideas-preview')) {
-      console.log(`[Middleware] Public ideas preview access: ${pathname}`);
-      return NextResponse.next();
-    }
-
-    // Check if this is a protected path that requires authentication
-    if (isProtectedPath(pathname)) {
-      // Create supabase middleware client for auth check
-      const res = NextResponse.next();
-      const supabase = createServerClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            get(name) {
-              return req.cookies.get(name)?.value;
-            },
-            set(name, value, options) {
-              res.cookies.set({ name, value, ...options });
-            },
-            remove(name, options) {
-              res.cookies.set({ name, value: '', ...options });
-            },
-          },
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        }
-      );
-
-      // Check if user is authenticated
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      // If not authenticated, redirect to login
-      if (!session) {
-        const redirectUrl = new URL('/login', req.url);
-        redirectUrl.searchParams.set('redirectTo', encodeURIComponent(pathname));
-        console.log(`[Middleware] Redirecting from protected path ${pathname} to login`);
-        return NextResponse.redirect(redirectUrl);
-      }
-
-      return res;
-    }
-
-    // Skip auth checks for public paths
-    if (isPublicPath(pathname)) {
-      console.log(`[Middleware] Public path access: ${pathname}`);
-      return NextResponse.next();
-    }
-
-    // Create supabase middleware client for auth check
-    const res = NextResponse.next();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name) {
-            return req.cookies.get(name)?.value;
-          },
-          set(name, value, options) {
-            res.cookies.set({ name, value, ...options });
-          },
-          remove(name, options) {
-            res.cookies.set({ name, value: '', ...options });
-          },
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
         },
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
+        set(name: string, value: string, options: any) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
         },
-      }
-    );
-
-    // Check if user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    // For group paths, we need special handling
-    if (isGroupPath(pathname)) {
-      console.log(`[Middleware] Group path access: ${pathname}`);
-
-      // If user is authenticated, let them proceed (individual pages will check membership)
-      if (session) {
-        return res;
-      }
-
-      // Extract group ID from the path
-      const groupId = pathname.split('/')[2];
-
-      // If no session, check if the group is public
-      try {
-        const { data: group } = await supabase
-          .from('groups')
-          .select('visibility')
-          .eq('id', groupId)
-          .single();
-
-        // If group is public, allow access
-        if (group && group.visibility === GROUP_VISIBILITY.PUBLIC) {
-          console.log(`[Middleware] Allowing public access to group: ${groupId}`);
-          return res;
-        }
-      } catch (error) {
-        console.error(`[Middleware] Error checking group visibility: ${error}`);
-      }
+        remove(name: string, options: any) {
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+            maxAge: 0,
+          });
+        },
+      },
     }
+  );
 
-    // If there's no session, redirect to login
-    if (!session) {
-      const redirectUrl = new URL('/login', req.url);
+  // Refresh session if expired
+  await supabase.auth.getSession();
 
-      // Add the original URL as a redirect parameter
-      redirectUrl.searchParams.set('redirectTo', encodeURIComponent(pathname));
+  // Check auth status
+  const { data: { user } } = await supabase.auth.getUser();
 
-      // Log the redirect for debugging
-      console.log(`[Middleware] Redirecting unauthenticated request from ${pathname} to login`);
-
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // Admin route protection
-    if (pathname.startsWith('/admin')) {
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', session.user.id)
-        .single();
-
-      if (!profile?.is_admin) {
-        // User is not an admin, redirect to home
-        return NextResponse.redirect(new URL('/', req.url));
-      }
-    }
-
-    // User is authenticated, proceed with the request
-    console.log(`[Middleware] Authenticated access: ${pathname} (user: ${session.user.id})`);
-    return res;
-  } catch (error) {
-    // Log the error
-    console.error('[Middleware] Error:', error);
-
-    // Continue with the request in case of error
-    return NextResponse.next();
+  // Auth protection logic
+  if (!user && !isPublicPath(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
+
+  // Prevent authenticated users from accessing login
+  if (user && request.nextUrl.pathname === '/login') {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  return response;
 }
 
 // Define middleware matching paths
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except static assets, public paths, and api health check
-     * We'll handle the specific exclusions inside the middleware function
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    '/destinations/:path*', // Also check destination paths for image redirects
-    '/api/destinations/:path*', // Handle API destination paths
   ],
 };

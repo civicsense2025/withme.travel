@@ -15,10 +15,9 @@ import { PageContainer } from '@/components/features/layout/molecules/PageContai
 import { PageHeader } from '@/components/features/layout/molecules/PageHeader';
 import { Heading } from '@/components/features/ui/Heading';
 import { Text } from '@/components/ui/Text';
-import { Section } from '@/components/ui/Section';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 600;
+export const revalidate = 60;
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -253,9 +252,9 @@ export default async function ItinerariesPage() {
           centered={true}
         />
         <div className="mt-6">
-          <Link href="/itineraries/submit" legacyBehavior>
+          <Link href="/itineraries/submit">
             <Button
-              size="default"
+              size="sm"
               className="mx-auto flex items-center rounded-full px-5 bg-white text-black border border-gray-200 hover:bg-gray-100 hover:text-black"
             >
               <PlusCircle className="mr-2 h-4 w-4" />

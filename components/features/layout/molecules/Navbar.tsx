@@ -7,7 +7,7 @@ export default function Navbar() {
   return (
     <header className="w-full py-4 border-b">
       <div className="container mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2" legacyBehavior>
+        <Link href="/" className="flex items-center gap-2">
           <Logo />
           <span className="font-medium">WithMe Travel</span>
         </Link>

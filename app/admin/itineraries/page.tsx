@@ -153,7 +153,7 @@ export default async function AdminItinerariesPage({ searchParams }: AdminItiner
     <div className="container py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight mb-4">Itinerary Management</h1>
-        <Link href="/admin/itineraries/create" legacyBehavior>
+        <Link href="/admin/itineraries/create">
           <Button>Create New Template</Button>
         </Link>
       </div>

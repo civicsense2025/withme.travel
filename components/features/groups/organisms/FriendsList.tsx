@@ -276,7 +276,7 @@ export function FriendsList({
                   <Link
                     href={`/profile/${friend.friend_id}`}
                     className="font-medium hover:underline"
-                    legacyBehavior>
+                   >
                     {friend.friend_profile.full_name}
                   </Link>
                 </div>

@@ -10,10 +10,12 @@
 // ============================================================================
 // IMPORTS & SCHEMAS
 // ============================================================================
-
+'use server'
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/tables';
 import { handleError, Result, Place } from './_shared';
+import { cookies } from 'next/headers';
+import { RequestCookies } from 'next/dist/server/web/spec-extension/cookies';
 
 // ============================================================================
 // CRUD FUNCTIONS
@@ -25,8 +27,9 @@ import { handleError, Result, Place } from './_shared';
  * @returns Result containing an array of places
  */
 export async function listPlaces(params: any): Promise<Result<Place[]>> {
+  const cookieStore = cookies();
+  const supabase = await createRouteHandlerClient();
   try {
-    const supabase = await createRouteHandlerClient();
     // TODO: Add search/filter logic based on params
     const { data, error } = await supabase.from(TABLES.PLACES).select('*');
     if (error) return { success: false, error: error.message };
@@ -42,8 +45,9 @@ export async function listPlaces(params: any): Promise<Result<Place[]>> {
  * @returns Result containing the place
  */
 export async function getPlace(placeId: string): Promise<Result<Place>> {
+  const cookieStore = await cookies();
+  const supabase = await createRouteHandlerClient();
   try {
-    const supabase = await createRouteHandlerClient();
     const { data, error } = await supabase
       .from(TABLES.PLACES)
       .select('*')
@@ -63,8 +67,9 @@ export async function getPlace(placeId: string): Promise<Result<Place>> {
  * @returns Result containing the created place
  */
 export async function createPlace(data: Partial<Place>): Promise<Result<Place>> {
+  const cookieStore = await cookies();
+  const supabase = await createRouteHandlerClient();
   try {
-    const supabase = await createRouteHandlerClient();
     const { data: newPlace, error } = await supabase
       .from(TABLES.PLACES)
       .insert(data)
@@ -85,8 +90,9 @@ export async function createPlace(data: Partial<Place>): Promise<Result<Place>> 
  * @returns Result containing the updated place
  */
 export async function updatePlace(placeId: string, data: Partial<Place>): Promise<Result<Place>> {
+  const cookieStore = await cookies();
+  const supabase = await createRouteHandlerClient();
   try {
-    const supabase = await createRouteHandlerClient();
     const { data: updatedPlace, error } = await supabase
       .from(TABLES.PLACES)
       .update(data)
@@ -107,8 +113,9 @@ export async function updatePlace(placeId: string, data: Partial<Place>): Promis
  * @returns Result indicating success or failure
  */
 export async function deletePlace(placeId: string): Promise<Result<null>> {
+  const cookieStore = await cookies();  
+  const supabase = await createRouteHandlerClient();
   try {
-    const supabase = await createRouteHandlerClient();
     const { error } = await supabase.from(TABLES.PLACES).delete().eq('id', placeId);
 
     if (error) return { success: false, error: error.message };
@@ -121,8 +128,11 @@ export async function deletePlace(placeId: string): Promise<Result<null>> {
 /**
  * Type guard to check if an object is a Place
  */
-export function isPlace(obj: any): obj is Place {
-  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+export async function isPlace(obj: any): Promise<boolean> {
+  const cookieStore = await cookies();
+  const supabase = await createRouteHandlerClient();
+  const { data, error } = await supabase.from(TABLES.PLACES).select('*').eq('id', obj.id).single();
+  return !!data;
 }
 
 // (Add more as needed)

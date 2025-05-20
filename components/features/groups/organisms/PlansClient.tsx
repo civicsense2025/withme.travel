@@ -178,7 +178,7 @@ const PlansClient: React.FC<PlansClientProps> = ({
     <div className="container max-w-7xl py-4 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <Link href={`/groups/${groupId}/plans`} passHref legacyBehavior>
+          <Link href={`/groups/${groupId}/plans`} passHref>
             <Button variant="ghost" size="sm" className="mb-2">
               <ChevronLeft className="h-4 w-4 mr-1" /> Back to plans
             </Button>

@@ -10,10 +10,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatDateRange } from '@/utils/lib-utils';
 import type { Trip as BaseTrip } from '@/lib/hooks/use-trips';
-import { TripCardHeader } from '@/app/trips/components/molecules/TripCardHeader';
 import { useTrips } from '@/lib/hooks/use-trips';
 import { EmptyTrips } from '@/components/features/trips/molecules/EmptyTrips';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TripCard } from '@/components/features/trips/molecules/TripCard';
 
 // ============================================================================
 // TYPES
@@ -23,7 +23,9 @@ type FilterType = 'all' | 'upcoming' | 'past';
 
 // Extend the Trip type to include cover_image_url
 interface Trip extends BaseTrip {
+  cover_image?: string;
   cover_image_url?: string | null;
+  destination_name?: string;
 }
 
 // ============================================================================
@@ -241,7 +243,16 @@ export default function TripsClientPage({ userId = '', isGuest = false }: { user
 
         {/* Single shared tabs content - trips list renders based on active filter */}
         <TabsContent value={filterType} className="mt-0">
-          <TripsList groupedTrips={groupedTrips} />
+          <TripsList groupedTrips={Object.fromEntries(
+            Object.entries(groupedTrips).map(([key, trips]) => [
+              key,
+              trips.map(trip => ({
+                ...trip,
+                destination_name: trip.destination_name ?? undefined,
+                cover_image_url: trip.cover_image_url ?? undefined
+              }))
+            ])
+          )} />
         </TabsContent>
       </Tabs>
 
@@ -304,45 +315,6 @@ function TripsLoadingSkeleton() {
   );
 }
 
-// Trip card component
-function TripCard({ trip }: { trip: Trip }) {
-  const hasDateInfo = trip.start_date || trip.end_date;
-  const dateRange = hasDateInfo && trip.start_date && trip.end_date 
-    ? formatDateRange(trip.start_date, trip.end_date) 
-    : '';
-  const locationName = trip.destination_name || '';
-  
-  return (
-    <Link href={`/trips/${trip.id}`} className="block no-underline" legacyBehavior>
-      <Card className="h-full hover:shadow-md transition-shadow duration-200 overflow-hidden">
-        <CardContent className="p-4">
-          <TripCardHeader
-            name={trip.name}
-            destination={locationName}
-            coverImageUrl={trip.cover_image_url || undefined}
-            status={trip.status ? String(trip.status) : undefined}
-          />
-          
-          {/* Metadata row */}
-          <div className="space-y-1 text-sm text-muted-foreground mt-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <User className="h-3.5 w-3.5 flex-shrink-0" />
-              <span>0 travelers</span>
-              {hasDateInfo && (
-                <>
-                  <span className="mx-1 flex-shrink-0">•</span>
-                  <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>{dateRange}</span>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
-
 // Trip list component
 function TripsList({ groupedTrips }: { groupedTrips: Record<string, Trip[]> }) {
   if (Object.keys(groupedTrips).length === 0) {
@@ -358,8 +330,17 @@ function TripsList({ groupedTrips }: { groupedTrips: Record<string, Trip[]> }) {
             <h2 className="text-xl font-semibold">{dateGroup}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tripsInGroup.map((trip: Trip) => (
-              <TripCard key={trip.id} trip={trip} />
+            {tripsInGroup.map((trip) => (
+              <TripCard 
+              key={trip.id} 
+              trip={{
+                ...trip,
+                cover_image_url: trip.cover_image_url || undefined,
+                destination_name: trip.destination_name || undefined,
+                start_date: trip.start_date || undefined,
+                end_date: trip.end_date || undefined,
+              }}  
+              />
             ))}
           </div>
         </div>

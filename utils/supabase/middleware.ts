@@ -47,3 +47,14 @@ export function createMiddlewareClient(
   });
   return { supabase, response };
 }
+
+export async function middleware(request: NextRequest) {
+  const { supabase, response } = createMiddlewareClient(request);
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  return response;
+}

@@ -79,7 +79,7 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
 
   if (status === MenuStatus.LOGGED_OUT) {
     return (
-      <Link href="/login" legacyBehavior>
+      <Link href="/login">
         <Button variant="outline" className="h-8 px-3 rounded-full ghost text-sm">
           Sign In
         </Button>
@@ -110,20 +110,20 @@ export default function UserMenu({ serverSession = null, topPosition = false }: 
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
-        <Link href="/trips" legacyBehavior>
+        <Link href="/trips">
           <Button variant="link" className="w-full text-left">🧳 My Trips</Button>
         </Link>
-        <Link href="/saved" legacyBehavior>
+        <Link href="/saved">
           <Button variant="link" className="w-full text-left">💾 Saved</Button>
         </Link>
-        <Link href="/settings" legacyBehavior>
+        <Link href="/settings">
           <Button variant="link" className="w-full text-left">👤 Account</Button>
         </Link>
-        <Link href="/travel-map" legacyBehavior>
+        <Link href="/travel-map">
           <Button variant="link" className="w-full text-left">🗺️ Travel Map</Button>
         </Link>
         {user?.role === 'admin' && (
-          <Link href="/admin/dashboard" legacyBehavior>
+          <Link href="/admin/dashboard">
             <Button variant="link" className="w-full text-left">🛠️ Admin Panel</Button>
           </Link>
         )}

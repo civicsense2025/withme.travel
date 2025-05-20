@@ -152,7 +152,7 @@ export function UserProfileCard({
   // Wrap with link if href is provided
   if (href) {
     return (
-      <Link href={href} className="block" legacyBehavior>
+      <Link href={href} className="block">
         {card}
       </Link>
     );

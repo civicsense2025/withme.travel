@@ -174,6 +174,8 @@ export function HeroSection() {
 
   const { destinations: popularDestinations = [], isLoading, error } = usePopularDestinations();
 
+  const destinations = Array.isArray(popularDestinations) ? popularDestinations : [];
+
   return (
     <section
       aria-label="Main welcome section"
@@ -372,7 +374,7 @@ export function HeroSection() {
               }
             >
               <PopularDestinationsGrid
-                destinations={popularDestinations.map((dest: any) => ({
+                destinations={destinations.map((dest: any) => ({
                   ...dest,
                   name: dest.name || 'Unnamed Destination',
                   byline: dest.byline || undefined,

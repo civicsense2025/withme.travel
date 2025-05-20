@@ -49,10 +49,10 @@ export default function SignInRedirectPage() {
           </AlertDescription>
         </Alert>
         <div className="flex gap-4">
-          <Link href="/auth/signin" legacyBehavior>
+          <Link href="/auth/signin">
             <Button variant="default">Go to Sign In</Button>
           </Link>
-          <Link href="/" legacyBehavior>
+          <Link href="/">
             <Button variant="outline">Go to Homepage</Button>
           </Link>
         </div>
@@ -76,7 +76,7 @@ export default function SignInRedirectPage() {
           <Spinner size="xl" variant="primary" />
         </div>
         <p className="text-muted-foreground">Please sign in to continue.</p>
-        <Link href="/api/auth/login" legacyBehavior>
+        <Link href="/api/auth/login">
           <Button>Sign In</Button>
         </Link>
       </div>

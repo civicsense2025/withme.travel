@@ -61,7 +61,7 @@ export function ItineraryTemplateCard({
       <Link
         href={`/itineraries/${slug}`}
         className="flex-1 flex flex-col h-full"
-        legacyBehavior>
+       >
         <div className="relative w-full h-40 overflow-hidden">
           {cover_image_url ? (
             <Image
