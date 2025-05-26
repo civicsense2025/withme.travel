@@ -1,36 +1,22 @@
-/**
- * Textarea (Atom)
- *
- * A themeable, accessible textarea component.
- *
- * @module ui/atoms
- */
-import React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react"
 
-/**
- * Props for the Textarea component
- */
-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  /** Textarea size */
-  size?: 'sm' | 'md' | 'lg';
-}
+import { cn } from "@/lib/utils"
 
-export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ size = 'md', className, ...props }, ref) => (
+const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.ComponentProps<"textarea">
+>(({ className, ...props }, ref) => {
+  return (
     <textarea
-      ref={ref}
       className={cn(
-        'block w-full rounded border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary',
-        {
-          'h-20 px-2 text-sm': size === 'sm',
-          'h-28 px-3 text-base': size === 'md',
-          'h-36 px-4 text-lg': size === 'lg',
-        },
+        "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
         className
       )}
+      ref={ref}
       {...props}
     />
   )
-);
-Textarea.displayName = 'Textarea';
+})
+Textarea.displayName = "Textarea"
+
+export { Textarea }

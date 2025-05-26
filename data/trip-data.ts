@@ -1,0 +1,162 @@
+import type { Trip, TripMember, TripTask, TripExpense, ItineraryItem } from "../types/trip"
+
+export const sampleTrip: Trip = {
+  id: "paris-adventure-2025",
+  name: "Paris Adventure",
+  emoji: "🗼",
+  description: "A magical week exploring the City of Light with amazing friends",
+  destination: "Paris, France",
+  startDate: "2025-06-15",
+  endDate: "2025-06-22",
+  duration: 7,
+  travelers: 4,
+  budget: 3200,
+  spent: 450,
+  status: "planning",
+  privacy: "members-only",
+  createdBy: "user-1",
+  createdAt: "2025-05-01",
+}
+
+export const tripMembers: TripMember[] = [
+  {
+    id: "user-1",
+    email: "sarah@example.com",
+    name: "Sarah Chen",
+    role: "admin",
+    joinedAt: "2025-05-01",
+    lastSeen: "2025-05-26",
+    isOnline: true,
+  },
+  {
+    id: "user-2",
+    email: "mike@example.com",
+    name: "Mike Johnson",
+    role: "editor",
+    joinedAt: "2025-05-02",
+    lastSeen: "2025-05-25",
+    isOnline: false,
+  },
+  {
+    id: "user-3",
+    email: "emma@example.com",
+    name: "Emma Wilson",
+    role: "contributor",
+    joinedAt: "2025-05-03",
+    lastSeen: "2025-05-26",
+    isOnline: true,
+  },
+  {
+    id: "user-4",
+    email: "alex@example.com",
+    name: "Alex Rodriguez",
+    role: "contributor",
+    joinedAt: "2025-05-05",
+    lastSeen: "2025-05-24",
+    isOnline: false,
+  },
+]
+
+export const tripTasks: TripTask[] = [
+  {
+    id: "task-1",
+    title: "Book Louvre Museum tickets",
+    completed: true,
+    assignedTo: "user-1",
+    dueDate: "2025-06-01",
+    category: "Activities",
+  },
+  {
+    id: "task-2",
+    title: "Research best croissant spots",
+    completed: false,
+    assignedTo: "user-2",
+    category: "Food",
+  },
+  {
+    id: "task-3",
+    title: "Pack camera equipment",
+    completed: false,
+    assignedTo: "user-3",
+    dueDate: "2025-06-10",
+    category: "Packing",
+  },
+  {
+    id: "task-4",
+    title: "Download offline maps",
+    completed: false,
+    category: "Preparation",
+  },
+]
+
+export const tripExpenses: TripExpense[] = [
+  {
+    id: "expense-1",
+    title: "Airbnb accommodation",
+    amount: 320,
+    category: "Accommodation",
+    paidBy: "user-1",
+    splitBetween: ["user-1", "user-2", "user-3", "user-4"],
+    date: "2025-05-15",
+  },
+  {
+    id: "expense-2",
+    title: "Museum passes",
+    amount: 130,
+    category: "Activities",
+    paidBy: "user-2",
+    splitBetween: ["user-1", "user-2", "user-3", "user-4"],
+    date: "2025-05-20",
+  },
+]
+
+export const itinerary: ItineraryItem[] = [
+  {
+    id: "item-1",
+    day: 1,
+    time: "10:00",
+    title: "Arrive in Paris",
+    description: "Land at CDG Airport and take RER B to city center",
+    type: "transport",
+  },
+  {
+    id: "item-2",
+    day: 1,
+    time: "14:00",
+    title: "Check into Airbnb",
+    description: "Charming apartment in Le Marais district",
+    location: "Le Marais, Paris",
+    type: "accommodation",
+  },
+  {
+    id: "item-3",
+    day: 1,
+    time: "16:00",
+    title: "Explore Île de la Cité",
+    description: "Visit Notre-Dame area and Sainte-Chapelle",
+    location: "Île de la Cité",
+    duration: "3 hours",
+    type: "activity",
+  },
+  {
+    id: "item-4",
+    day: 2,
+    time: "09:00",
+    title: "Louvre Museum",
+    description: "Pre-booked tickets for morning visit",
+    location: "Louvre Museum",
+    duration: "4 hours",
+    cost: 32,
+    type: "activity",
+  },
+  {
+    id: "item-5",
+    day: 2,
+    time: "19:00",
+    title: "Dinner at Le Comptoir du Relais",
+    description: "Traditional French bistro experience",
+    location: "Saint-Germain",
+    cost: 45,
+    type: "meal",
+  },
+]

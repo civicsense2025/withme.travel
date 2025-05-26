@@ -1,117 +1,62 @@
-import { TripType, TripStatus } from '@/utils/constants/status';
-import { User } from './user';
-import { Destination } from './destination';
-import { Database } from './.database.types';
+export type TripStatus = "planning" | "upcoming" | "active" | "completed"
 
-/**
- * Type for a trip member passed from SSR data
- */
-export interface LocalTripMemberFromSSR {
-  id: string;
-  trip_id: string;
-  user_id: string;
-  role: TripRole;
-  joined_at: string;
-  profiles: {
-    id: string;
-    name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-  } | null;
+export type Trip = {
+  id: string
+  name: string
+  emoji: string
+  description: string
+  destination: string
+  startDate: string
+  endDate: string
+  duration: number
+  travelers: number
+  budget: number
+  spent: number
+  status: TripStatus
+  privacy: "private" | "members-only" | "unlisted" | "public"
+  createdBy: string
+  createdAt: string
 }
 
-/**
- * Type for a manual expense
- */
-export interface ManualDbExpense {
-  id: string;
-  trip_id: string;
-  title: string;
-  amount: number;
-  currency: string;
-  category: string;
-  paid_by: string; // User ID
-  date: string; // ISO string
-  created_at: string;
-  updated_at?: string | null;
-  source?: string | null;
+export type TripMember = {
+  id: string
+  email: string
+  name: string
+  avatar?: string
+  role: "admin" | "editor" | "contributor" | "viewer"
+  joinedAt: string
+  lastSeen: string
+  isOnline: boolean
 }
 
-/**
- * Type for a unified expense representation
- */
-export interface UnifiedExpense {
-  id: string | number;
-  title: string | null;
-  amount: number | null;
-  currency: string | null;
-  category: string | null;
-  date: string | null;
-  paidBy?: string | null;
-  source: 'manual' | 'planned';
+export type TripTask = {
+  id: string
+  title: string
+  completed: boolean
+  assignedTo?: string
+  dueDate?: string
+  category: string
 }
 
-/**
- * Type for trip privacy settings
- */
-export type TripPrivacySetting = 'private' | 'shared_with_link' | 'public';
-
-/**
- * Type for an itinerary section
- */
-export interface ItinerarySection {
-  id: string;
-  trip_id: string;
-  day_number: number | null;
-  date: string | null;
-  title: string | null;
-  position: number;
-  created_at: string;
-  updated_at: string;
-  items: any[]; // Use a more specific type in your actual implementation
+export type TripExpense = {
+  id: string
+  title: string
+  amount: number
+  category: string
+  paidBy: string
+  splitBetween: string[]
+  date: string
+  receipt?: string
 }
 
-// Define the complex budget object type
-export interface TripBudgetObject {
-  total: number;
-  currency: string;
-  categories?: {
-    // Made categories optional as it might not always be present
-    accommodation?: number;
-    transportation?: number;
-    activities?: number;
-    food?: number;
-    shopping?: number;
-    other?: number;
-  };
+export type ItineraryItem = {
+  id: string
+  day: number
+  time?: string
+  title: string
+  description?: string
+  location?: string
+  duration?: string
+  cost?: number
+  type: "activity" | "meal" | "transport" | "accommodation" | "other"
 }
-
-// Modify the existing interface Trip
-export interface Trip {
-  id: string;
-  name: string;
-  description: string | null;
-  created_by: string | null; // Allow null
-  start_date: string | null;
-  end_date: string | null;
-  destination_id: string | null;
-  destination_name: string | null;
-  cover_image_url: string | null | undefined; // Allow undefined
-  created_at: string;
-  updated_at: string | null; // Allow null
-  status: TripStatus | null;
-  is_public: boolean;
-  vibe: string | null;
-  trip_type: TripType | null;
-  // Add/Ensure missing fields are present
-  slug: string | null;
-  public_slug: string | null; // Keep if needed elsewhere
-  privacy_setting: 'private' | 'shared_with_link' | 'public' | null;
-  duration_days: number | null;
-  playlist_url: string | null;
-  // Update budget type
-  budget: TripBudgetObject | number | null; // Allow number for simpler budget or the object
-}
-
-// Define TripRole based on the constants structure
-export type TripRole = 'admin' | 'editor' | 'viewer' | 'contributor';

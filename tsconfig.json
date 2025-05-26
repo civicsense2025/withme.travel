@@ -1,15 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2016",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
+    "target": "ES6",
     "skipLibCheck": true,
     "strict": true,
-    "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -19,37 +18,10 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@hooks/*": ["./hooks/*"]
-    },
-    "types": ["node", "react", "react-dom", "jest"],
-    "allowImportingTsExtensions": false
+      "@/*": ["./*"]
+    }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "next-env.d.ts",
-    "types/**/*.d.ts",
-    "build/types/**/*.ts",
-    "tailwind.config.js",
-    "tailwind.config.ts",
-    "types/.database.types.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "mobile",
-    "mobile/withme-app",
-    "scripts",
-    "**/.next",
-    "**/out",
-    "__tests__",
-    "tests",
-    "_disabled_features",
-    "coverage",
-    "playwright-report",
-    "build"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
