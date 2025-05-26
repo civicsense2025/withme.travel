@@ -1,32 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Star, ArrowRight, MapPin } from "lucide-react"
+import { Search, Star, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { destinations, experiences } from "../../data/experiences"
-import { madridDestination, parisDestination } from "../../data/destinations-data"
 import Link from "next/link"
 
 export default function DestinationsPage() {
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Combine the destination data
-  const allDestinations = [
-    {
-      ...destinations.find((d) => d.id === "madrid"),
-      ...madridDestination,
-      slug: "madrid",
-    },
-    {
-      ...destinations.find((d) => d.id === "paris"),
-      ...parisDestination,
-      slug: "paris",
-    },
-    ...destinations.filter((d) => !["madrid", "paris"].includes(d.id)).map((d) => ({ ...d, slug: d.id })),
-  ]
-
-  const filteredDestinations = allDestinations.filter(
+  const filteredDestinations = destinations.filter(
     (dest) =>
       dest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       dest.country.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -92,7 +76,7 @@ export default function DestinationsPage() {
                 {/* Destination Header */}
                 <div className="relative">
                   <img
-                    src={destination.imageUrl || destination.heroImage || "/placeholder.svg"}
+                    src={destination.imageUrl || "/placeholder.svg"}
                     alt={destination.name}
                     className="w-full h-64 object-cover"
                   />
@@ -103,13 +87,11 @@ export default function DestinationsPage() {
                       <h2 className="text-3xl font-bold">{destination.name}</h2>
                     </div>
                     <p className="text-lg opacity-90 mb-2">{destination.country}</p>
-                    <p className="text-white/80 max-w-2xl">
-                      {destination.description || "Discover this amazing destination"}
-                    </p>
+                    <p className="text-white/80 max-w-2xl">{destination.description}</p>
                   </div>
                   <div className="absolute top-6 right-6">
                     <Badge className="bg-white/90 text-gray-900 hover:bg-white">
-                      {destination.experienceCount || destExperiences.length} experiences
+                      {destination.experienceCount} experiences
                     </Badge>
                   </div>
                 </div>
@@ -120,13 +102,11 @@ export default function DestinationsPage() {
                   <div className="mb-6">
                     <h3 className="font-semibold text-gray-900 mb-3">Popular Categories</h3>
                     <div className="flex flex-wrap gap-2">
-                      {(destination.popularCategories || destination.tags || ["Culture", "Food", "Architecture"]).map(
-                        (category) => (
-                          <Badge key={category} variant="outline" className="rounded-full">
-                            {category}
-                          </Badge>
-                        ),
-                      )}
+                      {destination.popularCategories.map((category) => (
+                        <Badge key={category} variant="outline" className="rounded-full">
+                          {category}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
 
@@ -173,10 +153,9 @@ export default function DestinationsPage() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-3 mt-6">
-                    <Link href={`/destinations/${destination.slug}`} className="flex-1">
+                    <Link href={`/destinations/${destination.id}`} className="flex-1">
                       <Button className="w-full bg-blue-600 hover:bg-blue-700 rounded-xl">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        Explore Destination
+                        Explore {destination.name}
                       </Button>
                     </Link>
                     <Button variant="outline" className="rounded-xl">

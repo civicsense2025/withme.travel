@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, Heart, Share, Plus, Thermometer } from "lucide-react"
+import { ArrowLeft, Share, Plus, Heart, Thermometer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -9,46 +9,18 @@ import { ExperienceCard } from "./experience-card"
 import { experiences } from "../data/experiences"
 import Link from "next/link"
 
-type Destination = {
-  id: string
-  name: string
-  country: string
-  emoji: string
-  heroImage: string
-  description: string
-  highlights: Array<{
-    icon: string
-    title: string
-    description: string
-  }>
-  weather: {
-    current: string
-    condition: string
-    humidity: string
-    wind: string
-    forecast: Array<{
-      day: string
-      high: number
-      low: number
-      condition: string
-    }>
-  }
-  travelInfo: {
-    bestTime: string
-    language: string
-    currency: string
-    timezone: string
-    airport: string
-    metro: string
-  }
-  tags: string[]
-}
-
 type DestinationOverviewProps = {
-  destination: Destination
+  destination: {
+    id: string
+    name: string
+    country: string
+    emoji: string
+    imageUrl: string
+    description: string
+  }
 }
 
-export default function DestinationOverview({ destination }: DestinationOverviewProps) {
+export function DestinationOverview({ destination }: DestinationOverviewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showAllExperiences, setShowAllExperiences] = useState(false)
 
@@ -62,37 +34,39 @@ export default function DestinationOverview({ destination }: DestinationOverview
 
   const displayedExperiences = showAllExperiences ? filteredExperiences : filteredExperiences.slice(0, 8)
 
+  const highlights = [
+    { icon: "🏛️", title: "Royal Palace", description: "Opulent royal residence with 3,418 rooms" },
+    { icon: "🎨", title: "Prado Museum", description: "World-class art collection including Velázquez" },
+    { icon: "🌳", title: "Retiro Park", description: "Historic park perfect for strolling and relaxing" },
+    { icon: "🍷", title: "Tapas Culture", description: "Authentic Spanish cuisine and vibrant nightlife" },
+    { icon: "⚽", title: "Santiago Bernabéu", description: "Home stadium of Real Madrid football club" },
+    { icon: "🏛️", title: "Gran Vía", description: "Madrid's Broadway with theaters and shopping" },
+  ]
+
+  const weatherInfo = {
+    current: "22°C",
+    condition: "Sunny",
+    humidity: "45%",
+    wind: "8 km/h",
+    forecast: [
+      { day: "Today", high: 24, low: 16, condition: "☀️" },
+      { day: "Tomorrow", high: 26, low: 18, condition: "⛅" },
+      { day: "Wed", high: 23, low: 15, condition: "🌧️" },
+      { day: "Thu", high: 25, low: 17, condition: "☀️" },
+    ],
+  }
+
+  const travelInfo = {
+    bestTime: "April-June, September-October",
+    language: "Spanish",
+    currency: "Euro (€)",
+    timezone: "CET (UTC+1)",
+    airport: "MAD - Adolfo Suárez Madrid-Barajas",
+    metro: "Extensive metro system with 12 lines",
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-8">
-            <Link href="/" className="text-2xl font-bold text-gray-900">
-              withme.
-            </Link>
-            <nav className="flex space-x-6">
-              <Link href="/dashboard" className="text-gray-400 hover:text-gray-600 font-medium">
-                Planner
-              </Link>
-              <Link href="/destinations" className="text-black font-medium relative">
-                Destinations
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-black" />
-              </Link>
-              <Link href="/experiences" className="text-gray-400 hover:text-gray-600 font-medium">
-                Experiences
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <Heart className="w-4 h-4" />
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl">+ New Trip</Button>
-          </div>
-        </div>
-      </header>
-
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -108,7 +82,7 @@ export default function DestinationOverview({ destination }: DestinationOverview
       {/* Hero Section */}
       <div className="relative">
         <img
-          src={destination.heroImage || "/placeholder.svg"}
+          src={destination.imageUrl || "/placeholder.svg?height=400&width=1200"}
           alt={`${destination.name} cityscape`}
           className="w-full h-96 object-cover"
         />
@@ -151,7 +125,7 @@ export default function DestinationOverview({ destination }: DestinationOverview
               <p className="text-gray-600 leading-relaxed mb-6">{destination.description}</p>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {destination.highlights.map((highlight, index) => (
+                {highlights.map((highlight, index) => (
                   <div key={index} className="text-center p-4 bg-gray-50 rounded-2xl">
                     <div className="text-3xl mb-2">{highlight.icon}</div>
                     <h3 className="font-semibold text-gray-900 text-sm mb-1">{highlight.title}</h3>
@@ -169,11 +143,13 @@ export default function DestinationOverview({ destination }: DestinationOverview
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3">🏷️ Tags</h4>
                   <div className="flex flex-wrap gap-2">
-                    {destination.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="rounded-full">
-                        {tag}
-                      </Badge>
-                    ))}
+                    {["City Break", "Culture", "Architecture", "Food & Drink", "Museums", "Royal Heritage"].map(
+                      (tag) => (
+                        <Badge key={tag} variant="outline" className="rounded-full">
+                          {tag}
+                        </Badge>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -201,15 +177,15 @@ export default function DestinationOverview({ destination }: DestinationOverview
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Best Time</span>
-                        <span className="font-medium">{destination.travelInfo.bestTime}</span>
+                        <span className="font-medium">{travelInfo.bestTime}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Language</span>
-                        <span className="font-medium">{destination.travelInfo.language}</span>
+                        <span className="font-medium">{travelInfo.language}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Currency</span>
-                        <span className="font-medium">{destination.travelInfo.currency}</span>
+                        <span className="font-medium">{travelInfo.currency}</span>
                       </div>
                     </div>
                   </div>
@@ -230,7 +206,7 @@ export default function DestinationOverview({ destination }: DestinationOverview
                   <h2 className="text-2xl font-bold text-gray-900">🎯 Tours & Activities</h2>
                   <p className="text-gray-600">Powered by Viator</p>
                 </div>
-                <Link href={`/experiences?location=${destination.name}`}>
+                <Link href="/experiences?location=Madrid">
                   <Button variant="ghost" className="text-blue-600 hover:bg-blue-50 rounded-xl">
                     View All on Viator →
                   </Button>
@@ -307,23 +283,23 @@ export default function DestinationOverview({ destination }: DestinationOverview
               </h3>
 
               <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-gray-900">{destination.weather.current}</div>
-                <div className="text-gray-600">{destination.weather.condition}</div>
+                <div className="text-3xl font-bold text-gray-900">{weatherInfo.current}</div>
+                <div className="text-gray-600">{weatherInfo.condition}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                 <div>
                   <span className="text-gray-500">Humidity</span>
-                  <div className="font-medium">{destination.weather.humidity}</div>
+                  <div className="font-medium">{weatherInfo.humidity}</div>
                 </div>
                 <div>
                   <span className="text-gray-500">Wind</span>
-                  <div className="font-medium">{destination.weather.wind}</div>
+                  <div className="font-medium">{weatherInfo.wind}</div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                {destination.weather.forecast.map((day, index) => (
+                {weatherInfo.forecast.map((day, index) => (
                   <div key={index} className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">{day.day}</span>
                     <div className="flex items-center space-x-2">
@@ -351,15 +327,15 @@ export default function DestinationOverview({ destination }: DestinationOverview
               <div className="space-y-3 text-sm">
                 <div>
                   <span className="text-gray-500">Airport</span>
-                  <div className="font-medium">{destination.travelInfo.airport}</div>
+                  <div className="font-medium">{travelInfo.airport}</div>
                 </div>
                 <div>
                   <span className="text-gray-500">Metro</span>
-                  <div className="font-medium">{destination.travelInfo.metro}</div>
+                  <div className="font-medium">{travelInfo.metro}</div>
                 </div>
                 <div>
                   <span className="text-gray-500">Timezone</span>
-                  <div className="font-medium">{destination.travelInfo.timezone}</div>
+                  <div className="font-medium">{travelInfo.timezone}</div>
                 </div>
               </div>
             </div>
