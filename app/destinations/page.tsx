@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { destinations, experiences } from "../../data/experiences"
 import Link from "next/link"
-import {DestinationDetails} from "../../destination-details"
+import DestinationDetails from "../../destination-details"
 
 export default function DestinationsPage() {
   const [searchQuery, setSearchQuery] = useState("")
