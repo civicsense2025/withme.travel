@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { destinations, experiences } from "../../data/experiences"
 import Link from "next/link"
-import DestinationDetails from "../../destination-details"
 
 export default function DestinationsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -96,9 +95,7 @@ export default function DestinationsPage() {
                     </Badge>
                   </div>
                 </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <DestinationDetails />
-</div>
+
                 {/* Destination Content */}
                 <div className="p-6">
                   {/* Popular Categories */}
