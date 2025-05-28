@@ -11,7 +11,7 @@ import { itineraryTemplates, userTrips } from "../../../data/itinerary-templates
 import { DestinationOverview } from "../../../components/destination-overview"
 import type { ItineraryTemplateItem } from "../../../types/itinerary-templates"
 import Link from "next/link"
-import {DestinationDetails } from "../../destination-detals"
+import { DestinationDetails } from "../../destination-detals"
 
 type TemplateDetailPageProps = {
   params: { id: string }
