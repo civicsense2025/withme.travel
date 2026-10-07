@@ -6,6 +6,9 @@ export const MAX_EMAIL_LENGTH = 254;
 /** Most recipients accepted in a single invite request. */
 export const MAX_INVITE_EMAILS = 50;
 
-export const emailAddressSchema = z.string().email().max(MAX_EMAIL_LENGTH);
+/** One address. Pass a message to replace the default email error; the email check is added once. */
+export const emailAddress = (message?: string) => z.string().email(message).max(MAX_EMAIL_LENGTH);
+
+export const emailAddressSchema = emailAddress();
 
 export const emailListSchema = z.array(emailAddressSchema).max(MAX_INVITE_EMAILS);

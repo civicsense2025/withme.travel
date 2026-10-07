@@ -2,6 +2,7 @@
 import {
   MAX_EMAIL_LENGTH,
   MAX_INVITE_EMAILS,
+  emailAddress,
   emailAddressSchema,
   emailListSchema,
 } from '../email-validation';
@@ -46,5 +47,13 @@ describe('emailListSchema', () => {
     expect(emailListSchema.safeParse(['ada@example.com', addressOfLength(300)]).success).toBe(
       false
     );
+  });
+});
+
+describe('emailAddress with a custom message', () => {
+  it('reports only the custom message for a malformed address', () => {
+    const result = emailAddress('Please enter a valid email address').safeParse('nope');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((issue) => issue.message)).toEqual(['Please enter a valid email address']);
   });
 });
