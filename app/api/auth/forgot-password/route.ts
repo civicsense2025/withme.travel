@@ -6,10 +6,11 @@ import { isSuccess } from '@/utils/result';
 import { rateLimit } from '@/lib/rate-limit';
 import { EmailService } from '@/lib/services/email-service';
 import plunk from '@/app/lib/plunk';
+import { emailAddressSchema } from '@/lib/email-validation';
 
 // Validation schema for email
 const emailSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: emailAddressSchema.email('Please enter a valid email address'),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

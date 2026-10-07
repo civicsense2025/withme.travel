@@ -4,6 +4,7 @@ import { checkTripAccess } from '@/lib/trip-access';
 import { EmailService } from '@/lib/services/email-service';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { z } from 'zod';
+import { emailListSchema } from '@/lib/email-validation';
 import { Database } from '@/types/database.types';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -11,7 +12,7 @@ import { TABLES } from '@/utils/constants/tables';
 
 // Basic schema for invitation body validation
 const inviteSchema = z.object({
-  emails: z.array(z.string().email()),
+  emails: emailListSchema,
   message: z.string().optional().nullable(),
 });
 
