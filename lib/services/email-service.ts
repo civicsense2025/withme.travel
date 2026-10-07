@@ -170,7 +170,8 @@ export class EmailService {
         return { success: true, data };
       }
 
-      // Fall back to Nodemailer for development/testing
+      // Fall back to Nodemailer for development/testing. This is the only Nodemailer path:
+      // it runs when Resend is not configured and SMTP_HOST, SMTP_USER and SMTP_PASS are all set.
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         const nodemailerModule = await importNodemailer();
         const transporter = nodemailerModule.default.createTransport({

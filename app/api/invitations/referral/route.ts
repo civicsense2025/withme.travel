@@ -3,13 +3,14 @@ import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { TABLES } from '@/utils/constants/tables';
 import { ApiError, formatErrorResponse } from '@/lib/api-utils';
 import { z } from 'zod';
+import { emailAddress } from '@/lib/email-validation';
 import { nanoid } from 'nanoid';
 import { trackServerEvent } from '@/lib/tracking';
 import type { Database } from '@/utils/constants/tables.types';
 
 // Request schema validation
 const referralSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: emailAddress('Invalid email address'),
   message: z.string().optional(),
 });
 

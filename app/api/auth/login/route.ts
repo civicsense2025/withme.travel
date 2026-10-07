@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { emailAddress } from '@/lib/email-validation';
 import { captureException } from '@sentry/nextjs';
 import { sanitizeAuthCredentials } from '@/utils/sanitize';
 import { rateLimit } from '@/utils/middleware/rate-limit';
@@ -8,7 +9,7 @@ import { isSuccess } from '@/utils/result';
 
 // Simple schema for login validation
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: emailAddress('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
 

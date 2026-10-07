@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { importTripMembers } from '@/lib/api/tripMembers';
 import { z } from 'zod';
+import { emailAddress } from '@/lib/email-validation';
 
 // Schema for validating member data
 const memberSchema = z.object({
   members: z.array(
     z.object({
-      email: z.string().email(),
+      email: emailAddress(),
       role: z.enum(['admin', 'editor', 'viewer']).default('viewer'),
       name: z.string().optional(),
     })
