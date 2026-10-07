@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 import { checkTripAccess } from '@/lib/trip-access';
-import { EmailService } from '@/lib/services/email-service';
 import { TRIP_ROLES } from '@/utils/constants/status';
 import { z } from 'zod';
 import { emailListSchema } from '@/lib/email-validation';
@@ -58,14 +57,23 @@ export async function POST(request: NextRequest, { params }: { params: { tripId:
       );
     }
 
-    const { emails, message } = result.data;
+    const { message } = result.data;
+
+    // One invitation per address: compare case-insensitively and keep the first spelling.
+    const unique = new Map<string, string>();
+    for (const email of result.data.emails) {
+      const key = email.toLowerCase();
+      if (!unique.has(key)) unique.set(key, email);
+    }
+    const emails = [...unique.values()];
 
     // Check if some emails already have invitations
     const { data: existingInvites, error: inviteError } = await supabase
       .from('invitations')
       .select('email')
       .eq('trip_id', tripId)
-      .in('email', emails);
+      // Ask for both spellings: stored rows may be mixed case or already lower case.
+      .in('email', [...new Set([...emails, ...unique.keys()])]);
 
     if (inviteError) {
       console.error('Error checking existing invitations:', inviteError);
@@ -73,8 +81,8 @@ export async function POST(request: NextRequest, { params }: { params: { tripId:
     }
 
     // Filter out emails that already have invitations
-    const existingEmails = existingInvites?.map((invite) => invite.email) || [];
-    const newEmails = emails.filter((email) => !existingEmails.includes(email));
+    const existingEmails = new Set(existingInvites?.map((invite) => (invite.email ?? '').toLowerCase()));
+    const newEmails = emails.filter((email) => !existingEmails.has(email.toLowerCase()));
 
     if (newEmails.length === 0) {
       return NextResponse.json(
@@ -106,7 +114,7 @@ export async function POST(request: NextRequest, { params }: { params: { tripId:
 
     // Return success with the newly created invitations
     return NextResponse.json({
-      message: `Sent ${newEmails.length} invitation(s)`,
+      message: `Created ${newEmails.length} invitation(s)`,
       invitations: createdInvites,
     });
   } catch (error) {
